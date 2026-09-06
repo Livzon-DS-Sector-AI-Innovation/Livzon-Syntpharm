@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import { App, Button, Radio, Input, Tabs } from 'antd'
 import {
   SearchOutlined,
   AppstoreOutlined,
   UnorderedListOutlined,
   PlusOutlined } from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Candidate } from '@/types/hr'
 import { fetchCandidates } from '@/lib/api/client/hr'
 import {
@@ -25,32 +26,28 @@ export default function RecruitmentClient({
   initialCandidates,
   initialTotal }: RecruitmentClientProps) {
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const [viewMode, setViewMode] = useState<'list' | 'card'>('list')
-  const [candidates, setCandidates] = useState<Candidate[]>(initialCandidates)
-  const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'recommended'>('all')
   const [modalOpen, setModalOpen] = useState(false)
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['hr-candidates', { searchKeyword, activeTab, page, pageSize }],
+    queryFn: async () => {
       const res = await fetchCandidates({
         keyword: searchKeyword || undefined,
         recommendation_level: activeTab === 'recommended' ? '推荐,强烈推荐' : undefined,
         page,
         page_size: pageSize })
-      setCandidates(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [searchKeyword, activeTab, page, pageSize])
+      return { candidates: res.data, total: res.meta?.total || 0 }
+    },
+  })
+
+  const candidates = data?.candidates || initialCandidates
+  const total = data?.total || initialTotal
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -61,15 +58,11 @@ export default function RecruitmentClient({
     try {
       await deleteCandidateAction(id)
       message.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['hr-candidates'] })
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [searchKeyword, activeTab, page, pageSize])
 
   return (
     <div className="space-y-4">
@@ -157,7 +150,7 @@ export default function RecruitmentClient({
         onClose={() => setModalOpen(false)}
         onSuccess={() => {
           setModalOpen(false)
-          loadData()
+          queryClient.invalidateQueries({ queryKey: ['hr-candidates'] })
         }}
       />
     </div>

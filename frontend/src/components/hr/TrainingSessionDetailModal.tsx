@@ -17,6 +17,7 @@ import {
 } from 'antd'
 import { EditOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useQuery } from '@tanstack/react-query'
 import {
   fetchDepartments,
   fetchNewDepartments,
@@ -63,19 +64,19 @@ export default function TrainingSessionDetailModal({
   // Create mode or explicit startEditing: begin in edit mode; View mode: start read-only
   const [editing, setEditing] = useState(isCreate || startEditing)
   const [saving, setSaving] = useState(false)
-  const [departments, setDepartments] = useState<{ value: string; label: string }[]>([])
   const [_employees, setEmployees] = useState<{ value: string; label: string }[]>([])
   const [nameToNumberMap, setNameToNumberMap] = useState<Record<string, string>>({})
   const [factory, setFactory] = useState<'old' | 'new'>('old')
 
   // Load departments when factory changes
-  useEffect(() => {
-    const fetchFn = factory === 'new' ? fetchNewDepartments : fetchDepartments
-    fetchFn({ page_size: 100 }).then((res) => {
-      const list = (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
-      setDepartments(list)
-    })
-  }, [factory])
+  const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
+    queryKey: ['hr-departments-options', { factory }],
+    queryFn: async () => {
+      const fetchFn = factory === 'new' ? fetchNewDepartments : fetchDepartments
+      const res = await fetchFn({ page_size: 100 })
+      return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
+    },
+  })
 
   // Reset form when modal opens
   useEffect(() => {
@@ -149,201 +150,119 @@ export default function TrainingSessionDetailModal({
         // ignore
       }
     }
-    const map = new Map(all.map((e) => [e.value, e]))
-    const uniqueList = Array.from(map.values())
-    setEmployees(uniqueList)
+    setEmployees(all)
     setNameToNumberMap(numberMap)
-    const names = uniqueList.map((e) => e.value)
     if (preselectNames.length > 0) {
-      form.setFieldsValue({ employee_names: preselectNames.filter((n) => names.includes(n)) })
-    } else {
-      form.setFieldsValue({ employee_names: names })
+      form.setFieldsValue({ employee_names: preselectNames })
     }
   }
 
-  const handleFactoryChange = (val: 'old' | 'new') => {
-    setFactory(val)
+  const handleFactoryChange = (value: 'old' | 'new') => {
+    setFactory(value)
+    form.setFieldsValue({ department: undefined, trainee_departments: [], employee_names: [] })
     setEmployees([])
     setNameToNumberMap({})
-    form.setFieldsValue({
-      department: undefined,
-      trainee_departments: [],
-      employee_names: [],
-    })
-  }
-
-  const handleEdit = () => setEditing(true)
-
-  const handleCancelEdit = () => {
-    if (isCreate) {
-      onClose()
-      return
-    }
-    setEditing(false)
-    // Reset form to original record values
-    if (record) {
-      form.setFieldsValue({
-        factory: record.factory as 'old' | 'new',
-        department: record.department,
-        training_date: record.training_date ? dayjs(record.training_date) : undefined,
-        subject: record.subject,
-        training_time:
-          record.training_time_start && record.training_time_end
-            ? [dayjs(record.training_time_start, 'HH:mm'), dayjs(record.training_time_end, 'HH:mm')]
-            : undefined,
-        location: record.location,
-        trainer: record.trainer,
-        training_method: record.training_method,
-        content: record.content,
-        trainee_departments: record.trainee_departments || [],
-        employee_names: record.employee_names || [],
-        issuer_department: record.issuer_department,
-        issue_date: record.issue_date ? dayjs(record.issue_date) : undefined,
-        remarks: record.remarks,
-      })
-    }
   }
 
   const handleSave = async () => {
-    const values = await form.validateFields()
-    setSaving(true)
     try {
+      const values = await form.validateFields()
+      setSaving(true)
+      const employeeNumbers = (values.employee_names || []).map((name: string) => nameToNumberMap[name] || '')
+      const payload: TrainingSessionCreateInput | TrainingSessionUpdateInput = {
+        factory,
+        department: values.department,
+        training_date: values.training_date.format('YYYY-MM-DD'),
+        subject: values.subject,
+        training_time_start: values.training_time ? values.training_time[0].format('HH:mm') : undefined,
+        training_time_end: values.training_time ? values.training_time[1].format('HH:mm') : undefined,
+        location: values.location || undefined,
+        trainer: values.trainer || undefined,
+        training_method: values.training_method || undefined,
+        content: values.content || undefined,
+        trainee_departments: values.trainee_departments || [],
+        employee_names: values.employee_names || [],
+        employee_numbers: employeeNumbers,
+        issuer_department: values.issuer_department || values.department,
+        issue_date: values.issue_date ? values.issue_date.format('YYYY-MM-DD') : values.training_date.format('YYYY-MM-DD'),
+        remarks: values.remarks || undefined,
+      }
+
       if (isCreate) {
-        const payload: TrainingSessionCreateInput = {
-          factory: values.factory || factory,
-          department: values.department,
-          training_date: values.training_date.format('YYYY-MM-DD'),
-          subject: values.subject,
-          training_time_start: values.training_time
-            ? dayjs(values.training_time[0]).format('HH:mm')
-            : undefined,
-          training_time_end: values.training_time
-            ? dayjs(values.training_time[1]).format('HH:mm')
-            : undefined,
-          location: values.location,
-          trainer: values.trainer,
-          training_method: values.training_method,
-          content: values.content,
-          trainee_departments: values.trainee_departments || [],
-          employee_names: values.employee_names || [],
-          employee_numbers: (values.employee_names || []).map((n: string) => nameToNumberMap[n]).filter(Boolean),
-          issuer_department: values.issuer_department || values.department,
-          issue_date: values.issue_date
-            ? values.issue_date.format('YYYY-MM-DD')
-            : values.training_date.format('YYYY-MM-DD'),
-          remarks: values.remarks,
-          status: 'draft',
-        }
-        // 创建培训记录
-        const createRes = await createTrainingSession(payload)
-        const sessionId = createRes.data?.id
-        if (sessionId) {
-          // 自动发送选择任务给培训专员（测试阶段默认为李文兆）
-          try {
-            await sendTrainingSessionSelectTasksAction(sessionId)
-            message.success('创建成功，已自动发送选择任务给培训专员')
-          } catch (selectErr: unknown) {
-            message.warning(`创建成功，但发送选择任务失败：${(selectErr instanceof Error ? selectErr.message : '未知错误')}`)
-          }
-        } else {
-          message.success('创建成功')
-        }
+        await createTrainingSession(payload as TrainingSessionCreateInput)
+        message.success('创建成功')
       } else {
-        const payload: TrainingSessionUpdateInput = {
-          department: values.department,
-          training_date: values.training_date.format('YYYY-MM-DD'),
-          subject: values.subject,
-          training_time_start: values.training_time
-            ? dayjs(values.training_time[0]).format('HH:mm')
-            : undefined,
-          training_time_end: values.training_time
-            ? dayjs(values.training_time[1]).format('HH:mm')
-            : undefined,
-          location: values.location,
-          trainer: values.trainer,
-          training_method: values.training_method,
-          content: values.content,
-          trainee_departments: values.trainee_departments || [],
-          employee_names: values.employee_names || [],
-          employee_numbers: (values.employee_names || [])
-            .map((name: string) => nameToNumberMap[name])
-            .filter(Boolean),
-          issuer_department: values.issuer_department || values.department,
-          issue_date: values.issue_date
-            ? values.issue_date.format('YYYY-MM-DD')
-            : values.training_date.format('YYYY-MM-DD'),
-          remarks: values.remarks,
-        }
-        await updateTrainingSession(record!.id, payload)
+        await updateTrainingSession(record!.id, payload as TrainingSessionUpdateInput)
         message.success('更新成功')
-        setEditing(false)
       }
       onUpdated()
-      if (isCreate) onClose()
+      onClose()
     } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : (isCreate ? '创建失败' : '更新失败')))
+      if (err && typeof err === 'object' && 'errorFields' in err) return
+      message.error((err instanceof Error ? err.message : '操作失败'))
     } finally {
       setSaving(false)
     }
   }
 
-  // ─── Title ───
-  const titleNode = isCreate ? (
-    '新建培训'
-  ) : (
-    <div className="flex items-center justify-between w-full pr-8">
-      <span>
-        培训详情
-        <Tag color={STATUS_MAP[record?.status || 'draft']?.color} className="ml-2">
-          {STATUS_MAP[record?.status || 'draft']?.label}
-        </Tag>
-      </span>
-      {!editing ? (
-        <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
-          编辑
-        </Button>
-      ) : (
-        <Space>
-          <Button icon={<CloseOutlined />} onClick={handleCancelEdit}>
-            取消编辑
-          </Button>
-          <Button type="primary" loading={saving} onClick={handleSave}>
-            保存
-          </Button>
-        </Space>
-      )}
-    </div>
-  )
+  const handleSendSelectTasks = async () => {
+    if (!record) return
+    try {
+      const json = await sendTrainingSessionSelectTasksAction(record.id)
+      if (json.code === 200) {
+        message.success(json.message || '已发送选择任务')
+        onUpdated()
+      } else {
+        message.error(json.message || '发送失败')
+      }
+    } catch (err: unknown) {
+      message.error('发送失败: ' + (err instanceof Error ? err.message : '未知错误'))
+    }
+  }
 
   return (
     <Modal
-      title={titleNode}
+      title={isCreate ? '新建培训记录' : record?.subject || '培训记录详情'}
       open={open}
       onCancel={onClose}
       width={800}
       footer={
-        isCreate ? (
+        editing ? (
           <Space>
             <Button onClick={onClose}>取消</Button>
-            <Button type="primary" loading={saving} onClick={handleSave}>
-              创建
+            <Button type="primary" onClick={handleSave} loading={saving}>
+              保存
             </Button>
           </Space>
-        ) : null
+        ) : (
+          <Space>
+            <Button onClick={onClose}>关闭</Button>
+            {!isCreate && record?.status === 'draft' && (
+              <>
+                <Button type="primary" onClick={() => setEditing(true)}>
+                  编辑
+                </Button>
+                <Button onClick={handleSendSelectTasks}>
+                  发送选择任务
+                </Button>
+              </>
+            )}
+          </Space>
+        )
       }
-      destroyOnClose
     >
-      {/* Read-only Descriptions (view mode, not editing) */}
+      {/* View mode */}
       {!editing && record && (
-        <Descriptions bordered size="small" column={2} className="mb-6">
-          <Descriptions.Item label="厂区">
-            {record.factory === 'new' ? <Tag color="blue">新厂</Tag> : <Tag>旧厂</Tag>}
+        <Descriptions bordered size="small" column={2}>
+          <Descriptions.Item label="厂区">{record.factory === 'new' ? '新厂' : '旧厂'}</Descriptions.Item>
+          <Descriptions.Item label="状态">
+            <Tag color={STATUS_MAP[record.status || 'draft']?.color || 'default'}>
+              {STATUS_MAP[record.status || 'draft']?.label || record.status}
+            </Tag>
           </Descriptions.Item>
           <Descriptions.Item label="主办部门">{record.department}</Descriptions.Item>
-          <Descriptions.Item label="培训日期">{record.training_date}</Descriptions.Item>
-          <Descriptions.Item label="培训主题" span={2}>
-            <span className="font-medium">{record.subject}</span>
-          </Descriptions.Item>
+          <Descriptions.Item label="培训日期">{record.training_date || '-'}</Descriptions.Item>
+          <Descriptions.Item label="培训主题" span={2}>{record.subject}</Descriptions.Item>
           <Descriptions.Item label="培训时间">
             {record.training_time_start && record.training_time_end
               ? `${record.training_time_start} ~ ${record.training_time_end}`

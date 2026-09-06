@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { App, Button, Card, Select, Space, } from 'antd'
 import { FileTextOutlined, PrinterOutlined, DownloadOutlined } from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
 import { Employee } from '@/types/hr'
 import { fetchEmployees, fetchPrejobTrainingPlan } from '@/lib/api/client/hr'
 
@@ -20,24 +21,16 @@ const DEPT_CONTENT_MAP: Record<string, string[]> = {
 export default function PreJobPlanClient() {
   const { message } = App.useApp()
 
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [_loading, setLoading] = useState(false)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
 
-  useEffect(() => {
-    setLoading(true)
-    fetchEmployees({ page_size: 200 })
-      .then((res) => {
-        setEmployees(res.data || [])
-      })
-      .catch((err) => {
-        message.error('加载员工列表失败: ' + (err instanceof Error ? err.message : '未知错误'))
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [])
+  const { data: employees = [] } = useQuery<Employee[]>({
+    queryKey: ['hr-employees-list', { page_size: 200 }],
+    queryFn: async () => {
+      const res = await fetchEmployees({ page_size: 200 })
+      return res.data || []
+    },
+  })
 
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId)
 
@@ -122,9 +115,9 @@ export default function PreJobPlanClient() {
               <table className="w-full border-collapse text-sm">
                 <tbody>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">姓　　名</td>
+                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">姓  名</td>
                     <td className="border border-gray-300 px-3 py-2 w-32">{selectedEmployee.name}</td>
-                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">部　　门</td>
+                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">部  门</td>
                     <td className="border border-gray-300 px-3 py-2">{selectedEmployee.department}</td>
                   </tr>
                   <tr className="border border-gray-300">
@@ -134,11 +127,11 @@ export default function PreJobPlanClient() {
                     <td className="border border-gray-300 px-3 py-2">{selectedEmployee.hire_date || ''}</td>
                   </tr>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">拟定岗位</td>
+                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">职  位</td>
                     <td className="border border-gray-300 px-3 py-2" colSpan={3}>{selectedEmployee.position}</td>
                   </tr>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">类　　别</td>
+                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">类  别</td>
                     <td className="border border-gray-300 px-3 py-2" colSpan={3}>
                       <span className="mr-4">□ 新员工</span>
                       <span className="mr-4">□ 岗位/职位变动</span>
@@ -183,25 +176,25 @@ export default function PreJobPlanClient() {
                   <tr className="border border-gray-300">
                     <td className="border border-gray-300 px-3 py-2 w-48 bg-gray-50">部门负责人</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
-                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">日　　期</td>
+                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">日  期</td>
                     <td className="border border-gray-300 px-3 py-2 w-48"></td>
                   </tr>
                   <tr className="border border-gray-300">
                     <td className="border border-gray-300 px-3 py-2 bg-gray-50">人事行政部负责人</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">日　　期</td>
+                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">日  期</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                   </tr>
                   <tr className="border border-gray-300">
                     <td className="border border-gray-300 px-3 py-2 bg-gray-50">QA负责人</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">日　　期</td>
+                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">日  期</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                   </tr>
                   <tr className="border border-gray-300">
                     <td className="border border-gray-300 px-3 py-2 bg-gray-50">质量管理负责人</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">日　　期</td>
+                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">日  期</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                   </tr>
                 </tbody>

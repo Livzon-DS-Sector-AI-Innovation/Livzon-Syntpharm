@@ -1,7 +1,7 @@
 'use client'
 import { SendOutlined } from "@ant-design/icons"
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { App,
   Button,
   Card,
@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import Link from 'next/link'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnnualTrainingPlan, AnnualTrainingPlanItem } from '@/types/hr'
 import { fetchPlanItems } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
@@ -40,36 +41,34 @@ export default function AnnualPlanDetailClient({
   plan
 }: AnnualPlanDetailClientProps) {
   const { message } = App.useApp()
-  const [items, setItems] = useState<AnnualTrainingPlanItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<Partial<AnnualTrainingPlanItem>>({})
-  const [deptList, setDeptList] = useState<string[]>([])
-  const [trainerList, setTrainerList] = useState<string[]>([])
 
-  useEffect(() => {
-    apiGet<{name: string}[]>('/api/v1/hr/departments?page_size=100')
-      .then(d => setDeptList(d.map((x: {name: string}) => x.name)))
-    apiGet<{name: string}[]>('/api/v1/hr/trainers?page_size=200')
-      .then(d => setTrainerList(d.map((x: {name: string}) => x.name)))
-  }, [])
-
-  const loadItems = async () => {
-    setLoading(true)
-    try {
+  const { data: items = [], isLoading: loading } = useQuery<AnnualTrainingPlanItem[]>({
+    queryKey: ['hr-plan-items', planId],
+    queryFn: async () => {
       const res = await fetchPlanItems(planId)
-      setItems(res.data || [])
-    } catch (err: unknown) {
-      message.error('加载明细失败: ' + (err instanceof Error ? err.message : '未知错误'))
-    } finally {
-      setLoading(false)
-    }
-  }
+      return res.data || []
+    },
+  })
 
-  useEffect(() => {
-    loadItems()
-  }, [planId])
+  const { data: _deptList = [] } = useQuery<string[]>({
+    queryKey: ['hr-departments-list'],
+    queryFn: async () => {
+      const d = await apiGet<{name: string}[]>('/api/v1/hr/departments?page_size=100')
+      return d.map((x: {name: string}) => x.name)
+    },
+  })
+
+  const { data: _trainerList = [] } = useQuery<string[]>({
+    queryKey: ['hr-trainers-list'],
+    queryFn: async () => {
+      const d = await apiGet<{name: string}[]>('/api/v1/hr/trainers?page_size=200')
+      return d.map((x: {name: string}) => x.name)
+    },
+  })
 
   const handleExport = async () => {
     try {
@@ -110,7 +109,7 @@ export default function AnnualPlanDetailClient({
       tracking_status: '',
       sort_order: items.length
     }
-    setItems([...items, newItem])
+    queryClient.setQueryData<AnnualTrainingPlanItem[]>(['hr-plan-items', planId], (old) => [...(old || []), newItem])
     setEditingId(newItem.id)
     setEditForm(newItem)
   }
@@ -123,7 +122,25 @@ export default function AnnualPlanDetailClient({
   const handleCancel = () => {
     setEditingId(null)
     setEditForm({})
-    setItems((prev) => prev.filter((i) => !i.id.startsWith('new-')))
+    queryClient.setQueryData<AnnualTrainingPlanItem[]>(['hr-plan-items', planId], (old) => 
+      (old || []).filter((i) => !i.id.startsWith('new-'))
+    )
+  }
+
+  const updateField = (field: string, value: unknown) => {
+    setEditForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const _updateItem = (id: string, field: string, value: unknown) => {
+    queryClient.setQueryData<AnnualTrainingPlanItem[]>(['hr-plan-items', planId], (old) =>
+      (old || []).map((item) => item.id === id ? { ...item, [field]: value } : item)
+    )
+  }
+
+  const removeItem = (id: string) => {
+    queryClient.setQueryData<AnnualTrainingPlanItem[]>(['hr-plan-items', planId], (old) =>
+      (old || []).filter((item) => item.id !== id)
+    )
   }
 
   const handleSaveAll = async () => {
@@ -154,7 +171,7 @@ export default function AnnualPlanDetailClient({
       message.success('保存成功')
       setEditingId(null)
       setEditForm({})
-      await loadItems()
+      queryClient.invalidateQueries({ queryKey: ['hr-plan-items', planId] })
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : '保存失败')
     } finally {
@@ -164,36 +181,16 @@ export default function AnnualPlanDetailClient({
 
   const handleDelete = async (item: AnnualTrainingPlanItem) => {
     if (item.id.startsWith('new-')) {
-      setItems((prev) => prev.filter((i) => i.id !== item.id))
-      setEditingId(null)
+      removeItem(item.id)
       return
     }
     try {
       await deleteAnnualPlanItem(planId, item.id)
-      setItems((prev) => prev.filter((i) => i.id !== item.id))
-      message.success('已删除')
-    } catch { message.error('删除失败') }
-  }
-
-  const updateField = (field: keyof AnnualTrainingPlanItem, value: string | number | null | undefined) => {
-    setEditForm((prev) => ({ ...prev, [field]: value }))
-    if (editingId) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === editingId ? { ...i, [field]: value } : i))
-      )
+      queryClient.invalidateQueries({ queryKey: ['hr-plan-items', planId] })
+      message.success('删除成功')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
-  }
-
-  const isEditing = (item: AnnualTrainingPlanItem) => editingId === item.id
-
-  // Pad to at least 12 visible rows
-  const displayRows = [...items]
-  while (displayRows.length < 12) {
-    displayRows.push({
-      id: `blank-${displayRows.length}`,
-      plan_id: planId,
-      sort_order: displayRows.length
-    } as AnnualTrainingPlanItem)
   }
 
   if (loading) {
@@ -204,162 +201,114 @@ export default function AnnualPlanDetailClient({
     )
   }
 
-  if (!plan) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-        <p>未找到该年度计划</p>
-        <Link href="/hr/training/annual-plan">
-          <Button type="link">返回列表</Button>
-        </Link>
-      </div>
-    )
-  }
-
   return (
-    <div className="space-y-4">
-      {/* 控制栏 */}
-      <div className="flex flex-wrap items-center gap-4 no-print">
+    <div className="space-y-6" id="print-area">
+      {/* 顶部操作栏 */}
+      <div className="flex items-center justify-between no-print">
         <Link href="/hr/training/annual-plan">
-          <Button icon={<ArrowLeftOutlined />}>返回</Button>
+          <Button icon={<ArrowLeftOutlined />}>返回列表</Button>
         </Link>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={handleAdd}
-          disabled={!!editingId}
-        >
-          添加行
-        </Button>
-        <Button
-          type="primary"
-          icon={<SaveOutlined />}
-          loading={saving}
-          onClick={handleSaveAll}
-        >
-          保存全部
-        </Button>
-        <Button
-          icon={<DownloadOutlined />}
-          onClick={handleExport}
-        >
-          导出年度培训计划
-        </Button>
-        {editingId && (
-          <Button onClick={handleCancel}>取消编辑</Button>
-        )}
+        <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>
+            导出Excel
+          </Button>
+          <Button
+            type="primary"
+            icon={<SaveOutlined />}
+            onClick={handleSaveAll}
+            loading={saving}
+          >
+            保存
+          </Button>
+          <Button icon={<PlusOutlined />} onClick={handleAdd}>
+            添加明细
+          </Button>
+        </Space>
       </div>
 
-      <div id="print-area" className="print-area">
-        <Card bordered={false} className="annual-plan-preview">
-          <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm" style={{ tableLayout: 'fixed', minWidth: '1200px' }}>
-            <colgroup>
-              <col style={{ width: '35px' }} />
-              <col style={{ width: '90px' }} />
-              <col style={{ width: '280px' }} />
-              <col style={{ width: '170px' }} />
-              <col style={{ width: '140px' }} />
-              <col style={{ width: '65px' }} />
-              <col style={{ width: '65px' }} />
-              <col style={{ width: '90px' }} />
-              <col style={{ width: '55px' }} />
-              <col style={{ width: '130px' }} />
-              <col style={{ width: '80px' }} />
-            </colgroup>
+      {/* 计划基本信息 */}
+      {plan && (
+        <Card size="small" className="no-print">
+          <div className="flex items-center gap-6 text-sm">
+            <span><strong>年度：</strong>{plan.year}</span>
+            <span><strong>部门：</strong>{plan.department}</span>
+            <span><strong>状态：</strong>{plan.status}</span>
+          </div>
+        </Card>
+      )}
+
+      {/* 明细表格 */}
+      <Card>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-50">
+                <th className="border border-gray-300 px-2 py-2 w-12">序号</th>
+                <th className="border border-gray-300 px-2 py-2 w-20">月份</th>
+                <th className="border border-gray-300 px-2 py-2 w-20">受训人次</th>
+                <th className="border border-gray-300 px-2 py-2 w-20">培训时长(h)</th>
+                <th className="border border-gray-300 px-2 py-2 min-w-[200px]">培训内容及教材</th>
+                <th className="border border-gray-300 px-2 py-2 w-32">培训对象</th>
+                <th className="border border-gray-300 px-2 py-2 w-32">岗位及人数</th>
+                <th className="border border-gray-300 px-2 py-2 w-24">培训方式</th>
+                <th className="border border-gray-300 px-2 py-2 w-20">培训课时</th>
+                <th className="border border-gray-300 px-2 py-2 w-32">确认人/日期</th>
+                <th className="border border-gray-300 px-2 py-2 w-20">跟踪状态</th>
+                <th className="border border-gray-300 px-2 py-2 min-w-[120px]">备注</th>
+                <th className="border border-gray-300 px-1 py-2 w-20 no-print">操作</th>
+              </tr>
+            </thead>
             <tbody>
-              {/* 第1行: 标题 */}
-              <tr>
-                <td
-                  colSpan={10}
-                  className="text-center text-lg font-bold border border-gray-300 py-2"
-                >
-                  {plan.year} 年培训计划
-                </td>
-              </tr>
-              {/* 第2行: 部门 */}
-              <tr>
-                <td
-                  colSpan={10}
-                  className="text-left text-sm font-semibold border border-gray-300 px-3 py-1"
-                >
-                  部门：{plan.department}
-                </td>
-              </tr>
-              {/* 表头 */}
-              <tr>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  序号
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  培训季度及课时
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  培训内容及使用教材
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  培训对象
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  授课单位及授课人
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  考核方式
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  培训跟踪
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  确认人/日期
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  状态
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center">
-                  备注
-                </td>
-                <td className="bg-gray-50 font-medium border border-gray-300 px-1 py-2 text-center no-print">
-                  操作
-                </td>
-              </tr>
-              {/* 数据行 */}
-              {displayRows.map((item, idx) => {
-                const editing = isEditing(item)
-                const isBlank = item.id.startsWith('blank-')
+              {items.map((item, index) => {
+                const editing = editingId === item.id
+                const isBlank = item.id.startsWith('new-') && !editing
                 return (
-                  <tr key={item.id}>
-                    <td className="border border-gray-300 px-1 py-2 text-center align-top" style={{ lineHeight: '1.6' }}>
-                      <span>{idx + 1}</span>
+                  <tr key={item.id} className={isBlank ? 'opacity-50' : ''}>
+                    <td className="border border-gray-300 px-2 py-2 text-center">
+                      {index + 1}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top" style={{ wordBreak: 'break-word', lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2 text-center">
                       {editing ? (
-                        <div className="space-y-1">
-                          <select
-                            className="w-full text-xs border rounded px-1 py-0.5"
-                            value={editForm.month || ''}
-                            onChange={(e) => updateField('month', e.target.value)}
-                          >
-                            <option value="">请选择</option>
-                            {MONTH_OPTIONS.map((m) => ( <option key={m} value={m}>{m}</option> ))}
-                          </select>
-                          <InputNumber
-                            size="small"
-                            className="w-full"
-                            min={0}
-                            step={0.5}
-                            placeholder="课时"
-                            value={editForm.duration_hours ?? undefined}
-                            onChange={(val) => updateField('duration_hours', val)}
-                          />
-                        </div>
+                        <Select
+                          size="small"
+                          value={editForm.month || undefined}
+                          onChange={(v) => updateField('month', v)}
+                          options={MONTH_OPTIONS.map((m) => ({ label: m, value: m }))}
+                          placeholder="月"
+                          style={{ width: '100%' }}
+                        />
                       ) : (
-                        <span>
-                          {item.month || ''}
-                          {item.month && item.duration_hours ? ' ' : ''}
-                          {item.duration_hours ? `${item.duration_hours}课时` : ''}
-                        </span>
+                        <span>{item.month || ''}</span>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top" style={{ wordBreak: 'break-word', lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2 text-center">
+                      {editing ? (
+                        <InputNumber
+                          size="small"
+                          value={editForm.trainee_count ?? ''}
+                          onChange={(v) => updateField('trainee_count', v)}
+                          min={0}
+                          style={{ width: '100%' }}
+                        />
+                      ) : (
+                        <span className="px-1">{item.trainee_count ?? ''}</span>
+                      )}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-2 text-center">
+                      {editing ? (
+                        <InputNumber
+                          size="small"
+                          value={editForm.duration_hours ?? ''}
+                          onChange={(v) => updateField('duration_hours', v)}
+                          min={0}
+                          step={0.5}
+                          style={{ width: '100%' }}
+                        />
+                      ) : (
+                        <span className="px-1">{item.duration_hours ?? ''}</span>
+                      )}
+                    </td>
+                    <td className="border border-gray-300 px-2 py-2">
                       {editing ? (
                         <Input
                           size="small"
@@ -370,68 +319,75 @@ export default function AnnualPlanDetailClient({
                         <span>{item.content_and_textbook || ''}</span>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top" style={{ wordBreak: 'break-word', lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2">
                       {editing ? (
-                        <Select mode="tags" size="small" style={{ width: '100%' }} placeholder="选部门或输入"
-                          value={editForm.target_audience ? editForm.target_audience.split(/[,，、\s]+/).filter(Boolean) : []}
-                          onChange={(vals) => updateField('target_audience', vals.join('、'))}
-                          options={deptList.map(d => ({value:d,label:d}))} />
+                        <Input
+                          size="small"
+                          value={editForm.target_audience || ''}
+                          onChange={(e) => updateField('target_audience', e.target.value)}
+                        />
                       ) : (
                         <span>{item.target_audience || ''}</span>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top" style={{ wordBreak: 'break-word', lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2">
                       {editing ? (
-                        <Select mode="tags" size="small" style={{ width: '100%' }} placeholder="选培训师或输入"
-                          value={editForm.position_and_count ? editForm.position_and_count.split(/[,，、\s]+/).filter(Boolean) : []}
-                          onChange={(vals) => updateField('position_and_count', vals.join('、'))}
-                          options={trainerList.map(t => ({value:t,label:t}))} />
+                        <Input
+                          size="small"
+                          value={editForm.position_and_count || ''}
+                          onChange={(e) => updateField('position_and_count', e.target.value)}
+                        />
                       ) : (
-                        <span className="whitespace-pre-wrap">{item.position_and_count || ''}</span>
+                        <span>{item.position_and_count || ''}</span>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top" style={{ wordBreak: 'break-word', lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2 text-center">
                       {editing ? (
-                        <Select size="small" style={{ width: '100%' }} placeholder="选择"
+                        <Select
+                          size="small"
                           value={editForm.training_method || undefined}
                           onChange={(v) => updateField('training_method', v)}
-                          options={[{value:'面授',label:'面授'},{value:'自学',label:'自学'},{value:'自学+面授',label:'自学+面授'}]} />
+                          options={['面授', '函授', '远程教育', '自学', '其他'].map((m) => ({ label: m, value: m }))}
+                          placeholder="选方式"
+                          style={{ width: '100%' }}
+                        />
                       ) : (
                         <span>{item.training_method || ''}</span>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top text-center" style={{ lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2 text-center">
                       {editing ? (
-                        <select
-                          className="w-full text-xs border rounded px-1 py-0.5"
-                          value={editForm.tracking_status || ''}
-                          onChange={(e) => updateField('tracking_status', e.target.value)}
-                        >
-                          <option value="">请选择</option>
-                          <option value="完成">完成</option>
-                          <option value="未完成">未完成</option>
-                        </select>
+                        <InputNumber
+                          size="small"
+                          value={editForm.training_hours ?? ''}
+                          onChange={(v) => updateField('training_hours', v)}
+                          min={0}
+                          step={0.5}
+                          style={{ width: '100%' }}
+                        />
                       ) : (
-                        <span>{item.tracking_status ? `□${item.tracking_status}` : ''}</span>
+                        <span className="px-1">{item.training_hours ?? ''}</span>
                       )}
                     </td>
-                    <td className="border border-gray-300 px-2 py-2 align-top" style={{ wordBreak: 'break-word', lineHeight: '1.6' }}>
+                    <td className="border border-gray-300 px-2 py-2 text-center" style={{ lineHeight: '1.6' }}>
                       {editing ? (
-                        <div className="space-y-1">
-                          <Input
-                            size="small"
-                            placeholder="确认人"
-                            value={editForm.confirmer || ''}
-                            onChange={(e) => updateField('confirmer', e.target.value)}
-                          />
-                          <DatePicker
-                            size="small"
-                            className="w-full"
-                            placeholder="日期"
-                            value={editForm.confirm_date ? dayjs(editForm.confirm_date) : null}
-                            onChange={(d) => updateField('confirm_date', d ? d.format('YYYY-MM-DD') : '')}
-                          />
-                        </div>
+                        <>
+                          <div className="flex flex-col gap-1">
+                            <Input
+                              size="small"
+                              value={editForm.confirmer || ''}
+                              onChange={(e) => updateField('confirmer', e.target.value)}
+                              placeholder="确认人"
+                            />
+                            <DatePicker
+                              size="small"
+                              className="w-full"
+                              placeholder="日期"
+                              value={editForm.confirm_date ? dayjs(editForm.confirm_date) : null}
+                              onChange={(d) => updateField('confirm_date', d ? d.format('YYYY-MM-DD') : '')}
+                            />
+                          </div>
+                        </>
                       ) : (
                         <span>
                           {item.confirmer || ''}
@@ -517,7 +473,6 @@ export default function AnnualPlanDetailClient({
           </table>
           </div>
         </Card>
-      </div>
 
       <style jsx global>{`
         @media print {

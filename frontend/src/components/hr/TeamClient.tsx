@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import { App, Button, Table, Space, Popconfirm, Input } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Team } from '@/types/hr'
 import { fetchTeamsAction, deleteTeam } from '@/actions/hr'
 import TeamForm from './TeamForm'
@@ -14,31 +15,27 @@ interface TeamClientProps {
 
 export default function TeamClient({ departmentId, departmentName }: TeamClientProps) {
   const { message } = App.useApp()
-  const [teams, setTeams] = useState<Team[]>([])
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [formOpen, setFormOpen] = useState(false)
   const [editingTeam, setEditingTeam] = useState<Team | null>(null)
-  const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['hr-teams', { departmentId, searchKeyword, page, pageSize }],
+    queryFn: async () => {
       const res = await fetchTeamsAction({
         department_id: departmentId,
         keyword: searchKeyword || undefined,
         page,
         page_size: pageSize })
-      setTeams(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [departmentId, searchKeyword, page, pageSize])
+      return { teams: res.data, total: res.meta?.total || 0 }
+    },
+  })
+
+  const teams = data?.teams || []
+  const total = data?.total || 0
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -56,22 +53,18 @@ export default function TeamClient({ departmentId, departmentName }: TeamClientP
   }
 
   const handleFormSuccess = () => {
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hr-teams'] })
   }
 
   const handleDelete = async (id: string) => {
     try {
       await deleteTeam(id)
       message.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['hr-teams'] })
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
 
   const columns = [
     {

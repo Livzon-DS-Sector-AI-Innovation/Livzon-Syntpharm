@@ -1,36 +1,25 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {App, Button, Card, Select, Space, } from 'antd'
 import { FileTextOutlined, PrinterOutlined, DownloadOutlined } from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
 import { Employee } from '@/types/hr'
 import { fetchEmployees, fetchOnboardingTrainingRecord } from '@/lib/api/client/hr'
 
 export default function TrainingRecordClient() {
   const { message } = App.useApp()
 
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [_loading, setLoading] = useState(false)
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [downloading, setDownloading] = useState(false)
 
-  useEffect(() => {
-    setLoading(true)
-    fetchEmployees({ page_size: 200 })
-      .then((res) => {
-         
-        console.log('fetchEmployees success:', res)
-        setEmployees(res.data || [])
-      })
-      .catch((err) => {
-         
-        console.error('fetchEmployees error:', err)
-        message.error('加载员工列表失败: ' + (err.message || JSON.stringify(err) || '未知错误'))
-      })
-      .finally(() => {
-        setLoading(false)
-      })
-  }, [])
+  const { data: employees = [] } = useQuery<Employee[]>({
+    queryKey: ['hr-employees-list', { page_size: 200 }],
+    queryFn: async () => {
+      const res = await fetchEmployees({ page_size: 200 })
+      return res.data || []
+    },
+  })
 
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId)
 
@@ -115,54 +104,60 @@ export default function TrainingRecordClient() {
               <table className="w-full border-collapse text-sm">
                 <tbody>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">姓　　名</td>
+                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">姓  名</td>
                     <td className="border border-gray-300 px-3 py-2 w-32">{selectedEmployee.name}</td>
-                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">性　别</td>
+                    <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">性 别</td>
                     <td className="border border-gray-300 px-3 py-2 w-32">{selectedEmployee.gender || ''}</td>
                     <td className="border border-gray-300 px-3 py-2 w-24 bg-gray-50">工作卡号</td>
                     <td className="border border-gray-300 px-3 py-2">{selectedEmployee.employee_number}</td>
                   </tr>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">部　　门</td>
+                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">部  门</td>
                     <td className="border border-gray-300 px-3 py-2">{selectedEmployee.department}</td>
                     <td className="border border-gray-300 px-3 py-2 bg-gray-50">拟定岗位</td>
                     <td className="border border-gray-300 px-3 py-2" colSpan={3}>{selectedEmployee.position}</td>
-                  </tr>
-                  <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">报到日期</td>
-                    <td className="border border-gray-300 px-3 py-2">{selectedEmployee.hire_date || ''}</td>
-                    <td className="border border-gray-300 px-3 py-2 bg-gray-50">转正日期</td>
-                    <td className="border border-gray-300 px-3 py-2" colSpan={3}></td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             <div>
-              <div className="font-bold mb-2 border-b border-gray-300 pb-1">第二部分：培训记录</div>
+              <div className="font-bold mb-2 border-b border-gray-300 pb-1">第二部分：培训内容</div>
               <table className="w-full border-collapse text-sm">
                 <thead>
                   <tr className="border border-gray-300 bg-gray-50">
-                    <th className="border border-gray-300 px-3 py-2 text-left w-1/2">培训内容</th>
-                    <th className="border border-gray-300 px-3 py-2 text-left w-24">员工签名</th>
-                    <th className="border border-gray-300 px-3 py-2 text-left w-24">考核人</th>
-                    <th className="border border-gray-300 px-3 py-2 text-left w-24">日期</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left w-16">序号</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left">培训内容</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left w-32">培训日期</th>
+                    <th className="border border-gray-300 px-3 py-2 text-left w-32">培训师</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr className="border border-gray-300">
                     <td className="border border-gray-300 px-3 py-2 font-medium" colSpan={4}>
                       人事行政部 <span className="float-right text-gray-500">考核成绩：</span>
                     </td>
                   </tr>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2">公司历史、企业文化、职业道德等</td>
+                    <td className="border border-gray-300 px-3 py-2">公司简介</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                   </tr>
                   <tr className="border border-gray-300">
-                    <td className="border border-gray-300 px-3 py-2">公司用工管理制度</td>
+                    <td className="border border-gray-300 px-3 py-2">组织架构</td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                  </tr>
+                  <tr className="border border-gray-300">
+                    <td className="border border-gray-300 px-3 py-2">员工手册</td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                    <td className="border border-gray-300 px-3 py-2"></td>
+                  </tr>
+                  <tr className="border border-gray-300">
+                    <td className="border border-gray-300 px-3 py-2">公司规章制度</td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                     <td className="border border-gray-300 px-3 py-2"></td>
                     <td className="border border-gray-300 px-3 py-2"></td>

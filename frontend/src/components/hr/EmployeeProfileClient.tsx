@@ -3,8 +3,9 @@ import { Upload } from "antd"
 import { UploadOutlined } from "@ant-design/icons"
 import { Select } from "antd"
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Button, message, Tabs } from 'antd'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Employee, Department } from '@/types/hr'
 import { fetchEmployeesAction, uploadEmployeesAction } from '@/actions/hr'
 import { fetchNewEmployees, fetchNewDepartments } from '@/lib/api/client/hr'
@@ -38,27 +39,35 @@ export default function EmployeeProfileClient({
   initialTotal,
   factory,
 }: EmployeeProfileClientProps) {
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees)
-  const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [formOpen, setFormOpen] = useState(false)
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
   const [activeTab, setActiveTab] = useState('all')
-  const [departments, setDepartments] = useState<Department[]>([])
+  const queryClient = useQueryClient()
 
   const { searchKeyword, filterStatus } = useHrStore()
   const debouncedSearchKeyword = useDebounce(searchKeyword, 300)
+
+  const doFetch = factory === 'new' ? fetchNewEmployees : fetchEmployeesAction
+
+  const { data: departments = [] } = useQuery<Department[]>({
+    queryKey: ['hr-departments-list', { factory }],
+    queryFn: async () => {
+      const doFetchDepartments = factory === 'new' ? fetchNewDepartments : fetchDepartments
+      const res = await doFetchDepartments({ page_size: 100 })
+      return res.data
+    },
+  })
 
   const activeDepartment =
     activeTab === 'all'
       ? ''
       : departments.find((d) => d.id === activeTab)?.name || ''
 
-  const doFetch = factory === 'new' ? fetchNewEmployees : fetchEmployeesAction
-
-  const loadData = useCallback(async () => {
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['hr-employees', { factory, debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize }],
+    queryFn: async () => {
       const res = await doFetch({
         keyword: debouncedSearchKeyword || undefined,
         department: activeDepartment || undefined,
@@ -66,22 +75,12 @@ export default function EmployeeProfileClient({
         page,
         page_size: pageSize,
       })
-      setEmployees(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载数据失败')
-    }
-  }, [debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize, doFetch])
+      return { employees: res.data, total: res.meta?.total || 0 }
+    },
+  })
 
-  const loadDepartments = useCallback(async () => {
-    try {
-      const doFetchDepartments = factory === 'new' ? fetchNewDepartments : fetchDepartments
-      const res = await doFetchDepartments({ page_size: 100 })
-      setDepartments(res.data)
-    } catch {
-      setDepartments([])
-    }
-  }, [factory])
+  const employees = data?.employees || initialEmployees
+  const total = data?.total || initialTotal
 
   // When initialDepartment is provided, select that department tab
   useEffect(() => {
@@ -97,8 +96,8 @@ export default function EmployeeProfileClient({
   }
 
   const handleRefresh = () => {
-    loadData()
-    loadDepartments()
+    queryClient.invalidateQueries({ queryKey: ['hr-employees'] })
+    queryClient.invalidateQueries({ queryKey: ['hr-departments-list'] })
   }
 
   const handleEdit = (employee: Employee) => {
@@ -107,21 +106,13 @@ export default function EmployeeProfileClient({
   }
 
   const handleFormSuccess = () => {
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hr-employees'] })
   }
 
   const handleTabChange = (key: string) => {
     setActiveTab(key)
     setPage(1)
   }
-
-  useEffect(() => {
-    loadData()
-  }, [debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize])
-
-  useEffect(() => {
-    loadDepartments()
-  }, [loadDepartments])
 
   const tabItems = useMemo(
     () => [

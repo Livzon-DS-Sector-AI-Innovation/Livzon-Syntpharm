@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from "next/navigation"
 import { Button, message, Table, Space, Popconfirm, Input, Modal } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined, TeamOutlined } from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Department } from '@/types/hr'
 import { fetchDepartmentsAction, deleteDepartment } from '@/actions/hr'
 import { fetchNewDepartments } from '@/lib/api/client/hr'
@@ -21,44 +22,36 @@ export default function DepartmentClient({
   initialTotal,
   factory,
 }: DepartmentClientProps) {
-  const [departments, setDepartments] = useState<Department[]>(initialDepartments)
-  const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [formOpen, setFormOpen] = useState(false)
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null)
-  const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
   const _router = useRouter()
+  const queryClient = useQueryClient()
   const [teamModalOpen, setTeamModalOpen] = useState(false)
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null)
 
   const doFetch = factory === 'new' ? fetchNewDepartments : fetchDepartmentsAction
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['hr-departments', { factory, searchKeyword, page, pageSize }],
+    queryFn: async () => {
       const res = await doFetch({
         keyword: searchKeyword || undefined,
         page,
         page_size: pageSize,
       })
-      setDepartments(res.data)
-      setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [searchKeyword, page, pageSize, doFetch])
+      return { departments: res.data, total: res.meta?.total || 0 }
+    },
+  })
+
+  const departments = data?.departments || initialDepartments
+  const total = data?.total || initialTotal
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
     setPageSize(newPageSize)
-  }
-
-  const _handleRefresh = () => {
-    loadData()
   }
 
   const handleEdit = (department: Department) => {
@@ -72,14 +65,14 @@ export default function DepartmentClient({
   }
 
   const handleFormSuccess = () => {
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hr-departments'] })
   }
 
   const handleDelete = async (id: string) => {
     try {
       await deleteDepartment(id)
       message.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['hr-departments'] })
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : '删除失败')
     }
@@ -89,10 +82,6 @@ export default function DepartmentClient({
     setSelectedDepartment(department)
     setTeamModalOpen(true)
   }
-
-  useEffect(() => {
-    loadData()
-  }, [searchKeyword, page, pageSize])
 
   const columns = [
     {

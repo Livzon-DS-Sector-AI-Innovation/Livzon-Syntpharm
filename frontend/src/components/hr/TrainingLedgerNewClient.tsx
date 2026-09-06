@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { App, Button, Card, Form, Select, Spin, } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
 import { fetchDepartments, fetchEmployees } from '@/lib/api/client/hr'
 import { createTrainingLedgerPage } from '@/actions/hr'
 import type { Employee } from '@/types/hr'
@@ -13,33 +14,31 @@ export default function TrainingLedgerNewClient() {
   const { message } = App.useApp()
 
   const [form] = Form.useForm()
-  const [departments, setDepartments] = useState<string[]>([])
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedDept, setSelectedDept] = useState<string | null>(null)
 
-  useEffect(() => {
-    setLoading(true)
-    fetchDepartments({ page_size: 200 })
-      .then((res) => {
-        const names = (res.data || []).map((d: { name: string }) => d.name)
-        setDepartments(names)
-      })
-      .catch(() => message.error('加载部门列表失败'))
-      .finally(() => setLoading(false))
-  }, [])
+  const { data: departments = [], isLoading: loading } = useQuery<string[]>({
+    queryKey: ['hr-departments-names'],
+    queryFn: async () => {
+      const res = await fetchDepartments({ page_size: 200 })
+      return (res.data || []).map((d: { name: string }) => d.name)
+    },
+  })
+
+  const { data: employees = [] } = useQuery<Employee[]>({
+    queryKey: ['hr-employees-by-dept', selectedDept],
+    queryFn: async () => {
+      if (!selectedDept) return []
+      const res = await fetchEmployees({ department: selectedDept, page_size: 100 })
+      return res.data || []
+    },
+    enabled: !!selectedDept,
+  })
 
   const handleDeptChange = (dept: string) => {
     setSelectedDept(dept)
     form.setFieldValue('employee_number', undefined)
-    setEmployees([])
     if (!dept) return
-    fetchEmployees({ department: dept, page_size: 100 })
-      .then((res) => {
-        setEmployees(res.data || [])
-      })
-      .catch(() => message.error('加载人员列表失败'))
   }
 
   const handleSubmit = async (values: { employee_number: string }) => {

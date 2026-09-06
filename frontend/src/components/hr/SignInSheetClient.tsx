@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { App,
   Button,
   Card,
@@ -13,6 +13,7 @@ import { App,
 } from 'antd'
 import { FileTextOutlined, DownloadOutlined, PrinterOutlined, EyeOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useQuery } from '@tanstack/react-query'
 import { Employee } from '@/types/hr'
 import { fetchDepartments, fetchEmployees } from '@/lib/api/client/hr'
 import { generateTrainingSignInSheet } from '@/actions/hr'
@@ -20,25 +21,25 @@ import { generateTrainingSignInSheet } from '@/actions/hr'
 export default function SignInSheetClient() {
   const { message } = App.useApp()
   const [form] = Form.useForm()
-  const [departments, setDepartments] = useState<{ value: string; label: string }[]>([])
-  const [employees, setEmployees] = useState<Employee[]>([])
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [selectedDepts, setSelectedDepts] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(false)
 
-  useEffect(() => {
-    fetchDepartments({ page_size: 100 }).then((res) => {
-      const list = (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
-      setDepartments(list)
-    })
-    setLoading(true)
-    fetchEmployees({ page_size: 200 })
-      .then((res) => {
-        setEmployees(res.data || [])
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
+    queryKey: ['hr-departments-options'],
+    queryFn: async () => {
+      const res = await fetchDepartments({ page_size: 100 })
+      return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
+    },
+  })
+
+  const { data: employees = [] } = useQuery<Employee[]>({
+    queryKey: ['hr-employees-list', { page_size: 200 }],
+    queryFn: async () => {
+      const res = await fetchEmployees({ page_size: 200 })
+      return res.data || []
+    },
+  })
 
   const filteredEmployees = useMemo(() => {
     if (selectedDepts.length === 0) return []
@@ -150,11 +151,11 @@ export default function SignInSheetClient() {
               label="培训题目或内容摘要"
               rules={[{ required: true, message: '请填写培训题目' }]}
             >
-              <Input.TextArea rows={2} placeholder="请输入培训题目或内容摘要" />
+              <Input placeholder="如：安全生产规范培训" />
             </Form.Item>
 
             <Form.Item name="instructor" label="授课人">
-              <Input placeholder="请输入授课人" />
+              <Input placeholder="请输入授课人姓名" />
             </Form.Item>
 
             <Form.Item name="location" label="培训地点">
@@ -164,7 +165,6 @@ export default function SignInSheetClient() {
             <Form.Item name="training_method" label="培训方式">
               <Select
                 placeholder="选择培训方式"
-                allowClear
                 options={[
                   { value: '面授', label: '面授' },
                   { value: '函授', label: '函授' },
@@ -175,29 +175,28 @@ export default function SignInSheetClient() {
               />
             </Form.Item>
 
-            <Form.Item name="remarks" label="备注" className="md:col-span-2">
-              <Input.TextArea rows={2} placeholder="请输入备注内容" />
+            <Form.Item name="remarks" label="备注">
+              <Input.TextArea rows={2} placeholder="备注信息" />
             </Form.Item>
           </div>
 
-          <Form.Item label="应出席受训人员">
-            <div className="flex items-center gap-4 mb-2">
-              <span className="text-sm text-gray-500">
-                已选择 {employeeNames.length} 人（按部门自动填充）
-              </span>
-            </div>
-            <Form.Item name="employee_names" noStyle>
-              <Select
-                mode="multiple"
-                placeholder="选择受训人员"
-                options={filteredEmployees.map((e) => ({
-                  value: e.name,
-                  label: `${e.name} (${e.employee_number})`
-                }))}
-                loading={loading}
-                className="w-full"
-              />
-            </Form.Item>
+          <Form.Item
+            name="employee_names"
+            label="受训人员"
+            rules={[{ required: true, message: '请选择受训人员' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="选择受训人员（可多选）"
+              options={filteredEmployees.map((e) => ({
+                value: e.name,
+                label: `${e.name} (${e.employee_number})`
+              }))}
+              filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              className="w-full"
+            />
           </Form.Item>
 
           <Form.Item>
@@ -208,47 +207,43 @@ export default function SignInSheetClient() {
                 onClick={handleSubmit}
                 loading={submitting}
               >
-                生成并导出Excel
+                生成签到表
               </Button>
-              <Button icon={<PrinterOutlined />} onClick={handlePrint}>
-                打印预览
-              </Button>
-              <Button icon={<EyeOutlined />} onClick={handlePreview}>
+              <Button
+                icon={<EyeOutlined />}
+                onClick={handlePreview}
+              >
                 预览
+              </Button>
+              <Button
+                icon={<PrinterOutlined />}
+                onClick={handlePrint}
+              >
+                打印
               </Button>
             </Space>
           </Form.Item>
         </Form>
       </Card>
 
-      {/* Print preview area */}
       {showPreview && (
-        <div id="print-area">
+        <div id="print-area" className="print-area">
           <Card
             title={
               <div className="text-center">
                 <div className="text-xs text-gray-500 mb-1">
                   QR.SOP.PM.003/18（格式） P3/12
                 </div>
-                <div className="text-lg font-bold">
-                  丽珠集团新北江制药股份有限公司
-                </div>
+                <div className="text-lg font-bold">丽珠集团福州福兴医药有限公司</div>
                 <div className="text-base font-semibold mt-1">培训签到表</div>
               </div>
             }
+            className="training-record-preview"
           >
-            <div className="mb-2 text-sm">
+            <div className="mb-4 text-sm">
               <div className="flex gap-8 mb-1">
                 <span className="min-w-[200px] border-b border-gray-800 pb-0.5">
-                  <strong>培训日期：</strong>
-                  {formValues.training_date
-                    ? formValues.training_date.format('YYYY年MM月DD日')
-                    : '<span className="text-gray-400">______年____月____日</span>'}
-                </span>
-              </div>
-              <div className="flex gap-8 mb-1">
-                <span className="min-w-[240px] border-b border-gray-800 pb-0.5">
-                  <strong>受训部门：</strong>
+                  <strong>主办部门：</strong>
                   {selectedDepts.join('、') || '<span className="text-gray-400">________________</span>'}
                 </span>
                 <span className="min-w-[240px] border-b border-gray-800 pb-0.5">
