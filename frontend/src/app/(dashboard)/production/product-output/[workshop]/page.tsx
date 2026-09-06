@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Card, Row, Col, Typography, Spin, Empty, Button, Modal, Form, Input, App, Breadcrumb, Select, DatePicker } from 'antd'
 const { RangePicker } = DatePicker
 import { PlusOutlined, AppstoreOutlined, HomeOutlined } from '@ant-design/icons'
@@ -42,8 +42,7 @@ export default function WorkshopProductsPage() {
   const { message, modal } = App.useApp()
 
   const queryClient = useQueryClient()
-  const [summaries, setSummaries] = useState<Record<string, ProductSummary>>({})
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
+    const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1)
   const [selectedYear, setSelectedYear] = useState(dayjs().year())
@@ -63,73 +62,71 @@ export default function WorkshopProductsPage() {
     },
   })
 
-  const loadSummaries = async (productList: WorkshopProduct[]) => {
-    const newSummaries: Record<string, ProductSummary> = {}
+  const { data: summaries = {} } = useQuery({
+    queryKey: ['product-summaries', workshop, products.map(p => p.id), viewMode, selectedDate?.format('YYYY-MM-DD'), selectedMonth, selectedYear, dateRange?.[0]?.format('YYYY-MM-DD'), dateRange?.[1]?.format('YYYY-MM-DD')],
+    queryFn: async () => {
+      if (products.length === 0) return {}
+      const newSummaries: Record<string, ProductSummary> = {}
 
-    const promises = productList.map(async (product) => {
-      let dailyRes, monthlyRes, yearlyRes
-      let dailyBatchRes, monthlyBatchRes, yearlyBatchRes
+      const promises = products.map(async (product) => {
+        let dailyRes, monthlyRes, yearlyRes
+        let dailyBatchRes, monthlyBatchRes, yearlyBatchRes
 
-      if (viewMode === 'day') {
-        const targetDate = selectedDate.format('YYYY-MM-DD')
-        const monthStr = selectedDate.format('YYYY-MM')
-        const year = selectedDate.year()
-        ;[dailyRes, monthlyRes, yearlyRes] = await Promise.all([
-          getSummary({ target_date: targetDate, product_id: product.id }),
-          getSummary({ month: monthStr, product_id: product.id }),
-          getSummary({ year, product_id: product.id }),
-        ])
-        ;[dailyBatchRes, monthlyBatchRes, yearlyBatchRes] = await Promise.all([
-          getBatchCount({ target_date: targetDate, product_id: product.id }),
-          getBatchCount({ month: monthStr, product_id: product.id }),
-          getBatchCount({ year, product_id: product.id }),
-        ])
-      } else if (viewMode === 'month') {
-        const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
-        const year = selectedYear
-        monthlyRes = await getSummary({ month: monthStr, product_id: product.id })
-        yearlyRes = await getSummary({ year, product_id: product.id })
-        monthlyBatchRes = await getBatchCount({ month: monthStr, product_id: product.id })
-        yearlyBatchRes = await getBatchCount({ year, product_id: product.id })
-      } else if (viewMode === 'year') {
-        yearlyRes = await getSummary({ year: selectedYear, product_id: product.id })
-        yearlyBatchRes = await getBatchCount({ year: selectedYear, product_id: product.id })
-      } else if (viewMode === 'range' && dateRange[0] && dateRange[1]) {
-        const startDate = dateRange[0].format('YYYY-MM-DD')
-        const endDate = dateRange[1].format('YYYY-MM-DD')
-        monthlyRes = await getSummary({ start_date: startDate, end_date: endDate, product_id: product.id })
-        monthlyBatchRes = await getBatchCount({ start_date: startDate, end_date: endDate, product_id: product.id })
-      }
-
-      const extractBatchCount = (res: any) => {
-        const data = res.data
-        if (Array.isArray(data)) {
-          const item = data.find((d: any) => d.product_id === product.id)
-          return item?.batch_count || 0
+        if (viewMode === 'day') {
+          const targetDate = selectedDate.format('YYYY-MM-DD')
+          const monthStr = selectedDate.format('YYYY-MM')
+          const year = selectedDate.year()
+          ;[dailyRes, monthlyRes, yearlyRes] = await Promise.all([
+            getSummary({ target_date: targetDate, product_id: product.id }),
+            getSummary({ month: monthStr, product_id: product.id }),
+            getSummary({ year, product_id: product.id }),
+          ])
+          ;[dailyBatchRes, monthlyBatchRes, yearlyBatchRes] = await Promise.all([
+            getBatchCount({ target_date: targetDate, product_id: product.id }),
+            getBatchCount({ month: monthStr, product_id: product.id }),
+            getBatchCount({ year, product_id: product.id }),
+          ])
+        } else if (viewMode === 'month') {
+          const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+          const year = selectedYear
+          monthlyRes = await getSummary({ month: monthStr, product_id: product.id })
+          yearlyRes = await getSummary({ year, product_id: product.id })
+          monthlyBatchRes = await getBatchCount({ month: monthStr, product_id: product.id })
+          yearlyBatchRes = await getBatchCount({ year, product_id: product.id })
+        } else if (viewMode === 'year') {
+          yearlyRes = await getSummary({ year: selectedYear, product_id: product.id })
+          yearlyBatchRes = await getBatchCount({ year: selectedYear, product_id: product.id })
+        } else if (viewMode === 'range' && dateRange[0] && dateRange[1]) {
+          const startDate = dateRange[0].format('YYYY-MM-DD')
+          const endDate = dateRange[1].format('YYYY-MM-DD')
+          monthlyRes = await getSummary({ start_date: startDate, end_date: endDate, product_id: product.id })
+          monthlyBatchRes = await getBatchCount({ start_date: startDate, end_date: endDate, product_id: product.id })
         }
-        return 0
-      }
 
-      newSummaries[product.id] = {
-        daily: dailyRes?.data?.grand_total || 0,
-        monthly: monthlyRes?.data?.grand_total || 0,
-        yearly: yearlyRes?.data?.grand_total || 0,
-        dailyBatches: dailyBatchRes ? extractBatchCount(dailyBatchRes) : 0,
-        monthlyBatches: monthlyBatchRes ? extractBatchCount(monthlyBatchRes) : 0,
-        yearlyBatches: yearlyBatchRes ? extractBatchCount(yearlyBatchRes) : 0,
-      }
-    })
+        const extractBatchCount = (res: any) => {
+          const data = res.data
+          if (Array.isArray(data)) {
+            const item = data.find((d: any) => d.product_id === product.id)
+            return item?.batch_count || 0
+          }
+          return 0
+        }
 
-    await Promise.all(promises)
-    setSummaries(newSummaries)
-  }
+        newSummaries[product.id] = {
+          daily: dailyRes?.data?.grand_total || 0,
+          monthly: monthlyRes?.data?.grand_total || 0,
+          yearly: yearlyRes?.data?.grand_total || 0,
+          dailyBatches: dailyBatchRes ? extractBatchCount(dailyBatchRes) : 0,
+          monthlyBatches: monthlyBatchRes ? extractBatchCount(monthlyBatchRes) : 0,
+          yearlyBatches: yearlyBatchRes ? extractBatchCount(yearlyBatchRes) : 0,
+        }
+      })
 
-  // Load summaries when products or view parameters change
-  useEffect(() => {
-    if (products.length > 0) {
-      loadSummaries(products)
-    }
-  }, [viewMode, selectedDate, selectedMonth, selectedYear, dateRange, products])
+      await Promise.all(promises)
+      return newSummaries
+    },
+    enabled: products.length > 0,
+  })
 
   const handleAddProduct = async () => {
     try {
