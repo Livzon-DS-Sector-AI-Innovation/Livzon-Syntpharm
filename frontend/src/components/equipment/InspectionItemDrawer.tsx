@@ -75,12 +75,18 @@ export function InspectionItemDrawer() {
     enabled: inspectionItemDrawerOpen && !!inspectionItemTemplateId,
   })
 
-  useEffect(() => {
+  // Sync editing state when drawer opens (adjusting state during render)
+  const [prevDrawerState, setPrevDrawerState] = useState<string>('')
+  const drawerState = inspectionItemDrawerOpen && inspectionItemTemplateId ? 'open' : 'closed'
+  const itemState = editingInspectionItem?.id || 'none'
+  const combinedState = `${drawerState}-${itemState}`
+  if (combinedState !== prevDrawerState) {
+    setPrevDrawerState(combinedState)
     if (inspectionItemDrawerOpen && inspectionItemTemplateId) {
       if (editingInspectionItem) { setEditingData(editingInspectionItem); setFormMode(editingInspectionItem.id) }
       else { setFormMode(null); setEditingData(null) }
     }
-  }, [inspectionItemDrawerOpen, inspectionItemTemplateId, editingInspectionItem])
+  }
 
   const close = () => { setFormMode(null); closeInspectionItemDrawer() }
   const startEdit = (item: InspectionTemplateItem) => { setEditingData(item); setFormMode(item.id) }

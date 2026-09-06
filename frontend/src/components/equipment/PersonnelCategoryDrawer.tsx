@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   App, Drawer, TreeSelect, Select, Button, Tag, Typography, Tooltip,
 } from 'antd'
@@ -40,18 +40,20 @@ export function PersonnelCategoryDrawer({
   const queryClient = useQueryClient()
   const [items, setItems] = useState<CategoryAssignItem[]>([])
   const [submitting, setSubmitting] = useState(false)
-  useEffect(() => {
-    if (open) {
-      if (existingCategories.length > 0) {
-        setItems(existingCategories.map(c => ({
-          role_id: c.role_id,
-          category_id: c.category_id,
-        })))
-      } else {
-        setItems([])
-      }
+  // Sync items when drawer opens (adjusting state during render)
+  const [prevOpenState, setPrevOpenState] = useState<string>('')
+  const openState = open ? `${existingCategories.length}` : 'closed'
+  if (openState !== prevOpenState && open) {
+    setPrevOpenState(openState)
+    if (existingCategories.length > 0) {
+      setItems(existingCategories.map(c => ({
+        role_id: c.role_id,
+        category_id: c.category_id,
+      })))
+    } else {
+      setItems([])
     }
-  }, [open, existingCategories])
+  }
 
   const { data: categories = [] } = useQuery({
     queryKey: ['equipment-categories-tree'],

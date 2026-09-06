@@ -43,7 +43,6 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
         order_type: '故障维修',
         priority: defaultPriority,
       })
-      setFileList([])
       // 默认填入设备责任人
       if (selectedEquipment?.responsible_person_id) {
         form.setFieldsValue({ responsible_person_id: selectedEquipment.responsible_person_id })

@@ -51,10 +51,12 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
   const [localPage, setLocalPage] = useState(1)
   const [localPageSize, setLocalPageSize] = useState(20)
 
-  // resetKey 变化 → 重置到第一页
-  useEffect(() => {
+  // resetKey 变化 → 重置到第一页 (adjusting state during render)
+  const [prevResetKey, setPrevResetKey] = useState<unknown>(undefined)
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey)
     setLocalPage(1)
-  }, [resetKey])
+  }
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
 

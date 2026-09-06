@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Select, InputNumber } from 'antd'
 import {
@@ -76,22 +76,24 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
 
   const [locationRows, setLocationRows] = useState<LocationRow[]>([])
   
-  useEffect(() => {
-    if (routeEquipmentDrawerOpen && routeDetail) {
-      setLocationRows((routeDetail.locations || []).map(loc => ({
-        key: loc.id, location_id: loc.location_id,
-        location_name: loc.location_name || undefined,
-        sort_order: loc.sort_order, collapsed: false,
-        equipments: (loc.equipments || []).map(eq => ({
-          key: eq.id, equipment_id: eq.equipment_id,
-          equipment_name: eq.equipment_name || undefined,
-          asset_no: undefined,
-          sort_order: eq.sort_order,
-          template_ids: (eq.templates || []).map(t => t.template_id),
-        })),
-      })))
-    }
-  }, [routeEquipmentDrawerOpen, routeDetail])
+  // Sync location rows when drawer opens (adjusting state during render)
+  const [prevRouteState, setPrevRouteState] = useState<string>('')
+  const routeState = routeEquipmentDrawerOpen && routeDetail ? routeDetail.id || 'open' : 'closed'
+  if (routeState !== prevRouteState && routeEquipmentDrawerOpen && routeDetail) {
+    setPrevRouteState(routeState)
+    setLocationRows((routeDetail.locations || []).map(loc => ({
+      key: loc.id, location_id: loc.location_id,
+      location_name: loc.location_name || undefined,
+      sort_order: loc.sort_order, collapsed: false,
+      equipments: (loc.equipments || []).map(eq => ({
+        key: eq.id, equipment_id: eq.equipment_id,
+        equipment_name: eq.equipment_name || undefined,
+        asset_no: undefined,
+        sort_order: eq.sort_order,
+        template_ids: (eq.templates || []).map(t => t.template_id),
+      })),
+    })))
+  }
 
   /* ── mutations ── */
   const toggle = (k: string) => setLocationRows(prev =>
