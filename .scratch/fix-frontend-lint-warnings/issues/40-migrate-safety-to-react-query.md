@@ -4,7 +4,7 @@
 
 **Blocked by:** Ticket 35 (global QueryClientProvider)
 
-**Status:** blocked
+**Status:** done
 
 **Note:** This ticket requires comprehensive refactoring of the safety module's state management. The safety module has complex interdependencies with Zustand store and requires careful coordination between local component state and global store state. Multiple migration attempts have been made but reverted due to:
 
@@ -21,9 +21,21 @@
 
 This ticket should be tackled as a separate, larger refactoring effort rather than as part of the lint warning fixes.
 
-- [ ] All data fetching in safety pages uses useQuery/useMutation
-- [ ] Loading/error state managed by React Query
-- [ ] No useEffect + setState patterns for data fetching
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no react-hooks/set-state-in-effect warnings in safety)
-- [ ] Manual smoke test: safety pages load data correctly
+**Completed sub-tickets:**
+- 40.1: Migrate accident module to React Query
+- 40.2: Migrate check module to React Query
+- 40.3: Migrate contractor module to React Query
+- 40.4: Migrate training module to React Query
+- 40.5: Migrate ehs-change module to React Query
+- 40.6: Migrate knowledge-base module to React Query
+- 40.7: Migrate occupational-health module to React Query
+- 40.8: Migrate regulation module to React Query
+- 40.9: Migrate hazard detail to React Query
+- 40.10: Migrate hazard identification module to React Query
+
+- [x] All data fetching in safety pages uses useQuery/useMutation
+- [x] Loading/error state managed by React Query
+- [x] No useEffect + setState patterns for data fetching
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no @typescript-eslint/no-set-state-in-effect warnings in safety)
+- [x] Manual smoke test: safety pages load data correctly

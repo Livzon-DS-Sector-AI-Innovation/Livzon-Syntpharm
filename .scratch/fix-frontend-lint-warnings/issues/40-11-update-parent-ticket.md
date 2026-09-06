@@ -4,11 +4,11 @@
 
 **Blocked by:** 40.1, 40.2, 40.3, 40.4, 40.5, 40.6, 40.7, 40.8, 40.9, 40.10
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Verify all sub-tickets (40.1-40.10) are marked as done
-- [ ] Run full lint check on safety module: `pnpm lint src/app/\(dashboard\)/safety/`
-- [ ] Verify zero `@typescript-eslint/no-set-state-in-effect` warnings in safety module
-- [ ] Run full typecheck: `pnpm typecheck`
-- [ ] Update parent ticket 40 status to done
-- [ ] Update spec status if applicable
+- [x] Verify all sub-tickets (40.1-40.10) are marked as done
+- [x] Run full lint check on safety module: `pnpm lint src/app/\(dashboard\)/safety/`
+- [x] Verify zero `@typescript-eslint/no-set-state-in-effect` warnings in safety module
+- [x] Run full typecheck: `pnpm typecheck`
+- [x] Update parent ticket 40 status to done
+- [x] Update spec status if applicable
