@@ -1340,6 +1340,53 @@ class SafetyKnowledgeArticle(BaseModel):
     card_version: Mapped[int] = mapped_column(
         Integer, default=1, server_default="1", nullable=False, comment="知识卡片版本号"
     )
+    ppt_content: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="AI 生成的 PPT 内容 JSON",
+    )
+    ppt_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="PPT 生成时间"
+    )
+
+
+# ==================== PPT 生成记录 ====================
+
+
+class PptGenerationRecord(BaseModel):
+    """PPT 生成记录表"""
+
+    __tablename__ = "ppt_generation_records"
+    __table_args__ = (
+        Index("ix_ppt_gen_records_article_id", "article_id", postgresql_where=text("is_deleted = false")),
+        {"schema": "safety"},
+    )
+
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.knowledge_articles.id"),
+        nullable=False,
+        comment="关联知识库文章ID",
+    )
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="文件名")
+    template: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="模板类型: training/briefing/audit"
+    )
+    style: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="配色风格: professional/modern/minimal"
+    )
+    page_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="幻灯片页数"
+    )
+    object_key: Mapped[str] = mapped_column(String(500), nullable=False, comment="MinIO 对象路径")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败时的错误信息")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="success",
+        server_default="success",
+        nullable=False,
+        comment="状态: success/failed",
+    )
 
 
 # ==================== 风险作业报备 ====================

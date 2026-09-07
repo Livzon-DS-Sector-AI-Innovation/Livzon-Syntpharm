@@ -1083,6 +1083,19 @@ export async function syncKnowledgeArticles() {
   return response
 }
 
+// ── 批量导入 ──
+
+export async function batchImportKnowledgeArticles(files: File[], category?: string) {
+  const formData = new FormData()
+  files.forEach(f => formData.append("files", f))
+  if (category) formData.append("category", category)
+  
+  const authHeaders = await getAuthHeaders()
+  const response = await safetyApi.batchImportKnowledgeArticles(formData, authHeaders)
+  revalidatePath("/safety/knowledge-base")
+  return response
+}
+
 // ==================== 八大特殊作业报备 Actions ====================
 
 export async function getSpecialOperationReports(params?: SpecialOperationReportQueryParams) {

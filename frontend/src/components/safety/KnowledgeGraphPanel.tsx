@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -269,7 +269,6 @@ export default function KnowledgeGraphPanel() {
   // 用 selector 订阅，避免整个 store 对象变化触发重渲染
   const nodes = useKnowledgeGraphStore(s => s.nodes)
   const edges = useKnowledgeGraphStore(s => s.edges)
-  const loading = useKnowledgeGraphStore(s => s.loading)
   const selectedNodeId = useKnowledgeGraphStore(s => s.selectedNodeId)
   const selectedEdgeId = useKnowledgeGraphStore(s => s.selectedEdgeId)
   const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
@@ -279,12 +278,16 @@ export default function KnowledgeGraphPanel() {
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
   const rfInstance = useRef<any>(null)
   const loadingRef = useRef(false)  // 防重入
+  const [loading, setLoading] = useState(false)  // 本地 loading，避免 useSyncExternalStore 在 commit 阶段触发 error #185
 
-  // 加载数据 — 零依赖，用 ref 防重入 + 避免 message 变化导致重复执行
+  // 加载数据 — 用 ref 防重入
+  // loading 使用本地 state（非 store），通过 setTimeout 延迟设置，
+  // 完全避免 useSyncExternalStore 在 React commit 阶段触发 error #185
   const loadGraph = useCallback(async () => {
     if (loadingRef.current) return
     loadingRef.current = true
-    useKnowledgeGraphStore.setState({ loading: true })
+    // setTimeout 将状态更新推到下一个宏任务，完全脱离 React commit 阶段
+    setTimeout(() => setLoading(true), 0)
     try {
       const state = useKnowledgeGraphStore.getState()
       const data = await getFullGraph({
@@ -296,17 +299,18 @@ export default function KnowledgeGraphPanel() {
         nodes: data.nodes,
         edges: data.edges,
         stats: data.stats,
-        loading: false,
         error: null,
       })
+      setLoading(false)
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : '加载图谱失败'
-      useKnowledgeGraphStore.setState({ error: errMsg, loading: false })
+      useKnowledgeGraphStore.setState({ error: errMsg })
+      setLoading(false)
       messageRef.current.error(`加载图谱数据失败: ${errMsg}`)
     } finally {
       loadingRef.current = false
     }
-  }, [])  // 零依赖，永远不重新创建
+  }, [])
 
   useEffect(() => { loadGraph() }, [loadGraph])
 
@@ -327,7 +331,7 @@ export default function KnowledgeGraphPanel() {
     setTimeout(() => {
       rfInstance.current?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
-  }, [nodes, edges, setFlowNodes, setFlowEdges])
+  }, [nodes, edges]) // setFlowNodes/setFlowEdges 是稳定引用，无需加入依赖
 
   // 节点点击 → 展开邻居
   const onNodeClick = useCallback(

@@ -30,6 +30,7 @@ from app.modules.safety.models import (
     SpecialOperationPersonnel,
     SpecialOperationReport,
     TrainingRecord,
+    PptGenerationRecord,
 )
 
 logger = logging.getLogger(__name__)
@@ -1303,6 +1304,15 @@ class SafetyRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+
+    async def get_knowledge_article_by_title(self, title: str) -> SafetyKnowledgeArticle | None:
+        """根据标题查找知识库文章"""
+        query = select(SafetyKnowledgeArticle).where(
+            SafetyKnowledgeArticle.title == title,
+            ~SafetyKnowledgeArticle.is_deleted,
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
     async def create_knowledge_article(self, data: dict[str, Any]) -> SafetyKnowledgeArticle:
         """创建安全知识库文章"""
         item = SafetyKnowledgeArticle(**data)
@@ -2165,3 +2175,41 @@ class SafetyRepository:
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    # ==================== PPT 生成记录 ====================
+
+    async def get_ppt_generation_records(
+        self,
+        article_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[list[PptGenerationRecord], int]:
+        """查询某文章的 PPT 生成历史（只返回成功记录）"""
+        query = (
+            select(PptGenerationRecord)
+            .where(
+                PptGenerationRecord.article_id == article_id,
+                PptGenerationRecord.status == "success",
+                ~PptGenerationRecord.is_deleted,
+            )
+        )
+        count_query = (
+            select(func.count(PptGenerationRecord.id))
+            .where(
+                PptGenerationRecord.article_id == article_id,
+                PptGenerationRecord.status == "success",
+                ~PptGenerationRecord.is_deleted,
+            )
+        )
+        total = await self.session.scalar(count_query)
+        query = query.offset(skip).limit(limit).order_by(PptGenerationRecord.created_at.desc())
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+        return items, total or 0
+
+    async def create_ppt_generation_record(self, data: dict[str, Any]) -> PptGenerationRecord:
+        """创建 PPT 生成记录"""
+        item = PptGenerationRecord(**data)
+        self.session.add(item)
+        await self.session.flush()
+        return item

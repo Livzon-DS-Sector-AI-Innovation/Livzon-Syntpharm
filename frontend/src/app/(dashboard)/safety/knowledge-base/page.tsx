@@ -9,6 +9,7 @@ import {
   RobotOutlined,
   SyncOutlined,
   ApartmentOutlined,
+  ImportOutlined,
 } from '@ant-design/icons'
 import {
   getKnowledgeArticles,
@@ -27,6 +28,7 @@ import DocumentCardGrid from '@/components/safety/DocumentCardGrid'
 import KnowledgeSidebar from '@/components/safety/KnowledgeSidebar'
 import KnowledgeDetailDrawer from '@/components/safety/KnowledgeDetailDrawer'
 import KnowledgeFormModal from '@/components/safety/KnowledgeFormModal'
+import KnowledgeImportModal from '@/components/safety/KnowledgeImportModal'
 import { useKnowledgeStore } from '@/stores/safety'
 import type { SafetyKnowledgeArticle } from '@/types/safety'
 import { filterByMenuKey, computeMenuCounts } from '@/components/safety'
@@ -62,6 +64,7 @@ export default function KnowledgeBasePage() {
   const [selectedMenuKey, setSelectedMenuKey] = useState<string | null>(null)
   const [menuCounts, setMenuCounts] = useState<Map<string, number>>(new Map())
   const [syncing, setSyncing] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
 
   // Modal/Drawer visibility
   const [formOpen, setFormOpen] = useState(false)
@@ -467,6 +470,13 @@ export default function KnowledgeBasePage() {
             同步
           </Button>
 
+          <Button
+            icon={<ImportOutlined />}
+            onClick={() => setImportOpen(true)}
+          >
+            导入
+          </Button>
+
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
             查询
           </Button>
@@ -534,6 +544,12 @@ export default function KnowledgeBasePage() {
           setDetailId(null)
         }}
         onNewVersion={handleNewVersion}
+      />
+
+      <KnowledgeImportModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onSuccess={() => { loadData(); setImportOpen(false) }}
       />
       </div>
     </div>
