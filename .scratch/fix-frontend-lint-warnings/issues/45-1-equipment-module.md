@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] WorkOrderDrawer.tsx has no exhaustive-deps warnings
-- [ ] InspectionRoutesTab.tsx has no exhaustive-deps warnings
-- [ ] InspectionTasksTab.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for equipment module files
+- [x] WorkOrderDrawer.tsx has no exhaustive-deps warnings
+- [x] InspectionRoutesTab.tsx has no exhaustive-deps warnings
+- [x] InspectionTasksTab.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for equipment module files
