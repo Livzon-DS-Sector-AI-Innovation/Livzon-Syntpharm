@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] RegulationDashboardClient.tsx has no exhaustive-deps warnings
-- [ ] ReviewPageClient.tsx has no exhaustive-deps warnings
-- [ ] PurchaseRequestFormClient.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] RegulationDashboardClient.tsx has no exhaustive-deps warnings
+- [x] ReviewPageClient.tsx has no exhaustive-deps warnings
+- [x] PurchaseRequestFormClient.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
