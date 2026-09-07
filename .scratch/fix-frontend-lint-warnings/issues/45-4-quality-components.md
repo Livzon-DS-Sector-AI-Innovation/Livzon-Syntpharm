@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] AttachmentPreview.tsx has no exhaustive-deps warnings
-- [ ] CppBatchDataClient.tsx has no exhaustive-deps warnings
-- [ ] CqaBatchDataClient.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] AttachmentPreview.tsx has no exhaustive-deps warnings
+- [x] CppBatchDataClient.tsx has no exhaustive-deps warnings
+- [x] CqaBatchDataClient.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
