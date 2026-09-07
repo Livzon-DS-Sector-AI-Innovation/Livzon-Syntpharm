@@ -105,7 +105,7 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
         })
       }
     })
-  }, [message, onRefresh])
+  }, [message, modal, onRefresh])
 
   const columns = [
     {

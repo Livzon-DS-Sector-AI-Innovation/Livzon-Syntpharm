@@ -47,7 +47,7 @@ export function StatsPage() {
       }
     }
     loadData()
-  }, [])
+  }, [msgApi])
 
   if (loading) {
     return (

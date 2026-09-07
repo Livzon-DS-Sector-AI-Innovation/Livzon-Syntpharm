@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Switch, Upload } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined, InboxOutlined } from '@ant-design/icons'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
@@ -58,7 +58,7 @@ export function DeliverableTemplatePage() {
     msgApi.success('导出成功')
   }
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const data = await fetchDeliverableTemplates()
@@ -68,9 +68,9 @@ export function DeliverableTemplatePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [msgApi])
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { loadData() }, [loadData])
 
   const openCreate = () => {
     setEditingTemplate(null)

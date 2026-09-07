@@ -25,7 +25,7 @@ export function ReportModulePage() {
       }
     }
     loadProjects()
-  }, [])
+  }, [msgApi])
 
   return (
     <div>
