@@ -92,7 +92,7 @@ export default function SpecialOpsReportPanel() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, statusFilter, opType, keyword])
+  }, [page, pageSize, statusFilter, opType, keyword, message])
 
   // ── Open report drawer ──
   const handleCreateReport = () => {

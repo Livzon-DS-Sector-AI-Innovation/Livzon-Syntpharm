@@ -286,7 +286,7 @@ export default function KnowledgeGraphPanel() {
     } finally {
       store.setLoading(false)
     }
-  }, [store.nodeTypeFilter, store.relationTypeFilter, message, store])
+  }, [message, store])
 
   useEffect(() => { loadGraph() }, [loadGraph])
 

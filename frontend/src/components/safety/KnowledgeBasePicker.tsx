@@ -60,7 +60,7 @@ export default function KnowledgeBasePicker({ open, onClose, onSelect, excludeId
     } finally {
       setLoading(false)
     }
-  }, [keyword, category, excludeIds])
+  }, [keyword, category, excludeIds, message])
 
   // 重置状态
   useEffect(() => {

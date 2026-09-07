@@ -43,7 +43,7 @@ export default function AIWorkflowConfigClient({
     } catch {
       message.error('刷新失败')
     }
-  }, [])
+  }, [message])
 
       // Merge DB configs with built-in workflows
   const allWorkflows = [...workflows]
