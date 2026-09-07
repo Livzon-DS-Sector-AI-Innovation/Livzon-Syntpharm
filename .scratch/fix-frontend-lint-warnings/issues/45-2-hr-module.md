@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] DepartureClient.tsx has no exhaustive-deps warnings
-- [ ] OnboardingClient.tsx has no exhaustive-deps warnings
-- [ ] RosterClient.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for HR module files
+- [x] DepartureClient.tsx has no exhaustive-deps warnings
+- [x] OnboardingClient.tsx has no exhaustive-deps warnings
+- [x] RosterClient.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for HR module files
