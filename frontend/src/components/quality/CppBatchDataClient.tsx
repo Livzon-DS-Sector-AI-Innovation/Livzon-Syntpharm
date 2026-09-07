@@ -1,7 +1,7 @@
 'use client'
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import * as XLSX from "xlsx"
 import { fetchCppBatchesWide } from "@/lib/api/client/quality-cpv"
@@ -26,9 +26,7 @@ export function CppBatchDataClient({ productId, initialProduct, initialParameter
   const [endDate, setEndDate] = useState("")
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  useEffect(() => { loadData() }, [productId, page])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       const batchesData = await fetchCppBatchesWide(productId, {
@@ -41,7 +39,10 @@ export function CppBatchDataClient({ productId, initialProduct, initialParameter
       setBatches(batchesData.items)
       setTotal(batchesData.total)
     } catch (err) { console.error(err) } finally { setLoading(false) }
-  }
+  }, [productId, batchNo, startDate, endDate, page])
+
+  useEffect(() => { loadData() }, [loadData])
+
 
   function handleSearch() { setPage(1); loadData() }
 
