@@ -192,7 +192,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     }
     
     parseLiterature()
-  }, [initialData, literatureFile, message])
+  }, [initialData, literatureFile, message, routeId])
 
   const handleSelectRoute = (routeId: string) => {
     setSelectedRouteIds(prev =>
