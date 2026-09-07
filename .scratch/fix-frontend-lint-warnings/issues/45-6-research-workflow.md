@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] ProcessOptimizationWorkflowPage.tsx has no exhaustive-deps warnings
-- [ ] ModuleResearch.tsx has no exhaustive-deps warnings
-- [ ] RouteWorkflowPage.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] ProcessOptimizationWorkflowPage.tsx has no exhaustive-deps warnings
+- [x] ModuleResearch.tsx has no exhaustive-deps warnings
+- [x] RouteWorkflowPage.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
