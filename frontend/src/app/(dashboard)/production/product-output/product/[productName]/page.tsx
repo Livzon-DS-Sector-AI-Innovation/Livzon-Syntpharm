@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, Row, Col, Typography, Spin, Empty, Breadcrumb, Table, Tag, DatePicker, Select } from 'antd'
 import { HomeOutlined, AppstoreOutlined } from '@ant-design/icons'
 import { useParams, useRouter } from 'next/navigation'
@@ -37,11 +37,7 @@ export default function ProductDetailPage() {
   const [selectedMonth, setSelectedMonth] = useState<dayjs.Dayjs | null>(null)
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
 
-  useEffect(() => {
-    loadProductData()
-  }, [productName, filterType, dateRange, selectedMonth, selectedYear])
-
-  const loadProductData = async () => {
+  const loadProductData = useCallback(async () => {
     setLoading(true)
     try {
       const queryParams: any = { 
@@ -115,7 +111,12 @@ export default function ProductDetailPage() {
     } finally {
       setLoading(false)
     }
-  }
+    }, [productName, filterType, dateRange, selectedMonth, selectedYear])
+
+  useEffect(() => {
+    loadProductData()
+  }, [loadProductData])
+
 
   const columns = [
     {
