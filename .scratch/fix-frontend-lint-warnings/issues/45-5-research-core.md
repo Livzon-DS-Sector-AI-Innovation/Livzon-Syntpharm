@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] DeliverableTemplatePage.tsx has no exhaustive-deps warnings
-- [ ] ProjectTable.tsx has no exhaustive-deps warnings
-- [ ] ReportModulePage.tsx has no exhaustive-deps warnings
-- [ ] StatsPage.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] DeliverableTemplatePage.tsx has no exhaustive-deps warnings
+- [x] ProjectTable.tsx has no exhaustive-deps warnings
+- [x] ReportModulePage.tsx has no exhaustive-deps warnings
+- [x] StatsPage.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
