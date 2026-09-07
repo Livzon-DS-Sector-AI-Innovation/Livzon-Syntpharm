@@ -182,7 +182,7 @@ export default function InspectionTableDetailPage({
     } finally {
       setLoading(false)
     }
-  }, [resolvedParams.id, message])
+  }, [resolvedParams.id])
 
   useEffect(() => {
     fetchData()
