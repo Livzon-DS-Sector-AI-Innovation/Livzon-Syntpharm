@@ -41,7 +41,7 @@ export default function RegulationDashboardClient() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [message])
 
   if (loading && !data) {
     return (

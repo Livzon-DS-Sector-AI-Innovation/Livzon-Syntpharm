@@ -102,7 +102,7 @@ export function ReviewPageClient() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [message])
 
   useEffect(() => {
     let cancelled = false
@@ -122,7 +122,7 @@ export function ReviewPageClient() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [message])
 
   const filtered = drugs.filter(d => {
     if (search && !d.name.includes(search)) return false

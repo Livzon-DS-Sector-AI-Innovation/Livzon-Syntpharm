@@ -117,7 +117,8 @@ export function PurchaseRequestFormClient({
   const [submittingId, setSubmittingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [detailRecord, setDetailRecord] = useState<PurchaseRequestResponse | null>(null)
-  const watchedItems = Form.useWatch('items', form) ?? []
+  const watchedItemsRaw = Form.useWatch('items', form)
+  const watchedItems = useMemo(() => watchedItemsRaw ?? [], [watchedItemsRaw])
 
   const totalAmount = useMemo(
     () =>
