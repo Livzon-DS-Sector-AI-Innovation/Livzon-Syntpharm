@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] ai-log/page.tsx has no exhaustive-deps warnings
-- [ ] stability/page.tsx has no exhaustive-deps warnings
-- [ ] static-data/[module]/[id]/page.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] ai-log/page.tsx has no exhaustive-deps warnings
+- [x] stability/page.tsx has no exhaustive-deps warnings
+- [x] static-data/[module]/[id]/page.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
