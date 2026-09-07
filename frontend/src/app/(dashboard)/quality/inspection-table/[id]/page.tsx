@@ -181,8 +181,8 @@ export default function InspectionTableDetailPage({
       message.error('获取数据失败')
     } finally {
       setLoading(false)
-    }, [resolvedParams.id, message])
-  }
+    }
+  }, [resolvedParams.id, message])
 
   useEffect(() => {
     fetchData()
