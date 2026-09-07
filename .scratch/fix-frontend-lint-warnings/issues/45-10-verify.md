@@ -1,19 +1,59 @@
-# 45.10 — Verify exhaustive-deps fixes and document remaining warnings
+# 45.10 — Fix remaining exhaustive-deps warnings
 
-**What to build:** Verify that the exhaustive-deps fixes from tickets 45.1-45.9 are working, and document the remaining warnings that will be addressed in ticket 46.
+**What to build:** Fix the remaining 31 react-hooks/exhaustive-deps warnings across the codebase. These warnings occur when React hooks (useEffect, useCallback, useMemo) have missing dependencies in their dependency arrays.
 
 **Blocked by:** 45.1, 45.2, 45.3, 45.4, 45.5, 45.6, 45.7, 45.8, 45.9
 
-**Status:** done
+**Status:** todo
 
-- [x] Fixed exhaustive-deps warnings in equipment, hr, quality-core, quality-components, research-core, research-workflow, safety, registration-procurement, and remaining modules
-- [x] `tsc --noEmit` passes with 0 errors
-- [x] All sub-tickets 45.1-45.9 marked as done
-- [x] Documented remaining 31 exhaustive-deps warnings for ticket 46
+## Files with warnings:
 
-**Notes:**
-- 31 exhaustive-deps warnings remain across 23 files
-- These are in: quality deviation (4 files), quality instrument (1 file), registration ledger (1 file), energy DeviceDrawer (1 file), hr training (2 files), production (3 files), research (1 file), safety hazard (3 files), safety special ops (2 files), safety workflow/regulation (5 files)
-- Common patterns: missing useCallback wrappers, missing dependencies in useEffect/useCallback arrays
-- These warnings don't cause runtime errors but should be fixed for code quality
-- Ticket 46 will address these remaining warnings
+### Quality module (6 files, 8 warnings):
+- `quality/deviation-automation/preview/[id]/page.tsx` - 2 warnings
+- `quality/deviation-automation/templates/page.tsx` - 1 warning
+- `quality/deviation-flow/create/page.tsx` - 1 warning
+- `quality/deviation-flow/progress/page.tsx` - 1 warning
+- `quality/instrument/list/edit/page.tsx` - 1 warning
+- `quality/deviation-flow/settings/page.tsx` - 2 warnings
+
+### Registration module (1 file, 1 warning):
+- `registration/ledger/page.tsx` - 1 warning
+
+### Energy module (1 file, 1 warning):
+- `components/energy/DeviceDrawer.tsx` - 1 warning
+
+### HR module (2 files, 2 warnings):
+- `components/hr/TrainingSelectClient.tsx` - 1 warning
+- `components/hr/TrainingSessionDetailModal.tsx` - 1 warning
+
+### Production module (3 files, 3 warnings):
+- `components/production/AnnualReviewTab.tsx` - 1 warning
+- `components/production/WorkshopRankingTrend.tsx` - 1 warning
+- `components/production/pressure/PressureManualInputPageClient.tsx` - 1 warning
+
+### Research module (1 file, 1 warning):
+- `components/research/StageModuleLayout.tsx` - 1 warning
+
+### Safety module (9 files, 15 warnings):
+- `components/safety/HazardLedgerPage.tsx` - 1 warning
+- `components/safety/HazardLedgerPanel.tsx` - 3 warnings
+- `components/safety/HazardSelectModal.tsx` - 1 warning
+- `components/safety/SopContentEditor.tsx` - 1 warning
+- `components/safety/SpecialOpsLedger.tsx` - 1 warning
+- `components/safety/SpecialOpsManagement.tsx` - 1 warning
+- `components/safety/WorkflowListPanel.tsx` - 1 warning
+- `components/safety/hazard-identification/HazardIdentificationDetailPageClient.tsx` - 1 warning
+- `components/safety/hazard/HazardDetailPageClient.tsx` - 1 warning
+- `components/safety/regulation/SafetyRegulationPageClient.tsx` - 2 warnings
+
+## Common fix patterns:
+1. Wrap functions used in useEffect/useCallback with `useCallback` and add proper dependencies
+2. Add missing dependencies to dependency arrays
+3. Reorder function declarations to avoid "used before declaration" errors
+4. Import `useCallback` from React where missing
+
+## Acceptance criteria:
+- [ ] `pnpm lint` shows 0 exhaustive-deps warnings
+- [ ] `tsc --noEmit` passes
+- [ ] No runtime errors introduced
+- [ ] All hooks follow React's rules of hooks
