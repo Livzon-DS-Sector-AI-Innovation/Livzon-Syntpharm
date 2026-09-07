@@ -54,7 +54,7 @@ export default function AuthorizationLetterClient({
     } finally {
       setLoading(false)
     }
-  }, [productName, preparationUnit, page, pageSize])
+  }, [productName, preparationUnit, page, pageSize, message])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)

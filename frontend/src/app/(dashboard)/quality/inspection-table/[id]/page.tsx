@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use, useRef } from 'react'
+import { useState, useEffect, use, useRef, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -163,7 +163,7 @@ export default function InspectionTableDetailPage({
     }
   }
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const result = await getInspectionTable(resolvedParams.id)
@@ -181,12 +181,12 @@ export default function InspectionTableDetailPage({
       message.error('获取数据失败')
     } finally {
       setLoading(false)
-    }
+    }, [resolvedParams.id, message])
   }
 
   useEffect(() => {
     fetchData()
-  }, [resolvedParams.id])
+  }, [fetchData])
 
   // 处理多文件上传并识别
   const handleFileUpload = async (fileList: File[]) => {

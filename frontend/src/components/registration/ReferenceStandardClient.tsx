@@ -48,7 +48,7 @@ export default function ReferenceStandardClient({
     } finally {
       setLoading(false)
     }
-  }, [drugName, page, pageSize])
+  }, [drugName, page, pageSize, message])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)

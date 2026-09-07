@@ -128,7 +128,7 @@ export default function HazardInspectionForm({
         }])
       }
     }
-  })
+  }, [initialValues, form])
 
   // 从飞书登录信息自动填充检查人员姓名和部门（仅新建表单，草稿不覆盖）
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function HazardInspectionForm({
         form.setFieldsValue(patch)
       }
     })
-  }, [initialValues])
+  }, [initialValues, form])
 
   // 规范化表单值：mode="multiple" 字段返回数组，需转为逗号分隔字符串（匹配 Bitable multi_select）
   const normalizeValues = (values: Record<string, unknown>): Record<string, unknown> => {

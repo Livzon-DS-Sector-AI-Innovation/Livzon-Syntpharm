@@ -29,7 +29,7 @@ export function AlertsPageClient() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize])
+  }, [page, pageSize, message])
 
   const handlePageChange = (p: number, ps: number) => {
     setPage(p)

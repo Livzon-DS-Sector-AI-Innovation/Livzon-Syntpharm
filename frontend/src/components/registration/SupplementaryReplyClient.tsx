@@ -46,7 +46,7 @@ export default function SupplementaryReplyClient({
     } finally {
       setLoading(false)
     }
-  }, [drugName, page, pageSize])
+  }, [drugName, page, pageSize, message])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
