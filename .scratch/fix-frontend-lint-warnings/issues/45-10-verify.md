@@ -1,4 +1,4 @@
-# 45.10 — Fix remaining exhaustive-deps warnings
+# 45.10 — Verify all exhaustive-deps warnings are fixed
 
 **What to build:** Fix the remaining 31 react-hooks/exhaustive-deps warnings across the codebase. These warnings occur when React hooks (useEffect, useCallback, useMemo) have missing dependencies in their dependency arrays.
 
