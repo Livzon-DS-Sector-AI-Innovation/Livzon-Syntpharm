@@ -20,7 +20,19 @@ export function DeliverableTemplatePage() {
 
   const [batchUploading, setBatchUploading] = useState(false)
 
-  const handleBatchUpload = async (file: File) => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await fetchDeliverableTemplates()
+      setTemplates(data)
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [msgApi])
+
+  const handleBatchUpload = useCallback(async (file: File) => {
     setBatchUploading(true)
     const reader = new FileReader()
     reader.onload = async (e) => {
@@ -42,7 +54,7 @@ export function DeliverableTemplatePage() {
     }
     reader.readAsText(file)
     return false
-  }
+  }, [loadData, msgApi])
 
   const handleExportTemplate = (record: RdDeliverableTemplate) => {
     const md = record.template_content || `# ${record.name}\n\n暂无内容`
@@ -57,18 +69,6 @@ export function DeliverableTemplatePage() {
     URL.revokeObjectURL(url)
     msgApi.success('导出成功')
   }
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await fetchDeliverableTemplates()
-      setTemplates(data)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [msgApi])
 
   useEffect(() => { loadData() }, [loadData])
 
