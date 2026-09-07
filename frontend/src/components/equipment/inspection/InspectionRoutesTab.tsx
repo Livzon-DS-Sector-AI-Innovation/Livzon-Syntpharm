@@ -19,7 +19,7 @@ interface Props {
 export function InspectionRoutesTab({ templates: _templates, equipments: _equipments }: Props) {
   const { message, modal } = App.useApp()
   const {
-    routes, routesTotal, routesPage, routesPageSize, routesLoading, routesKeyword, routesRefreshKey,
+    routes, routesTotal, routesPage, routesPageSize, routesLoading, routesKeyword, routesRefreshKey: _routesRefreshKey,
     setRoutes, setRoutesTotal, setRoutesLoading, setRoutesPage, setRoutesPageSize, setRoutesKeyword,
     openRouteDrawer, openRouteEquipmentDrawer, openScheduleDrawer,
   } = useInspectionStore()
@@ -35,7 +35,7 @@ export function InspectionRoutesTab({ templates: _templates, equipments: _equipm
     } catch (err: unknown) {
       message.error((err as Error).message || '加载失败')
     } finally { setRoutesLoading(false) }
-  }, [routesKeyword, routesPage, routesPageSize, routesRefreshKey, setRoutes, setRoutesTotal, setRoutesLoading, message])
+  }, [routesKeyword, routesPage, routesPageSize, setRoutes, setRoutesTotal, setRoutesLoading, message])
 
   useEffect(() => { load() }, [load])
 

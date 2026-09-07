@@ -43,7 +43,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
         }
       }).catch(() => {})
     }
-  }, [workOrderDrawerOpen])
+  }, [workOrderDrawerOpen, form, editingWorkOrder])
 
   // 构建 initialValues：编辑时填充已有数据，新建时给默认值
   const initialValues = useMemo(() => {
@@ -66,7 +66,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
     if (workOrderDrawerOpen) {
       form.setFieldsValue(initialValues)
     }
-  }, [workOrderDrawerOpen, initialValues])
+  }, [workOrderDrawerOpen, initialValues, form])
 
   const handleSubmit = async () => {
     try {

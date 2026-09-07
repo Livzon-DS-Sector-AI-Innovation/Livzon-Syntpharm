@@ -31,7 +31,7 @@ const ALL_STATUSES: InspectionTaskStatus[] = ['待执行', '执行中', '已完�
 export function InspectionTasksTab({ templates: _templates, equipments: allEquipments }: Props) {
   const { message, modal } = App.useApp()
   const {
-    tasks, tasksTotal, tasksPage, tasksPageSize, tasksLoading, tasksStatusFilter, tasksRefreshKey,
+    tasks, tasksTotal, tasksPage, tasksPageSize, tasksLoading, tasksStatusFilter, tasksRefreshKey: _tasksRefreshKey,
     setTasks, setTasksTotal, setTasksLoading, setTasksPage, setTasksPageSize, setTasksStatusFilter,
     openTaskDrawer, setExecutingTask, triggerTasksRefresh,
   } = useInspectionStore()
@@ -54,7 +54,7 @@ export function InspectionTasksTab({ templates: _templates, equipments: allEquip
     } finally {
       setTasksLoading(false)
     }
-  }, [tasksStatusFilter, tasksPage, tasksPageSize, tasksRefreshKey, setTasks, setTasksTotal, setTasksLoading, message])
+  }, [tasksStatusFilter, tasksPage, tasksPageSize, setTasks, setTasksTotal, setTasksLoading, message])
 
   useEffect(() => { loadTasks() }, [loadTasks])
 
