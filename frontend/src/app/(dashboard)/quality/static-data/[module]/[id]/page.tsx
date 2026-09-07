@@ -1,6 +1,6 @@
 'use client'
 
-import {useState, useEffect} from 'react'
+import {useState, useEffect, useCallback} from 'react'
 import { useParams } from 'next/navigation'
 import {
   Card,
@@ -193,7 +193,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       }
     }
     loadDictData()
-  }, [moduleType])
+  }, [moduleType, isStdWithItems])
 
   // 加载检验项目下拉选项（用于 items 子表）
   useEffect(() => {
@@ -208,15 +208,9 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         })
         .catch(() => {})
     }
-  }, [moduleType])
+  }, [moduleType, isStdWithItems])
 
-  useEffect(() => {
-    if (!isNew) {
-      loadRecord()
-    }
-  }, [id, moduleType, isNew, loadRecord])
-
-  async function loadRecord() {
+  const loadRecord = useCallback(async () => {
     if (!id) return
     setLoading(true)
     try {
@@ -262,7 +256,14 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, moduleType, isStdWithItems, supportsUpload, form])
+
+  useEffect(() => {
+    if (!isNew) {
+      loadRecord()
+    }
+  }, [id, moduleType, isNew, loadRecord])
+
 
   async function handleSave(values: Record<string, unknown> & { report_date?: { format: (f: string) => string } }) {
     setSaving(true)

@@ -68,7 +68,7 @@ export default function AiLogPage() {
     },
   })
 
-  const data = queryData?.items || []
+  const data = React.useMemo(() => queryData?.items || [], [queryData?.items])
   const paginationWithTotal = {
     current: queryData?.page || 1,
     pageSize: queryData?.page_size || 20,

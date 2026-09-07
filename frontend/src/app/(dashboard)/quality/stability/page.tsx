@@ -334,11 +334,11 @@ export default function StabilityStudyPage() {
   }
 
   // 更新取样节点
-  const handleUpdateSampleNode = (index: number, field: string, value: unknown) => {
+  const handleUpdateSampleNode = useCallback((index: number, field: string, value: unknown) => {
     const newNodes = [...sampleNodes]
     newNodes[index] = { ...newNodes[index], [field]: value }
     setSampleNodes(newNodes)
-  }
+  }, [sampleNodes])
 
   // 试验类型切换
   const handleStudyTypeChange = (type: StabilityStudyType) => {
@@ -526,7 +526,7 @@ export default function StabilityStudyPage() {
         </Tag>
       ),
     },
-  ], [sampleNodes])
+  ], [handleUpdateSampleNode])
 
   return (
     <div style={{ padding: 24 }}>
