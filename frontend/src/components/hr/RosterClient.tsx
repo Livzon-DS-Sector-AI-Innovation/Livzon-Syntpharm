@@ -49,7 +49,7 @@ export default function RosterClient({
     } finally {
       setLoading(false)
     }
-  }, [keyword, filterStatus, filterDepartment, page, pageSize])
+  }, [keyword, filterStatus, filterDepartment, page, pageSize, message])
 
   useEffect(() => {
     let cancelled = false
@@ -75,7 +75,7 @@ export default function RosterClient({
     }
     load()
     return () => { cancelled = true }
-  }, [keyword, filterStatus, filterDepartment, page, pageSize])
+  }, [keyword, filterStatus, filterDepartment, page, pageSize, message])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)

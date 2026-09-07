@@ -81,12 +81,12 @@ export default function OnboardingClient({
 
   useEffect(() => {
     loadData()
-  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, factory])
+  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, factory, loadData])
 
-  const employedColorMap: Record<string, string> = {
+  const employedColorMap = useMemo<Record<string, string>>(() => ({
     '是': 'success',
     '否': 'default',
-  }
+  }), [])
 
   const columns: ColumnsType<OnboardingRecord> = useMemo(() => {
     const baseColumns: ColumnsType<OnboardingRecord> = [
@@ -198,7 +198,7 @@ export default function OnboardingClient({
     )
 
     return baseColumns
-  }, [factory])
+  }, [factory, employedColorMap])
 
   return (
     <div className="space-y-4">

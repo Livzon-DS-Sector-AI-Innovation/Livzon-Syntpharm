@@ -112,7 +112,7 @@ export default function DepartureClient({
 
   useEffect(() => {
     loadData()
-  }, [filterDepartment, filterOffboardingType, searchKeyword, page, pageSize])
+  }, [filterDepartment, filterOffboardingType, searchKeyword, page, pageSize, loadData])
 
   const offboardingTypeColorMap: Record<string, string> = {
     '辞职': 'default',
