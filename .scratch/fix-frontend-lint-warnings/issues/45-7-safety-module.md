@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] AIWorkflowConfigClient.tsx has no exhaustive-deps warnings
-- [ ] KnowledgeBasePicker.tsx has no exhaustive-deps warnings
-- [ ] KnowledgeGraphPanel.tsx has no exhaustive-deps warnings
-- [ ] SpecialOpsReportPanel.tsx has no exhaustive-deps warnings
-- [ ] regulation/RegulationGeneratorPageClient.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] AIWorkflowConfigClient.tsx has no exhaustive-deps warnings
+- [x] KnowledgeBasePicker.tsx has no exhaustive-deps warnings
+- [x] KnowledgeGraphPanel.tsx has no exhaustive-deps warnings
+- [x] SpecialOpsReportPanel.tsx has no exhaustive-deps warnings
+- [x] regulation/RegulationGeneratorPageClient.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
