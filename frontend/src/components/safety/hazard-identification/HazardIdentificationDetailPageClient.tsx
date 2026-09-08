@@ -80,7 +80,7 @@ export function HazardIdentificationDetailPageClient() {
   const [editForm, setEditForm] = useState<Record<string, unknown>>({})
   const { message } = App.useApp()
 
-  const loadRecord = async () => {
+  const loadRecord = useCallback(async () => {
     try {
       const response = await getHazardIdentification(id)
       if (response.code === 200) {
@@ -98,11 +98,11 @@ export function HazardIdentificationDetailPageClient() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, message, router])
 
   useEffect(() => {
     if (id) loadRecord()
-  }, [id])
+  }, [id, loadRecord])
 
   const getCurrentStepNum = (progress: string): number => {
     if (progress === 'completed') return 7

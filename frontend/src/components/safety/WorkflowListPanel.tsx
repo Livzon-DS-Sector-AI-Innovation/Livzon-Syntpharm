@@ -186,7 +186,7 @@ export default function WorkflowListPanel() {
     setFilterPopoverOpen(false)
   }
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await getHazardIdentifications({
@@ -216,7 +216,7 @@ export default function WorkflowListPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [queryParams, statusFilter, progressFilter, deptFilter, activeBatchId, sortField, sortOrder, msgApi])
 
   const loadStats = async () => {
     try {
@@ -230,7 +230,7 @@ export default function WorkflowListPanel() {
   useEffect(() => {
     setSelectedRowKeys([])
     loadData()
-  }, [queryParams.page, queryParams.page_size, statusFilter, progressFilter, deptFilter])
+  }, [queryParams.page, queryParams.page_size, statusFilter, progressFilter, deptFilter, loadData])
 
   // 排序变化时重新加载
 

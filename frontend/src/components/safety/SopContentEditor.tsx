@@ -1048,7 +1048,7 @@ export default function SopContentEditor({
         message.success('已撤回所有修改')
       },
     })
-  }, [isDirty, initialContent, regulationName])
+  }, [isDirty, initialContent, regulationName, message])
 
   /* ── save / export ── */
 
@@ -1070,7 +1070,7 @@ export default function SopContentEditor({
     } catch (err: unknown) {
       message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '保存失败')
     } finally { setSaving(false) }
-  }, [regulationId, fullContent, onSaved, sopName, regulationName, revisionMode, onReviseSave, revisionOpinion])
+  }, [regulationId, fullContent, onSaved, sopName, regulationName, revisionMode, onReviseSave, revisionOpinion, message])
 
   const handleExport = useCallback(async () => {
     setExporting(true)
@@ -1088,7 +1088,7 @@ export default function SopContentEditor({
     } catch (err: unknown) {
       message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '导出失败')
     } finally { setExporting(false) }
-  }, [regulationId, regulationName])
+  }, [regulationId, regulationName, message])
 
   const handleSaveAndExport = useCallback(async () => {
     setSaving(true)
@@ -1105,7 +1105,7 @@ export default function SopContentEditor({
       message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '保存失败')
       setSaving(false)
     }
-  }, [regulationId, fullContent, onSaved, handleExport, sopName, regulationName])
+  }, [regulationId, fullContent, onSaved, handleExport, sopName, regulationName, message])
 
   const handleBack = useCallback(() => {
     if (isDirty) {
@@ -1136,7 +1136,7 @@ export default function SopContentEditor({
      ═══════════════════════════════════════════════════════════════════════════ */
 
   /** Render a table-based chapter (Ch3,4,5,8) with editable HTML table. */
-  function renderTableChapter(chapterId: number, content: string) {
+  const renderTableChapter = useCallback((chapterId: number, content: string) => {
     const { before, table, after } = splitAroundTable(content)
     const handleTableChange = (t: MarkdownTable) => {
       const parts: string[] = []
@@ -1193,10 +1193,10 @@ export default function SopContentEditor({
         ) : null}
       </div>
     )
-  }
+  }, [handleChapterChange])
 
   /** Render Ch2: bullet list items as labeled fields. */
-  function renderCh2(content: string) {
+  const renderCh2 = useCallback((content: string) => {
     const blocks = parseBulletList(content)
     if (blocks.length === 0) {
       return (
@@ -1234,10 +1234,10 @@ export default function SopContentEditor({
         ))}
       </div>
     )
-  }
+  }, [handleChapterChange])
 
   /** Render Ch6: H2 sections with numbered items. */
-  function renderCh6(content: string) {
+  const renderCh6 = useCallback((content: string) => {
     const sections = parseNumberedSections(content)
     if (sections.length === 0) {
       return (
@@ -1367,10 +1367,10 @@ export default function SopContentEditor({
         </div>
       </div>
     )
-  }
+  }, [handleChapterChange, collapsedKeys, toggleCollapse])
 
   /** Render Ch7: H2 stages with H3 sub-sections and numbered items. */
-  function renderCh7(content: string) {
+  const renderCh7 = useCallback((content: string) => {
     // Extract preamble (everything before first ##)
     const lines = content.split('\n')
     let preambleEnd = 0
@@ -1555,10 +1555,10 @@ export default function SopContentEditor({
         </div>
       </div>
     )
-  }
+  }, [handleChapterChange, collapsedKeys, toggleCollapse])
 
   /** Render Ch9: H2 emergency categories with mixed content. */
-  function renderCh9(content: string) {
+  const renderCh9 = useCallback((content: string) => {
     const lines = content.split('\n')
     let preambleEnd = 0
     for (let i = 0; i < lines.length; i++) {
@@ -1669,7 +1669,7 @@ export default function SopContentEditor({
         </div>
       </div>
     )
-  }
+  }, [handleChapterChange, collapsedKeys, toggleCollapse])
 
   /** Dispatch to the correct chapter renderer. */
   const renderChapterContent = useCallback(
@@ -1702,7 +1702,7 @@ export default function SopContentEditor({
           )
       }
     },
-    [handleChapterChange, chapters, collapsedKeys, renderCh2, renderCh6, renderCh7, renderCh9, renderTableChapter],
+    [handleChapterChange, renderCh2, renderCh6, renderCh7, renderCh9, renderTableChapter],
   )
 
   /* ── key styles ── */

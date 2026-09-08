@@ -153,7 +153,7 @@ export function SafetyRegulationPageClient() {
 
   // ========== Regulation Handlers ==========
 
-  const loadRegulations = async () => {
+  const loadRegulations = useCallback(async () => {
     setRegLoading(true)
     try {
       const response = await getRegulations({
@@ -171,9 +171,9 @@ export function SafetyRegulationPageClient() {
     } finally {
       setRegLoading(false)
     }
-  }
+  }, [regulationQueryParams, regSearchText, positionFilter, statusFilter, setRegulations, setRegulationTotal])
 
-  const loadRevisions = async () => {
+  const loadRevisions = useCallback(async () => {
     setRevLoading(true)
     try {
       const response = await getRevisions({
@@ -191,7 +191,7 @@ export function SafetyRegulationPageClient() {
     } finally {
       setRevLoading(false)
     }
-  }
+  }, [revisionQueryParams, typeFilter, scopeFilter, opinionFilter, setRevisions, setRevisionTotal])
 
   const loadRegulationsForSelect = async () => {
     try {
@@ -206,11 +206,11 @@ export function SafetyRegulationPageClient() {
 
   useEffect(() => {
     if (activeTab === 'regulations') loadRegulations()
-  }, [regulationQueryParams.page, regulationQueryParams.page_size, positionFilter, statusFilter, activeTab])
+  }, [regulationQueryParams.page, regulationQueryParams.page_size, positionFilter, statusFilter, activeTab, loadRegulations])
 
   useEffect(() => {
     if (activeTab === 'revisions') loadRevisions()
-  }, [revisionQueryParams.page, revisionQueryParams.page_size, typeFilter, scopeFilter, opinionFilter, activeTab])
+  }, [revisionQueryParams.page, revisionQueryParams.page_size, typeFilter, scopeFilter, opinionFilter, activeTab, loadRevisions])
 
   // ---- Regulation CRUD ----
 

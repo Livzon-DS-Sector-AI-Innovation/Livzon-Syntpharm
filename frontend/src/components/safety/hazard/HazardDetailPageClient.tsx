@@ -468,7 +468,7 @@ export function HazardDetailPageClient() {
   // Modal 状态
   const [verifyModalVisible, setVerifyModalVisible] = useState(false)
 
-  const loadRecord = async () => {
+  const loadRecord = useCallback(async () => {
     try {
       const response = await getHazard(id)
       if (response.code === 200) {
@@ -484,11 +484,11 @@ export function HazardDetailPageClient() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, message, router])
 
   useEffect(() => {
     if (id) loadRecord()
-  }, [id])
+  }, [id, loadRecord])
 
   // 获取字段当前值
   const fieldVal = (field: string): string => {
