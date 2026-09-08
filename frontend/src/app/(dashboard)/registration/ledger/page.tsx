@@ -75,7 +75,7 @@ function LedgerContent() {
     } finally {
       setLoading(false)
     }
-  }, [type])
+  }, [type, message])
 
   const handleImport = async (file: File) => {
     console.log('🚀 Starting import, file:', file.name, 'type:', type)
