@@ -7,10 +7,10 @@ import {
   Badge, Empty, Spin, Card, Modal, Typography,
 } from 'antd'
 import {
-  ThunderboltOutlined, CheckOutlined, EditOutlined,
+  ThunderboltOutlined, CheckOutlined,
   ReloadOutlined, FileImageOutlined,
 } from '@ant-design/icons'
-import type { ChapterAsset, AssetCategory } from '@/types/dossier-writer'
+import type { ChapterAsset } from '@/types/dossier-writer'
 import type { AIPreviewResult, AIFieldResult, PageSplitInfo } from '@/types/dossier-writer'
 import { fetchAssetCategories, fetchSelectedAssets } from '@/lib/api/client/dossier-writer'
 import { aiConfirmAndFill, aiPreviewExtraction, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
@@ -27,7 +27,7 @@ interface AiFillPanelProps {
   onFillComplete?: () => void
 }
 
-export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
+export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
   const { message } = App.useApp()
 
   // Categories (for display labels)
@@ -83,7 +83,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   }, [chapterId])
 
   // Load selected assets (including inherited)
-  const { data: selectedAssets = [], refetch: refetchSelectedAssets } = useQuery({
+  const { data: selectedAssets = [], refetch: _refetchSelectedAssets } = useQuery({
     queryKey: ['selected-assets', chapterId, refreshKey],
     queryFn: async () => {
       const res = await fetchSelectedAssets(chapterId)

@@ -3,12 +3,11 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  App, Tree, Button, Space, Tag, Upload, Spin, Empty, Descriptions,
+  App, Tree, Button, Space, Tag, Upload, Spin, Empty,
   Popconfirm, Typography, Tabs, Modal, Select, Checkbox,
 } from 'antd'
 import {
   ArrowLeftOutlined, FileWordOutlined, UploadOutlined, DeleteOutlined,
-  ReloadOutlined,
   ThunderboltOutlined,
   WarningOutlined, NodeIndexOutlined,
 } from '@ant-design/icons'
@@ -16,12 +15,12 @@ import dayjs from 'dayjs'
 import type { DataNode } from "antd/es/tree";
 import { useDossierWriterStore } from '@/stores/dossier-writer'
 import {
-  getDownloadUrl, getChapterPreview, fetchChapterAssets,
+  getDownloadUrl, fetchChapterAssets,
   getChapterDocxUrl, fetchAssetCategories, fetchAvailableAssets,
 } from '@/lib/api/client/dossier-writer'
 import {uploadTemplates, uploadChapterAsset, deleteChapterAsset, exportDossier, matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage} from '@/actions/dossier-writer'
 import type { Chapter, ChapterAsset, AssetCategory, AvailableAsset } from '@/types/dossier-writer'
-import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
+import type { UploadResponse } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
 import { DocxPreview } from './DocxPreview'
 
@@ -72,7 +71,7 @@ export function DossierWriterDetailPageClient() {
   const dossierId = params.id as string
 
   const {
-    currentDossier, currentDossierLoading, loadDossier,
+    currentDossier, currentDossierLoading: _currentDossierLoading, loadDossier,
     chapterTree, chapterTreeLoading, loadChapterTree,
   } = useDossierWriterStore()
 
