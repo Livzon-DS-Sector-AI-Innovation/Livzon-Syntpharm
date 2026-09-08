@@ -4,8 +4,14 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] energy/DeviceDrawer.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for this file
+- [x] energy/DeviceDrawer.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for this file
+
+**Notes:**
+- Wrapped loadDeviceData in useCallback with dependencies [form, message]
+- Moved loadDeviceData before useEffect to avoid 'used before declaration' error
+- Added loadDeviceData to useEffect dependency array
+- All exhaustive-deps warnings resolved
