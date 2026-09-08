@@ -1,7 +1,7 @@
 'use client'
 import {deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -56,11 +56,7 @@ export default function TemplateManagementPage() {
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([])
   const [uploading, setUploading] = useState(false)
 
-  useEffect(() => {
-    fetchData()
-  }, [])
-
-  const fetchData = async (page = 1, pageSize = 20) => {
+  const fetchData = useCallback(async (page = 1, pageSize = 20) => {
     setLoading(true)
     try {
       const response = await fetch(
@@ -81,7 +77,11 @@ export default function TemplateManagementPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handleTableChange = (newPagination: TablePaginationConfig) => {
     fetchData(newPagination.current ?? 1, newPagination.pageSize ?? 20)

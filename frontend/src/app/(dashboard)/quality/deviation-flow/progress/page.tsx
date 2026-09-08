@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {Tag, Button, Typography, Timeline, message} from 'antd'
 import {
   ArrowLeftOutlined, EditOutlined,
@@ -67,13 +67,7 @@ const [data, setData] = useState<DeviationFlowDetail | null>(null)
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  useEffect(() => {
-    if (deviationId) {
-      loadDetail()
-    }
-  }, [deviationId])
-
-  const loadDetail = async () => {
+  const loadDetail = useCallback(async () => {
     setLoading(true)
     try {
       const response = await fetch(`${API_BASE}/quality/deviation-flow/${deviationId}`)
@@ -89,7 +83,13 @@ const [data, setData] = useState<DeviationFlowDetail | null>(null)
     } finally {
       setLoading(false)
     }
-  }
+  }, [deviationId])
+
+  useEffect(() => {
+    if (deviationId) {
+      loadDetail()
+    }
+  }, [deviationId, loadDetail])
 
   if (loading) {
     return (

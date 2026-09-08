@@ -1,7 +1,7 @@
 'use client'
 import {updateAIResult, generateStandard} from '@/actions/quality'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { use } from 'react'
 import {
   Card,
@@ -65,17 +65,7 @@ export default function PreviewPage({
   const [activeTab, setActiveTab] = useState('preview')
   const editableRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    fetchTaskDetail()
-  }, [taskId])
-
-  useEffect(() => {
-    if (task?.ai_result) {
-      fetchPreview()
-    }
-  }, [task])
-
-  const fetchTaskDetail = async () => {
+  const fetchTaskDetail = useCallback(async () => {
     try {
       const response = await fetch(
         `${API_BASE}/quality/deviation-automation/tasks/${taskId}`
@@ -88,9 +78,9 @@ export default function PreviewPage({
     } finally {
       setLoading(false)
     }
-  }
+  }, [taskId])
 
-  const fetchPreview = async () => {
+  const fetchPreview = useCallback(async () => {
     setPreviewLoading(true)
     try {
       const response = await fetch(
@@ -109,7 +99,17 @@ export default function PreviewPage({
     } finally {
       setPreviewLoading(false)
     }
-  }
+  }, [taskId])
+
+  useEffect(() => {
+    fetchTaskDetail()
+  }, [fetchTaskDetail])
+
+  useEffect(() => {
+    if (task?.ai_result) {
+      fetchPreview()
+    }
+  }, [task, fetchPreview])
 
   const handleContentChange = () => {
     if (editableRef.current) {

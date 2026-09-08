@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Form, Input, Select, DatePicker, Button, Space,
   Typography, Divider, Upload, message, Steps, Modal, Tag,
@@ -130,13 +130,7 @@ export default function DeviationCreatePage() {
     }
   }
 
-  useEffect(() => {
-    if (editId) {
-      loadDeviationData(editId)
-    }
-  }, [editId])
-
-  const loadDeviationData = async (id: string) => {
+  const loadDeviationData = useCallback(async (id: string) => {
     try {
       const response = await fetch(`${API_BASE}/quality/deviation-flow/${id}`)
       const result = await response.json()
@@ -178,7 +172,13 @@ export default function DeviationCreatePage() {
     } catch (_error) {
       message.error('加载数据失败')
     }
-  }
+  }, [form])
+
+  useEffect(() => {
+    if (editId) {
+      loadDeviationData(editId)
+    }
+  }, [editId, loadDeviationData])
 
   const loadAttachments = async (deviationId: string) => {
     try {
