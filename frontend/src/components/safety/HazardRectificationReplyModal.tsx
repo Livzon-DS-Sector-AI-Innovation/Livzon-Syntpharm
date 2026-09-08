@@ -132,7 +132,7 @@ export default function HazardRectificationReplyModal({
       okText="提交"
       cancelText="取消"
       width={650}
-      destroyOnHidden
+      destroyOnClose
     >
       {/* 隐患信息摘要 */}
       {record && (

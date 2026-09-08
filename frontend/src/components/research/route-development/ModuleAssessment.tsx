@@ -194,7 +194,7 @@ export function ModuleAssessment({ routeId, selectedRouteName, experiments = [],
     <div>
       <Card title={`📊 四维度评估 — ${selectedRouteName}`} style={{ marginBottom: 16 }}>
         <Alert
-          title="动态权重设置"
+          message="动态权重设置"
           description="根据项目特点调整各维度权重，权重总和必须为100%"
           type="info"
           showIcon
@@ -242,7 +242,7 @@ export function ModuleAssessment({ routeId, selectedRouteName, experiments = [],
               </div>
             ))}
             <Alert
-              title={isWeightValid ? '权重总和正确' : `权重总和为${weightSum}%，需要调整为100%`}
+              message={isWeightValid ? '权重总和正确' : `权重总和为${weightSum}%，需要调整为100%`}
               type={isWeightValid ? 'success' : 'warning'}
               showIcon
               style={{ marginTop: 8 }}

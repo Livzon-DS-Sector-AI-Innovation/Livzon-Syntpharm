@@ -60,10 +60,10 @@ export function InspectionRouteDrawer() {
   return (
     <Drawer
       title={null}
-      size={460}
+      width={460}
       open={routeDrawerOpen}
       onClose={closeRouteDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}
     >
       {/* ═══ HEADER ═══ */}

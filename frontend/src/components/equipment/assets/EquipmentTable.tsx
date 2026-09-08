@@ -93,8 +93,8 @@ export function EquipmentTable({ loading = false, onPageChange, onImportClick, r
   }, [modal, message, onPageChange, localPage, localPageSize])
 
   const columns = [
-    { title: '设备编号', dataIndex: 'asset_no', key: 'asset_no', width: 140, fixed: 'start' as const },
-    { title: '设备名称', dataIndex: 'name', key: 'name', width: 180, fixed: 'start' as const, ellipsis: true },
+    { title: '设备编号', dataIndex: 'asset_no', key: 'asset_no', width: 140, fixed: 'left' as const },
+    { title: '设备名称', dataIndex: 'name', key: 'name', width: 180, fixed: 'left' as const, ellipsis: true },
     { title: '设备分类', dataIndex: 'category_names', key: 'category', width: 150, render: (n: string | null) => n || '-' },
     { title: '设备位置', dataIndex: 'location_name', key: 'location', width: 120, render: (n: string | null) => n || '-' },
     { title: '归属部门', dataIndex: 'department_name', key: 'department', width: 120,
@@ -111,7 +111,7 @@ export function EquipmentTable({ loading = false, onPageChange, onImportClick, r
     { title: '型号', dataIndex: 'model', key: 'model', width: 140, ellipsis: true },
     { title: '供应商', dataIndex: 'supplier', key: 'supplier', width: 150, ellipsis: true },
     { title: '投用日期', dataIndex: 'commissioning_date', key: 'commissioning_date', width: 120 },
-    { title: '操作', key: 'action', width: 240, fixed: 'end' as const,
+    { title: '操作', key: 'action', width: 240, fixed: 'right' as const,
       render: (_: unknown, record: Equipment) => (
         <Space size={8}>
           <span role="button" onClick={() => { setDetailEquipment(record); setDetailOpen(true) }} style={linkPrimary}><EyeOutlined />详情</span>

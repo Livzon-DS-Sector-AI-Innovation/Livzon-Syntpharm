@@ -124,7 +124,7 @@ export function ControlStrategy({ solvents }: ControlStrategyProps) {
               scroll={{ x: 500 }}
             />
             <Alert
-              title="10% 标准"
+              message="10% 标准"
               description="残留量持续 ≤10% ICH 限值时，可豁免批批检验。根据 EMA/EDQM CEP 要求，需来自 6 批连续中试规模批次或 3 批连续工业生产规模批次。"
               type="info"
               showIcon

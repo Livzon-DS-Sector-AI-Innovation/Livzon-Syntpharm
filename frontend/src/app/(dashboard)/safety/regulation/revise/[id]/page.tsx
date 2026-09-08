@@ -72,7 +72,7 @@ export default function RegulationRevisePage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
-        <Spin size="large" description="加载操规内容..." />
+        <Spin size="large" tip="加载操规内容..." />
       </div>
     )
   }

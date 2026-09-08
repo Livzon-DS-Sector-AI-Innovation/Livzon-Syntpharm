@@ -72,10 +72,10 @@ export function FailureCodeDrawer({ onRefresh }: FailureCodeDrawerProps) {
   return (
     <Drawer
       title={title}
-      size={420}
+      width={420}
       open={failureCodeDrawerOpen}
       onClose={closeFailureCodeDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeFailureCodeDrawer}>取消</Button>

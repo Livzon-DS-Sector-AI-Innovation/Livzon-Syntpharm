@@ -433,8 +433,8 @@ export default function SopGeneratorModal({
       onCancel={handleClose}
       width={640}
       footer={null}
-      destroyOnHidden
-      mask={{ closable: maskClosable }}
+      destroyOnClose
+      maskClosable={maskClosable}
       closable={!uploading}
       styles={{
         body: { padding: 24 }

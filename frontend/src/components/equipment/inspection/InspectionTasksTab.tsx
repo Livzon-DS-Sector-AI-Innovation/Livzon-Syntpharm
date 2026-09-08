@@ -208,7 +208,7 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
       },
     },
     {
-      title: '操作', key: 'action', width: 140, fixed: 'end' as const,
+      title: '操作', key: 'action', width: 140, fixed: 'right' as const,
       render: (_: unknown, record: InspectionTask) => (
         <Space size={12}>
           {(record.status === '待执行' || record.status === '执行中') && (

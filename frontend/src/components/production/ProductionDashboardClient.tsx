@@ -163,7 +163,7 @@ export function ProductionDashboardClient() {
                 <Statistic
                   title="总批次"
                   value={stats.totalBatches}
-                  styles={{ content: { color: '#5645d4' } }}
+                  valueStyle={{ color: '#5645d4'  }}
                 />
               </Card>
             </Col>
@@ -172,7 +172,7 @@ export function ProductionDashboardClient() {
                 <Statistic
                   title="执行中"
                   value={stats.inProgressBatches}
-                  styles={{ content: { color: '#dd5b00' } }}
+                  valueStyle={{ color: '#dd5b00'  }}
                 />
               </Card>
             </Col>
@@ -181,7 +181,7 @@ export function ProductionDashboardClient() {
                 <Statistic
                   title="已完成"
                   value={stats.completedBatches}
-                  styles={{ content: { color: '#1aae39' } }}
+                  valueStyle={{ color: '#1aae39'  }}
                 />
               </Card>
             </Col>
@@ -190,7 +190,7 @@ export function ProductionDashboardClient() {
                 <Statistic
                   title="草稿"
                   value={stats.draftBatches}
-                  styles={{ content: { color: '#787671' } }}
+                  valueStyle={{ color: '#787671'  }}
                 />
               </Card>
             </Col>

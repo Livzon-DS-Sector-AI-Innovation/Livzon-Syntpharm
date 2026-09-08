@@ -94,7 +94,7 @@ export function ModuleLabConfirmation({
           type="success"
           showIcon
           icon={<CheckCircleOutlined />}
-          title="小试工艺确认已完成"
+          message="小试工艺确认已完成"
           description="小试确认批数据已记录，可作为公斤级放大试验方案的依据。"
           style={{ marginBottom: 16 }}
         />
@@ -155,7 +155,7 @@ export function ModuleLabConfirmation({
       <Alert
         type="info"
         showIcon
-        title="小试工艺确认"
+        message="小试工艺确认"
         description="在公斤级放大试验前，需要进行至少一批小试工艺确认（g级规模），验证DOE优化参数的可行性，并为放大方案提供依据。"
         style={{ marginBottom: 16 }}
       />

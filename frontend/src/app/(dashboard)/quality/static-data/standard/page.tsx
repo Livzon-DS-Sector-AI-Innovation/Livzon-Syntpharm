@@ -681,7 +681,7 @@ export default function StandardPage() {
       <Drawer
         title="调整数量"
         placement="right"
-        size={400}
+        width={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

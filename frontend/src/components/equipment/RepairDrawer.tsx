@@ -88,10 +88,10 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
   return (
     <Drawer
       title="报故障维修"
-      size={480}
+      width={480}
       open={repairDrawerOpen}
       onClose={closeRepairDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeRepairDrawer}>取消</Button>

@@ -317,7 +317,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
                   </div>
                   <Statistic
                     value={st.count}
-                    styles={{ content: { fontSize: 24, fontWeight: 700, color: T.ink } }}
+                    valueStyle={{ fontSize: 24, fontWeight: 700, color: T.ink }}
                     suffix={
                       st.critical > 0
                         ? <Tag style={{ fontSize: 10, color: T.error, backgroundColor: T.rose, border: 'none', borderRadius: 4, marginLeft: 6 }}>关键{st.critical}</Tag>

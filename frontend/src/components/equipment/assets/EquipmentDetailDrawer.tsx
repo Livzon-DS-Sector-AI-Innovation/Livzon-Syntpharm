@@ -245,10 +245,10 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
   return (
     <Drawer
       title="设备详情"
-      size={860}
+      width={860}
       open={open}
       onClose={onClose}
-      destroyOnHidden
+      destroyOnClose
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },

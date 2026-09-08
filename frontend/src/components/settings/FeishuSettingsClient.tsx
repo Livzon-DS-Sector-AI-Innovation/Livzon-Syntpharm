@@ -192,7 +192,7 @@ export default function FeishuSettingsClient() {
         className="mb-4"
         type="info"
         showIcon
-        title="仅针对 Livzon 助手"
+        message="仅针对 Livzon 助手"
         description="这里保存的 App ID、App Secret 和卡片回调配置只会用于 Livzon 助手通讯录、消息发送和权限诊断，不影响其他模块。"
       />
 
@@ -262,7 +262,7 @@ export default function FeishuSettingsClient() {
             className="mb-4"
             type="warning"
             showIcon
-            title="交互卡片回调方式"
+            message="交互卡片回调方式"
             description={`生产环境可配置 HTTP 回调地址：${config?.card_callback_url || '/api/v1/identity/feishu/card-callback'}；开发环境可在后端开启 LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED=true，并在飞书开放平台选择使用长连接接收回调。`}
           />
 
@@ -326,7 +326,7 @@ export default function FeishuSettingsClient() {
               className="mb-3"
               type={diagnostic.status === 'ok' ? 'success' : diagnostic.status}
               showIcon
-              title={diagnostic.message}
+              message={diagnostic.message}
               description={`部门 ${diagnostic.department_count || 0} 个，抽样用户 ${diagnostic.sample_user_count || 0} 名。`}
             />
             <List<DiagnosticStep>

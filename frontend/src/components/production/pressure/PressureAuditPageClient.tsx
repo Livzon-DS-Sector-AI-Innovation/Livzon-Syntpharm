@@ -157,17 +157,17 @@ export function PressureAuditPageClient() {
       <Row gutter={16}>
         <Col span={8}>
           <Card variant="borderless" className="shadow-sm">
-            <Statistic title="待审核" value={auditStats.pending_count} styles={{ content: { color: '#dd5b00' } }} />
+            <Statistic title="待审核" value={auditStats.pending_count} valueStyle={{ color: '#dd5b00'  }} />
           </Card>
         </Col>
         <Col span={8}>
           <Card variant="borderless" className="shadow-sm">
-            <Statistic title="今日已通过" value={auditStats.today_approved_count} styles={{ content: { color: '#52c41a' } }} />
+            <Statistic title="今日已通过" value={auditStats.today_approved_count} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
         <Col span={8}>
           <Card variant="borderless" className="shadow-sm">
-            <Statistic title="已驳回" value={auditStats.rejected_count} styles={{ content: { color: '#ff4d4f' } }} />
+            <Statistic title="已驳回" value={auditStats.rejected_count} valueStyle={{ color: '#ff4d4f' }} />
           </Card>
         </Col>
       </Row>

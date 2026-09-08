@@ -84,7 +84,7 @@ export function ProjectDrawer({ onRefresh }: ProjectDrawerProps) {
   return (
     <Drawer
       title={editingProject ? '编辑研发项目' : '新建研发项目'}
-      size={480}
+      width={480}
       open={drawerOpen}
       onClose={closeDrawer}
       extra={

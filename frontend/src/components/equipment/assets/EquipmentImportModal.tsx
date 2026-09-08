@@ -120,13 +120,13 @@ export function EquipmentImportModal({ open, onClose, onImported }: EquipmentImp
         </Space>
       }
       width={640}
-      destroyOnHidden
+      destroyOnClose
     >
       {result ? (
         <div>
           <Alert
             type={result.errors?.length || 0 > 0 ? 'warning' : 'success'}
-            title={`导入完成：成功 ${result.imported} 条，跳过 ${result.skipped} 条`}
+            message={`导入完成：成功 ${result.imported} 条，跳过 ${result.skipped} 条`}
             style={{ marginBottom: 12 }}
           />
           {renderResultTable('错误', result.errors || [], '#e03131')}
@@ -146,7 +146,7 @@ export function EquipmentImportModal({ open, onClose, onImported }: EquipmentImp
         <div>
           <Alert
             type="info"
-            title="请使用下载的模板文件填写数据后上传"
+            message="请使用下载的模板文件填写数据后上传"
             description="必填列：设备编号、设备名称、设备分类、设备位置、归属部门、负责人。分类/位置/部门需在系统中存在，否则跳过。"
             style={{ marginBottom: 16 }}
           />

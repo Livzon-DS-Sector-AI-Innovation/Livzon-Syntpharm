@@ -312,17 +312,17 @@ export function ReviewPageClient() {
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="创新药" value={stats.firstSubmission} styles={{ content: { color: '#722ed1' } }} />
+            <Statistic title="创新药" value={stats.firstSubmission} valueStyle={{ color: '#722ed1' }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="审评中" value={stats.inProgress} styles={{ content: { color: '#1677ff' } }} />
+            <Statistic title="审评中" value={stats.inProgress} valueStyle={{ color: '#1677ff' }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="已获批" value={stats.approved} styles={{ content: { color: '#52c41a' } }} />
+            <Statistic title="已获批" value={stats.approved} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
       </Row>

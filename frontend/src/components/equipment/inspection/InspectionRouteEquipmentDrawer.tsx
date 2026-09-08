@@ -149,10 +149,10 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
   return (
     <Drawer
       title={null}
-      size={840}
+      width={840}
       open={routeEquipmentDrawerOpen}
       onClose={closeRouteEquipmentDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}
     >
       {/* ═══ HEADER ═══ */}
@@ -267,7 +267,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                         地点选择
                       </div>
                       <Select
-                        showSearch={{ optionFilterProp: 'label' }} size="small" style={{ width: '100%' }}
+                        showSearch optionFilterProp='label' size="small" style={{ width: '100%' }}
                         placeholder="选择巡检地点"
                         value={loc.location_id || undefined}
                         onChange={(v) => {
@@ -335,7 +335,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                         {/* equipment select */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <Select
-                            showSearch={{ optionFilterProp: 'label' }} size="small" style={{ width: '100%' }}
+                            showSearch optionFilterProp='label' size="small" style={{ width: '100%' }}
                             placeholder="选择设备"
                             value={eq.equipment_id || undefined}
                             onChange={(v) => {
@@ -385,7 +385,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                           placeholder="绑定巡检模板（可多选，合并检查项）"
                           value={eq.template_ids}
                           onChange={v => updEq(loc.key, eq.key, 'template_ids', v)}
-                          showSearch={{ optionFilterProp: 'label' }} options={tplOptions}
+                          showSearch optionFilterProp='label' options={tplOptions}
                         />
                       </div>
                     </div>

@@ -338,7 +338,7 @@ export function FeishuConfigClient({
       key: 'sync_status',
       width: 128,
       render: (status, table) => (
-        <Space orientation="vertical" size={2}>
+        <Space direction="vertical" size={2}>
           <Tag color={status === 'failed' ? 'error' : 'default'}>
             {status || 'pending'}
           </Tag>
@@ -537,7 +537,7 @@ export function FeishuConfigClient({
             />
             <Text strong>{testResult.ok ? '测试通过' : '测试未通过'}</Text>
           </div>
-          <Space orientation="vertical" size={10} className="w-full">
+          <Space direction="vertical" size={10} className="w-full">
             {testResult.steps.map((step) => (
               <Alert
                 key={`${step.name}-${step.message}`}

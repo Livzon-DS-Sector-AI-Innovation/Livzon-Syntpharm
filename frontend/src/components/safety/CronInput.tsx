@@ -18,7 +18,7 @@ export default function CronInput({ value = '', onChange, onPresetSelect }: Cron
   }
 
   return (
-    <Space orientation="vertical" style={{ width: '100%' }}>
+    <Space direction="vertical" style={{ width: '100%' }}>
       <Input
         value={value}
         onChange={(e) => onChange?.(e.target.value)}

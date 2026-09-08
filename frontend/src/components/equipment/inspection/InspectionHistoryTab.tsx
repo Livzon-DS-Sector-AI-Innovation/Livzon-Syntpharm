@@ -98,7 +98,7 @@ export function InspectionHistoryTab({ equipments }: Props) {
       },
     },
     {
-      title: '', key: 'action', width: 60, fixed: 'end' as const,
+      title: '', key: 'action', width: 60, fixed: 'right' as const,
       render: (_: unknown, r: InspectionTask) => (
         <span role="button" onClick={() => openHistoryDetail(r.id)} style={linkPrimary}>
           <EyeOutlined />详情

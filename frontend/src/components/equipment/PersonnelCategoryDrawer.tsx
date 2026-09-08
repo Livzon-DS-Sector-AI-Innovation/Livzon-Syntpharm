@@ -372,7 +372,7 @@ export function PersonnelCategoryDrawer({
                         style={{ width: '100%' }}
                         treeData={buildTree(categories)}
                         treeDefaultExpandAll
-                        styles={{ popup: { root: { maxHeight: 360 } } }}
+                        listHeight={360}
                       />
                     </div>
                   </div>

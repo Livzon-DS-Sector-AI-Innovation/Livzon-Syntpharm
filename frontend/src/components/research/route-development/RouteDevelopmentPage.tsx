@@ -297,7 +297,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
     <div>
       {false && (
         <Alert
-          title="后端服务不可用"
+          message="后端服务不可用"
           description="API 服务器未启动，当前显示的是空数据。工作流功能仍可正常使用，数据保存在浏览器本地。"
           type="warning"
           showIcon
@@ -341,7 +341,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
 
           {fileList.length > 0 && (
             <Alert
-              title={`✓ 已选择 ${fileList.length} 个文件`}
+              message={`✓ 已选择 ${fileList.length} 个文件`}
               description={fileList.map(f => f.name).join('、')}
               type="success"
               showIcon

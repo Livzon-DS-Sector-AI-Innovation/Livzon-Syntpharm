@@ -164,7 +164,7 @@ export function StatsPage() {
                 title="研发项目"
                 value={stats.projects.total}
                 prefix={<ProjectOutlined />}
-                styles={{ content: { color: '#1677ff' } }}
+                valueStyle={{ color: '#1677ff' }}
               />
             </Card>
           </Link>
@@ -176,7 +176,7 @@ export function StatsPage() {
                 title="研究项"
                 value={stats.tracks.total}
                 prefix={<ExperimentOutlined />}
-                styles={{ content: { color: '#7b3ff2' } }}
+                valueStyle={{ color: '#7b3ff2' }}
               />
             </Card>
           </Link>
@@ -188,7 +188,7 @@ export function StatsPage() {
                 title="交付物"
                 value={stats.deliverables.total}
                 prefix={<CheckCircleOutlined />}
-                styles={{ content: { color: '#52c41a' } }}
+                valueStyle={{ color: '#52c41a' }}
               />
             </Card>
           </Link>

@@ -126,7 +126,7 @@ export default function AnnualPlanListClient() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Spin size="large" description="加载中..." />
+          <Spin size="large" tip="加载中..." />
         </div>
       ) : plans.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -191,9 +191,9 @@ export default function AnnualPlanListClient() {
           form.resetFields()
         }}
         footer={null}
-        destroyOnHidden
+        destroyOnClose
       >
-        <Spin spinning={modalLoading} description="加载部门列表...">
+        <Spin spinning={modalLoading} tip="加载部门列表...">
           <Form
             form={form}
             layout="vertical"

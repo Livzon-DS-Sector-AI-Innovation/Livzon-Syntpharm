@@ -72,7 +72,7 @@ export function InspectionRoutesTab({ templates, equipments }: Props) {
       ),
     },
     {
-      title: '操作', key: 'action', width: 190, fixed: 'end' as const,
+      title: '操作', key: 'action', width: 190, fixed: 'right' as const,
       render: (_: unknown, r: InspectionRoute) => (
         <Space size={16}>
           <span role="button" onClick={() => openRouteEquipmentDrawer(r.id)} style={linkPurple}>

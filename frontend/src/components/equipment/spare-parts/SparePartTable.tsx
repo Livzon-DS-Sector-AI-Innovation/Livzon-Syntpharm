@@ -52,7 +52,7 @@ export function SparePartTable({ onRefresh }: Props) {
       render: (v: boolean) => <span style={v ? pillSuccess : pillNeutral}>{v ? '启用' : '停用'}</span>,
     },
     {
-      title: '操作', key: 'action', width: 180, fixed: 'end',
+      title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_: unknown, r: SparePart) => (
         <Space size={12}>
           <span role="button" onClick={() => openStockInboundDrawer(r.id)} style={linkPurple}><ImportOutlined />入库</span>

@@ -59,7 +59,7 @@ export function CalibrationPlanTable({ onRefresh, onRecordRefresh }: Props) {
       render: (s: CalibrationPlanStatus) => <span style={statusMap[s]}>{s}</span>,
     },
     {
-      title: '操作', key: 'action', width: 180, fixed: 'end',
+      title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_: unknown, r: CalibrationPlan) => (
         <Space size={12}>
           <span role="button" onClick={() => openCalibrationRecordDrawer({ calibration_plan_id: r.id, calibration_type: r.calibration_type } as any)} style={linkPurple}><FileTextOutlined />记录</span>

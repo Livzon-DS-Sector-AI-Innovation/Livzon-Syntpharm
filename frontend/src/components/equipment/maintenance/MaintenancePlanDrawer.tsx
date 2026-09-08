@@ -41,7 +41,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
       fetchCategoriesClient().then(setCategories),
     ]).catch(err => console.warn('MaintenancePlanDrawer: 加载数据失败', err))
 
-    // 延迟确保 Form 字段在 destroyOnHidden 后重新挂载完毕
+    // 延迟确保 Form 字段在 destroyOnClose 后重新挂载完毕
     const timer = setTimeout(() => {
       if (editingMaintenancePlan) {
         // Determine plan mode from existing data
@@ -109,10 +109,10 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
   return (
     <Drawer
       title={editingMaintenancePlan ? '编辑维护计划' : '新建维护计划'}
-      size={480}
+      width={480}
       open={maintenancePlanDrawerOpen}
       onClose={closeMaintenancePlanDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeMaintenancePlanDrawer}>取消</Button>

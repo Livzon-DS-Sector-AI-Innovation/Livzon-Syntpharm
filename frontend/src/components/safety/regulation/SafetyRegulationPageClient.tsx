@@ -983,7 +983,7 @@ export function SafetyRegulationPageClient() {
         open={regDrawerOpen}
         onClose={() => setRegDrawerOpen(false)}
         styles={{ wrapper: { width: 480 } }}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setRegDrawerOpen(false)}>取消</Button>
@@ -1038,7 +1038,7 @@ export function SafetyRegulationPageClient() {
         open={revDrawerOpen}
         onClose={() => setRevDrawerOpen(false)}
         styles={{ wrapper: { width: 480 } }}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setRevDrawerOpen(false)}>取消</Button>

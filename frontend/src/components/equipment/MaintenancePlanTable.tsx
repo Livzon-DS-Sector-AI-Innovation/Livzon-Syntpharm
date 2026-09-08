@@ -64,7 +64,7 @@ export function MaintenancePlanTable({ onRefresh, equipments }: Props) {
       render: (s: MaintenancePlanStatus) => <span style={statusMap[s]}>{s}</span>,
     },
     {
-      title: '操作', key: 'action', width: 150, fixed: 'end',
+      title: '操作', key: 'action', width: 150, fixed: 'right',
       render: (_: unknown, r: MaintenancePlan) => (
         <Space size={12}>
           <span role="button" onClick={() => openMaintenancePlanDrawer(r)} style={linkPrimary}><EditOutlined />编辑</span>

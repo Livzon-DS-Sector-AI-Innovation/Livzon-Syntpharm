@@ -552,7 +552,7 @@ export default function EhsChangePage() {
         onOk={handleSave}
         confirmLoading={saving}
         width={800}
-        destroyOnHidden
+        destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Title level={5} className="mb-3">基本信息</Title>
@@ -617,7 +617,7 @@ export default function EhsChangePage() {
         title={selectedChange ? `变更详情 - ${selectedChange.change_no}` : '变更详情'}
         open={drawerOpen}
         onClose={() => { setDrawerOpen(false); setSelectedChange(null) }}
-        size={800}
+        width={800}
         extra={
           selectedChange ? (
             <Space>

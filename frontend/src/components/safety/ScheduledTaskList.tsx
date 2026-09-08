@@ -102,7 +102,7 @@ export default function ScheduledTaskList({ initialData, initialTotal }: Schedul
       width: 200,
       ellipsis: true,
       render: (v: string, r: ScheduledTask) => (
-        <Space orientation="vertical" size={0}>
+        <Space direction="vertical" size={0}>
           <span style={{ fontWeight: 500 }}>{v}</span>
           {r.cron_desc && <span style={{ fontSize: 12, color: '#999' }}>{r.cron_desc}</span>}
         </Space>
@@ -133,7 +133,7 @@ export default function ScheduledTaskList({ initialData, initialTotal }: Schedul
       title: '上次执行',
       width: 170,
       render: (_: unknown, r: ScheduledTask) => (
-        <Space orientation="vertical" size={0}>
+        <Space direction="vertical" size={0}>
           {r.last_run_at ? (
             <span style={{ fontSize: 13 }}>
               {new Date(r.last_run_at).toLocaleString('zh-CN')}

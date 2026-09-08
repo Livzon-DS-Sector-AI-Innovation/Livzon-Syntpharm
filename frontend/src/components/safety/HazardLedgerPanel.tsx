@@ -448,7 +448,7 @@ export default function HazardLedgerPanel() {
       title: '',
       key: '__row_select__',
       width: 48,
-      fixed: 'start',
+      fixed: 'left',
       align: 'center',
       render: (_: unknown, record: HazardIdentification, index: number) => {
         const isSelected = selectedRowKeys.includes(record.id)
@@ -669,7 +669,7 @@ export default function HazardLedgerPanel() {
 
     return (
       <div style={{ padding: '12px 24px', background: '#fafafa', borderRadius: 8 }}>
-        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           {lecRow('固有风险评价', record.l_inherent, record.e_inherent, record.c_inherent, record.d_inherent, record.inherent_risk_level, record.inherent_risk_label)}
 
           {(record.existing_engineering_controls || record.existing_management_controls || record.existing_ppe || record.existing_emergency_measures) && (
@@ -1225,7 +1225,7 @@ export default function HazardLedgerPanel() {
 
           {exporting && (
             <div style={{ textAlign: 'center', padding: 16 }}>
-              <Spin description={exportStep || '正在导出…'} />
+              <Spin tip={exportStep || '正在导出…'} />
             </div>
           )}
         </div>

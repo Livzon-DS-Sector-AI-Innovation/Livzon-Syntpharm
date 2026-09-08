@@ -103,10 +103,10 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
   return (
     <Drawer
       title={isEditing ? '编辑维修工单' : '新建维修工单'}
-      size={480}
+      width={480}
       open={workOrderDrawerOpen}
       onClose={closeWorkOrderDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeWorkOrderDrawer}>取消</Button>

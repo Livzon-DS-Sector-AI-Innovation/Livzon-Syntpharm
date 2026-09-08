@@ -91,7 +91,7 @@ export function InspectionItemDrawer() {
     { title: '描述', dataIndex: 'item_description', width: 160, render: (v: string | null) => v || <span style={{ color: C.stone }}>—</span> },
     { title: '预期结果', dataIndex: 'expected_result', width: 140, render: (v: string | null) => v || <span style={{ color: C.stone }}>—</span> },
     { title: '检查方法', dataIndex: 'check_method', width: 120, render: (v: string | null) => v || <span style={{ color: C.stone }}>—</span> },
-    { title: '操作', key: 'a', width: 120, fixed: 'end' as const,
+    { title: '操作', key: 'a', width: 120, fixed: 'right' as const,
       render: (_: unknown, r: InspectionTemplateItem) => (
         <div style={{ display: 'flex', gap: 10 }}>
           <span role="button" onClick={() => startEdit(r)} style={linkPrimary}><EditOutlined />编辑</span>
@@ -104,7 +104,7 @@ export function InspectionItemDrawer() {
   ]
 
   return (
-    <Drawer title={null} size={780} open={inspectionItemDrawerOpen} onClose={close} destroyOnHidden
+    <Drawer title={null} width={780} open={inspectionItemDrawerOpen} onClose={close} destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}>
       <div style={{ background: C.navy, padding: '16px 28px', borderBottom: `3px solid ${C.purple}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>

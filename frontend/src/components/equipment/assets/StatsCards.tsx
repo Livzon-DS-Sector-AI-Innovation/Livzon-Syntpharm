@@ -95,12 +95,9 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
               onClick={() => handleClick(key)}
             >
               <Statistic
-                title={label}
+                title={<span style={{ color: '#5d5b54', fontSize: 14 }}>{label}</span>}
                 value={value}
-                styles={{
-                  content: { color, fontWeight: 600 },
-                  title: { color: '#5d5b54', fontSize: 14 },
-                }}
+                valueStyle={{ color, fontWeight: 600 }}
               />
             </Card>
           </Col>
