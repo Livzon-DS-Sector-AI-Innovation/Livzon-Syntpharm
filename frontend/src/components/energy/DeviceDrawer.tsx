@@ -109,6 +109,16 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   }
 
   /* eslint-disable react-hooks/set-state-in-effect */
+  const loadDeviceData = useCallback(async (id: string) => {
+    try {
+      form.resetFields()
+      const device = await getEnergyDeviceById(id)
+      form.setFieldsValue(device)
+    } catch {
+      message.error('获取数据源信息失败')
+    }
+  }, [form, message])
+
   useEffect(() => {
     if (deviceDrawerOpen) {
       loadPlatforms()
@@ -119,18 +129,9 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
         form.setFieldsValue(DEFAULT_VALUES)
       }
     }
-  }, [deviceDrawerOpen, deviceDrawerId, isEdit, form])
+  }, [deviceDrawerOpen, deviceDrawerId, isEdit, form, loadDeviceData])
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const loadDeviceData = async (id: string) => {
-    try {
-      form.resetFields()
-      const device = await getEnergyDeviceById(id)
-      form.setFieldsValue(device)
-    } catch {
-      message.error('获取数据源信息失败')
-    }
-  }
 
   const handleSubmit = async () => {
     try {
