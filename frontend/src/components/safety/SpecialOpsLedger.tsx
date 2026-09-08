@@ -102,7 +102,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical])
+  }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical, message])
 
   // ── AI Export ──
 
