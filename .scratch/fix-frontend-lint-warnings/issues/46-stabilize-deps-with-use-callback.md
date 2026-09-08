@@ -4,10 +4,16 @@
 
 **Blocked by:** Ticket 45 (deps added)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Inline functions used as deps wrapped in useCallback
-- [ ] useCallback dependencies properly specified
-- [ ] Effects run only when actual data changes
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes (no react-hooks/exhaustive-deps warnings)
+- [x] Inline functions used as deps wrapped in useCallback
+- [x] useCallback dependencies properly specified
+- [x] Effects run only when actual data changes
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes (no react-hooks/exhaustive-deps warnings)
+
+**Notes:**
+- All inline functions used as dependencies have been wrapped in useCallback
+- All useCallback dependencies are properly specified
+- Zero exhaustive-deps warnings remaining in the codebase
+- Work completed as part of tickets 45.11-45.20
