@@ -1,0 +1,106 @@
+name: Deploy Test
+on:
+  push:
+    branches: [test]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-test
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Deploy to Test Server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.TEST_SERVER_HOST }}
+          username: ${{ secrets.TEST_SERVER_USER }}
+          key: ${{ secrets.TEST_SERVER_SSH_KEY }}
+          script: |
+            set -e
+
+            cd /opt/code/Livzon-Syntpharm
+
+            # 前置校验：.env.test 由运维在服务器上手工维护，缺失时直接中止
+            if [ ! -f .env.test ]; then
+              echo "❌ .env.test 不存在，无法部署（请参照 .env.example 在服务器上生成并填写）"
+              exit 1
+            fi
+
+            git fetch origin test
+            # 强制对齐远程 test：-f 丢弃服务器上对跟踪文件（如 compose yml）的手工改动。
+            # 服务器侧的环境差异应通过 .env.test 注入，不要直接改仓库内文件
+            git checkout -f -B test origin/test
+            git reset --hard origin/test
+
+            # 基础设施层（PostgreSQL / Redis / MinIO）：仅确保运行，不重建。
+            # 数据库等有持久化数据，不应随代码每次部署而重启
+            docker compose --env-file .env.test -f docker-compose.infra.yml up -d
+
+            # 重建应用层镜像（仅代码相关服务；nginx 使用固定镜像，无需 build）
+            docker compose --env-file .env.test \
+              -f docker-compose.infra.yml \
+              -f docker-compose.test.yml build --pull backend migrate edbo-service frontend
+
+            # 仅重启代码相关服务（backend / migrate / edbo-service / frontend / nginx）。
+            # 通过显式服务列表限定作用域，避免 --force-recreate 波及基础设施容器
+            docker compose --env-file .env.test \
+              -f docker-compose.infra.yml \
+              -f docker-compose.test.yml up -d --force-recreate backend migrate edbo-service frontend nginx
+
+            # 健康检查：backend 宿主端口 8000（见 docker-compose.test.yml），
+            # 使用 /health/ready 同时校验数据库连通性
+            echo "等待后端就绪..."
+            ready=0
+            for i in $(seq 1 60); do
+              if curl -sf --max-time 5 http://localhost:8000/health/ready >/dev/null 2>&1; then
+                ready=1
+                break
+              fi
+              sleep 3
+            done
+
+            if [ "$ready" -ne 1 ]; then
+              echo "❌ 后端健康检查失败"
+              docker compose --env-file .env.test \
+                -f docker-compose.infra.yml \
+                -f docker-compose.test.yml ps
+              exit 1
+            fi
+            echo "✅ 后端就绪"
+
+            # 清理旧镜像（仅清理 72h 前的悬空镜像，保护本次新构建产物）
+            docker image prune -f --filter "until=72h"
+
+      - name: Notify Feishu
+        if: success()
+        run: |
+          curl -s -X POST "${{ secrets.FEISHU_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msg_type\": \"interactive\",
+              \"card\": {
+                \"header\": {
+                  \"title\": { \"tag\": \"plain_text\", \"content\": \"✅ 测试环境已部署\" },
+                  \"template\": \"green\"
+                },
+                \"elements\": [
+                  { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**分支:** test\\n**提交:** ${{ github.sha }}\\n**操作人:** ${{ github.actor }}\\n**时间:** $(date '+%Y-%m-%d %H:%M:%S')\" } },
+                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"访问测试环境\" }, \"url\": \"http://8.138.204.232\", \"type\": \"primary\" }] }
+                ]
+              }
+            }" || true
+
+      - name: Notify Feishu (Failure)
+        if: failure()
+        run: |
+          curl -s -X POST "${{ secrets.FEISHU_WEBHOOK }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msg_type\": \"text\",
+              \"content\": { \"text\": \"❌ 测试环境部署失败\\n提交: ${{ github.sha }}\\n操作人: ${{ github.actor }}\\n详情: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\" }
+            }" || true
