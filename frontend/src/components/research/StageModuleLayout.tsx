@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect, useCallback, ReactNode } from 'react'
 import {App, Card, Table, Tag, Button, Input} from 'antd'
 import { ArrowLeftOutlined, SearchOutlined, EnterOutlined } from '@ant-design/icons'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
@@ -39,11 +39,7 @@ export function StageModuleLayout({ title, description, stage, children }: Stage
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
 
-  useEffect(() => {
-    loadProjects()
-  }, [stage])
-
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
     setLoading(true)
     try {
       const result = await fetchRdProjects({ page_size: 100, stage })
@@ -54,7 +50,11 @@ export function StageModuleLayout({ title, description, stage, children }: Stage
     } finally {
       setLoading(false)
     }
-  }
+  }, [stage, msgApi])
+
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
 
   const filteredProjects = keyword
     ? projects.filter(p =>
