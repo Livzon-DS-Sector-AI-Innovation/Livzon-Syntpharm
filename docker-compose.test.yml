@@ -1,5 +1,7 @@
 # 测试服务器 - 应用层
+
 # 运行: docker compose --env-file .env.test -f docker-compose.infra.yml -f docker-compose.test.yml up -d
+
 # 用途: 部署 test 分支的前后端应用
 
 services:
@@ -44,7 +46,9 @@ services:
       - ./uploads:/app/uploads
       - ./storage:/app/storage
     ports:
+
       - "8000:8000"
+
     networks:
       - test-net
 

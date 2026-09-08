@@ -1,5 +1,7 @@
 # 测试服务器 - 基础设施层
+
 # 运行: docker compose --env-file .env.test -f docker-compose.infra.yml up -d
+
 # 用途: 提供共享的数据库、缓存、对象存储服务
 
 services:
@@ -57,6 +59,7 @@ services:
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+
       interval: 5s
       timeout: 5s
       retries: 5
