@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import {Card, Spin, Segmented, Empty, Alert} from 'antd'
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
@@ -30,11 +30,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
   const [visibleSet, setVisibleSet] = useState<Set<string>>(new Set())
   const [trendType, setTrendType] = useState<string>('折线图')
 
-  useEffect(() => {
-    loadData()
-  }, [year])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -79,7 +75,11 @@ export default function WorkshopRankingTrend({ year }: Props) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [year])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const months = useMemo(
     () => Array.from({ length: 12 }, (_, i) => `${i + 1}月`),

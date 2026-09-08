@@ -42,11 +42,7 @@ export function PressureManualInputPageClient() {
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [addForm] = Form.useForm()
 
-  useEffect(() => {
-    loadPoints()
-  }, [area])
-
-  const loadPoints = async () => {
+  const loadPoints = useCallback(async () => {
     setLoading(true)
     try {
       const res = await getPointMappings({ area, page_size: 200 })
@@ -66,7 +62,11 @@ export function PressureManualInputPageClient() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [area, timeSlots, message])
+
+  useEffect(() => {
+    loadPoints()
+  }, [loadPoints])
 
   const handleAddPoint = async () => {
     try {

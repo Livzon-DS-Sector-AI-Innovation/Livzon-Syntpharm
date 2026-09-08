@@ -18,11 +18,7 @@ export default function AnnualReviewTab({ year }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<AnnualReviewData | null>(null)
 
-  useEffect(() => {
-    loadData()
-  }, [year])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -38,7 +34,11 @@ export default function AnnualReviewTab({ year }: Props) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [year])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleExport = async () => {
     try {
