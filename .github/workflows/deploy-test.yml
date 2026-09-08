@@ -23,7 +23,7 @@ jobs:
           script: |
             set -e
 
-            cd /opt/Livzon-Syntpharm
+            cd /opt/code/Livzon-Syntpharm
 
             # 前置校验：.env.test 由运维在服务器上手工维护，缺失时直接中止
             if [ ! -f .env.test ]; then
