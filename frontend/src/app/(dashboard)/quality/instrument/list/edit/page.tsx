@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Card,
   Form,
@@ -64,16 +64,7 @@ export default function EditInstrumentPage() {
   const [ruleForm] = Form.useForm()
   const [instrument, setInstrument] = useState<Instrument | null>(null)
 
-  useEffect(() => {
-    if (!instrumentId) {
-      message.error('缺少仪器ID参数')
-      router.push('/quality/instrument/list')
-      return
-    }
-    loadData()
-  }, [instrumentId, router])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!instrumentId) return
     
     setInitialLoading(true)
@@ -105,7 +96,16 @@ export default function EditInstrumentPage() {
     } finally {
       setInitialLoading(false)
     }
-  }
+  }, [instrumentId, form, ruleForm, router])
+
+  useEffect(() => {
+    if (!instrumentId) {
+      message.error('缺少仪器ID参数')
+      router.push('/quality/instrument/list')
+      return
+    }
+    loadData()
+  }, [instrumentId, router, loadData])
 
   const handleSubmit = async () => {
     if (!instrument) return
