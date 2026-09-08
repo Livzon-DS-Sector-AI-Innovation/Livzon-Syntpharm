@@ -32,7 +32,9 @@ jobs:
             fi
 
             git fetch origin test
-            git checkout test
+            # 强制对齐远程 test：-f 丢弃服务器上对跟踪文件（如 compose yml）的手工改动。
+            # 服务器侧的环境差异应通过 .env.test 注入，不要直接改仓库内文件
+            git checkout -f -B test origin/test
             git reset --hard origin/test
 
             # 基础设施层（PostgreSQL / Redis / MinIO）：仅确保运行，不重建。
