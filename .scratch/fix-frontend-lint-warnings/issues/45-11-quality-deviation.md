@@ -4,11 +4,16 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] deviation-automation/preview/[id]/page.tsx has no exhaustive-deps warnings
-- [ ] deviation-automation/templates/page.tsx has no exhaustive-deps warnings
-- [ ] deviation-flow/create/page.tsx has no exhaustive-deps warnings
-- [ ] deviation-flow/progress/page.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] deviation-automation/preview/[id]/page.tsx has no exhaustive-deps warnings
+- [x] deviation-automation/templates/page.tsx has no exhaustive-deps warnings
+- [x] deviation-flow/create/page.tsx has no exhaustive-deps warnings
+- [x] deviation-flow/progress/page.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
+
+**Notes:**
+- Wrapped all async functions in useCallback with proper dependencies
+- Moved function declarations before useEffect hooks to avoid "used before declaration" errors
+- All exhaustive-deps warnings resolved in these 4 files
