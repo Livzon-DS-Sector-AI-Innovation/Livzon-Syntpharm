@@ -267,7 +267,7 @@ export default function HazardLedgerPage() {
     setFilterPopoverOpen(false)
   }
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const response = await getHazards({
@@ -299,7 +299,7 @@ export default function HazardLedgerPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, sortField, sortOrder, msgApi, setHazards, setHazardTotal])
 
   // ── 全局统计（挂载时 + 数据变更后刷新）──
   const loadStats = async () => {
@@ -313,7 +313,7 @@ export default function HazardLedgerPage() {
   useEffect(() => {
     setSelectedRowKeys([])
     loadData()
-  }, [hazardQueryParams.page, hazardQueryParams.page_size, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter])
+  }, [hazardQueryParams.page, hazardQueryParams.page_size, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, loadData])
 
   // 排序变化时重新加载
 

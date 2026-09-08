@@ -23,7 +23,7 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
   const [page, setPage] = useState(1)
   const { message } = App.useApp()
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await getHazardRiskOptions({ keyword: keyword || undefined, department, page, page_size: 20 })
@@ -36,11 +36,11 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
     } finally {
       setLoading(false)
     }
-  }
+  }, [keyword, department, page, message])
 
   useEffect(() => {
     if (open) loadData()
-  }, [open, page])
+  }, [open, page, loadData])
 
   const handleSearch = () => {
     setPage(1)

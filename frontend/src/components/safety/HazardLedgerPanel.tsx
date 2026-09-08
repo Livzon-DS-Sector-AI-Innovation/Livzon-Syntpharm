@@ -204,7 +204,7 @@ export default function HazardLedgerPanel() {
     setFilterPopoverOpen(false)
   }
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const res = await getHILedgerStats({
         department,
@@ -217,9 +217,9 @@ export default function HazardLedgerPanel() {
         setStats(res.data as HazardLedgerStats)
       }
     } catch { /* non-critical */ }
-  }
+  }, [department, position, riskLevel, dateRange])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     try {
       const res = await getHazardIdentifications({
@@ -251,22 +251,22 @@ export default function HazardLedgerPanel() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [queryParams, department, position, riskLevel, dateRange, sortField, sortOrder, msgApi])
 
   useEffect(() => {
     setSelectedRowKeys([])
     loadData()
-  }, [queryParams.page, queryParams.page_size, riskLevel, department, position])
+  }, [queryParams.page, queryParams.page_size, riskLevel, department, position, loadData])
 
   // 排序/日期变化时重新加载
   useEffect(() => {
     if (sortField) loadData()
-  }, [sortField, sortOrder])
+  }, [sortField, sortOrder, loadData])
 
   useEffect(() => {
     loadData()
     loadStats()
-  }, [dateRange])
+  }, [dateRange, loadData, loadStats])
 
   const handleSearch = () => {
     searchKeywordRef.current = keyword
