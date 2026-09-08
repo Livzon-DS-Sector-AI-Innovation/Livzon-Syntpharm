@@ -4,8 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] registration/ledger/page.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for this file
+- [x] registration/ledger/page.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for this file
+
+**Notes:**
+- Added 'message' to useCallback dependency array
+- All exhaustive-deps warnings resolved
