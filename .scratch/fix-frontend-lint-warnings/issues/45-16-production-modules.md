@@ -4,10 +4,16 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] production/AnnualReviewTab.tsx has no exhaustive-deps warnings
-- [ ] production/WorkshopRankingTrend.tsx has no exhaustive-deps warnings
-- [ ] production/pressure/PressureManualInputPageClient.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] production/AnnualReviewTab.tsx has no exhaustive-deps warnings
+- [x] production/WorkshopRankingTrend.tsx has no exhaustive-deps warnings
+- [x] production/pressure/PressureManualInputPageClient.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
+
+**Notes:**
+- AnnualReviewTab.tsx: Wrapped loadData in useCallback with [year] dependency, moved before useEffect, added to dependency array
+- WorkshopRankingTrend.tsx: Added useCallback import, wrapped loadData in useCallback with [year] dependency, moved before useEffect, added to dependency array
+- PressureManualInputPageClient.tsx: Wrapped loadPoints in useCallback with [area, timeSlots, message] dependencies, moved before useEffect, added to dependency array
+- All exhaustive-deps warnings resolved in all three files
