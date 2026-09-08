@@ -4,8 +4,15 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] research/StageModuleLayout.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for this file
+- [x] research/StageModuleLayout.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for this file
+
+**Notes:**
+- Added useCallback import
+- Wrapped loadProjects in useCallback with [stage, msgApi] dependencies
+- Moved loadProjects before useEffect to avoid 'used before declaration' error
+- Added loadProjects to useEffect dependency array
+- All exhaustive-deps warnings resolved
