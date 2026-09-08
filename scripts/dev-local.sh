@@ -15,11 +15,15 @@ fi
 
 source .env.local
 
+# 测试服务器后端健康检查地址（对应 docker-compose.test.yml 中 backend 宿主端口 8000）。
+# 默认走内网地址；公网访问可设 TEST_SERVER_BACKEND=http://8.138.204.232:8000 覆盖
+TEST_SERVER_BACKEND="${TEST_SERVER_BACKEND:-http://172.17.62.101:8000}"
+
 echo "🔍 检查测试服务器连通性..."
-if curl -sf --connect-timeout 3 "http://172.17.62.101:18000/health/live" > /dev/null 2>&1; then
-    echo "   测试服务器: ✓ 可达"
+if curl -sf --connect-timeout 3 "${TEST_SERVER_BACKEND}/health/live" > /dev/null 2>&1; then
+    echo "   测试服务器: ✓ 可达 (${TEST_SERVER_BACKEND})"
 else
-    echo "   测试服务器: ✗ 不可达"
+    echo "   测试服务器: ✗ 不可达 (${TEST_SERVER_BACKEND})"
     echo "   是否继续启动？(y/N)"
     read -r answer
     [ "$answer" = "y" ] || exit 0
