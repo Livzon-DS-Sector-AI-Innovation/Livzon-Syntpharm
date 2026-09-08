@@ -48,14 +48,7 @@ export default function TrainingSelectClient({
     })
   }, [isNew])
 
-  // 部门列表加载完成后，自动加载任务对应部门的员工
-  useEffect(() => {
-    if (departments.length > 0 && taskDept) {
-      loadEmployees([taskDept])
-    }
-  }, [departments, taskDept])
-
-  const loadEmployees = async (depts: string[]) => {
+  const loadEmployees = useCallback(async (depts: string[]) => {
     if (!depts || depts.length === 0) {
       setEmployees([])
       setSelectedNumbers([])
@@ -81,7 +74,14 @@ export default function TrainingSelectClient({
     const uniqueList = Array.from(map.values())
     setEmployees(uniqueList)
     setLoading(false)
-  }
+  }, [isNew])
+
+  // 部门列表加载完成后，自动加载任务对应部门的员工
+  useEffect(() => {
+    if (departments.length > 0 && taskDept) {
+      loadEmployees([taskDept])
+    }
+  }, [departments, taskDept, loadEmployees])
 
   const handleSubmit = async () => {
     if (selectedNumbers.length === 0) {

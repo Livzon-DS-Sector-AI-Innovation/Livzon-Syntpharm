@@ -120,7 +120,7 @@ export default function TrainingSessionDetailModal({
       })
       setEditing(true)
     }
-  }, [open, record, form])
+  }, [open, record, form, startEditing])
 
   const _loadEmployees = async (
     depts: string[],
