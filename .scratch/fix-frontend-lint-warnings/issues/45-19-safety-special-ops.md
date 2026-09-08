@@ -4,9 +4,14 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] safety/SpecialOpsLedger.tsx has no exhaustive-deps warnings
-- [ ] safety/SpecialOpsManagement.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for these files
+- [x] safety/SpecialOpsLedger.tsx has no exhaustive-deps warnings
+- [x] safety/SpecialOpsManagement.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for these files
+
+**Notes:**
+- SpecialOpsLedger.tsx: Added 'message' to useCallback dependency array
+- SpecialOpsManagement.tsx: Added 'message' to useCallback dependency array
+- All exhaustive-deps warnings resolved in both files
