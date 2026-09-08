@@ -1,0 +1,46 @@
+# 个人开发服务器 - 仅运行前后端
+# 运行: docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.local.yml up -d
+# 用途: 本地开发时连接测试服务器的基础设施
+
+services:
+  # 禁用本地基础设施（连接测试服务器）
+  postgres:
+    deploy:
+      replicas: 0
+  redis:
+    deploy:
+      replicas: 0
+  minio:
+    deploy:
+      replicas: 0
+  migrate:
+    deploy:
+      replicas: 0
+  edbo-service:
+    deploy:
+      replicas: 0
+
+  # 后端：连接测试服务器的数据库/缓存/存储
+  backend:
+    env_file:
+      - .env
+      - .env.local
+    environment:
+      DATABASE_URL: ${TEST_DATABASE_URL}
+      REDIS_URL: ${TEST_REDIS_URL}
+      MINIO_ENDPOINT: ${TEST_MINIO_ENDPOINT}
+      EDBO_SERVICE_URL: ${TEST_EDBO_SERVICE_URL}
+    volumes:
+      - ./backend/app:/app/app:ro
+    ports:
+      - "8000:8000"
+
+  # 前端：连接本地后端
+  frontend:
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
