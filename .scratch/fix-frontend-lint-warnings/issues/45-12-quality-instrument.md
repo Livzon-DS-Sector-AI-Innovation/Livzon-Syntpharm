@@ -4,8 +4,14 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] quality/instrument/list/edit/page.tsx has no exhaustive-deps warnings
-- [ ] `tsc --noEmit` passes
-- [ ] `pnpm lint` passes for this file
+- [x] quality/instrument/list/edit/page.tsx has no exhaustive-deps warnings
+- [x] `tsc --noEmit` passes
+- [x] `pnpm lint` passes for this file
+
+**Notes:**
+- Wrapped loadData in useCallback with dependencies [instrumentId, form, ruleForm, router]
+- Moved loadData declaration before useEffect to avoid 'used before declaration' error
+- Added loadData to useEffect dependency array
+- All exhaustive-deps warnings resolved
