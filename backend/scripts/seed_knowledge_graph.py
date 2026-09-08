@@ -9,7 +9,6 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory
 from app.modules.safety.models import GraphKnowledgeNode, GraphKnowledgeEdge
@@ -46,7 +45,6 @@ MOCK_NODES = [
         "status": "human_confirmed",
         "confidence": 1.0,
     },
-    
     # 文档节点 (document)
     {
         "id": "doc-001",
@@ -93,7 +91,6 @@ MOCK_NODES = [
         "status": "ai_generated",
         "confidence": 0.85,
     },
-    
     # 条款节点 (clause)
     {
         "id": "clause-001",
@@ -107,7 +104,7 @@ MOCK_NODES = [
         "id": "clause-002",
         "name": "第二十一条 安全生产管理机构",
         "node_type": "clause",
-        "ai_summary": "矿山、金属冶炼、建筑施工、道路运输单位和危险物品的生产、经营、储存单位，应当设置安全生产管理机构",
+        "ai_summary": "矿山、金属冶炼、建筑施工、道路运输单位和危险物品的生产、经营、储存单位，应当设置安全生产管理机构",  # noqa: E501  # noqa: E501
         "status": "ai_generated",
         "confidence": 0.89,
     },
@@ -119,7 +116,6 @@ MOCK_NODES = [
         "status": "ai_generated",
         "confidence": 0.86,
     },
-    
     # 实体节点 (entity)
     {
         "id": "entity-001",
@@ -197,7 +193,6 @@ MOCK_EDGES = [
         "confidence": 0.88,
         "status": "ai_generated",
     },
-    
     # contains 关系 (文档包含条款)
     {
         "id": "edge-006",
@@ -226,7 +221,6 @@ MOCK_EDGES = [
         "confidence": 0.88,
         "status": "ai_generated",
     },
-    
     # references 关系 (条款引用实体)
     {
         "id": "edge-009",
@@ -255,7 +249,6 @@ MOCK_EDGES = [
         "confidence": 0.83,
         "status": "ai_generated",
     },
-    
     # related_to 关系 (实体间关联)
     {
         "id": "edge-012",
@@ -282,6 +275,7 @@ def parse_uuid(id_str: str) -> uuid.UUID:
     """将字符串 ID 转换为 UUID"""
     # 使用简单的哈希生成确定性 UUID
     import hashlib
+
     hash_bytes = hashlib.md5(id_str.encode()).digest()
     return uuid.UUID(bytes=hash_bytes[:16])
 
@@ -290,15 +284,13 @@ async def seed_knowledge_graph():
     """插入知识图谱 mock 数据"""
     async with async_session_factory() as session:
         # 检查是否已有数据
-        result = await session.execute(
-            select(GraphKnowledgeNode).limit(1)
-        )
+        result = await session.execute(select(GraphKnowledgeNode).limit(1))
         if result.scalar_one_or_none():
             print("⚠️  知识图谱已有数据，跳过插入")
             return
-        
+
         print("🌱 开始插入知识图谱 mock 数据...")
-        
+
         # 插入节点
         node_map = {}
         for node_data in MOCK_NODES:
@@ -317,9 +309,9 @@ async def seed_knowledge_graph():
             session.add(node)
             node_map[node_data["id"]] = node.id
             print(f"  ✓ 节点: {node.name} ({node.node_type})")
-        
+
         await session.flush()
-        
+
         # 插入边
         for edge_data in MOCK_EDGES:
             edge = GraphKnowledgeEdge(
@@ -336,7 +328,7 @@ async def seed_knowledge_graph():
             )
             session.add(edge)
             print(f"  ✓ 边: {edge.relation_type}")
-        
+
         await session.commit()
         print(f"\n✅ 成功插入 {len(MOCK_NODES)} 个节点和 {len(MOCK_EDGES)} 条边")
 

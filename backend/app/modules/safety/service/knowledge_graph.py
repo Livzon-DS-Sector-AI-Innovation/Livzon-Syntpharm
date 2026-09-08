@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.models import GraphKnowledgeEdge, GraphKnowledgeNode
@@ -29,7 +29,7 @@ class KnowledgeGraphService:
         limit: int = 50,
     ) -> tuple[list[GraphKnowledgeNode], int]:
         """获取节点列表（分页）"""
-        conditions = [GraphKnowledgeNode.is_deleted == False]
+        conditions = [GraphKnowledgeNode.is_deleted == False]  # noqa: E712
         if node_type:
             conditions.append(GraphKnowledgeNode.node_type == node_type)
         if entity_type:
@@ -56,7 +56,7 @@ class KnowledgeGraphService:
         """获取单个节点"""
         stmt = select(GraphKnowledgeNode).where(
             GraphKnowledgeNode.id == node_id,
-            GraphKnowledgeNode.is_deleted == False,
+            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -69,7 +69,7 @@ class KnowledgeGraphService:
     ) -> list[GraphKnowledgeNode]:
         """搜索节点"""
         conditions = [
-            GraphKnowledgeNode.is_deleted == False,
+            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
             GraphKnowledgeNode.name.ilike(f"%{query}%"),
         ]
         if node_types:
@@ -77,12 +77,7 @@ class KnowledgeGraphService:
             if types:
                 conditions.append(GraphKnowledgeNode.node_type.in_(types))
 
-        stmt = (
-            select(GraphKnowledgeNode)
-            .where(and_(*conditions))
-            .order_by(GraphKnowledgeNode.name)
-            .limit(limit)
-        )
+        stmt = select(GraphKnowledgeNode).where(and_(*conditions)).order_by(GraphKnowledgeNode.name).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -96,7 +91,7 @@ class KnowledgeGraphService:
         limit: int = 50,
     ) -> tuple[list[GraphKnowledgeEdge], int]:
         """获取边列表（分页）"""
-        conditions = [GraphKnowledgeEdge.is_deleted == False]
+        conditions = [GraphKnowledgeEdge.is_deleted == False]  # noqa: E712
         if relation_type:
             conditions.append(GraphKnowledgeEdge.relation_type == relation_type)
         if status:
@@ -124,7 +119,7 @@ class KnowledgeGraphService:
         max_nodes: int = 500,
     ) -> dict[str, Any]:
         """获取完整图谱数据"""
-        node_conditions = [GraphKnowledgeNode.is_deleted == False]
+        node_conditions = [GraphKnowledgeNode.is_deleted == False]  # noqa: E712
         if node_types:
             types = [t.strip() for t in node_types.split(",") if t.strip()]
             if types:
@@ -141,7 +136,7 @@ class KnowledgeGraphService:
         node_ids = {n.id for n in nodes}
 
         edge_conditions = [
-            GraphKnowledgeEdge.is_deleted == False,
+            GraphKnowledgeEdge.is_deleted == False,  # noqa: E712
             GraphKnowledgeEdge.source_node_id.in_(node_ids),
             GraphKnowledgeEdge.target_node_id.in_(node_ids),
         ]
@@ -184,7 +179,11 @@ class KnowledgeGraphService:
         """展开指定节点的邻居"""
         center = await self.get_node(node_id)
         if not center:
-            return {"nodes": [], "edges": [], "stats": {"total_nodes": 0, "total_edges": 0, "by_type": {}, "by_status": {}}}
+            return {
+                "nodes": [],
+                "edges": [],
+                "stats": {"total_nodes": 0, "total_edges": 0, "by_type": {}, "by_status": {}},
+            }
 
         visited_ids: set[uuid.UUID] = {node_id}
         all_node_ids: set[uuid.UUID] = {node_id}
@@ -195,7 +194,7 @@ class KnowledgeGraphService:
             if not current_ids:
                 break
             edge_conditions = [
-                GraphKnowledgeEdge.is_deleted == False,
+                GraphKnowledgeEdge.is_deleted == False,  # noqa: E712
                 or_(
                     GraphKnowledgeEdge.source_node_id.in_(current_ids),
                     GraphKnowledgeEdge.target_node_id.in_(current_ids),
@@ -230,7 +229,7 @@ class KnowledgeGraphService:
             select(GraphKnowledgeNode)
             .where(
                 GraphKnowledgeNode.id.in_(all_node_ids),
-                GraphKnowledgeNode.is_deleted == False,
+                GraphKnowledgeNode.is_deleted == False,  # noqa: E712
             )
             .limit(max_nodes)
         )
@@ -239,7 +238,7 @@ class KnowledgeGraphService:
 
         edge_stmt = select(GraphKnowledgeEdge).where(
             GraphKnowledgeEdge.id.in_(all_edge_ids),
-            GraphKnowledgeEdge.is_deleted == False,
+            GraphKnowledgeEdge.is_deleted == False,  # noqa: E712
         )
         edge_result = await self.db.execute(edge_stmt)
         edges = list(edge_result.scalars().all())
@@ -280,7 +279,7 @@ class KnowledgeGraphService:
 
         # 1. 获取文章
         article_conditions = [
-            SafetyKnowledgeArticle.is_deleted == False,
+            SafetyKnowledgeArticle.is_deleted == False,  # noqa: E712
             SafetyKnowledgeArticle.status == "published",
         ]
         if document_ids:
@@ -304,8 +303,8 @@ class KnowledgeGraphService:
         # 3. 为每篇文章创建 document 节点 + belongs_to 边
         for article in articles:
             # 检查是否已存在
-            existing = await self._find_document_node(article.id)
-            if existing and not force_rebuild:
+            doc_existing = await self._find_document_node(article.id)
+            if doc_existing and not force_rebuild:
                 continue
 
             doc_node = GraphKnowledgeNode(
@@ -361,7 +360,7 @@ class KnowledgeGraphService:
         stmt = select(GraphKnowledgeNode).where(
             GraphKnowledgeNode.node_type == "category",
             GraphKnowledgeNode.name == name,
-            GraphKnowledgeNode.is_deleted == False,
+            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
         )
         result = await self.db.execute(stmt)
         existing = result.scalar_one_or_none()
@@ -383,7 +382,7 @@ class KnowledgeGraphService:
         stmt = select(GraphKnowledgeNode).where(
             GraphKnowledgeNode.node_type == "document",
             GraphKnowledgeNode.article_id == article_id,
-            GraphKnowledgeNode.is_deleted == False,
+            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()

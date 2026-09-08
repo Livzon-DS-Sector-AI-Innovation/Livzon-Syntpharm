@@ -1369,12 +1369,8 @@ class PptGenerationRecord(BaseModel):
         comment="关联知识库文章ID",
     )
     file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="文件名")
-    template: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="模板类型: training/briefing/audit"
-    )
-    style: Mapped[str] = mapped_column(
-        String(32), nullable=False, comment="配色风格: professional/modern/minimal"
-    )
+    template: Mapped[str] = mapped_column(String(32), nullable=False, comment="模板类型: training/briefing/audit")
+    style: Mapped[str] = mapped_column(String(32), nullable=False, comment="配色风格: professional/modern/minimal")
     page_count: Mapped[int] = mapped_column(
         Integer, default=0, server_default="0", nullable=False, comment="幻灯片页数"
     )
@@ -2031,9 +2027,7 @@ class GraphKnowledgeNode(BaseModel):
         String(32), nullable=False, comment="节点类型: document/clause/entity/category/concept"
     )
     aliases: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="别名列表")
-    article_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, comment="关联知识库文章ID"
-    )
+    article_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="关联知识库文章ID")
     entity_type: Mapped[str | None] = mapped_column(
         String(32), nullable=True, comment="实体子类型: equipment/condition/location/operation/material/standard"
     )

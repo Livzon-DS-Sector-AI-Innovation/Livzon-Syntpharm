@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button, Input, Select, Space, Tooltip, App } from 'antd'
 import {
   SearchOutlined,
@@ -27,7 +27,9 @@ export default function KnowledgeGraphToolbar({
 }: ToolbarProps) {
   const { message } = App.useApp()
   const messageRef = useRef(message)
-  messageRef.current = message
+  useEffect(() => {
+    messageRef.current = message
+  }, [message])
   const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
   const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
   const [searching, setSearching] = useState(false)

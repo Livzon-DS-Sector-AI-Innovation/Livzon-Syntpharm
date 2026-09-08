@@ -265,7 +265,9 @@ function mapEdgeToFlowEdge(e: GraphEdgeData): Edge {
 export default function KnowledgeGraphPanel() {
   const { message } = App.useApp()
   const messageRef = useRef(message)
-  messageRef.current = message
+  useEffect(() => {
+    messageRef.current = message
+  }, [message])
   // 用 selector 订阅，避免整个 store 对象变化触发重渲染
   const nodes = useKnowledgeGraphStore(s => s.nodes)
   const edges = useKnowledgeGraphStore(s => s.edges)

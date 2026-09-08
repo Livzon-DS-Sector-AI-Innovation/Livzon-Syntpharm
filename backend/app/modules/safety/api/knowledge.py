@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -209,6 +209,7 @@ async def handler(  # noqa: F811
 
 # ── 知识图谱端点 ──────────────────────────────────────────
 
+
 def _node_to_dict(n) -> dict:
     """节点 ORM → dict"""
     return {
@@ -259,6 +260,7 @@ async def get_full_graph(
 ) -> Any:
     """获取完整知识图谱数据"""
     from app.modules.safety.service import KnowledgeGraphService
+
     service = KnowledgeGraphService(db)
     data = await service.get_full_graph(node_types, relation_types, max_nodes)
     return ApiResponse(
@@ -287,6 +289,7 @@ async def get_graph_nodes(
 ) -> Any:
     """获取图谱节点列表"""
     from app.modules.safety.service import KnowledgeGraphService
+
     service = KnowledgeGraphService(db)
     offset = (page - 1) * page_size
     items, total = await service.get_nodes(node_type, entity_type, status, keyword, offset, page_size)
@@ -311,6 +314,7 @@ async def get_graph_edges(
 ) -> Any:
     """获取图谱边列表"""
     from app.modules.safety.service import KnowledgeGraphService
+
     service = KnowledgeGraphService(db)
     offset = (page - 1) * page_size
     items, total = await service.get_edges(relation_type, status, offset, page_size)
@@ -333,6 +337,7 @@ async def search_graph_nodes(
 ) -> Any:
     """搜索图谱节点"""
     from app.modules.safety.service import KnowledgeGraphService
+
     service = KnowledgeGraphService(db)
     items = await service.search_nodes(query, node_types)
     return ApiResponse(data=[_node_to_dict(n) for n in items])
@@ -353,6 +358,7 @@ async def expand_graph_node(
 ) -> Any:
     """展开指定节点的邻居节点"""
     from app.modules.safety.service import KnowledgeGraphService
+
     service = KnowledgeGraphService(db)
     data = await service.expand_node(node_id, hops, relation_types, max_nodes)
     return ApiResponse(
@@ -377,6 +383,7 @@ async def generate_graph(
 ) -> Any:
     """从知识库文章 AI 生成知识图谱"""
     from app.modules.safety.service import KnowledgeGraphService
+
     service = KnowledgeGraphService(db)
     result = await service.generate_graph(document_ids, force_rebuild)
     await db.commit()
@@ -395,53 +402,57 @@ async def handler(  # noqa: F811
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """批量导入知识库文章"""
-    from app.modules.safety.service.document_parser import parse_document
     from app.modules.safety.repository import SafetyRepository
-    
+    from app.modules.safety.service.document_parser import parse_document
+
     if not files:
         return ApiResponse(code=400, message="未选择文件")
-    
+
     if len(files) > 20:
         return ApiResponse(code=400, message="单次最多导入 20 个文件")
-    
+
     repo = SafetyRepository(db)
     results = []
     success_count = 0
     error_count = 0
-    
+
     for file in files:
         try:
             # 读取文件内容
             content = await file.read()
             filename = file.filename or "unknown"
-            
+
             # 检查文件大小（最大 50MB）
             if len(content) > 50 * 1024 * 1024:
-                results.append({
-                    "filename": filename,
-                    "status": "error",
-                    "message": "文件过大（超过 50MB）",
-                })
+                results.append(
+                    {
+                        "filename": filename,
+                        "status": "error",
+                        "message": "文件过大（超过 50MB）",
+                    }
+                )
                 error_count += 1
                 continue
-            
+
             # 解析文档
             parsed = await parse_document(filename, content)
-            
+
             # 使用用户指定的分类，或使用推断的分类
             final_category = category if category else parsed["category"]
-            
+
             # 检查是否已存在同名文章
             existing = await repo.get_knowledge_article_by_title(parsed["title"])
             if existing:
-                results.append({
-                    "filename": filename,
-                    "status": "skipped",
-                    "message": f"已存在同名文章: {parsed['title']}",
-                })
+                results.append(
+                    {
+                        "filename": filename,
+                        "status": "skipped",
+                        "message": f"已存在同名文章: {parsed['title']}",
+                    }
+                )
                 error_count += 1
                 continue
-            
+
             # 创建文章
             article_data = {
                 "title": parsed["title"],
@@ -452,11 +463,11 @@ async def handler(  # noqa: F811
                 "status": "draft",
             }
             article = await repo.create_knowledge_article(article_data)
-            
+
             # 保存附件
             file_ext = os.path.splitext(filename)[1]
             safe_name = f"{article.id}_{int(datetime.now().timestamp())}{file_ext}"
-            
+
             if minio_enabled():
                 object_key = f"knowledge/{safe_name}"
                 upload_object(
@@ -474,7 +485,7 @@ async def handler(  # noqa: F811
                 with open(file_path, "wb") as f:
                     f.write(content)
                 stored_path = file_path
-            
+
             # 更新文章的附件信息
             await repo.update_knowledge_article(
                 article.id,
@@ -483,26 +494,30 @@ async def handler(  # noqa: F811
                     "attachment_original_name": filename,
                 },
             )
-            
-            results.append({
-                "filename": filename,
-                "status": "success",
-                "article_id": str(article.id),
-                "title": parsed["title"],
-                "category": final_category,
-            })
+
+            results.append(
+                {
+                    "filename": filename,
+                    "status": "success",
+                    "article_id": str(article.id),
+                    "title": parsed["title"],
+                    "category": final_category,
+                }
+            )
             success_count += 1
-            
+
         except Exception as e:
-            results.append({
-                "filename": file.filename or "unknown",
-                "status": "error",
-                "message": str(e),
-            })
+            results.append(
+                {
+                    "filename": file.filename or "unknown",
+                    "status": "error",
+                    "message": str(e),
+                }
+            )
             error_count += 1
-    
+
     await db.commit()
-    
+
     return ApiResponse(
         data={
             "results": results,
@@ -527,23 +542,23 @@ async def generate_card(
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成结构化知识卡片"""
+    from app.core.config import get_settings
     from app.modules.safety.repository import SafetyRepository
     from app.platform.integrations.ai.client import AIService
-    from app.core.config import get_settings
-    
+
     repo = SafetyRepository(db)
     article = await repo.get_knowledge_article_by_id(article_id)
     if not article:
         return ApiResponse(code=404, message="文章不存在")
-    
+
     if not article.content:
         return ApiResponse(code=400, message="文章内容为空，无法生成知识卡片")
-    
+
     # 获取 AI 服务配置
     settings = get_settings()
     api_key = settings.LLM_API_KEY or settings.AI_API_KEY
     base_url = settings.LLM_BASE_URL or settings.AI_BASE_URL
-    
+
     if not api_key:
         # 降级方案：使用简单规则提取
         card = {
@@ -560,13 +575,13 @@ async def generate_card(
         await repo.update_knowledge_article(article_id, {"knowledge_card": card})
         await db.commit()
         return ApiResponse(data=card, message="AI 服务未配置，已生成空知识卡片（请配置 LLM_API_KEY 后重新生成）")
-    
+
     ai_service = AIService(
         api_key=api_key,
         base_url=base_url,
         model="deepseek-chat",
     )
-    
+
     # 构建 prompt
     prompt = f"""请从以下法规文档内容中提取结构化知识卡片。
 
@@ -590,27 +605,26 @@ async def generate_card(
 }}
 
 如果某些字段在文档中没有相关内容，请返回 null。"""
-    
+
     try:
         response = await ai_service.chat_parsed(
             messages=[{"role": "user", "content": prompt}],
             expected_keys=["document_title", "document_category", "priority"],
         )
-        
+
         # 更新文章的知识卡片字段
         await repo.update_knowledge_article(
             article_id,
             {"knowledge_card": response},
         )
         await db.commit()
-        
+
         return ApiResponse(
             data=response,
             message="知识卡片生成成功",
         )
     except Exception as e:
         return ApiResponse(code=500, message=f"知识卡片生成失败：{str(e)}")
-
 
 
 @knowledge_router.post(
@@ -665,15 +679,17 @@ async def get_ppt_history(
 
     records = []
     for item in items:
-        records.append({
-            "id": str(item.id),
-            "file_name": item.file_name,
-            "template": item.template,
-            "style": item.style,
-            "page_count": item.page_count,
-            "download_url": item.object_key,
-            "created_at": item.created_at.isoformat() if item.created_at else None,
-        })
+        records.append(
+            {
+                "id": str(item.id),
+                "file_name": item.file_name,
+                "template": item.template,
+                "style": item.style,
+                "page_count": item.page_count,
+                "download_url": item.object_key,
+                "created_at": item.created_at.isoformat() if item.created_at else None,
+            }
+        )
 
     return ApiResponse(data={"records": records, "total": total})
 
@@ -689,45 +705,48 @@ async def generate_summary(
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成摘要"""
+    from app.core.config import get_settings
     from app.modules.safety.repository import SafetyRepository
     from app.platform.integrations.ai.client import AIService
-    from app.core.config import get_settings
-    
+
     repo = SafetyRepository(db)
     article = await repo.get_knowledge_article_by_id(article_id)
     if not article:
         return ApiResponse(code=404, message="文章不存在")
-    
+
     if not article.content:
         return ApiResponse(code=400, message="文章内容为空，无法生成摘要")
-    
+
     # 获取 AI 服务配置
     settings = get_settings()
     api_key = settings.LLM_API_KEY or settings.AI_API_KEY
     base_url = settings.LLM_BASE_URL or settings.AI_BASE_URL
-    
+
     if not api_key:
         # 降级方案：提取前 500 字符作为摘要
         summary = article.content[:500]
         # 按句号/分号截断
-        for sep in ['。', '；', ';', '.', '\n']:
+        for sep in ["。", "；", ";", ".", "\n"]:
             last_sep = summary.rfind(sep)
             if last_sep > 100:
-                summary = summary[:last_sep + 1]
+                summary = summary[: last_sep + 1]
                 break
         if len(article.content) > 500:
             summary += "..."
-        
+
         await repo.update_knowledge_article(article_id, {"summary": summary})
         await db.commit()
-        return ApiResponse(data={"summary": summary, "message": "AI 服务未配置，已生成基础摘要"}, message="摘要生成成功")
-    
+        return ApiResponse(
+            data={"summary": summary, "message": "AI 服务未配置，已生成基础摘要"},
+            message="摘要生成成功",
+        )
+
     ai_service = AIService(
         api_key=api_key,
         base_url=base_url,
         model="deepseek-chat",
     )
-    
+
     # 构建 prompt
     prompt = f"""请为以下法规文档生成结构化摘要。
 
@@ -743,17 +762,17 @@ async def generate_summary(
 3. 重要要求和注意事项
 
 直接返回摘要文本，不需要 JSON 格式。"""
-    
+
     try:
         summary = await ai_service.chat(
             messages=[{"role": "user", "content": prompt}],
             response_format="text",
         )
-        
+
         # 更新文章的摘要字段
         await repo.update_knowledge_article(article_id, {"summary": summary})
         await db.commit()
-        
+
         return ApiResponse(
             data={"summary": summary, "message": "摘要生成成功"},
             message="摘要生成成功",

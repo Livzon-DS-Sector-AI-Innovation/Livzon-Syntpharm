@@ -342,7 +342,7 @@ class RegulationService:
         """获取文本模型 AIService（硬编码配置）"""
         from app.modules.safety.service.config import create_ai_service
 
-        return await create_ai_service("text")  # type: ignore[return-value]
+        return await create_ai_service("text")  # type: ignore[no-any-return]
 
     async def _ai_identify_scope(
         self,
