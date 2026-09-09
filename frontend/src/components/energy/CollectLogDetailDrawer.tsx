@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Drawer, Table, Spin, Empty, App, Button } from 'antd'
 import {
@@ -9,7 +8,6 @@ import {
 } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import {
-  CollectLogDetail,
   CollectLogDeviceDetail,
   CollectStatus,
 } from '@/types/energy'
@@ -163,7 +161,7 @@ export function CollectLogDetailDrawer({
   open,
   onClose,
 }: CollectLogDetailDrawerProps) {
-  const { message } = App.useApp()
+  const { message: _message } = App.useApp()
   const { isLoading: loading, data: detail = null } = useQuery({
     queryKey: ['collect-log-detail', logId],
     queryFn: async () => {
