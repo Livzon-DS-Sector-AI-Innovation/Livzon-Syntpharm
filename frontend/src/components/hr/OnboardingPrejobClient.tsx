@@ -16,13 +16,11 @@ import { Employee, SopCatalogItem } from '@/types/hr'
 import {
   fetchEmployees,
   fetchNewEmployees,
-  fetchPrejobTrainingPlan,
   fetchOnboardingEvaluationByEmployeeId,
-  fetchOnboardingRecords
 } from '@/lib/api/client/hr'
 import { apiGet } from '@/lib/api/client'
 
-const DEPT_CONTENT_MAP: Record<string, string[]> = {
+const _DEPT_CONTENT_MAP: Record<string, string[]> = {
   '人事行政部': [
     '公司级公用文件(详见附件一)',
     '部门级公用文件(详见附件二)',
@@ -287,7 +285,7 @@ export default function OnboardingPrejobClient() {
                 />
                 <Button size="small" onClick={() => {
                   setSelectedSops(prev => {
-                    const visibleIds = new Set(allSops.slice(0, 200).map(s => s.id))
+                    const _visibleIds = new Set(allSops.slice(0, 200).map(s => s.id))
                     const newOnes = allSops.slice(0, 200).filter(s => !prev.find(p => p.id === s.id))
                     return [...prev, ...newOnes]
                   })

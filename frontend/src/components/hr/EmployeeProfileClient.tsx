@@ -65,7 +65,7 @@ export default function EmployeeProfileClient({
       ? ''
       : departments.find((d) => d.id === activeTab)?.name || ''
 
-  const { data, isLoading: loading } = useQuery({
+  const { data, isLoading: _loading } = useQuery({
     queryKey: ['hr-employees', { factory, debouncedSearchKeyword, activeDepartment, filterStatus, page, pageSize }],
     queryFn: async () => {
       const res = await doFetch({

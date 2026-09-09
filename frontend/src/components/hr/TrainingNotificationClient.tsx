@@ -376,7 +376,7 @@ export default function TrainingNotificationClient() {
   }
 
   const formValues = form.getFieldsValue()
-  const traineeDepts: string[] = formValues?.trainee_departments || []
+  const _traineeDepts: string[] = formValues?.trainee_departments || []
   const hasBasicInfo = formValues?.department && formValues?.training_date && formValues?.subject
 
   return (
@@ -423,7 +423,7 @@ export default function TrainingNotificationClient() {
                 placeholder="选择培训师"
                 options={trainerEmployees}
                 className="w-full"
-                onChange={(value) => {
+                onChange={(_value) => {
                   const dept = departments.find(d => d.value === form.getFieldValue('department'))
                   if (dept) setTrainerDept(dept.value)
                 }}
@@ -565,6 +565,6 @@ interface EvaluationPreviewProps {
   data?: Record<string, unknown>
 }
 
-function EvaluationPreview(props: EvaluationPreviewProps) {
+function _EvaluationPreview(_props: EvaluationPreviewProps) {
   return <div>Evaluation Preview</div>
 }

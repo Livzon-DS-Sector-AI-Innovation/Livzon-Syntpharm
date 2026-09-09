@@ -35,7 +35,7 @@ export default function CandidateDetailClient({
     candidate.recommendation_level || ''
   )
   const [updating, setUpdating] = useState(false)
-  const [navContext, setNavContext] = useState<{
+  const [navContext, _setNavContext] = useState<{
     ids: string[]
     currentIndex: number
   } | null>(null)
