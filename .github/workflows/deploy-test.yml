@@ -1,7 +1,5 @@
 name: Deploy Test
 on:
-  push:
-    branches: [test]
   workflow_dispatch:
 
 concurrency:
