@@ -131,7 +131,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
 
   const trendOption: EChartsOption = useMemo(() => {
     const visible = ranking.filter((w) => visibleSet.has(w.workshop))
-    const series = visible.map((w, i) => ({
+    const series = visible.map((w, _i) => ({
       name: w.workshop,
       type: trendType === '折线图' ? 'line' : 'bar',
       data: w.months.map((v) => Math.round(v * 100) / 100),
