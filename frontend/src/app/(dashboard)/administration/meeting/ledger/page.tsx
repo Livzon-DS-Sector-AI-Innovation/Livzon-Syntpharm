@@ -20,11 +20,25 @@ const STATUS_COLORS: Record<string, string> = {
   '停用': 'error',
 }
 
+interface GiftInventory {
+  id: string
+  name: string
+  specification?: string
+  unit: string
+  opening_stock: number
+  incoming_qty?: number
+  closing_stock: number
+  unit_price?: number
+  total_amount?: number
+  status: string
+}
+
+
 export default function ItemLedgerPage() {
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<GiftInventory | null>(null)
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
@@ -46,21 +60,21 @@ export default function ItemLedgerPage() {
     setPagination({ ...pagination, current: page })
   }
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: GiftInventory) => {
     try {
       if (editing) {
-        await updateGiftInventory(editing.id, values)
+        await updateGiftInventory(editing.id, values as unknown as Record<string, unknown>)
         message.success('更新成功')
       } else {
-        await createGiftInventory(values)
+        await createGiftInventory(values as unknown as Record<string, unknown>)
         message.success('创建成功')
       }
       setModalOpen(false)
       form.resetFields()
       setEditing(null)
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     }
   }
 
@@ -69,8 +83,8 @@ export default function ItemLedgerPage() {
       await deleteGiftInventory(id)
       message.success('删除成功')
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -94,7 +108,7 @@ export default function ItemLedgerPage() {
       title: '操作',
       key: 'action',
       width: 160,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: GiftInventory) => (
         <Space>
           <Button
             icon={<EditOutlined />}

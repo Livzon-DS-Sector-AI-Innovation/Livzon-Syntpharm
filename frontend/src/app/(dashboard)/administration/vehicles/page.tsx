@@ -27,10 +27,23 @@ const fileToBase64 = (file: File): Promise<string> => {
   })
 }
 
+interface Vehicle {
+  id: string
+  plate_number: string
+  brand?: string
+  model?: string
+  color?: string
+  mileage?: number
+  status: string
+  owner_department?: string
+  photo_data?: string
+  photo_type?: string
+}
+
 export default function VehiclePage() {
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<Vehicle | null>(null)
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
@@ -49,7 +62,7 @@ export default function VehiclePage() {
     setPagination({ ...pagination, current: page })
   }
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: Vehicle) => {
     try {
       const payload = { ...values }
       if (fileList.length > 0 && fileList[0].originFileObj) {
@@ -69,8 +82,8 @@ export default function VehiclePage() {
       setEditing(null)
       setFileList([])
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     }
   }
 
@@ -79,8 +92,8 @@ export default function VehiclePage() {
       await deleteVehicle(id)
       message.success('删除成功')
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -100,14 +113,14 @@ export default function VehiclePage() {
         console.error('导入错误:', result.errors)
       }
       load(1)
-    } catch (err: any) {
-      message.error(err.message || '批量导入失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '批量导入失败')
     } finally {
       if (importInputRef.current) importInputRef.current.value = ''
     }
   }
 
-  const openModal = (record?: any) => {
+  const openModal = (record?: Vehicle) => {
     if (record) {
       setEditing(record)
       form.setFieldsValue(record)
@@ -129,7 +142,7 @@ export default function VehiclePage() {
     setModalOpen(true)
   }
 
-  const VehicleCard = ({ record }: { record: any }) => (
+  const VehicleCard = ({ record }: { record: Vehicle }) => (
     <Card
       hoverable
       className="relative overflow-hidden"
@@ -226,7 +239,7 @@ export default function VehiclePage() {
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {data.map((record: any) => (
+            {data.map((record: Vehicle) => (
               <VehicleCard key={record.id} record={record} />
             ))}
           </div>

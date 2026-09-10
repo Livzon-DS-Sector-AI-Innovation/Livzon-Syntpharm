@@ -7,12 +7,25 @@ import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant
 import { fetchGiftRequisitions } from '@/lib/api/client/administration/gift-requisition'
 import { createGiftRequisition, updateGiftRequisition, deleteGiftRequisition } from '@/actions/administration'
 
+interface GiftRequisition {
+  id: string
+  seq_no?: number
+  department: string
+  item_name: string
+  unit_price?: number
+  quantity: number
+  total_amount?: number
+  recipient: string
+  requisition_date: string
+  remarks?: string
+}
+
 export default function RequisitionPage() {
   const [department, setDepartment] = useState('')
   const [itemName, setItemName] = useState('')
   const [recipient, setRecipient] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<GiftRequisition | null>(null)
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
@@ -39,21 +52,21 @@ export default function RequisitionPage() {
     refetch()
   }
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: GiftRequisition) => {
     try {
       if (editing) {
-        await updateGiftRequisition(editing.id, values)
+        await updateGiftRequisition(editing.id, values as unknown as Record<string, unknown>)
         message.success('更新成功')
       } else {
-        await createGiftRequisition(values)
+        await createGiftRequisition(values as unknown as Record<string, unknown>)
         message.success('创建成功')
       }
       setModalOpen(false)
       form.resetFields()
       setEditing(null)
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     }
   }
 
@@ -62,8 +75,8 @@ export default function RequisitionPage() {
       await deleteGiftRequisition(id)
       message.success('删除成功')
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -81,7 +94,7 @@ export default function RequisitionPage() {
       title: '操作',
       key: 'action',
       width: 160,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: GiftRequisition) => (
         <Space>
           <Button
             icon={<EditOutlined />}
