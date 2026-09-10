@@ -1,8 +1,7 @@
-import type { UploadFile } from "antd";
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
+import { UploadFile, Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
 import {DownloadOutlined, DeleteOutlined, FileSearchOutlined} from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
 import { fetchReferenceStandards, fetchReferenceStandardDownloadUrl } from '@/lib/api/client/registration'

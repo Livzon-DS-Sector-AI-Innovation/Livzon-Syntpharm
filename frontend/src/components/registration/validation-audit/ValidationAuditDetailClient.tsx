@@ -1,9 +1,8 @@
-import type { UploadFile } from "antd";
 'use client'
 
 
 import { useState, useCallback, type JSX } from 'react'
-import {
+import { UploadFile, 
   Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty, Typography,
 } from 'antd'
 import {

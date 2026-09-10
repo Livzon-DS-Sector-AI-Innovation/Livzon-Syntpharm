@@ -1,8 +1,7 @@
-import type { UploadFile } from "antd";
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Table, Input, Button, Space, App, Card, Modal, Form, Upload } from 'antd'
+import { UploadFile, Table, Input, Button, Space, App, Card, Modal, Form, Upload } from 'antd'
 import { UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { SupplementaryReplyListItem } from '@/types/registration'
 import { fetchSupplementaryReplies, fetchSupplementaryReplyDownloadUrl } from '@/lib/api/client/registration'

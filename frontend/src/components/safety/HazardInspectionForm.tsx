@@ -1,4 +1,3 @@
-import type { UploadFile } from "antd";
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
@@ -8,6 +7,7 @@ import {
   DatePicker,
   Select,
   Upload,
+  UploadFile,
   Button,
   Space,
   Card,

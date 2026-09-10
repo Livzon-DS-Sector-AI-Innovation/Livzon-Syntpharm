@@ -1,10 +1,8 @@
-import type { UploadFile } from "antd";
 'use client'
 
- 'use client'
 
 import { useState } from 'react'
-import { Form, Input, Upload, Button, App, Card, Radio, Typography } from 'antd'
+import { UploadFile,  Form, Input, Upload, Button, App, Card, Radio, Typography } from 'antd'
 import {
   InboxOutlined, ArrowLeftOutlined, CheckCircleFilled,
   FileTextOutlined, AuditOutlined, SyncOutlined,
