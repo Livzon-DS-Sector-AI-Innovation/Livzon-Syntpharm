@@ -1,4 +1,4 @@
-# 64 — Replace `any` in administration pages
+# 63 — Replace `any` in administration pages
 
 **What to build:** All administration page components use proper types instead of `any`. This includes replacing `useState<any>(null)` with specific record types, form handlers with form field interfaces, error catches with `unknown` and type guards, and table column renderers with actual row types.
 

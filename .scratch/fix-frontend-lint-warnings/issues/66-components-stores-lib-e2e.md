@@ -1,4 +1,4 @@
-# 67 — Replace `any` in components, stores, lib, e2e
+# 66 — Replace `any` in components, stores, lib, e2e
 
 **What to build:** All shared components, stores, utilities, and test files use proper types instead of `any`. This includes client-side API fetch helpers, Excel export utilities, PDF extraction, validation schemas, workflow templates, and e2e test setup.
 

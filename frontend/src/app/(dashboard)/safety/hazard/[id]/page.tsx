@@ -865,7 +865,7 @@ export default function HazardLedgerDetailPage() {
           <div style={{ marginTop: 10, textAlign: 'center' }}>
             <Text style={{ fontSize: 12, color: '#8c8c8c' }}>AI 置信度 </Text>
             <Text style={{ fontSize: 13, fontWeight: 600 }}>
-              {Math.round(aiResult.confidence * 100)}%
+              {Math.round((aiResult.confidence as number) * 100)}%
             </Text>
           </div>
         )}

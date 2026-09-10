@@ -256,10 +256,10 @@ export default function CreateReportPage() {
         {selectedTemplate && Object.keys(selectedTemplate.field_mapping || {}).length > 0 && (
           <Card title="静态字段" style={{ marginTop: 16 }}>
             <Row gutter={24}>
-              {Object.entries(selectedTemplate.field_mapping || {}).map(([key, config]: [string, Record<string, unknown>]) => (
+              {Object.entries(selectedTemplate.field_mapping || {}).map(([key, config]: [string, unknown]) => (
                 <Col span={8} key={key}>
                   <Form.Item name={['static_data', key]} label={(config as Record<string, unknown>).label as string || key}>
-                    <Input placeholder={`请输入${config.label || key}`} />
+                    <Input placeholder={`请输入${(config as Record<string, unknown>).label || key}`} />
                   </Form.Item>
                 </Col>
               ))}

@@ -42,13 +42,14 @@ export default function TrainingSpecialistsClient() {
   const [teamSaving, setTeamSaving] = useState(false)
   const [_teamDept, setTeamDept] = useState('')
 
-  const { data: data = [], isLoading: loading, refetch: loadData } = useQuery<TrainingSpecialist[]>({
+  const { data: specialistsData, isLoading: loading, refetch: loadData } = useQuery<TrainingSpecialist[]>({
     queryKey: ['hr-training-specialists'],
     queryFn: async () => {
       const res = await fetchTrainingSpecialists()
-      return res.data || []
+      return (res.data as TrainingSpecialist[]) || []
     },
   })
+  const data: TrainingSpecialist[] = specialistsData || []
 
   const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
     queryKey: ['hr-departments-options', { factory }],
@@ -59,14 +60,15 @@ export default function TrainingSpecialistsClient() {
     },
   })
 
-  const { data: teams = [], isLoading: teamsLoading, refetch: loadTeams } = useQuery<TrainingTeam[]>({
+  const { data: teamsData, isLoading: teamsLoading, refetch: loadTeams } = useQuery<TrainingTeam[]>({
     queryKey: ['hr-training-teams', { teamFactory }],
     queryFn: async () => {
       const res = await fetchTrainingTeams(teamFactory)
-      return res.data || []
+      return (res.data as TrainingTeam[]) || []
     },
   })
 
+  const teams = teamsData || []
   const handleSyncOpenIds = async () => {
     try {
       const json = await syncTrainingSpecialistsFeishuOpenIds()
@@ -199,7 +201,7 @@ export default function TrainingSpecialistsClient() {
   const loadTeamSpecialists = async () => {
     try {
       const res = await fetchTrainingSpecialists()
-      const list = (res.data || []).map((s: TrainingSpecialist) => ({
+      const list = ((res.data || []) as TrainingSpecialist[]).map((s: TrainingSpecialist) => ({
         value: s.employee_number || '',
         label: `${s.employee_name} (${s.employee_number})`,
         department: s.department || '',

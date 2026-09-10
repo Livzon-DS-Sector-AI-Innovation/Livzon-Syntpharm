@@ -205,7 +205,7 @@ export default function TrainingSessionListClient({
       if (employeeNames.length === 0) {
         try {
           const tasksRes = await fetchTrainingSessionSelectTasks(record.id)
-          const tasks: SelectTask[] = tasksRes.data || []
+          const tasks: SelectTask[] = (tasksRes.data as SelectTask[]) || []
           for (const t of tasks) {
             if (t.status === 'submitted' && t.employee_names) {
               employeeNames.push(...t.employee_names)
@@ -248,7 +248,7 @@ export default function TrainingSessionListClient({
       if (employeeNames.length === 0) {
         try {
           const tasksRes = await fetchTrainingSessionSelectTasks(record.id)
-          const tasks: SelectTask[] = tasksRes.data || []
+          const tasks: SelectTask[] = (tasksRes.data as SelectTask[]) || []
           for (const t of tasks) {
             if (t.status === 'submitted' && t.employee_names) {
               employeeNames.push(...t.employee_names)
@@ -306,7 +306,7 @@ export default function TrainingSessionListClient({
     if (selectedNames.length === 0) {
       try {
         const tasksRes = await fetchTrainingSessionSelectTasks(record.id)
-        const tasks: SelectTask[] = tasksRes.data || []
+        const tasks: SelectTask[] = (tasksRes.data as SelectTask[]) || []
         for (const t of tasks) {
           if (t.status === 'submitted') {
             if (t.employee_names) selectedNames.push(...t.employee_names)
@@ -424,7 +424,7 @@ export default function TrainingSessionListClient({
   const handleRefreshSelectStatus = async (record: TrainingSession) => {
     try {
       const res = await fetchTrainingSessionSelectTasks(record.id)
-      const tasks: SelectTask[] = res.data || []
+      const tasks: SelectTask[] = (res.data as SelectTask[]) || []
       if (tasks.length === 0) {
         message.info('暂无选择任务')
         handleRefresh()
@@ -479,7 +479,7 @@ export default function TrainingSessionListClient({
     if (tasks.length === 0) {
       try {
         const res = await fetchTrainingSessionSelectTasks(record.id)
-        tasks = res.data || []
+        tasks = (res.data as SelectTask[]) || []
       } catch { /* ignore */ }
     }
     if (tasks.length === 0) {

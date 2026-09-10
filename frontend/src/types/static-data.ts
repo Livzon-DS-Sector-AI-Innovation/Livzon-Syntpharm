@@ -22,7 +22,7 @@ export type YesNo = 0 | 1
 
 // ============ 通用响应结构 ============
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T
@@ -30,14 +30,14 @@ export interface ApiResponse<T = any> {
     page?: number
     page_size?: number
     total?: number
-    [key: string]: any
+    [key: string]: unknown
   }
 }
 
 export interface PageParams {
   page?: number
   page_size?: number
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // ============ 一、通用字典表 ============

@@ -468,9 +468,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           {report.template && Object.keys(report.template.field_mapping || {}).length > 0 && (
             <Card title="静态字段" style={{ marginBottom: 16 }}>
               <Row gutter={24}>
-                {Object.entries(report.template.field_mapping || {}).map(([key, config]: [string, Record<string, unknown>]) => (
+                {Object.entries(report.template.field_mapping || {}).map(([key, config]: [string, unknown]) => (
                   <Col span={8} key={key}>
-                    <Form.Item name={['static_data', key]} label={(config.label as string) || key}>
+                    <Form.Item name={['static_data', key]} label={((config as Record<string, unknown>).label as string) || key}>
                       <Input disabled={!isEditMode} />
                     </Form.Item>
                   </Col>

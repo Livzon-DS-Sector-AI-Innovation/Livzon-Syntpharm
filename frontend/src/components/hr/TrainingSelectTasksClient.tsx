@@ -19,6 +19,7 @@ interface TaskItem {
   training_method: string
   has_result: boolean
   selected_count: number
+  employee_numbers?: string[]
   created_at: string
 }
 
@@ -37,7 +38,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
     setLoading(true)
     try {
       const res = await fetchTrainingSelectTasks("default")
-      setTasks(res.data || [])
+      setTasks((res.data as TaskItem[]) || [])
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : '加载失败')
     } finally {
@@ -52,7 +53,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
     }
     try {
       const res = await fetchTrainingSelectTaskResult(tokenInput.trim())
-      const task = res.data
+      const task = res.data as TaskItem | null
       if (!task?.employee_numbers?.length) {
         message.warning('该任务尚未提交选择结果')
         return

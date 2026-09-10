@@ -1,4 +1,4 @@
-# 66 — Replace `any` in equipment, production, safety pages
+# 65 — Replace `any` in equipment, production, safety pages
 
 **What to build:** All equipment, production, and safety page components use proper types instead of `any`. This includes API response callbacks, error handlers, and data transformations. The `production/product-output/` pages have 17 warnings with complex data transformations that need careful typing.
 
