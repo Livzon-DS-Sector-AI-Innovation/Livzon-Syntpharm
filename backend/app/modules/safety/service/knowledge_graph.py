@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.models import GraphKnowledgeEdge, GraphKnowledgeNode
@@ -17,6 +17,7 @@ class KnowledgeGraphService:
     def __init__(self, db: AsyncSession):
         self.db = db
         from app.modules.safety.service.knowledge_graph_repo import KnowledgeGraphRepository
+
         self.repo = KnowledgeGraphRepository(db)
 
     # ── 节点操作 ──────────────────────────────────────────
@@ -319,11 +320,13 @@ class KnowledgeGraphService:
         }
         name = cat_labels.get(category, category)
 
-        existing = await self.repo.find_node([
-            GraphKnowledgeNode.node_type == "category",
-            GraphKnowledgeNode.name == name,
-            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
-        ])
+        existing = await self.repo.find_node(
+            [
+                GraphKnowledgeNode.node_type == "category",
+                GraphKnowledgeNode.name == name,
+                GraphKnowledgeNode.is_deleted == False,  # noqa: E712
+            ]
+        )
         if existing:
             return existing
 
@@ -338,8 +341,10 @@ class KnowledgeGraphService:
 
     async def _find_document_node(self, article_id: uuid.UUID) -> GraphKnowledgeNode | None:
         """查找文章对应的文档节点"""
-        return await self.repo.find_node([
-            GraphKnowledgeNode.node_type == "document",
-            GraphKnowledgeNode.article_id == article_id,
-            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
-        ])
+        return await self.repo.find_node(
+            [
+                GraphKnowledgeNode.node_type == "document",
+                GraphKnowledgeNode.article_id == article_id,
+                GraphKnowledgeNode.is_deleted == False,  # noqa: E712
+            ]
+        )

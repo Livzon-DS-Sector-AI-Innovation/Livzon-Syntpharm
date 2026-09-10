@@ -98,8 +98,7 @@ class KnowledgeService:
             return None
         return await self.repo.update_knowledge_article(article_id, {"status": "archived"})
 
-
-# ==================== 风险作业报备 Services ====================
+    # ==================== 风险作业报备 Services ====================
 
     # ── AI 生成 ──
 
@@ -205,8 +204,6 @@ class KnowledgeService:
             logger.exception("摘要生成失败: article_id=%s", article_id)
             raise
 
-    async def get_ppt_history(
-        self, article_id: uuid.UUID, skip: int = 0, limit: int = 20
-    ) -> tuple[list[Any], int]:
+    async def get_ppt_history(self, article_id: uuid.UUID, skip: int = 0, limit: int = 20) -> tuple[list[Any], int]:
         """查询某文章的 PPT 生成历史"""
         return await self.repo.get_ppt_generation_records(article_id, skip, limit)

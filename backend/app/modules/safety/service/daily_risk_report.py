@@ -38,7 +38,15 @@ class DailyRiskReportService:
         report_type: str | None = None,
     ) -> tuple[list[DailyRiskReport], int]:
         """获取每日风险作业报备列表"""
-        return await self.repo.get_daily_risk_reports(skip, limit, status, department, report_date, keyword, report_type)
+        return await self.repo.get_daily_risk_reports(
+            skip,
+            limit,
+            status,
+            department,
+            report_date,
+            keyword,
+            report_type,
+        )
 
     async def get_report(self, report_id: uuid.UUID) -> DailyRiskReport | None:
         """获取报备详情"""

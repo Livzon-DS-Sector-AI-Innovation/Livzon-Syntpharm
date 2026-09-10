@@ -307,7 +307,7 @@ async def handler(  # noqa: F811
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """导出特殊作业台账为 Excel 文件，支持 AI 自然语言筛选
-    
+
     TODO(H7): Excel export can take >5s for large datasets. Consider async task + polling pattern.
     """
     from urllib.parse import quote

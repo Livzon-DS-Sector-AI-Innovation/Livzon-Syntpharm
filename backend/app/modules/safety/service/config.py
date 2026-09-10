@@ -50,7 +50,7 @@ async def create_ai_service(config_type: str = "text") -> Any:
     """创建 AI 服务实例（使用全局 llm_client 单例）。
 
     config_type: "text"（文本模型）或 "vision"（视觉模型）
-    
+
     返回 llm_client 单例，配置从 core.llm_configs 表读取。
     """
     from app.core.llm import llm_client

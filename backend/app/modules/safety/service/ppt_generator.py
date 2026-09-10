@@ -259,15 +259,17 @@ class PptGeneratorService:
             logger.warning("MinIO 未启用，PPT 文件无法持久化存储")
 
         # 7. 写入生成记录（通过 repository）
-        await self.repo.create_ppt_generation_record({
-            "article_id": article_id,
-            "file_name": file_name,
-            "template": template,
-            "style": style,
-            "page_count": page_count,
-            "object_key": object_key,
-            "status": "success",
-        })
+        await self.repo.create_ppt_generation_record(
+            {
+                "article_id": article_id,
+                "file_name": file_name,
+                "template": template,
+                "style": style,
+                "page_count": page_count,
+                "object_key": object_key,
+                "status": "success",
+            }
+        )
 
         return {
             "download_url": object_key,

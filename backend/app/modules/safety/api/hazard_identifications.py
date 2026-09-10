@@ -394,7 +394,7 @@ async def handler(  # noqa: F811
     3. Excel 标准化输出插件填表 → LibreOffice 转 PDF
 
     不提供 natural_query 时导出全部已完成记录。
-    
+
     TODO(H7): PDF export can take >5s for large datasets. Consider async task + polling pattern.
     """
     from datetime import datetime as dt_module

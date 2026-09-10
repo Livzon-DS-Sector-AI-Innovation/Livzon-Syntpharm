@@ -103,7 +103,7 @@ class LLMClient:
                     last_error = e
                     if attempt < 2:
                         # Exponential backoff: 1s, 2s
-                        await asyncio.sleep(2 ** attempt)
+                        await asyncio.sleep(2**attempt)
                         continue
                     raise
 

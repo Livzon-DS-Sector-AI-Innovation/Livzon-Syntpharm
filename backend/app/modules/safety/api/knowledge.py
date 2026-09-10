@@ -1,10 +1,10 @@
 # mypy: ignore-errors
 """Safety API — knowledge endpoints."""
 
+import logging
 import os
 import uuid
 from datetime import datetime
-import logging
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
@@ -195,7 +195,7 @@ async def handler(  # noqa: F811
         stored_path = file_path
 
     service = KnowledgeService(db)
-    item = await repo.update_knowledge_article(
+    item = await service.repo.update_knowledge_article(
         article_id,
         {
             "attachment_path": stored_path,
@@ -543,7 +543,7 @@ async def generate_card(
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成结构化知识卡片（委托给 KnowledgeService）
-    
+
     TODO(H7): Consider async task pattern for large documents.
     """
     service = KnowledgeService(db)
@@ -553,7 +553,10 @@ async def generate_card(
         card = result.get("card", result)
         # 如果生成了知识卡片，更新文章字段
         if "card" in result:
-            await service.update_article(article_id, type("U", (), {"model_dump": lambda self: {"knowledge_card": card}})())
+            await service.update_article(
+                article_id,
+                type("U", (), {"model_dump": lambda self: {"knowledge_card": card}})(),
+            )
             await db.commit()
         return build_response(data=card, message=result.get("message", "知识卡片生成成功"))
     except ValueError as e:
@@ -575,7 +578,7 @@ async def generate_ppt(
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成 PPT（.pptx 文件）
-    
+
     TODO(H7): This operation can take >5s. Consider converting to async task + polling:
     1. Accept request → create task record → return task_id immediately
     2. Background worker generates PPT
@@ -643,7 +646,7 @@ async def generate_summary(
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成摘要（委托给 KnowledgeService）
-    
+
     TODO(H7): Consider async task pattern for large documents.
     """
     service = KnowledgeService(db)

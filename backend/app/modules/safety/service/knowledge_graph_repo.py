@@ -50,23 +50,13 @@ class KnowledgeGraphRepository:
 
     async def search_nodes(self, conditions: list[Any], limit: int = 50) -> list[GraphKnowledgeNode]:
         """Search nodes matching conditions."""
-        stmt = (
-            select(GraphKnowledgeNode)
-            .where(and_(*conditions))
-            .order_by(GraphKnowledgeNode.name)
-            .limit(limit)
-        )
+        stmt = select(GraphKnowledgeNode).where(and_(*conditions)).order_by(GraphKnowledgeNode.name).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
     async def get_nodes_unordered(self, conditions: list[Any], limit: int = 500) -> list[GraphKnowledgeNode]:
         """Get nodes matching conditions (ordered by created_at ASC, with limit)."""
-        stmt = (
-            select(GraphKnowledgeNode)
-            .where(and_(*conditions))
-            .order_by(GraphKnowledgeNode.created_at)
-            .limit(limit)
-        )
+        stmt = select(GraphKnowledgeNode).where(and_(*conditions)).order_by(GraphKnowledgeNode.created_at).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -105,12 +95,7 @@ class KnowledgeGraphRepository:
 
     async def get_edges_unordered(self, conditions: list[Any], limit: int = 2000) -> list[GraphKnowledgeEdge]:
         """Get edges matching conditions (ordered by created_at ASC, with limit)."""
-        stmt = (
-            select(GraphKnowledgeEdge)
-            .where(and_(*conditions))
-            .order_by(GraphKnowledgeEdge.created_at)
-            .limit(limit)
-        )
+        stmt = select(GraphKnowledgeEdge).where(and_(*conditions)).order_by(GraphKnowledgeEdge.created_at).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 

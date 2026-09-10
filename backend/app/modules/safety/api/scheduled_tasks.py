@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.response import ApiResponse, build_response, paginated_response, success_response
+from app.core.response import ApiResponse, paginated_response, success_response
 from app.modules.safety.schemas import (
     CardPreviewRequest,
     ScheduledTaskCreate,
