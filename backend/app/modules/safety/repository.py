@@ -1569,6 +1569,7 @@ class SafetyRepository:
         department: str | None = None,
         report_date: datetime | None = None,
         keyword: str | None = None,
+        report_type: str | None = None,
     ) -> tuple[list[DailyRiskReport], int]:
         """获取每日风险作业报备列表"""
         query = select(DailyRiskReport).where(~DailyRiskReport.is_deleted)
@@ -1586,6 +1587,8 @@ class SafetyRepository:
                 | DailyRiskReport.operation_description.ilike(like)
                 | DailyRiskReport.department.ilike(like)
             )
+        if report_type:
+            query = query.where(DailyRiskReport.report_type == report_type)
 
         count_query = select(func.count(DailyRiskReport.id)).where(~DailyRiskReport.is_deleted)
         if status:
@@ -1601,6 +1604,8 @@ class SafetyRepository:
                 | DailyRiskReport.operation_description.ilike(like)
                 | DailyRiskReport.department.ilike(like)
             )
+        if report_type:
+            count_query = count_query.where(DailyRiskReport.report_type == report_type)
 
         total = await self.session.scalar(count_query)
         query = (

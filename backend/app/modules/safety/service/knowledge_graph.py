@@ -16,6 +16,8 @@ class KnowledgeGraphService:
 
     def __init__(self, db: AsyncSession):
         self.db = db
+        from app.modules.safety.service.knowledge_graph_repo import KnowledgeGraphRepository
+        self.repo = KnowledgeGraphRepository(db)
 
     # ── 节点操作 ──────────────────────────────────────────
 
@@ -38,28 +40,11 @@ class KnowledgeGraphService:
             conditions.append(GraphKnowledgeNode.status == status)
         if keyword:
             conditions.append(GraphKnowledgeNode.name.ilike(f"%{keyword}%"))
-
-        count_stmt = select(func.count()).select_from(GraphKnowledgeNode).where(and_(*conditions))
-        total = (await self.db.execute(count_stmt)).scalar() or 0
-
-        stmt = (
-            select(GraphKnowledgeNode)
-            .where(and_(*conditions))
-            .order_by(GraphKnowledgeNode.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all()), total
+        return await self.repo.get_nodes(conditions, offset, limit)
 
     async def get_node(self, node_id: uuid.UUID) -> GraphKnowledgeNode | None:
         """获取单个节点"""
-        stmt = select(GraphKnowledgeNode).where(
-            GraphKnowledgeNode.id == node_id,
-            GraphKnowledgeNode.is_deleted == False,  # noqa: E712
-        )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self.repo.get_node(node_id)
 
     async def search_nodes(
         self,
@@ -76,10 +61,7 @@ class KnowledgeGraphService:
             types = [t.strip() for t in node_types.split(",") if t.strip()]
             if types:
                 conditions.append(GraphKnowledgeNode.node_type.in_(types))
-
-        stmt = select(GraphKnowledgeNode).where(and_(*conditions)).order_by(GraphKnowledgeNode.name).limit(limit)
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        return await self.repo.search_nodes(conditions, limit)
 
     # ── 边操作 ────────────────────────────────────────────
 
@@ -96,19 +78,7 @@ class KnowledgeGraphService:
             conditions.append(GraphKnowledgeEdge.relation_type == relation_type)
         if status:
             conditions.append(GraphKnowledgeEdge.status == status)
-
-        count_stmt = select(func.count()).select_from(GraphKnowledgeEdge).where(and_(*conditions))
-        total = (await self.db.execute(count_stmt)).scalar() or 0
-
-        stmt = (
-            select(GraphKnowledgeEdge)
-            .where(and_(*conditions))
-            .order_by(GraphKnowledgeEdge.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-        )
-        result = await self.db.execute(stmt)
-        return list(result.scalars().all()), total
+        return await self.repo.get_edges(conditions, offset, limit)
 
     # ── 完整图谱 ──────────────────────────────────────────
 
@@ -125,14 +95,7 @@ class KnowledgeGraphService:
             if types:
                 node_conditions.append(GraphKnowledgeNode.node_type.in_(types))
 
-        node_stmt = (
-            select(GraphKnowledgeNode)
-            .where(and_(*node_conditions))
-            .order_by(GraphKnowledgeNode.created_at)
-            .limit(max_nodes)
-        )
-        node_result = await self.db.execute(node_stmt)
-        nodes = list(node_result.scalars().all())
+        nodes = await self.repo.get_nodes_unordered(node_conditions, max_nodes)
         node_ids = {n.id for n in nodes}
 
         edge_conditions = [
@@ -316,8 +279,7 @@ class KnowledgeGraphService:
                 confidence=0.9,
                 status="ai_generated",
             )
-            self.db.add(doc_node)
-            await self.db.flush()
+            await self.repo.add_node(doc_node)
             nodes_created += 1
 
             # belongs_to 边
@@ -331,10 +293,10 @@ class KnowledgeGraphService:
                     confidence=0.95,
                     status="ai_generated",
                 )
-                self.db.add(edge)
+                await self.repo.add_edge(edge)
                 edges_created += 1
 
-        await self.db.flush()
+        await self.repo.flush()
 
         return {
             "status": "success",
@@ -357,13 +319,11 @@ class KnowledgeGraphService:
         }
         name = cat_labels.get(category, category)
 
-        stmt = select(GraphKnowledgeNode).where(
+        existing = await self.repo.find_node([
             GraphKnowledgeNode.node_type == "category",
             GraphKnowledgeNode.name == name,
             GraphKnowledgeNode.is_deleted == False,  # noqa: E712
-        )
-        result = await self.db.execute(stmt)
-        existing = result.scalar_one_or_none()
+        ])
         if existing:
             return existing
 
@@ -373,16 +333,13 @@ class KnowledgeGraphService:
             confidence=1.0,
             status="human_confirmed",
         )
-        self.db.add(node)
-        await self.db.flush()
+        await self.repo.add_node(node)
         return node
 
     async def _find_document_node(self, article_id: uuid.UUID) -> GraphKnowledgeNode | None:
         """查找文章对应的文档节点"""
-        stmt = select(GraphKnowledgeNode).where(
+        return await self.repo.find_node([
             GraphKnowledgeNode.node_type == "document",
             GraphKnowledgeNode.article_id == article_id,
             GraphKnowledgeNode.is_deleted == False,  # noqa: E712
-        )
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        ])

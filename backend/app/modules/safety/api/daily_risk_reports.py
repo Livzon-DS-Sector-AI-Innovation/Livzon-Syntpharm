@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     DailyRiskReportCreate,
     DailyRiskReportResponse,
@@ -46,8 +46,8 @@ async def handler(
         from datetime import datetime as dt
 
         parsed_date = dt.fromisoformat(report_date)
-    items, total = await service.get_reports(skip, page_size, status, department, parsed_date, keyword)
-    return ApiResponse(
+    items, total = await service.get_reports(skip, page_size, status, department, parsed_date, keyword, report_type)
+    return build_response(
         data=[DailyRiskReportResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -65,7 +65,7 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.create_report(data)
     await db.commit()
-    return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
+    return build_response(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.get(  # type: ignore[no-redef]
@@ -82,8 +82,8 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.get_report(report_id)
     if not item:
-        return ApiResponse(code=404, message="报备不存在")
-    return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
+        return build_response(code=404, message="报备不存在")
+    return build_response(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.put(  # type: ignore[no-redef]
@@ -101,9 +101,9 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.update_report(report_id, data)
     if not item:
-        return ApiResponse(code=404, message="报备不存在")
+        return build_response(code=404, message="报备不存在")
     await db.commit()
-    return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
+    return build_response(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.delete(  # type: ignore[no-redef]
@@ -120,9 +120,9 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     ok = await service.delete_report(report_id)
     if not ok:
-        return ApiResponse(code=404, message="报备不存在")
+        return build_response(code=404, message="报备不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
@@ -139,9 +139,9 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.submit_report(report_id)
     if not item:
-        return ApiResponse(code=400, message="无法提交，当前状态不允许")
+        return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
+    return build_response(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
@@ -158,9 +158,9 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.approve_report(report_id)
     if not item:
-        return ApiResponse(code=400, message="无法审批，当前状态不允许")
+        return build_response(code=400, message="无法审批，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
+    return build_response(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
@@ -178,6 +178,6 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.reject_report(report_id, reason)
     if not item:
-        return ApiResponse(code=400, message="无法驳回，当前状态不允许")
+        return build_response(code=400, message="无法驳回，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=DailyRiskReportResponse.model_validate(item))
+    return build_response(data=DailyRiskReportResponse.model_validate(item))

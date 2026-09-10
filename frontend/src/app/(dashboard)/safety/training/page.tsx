@@ -742,7 +742,7 @@ export default function TrainingPage() {
         width={700}
         okText="确认"
         cancelText="取消"
-        bodyStyle={{ maxHeight: "70vh", overflowY: "auto" }}
+        styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         <Form
           form={editingRecord ? editForm : form}
@@ -851,7 +851,7 @@ export default function TrainingPage() {
         width={1100}
         style={{ maxWidth: "95vw" }}
         footer={null}
-        bodyStyle={{ maxHeight: "70vh", overflowY: "auto" }}
+        styles={{ body: { maxHeight: "70vh", overflowY: "auto" } }}
       >
         <div className="mb-4">
           <Space>

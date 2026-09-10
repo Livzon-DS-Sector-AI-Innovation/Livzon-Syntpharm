@@ -4,6 +4,7 @@
 import os
 import uuid
 from datetime import datetime
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
@@ -11,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
@@ -22,6 +23,8 @@ from app.modules.safety.schemas import (
 from app.modules.safety.service import (
     KnowledgeService,
 )
+
+logger = logging.getLogger(__name__)
 
 knowledge_router = APIRouter()
 
@@ -40,7 +43,7 @@ async def handler(
     service = KnowledgeService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_articles(skip, page_size, category, status, keyword)
-    return ApiResponse(
+    return build_response(
         data=[SafetyKnowledgeArticleResponse.model_validate(a) for a in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -58,7 +61,7 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.create_article(data)
     await db.commit()
-    return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.get(  # type: ignore[no-redef]
@@ -75,8 +78,8 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.get_article(article_id)
     if not item:
-        return ApiResponse(code=404, message="文章不存在")
-    return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+        return build_response(code=404, message="文章不存在")
+    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.put(  # type: ignore[no-redef]
@@ -94,9 +97,9 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.update_article(article_id, data)
     if not item:
-        return ApiResponse(code=404, message="文章不存在")
+        return build_response(code=404, message="文章不存在")
     await db.commit()
-    return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.delete(  # type: ignore[no-redef]
@@ -113,9 +116,9 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     result = await service.delete_article(article_id)
     if not result:
-        return ApiResponse(code=404, message="文章不存在")
+        return build_response(code=404, message="文章不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
@@ -132,9 +135,9 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.publish_article(article_id)
     if not item:
-        return ApiResponse(code=400, message="无法发布，当前状态不允许")
+        return build_response(code=400, message="无法发布，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
@@ -151,9 +154,9 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.archive_article(article_id)
     if not item:
-        return ApiResponse(code=400, message="无法归档，当前状态不允许")
+        return build_response(code=400, message="无法归档，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
@@ -191,9 +194,7 @@ async def handler(  # noqa: F811
             f.write(content)
         stored_path = file_path
 
-    from app.modules.safety.repository import SafetyRepository
-
-    repo = SafetyRepository(db)
+    service = KnowledgeService(db)
     item = await repo.update_knowledge_article(
         article_id,
         {
@@ -202,9 +203,9 @@ async def handler(  # noqa: F811
         },
     )
     if not item:
-        return ApiResponse(code=404, message="文章不存在")
+        return build_response(code=404, message="文章不存在")
     await db.commit()
-    return ApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 # ── 知识图谱端点 ──────────────────────────────────────────
@@ -263,7 +264,7 @@ async def get_full_graph(
 
     service = KnowledgeGraphService(db)
     data = await service.get_full_graph(node_types, relation_types, max_nodes)
-    return ApiResponse(
+    return build_response(
         data={
             "nodes": [_node_to_dict(n) for n in data["nodes"]],
             "edges": [_edge_to_dict(e) for e in data["edges"]],
@@ -293,7 +294,7 @@ async def get_graph_nodes(
     service = KnowledgeGraphService(db)
     offset = (page - 1) * page_size
     items, total = await service.get_nodes(node_type, entity_type, status, keyword, offset, page_size)
-    return ApiResponse(
+    return build_response(
         data=[_node_to_dict(n) for n in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -318,7 +319,7 @@ async def get_graph_edges(
     service = KnowledgeGraphService(db)
     offset = (page - 1) * page_size
     items, total = await service.get_edges(relation_type, status, offset, page_size)
-    return ApiResponse(
+    return build_response(
         data=[_edge_to_dict(e) for e in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -340,7 +341,7 @@ async def search_graph_nodes(
 
     service = KnowledgeGraphService(db)
     items = await service.search_nodes(query, node_types)
-    return ApiResponse(data=[_node_to_dict(n) for n in items])
+    return build_response(data=[_node_to_dict(n) for n in items])
 
 
 @knowledge_router.get(
@@ -361,7 +362,7 @@ async def expand_graph_node(
 
     service = KnowledgeGraphService(db)
     data = await service.expand_node(node_id, hops, relation_types, max_nodes)
-    return ApiResponse(
+    return build_response(
         data={
             "nodes": [_node_to_dict(n) for n in data["nodes"]],
             "edges": [_edge_to_dict(e) for e in data["edges"]],
@@ -387,7 +388,7 @@ async def generate_graph(
     service = KnowledgeGraphService(db)
     result = await service.generate_graph(document_ids, force_rebuild)
     await db.commit()
-    return ApiResponse(data=result)
+    return build_response(data=result)
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
@@ -402,16 +403,16 @@ async def handler(  # noqa: F811
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """批量导入知识库文章"""
-    from app.modules.safety.repository import SafetyRepository
     from app.modules.safety.service.document_parser import parse_document
 
     if not files:
-        return ApiResponse(code=400, message="未选择文件")
+        return build_response(code=400, message="未选择文件")
 
     if len(files) > 20:
-        return ApiResponse(code=400, message="单次最多导入 20 个文件")
+        return build_response(code=400, message="单次最多导入 20 个文件")
 
-    repo = SafetyRepository(db)
+    service = KnowledgeService(db)
+    repo = service.repo
     results = []
     success_count = 0
     error_count = 0
@@ -518,7 +519,7 @@ async def handler(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(
+    return build_response(
         data={
             "results": results,
             "summary": {
@@ -541,90 +542,25 @@ async def generate_card(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """使用 AI 从文章内容生成结构化知识卡片"""
-    from app.core.config import get_settings
-    from app.modules.safety.repository import SafetyRepository
-    from app.platform.integrations.ai.client import AIService
-
-    repo = SafetyRepository(db)
-    article = await repo.get_knowledge_article_by_id(article_id)
-    if not article:
-        return ApiResponse(code=404, message="文章不存在")
-
-    if not article.content:
-        return ApiResponse(code=400, message="文章内容为空，无法生成知识卡片")
-
-    # 获取 AI 服务配置
-    settings = get_settings()
-    api_key = settings.LLM_API_KEY or settings.AI_API_KEY
-    base_url = settings.LLM_BASE_URL or settings.AI_BASE_URL
-
-    if not api_key:
-        # 降级方案：使用简单规则提取
-        card = {
-            "document_title": article.title,
-            "document_category": article.category,
-            "priority": "P1",
-            "hazard_type_definitions": None,
-            "hazard_category_criteria": None,
-            "hazard_level_criteria": None,
-            "key_defect_examples": None,
-            "rectification_requirements": None,
-            "legal_basis_clauses": None,
-        }
-        await repo.update_knowledge_article(article_id, {"knowledge_card": card})
-        await db.commit()
-        return ApiResponse(data=card, message="AI 服务未配置，已生成空知识卡片（请配置 LLM_API_KEY 后重新生成）")
-
-    ai_service = AIService(
-        api_key=api_key,
-        base_url=base_url,
-        model="deepseek-chat",
-    )
-
-    # 构建 prompt
-    prompt = f"""请从以下法规文档内容中提取结构化知识卡片。
-
-文档标题：{article.title}
-文档分类：{article.category}
-
-文档内容：
-{article.content[:3000] if article.content else ""}
-
-请以 JSON 格式返回以下字段：
-{{
-  "document_title": "文档标题",
-  "document_category": "文档分类",
-  "priority": "P0 或 P1 或 P2",
-  "hazard_type_definitions": "隐患分类定义（人/物/环/管）",
-  "hazard_category_criteria": "隐患类别判定标准",
-  "hazard_level_criteria": "隐患级别分级标准",
-  "key_defect_examples": "典型缺陷示例",
-  "rectification_requirements": "整改措施要求",
-  "legal_basis_clauses": "可引用的法律依据条文"
-}}
-
-如果某些字段在文档中没有相关内容，请返回 null。"""
-
+    """使用 AI 从文章内容生成结构化知识卡片（委托给 KnowledgeService）
+    
+    TODO(H7): Consider async task pattern for large documents.
+    """
+    service = KnowledgeService(db)
     try:
-        response = await ai_service.chat_parsed(
-            messages=[{"role": "user", "content": prompt}],
-            expected_keys=["document_title", "document_category", "priority"],
-        )
-
-        # 更新文章的知识卡片字段
-        await repo.update_knowledge_article(
-            article_id,
-            {"knowledge_card": response},
-        )
+        result = await service.generate_card(article_id)
         await db.commit()
-
-        return ApiResponse(
-            data=response,
-            message="知识卡片生成成功",
-        )
-    except Exception as e:
-        return ApiResponse(code=500, message=f"知识卡片生成失败：{str(e)}")
+        card = result.get("card", result)
+        # 如果生成了知识卡片，更新文章字段
+        if "card" in result:
+            await service.update_article(article_id, type("U", (), {"model_dump": lambda self: {"knowledge_card": card}})())
+            await db.commit()
+        return build_response(data=card, message=result.get("message", "知识卡片生成成功"))
+    except ValueError as e:
+        return build_response(code=400, message=str(e))
+    except Exception:
+        logger.exception("知识卡片生成失败: article_id=%s", article_id)
+        return build_response(code=500, message="知识卡片生成失败")
 
 
 @knowledge_router.post(
@@ -638,24 +574,28 @@ async def generate_ppt(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """使用 AI 从文章内容生成 PPT（.pptx 文件）"""
+    """使用 AI 从文章内容生成 PPT（.pptx 文件）
+    
+    TODO(H7): This operation can take >5s. Consider converting to async task + polling:
+    1. Accept request → create task record → return task_id immediately
+    2. Background worker generates PPT
+    3. Client polls /tasks/{task_id}/status for completion
+    """
     from app.modules.safety.service.ppt_generator import PptGeneratorService
 
-    template = "training"
-    style = "professional"
-    if data:
-        template = data.get("template", "training")
-        style = data.get("style", "professional")
+    template = data.get("template", "training") if data else "training"
+    style = data.get("style", "professional") if data else "professional"
 
     try:
-        service = PptGeneratorService(db)
-        result = await service.generate(article_id, template=template, style=style)
+        ppt_service = PptGeneratorService(db)
+        result = await ppt_service.generate(article_id, template=template, style=style)
         await db.commit()
-        return ApiResponse(data=result, message=result["message"])
+        return build_response(data=result, message=result["message"])
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
-    except Exception as e:
-        return ApiResponse(code=500, message=f"PPT 生成失败：{str(e)}")
+        return build_response(code=400, message=str(e))
+    except Exception:
+        logger.exception("PPT 生成失败: article_id=%s", article_id)
+        return build_response(code=500, message="PPT 生成失败")
 
 
 @knowledge_router.get(
@@ -670,12 +610,10 @@ async def get_ppt_history(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """查询某文章的 PPT 生成历史记录"""
-    from app.modules.safety.repository import SafetyRepository
-
-    repo = SafetyRepository(db)
+    """查询某文章的 PPT 生成历史记录（委托给 KnowledgeService）"""
+    service = KnowledgeService(db)
     skip = (page - 1) * page_size
-    items, total = await repo.get_ppt_generation_records(article_id, skip, page_size)
+    items, total = await service.get_ppt_history(article_id, skip, page_size)
 
     records = []
     for item in items:
@@ -691,7 +629,7 @@ async def get_ppt_history(
             }
         )
 
-    return ApiResponse(data={"records": records, "total": total})
+    return build_response(data={"records": records, "total": total})
 
 
 @knowledge_router.post(
@@ -704,78 +642,17 @@ async def generate_summary(
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """使用 AI 从文章内容生成摘要"""
-    from app.core.config import get_settings
-    from app.modules.safety.repository import SafetyRepository
-    from app.platform.integrations.ai.client import AIService
-
-    repo = SafetyRepository(db)
-    article = await repo.get_knowledge_article_by_id(article_id)
-    if not article:
-        return ApiResponse(code=404, message="文章不存在")
-
-    if not article.content:
-        return ApiResponse(code=400, message="文章内容为空，无法生成摘要")
-
-    # 获取 AI 服务配置
-    settings = get_settings()
-    api_key = settings.LLM_API_KEY or settings.AI_API_KEY
-    base_url = settings.LLM_BASE_URL or settings.AI_BASE_URL
-
-    if not api_key:
-        # 降级方案：提取前 500 字符作为摘要
-        summary = article.content[:500]
-        # 按句号/分号截断
-        for sep in ["。", "；", ";", ".", "\n"]:
-            last_sep = summary.rfind(sep)
-            if last_sep > 100:
-                summary = summary[: last_sep + 1]
-                break
-        if len(article.content) > 500:
-            summary += "..."
-
-        await repo.update_knowledge_article(article_id, {"summary": summary})
-        await db.commit()
-        return ApiResponse(
-            data={"summary": summary, "message": "AI 服务未配置，已生成基础摘要"},
-            message="摘要生成成功",
-        )
-
-    ai_service = AIService(
-        api_key=api_key,
-        base_url=base_url,
-        model="deepseek-chat",
-    )
-
-    # 构建 prompt
-    prompt = f"""请为以下法规文档生成结构化摘要。
-
-文档标题：{article.title}
-文档分类：{article.category}
-
-文档内容：
-{article.content[:3000] if article.content else ""}
-
-请生成 200-500 字的摘要，包含：
-1. 文档的核心目的和适用范围
-2. 主要内容和关键条款
-3. 重要要求和注意事项
-
-直接返回摘要文本，不需要 JSON 格式。"""
-
+    """使用 AI 从文章内容生成摘要（委托给 KnowledgeService）
+    
+    TODO(H7): Consider async task pattern for large documents.
+    """
+    service = KnowledgeService(db)
     try:
-        summary = await ai_service.chat(
-            messages=[{"role": "user", "content": prompt}],
-            response_format="text",
-        )
-
-        # 更新文章的摘要字段
-        await repo.update_knowledge_article(article_id, {"summary": summary})
+        result = await service.generate_summary(article_id)
         await db.commit()
-
-        return ApiResponse(
-            data={"summary": summary, "message": "摘要生成成功"},
-            message="摘要生成成功",
-        )
-    except Exception as e:
-        return ApiResponse(code=500, message=f"摘要生成失败：{str(e)}")
+        return build_response(data=result, message=result.get("message", "摘要生成成功"))
+    except ValueError as e:
+        return build_response(code=400, message=str(e))
+    except Exception:
+        logger.exception("摘要生成失败: article_id=%s", article_id)
+        return build_response(code=500, message="摘要生成失败")

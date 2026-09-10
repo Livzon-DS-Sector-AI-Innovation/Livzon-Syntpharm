@@ -132,7 +132,7 @@ export default function HazardInspectionForm({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(initialValues)])
+  }, [initialValues])
 
   // 从飞书登录信息自动填充检查人员姓名和部门（仅新建表单，草稿不覆盖）
   useEffect(() => {

@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  typescript: { ignoreBuildErrors: true },
+  typescript: { ignoreBuildErrors: false },
   distDir: process.env.NEXT_DIST_DIR ?? '.next',
   output: 'standalone',
   reactCompiler: false,

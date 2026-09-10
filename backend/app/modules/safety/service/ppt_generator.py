@@ -23,10 +23,11 @@ from pptx.enum.text import PP_ALIGN
 from pptx.util import Inches, Pt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
+from app.core.llm import llm_client
+from app.core.llm.exceptions import LLMConfigError
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
-from app.modules.safety.models import PptGenerationRecord, SafetyKnowledgeArticle
+from app.modules.safety.models import SafetyKnowledgeArticle
 from app.modules.safety.repository import SafetyRepository
 
 logger = logging.getLogger(__name__)
@@ -217,18 +218,13 @@ class PptGeneratorService:
         if not article.content:
             raise ValueError("文章内容为空，无法生成 PPT")
 
-        # 2. 获取 AI 配置
-        settings = get_settings()
-        api_key = settings.LLM_API_KEY or settings.AI_API_KEY
-        base_url = settings.LLM_BASE_URL or settings.AI_BASE_URL
-
-        # 3. 调用 AI 生成大纲
-        if not api_key:
+        # 2. 调用 AI 生成大纲（通过全局 llm_client 单例）
+        try:
+            outline = await self._generate_outline(article, template)
+        except LLMConfigError:
             # 降级方案：生成基础 2 页 PPT
             outline = self._fallback_outline(article)
             logger.warning("AI 服务未配置，使用降级 PPT 大纲")
-        else:
-            outline = await self._generate_outline(article, template, api_key, base_url)
 
         # 4. 更新文章的 ppt_content 缓存
         await self.repo.update_knowledge_article(
@@ -262,18 +258,16 @@ class PptGeneratorService:
             # MinIO 未启用时，object_key 仍作为标识返回
             logger.warning("MinIO 未启用，PPT 文件无法持久化存储")
 
-        # 7. 写入生成记录
-        record = PptGenerationRecord(
-            article_id=article_id,
-            file_name=file_name,
-            template=template,
-            style=style,
-            page_count=page_count,
-            object_key=object_key,
-            status="success",
-        )
-        self.session.add(record)
-        await self.session.flush()
+        # 7. 写入生成记录（通过 repository）
+        await self.repo.create_ppt_generation_record({
+            "article_id": article_id,
+            "file_name": file_name,
+            "template": template,
+            "style": style,
+            "page_count": page_count,
+            "object_key": object_key,
+            "status": "success",
+        })
 
         return {
             "download_url": object_key,
@@ -286,18 +280,8 @@ class PptGeneratorService:
         self,
         article: SafetyKnowledgeArticle,
         template: str,
-        api_key: str,
-        base_url: str,
     ) -> dict[str, Any]:
-        """调用 AI 生成 PPT 大纲"""
-        from app.platform.integrations.ai.client import AIService
-
-        ai_service = AIService(
-            api_key=api_key,
-            base_url=base_url,
-            model="deepseek-chat",
-        )
-
+        """调用 AI 生成 PPT 大纲（使用全局 llm_client 单例）"""
         prompt_template = PROMPTS.get(template, PROMPTS["training"])
         prompt = f"""{prompt_template}
 
@@ -307,7 +291,7 @@ class PptGeneratorService:
 文档内容：
 {article.content[:3000] if article.content else ""}"""
 
-        response = await ai_service.chat_parsed(
+        response = await llm_client.chat_json(
             messages=[{"role": "user", "content": prompt}],
             expected_keys=["title", "slides"],
         )

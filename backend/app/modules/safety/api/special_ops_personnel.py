@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     SpecialOperationPersonnelCreate,
     SpecialOperationPersonnelResponse,
@@ -41,7 +41,7 @@ async def handler(
     service = SpecialOperationService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_personnel(skip, page_size, status, certificate_type, department, keyword)
-    return ApiResponse(
+    return build_response(
         data=[SpecialOperationPersonnelResponse.model_validate(p) for p in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -61,7 +61,7 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.create_personnel(data)
     await db.commit()
-    return ApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
+    return build_response(data=SpecialOperationPersonnelResponse.model_validate(item))
 
 
 @special_ops_personnel_router.get(  # type: ignore[no-redef]
@@ -78,8 +78,8 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.get_personnel_by_id(personnel_id)
     if not item:
-        return ApiResponse(code=404, message="人员资质不存在")
-    return ApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
+        return build_response(code=404, message="人员资质不存在")
+    return build_response(data=SpecialOperationPersonnelResponse.model_validate(item))
 
 
 @special_ops_personnel_router.put(  # type: ignore[no-redef]
@@ -97,9 +97,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.update_personnel(personnel_id, data)
     if not item:
-        return ApiResponse(code=404, message="人员资质不存在")
+        return build_response(code=404, message="人员资质不存在")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
+    return build_response(data=SpecialOperationPersonnelResponse.model_validate(item))
 
 
 @special_ops_personnel_router.delete(  # type: ignore[no-redef]
@@ -116,6 +116,6 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     result = await service.delete_personnel(personnel_id)
     if not result:
-        return ApiResponse(code=404, message="人员资质不存在")
+        return build_response(code=404, message="人员资质不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")

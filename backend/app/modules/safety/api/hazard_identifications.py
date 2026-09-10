@@ -7,11 +7,12 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query, UploadFile
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
@@ -67,7 +68,7 @@ async def handler(
         date_to,
         batch_id,
     )
-    return ApiResponse(
+    return build_response(
         data=[HazardIdentificationResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -85,7 +86,7 @@ async def handler(  # noqa: F811
     """获取危险源辨识工作流统计（草案/进行中/待审核/已完成）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_stats()
-    return ApiResponse(data=stats)
+    return build_response(data=stats)
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
@@ -111,7 +112,7 @@ async def handler(  # noqa: F811
         date_from,
         date_to,
     )
-    return ApiResponse(data=stats)
+    return build_response(data=stats)
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
@@ -131,7 +132,7 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_hazard_risk_options(department, keyword, skip, page_size)
-    return ApiResponse(
+    return build_response(
         data=[HazardRiskOption.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -151,8 +152,8 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.get_hazard_identification(hid)
     if not item:
-        return ApiResponse(code=404, message="记录不存在")
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+        return build_response(code=404, message="记录不存在")
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
@@ -169,7 +170,7 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.create_hazard_identification(data)
     await db.commit()
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 # ── 批量辨识 + 工段预览 ──
@@ -188,8 +189,8 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     stages = await service.get_regulation_stages(regulation_id)
     if stages is None:
-        return ApiResponse(code=404, message="操规不存在或无可解析的第七章内容")
-    return ApiResponse(data=stages)
+        return build_response(code=404, message="操规不存在或无可解析的第七章内容")
+    return build_response(data=stages)
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
@@ -207,9 +208,9 @@ async def handler(  # noqa: F811
     try:
         result = await service.create_hazard_identification_batch(data)
         await db.commit()
-        return ApiResponse(data=result)
+        return build_response(data=result)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return build_response(code=400, message=str(e))
 
 
 @hazard_identifications_router.put(  # type: ignore[no-redef]
@@ -227,9 +228,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_hazard_identification(hid, data)
     if not item:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
@@ -246,9 +247,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.submit_hazard_identification(hid)
     if not item:
-        return ApiResponse(code=400, message="无法提交，当前状态不允许")
+        return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
@@ -266,9 +267,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.run_script(hid, data.script_number, data.ai_output)
     if not item:
-        return ApiResponse(code=400, message="无法执行脚本，当前状态不允许或条件不满足")
+        return build_response(code=400, message="无法执行脚本，当前状态不允许或条件不满足")
     await db.commit()
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
@@ -286,9 +287,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.review_script(hid, data.script_number, data.action)
     if not item:
-        return ApiResponse(code=400, message="无法审核，当前状态不允许")
+        return build_response(code=400, message="无法审核，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
@@ -329,9 +330,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.upload_attachment(hid, file.filename or "unknown", stored_path)
     if not item:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(data=HazardIdentificationResponse.model_validate(item))
+    return build_response(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.delete(  # type: ignore[no-redef]
@@ -348,9 +349,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_hazard_identification(hid)
     if not result:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ── 危险源辨识台账导出 ──
@@ -369,14 +370,16 @@ async def handler(  # noqa: F811
     """使用 AI 将自然语言查询解析为结构化的危险源辨识台账筛选条件"""
     service = SafetyService(db)
     if not data.natural_query:
-        return ApiResponse(code=400, message="请提供自然语言查询")
+        return build_response(code=400, message="请提供自然语言查询")
     result = await service.parse_hazard_export_query(data.natural_query)
-    return ApiResponse(data=result)
+    return build_response(data=result)
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/export-pdf",
+    response_model=ApiResponse,
     summary="导出危险源辨识台账 PDF",
+    response_class=Response,
 )
 async def handler(  # noqa: F811
     data: HazardLedgerExportRequest,
@@ -391,6 +394,8 @@ async def handler(  # noqa: F811
     3. Excel 标准化输出插件填表 → LibreOffice 转 PDF
 
     不提供 natural_query 时导出全部已完成记录。
+    
+    TODO(H7): PDF export can take >5s for large datasets. Consider async task + polling pattern.
     """
     from datetime import datetime as dt_module
     from urllib.parse import quote

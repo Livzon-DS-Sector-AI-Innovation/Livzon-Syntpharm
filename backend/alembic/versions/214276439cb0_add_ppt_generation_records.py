@@ -18,7 +18,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
+    from sqlalchemy import inspect as sa_inspect
+
+    conn = op.get_bind()
+    inspector = sa_inspect(conn)
+    existing_tables = inspector.get_table_names(schema="safety")
+
+    if "ppt_generation_records" not in existing_tables:
+        op.create_table(
         'ppt_generation_records',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
         sa.Column('article_id', UUID(as_uuid=True), sa.ForeignKey('safety.knowledge_articles.id'), nullable=False, comment='关联知识库文章ID'),
@@ -35,14 +42,17 @@ def upgrade() -> None:
         sa.Column('updated_by', UUID(as_uuid=True), nullable=True),
         sa.Column('is_deleted', sa.Boolean, nullable=False, server_default='false'),
         schema='safety',
-    )
-    op.create_index(
-        'ix_ppt_gen_records_article_id',
-        'ppt_generation_records',
-        ['article_id'],
-        schema='safety',
-        postgresql_where=sa.text('is_deleted = false'),
-    )
+        )
+    # Index creation (only if table was just created or already exists)
+    existing_indexes = {idx["name"] for idx in inspector.get_indexes("ppt_generation_records", schema="safety")} if "ppt_generation_records" in existing_tables else set()
+    if "ix_ppt_gen_records_article_id" not in existing_indexes:
+        op.create_index(
+            'ix_ppt_gen_records_article_id',
+            'ppt_generation_records',
+            ['article_id'],
+            schema='safety',
+            postgresql_where=sa.text('is_deleted = false'),
+        )
 
 
 def downgrade() -> None:

@@ -5,11 +5,12 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.response import ApiResponse, build_response
 from app.modules.safety.schemas import (
     LedgerExportRequest,
     SetCriticalRequest,
@@ -61,7 +62,7 @@ async def handler(
         keyword,
         is_critical,
     )
-    return ApiResponse(
+    return build_response(
         data=[SpecialOperationReportResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -79,7 +80,7 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     item = await service.create_report(data)
     await db.commit()
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 @special_operation_reports_router.get(  # type: ignore[no-redef]
@@ -96,8 +97,8 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     item = await service.get_report(report_id)
     if not item:
-        return ApiResponse(code=404, message="报备不存在")
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+        return build_response(code=404, message="报备不存在")
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 @special_operation_reports_router.put(  # type: ignore[no-redef]
@@ -115,9 +116,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     item = await service.update_report(report_id, data)
     if not item:
-        return ApiResponse(code=404, message="报备不存在")
+        return build_response(code=404, message="报备不存在")
     await db.commit()
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 @special_operation_reports_router.delete(  # type: ignore[no-redef]
@@ -134,9 +135,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     ok = await service.delete_report(report_id)
     if not ok:
-        return ApiResponse(code=404, message="报备不存在")
+        return build_response(code=404, message="报备不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @special_operation_reports_router.post(  # type: ignore[no-redef]
@@ -153,9 +154,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     item = await service.submit_report(report_id)
     if not item:
-        return ApiResponse(code=400, message="无法提交，当前状态不允许")
+        return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 @special_operation_reports_router.post(  # type: ignore[no-redef]
@@ -172,9 +173,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     item = await service.approve_report(report_id)
     if not item:
-        return ApiResponse(code=400, message="无法审批，当前状态不允许")
+        return build_response(code=400, message="无法审批，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 @special_operation_reports_router.post(  # type: ignore[no-redef]
@@ -192,9 +193,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationReportService(db)
     item = await service.reject_report(report_id, reason)
     if not item:
-        return ApiResponse(code=400, message="无法驳回，当前状态不允许")
+        return build_response(code=400, message="无法驳回，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 @special_operation_reports_router.put(  # type: ignore[no-redef]
@@ -213,9 +214,9 @@ async def handler(  # noqa: F811
     updated_by = current_user.name if current_user else None
     item = await service.set_critical_manual(report_id, data.is_critical, data.reason, updated_by)
     if not item:
-        return ApiResponse(code=404, message="报备不存在")
+        return build_response(code=404, message="报备不存在")
     await db.commit()
-    return ApiResponse(data=SpecialOperationReportResponse.model_validate(item))
+    return build_response(data=SpecialOperationReportResponse.model_validate(item))
 
 
 # ==================== 特殊作业台账 Routes ====================
@@ -255,7 +256,7 @@ async def handler(  # noqa: F811
         keyword=keyword,
         is_critical=is_critical,
     )
-    return ApiResponse(
+    return build_response(
         data=[SpecialOperationReportResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -273,7 +274,7 @@ async def handler(  # noqa: F811
     """按作业类型统计台账数量和关键作业数量"""
     service = SpecialOperationReportService(db)
     stats = await service.get_ledger_stats()
-    return ApiResponse(data=[SpecialOperationLedgerStats(**s) for s in stats])
+    return build_response(data=[SpecialOperationLedgerStats(**s) for s in stats])
 
 
 @special_operation_reports_router.post(  # type: ignore[no-redef]
@@ -289,21 +290,26 @@ async def handler(  # noqa: F811
     """使用 AI 将自然语言查询解析为结构化的台账筛选条件"""
     service = SpecialOperationReportService(db)
     if not data.natural_query:
-        return ApiResponse(code=400, message="请提供自然语言查询")
+        return build_response(code=400, message="请提供自然语言查询")
     result = await service.parse_natural_query(data.natural_query)
-    return ApiResponse(data=result)
+    return build_response(data=result)
 
 
 @special_operation_reports_router.post(  # type: ignore[no-redef]
     "/special-operation-ledger/export",
+    response_model=ApiResponse,
     summary="导出特殊作业台账 Excel",
+    response_class=Response,
 )
 async def handler(  # noqa: F811
     data: LedgerExportRequest,
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
-    """导出特殊作业台账为 Excel 文件，支持 AI 自然语言筛选"""
+    """导出特殊作业台账为 Excel 文件，支持 AI 自然语言筛选
+    
+    TODO(H7): Excel export can take >5s for large datasets. Consider async task + polling pattern.
+    """
     from urllib.parse import quote
 
     from fastapi.responses import Response

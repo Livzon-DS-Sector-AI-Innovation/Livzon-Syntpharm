@@ -59,16 +59,16 @@ export default function KnowledgeImportModal({
 
     try {
       const files = fileList.map(f => {
-        console.log('File object:', f)
-        console.log('originFileObj:', f.originFileObj)
+
+
         return f.originFileObj as File
       })
       
-      console.log('Files to upload:', files)
-      console.log('Category:', category)
+
+
       
       const response = await batchImportKnowledgeArticles(files, category || undefined)
-      console.log('Response:', response)
+
 
       if (response.code === 200) {
         setResults(response.data.results)
