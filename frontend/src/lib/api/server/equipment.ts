@@ -454,6 +454,7 @@ export async function deleteInspectionTemplateItemApi(itemId: string, headers?: 
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
     method: 'POST',
@@ -485,6 +486,7 @@ export async function downloadImportTemplateApi(headers?: Record<string, string>
   return Buffer.from(arrayBuffer).toString('base64')
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function importEquipmentsApi(formData: FormData, headers?: Record<string, string>): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
@@ -521,6 +523,7 @@ export async function deleteInspectionRouteApi(id: string, headers?: Record<stri
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function setRouteLocationsApi(routeId: string, locations: any[], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/locations`, {
     method: 'POST',
@@ -551,6 +554,7 @@ export async function closeInspectionTaskApi(id: string, closureRemark?: string,
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
     method: 'POST',
@@ -566,6 +570,7 @@ export async function deleteInspectionPhotoApi(taskId: string, photoId: string, 
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
     method: 'POST',
@@ -614,6 +619,7 @@ export async function fetchLocationTree() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations?tree=true`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchEquipments(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.category_id) params.append('category_id', filters.category_id)
@@ -636,6 +642,7 @@ export async function fetchDepartments() {
   return res.data || []
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchInspectionTemplates(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -645,6 +652,7 @@ export async function fetchInspectionTemplates(filters: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/templates${qs ? `?${qs}` : ''}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchWorkOrders(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.status) params.append('status', filters.status)
@@ -669,6 +677,7 @@ export async function fetchFailureCodes(type: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${type}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchCalibrationPlans(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -679,6 +688,7 @@ export async function fetchCalibrationPlans(filters: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans${qs ? `?${qs}` : ''}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchCalibrationRecords(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -689,6 +699,7 @@ export async function fetchCalibrationRecords(filters: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/records${qs ? `?${qs}` : ''}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchMaintenancePlans(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -706,6 +717,7 @@ export async function fetchOverdueMaintenancePlans(days?: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/overdue${qs ? `?${qs}` : ''}`)
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
 export async function fetchSpareParts(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.category) params.append('category', filters.category)
