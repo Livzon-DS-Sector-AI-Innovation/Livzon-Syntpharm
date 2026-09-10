@@ -1,7 +1,7 @@
 """add_ppt_generation_records
 
-Revision ID: 214276439cb0
-Revises: 214276439ca9
+Revision ID: 0059_add_ppt_generation_records
+Revises: 0058_add_ppt_content_fields
 Create Date: 2026-09-04 10:00:00.000000
 """
 from typing import Sequence, Union
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 
 
-revision: str = '214276439cb0'
-down_revision: Union[str, None] = '214276439ca9'
+revision: str = '0059_add_ppt_generation_records'
+down_revision: Union[str, None] = '0058_add_ppt_content_fields'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
