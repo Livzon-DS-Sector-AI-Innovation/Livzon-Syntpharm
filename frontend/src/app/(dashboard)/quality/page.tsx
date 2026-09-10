@@ -43,22 +43,6 @@ interface ReagentItem {
   status: string
 }
 
-interface UpcomingInstrument {
-  id: string
-  instrument_no: string
-  instrument_name: string
-  valid_until: string
-  days_remaining: number
-}
-
-interface ExpiringReagent {
-  id: string
-  reagent_name: string
-  lot_no: string
-  expiration_date: string
-  days_remaining: number
-}
-
 export default function QualityDashboardPage() {
   // 加载仪器统计
   const { data: instrumentData, isLoading: instrumentLoading, refetch: refetchInstruments } = useQuery({

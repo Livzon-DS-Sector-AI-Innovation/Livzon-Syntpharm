@@ -57,7 +57,7 @@ export default function MaterialReportPage() {
   }>({})
   const queryClient = useQueryClient()
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: _refetch } = useQuery({
     queryKey: ['material-reports', filters, pagination.page, pagination.pageSize],
     queryFn: async () => {
       const [result, stats, templateResult] = await Promise.all([

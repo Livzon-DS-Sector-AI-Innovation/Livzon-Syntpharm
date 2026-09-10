@@ -1,13 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Table, Tag, Input, Select, Space, Button } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
 
 export default function LoginLogsPage() {
-  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [status, setStatus] = useState<string | undefined>()

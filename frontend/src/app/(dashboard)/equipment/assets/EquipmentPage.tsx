@@ -57,7 +57,7 @@ export function EquipmentPage({
     setEquipments,
     setStatistics,
     setTotal,
-    setLoading,
+    setLoading: _setLoading,
     setDepartments,
   } = useEquipmentStore()
 

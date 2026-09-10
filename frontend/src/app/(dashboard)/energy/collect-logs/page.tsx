@@ -4,7 +4,7 @@
 
 
 import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { Select, Button } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
@@ -21,7 +21,6 @@ export default function CollectLogsPage() {
     closeCollectLogDrawer,
   } = useEnergyStore()
 
-  const queryClient = useQueryClient()
   const [triggerLoading, setTriggerLoading] = useState(false)
 
   const { data: queryData, isLoading, refetch } = useQuery({
