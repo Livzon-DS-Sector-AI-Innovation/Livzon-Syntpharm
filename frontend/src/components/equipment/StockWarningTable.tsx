@@ -3,7 +3,7 @@
 import { Alert, Table } from 'antd'
 import { WarningOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import { StockWarning } from '@/types/equipment'
+import { StockWarning } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 
 interface StockWarningTableProps {

@@ -11,7 +11,7 @@ import { useInspectionStore } from '@/stores/inspection'
 import { setRouteLocations } from '@/actions/inspection'
 import { fetchInspectionRouteById } from '@/lib/api/client/inspection'
 import type { RouteLocationItem } from '@/types/inspection'
-import type { InspectionTemplate as InspectionTemplateType } from '@/types/equipment'
+import type { InspectionTemplate as InspectionTemplateType } from '@/types/equipment/generated-bridge'
 
 interface LocationOption { id: string; name: string; code: string }
 

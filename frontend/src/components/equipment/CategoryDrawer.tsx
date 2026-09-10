@@ -61,10 +61,11 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
 
   // 递归展平分类树，用缩进前缀区分层级
   function flattenTree(
-    items: typeof categories,
+    items: typeof categories | undefined | null,
     excludeId?: string,
     depth = 0,
   ): { label: string; value: string }[] {
+    if (!items) return []
     const result: { label: string; value: string }[] = []
     for (const cat of items) {
       if (cat.id === excludeId) {

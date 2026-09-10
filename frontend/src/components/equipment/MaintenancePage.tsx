@@ -7,7 +7,7 @@ import { PlusOutlined } from '@ant-design/icons'
 import {
   Equipment, FailureCode, WorkOrder, WorkOrderStatistics, CalibrationPlan, CalibrationRecord,
   MaintenancePlan,
-} from '@/types/equipment'
+} from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import {
@@ -19,7 +19,7 @@ import {
   fetchClaimTimeoutConfigClient,
 } from '@/lib/api/client/equipment'
 import { updateClaimTimeoutConfig } from '@/actions/equipment'
-import { EquipmentCategory } from '@/types/equipment'
+import { EquipmentCategory } from '@/types/equipment/generated-bridge'
 import { WorkOrderStatsCards } from './WorkOrderStatsCards'
 import { WorkOrderTable } from './WorkOrderTable'
 import { WorkOrderDrawer } from './WorkOrderDrawer'

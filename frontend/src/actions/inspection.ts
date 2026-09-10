@@ -13,11 +13,11 @@ import {
   createRouteApi, updateRouteApi, deleteRouteApi,
   setRouteLocationsApi,
   createTaskApi, startTaskApi, completeTaskApi, closeTaskApi,
-  submitEquipmentCheckApi,
+  submitEquipmentCheckApiTyped,
   deleteInspectionPhotoApi,
-  submitRouteCheckApi,
+  submitRouteCheckApiTyped,
   analyzeInspectionPhotoApi,
-  createScheduleApi, updateScheduleApi, deleteScheduleApi,
+  createScheduleApiTyped, updateScheduleApiTyped, deleteScheduleApi,
 } from '@/lib/api/server/inspection'
 import {
   uploadInspectionPhotoApi,
@@ -81,7 +81,7 @@ export async function closeInspectionTask(id: string, closureRemark?: string) {
 }
 
 export async function submitEquipmentCheck(taskId: string, equipmentId: string, data: EquipmentCheckResult) {
-  const result = await submitEquipmentCheckApi(taskId, equipmentId, data, await authHeaders())
+  const result = await submitEquipmentCheckApiTyped(taskId, equipmentId, data, await authHeaders())
   revalidate()
   return result
 }
@@ -99,7 +99,7 @@ export async function deleteInspectionPhoto(taskId: string, photoId: string) {
 }
 
 export async function submitRouteCheck(taskId: string, data: RouteCheckSubmitInput) {
-  const result = await submitRouteCheckApi(taskId, data, await authHeaders())
+  const result = await submitRouteCheckApiTyped(taskId, data, await authHeaders())
   revalidate()
   return result
 }
@@ -121,7 +121,7 @@ export async function analyzeInspectionPhoto(
 }
 
 export async function createSchedule(routeId: string, data: CreateInspectionScheduleInput) {
-  const result = await createScheduleApi(routeId, data, await authHeaders())
+  const result = await createScheduleApiTyped(routeId, data, await authHeaders())
   revalidate()
   return result
 }
@@ -129,7 +129,7 @@ export async function createSchedule(routeId: string, data: CreateInspectionSche
 export async function updateSchedule(
   routeId: string, scheduleId: string, data: UpdateInspectionScheduleInput,
 ) {
-  const result = await updateScheduleApi(routeId, scheduleId, data, await authHeaders())
+  const result = await updateScheduleApiTyped(routeId, scheduleId, data, await authHeaders())
   revalidate()
   return result
 }

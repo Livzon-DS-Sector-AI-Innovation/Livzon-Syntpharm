@@ -1,4 +1,5 @@
 import { apiFetch, getApiBaseUrl } from './base'
+import type { components } from '@/types/generated/schema'
 
 const BASE = `${getApiBaseUrl()}/api/v1/equipment/inspection`
 
@@ -88,4 +89,42 @@ export async function updateScheduleApi(routeId: string, scheduleId: string, dat
 
 export async function deleteScheduleApi(routeId: string, scheduleId: string, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/routes/${routeId}/schedules/${scheduleId}`, { method: 'DELETE', headers })
+}
+
+
+// Typed versions
+export async function createRouteApiTyped(data: components['schemas']['InspectionRouteCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/routes`, { method: 'POST', body: JSON.stringify(data), headers })
+}
+
+export async function updateRouteApiTyped(id: string, data: components['schemas']['InspectionRouteUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/routes/${id}`, { method: 'PUT', body: JSON.stringify(data), headers })
+}
+
+export async function createTaskApiTyped(data: components['schemas']['InspectionTaskCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/tasks`, { method: 'POST', body: JSON.stringify(data), headers })
+}
+
+export async function submitEquipmentCheckApiTyped(taskId: string, equipmentId: string, data: components['schemas']['EquipmentCheckResult'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/tasks/${taskId}/equipments/${equipmentId}/check`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function submitRouteCheckApiTyped(taskId: string, data: components['schemas']['RouteCheckSubmit'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/tasks/${taskId}/route-check`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    headers,
+  })
+}
+
+export async function createScheduleApiTyped(routeId: string, data: components['schemas']['InspectionScheduleCreate'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/routes/${routeId}/schedules`, { method: 'POST', body: JSON.stringify(data), headers })
+}
+
+export async function updateScheduleApiTyped(routeId: string, scheduleId: string, data: components['schemas']['InspectionScheduleUpdate'], headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/routes/${routeId}/schedules/${scheduleId}`, { method: 'PUT', body: JSON.stringify(data), headers })
 }

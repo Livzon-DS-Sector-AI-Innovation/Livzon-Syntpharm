@@ -11,6 +11,7 @@ from app.modules.equipment.schemas.calibration import (
     CalibrationType,
 )
 from app.modules.equipment.schemas.equipment import (
+    BatchDeleteRequest,
     EquipmentCategoryCreate,
     EquipmentCategoryResponse,
     EquipmentCategoryTree,
@@ -145,6 +146,7 @@ __all__ = [
     "EquipmentUpdate",
     "EquipmentResponse",
     "EquipmentStatistics",
+    "BatchDeleteRequest",
     # failure code
     "FailureCodeType",
     "FailureCodeCreate",

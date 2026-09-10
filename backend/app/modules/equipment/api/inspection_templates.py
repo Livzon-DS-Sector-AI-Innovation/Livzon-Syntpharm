@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -34,8 +34,8 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 @router.post("/", summary="新增巡检模板")
 async def create_inspection_template(
     data: InspectionTemplateCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     template = await service.create_inspection_template(db, data)
@@ -44,13 +44,13 @@ async def create_inspection_template(
 
 @router.get("/", summary="巡检模板列表")
 async def list_inspection_templates(
+    current_user: RequiredUser,
     equipment_category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
     is_active: bool | None = Query(None, description="是否启用"),
     keyword: str | None = Query(None, description="关键词搜索"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     templates, total = await service.get_inspection_templates(
@@ -72,8 +72,8 @@ async def list_inspection_templates(
 @router.get("/{template_id}", summary="巡检模板详情")
 async def get_inspection_template(
     template_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     template = await service.get_inspection_template_by_id(db, template_id)
@@ -84,8 +84,8 @@ async def get_inspection_template(
 async def update_inspection_template(
     template_id: uuid.UUID,
     data: InspectionTemplateUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     template = await service.update_inspection_template(db, template_id, data)
@@ -95,8 +95,8 @@ async def update_inspection_template(
 @router.delete("/{template_id}", summary="删除巡检模板")
 async def delete_inspection_template(
     template_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_inspection_template(db, template_id)
@@ -108,8 +108,8 @@ async def delete_inspection_template(
 async def add_template_item(
     template_id: uuid.UUID,
     data: InspectionTemplateItemCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     await service.add_template_item(db, template_id, data)
@@ -120,8 +120,8 @@ async def add_template_item(
 async def update_template_item(
     item_id: uuid.UUID,
     data: InspectionTemplateItemUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     await service.update_template_item(db, item_id, data)
@@ -131,8 +131,8 @@ async def update_template_item(
 @router.delete("/items/{item_id}", summary="删除检查项")
 async def delete_template_item(
     item_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_template_item(db, item_id)
@@ -144,8 +144,8 @@ async def delete_template_item(
 async def complete_inspection(
     work_order_id: uuid.UUID,
     data: InspectionCompleteRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     wo = await service.complete_inspection(db, work_order_id, data)

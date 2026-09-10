@@ -6,7 +6,8 @@ import { PlusOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, uploadWorkOrderImages } from '@/actions/equipment'
-import { CreateWorkOrderInput, FailureCode, Maintainer } from '@/types/equipment'
+import { FailureCode } from '@/types/equipment/generated-bridge'
+import { CreateWorkOrderInput, Maintainer } from '@/types/equipment/generated-bridge'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
@@ -37,7 +38,7 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
         priority: defaultPriority,
       })
       setFileList([])
-      fetchAllUsersClient().then(setMaintainers).catch(() => {})
+      fetchAllUsersClient().then((users) => setMaintainers(users)).catch(() => {})
       // 默认填入设备责任人
       if (selectedEquipment?.responsible_person_id) {
         form.setFieldsValue({ responsible_person_id: selectedEquipment.responsible_person_id })

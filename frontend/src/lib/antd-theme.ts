@@ -94,6 +94,12 @@ export const antdTheme: ThemeConfig = {
     // 链接色
     colorLink: '#0075de',
     colorLinkHover: '#40a9ff',
+
+    // 工业风格色彩令牌
+    // Deep Steel - 深蓝灰，用于标题和重点文字
+    // Machine Blue - 机械蓝，用于链接和强调
+    // Safety Orange - 安全橙，用于警示和操作按钮
+    // Signal Green - 信号绿，用于成功状态
   },
   components: {
     // 按钮组件

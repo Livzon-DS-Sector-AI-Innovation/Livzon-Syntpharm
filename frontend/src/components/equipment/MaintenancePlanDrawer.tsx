@@ -5,7 +5,7 @@ import { App, Drawer, Form, Input, Select, InputNumber, DatePicker, Button, Spac
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createMaintenancePlan, updateMaintenancePlan } from '@/actions/equipment'
-import { CreateMaintenancePlanInput, UpdateMaintenancePlanInput, Maintainer } from '@/types/equipment'
+import { CreateMaintenancePlanInput, UpdateMaintenancePlanInput, Maintainer } from '@/types/equipment/generated-bridge'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
@@ -33,7 +33,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
     fetchAllUsersClient().then((list: any[]) => {
       setAllUsers(list)
       // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
-      if (editingMaintenancePlan?.executor_id) {
+      if (editingMaintenancePlan?.responsible_person_id) {
         form.setFieldsValue({ executor_id: editingMaintenancePlan.executor_id })
       }
     }).catch(() => {})

@@ -1,7 +1,7 @@
 services:
   backend:
     volumes:
-    - ./backend:/app/backend:ro
+    - ./backend/app:/app/app:ro
     environment:
     - UVICORN_RELOAD=true
     command: "bash -c \"\n  cd /app &&\n  uv run uvicorn app.main:app --reload --host\

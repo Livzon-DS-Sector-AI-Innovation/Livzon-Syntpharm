@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from 'react'
 import {App, Drawer, Descriptions, Table, Tabs, Tag, Empty, Spin} from 'antd'
 import { ToolOutlined, SearchOutlined, CalendarOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
-import type { Equipment, MaintenancePlan, WorkOrder } from '@/types/equipment'
+import type { Equipment, MaintenancePlan, WorkOrder } from '@/types/equipment/generated-bridge'
 import type { InspectionTask } from '@/types/inspection'
 import { fetchMaintenancePlansClient, fetchWorkOrdersClient } from '@/lib/api/client/equipment'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
 import {monoFont, pillNeutral, pillSuccess, pillWarning, pillError, statusPill} from '@/components/equipment/shared-styles'
-import type { EquipmentStatus } from '@/types/equipment'
+import type { EquipmentStatus } from '@/types/equipment/generated-bridge'
 
 interface EquipmentDetailDrawerProps {
   open: boolean
@@ -267,9 +267,12 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
           <Descriptions.Item label="归属部门">{equipment.department_name || '-'}</Descriptions.Item>
           <Descriptions.Item label="负责人">{equipment.responsible_person_name || '-'}</Descriptions.Item>
           <Descriptions.Item label="设备状态">
-            <span style={EQUIP_STATUS_MAP[equipment.status] || pillNeutral}>{equipment.status}</span>
+            <span style={EQUIP_STATUS_MAP[equipment.status as EquipmentStatus] || pillNeutral}>{equipment.status}</span>
           </Descriptions.Item>
           <Descriptions.Item label="资产类别说明">{equipment.category_description || '-'}</Descriptions.Item>
+          <Descriptions.Item label="数量">
+            {equipment.technical_params?.['数量'] != null ? String(equipment.technical_params['数量']) : '-'}
+          </Descriptions.Item>
           <Descriptions.Item label="设备型号">{equipment.model || '-'}</Descriptions.Item>
           <Descriptions.Item label="设备规格">{equipment.specification || '-'}</Descriptions.Item>
           <Descriptions.Item label="制造商">{equipment.manufacturer || '-'}</Descriptions.Item>
@@ -280,6 +283,7 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
           <Descriptions.Item label="投用日期">{equipment.commissioning_date || '-'}</Descriptions.Item>
           <Descriptions.Item label="当前成本">{equipment.current_cost ? `¥${equipment.current_cost.toLocaleString()}` : '-'}</Descriptions.Item>
           <Descriptions.Item label="账面净值">{equipment.book_value ? `¥${equipment.book_value.toLocaleString()}` : '-'}</Descriptions.Item>
+          <Descriptions.Item label=" "></Descriptions.Item>
           <Descriptions.Item label="描述" span={2}>{equipment.description || '-'}</Descriptions.Item>
         </Descriptions>
       </div>

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.response import success_response
 from app.modules.equipment import service
 from app.modules.equipment.models import FailureAction, FailureCause, FailureSymptom
@@ -30,8 +30,8 @@ def _register_failure_code_routes(
     @router.post(f"/{path}", summary=f"新增{summary_prefix}")
     async def create(
         data: FailureCodeCreate,
+        current_user: RequiredUser,
         db: AsyncSession = Depends(get_db),
-        current_user: CurrentUser = None,
     ) -> JSONResponse:
         result = await service.create_failure_code(db, model_class, data)
         return success_response(data=FailureCodeResponse.model_validate(result))
@@ -55,8 +55,8 @@ def _register_failure_code_routes(
     async def update(
         code_id: uuid.UUID,
         data: FailureCodeUpdate,
+        current_user: RequiredUser,
         db: AsyncSession = Depends(get_db),
-        current_user: CurrentUser = None,
     ) -> JSONResponse:
         result = await service.update_failure_code(db, model_class, code_id, data)
         return success_response(data=FailureCodeResponse.model_validate(result))
@@ -64,8 +64,8 @@ def _register_failure_code_routes(
     @router.delete(f"/{path}/{{code_id}}", summary=f"删除{summary_prefix}")
     async def delete(
         code_id: uuid.UUID,
+        current_user: RequiredUser,
         db: AsyncSession = Depends(get_db),
-        current_user: CurrentUser = None,
     ) -> JSONResponse:
         await service.delete_failure_code(db, model_class, code_id)
         return success_response(message="删除成功")

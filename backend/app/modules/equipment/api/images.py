@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException, NotFoundException
 from app.core.response import success_response
 from app.modules.equipment import repository as repo
@@ -29,9 +29,9 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 @router.post("/{work_order_id}/images", summary="上传工单图片")
 async def upload_work_order_images(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
     files: list[UploadFile] = File(..., description="图片文件"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     images = await service.upload_images(db, work_order_id, files)
@@ -76,8 +76,8 @@ async def serve_work_order_image(
 async def remove_work_order_image(
     work_order_id: uuid.UUID,
     image_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> JSONResponse:
     _require_user(current_user)
     await service.delete_work_order_image(db, image_id)

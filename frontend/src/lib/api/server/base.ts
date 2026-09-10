@@ -1,5 +1,12 @@
 export function getApiBaseUrl(): string {
-  return process.env.API_BASE_URL || 'http://backend:8000'
+  if (process.env.API_BASE_URL) {
+    return process.env.API_BASE_URL
+  }
+  
+  throw new Error(
+    'API_BASE_URL environment variable is not set. ' +
+    'Please set it to the backend API base URL (e.g., http://localhost:8000 for development).'
+  )
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {

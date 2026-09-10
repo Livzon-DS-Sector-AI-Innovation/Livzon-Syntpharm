@@ -10,21 +10,21 @@ import {
   CreateInspectionScheduleInput, UpdateInspectionScheduleInput,
 } from '@/types/inspection'
 import {
-  createInspectionRouteApi,
-  updateInspectionRouteApi,
+  createInspectionRouteApiTyped,
+  updateInspectionRouteApiTyped,
   deleteInspectionRouteApi,
   setRouteLocationsApi,
-  createInspectionTaskApi,
+  createInspectionTaskApiTyped,
   startInspectionTaskApi,
   completeInspectionTaskApi,
   closeInspectionTaskApi,
-  submitEquipmentCheckApi,
+  submitEquipmentCheckApiTyped,
   uploadInspectionPhotoApi,
   deleteInspectionPhotoApi,
-  submitRouteCheckApi,
+  submitRouteCheckApiTyped,
   analyzeInspectionPhotoApi,
-  createScheduleApi,
-  updateScheduleApi,
+  createScheduleApiTyped,
+  updateScheduleApiTyped,
   deleteScheduleApi,
   uploadTaskPhotoApi,
 } from '@/lib/api/server/equipment'
@@ -58,14 +58,14 @@ async function uploadPhoto(taskId: string, formData: FormData): Promise<ActionRe
 // ==================== 巡检线路 ====================
 export async function createInspectionRoute(data: CreateInspectionRouteInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => createInspectionRouteApi(data, authHeaders))
+  const result = await wrapApiCall(() => createInspectionRouteApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }
 
 export async function updateInspectionRoute(id: string, data: UpdateInspectionRouteInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => updateInspectionRouteApi(id, data, authHeaders))
+  const result = await wrapApiCall(() => updateInspectionRouteApiTyped(id, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }
@@ -87,7 +87,7 @@ export async function setRouteLocations(routeId: string, locations: RouteLocatio
 // ==================== 巡检任务 ====================
 export async function createInspectionTask(data: CreateInspectionTaskInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => createInspectionTaskApi(data, authHeaders))
+  const result = await wrapApiCall(() => createInspectionTaskApiTyped(data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }
@@ -116,7 +116,7 @@ export async function closeInspectionTask(id: string, closureRemark?: string) {
 // ==================== 巡检执行 ====================
 export async function submitEquipmentCheck(taskId: string, equipmentId: string, data: EquipmentCheckResult) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => submitEquipmentCheckApi(taskId, equipmentId, data, authHeaders))
+  const result = await wrapApiCall(() => submitEquipmentCheckApiTyped(taskId, equipmentId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }
@@ -146,7 +146,7 @@ export async function deleteInspectionPhoto(taskId: string, photoId: string) {
 // ==================== 线路巡检 ====================
 export async function submitRouteCheck(taskId: string, data: RouteCheckSubmitInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => submitRouteCheckApi(taskId, data, authHeaders))
+  const result = await wrapApiCall(() => submitRouteCheckApiTyped(taskId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }
@@ -171,7 +171,7 @@ export async function analyzeInspectionPhoto(
 // ==================== 路线定时任务 ====================
 export async function createSchedule(routeId: string, data: CreateInspectionScheduleInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => createScheduleApi(routeId, data, authHeaders))
+  const result = await wrapApiCall(() => createScheduleApiTyped(routeId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }
@@ -180,7 +180,7 @@ export async function updateSchedule(
   routeId: string, scheduleId: string, data: UpdateInspectionScheduleInput,
 ) {
   const authHeaders = await getAuthHeaders()
-  const result = await wrapApiCall(() => updateScheduleApi(routeId, scheduleId, data, authHeaders))
+  const result = await wrapApiCall(() => updateScheduleApiTyped(routeId, scheduleId, data, authHeaders))
   if (result.success) revalidatePath('/equipment/inspection')
   return result
 }

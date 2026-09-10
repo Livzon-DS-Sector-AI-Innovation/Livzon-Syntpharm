@@ -1,10 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Button, Space, Popconfirm, Empty } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import { EquipmentCategory } from '@/types/equipment'
+import { App, Button, Space, Popconfirm, Empty, Tooltip } from 'antd'
+import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { EquipmentCategory } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
+import { CategoryEditor } from './CategoryEditor'
 import { deleteCategory } from '@/actions/equipment'
 
 interface CategoryTreeProps {
@@ -60,6 +61,7 @@ function TreeNode({
   onSelect,
   onEdit,
   onDelete,
+  onRefresh,
 }: {
   node: TreeNodeData
   level: number
@@ -67,6 +69,7 @@ function TreeNode({
   onSelect: (id: string) => void
   onEdit: (node: TreeNodeData) => void
   onDelete: (node: TreeNodeData) => void
+  onRefresh?: () => void
 }) {
   const [expanded, setExpanded] = useState(true)
   const [hovered, setHovered] = useState(false)
@@ -172,6 +175,7 @@ function TreeNode({
               onSelect={onSelect}
               onEdit={onEdit}
               onDelete={onDelete}
+              onRefresh={onRefresh}
             />
           ))}
         </div>
@@ -183,6 +187,7 @@ function TreeNode({
 // ==================== 分类树主组件 ====================
 
 export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
+  const [editorOpen, setEditorOpen] = useState(false)
   const { message } = App.useApp()
   const {
     selectedCategory,
@@ -202,7 +207,8 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
 
   const handleEdit = (node: TreeNodeData) => {
     // 从 categories 中找到完整对象传给 drawer
-    function find(items: EquipmentCategory[]): EquipmentCategory | undefined {
+    function find(items: EquipmentCategory[] | undefined): EquipmentCategory | undefined {
+      if (!items) return undefined
       for (const item of items) {
         if (item.id === node.id) return item
         if (item.children?.length) {
@@ -230,15 +236,49 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
           </Button>
         </div>
         <Empty
-          description="暂无分类"
+          description={
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ margin: '0 0 8px 0', fontSize: 14 }}>暂无设备分类</p>
+              <p style={{ margin: 0, fontSize: 12, color: '#94a3b8' }}>
+                分类用于设备类型管理和统计分析。<br />
+                请先创建分类体系，以便对设备进行标准化管理。
+              </p>
+            </div>
+          }
           styles={{ description: { color: '#787671' } }}
-        />
+        >
+          <Button type="primary" onClick={() => openCategoryDrawer()}>
+            创建第一个分类
+          </Button>
+        </Empty>
       </div>
     )
   }
 
   return (
     <div>
+      <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={() => setEditorOpen(true)}
+        >
+          新建根分类
+        </Button>
+        <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+        </Tooltip>
+      </div>
+      <CategoryEditor
+        mode="create"
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSuccess={() => {
+          setEditorOpen(false)
+          onRefresh?.()
+        }}
+      />
       <div style={{ marginBottom: 12 }}>
         <Button
           type="primary"
@@ -248,6 +288,21 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
         >
           新增分类
         </Button>
+      </div>
+
+      {/* 顶部操作栏 */}
+      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<PlusOutlined />}
+          onClick={() => setEditorOpen(true)}
+        >
+          新建根分类
+        </Button>
+        <Tooltip title="分类用于设备类型管理和统计分析。例如：生产设备、辅助设备。">
+          <InfoCircleOutlined style={{ color: '#94a3b8', cursor: 'help' }} />
+        </Tooltip>
       </div>
 
       {/* 自定义树 */}
@@ -261,9 +316,21 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
             onSelect={(id) => setSelectedCategory(id || null)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRefresh={onRefresh}
           />
         ))}
       </div>
+
+      {/* 受控编辑器 */}
+      <CategoryEditor
+        mode="create"
+        open={editorOpen}
+        onOpenChange={setEditorOpen}
+        onSuccess={() => {
+          setEditorOpen(false)
+          onRefresh?.()
+        }}
+      />
     </div>
   )
 }

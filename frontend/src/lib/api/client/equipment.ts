@@ -1,4 +1,6 @@
-import type { Personnel } from '@/types/equipment'
+import type { DepartmentOption } from '@/types/equipment/generated-bridge'
+export type { DepartmentOption } from '@/types/equipment/generated-bridge'
+import type { Personnel } from '@/types/equipment-personnel'
 import {
   EquipmentCategory, Location, EquipmentFilters, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
@@ -8,10 +10,30 @@ import {
   MaintenancePlanFilters, MaintenancePlanListResponse, MaintenancePlan,
   InspectionTemplateFilters, InspectionTemplateListResponse, InspectionTemplate, InspectionTemplateItem,
   MaterialRecord, ClaimTimeoutConfig, Maintainer, WorkOrderImage,
-} from '@/types/equipment'
-import { apiGet, apiFetchPaginated } from '@/lib/api/client'
+} from '@/types/equipment/generated-bridge'
+import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
+
+// Query parameter types (manually defined to avoid type resolution issues)
+export interface GetEquipmentsQuery {
+  category_id?: string | null
+  location_id?: string | null
+  department_id?: string | null
+  status?: string | null
+  keyword?: string | null
+  page?: number
+  page_size?: number
+}
+
+export interface GetStatisticsQuery {
+  category_id?: string | null
+  location_id?: string | null
+  department_id?: string | null
+  status?: string | null
+}
+
+
 
 // ═══════════════════════════════════════════════════════════
 //  设备分类
@@ -56,8 +78,21 @@ export async function fetchEquipments(filters: EquipmentFilters = {}): Promise<E
   return apiFetchPaginated(url)
 }
 
-export async function fetchEquipmentStatistics(): Promise<EquipmentStatistics> {
-  return apiGet(`${API_BASE}/equipment/equipments/statistics`)
+// Use GetStatisticsQuery from generated types
+
+export async function fetchEquipmentStatistics(filters: GetStatisticsQuery = {}): Promise<EquipmentStatistics> {
+  const params = new URLSearchParams()
+  if (filters.category_id) params.append('category_id', filters.category_id)
+  if (filters.location_id) params.append('location_id', filters.location_id)
+  if (filters.department_id) params.append('department_id', filters.department_id)
+  if (filters.status) params.append('status', filters.status)
+
+  const queryString = params.toString()
+  const url = queryString
+    ? `${API_BASE}/equipment/equipments/statistics?${queryString}`
+    : `${API_BASE}/equipment/equipments/statistics`
+
+  return apiGet(url)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -82,8 +117,8 @@ export async function fetchWorkOrders(filters: WorkOrderFilters = {}): Promise<W
 
   const queryString = params.toString()
   const url = queryString
-    ? `${API_BASE}/equipment/maintenance/work-orders/?${queryString}`
-    : `${API_BASE}/equipment/maintenance/work-orders/`
+    ? `${API_BASE}/equipment/maintenance/work-orders?${queryString}`
+    : `${API_BASE}/equipment/maintenance/work-orders`
 
   return apiFetchPaginated(url)
 }
@@ -92,11 +127,11 @@ export async function fetchWorkOrderStatistics(exclude_status?: string): Promise
   const params = new URLSearchParams()
   if (exclude_status) params.append('exclude_status', exclude_status)
   const qs = params.toString()
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/statistics${qs ? `?${qs}` : ''}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-ordersstatistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkOrderById(id: string): Promise<WorkOrder> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${id}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -184,19 +219,19 @@ export async function fetchMaintenancePlans(filters: MaintenancePlanFilters = {}
 
   const queryString = params.toString()
   const url = queryString
-    ? `${API_BASE}/equipment/maintenance/plans/?${queryString}`
-    : `${API_BASE}/equipment/maintenance/plans/`
+    ? `${API_BASE}/equipment/maintenance/plans?${queryString}`
+    : `${API_BASE}/equipment/maintenance/plans`
 
   return apiFetchPaginated(url)
 }
 
 export async function fetchMaintenancePlanById(id: string): Promise<MaintenancePlan> {
-  return apiGet(`${API_BASE}/equipment/maintenance/plans/${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plans${id}`)
 }
 
 export async function fetchOverdueMaintenancePlans(days?: number): Promise<MaintenancePlan[]> {
   const params = days ? `?days=${days}` : ''
-  return apiGet(`${API_BASE}/equipment/maintenance/plans/overdue${params}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/plansoverdue${params}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -226,19 +261,12 @@ export async function fetchInspectionTemplateById(id: string): Promise<Inspectio
 //  工单物料
 // ═══════════════════════════════════════════════════════════
 export async function fetchWorkOrderMaterials(workOrderId: string): Promise<MaterialRecord[]> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/materials`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/materials`)
 }
 
 // ═══════════════════════════════════════════════════════════
 //  部门列表
 // ═══════════════════════════════════════════════════════════
-export interface DepartmentOption {
-  id: string
-  name: string
-  leader_name: string | null
-  leader_user_id: string | null
-  leader_id: string | null
-}
 
 export async function fetchDepartments(): Promise<DepartmentOption[]> {
   return apiGet(`${API_BASE}/equipment/departments`)
@@ -257,7 +285,7 @@ export async function fetchAllUsersClient(): Promise<Maintainer[]> {
 }
 
 export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<WorkOrderImage[]> {
-  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`) || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/images`) || []
 }
 
 export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfig> {
@@ -273,25 +301,17 @@ export async function fetchPersonnelList(params?: any): Promise<Personnel[]> {
 //  Client aliases with null-to-undefined coercion
 // ═══════════════════════════════════════════════════════════
 
-interface FetchEquipmentsClientParams {
-  category_id?: string | null
-  location_id?: string | null
-  department_id?: string | null
-  status?: string
-  keyword?: string
-  page?: number
-  page_size?: number
-}
+// Use GetEquipmentsQuery from generated types
 
-export async function fetchEquipmentsClient(params: FetchEquipmentsClientParams = {}): Promise<EquipmentListResponse> {
+export async function fetchEquipmentsClient(params: GetEquipmentsQuery = {}): Promise<EquipmentListResponse> {
   return fetchEquipments({
     category_id: params.category_id ?? undefined,
     location_id: params.location_id ?? undefined,
     department_id: params.department_id ?? undefined,
-    status: params.status as EquipmentFilters['status'],
-    keyword: params.keyword,
-    page: params.page,
-    page_size: params.page_size,
+    status: params.status ?? undefined,
+    keyword: params.keyword ?? undefined,
+    page: params.page ?? undefined,
+    page_size: params.page_size ?? undefined,
   })
 }
 
@@ -310,13 +330,19 @@ export const fetchStockWarningsClient = fetchStockWarnings
 export const fetchMaintenancePlansClient = fetchMaintenancePlans
 export const fetchOverdueMaintenancePlansClient = fetchOverdueMaintenancePlans
 export async function fetchInspectionTemplateItemsClient(templateId: string): Promise<InspectionTemplateItem[]> {
-  const response = await fetch(`${API_BASE}/equipment/maintenance/inspection-templates/${templateId}/items`)
-  if (!response.ok) throw new Error(`请求失败: ${response.status}`)
-  const result = await response.json()
-  return result.data || []
+  return await apiGet<InspectionTemplateItem[]>(`${API_BASE}/equipment/maintenance/inspection-templates/${templateId}/items`)
 }
 
 export const fetchInspectionTemplatesClient = fetchInspectionTemplates
 export const fetchInspectionTemplateByIdClient = fetchInspectionTemplateById
 export const fetchWorkOrderMaterialsClient = fetchWorkOrderMaterials
 export const fetchDepartmentsClient = fetchDepartments
+/**
+ * 批量删除设备
+ */
+export async function batchDeleteEquipments(ids: string[]): Promise<any> {
+  return await fetchApi<any>(`${API_BASE}/equipment/equipments/batch-delete`, {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  })
+}

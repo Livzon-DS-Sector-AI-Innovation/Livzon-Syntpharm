@@ -6,12 +6,13 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.schemas import (
+    BatchDeleteRequest,
     EquipmentCategoryCreate,
     EquipmentCategoryResponse,
     EquipmentCategoryTree,
@@ -62,8 +63,8 @@ async def _equipment_to_response(equipment: Equipment, db: AsyncSession | None =
 @router.post("/categories", summary="创建设备分类")
 async def create_equipment_category(
     data: EquipmentCategoryCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """创建设备分类"""
     category = await service.create_equipment_category(db, data)
@@ -98,8 +99,8 @@ async def get_equipment_category(
 async def update_equipment_category(
     category_id: uuid.UUID,
     data: EquipmentCategoryUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """更新设备分类"""
     category = await service.update_equipment_category(db, category_id, data)
@@ -109,8 +110,8 @@ async def update_equipment_category(
 @router.delete("/categories/{category_id}", summary="删除设备分类")
 async def delete_equipment_category(
     category_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """删除设备分类"""
     await service.delete_equipment_category(db, category_id)
@@ -121,8 +122,8 @@ async def delete_equipment_category(
 @router.post("/locations", summary="创建位置")
 async def create_location(
     data: LocationCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """创建位置"""
     location = await service.create_location(db, data)
@@ -157,8 +158,8 @@ async def get_location(
 async def update_location(
     location_id: uuid.UUID,
     data: LocationUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """更新位置"""
     location = await service.update_location(db, location_id, data)
@@ -168,8 +169,8 @@ async def update_location(
 @router.delete("/locations/{location_id}", summary="删除位置")
 async def delete_location(
     location_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """删除位置"""
     await service.delete_location(db, location_id)
@@ -190,8 +191,8 @@ async def get_departments_list(
 @router.post("/equipments", summary="创建设备")
 async def create_equipment(
     data: EquipmentCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """创建设备"""
     equipment = await service.create_equipment(db, data)
@@ -226,10 +227,14 @@ async def get_equipments(
 
 @router.get("/equipments/statistics", summary="获取设备统计")
 async def get_equipment_statistics(
+    category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
+    location_id: uuid.UUID | None = Query(None, description="设备位置ID"),
+    department_id: uuid.UUID | None = Query(None, description="归属部门ID"),
+    status: str | None = Query(None, description="设备状态"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    """获取设备统计"""
-    stats = await service.get_equipment_statistics(db)
+    """获取设备统计（支持筛选）"""
+    stats = await service.get_equipment_statistics(db, category_id, location_id, department_id, status)
     return build_response(data=EquipmentStatistics(**stats))
 
 
@@ -247,8 +252,8 @@ async def get_equipment(
 async def update_equipment(
     equipment_id: uuid.UUID,
     data: EquipmentUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """更新设备"""
     equipment = await service.update_equipment(db, equipment_id, data)
@@ -258,9 +263,20 @@ async def update_equipment(
 @router.delete("/equipments/{equipment_id}", summary="删除设备")
 async def delete_equipment(
     equipment_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     """删除设备"""
     await service.delete_equipment(db, equipment_id)
     return build_response(message="删除成功")
+
+
+@router.post("/equipments/batch-delete", summary="批量删除设备")
+async def batch_delete_equipments(
+    data: BatchDeleteRequest,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """批量删除设备"""
+    deleted_count = await service.batch_delete_equipments(db, data.ids)
+    return build_response(message=f"成功删除 {deleted_count} 台设备")

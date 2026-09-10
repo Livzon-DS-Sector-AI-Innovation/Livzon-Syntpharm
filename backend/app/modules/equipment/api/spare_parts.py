@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -33,8 +33,8 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 @router.post("/", summary="创建备件")
 async def create_spare_part(
     data: SparePartCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.create_spare_part(db, data)
@@ -43,13 +43,13 @@ async def create_spare_part(
 
 @router.get("/", summary="备件列表")
 async def list_spare_parts(
+    current_user: RequiredUser,
     category: str | None = Query(None, description="备件分类"),
     keyword: str | None = Query(None, description="关键词搜索"),
     is_active: bool | None = Query(None, description="是否启用"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     spare_parts, total = await service.get_spare_parts(
@@ -70,8 +70,8 @@ async def list_spare_parts(
 
 @router.get("/stock/warnings", summary="库存预警列表")
 async def get_stock_warnings(
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     warnings = await service.get_stock_warnings(db)
@@ -90,8 +90,8 @@ async def get_stock_warnings(
 @router.get("/{spare_part_id}", summary="备件详情")
 async def get_spare_part(
     spare_part_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.get_spare_part_by_id(db, spare_part_id)
@@ -102,8 +102,8 @@ async def get_spare_part(
 async def update_spare_part(
     spare_part_id: uuid.UUID,
     data: SparePartUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     spare_part = await service.update_spare_part(db, spare_part_id, data)
@@ -113,8 +113,8 @@ async def update_spare_part(
 @router.delete("/{spare_part_id}", summary="删除备件")
 async def delete_spare_part(
     spare_part_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_spare_part(db, spare_part_id)
@@ -124,8 +124,8 @@ async def delete_spare_part(
 @router.get("/{spare_part_id}/stock", summary="查看库存")
 async def get_stock(
     spare_part_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     stock = await service.get_stock_by_spare_part_id(db, spare_part_id)
@@ -136,8 +136,8 @@ async def get_stock(
 async def inbound_stock(
     spare_part_id: uuid.UUID,
     data: StockInboundRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     stock = await service.inbound_stock(db, spare_part_id, data)
@@ -148,8 +148,8 @@ async def inbound_stock(
 async def adjust_stock(
     spare_part_id: uuid.UUID,
     data: StockAdjustRequest,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     stock = await service.adjust_stock(db, spare_part_id, data)

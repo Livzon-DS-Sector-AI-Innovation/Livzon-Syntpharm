@@ -14,7 +14,7 @@ import { assignCategories } from '@/actions/equipment-personnel'
 import type {
   EquipmentRole, CategoryAssignItem, PersonnelCategoryInfo,
 } from '@/types/equipment-personnel'
-import type { EquipmentCategory } from '@/types/equipment'
+import type { EquipmentCategory } from '@/types/equipment/generated-bridge'
 
 const { Text } = Typography
 

@@ -13,7 +13,7 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.platform.identity.models import Department, User
+from app.platform.identity.models import User
 
 
 def _escape_like(value: str) -> str:
@@ -556,27 +556,47 @@ async def get_max_equipment_no_by_category(
     return result.scalar_one_or_none()
 
 
-async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
-    """获取设备统计"""
+async def get_equipment_statistics(
+    db: AsyncSession,
+    category_id: uuid.UUID | None = None,
+    location_id: uuid.UUID | None = None,
+    department_id: uuid.UUID | None = None,
+    status: str | None = None,
+) -> dict[str, Any]:
+    """获取设备统计（支持筛选）"""
+    # 构建基础查询条件
+    base_filter = Equipment.is_deleted == False  # noqa: E712
+
+    # 添加筛选条件
+    if category_id:
+        category_ids = await _get_category_child_ids(db, category_id)
+        base_filter = base_filter & Equipment.id.in_(
+            select(EquipmentCategoryLink.equipment_id).where(
+                EquipmentCategoryLink.category_id.in_(category_ids),
+                EquipmentCategoryLink.is_deleted == False,  # noqa: E712
+            )
+        )
+    if location_id:
+        location_ids = await _get_location_child_ids(db, location_id)
+        base_filter = base_filter & Equipment.location_id.in_(location_ids)
+    if department_id:
+        base_filter = base_filter & (Equipment.department_id == department_id)
+    if status:
+        base_filter = base_filter & (Equipment.status == status)
+
     # 总数
-    total_result = await db.execute(
-        select(func.count()).where(Equipment.is_deleted == False)  # noqa: E712
-    )
+    total_result = await db.execute(select(func.count()).where(base_filter))
     total = total_result.scalar() or 0
 
     # 按状态统计
     status_result = await db.execute(
-        select(Equipment.status, func.count())
-        .where(Equipment.is_deleted == False)  # noqa: E712
-        .group_by(Equipment.status)
+        select(Equipment.status, func.count()).where(base_filter).group_by(Equipment.status)
     )
     by_status = {row[0]: row[1] for row in status_result.all()}
 
     # 按分类统计（A/B/C）
     class_result = await db.execute(
-        select(Equipment.equipment_class, func.count())
-        .where(Equipment.is_deleted == False)  # noqa: E712
-        .group_by(Equipment.equipment_class)
+        select(Equipment.equipment_class, func.count()).where(base_filter).group_by(Equipment.equipment_class)
     )
     by_category = {row[0]: row[1] for row in class_result.all()}
 
@@ -584,7 +604,7 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
     location_result = await db.execute(
         select(Location.name, func.count())
         .join(Equipment, Equipment.location_id == Location.id)
-        .where(Equipment.is_deleted == False)  # noqa: E712
+        .where(base_filter)
         .group_by(Location.name)
     )
     by_location = {row[0]: row[1] for row in location_result.all()}
@@ -598,63 +618,38 @@ async def get_equipment_statistics(db: AsyncSession) -> dict[str, Any]:
 
 
 async def get_departments_for_select(db: AsyncSession) -> list[dict[str, Any]]:
-    """获取可选部门列表（含负责人姓名和 leader_id），供下拉使用"""
-    query = (
-        select(
-            Department.id.label("id"),
-            Department.name.label("name"),
-            Department.leader_user_id.label("leader_user_id"),
-            User.id.label("leader_id"),
-            User.name.label("leader_name"),
-        )
-        .outerjoin(User, Department.leader_user_id == User.feishu_open_id)
-        .where(
-            Department.status_is_deleted.isnot(True),
-            Department.is_deleted == False,  # noqa: E712
-        )
-        .order_by(Department.name)
-    )
-    result = await db.execute(query)
-    rows = result.all()
-    return [dict(row._mapping) for row in rows]
+    """获取可选部门列表（含负责人），供下拉使用"""
+    from app.modules.hr.public_api import list_all_departments
+
+    departments = await list_all_departments(db)
+    # Sort by name and return as dicts
+    sorted_depts = sorted(departments, key=lambda d: d.name)
+    return [{"id": dept.id, "name": dept.name} for dept in sorted_depts]
 
 
 async def get_department_info(db: AsyncSession, department_id: uuid.UUID) -> dict[str, Any] | None:
-    """获取单个部门信息（含负责人姓名和 leader_id）"""
-    query = (
-        select(
-            Department.id.label("id"),
-            Department.name.label("name"),
-            Department.leader_user_id.label("leader_user_id"),
-            User.id.label("leader_id"),
-            User.name.label("leader_name"),
-        )
-        .outerjoin(User, Department.leader_user_id == User.feishu_open_id)
-        .where(
-            Department.id == department_id,
-            Department.is_deleted == False,  # noqa: E712
-        )
-    )
-    result = await db.execute(query)
-    row = result.one_or_none()
-    if row is None:
+    """获取单个部门信息（含负责人姓名和 leader_id）
+    注意：当前 HrDepartment 模型暂无负责人字段，暂时只返回基本信息
+    """
+    from app.modules.hr.public_api import list_all_departments
+
+    departments = await list_all_departments(db)
+    dept = next((d for d in departments if d.id == department_id), None)
+    if not dept:
         return None
-    return dict(row._mapping)
+    row = {"id": dept.id, "name": dept.name}
+    d = dict(row)
+    d["leader_user_id"] = None
+    d["leader_id"] = None
+    d["leader_name"] = None
+    return d
 
 
 async def get_department_leader_user_id(db: AsyncSession, department_id: uuid.UUID) -> uuid.UUID | None:
-    """获取部门负责人的 User.id（UUID），通过 feishu_open_id 关联"""
-    from app.platform.identity.models import Department, User
-
-    result = await db.execute(
-        select(User.id)
-        .join(Department, Department.leader_user_id == User.feishu_open_id)
-        .where(
-            Department.id == department_id,
-            Department.is_deleted == False,  # noqa: E712
-        )
-    )
-    return result.scalar_one_or_none()
+    """获取部门负责人的 User.id（UUID）
+    注意：当前 HrDepartment 模型暂无负责人字段，暂时返回 None
+    """
+    return None
 
 
 async def get_user_name_by_id(db: AsyncSession, user_id: uuid.UUID) -> str | None:

@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { App, Drawer, Form, Input, InputNumber, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
 import { stockInbound } from '@/actions/equipment'
-import { StockInboundInput } from '@/types/equipment'
+import { StockInboundInput } from '@/types/equipment/generated-bridge'
 
 const { TextArea } = Input
 

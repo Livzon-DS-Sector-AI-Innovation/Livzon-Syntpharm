@@ -16,6 +16,21 @@ export class ApiError extends Error {
 }
 
 /**
+ * Get auth token from cookies (client-side)
+ */
+function getAuthToken(): string | null {
+  if (typeof document === 'undefined') return null
+  const cookies = document.cookie.split(';')
+  for (const cookie of cookies) {
+    const [name, value] = cookie.trim().split('=')
+    if (name === 'auth_token') {
+      return value
+    }
+  }
+  return null
+}
+
+/**
  * 增强的 fetch 函数
  * - 检查 HTTP 状态码
  * - 检查 Content-Type
@@ -28,13 +43,18 @@ export async function fetchApi<T>(
 ): Promise<T> {
   let response: Response
 
+  // Get auth token from cookies
+  const authToken = getAuthToken()
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
+    ...(options?.headers as Record<string, string> || {}),
+  }
+
   try {
     response = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
+      headers,
     })
   } catch (error) {
     // 网络错误

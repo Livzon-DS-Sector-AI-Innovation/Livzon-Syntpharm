@@ -65,6 +65,8 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
     depth = 0,
   ): { label: string; value: string }[] {
     const result: { label: string; value: string }[] = []
+    // 防御性检查：确保 items 是数组
+    if (!Array.isArray(items)) return []
     for (const loc of items) {
       if (loc.id === excludeId) {
         if (loc.children?.length) {

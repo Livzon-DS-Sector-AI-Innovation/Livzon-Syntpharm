@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -29,8 +29,8 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 @router.post("/", summary="新增维护计划")
 async def create_maintenance_plan(
     data: MaintenancePlanCreate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     plan = await service.create_maintenance_plan(db, data)
@@ -39,13 +39,13 @@ async def create_maintenance_plan(
 
 @router.get("/", summary="维护计划列表")
 async def list_maintenance_plans(
+    current_user: RequiredUser,
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     status: str | None = Query(None, description="状态"),
     keyword: str | None = Query(None, description="关键词搜索"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     plans, total = await service.get_maintenance_plans(
@@ -66,9 +66,9 @@ async def list_maintenance_plans(
 
 @router.get("/overdue", summary="查询到期/逾期的维护计划")
 async def get_overdue_plans(
+    current_user: RequiredUser,
     days: int = Query(0, ge=0, description="提前天数，0=仅逾期"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     plans = await service.get_overdue_maintenance_plans(db, days)
@@ -78,8 +78,8 @@ async def get_overdue_plans(
 @router.get("/{plan_id}", summary="维护计划详情")
 async def get_maintenance_plan(
     plan_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     plan = await service.get_maintenance_plan_by_id(db, plan_id)
@@ -90,8 +90,8 @@ async def get_maintenance_plan(
 async def update_maintenance_plan(
     plan_id: uuid.UUID,
     data: MaintenancePlanUpdate,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     plan = await service.update_maintenance_plan(db, plan_id, data)
@@ -101,8 +101,8 @@ async def update_maintenance_plan(
 @router.delete("/{plan_id}", summary="删除维护计划")
 async def delete_maintenance_plan(
     plan_id: uuid.UUID,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser = None,
 ) -> ApiResponse:
     _require_user(current_user)
     await service.delete_maintenance_plan(db, plan_id)

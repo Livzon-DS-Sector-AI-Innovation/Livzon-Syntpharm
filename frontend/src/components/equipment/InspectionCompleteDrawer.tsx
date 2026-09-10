@@ -5,7 +5,7 @@ import { App, Drawer, Form, Input, Select, Button, Space, Table, Typography } fr
 import type { ColumnsType } from 'antd/es/table'
 import { useEquipmentStore } from '@/stores/equipment'
 import { completeInspection } from '@/actions/equipment'
-import { InspectionRecordItem, InspectionTemplateItem } from '@/types/equipment'
+import { InspectionRecordItem, InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 const { Text } = Typography
 
@@ -46,7 +46,7 @@ export function InspectionCompleteDrawer({ onRefresh }: InspectionCompleteDrawer
     try {
       const values = await form.validateFields()
       const records: InspectionRecordItem[] = values.records.map((row) => ({
-        item_id: row.id,
+        template_item_id: row.id,
         result: row.result,
         actual_value: row.actual_value || undefined,
         remark: row.remark || undefined,

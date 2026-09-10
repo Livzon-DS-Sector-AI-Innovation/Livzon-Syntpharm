@@ -1,6 +1,6 @@
 import type {
   EquipmentRole, Personnel, PersonnelListResponse, Candidate,
-} from '@/types/equipment'
+} from '@/types/equipment-personnel'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'

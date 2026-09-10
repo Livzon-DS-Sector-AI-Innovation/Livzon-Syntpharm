@@ -12,7 +12,7 @@ import {
 } from '@/lib/api/client/inspection'
 import {statusPill, pillSuccess, pillError, pillTab, linkSuccess, linkWarning, linkMuted} from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionTaskStatus } from '@/types/inspection'
-import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment'
+import type { InspectionTemplate, InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 interface Props {
   templates: InspectionTemplate[]
