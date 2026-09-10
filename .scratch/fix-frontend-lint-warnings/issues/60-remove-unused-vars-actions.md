@@ -2,15 +2,15 @@
 
 **What to build:** Remove or prefix with `_` all unused variables/imports in src/actions/
 
-**Status:** ready-for-agent
+**Status:** done
 
-## Files to fix
+## Files fixed
 
-- src/actions/hr.ts: OnboardingRecord, TrainingLedgerRecord, FeishuSyncResult
-- src/actions/safety/index.ts: KnowledgeCardContent, HazardIdentificationFormData, HazardIdentificationQueryParams, HazardIdentificationBatchCreateInput, HazardLedgerExportRequest
+- src/actions/hr.ts: Removed OnboardingRecord, TrainingLedgerRecord, FeishuSyncResult
+- src/actions/safety/index.ts: Removed HazardIdentificationFormData, HazardIdentificationQueryParams, HazardIdentificationBatchCreateInput, HazardLedgerExportRequest
 
 ## Acceptance Criteria
 
-- [ ] All unused vars removed or prefixed with `_`
-- [ ] `pnpm lint` shows 0 `@typescript-eslint/no-unused-vars` warnings in src/actions/
-- [ ] `tsc --noEmit` passes
+- [x] All unused vars removed or prefixed with `_`
+- [x] `pnpm lint` shows 0 `@typescript-eslint/no-unused-vars` warnings in src/actions/
+- [x] `tsc --noEmit` passes
