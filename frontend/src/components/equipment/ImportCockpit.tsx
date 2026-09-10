@@ -1,0 +1,86 @@
+import React from 'react';
+import { Table, Tag, Tooltip } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
+
+interface HeaderDef {
+  key: string;
+  title: string;
+  width?: number;
+}
+
+interface ImportCockpitProps {
+  data: any[];
+  headers?: HeaderDef[];
+}
+
+// 默认 fallback：如果后端没传 headers，使用这个本地定义
+const DEFAULT_HEADERS: HeaderDef[] = [
+  { key: 'row_index', title: '行号', width: 60 },
+  { key: 'asset_no', title: '资产编号' },
+  { key: 'label_no', title: '标签号' },
+  { key: 'name', title: '设备名称' },
+  { key: 'category_description', title: '资产类别说明' },
+  { key: 'equipment_class', title: '设备分类' },
+  { key: 'manufacturer', title: '制造商' },
+  { key: 'model', title: '型号' },
+  { key: 'current_cost', title: '当前成本' },
+  { key: 'book_value', title: '帐面净值' },
+  { key: 'quantity', title: '数量' },
+  { key: 'department_name', title: '部门' },
+  { key: 'location_text', title: '位置' },
+  { key: 'status', title: '状态' },
+  { key: 'scrap_status', title: '报废状态' },
+  { key: 'scrap_time', title: '报废时间' },
+  { key: 'equipment_tag', title: '设备位号' },
+  { key: 'responsible_person_name', title: '负责人' },
+  { key: 'specification', title: '设备规格' },
+  { key: 'supplier', title: '供应商' },
+  { key: 'production_date', title: '出厂日期' },
+  { key: 'commissioning_date', title: '启用日期' },
+  { key: 'description', title: '描述' },
+];
+
+export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }) => {
+  // 使用后端传来的 headers，如果没有则使用默认值
+  const activeHeaders = headers || DEFAULT_HEADERS;
+
+  // 动态生成列定义
+  const columns: ColumnsType<any> = [
+    ...activeHeaders.map(field => ({
+      title: field.title,
+      dataIndex: field.key,
+      key: field.key,
+      width: field.width || 120,
+      ellipsis: true,
+      render: (text: any) => text !== null && text !== undefined ? String(text) : '-',
+    })),
+    {
+      title: '验证',
+      key: 'validation',
+      width: 100,
+      fixed: 'right',
+      render: (_, record: any) => {
+        if (record.validation_status === 'pass') return <Tag color="success">通过</Tag>;
+        if (record.validation_status === 'duplicate') return <Tag color="warning">重复</Tag>;
+        return (
+          <Tooltip title={record.error_message}>
+            <Tag color="error">异常</Tag>
+          </Tooltip>
+        );
+      },
+    },
+  ];
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <Table 
+        columns={columns} 
+        dataSource={data} 
+        rowKey="row_index"
+        pagination={false}
+        size="small"
+        scroll={{ x: 'max-content' }}
+      />
+    </div>
+  );
+};

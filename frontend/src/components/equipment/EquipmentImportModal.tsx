@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Checkbox } from 'antd'
 import { Modal, Upload, Button, Table, Tag, App, Steps } from 'antd'
 import { InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
@@ -46,8 +47,10 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const [currentStep, setCurrentStep] = useState(0)
   const [rawData, setRawData] = useState<any[]>([])
   const [previewData, setPreviewData] = useState<ImportPreviewItem[]>([])
+  const [previewHeaders, setPreviewHeaders] = useState<any[]>([])
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [loading, setLoading] = useState(false)
+  const [forceOverride, setForceOverride] = useState(false)
 
   const resetState = () => {
     setCurrentStep(0)
@@ -92,6 +95,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
           row.some(cell => cell !== '' && cell !== null && cell !== undefined)
         )
         
+
         // 转换为对象数组
         const result = dataRows.map(row => {
           const obj: any = {}
@@ -128,7 +132,8 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     try {
       const result = await previewEquipmentImport(data)
       if (result.code === 200) {
-        setPreviewData(result.data.items)
+        setPreviewData(result.data.items);
+        setPreviewHeaders(result.data.headers || []);
         setCurrentStep(2)
       } else {
         message.error(result.message || '预览失败')
@@ -205,6 +210,13 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     { title: '导入完成' },
   ]
 
+  
+  const switchStyles = {
+    container: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', fontFamily: 'monospace', fontSize: '12px', color: forceOverride ? '#f97316' : '#6b7280' },
+    track: { width: '36px', height: '20px', backgroundColor: forceOverride ? 'rgba(249, 115, 22, 0.2)' : '#374151', borderRadius: '9999px', position: 'relative', border: '1px solid', borderColor: forceOverride ? '#f97316' : '#4b5563', transition: 'all 0.2s' },
+    thumb: { position: 'absolute', top: '2px', left: forceOverride ? '18px' : '2px', width: '14px', height: '14px', backgroundColor: forceOverride ? '#f97316' : '#9ca3af', borderRadius: '50%', transition: 'all 0.2s', boxShadow: forceOverride ? '0 0 8px rgba(249, 115, 22, 0.6)' : 'none' }
+  };
+
   return (
     <Modal
       title="批量导入设备"
@@ -259,20 +271,27 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
 
       {currentStep === 2 && (
         <div>
-          <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
-            <span>总计: <strong>{previewData.length}</strong> 条</span>
-            <span style={{ color: '#1aae39' }}>可导入: <strong>{validCount}</strong> 条</span>
-            {invalidCount > 0 && (
-              <span style={{ color: '#e03131' }}>异常: <strong>{invalidCount}</strong> 条</span>
-            )}
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <span>总计: <strong>{previewData.length}</strong> 条</span>
+              <div className="ml-auto">
+                <ForceOverrideToggle onToggle={setForceOverride} />
+              </div>
+              <span style={{ color: '#1aae39' }}>可导入: <strong>{validCount}</strong> 条</span>
+              {invalidCount > 0 && (
+                <span style={{ color: '#e03131' }}>异常: <strong>{invalidCount}</strong> 条</span>
+              )}
+            </div>
+            <div style={switchStyles.container} onClick={() => setForceOverride(!forceOverride)}>
+              <div style={switchStyles.track}>
+                <div style={switchStyles.thumb}></div>
+              </div>
+              <span>FULL OVERRIDE</span>
+            </div>
           </div>
-          <Table
-            columns={previewColumns}
-            dataSource={previewData}
-            rowKey="row_index"
-            size="small"
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 'max-content', y: 400 }}
+          <ImportCockpit 
+            data={previewData} 
+            headers={previewHeaders} 
           />
         </div>
       )}
@@ -280,13 +299,37 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
       {currentStep === 3 && importResult && (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <CheckCircleOutlined style={{ fontSize: 64, color: '#1aae39', marginBottom: 24 }} />
+          <div style={{ 
+            background: '#f5f5f5', 
+            borderRadius: 8, 
+            padding: 24, 
+            marginBottom: 24,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: 16,
+            textAlign: 'center'
+          }}>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#1aae39' }}>{importResult.created_count}</div>
+              <div style={{ fontSize: 12, color: '#666' }}>创建</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#1890ff' }}>{importResult.updated_count}</div>
+              <div style={{ fontSize: 12, color: '#666' }}>更新</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#faad14' }}>{importResult.skipped_count}</div>
+              <div style={{ fontSize: 12, color: '#666' }}>跳过</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#e03131' }}>{importResult.error_count}</div>
+              <div style={{ fontSize: 12, color: '#666' }}>错误</div>
+            </div>
+          </div>
+          <div style={{ marginBottom: 16, fontSize: 12, color: '#999' }}>
+            批次 ID: {importResult.batch_id}
+          </div>
           <h3>导入完成</h3>
-          <p style={{ fontSize: 16 }}>
-            成功导入 <strong style={{ color: '#1aae39' }}>{importResult.created_count}</strong> 条记录
-            {importResult.skipped_count > 0 && (
-              <>，跳过 <strong style={{ color: '#e03131' }}>{importResult.skipped_count}</strong> 条</>
-            )}
-          </p>
           {importResult.errors.length > 0 && (
             <div style={{ marginTop: 16, textAlign: 'left', maxHeight: 200, overflow: 'auto' }}>
               <p style={{ color: '#e03131' }}>错误详情：</p>

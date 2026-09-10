@@ -1,0 +1,186 @@
+"""Equipment Import v4 API Routes."""
+import time
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, Depends, Body
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.deps import RequiredUser
+from app.core.response import ApiResponse, build_response
+from app.modules.equipment.models.import_audit import ImportAuditLog
+from app.modules.equipment.schemas.import_v4 import ImportBatchResponse
+from app.modules.equipment.service.import_engine import (
+    apply_incremental_update,
+    detect_internal_duplicates,
+    find_existing_equipment,
+)
+from app.modules.equipment import repository as repo
+
+router = APIRouter()
+
+
+async def log_audit(
+    db: AsyncSession,
+    batch_id: str,
+    operation_type: str,
+    match_strategy: str = "none",
+    override_type: str = "normal",
+    asset_no: str | None = None,
+    equipment_tag: str | None = None,
+    department_id: uuid.UUID | None = None,
+    location_text: str | None = None,
+    changes: dict[str, Any] | None = None,
+    warnings: list[dict[str, Any]] | None = None,
+    error_message: str | None = None,
+    row_index: int | None = None,
+    created_by: uuid.UUID | None = None,
+) -> None:
+    audit_log = ImportAuditLog(
+        batch_id=batch_id,
+        operation_type=operation_type,
+        match_strategy=match_strategy,
+        asset_no=asset_no,
+        equipment_tag=equipment_tag,
+        department_id=department_id,
+        location_text=location_text,
+        changes=changes,
+        warnings=warnings,
+        error_message=error_message,
+        row_index=row_index,
+        created_by=created_by,
+    )
+    db.add(audit_log)
+
+
+@router.post("/batch", summary="执行批量导入 (v4)")
+async def batch_import_v4(
+    data: list[dict[str, Any]],
+    force_override: bool = Body(True),
+    current_user: RequiredUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    # 统一字段映射：兼容前端中文键名 (Fix #1)
+    FIELD_MAP = {
+        "资产编号": "asset_no", "标签号": "label_no", "设备名称": "name",
+        "资产类别说明": "category_description", "数量": "quantity",
+        "制造商": "manufacturer", "型号": "model", "当前成本": "current_cost",
+        "帐面净值": "book_value", "启用日期": "commissioning_date",
+        "实物所在部门": "department_name", "实物所在地点": "location_text",
+        "报废状态": "scrap_status", "报废时间": "scrap_time"
+    }
+    
+    normalized_data = []
+    for row in data:
+        new_row = {}
+        for k, v in row.items():
+            clean_key = str(k).strip()
+            mapped_key = FIELD_MAP.get(clean_key, clean_key)
+            new_row[mapped_key] = v
+        normalized_data.append(new_row)
+    data = normalized_data
+
+    batch_id = f"import_{int(time.time())}_{current_user.id.hex[:8]}"
+    created = updated = skipped_duplicate = skipped_no_change = failed = 0
+    total_warnings = 0
+    errors = []
+    # duplicates = detect_internal_duplicates(data)
+    duplicates = set()
+
+    for idx, row in enumerate(data):
+        async with db.begin_nested():
+            try:
+                if idx in duplicates:
+                    skipped_duplicate += 1
+                    await log_audit(db, batch_id, "skip_duplicate", row_index=idx, created_by=current_user.id)
+                    continue
+
+                asset_no = row.get("asset_no")
+                equipment_tag = row.get("equipment_tag")
+                name = row.get("name")
+                dept_id = row.get("department_id")
+                location = row.get("location_text")
+
+                existing, strategy, warnings = await find_existing_equipment(db, asset_no, equipment_tag, name, dept_id, location)
+                total_warnings += len(warnings)
+
+                if any(w["level"] == "ERROR" for w in warnings):
+                    failed += 1
+                    await log_audit(db, batch_id, "error", strategy, warnings=warnings, row_index=idx, created_by=current_user.id)
+                    continue
+
+                if existing:
+                    is_fuzzy_protected = (strategy == "fuzzy")
+                    changes = apply_incremental_update(existing, row, force_override=force_override and not is_fuzzy_protected)
+                    
+                    if changes:
+                        updated += 1
+                        await log_audit(db, batch_id, "update", strategy, 
+                                      asset_no=asset_no, equipment_tag=equipment_tag,
+                                      department_id=dept_id, location_text=location,
+                                      changes=changes, warnings=warnings, created_by=current_user.id)
+                    else:
+                        skipped_no_change += 1
+                else:
+                    await repo.create_equipment(db, row)
+                    created += 1
+                    await log_audit(db, batch_id, "create", "none", 
+                                  asset_no=asset_no, equipment_tag=equipment_tag,
+                                  department_id=dept_id, location_text=location,
+                                  created_by=current_user.id)
+
+            except Exception as e:
+                failed += 1
+                errors.append({"row": idx, "error": str(e)})
+                await log_audit(db, batch_id, "error", error_message=str(e), row_index=idx, created_by=current_user.id)
+
+    return build_response(data=ImportBatchResponse(
+        batch_id=batch_id,
+        created_count=created,
+        updated_count=updated,
+        skipped_count=skipped_duplicate + skipped_no_change,
+        error_count=failed,
+        warnings_count=total_warnings,
+        errors=errors[:10]
+    ))
+
+
+@router.post("/preview", summary="预览导入结果 (v4)")
+async def preview_import_v4(
+    data: list[dict[str, Any]],
+    force_override: bool = Body(True),
+    current_user: RequiredUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    results = []
+    # duplicates = detect_internal_duplicates(data)
+    duplicates = set()
+
+    for idx, row in enumerate(data):
+        asset_no = row.get("asset_no")
+        equipment_tag = row.get("equipment_tag")
+        name = row.get("name")
+        dept_id = row.get("department_id")
+        location = row.get("location_text")
+
+        # Fix #2: 正确解构返回值
+        equipment, strategy, warnings = await find_existing_equipment(db, asset_no, equipment_tag, name, dept_id, location)
+        
+        expected_changes = {}
+        if equipment:
+            is_fuzzy_protected = (strategy == "fuzzy")
+            expected_changes = apply_incremental_update(equipment, row, force_override=force_override and not is_fuzzy_protected)
+
+        if idx in duplicates:
+            warnings.append({"field": "row", "level": "WARN", "message": "Duplicate of previous row"})
+
+        results.append({
+            "row_index": idx,
+            "strategy": strategy,
+            "warnings": warnings,
+            "expected_changes": expected_changes,
+            **row
+        })
+
+    return build_response(data={"items": results, "total": len(results)})

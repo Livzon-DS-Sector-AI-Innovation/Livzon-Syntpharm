@@ -394,8 +394,8 @@ export async function previewEquipmentImport(data: any) {
   return result
 }
 
-export async function batchImportEquipment(data: any) {
-  const result = await batchImportEquipmentApiTyped(data, await authHeaders())
+export async function batchImportEquipment(data: any, forceOverride: boolean = false) {
+  const result = await batchImportEquipmentApiTyped(data, await authHeaders(), forceOverride)
   revalidatePath('/equipment')
   return result
 }
