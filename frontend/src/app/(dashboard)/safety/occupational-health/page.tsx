@@ -3,7 +3,7 @@
 "use client"
 
 
-import { useState, useCallback } from 'react'
+import { useState, } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
@@ -151,7 +151,7 @@ export default function OccupationalHealthPage() {
   })
   const [exampagination, setExamPagination] = useState({ page: 1, page_size: 20, total: 0 })
 
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const { data: monitorsData, isLoading: monitorLoading, refetch: refetchMonitors } = useQuery({
     queryKey: ['safety-oh-monitors', { monitorPagination, monitorFilters }],

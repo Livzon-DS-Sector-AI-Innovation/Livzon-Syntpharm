@@ -1,6 +1,5 @@
 import type {
   EnergyDeviceConfig,
-  EnergyData,
   CollectLog,
   AlertRule,
   AlertRecord,

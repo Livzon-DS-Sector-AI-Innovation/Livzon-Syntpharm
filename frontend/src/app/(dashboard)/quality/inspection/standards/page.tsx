@@ -114,7 +114,7 @@ export default function InspectionStandardsPage() {
   // 子表编辑相关
   const [editingItems, setEditingItems] = useState<InspectionStandardItem[]>([])
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: _refetch } = useQuery({
     queryKey: ['inspection-standards', page, pageSize, statusFilter, materialCategoryFilter, pharmacopeiaFilter, searchMaterialName, versionFilter],
     queryFn: async () => {
       const response = await getStandards({

@@ -141,7 +141,7 @@ export default function HplcReferencePage() {
     return params
   }, [page, pageSize, searchText, statusFilter, advancedForm])
 
-  const { data: queryResult, isLoading: loading, refetch: fetchData } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: _fetchData } = useQuery({
     queryKey: ['hplc-reference-list', page, pageSize, searchText, statusFilter],
     queryFn: async () => {
       const params = queryParams()
@@ -176,7 +176,7 @@ export default function HplcReferencePage() {
   })
 
   // 复标提醒：拉取需要复标的对照品列表
-  const { data: recalList = [], refetch: refetchRecal } = useQuery({
+  const { data: recalList = [], refetch: _refetchRecal } = useQuery({
     queryKey: ['hplc-reference-recal-alert'],
     queryFn: async () => {
       const res = await getHplcReferencesNeedRecal()
@@ -1397,7 +1397,7 @@ export default function HplcReferencePage() {
                 total: usageHistoryTotal,
                 showSizeChanger: false,
                 showTotal: t => `共 ${t} 条领用记录`,
-                onChange: (p) => refetchUsageHistory(),
+                onChange: (_p) => refetchUsageHistory(),
               }}
               columns={[
                 {

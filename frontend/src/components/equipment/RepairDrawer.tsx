@@ -8,7 +8,7 @@ import type { UploadFile } from 'antd/es/upload'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, uploadWorkOrderImages } from '@/actions/equipment'
 import { FailureCode } from '@/types/equipment/generated-bridge'
-import { CreateWorkOrderInput, Maintainer } from '@/types/equipment/generated-bridge'
+import { CreateWorkOrderInput, } from '@/types/equipment/generated-bridge'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input

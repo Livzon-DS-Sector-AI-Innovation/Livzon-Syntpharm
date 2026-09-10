@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {App, Card, Select, Table, Tag, Tabs, Button, Drawer, Descriptions} from 'antd'
+import {Card, Select, Table, Tag, Tabs, Button, Drawer, Descriptions} from 'antd'
 import { ExperimentOutlined, SearchOutlined, EyeOutlined, CheckCircleOutlined, UnorderedListOutlined, ReloadOutlined } from '@ant-design/icons'
 import { fetchAllTracks, fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import { RdResearchTrack } from '@/types/research/rd-project'

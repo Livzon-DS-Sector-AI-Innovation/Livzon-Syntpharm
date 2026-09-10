@@ -27,7 +27,6 @@ import {
   createReminderConfig,
   updateReminderConfig,
 } from '@/actions/instrument'
-import type { ReminderConfig } from '@/types/instrument'
 import '../instrument-style.css'
 
 const { Text } = Typography

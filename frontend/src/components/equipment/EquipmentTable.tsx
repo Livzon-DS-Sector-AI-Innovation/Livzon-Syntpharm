@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { App, Table, Space, Input, Select, Button } from 'antd'
 import { EditOutlined, DeleteOutlined, SearchOutlined, ToolOutlined, PlusOutlined, EyeOutlined, ImportOutlined, SettingOutlined } from '@ant-design/icons'
 import { Equipment } from '@/types/equipment/generated-bridge'
@@ -21,7 +21,7 @@ const statusConfig: Record<EquipmentStatus, { color: string; bg: string }> = {
   '报废':   { color: '#e03131', bg: '#fde0ec' },
 }
 
-const statusPillMap: Record<EquipmentStatus, React.CSSProperties> = Object.fromEntries(
+const _statusPillMap: Record<EquipmentStatus, React.CSSProperties> = Object.fromEntries(
   Object.entries(statusConfig).map(([k, v]) => [k, statusPill(v.color, v.bg)])
 ) as Record<EquipmentStatus, React.CSSProperties>
 

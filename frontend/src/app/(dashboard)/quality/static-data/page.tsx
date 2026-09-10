@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
@@ -110,7 +110,7 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+  const { data: queryResult, isLoading: loading, refetch: _refetch } = useQuery({
     queryKey: ['static-data-list', tabKey, page, pageSize, searchValues],
     queryFn: async () => {
       const params = { page, page_size: pageSize, ...searchValues }

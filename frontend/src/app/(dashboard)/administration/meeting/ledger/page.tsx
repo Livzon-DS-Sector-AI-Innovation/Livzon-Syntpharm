@@ -28,7 +28,7 @@ export default function ItemLedgerPage() {
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
-  const { data: queryData, isLoading, refetch } = useQuery({
+  const { data: queryData, isLoading, refetch: _refetch } = useQuery({
     queryKey: ['gift-inventories', { keyword, status: statusFilter, page: pagination.current, pageSize: pagination.pageSize }],
     queryFn: async () => {
       const res = await fetchGiftInventories({

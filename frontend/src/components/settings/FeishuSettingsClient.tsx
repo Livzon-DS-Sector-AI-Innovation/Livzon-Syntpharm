@@ -29,7 +29,6 @@ import {
   testLivzonFeishuConfig,
 } from '@/actions/settings'
 import type {
-  FeishuConfig,
   FeishuConfigUpsert,
   FeishuDiagnosticResult,
 } from '@/types/settings'

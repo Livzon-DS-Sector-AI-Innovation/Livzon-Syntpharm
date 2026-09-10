@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useState, useCallback, Suspense } from 'react'
 import { Segmented, Input, Select, DatePicker, Spin } from 'antd'
 import {
   LoadingOutlined, SearchOutlined, FilterOutlined, ReloadOutlined,

@@ -3,7 +3,6 @@
 "use client"
 
 
-import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Input, Select, Button } from 'antd'
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons'
@@ -11,7 +10,6 @@ import { useEnergyStore } from '@/stores/energy'
 import { DeviceTable, DeviceDrawer } from '@/components/energy'
 import { getEnergyDevices } from '@/actions/energy'
 import { EnergyDeviceConfig, PaginatedResponse } from '@/types/energy'
-
 export default function DevicesPage() {
   const { deviceFilters, setDeviceFilters, openDeviceDrawer } = useEnergyStore()
 

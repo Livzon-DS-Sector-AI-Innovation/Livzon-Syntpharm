@@ -2,7 +2,7 @@
 import { EquipmentCategory } from '@/types/equipment/generated-bridge'
 
 import { useEffect } from 'react'
-import { App, Form, Input, Button, Modal } from 'antd'
+import { App, Form, Input, Modal } from 'antd'
 import { createCategory, updateCategory } from '@/actions/equipment'
 
 const { TextArea } = Input

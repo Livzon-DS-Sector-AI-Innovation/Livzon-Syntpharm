@@ -10,7 +10,6 @@ import { ThunderboltOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
 import { CollectLogTable, CollectLogDetailDrawer } from '@/components/energy'
 import { getCollectLogs, triggerCollect } from '@/actions/energy'
-import { CollectLog, PaginatedResponse } from '@/types/energy'
 
 export default function CollectLogsPage() {
   const {

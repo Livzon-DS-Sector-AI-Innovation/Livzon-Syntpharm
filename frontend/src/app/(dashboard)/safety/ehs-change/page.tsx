@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
@@ -117,7 +117,7 @@ export default function EhsChangePage() {
   // Pagination
   const [pagination, setPagination] = useState({ page: 1, page_size: 20, total: 0 })
 
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const { data: changesData, isLoading, refetch } = useQuery({
     queryKey: ['safety-ehs-changes', { pagination, filters }],

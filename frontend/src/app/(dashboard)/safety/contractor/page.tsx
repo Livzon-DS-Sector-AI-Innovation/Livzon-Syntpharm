@@ -36,7 +36,7 @@ export default function ContractorPage() {
   const [keyword, setKeyword] = useState('')
   const [_tab] = useState('list')
 
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const { data: contractorsData, isLoading, refetch } = useQuery({
     queryKey: ['safety-contractors', { page, pageSize, statusFilter, typeFilter, trainingFilter, keyword }],

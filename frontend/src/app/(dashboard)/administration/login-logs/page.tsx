@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Table, Tag, Input, Select, Space, Button } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
-import type { LoginLog } from '@/types/identity'
 
 export default function LoginLogsPage() {
   const queryClient = useQueryClient()

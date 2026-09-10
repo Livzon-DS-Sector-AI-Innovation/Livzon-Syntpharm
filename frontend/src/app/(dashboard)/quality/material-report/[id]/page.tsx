@@ -46,7 +46,6 @@ import {
 } from '@/actions/material-report'
 import {
   ReportDetailResponse,
-  TemplateListItem,
   TemplateColumnConfig,
   reportStatusLabels,
   reportStatusColors,

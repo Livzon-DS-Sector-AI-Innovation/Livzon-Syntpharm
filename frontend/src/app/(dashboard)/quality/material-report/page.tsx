@@ -39,7 +39,6 @@ import {
 } from '@/actions/material-report'
 import {
   ReportListItem,
-  TemplateListItem,
   reportStatusLabels,
   reportStatusColors,
 } from '@/types/material-report'

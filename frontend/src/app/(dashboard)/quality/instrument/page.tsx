@@ -25,16 +25,6 @@ import {
 import type { InstrumentListItem } from '@/types/instrument'
 import './instrument-style.css'
 
-interface ReminderConfig {
-  id: string
-  name: string
-  feishu_app_id: string | null
-  feishu_app_secret: string | null
-  chat_id: string | null
-  receive_id_type: string
-  is_active: boolean
-}
-
 export default function InstrumentDashboardPage() {
   const router = useRouter()
   const [isMobile, setIsMobile] = useState(false)

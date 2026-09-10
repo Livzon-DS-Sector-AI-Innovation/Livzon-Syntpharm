@@ -89,7 +89,7 @@ export function InspectionScheduleDrawer() {
   const [monthDays, setMonthDays] = useState<number[]>([1])
   const [assigneeId, setAssigneeId] = useState<string | undefined>(undefined)
 
-  const { data: schedules = [], isLoading: loading, refetch } = useQuery({
+  const { data: schedules = [], isLoading: loading, refetch: _refetch } = useQuery({
     queryKey: ['inspection-route-schedules', scheduleRouteId],
     queryFn: async () => {
       if (!scheduleRouteId) return []

@@ -519,7 +519,7 @@ export default function MobileReagentCreatePage() {
   const router = useRouter()
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
+  const [uploadedUrls, _setUploadedUrls] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [_recognizedData, setRecognizedData] = useState<Record<string, string>>({})

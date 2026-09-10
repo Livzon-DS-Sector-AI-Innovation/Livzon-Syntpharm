@@ -455,7 +455,7 @@ export default function HazardLedgerDetailPage() {
 
   const queryClient = useQueryClient()
 
-  const { data: record, isLoading: loading, refetch } = useQuery({
+  const { data: record, isLoading: loading, refetch: _refetch } = useQuery({
     queryKey: ['safety-hazard', id],
     queryFn: async () => {
       const response = await getHazard(id)

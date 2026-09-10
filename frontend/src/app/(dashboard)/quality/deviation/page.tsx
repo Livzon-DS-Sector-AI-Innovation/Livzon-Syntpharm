@@ -201,7 +201,7 @@ const DeviationListTab: React.FC<{
   const [aiResult, setAiResult] = useState('')
   const [aiTargetField, setAiTargetField] = useState('')
   const [searchValues, setSearchValues] = useState<SearchFormValues | undefined>(undefined)
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const { data: queryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
     queryKey: ['deviations', pagination.current, pagination.pageSize, searchValues],

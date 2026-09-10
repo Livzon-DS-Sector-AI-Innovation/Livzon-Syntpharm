@@ -57,7 +57,7 @@ export default function RegulatoryDocumentDetailPage() {
   const [doc, setDoc] = useState<DocumentDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadDetail = async () => {
+  const _loadDetail = async () => {
     setLoading(true)
     try {
       const data = await fetchDocumentDetail(docId)

@@ -123,7 +123,7 @@ const handleAnalyze = async () => {
     }
   }
 
-  const handleTargetSuccess = (target: UnitConsumptionTarget) => {
+  const handleTargetSuccess = (_target: UnitConsumptionTarget) => {
     if (result && productionItems.length > 0) {
       handleAnalyze()
     }

@@ -41,7 +41,7 @@ export function InspectionPage({ initialTemplates, initialEquipments, initialCat
     setInspectionTemplateLoading, openInspectionTemplateDrawer,
   } = useEquipmentStore()
 
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
   useEffect(() => {
     if (initialTemplates.length > 0 && templates.length === 0) {
       setTemplates(initialTemplates)

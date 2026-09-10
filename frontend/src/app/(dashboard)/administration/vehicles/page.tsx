@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery, } from '@tanstack/react-query'
 import { Button, Input, Tag, Modal, Form, message, Popconfirm, Upload, Image, Card, Empty } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons'
 import { fetchVehicles } from '@/lib/api/client/administration/vehicle'
@@ -36,7 +36,7 @@ export default function VehiclePage() {
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: queryData, isLoading, refetch } = useQuery({
+  const { data: queryData, isLoading, refetch: _refetch } = useQuery({
     queryKey: ['vehicles', { keyword, page: pagination.current, pageSize: pagination.pageSize }],
     queryFn: async () => {
       const res = await fetchVehicles({ keyword, page: pagination.current, page_size: pagination.pageSize })

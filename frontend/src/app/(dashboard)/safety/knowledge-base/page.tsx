@@ -27,7 +27,7 @@ import KnowledgeDetailDrawer from '@/components/safety/KnowledgeDetailDrawer'
 import KnowledgeFormModal from '@/components/safety/KnowledgeFormModal'
 import { useKnowledgeStore } from '@/stores/safety'
 import type { SafetyKnowledgeArticle } from '@/types/safety'
-import { filterByMenuKey, computeMenuCounts } from '@/components/safety'
+import { filterByMenuKey } from '@/components/safety'
 
 export default function KnowledgeBasePage() {
   // ── Antd App hook ──────────────────────────────────
@@ -50,7 +50,7 @@ export default function KnowledgeBasePage() {
   const [smartSearch, setSmartSearch] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedMenuKey, setSelectedMenuKey] = useState<string | null>(null)
-  const [menuCounts, setMenuCounts] = useState<Map<string, number>>(new Map())
+  const [menuCounts, _setMenuCounts] = useState<Map<string, number>>(new Map())
   const [syncing, setSyncing] = useState(false)
 
   // Modal/Drawer visibility
@@ -66,7 +66,7 @@ export default function KnowledgeBasePage() {
     refetch()
   }
 
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const { data: knowledgeData, isLoading, refetch } = useQuery({
     queryKey: ['safety-knowledge', { queryParams, statusFilter, categoryFilter, smartSearch, searchText }],
@@ -106,7 +106,7 @@ export default function KnowledgeBasePage() {
     return filtered
   })()
 
-  const total = (() => {
+  const _total = (() => {
     const totalCount = knowledgeData?.total || 0
     return cardStatusFilter || selectedMenuKey ? items.length : totalCount
   })()

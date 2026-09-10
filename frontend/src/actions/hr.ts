@@ -27,7 +27,6 @@ import {
   Team,
   OffboardingRecord,
   OnboardingRecordListResponse,
-  OnboardingRecord,
   DepartureRecordListResponse,
   DepartureRecord,
   CandidateListResponse,

@@ -80,7 +80,7 @@ export default function MediumPage() {
   const [stockDrawerOpen, setStockDrawerOpen] = useState(false)
   const [stockAdjustRecord, setStockAdjustRecord] = useState<Medium | null>(null)
   const [stockForm] = Form.useForm()
-  const queryClient = useQueryClient()
+  const _queryClient = useQueryClient()
 
   const queryParams = useCallback((): Record<string, unknown> => {
     const params: Record<string, unknown> = { page, page_size: pageSize }

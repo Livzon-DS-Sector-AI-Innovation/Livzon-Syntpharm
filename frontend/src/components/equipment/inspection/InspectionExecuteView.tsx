@@ -6,7 +6,7 @@ import { App, Progress, Typography } from 'antd'
 import { ArrowLeftOutlined, CheckOutlined, CameraOutlined, AimOutlined, RobotOutlined, EnvironmentOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
 import { submitEquipmentCheck, uploadInspectionPhoto, completeInspectionTask, analyzeInspectionPhoto } from '@/actions/inspection'
-import type { InspectionRecordItem, InspectionAIItemResult } from '@/types/inspection'
+import type { InspectionRecordItem, } from '@/types/inspection'
 import type { InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 const { Text } = Typography

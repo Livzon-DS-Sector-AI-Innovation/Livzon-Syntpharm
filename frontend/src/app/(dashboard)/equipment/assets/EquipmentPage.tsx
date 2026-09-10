@@ -1,7 +1,7 @@
 'use client'
 
 import '../../../../styles/industrial-theme.css';
-import { useEffect, useCallback, useState, useMemo } from 'react'
+import { useEffect, useCallback, useState, } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
@@ -105,7 +105,7 @@ export function EquipmentPage({
   }, [categories.length, locations.length, departments.length, setCategories, setLocations, setDepartments])
 
   // 获取列表数据
-  const { data: equipmentsData, isLoading, refetch: refetchEquipments } = useQuery({
+  const { data: _equipmentsData, isLoading: _isLoading, refetch: refetchEquipments } = useQuery({
     queryKey: ['equipment-list', { selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword }],
     queryFn: async () => {
       const equipmentsResponse = await fetchEquipmentsClient({
@@ -121,7 +121,7 @@ export function EquipmentPage({
     },
   })
 
-  const fetchData = useCallback((p: number, ps: number) => {
+  const fetchData = useCallback((_p: number, _ps: number) => {
     refetchEquipments()
   }, [refetchEquipments])
 

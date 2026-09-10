@@ -55,7 +55,7 @@ const EQUIP_STATUS_MAP: Record<EquipmentStatus, React.CSSProperties> = {
 
 
 
-export function EquipmentDetailDrawer({ open, equipment, categoryName, locationName, onClose }: EquipmentDetailDrawerProps) {
+export function EquipmentDetailDrawer({ open, equipment, categoryName: _categoryName, locationName, onClose }: EquipmentDetailDrawerProps) {
 
   const [activeTab, setActiveTab] = useState<'plans' | 'history' | 'orders'>('plans')
 

@@ -64,7 +64,6 @@ import type {
   OhHealthExamQueryParams,
   // knowledge
   GeneratePptRequest,
-  KnowledgeCardContent,
   GenerateCardResponse,
   AgentUsageStats,
   BatchGenerateCardsResponse,

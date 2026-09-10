@@ -41,7 +41,6 @@ import type {
   CalibrationRecordFilter,
   CalibrationRecordCreate,
   CalibrationRecordUpdate,
-  InstrumentListItem,
   CalibrationMethod,
   CalibrationResult,
   RecordStatus,
