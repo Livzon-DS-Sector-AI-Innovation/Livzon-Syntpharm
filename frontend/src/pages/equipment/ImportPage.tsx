@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Button } from 'antd';
+import { Tag as Badge } from 'antd';
 
 // 定义 22 个字段的中文映射
 const FIELD_LABELS: Record<string, string> = {

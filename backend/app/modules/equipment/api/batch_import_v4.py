@@ -1,18 +1,22 @@
 """Equipment Import v4 API Routes."""
-import time, uuid, logging
-from typing import Any, Annotated
-from fastapi import APIRouter, Depends, Body
+import logging
+import time
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse, build_response
-from app.modules.equipment.models.import_audit import ImportAuditLog
-from app.modules.equipment.service.import_engine import (
-    preprocess_excel_row,
-    apply_incremental_update, detect_internal_duplicates, find_existing_equipment
-)
 from app.modules.equipment import repository as repo
 from app.modules.equipment.config.dept_mapping import normalize_department_name
+from app.modules.equipment.models.import_audit import ImportAuditLog
+from app.modules.equipment.service.import_engine import (
+    apply_incremental_update,
+    detect_internal_duplicates,
+    find_existing_equipment,
+)
 
 router = APIRouter()
 
@@ -48,7 +52,7 @@ async def resolve_department_strict(excel_dept: str, db: AsyncSession):
     if not excel_dept or not str(excel_dept).strip(): return None, None, "部门名称为空"
     standard_name = normalize_department_name(str(excel_dept).strip())
     if not standard_name: return None, None, f"部门'{excel_dept}'未在映射表中定义"
-    
+
     from app.modules.hr.public_api import get_department_by_name
     if not (dept := await get_department_by_name(db, standard_name)):
         return None, None, f"标准化部门'{standard_name}'在数据库中不存在"
@@ -64,8 +68,8 @@ async def batch_import_v4(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     data = request.get("data", [])
-    force_override = request.get("force_override_business_fields", True)
-    
+    force_override = request.get("force_override_business_fields", False)
+
     # 字段映射
     FIELD_MAP = {
         "资产编号": "asset_no", "标签号": "label_no", "设备名称": "name",
@@ -80,7 +84,7 @@ async def batch_import_v4(
         "出厂日期": "production_date", "描述": "description"
     }
     normalized_data = [{FIELD_MAP.get(k.strip(), k.strip()): v for k, v in row.items()} for row in data]
-    
+
     duplicates = detect_internal_duplicates(normalized_data)
     batch_id = f"import_{int(time.time())}_{current_user.id.hex[:8]}"
     created = updated = skipped = failed = 0
@@ -91,19 +95,19 @@ async def batch_import_v4(
             try:
                 if idx in duplicates:
                     skipped += 1; continue
-                
+
                 dept_raw = row.get("department_name")
                 dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
-                
+
                 if dept_error:
                     failed += 1; errors.append({"row": idx, "error": dept_error})
                     if dept_raw: unmapped_depts.setdefault(dept_raw, []).append(idx)
                     continue
-                
+
                 row["department_id"] = dept_id
                 existing, strategy, warnings = await find_existing_equipment(
                     db, row.get("asset_no"), row.get("equipment_tag"), row.get("name"), dept_id, row.get("location_text"))
-                
+
                 if existing:
                     changes = apply_incremental_update(existing, row, force_override)
                     if changes: updated += 1
@@ -147,18 +151,18 @@ async def preview_import_v4(
             mapped_key = FIELD_MAP.get(clean_key, clean_key)
             new_row[mapped_key] = v
         normalized_data.append(new_row)
-    
+
     # 使用映射后的数据进行去重检测
     duplicates = detect_internal_duplicates(normalized_data)
 
     for idx, row in enumerate(normalized_data):
         # 1. 使用映射后的行数据，确保包含所有 22 个英文键名
-        display_row = dict(row) 
-        
+        display_row = dict(row)
+
         # 2. 后台静默解析部门，用于校验和匹配逻辑
         dept_raw = row.get("department_name")
         dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
-        
+
         # 3. 组装返回结果
         result_item = {
             "row_index": idx,
@@ -169,13 +173,13 @@ async def preview_import_v4(
         }
         # 将原始 Excel 数据合并进去，确保前端看到的列名和值与 Excel 完全一致
         result_item.update(display_row)
-        
+
         results.append(result_item)
-        
+
     if results:
         logger.info(f"[DEBUG-PREVIEW] First item keys: {list(results[0].keys())}")
     return build_response(data={
-        "items": results, 
+        "items": results,
         "total": len(results),
         "headers": PREVIEW_HEADERS
     })

@@ -1,4 +1,8 @@
-import asyncio, os, sys, httpx, uuid
+import asyncio
+import os
+import sys
+import httpx
+import uuid
 sys.path.insert(0, '/home/zhuangweizi/Livzon-Syntpharm/backend')
 from app.core.database import async_session_factory
 from app.modules.hr.models import HrDepartment
@@ -10,15 +14,15 @@ APP_SECRET = os.getenv("FEISHU__PLATFORM__APP_SECRET")
 async def sync():
     async with httpx.AsyncClient() as client:
         # 1. Get Token
-        resp = await client.post("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", 
+        resp = await client.post("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
                                 json={"app_id": APP_ID, "app_secret": APP_SECRET})
         token = resp.json()["tenant_access_token"]
-        
+
         # 2. Get Scoped Departments (The two companies)
         headers = {"Authorization": f"Bearer {token}"}
         resp = await client.get("https://open.feishu.cn/open-apis/contact/v3/scopes", headers=headers)
         scopes = resp.json().get("data", {}).get("department_scopes", [])
-        
+
         all_depts = []
         for scope in scopes:
             dept_id = scope["department_id"]
@@ -26,21 +30,21 @@ async def sync():
             queue = [dept_id]
             while queue:
                 current_id = queue.pop(0)
-                resp = await client.get(f"https://open.feishu.cn/open-apis/contact/v3/departments/{current_id}", 
+                resp = await client.get(f"https://open.feishu.cn/open-apis/contact/v3/departments/{current_id}",
                                        params={"department_id_type": "open_department_id"}, headers=headers)
                 if resp.status_code == 200:
                     data = resp.json().get("data", {})
                     if data:
                         all_depts.append({"id": data["department_id"], "name": data["name"]})
                         # Get children
-                        resp_children = await client.get("https://open.feishu.cn/open-apis/contact/v3/departments", 
+                        resp_children = await client.get("https://open.feishu.cn/open-apis/contact/v3/departments",
                                                        params={"parent_department_id": current_id, "page_size": 50}, headers=headers)
                         children = resp_children.json().get("data", {}).get("items", [])
                         for c in children:
                             queue.append(c["department_id"])
 
         print(f"✅ 从飞书获取到 {len(all_depts)} 个部门")
-        
+
         # 3. Save to DB
         async with async_session_factory() as db:
             for d in all_depts:

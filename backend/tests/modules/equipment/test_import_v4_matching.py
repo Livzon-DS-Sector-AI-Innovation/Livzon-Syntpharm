@@ -1,7 +1,4 @@
 """Tests for Equipment Import v4 Matching Logic."""
-import pytest
-from unittest.mock import AsyncMock, MagicMock
-import uuid
 
 # 模拟数据库会话和模型
 class MockEquipment:

@@ -13,7 +13,7 @@ from sqlalchemy import text
 async def verify():
     async with async_session_factory() as db:
         print("🔍 开始验证设备导入 v4 迁移...")
-        
+
         # 1. 检查 is_fixed_asset 字段
         try:
             await db.execute(text("SELECT is_fixed_asset FROM equipment.equipments LIMIT 1"))

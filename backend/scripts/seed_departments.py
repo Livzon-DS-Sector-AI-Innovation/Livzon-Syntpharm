@@ -50,7 +50,7 @@ async def seed():
                 print(f"   ➕ 创建部门: {dept_info['name']}")
             else:
                 print(f"   ✅ 部门已存在: {dept_info['name']}")
-        
+
         await db.commit()
         print("🎉 部门种子数据初始化完成！")
 
