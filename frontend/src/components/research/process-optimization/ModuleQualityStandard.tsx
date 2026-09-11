@@ -162,7 +162,7 @@ export function ModuleQualityStandard({ optimizationId, doeExperiment, impurityS
               children: (
                 <div>
                   <Alert
-                    title="质量标准建立"
+                    message="质量标准建立"
                     description="基于DOE优化数据、杂质研究和晶型研究结果，制定检测方法和质量标准。"
                     type="info"
                     showIcon
@@ -235,7 +235,7 @@ export function ModuleQualityStandard({ optimizationId, doeExperiment, impurityS
               children: (
                 <div>
                   <Alert
-                    title="杂质限度制定"
+                    message="杂质限度制定"
                     description="基于ICH Q3A(R2)/Q3B(R2)指导原则，结合实验数据和安全性评估制定杂质限度。"
                     type="info"
                     showIcon

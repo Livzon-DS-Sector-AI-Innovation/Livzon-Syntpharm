@@ -671,7 +671,7 @@ export default function HazardIdentificationDetailPage() {
         okText="确认"
         cancelText="取消"
         width={640}
-        destroyOnHidden
+        destroyOnClose
       >
         {Object.entries(editForm).map(([key, val]) => (
           <div key={key} style={{ marginBottom: 14 }}>

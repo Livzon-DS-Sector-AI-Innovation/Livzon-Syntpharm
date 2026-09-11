@@ -146,10 +146,8 @@ export function PackagingTable({ initialItems }: PackagingTableProps) {
               title="库存不足"
               value={stats.warningCount}
               suffix="种"
-              styles={{
-                content: {
-                  color: stats.warningCount > 0 ? '#dd5b00' : undefined,
-                },
+              valueStyle={{
+                color: stats.warningCount > 0 ? '#dd5b00' : undefined,
               }}
             />
           </Card>

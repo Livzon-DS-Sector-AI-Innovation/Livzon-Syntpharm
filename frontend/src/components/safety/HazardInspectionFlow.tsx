@@ -370,10 +370,19 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
   // ── 从草稿继续登记 ──
   const handleContinueDraft = (draft: HazardReport) => {
     setDraftFormValues({
-      inspection_category: draft.inspection_category,
+      // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
+      inspection_category: Array.isArray(draft.inspection_category)
+        ? draft.inspection_category
+        : draft.inspection_category
+          ? draft.inspection_category.split(/[,，]/).filter(Boolean)
+          : undefined,
       discovered_by: draft.discovered_by,
       discovered_by_name: draft.discovered_by_name,
-      inspector_department: draft.inspector_department,
+      inspector_department: Array.isArray(draft.inspector_department)
+        ? draft.inspector_department
+        : draft.inspector_department
+          ? draft.inspector_department.split(/[,，]/).filter(Boolean)
+          : undefined,
       department: draft.department,
       discovered_at: draft.discovered_at,
       description: draft.description,
@@ -473,7 +482,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
                   AI 正在分析中
                 </Title>
               </div>
-              <Space orientation="vertical" size="middle" style={{ marginTop: 8 }}>
+              <Space direction="vertical" size="middle" style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {aiProgress === 'script1' ? (
                     <LoadingOutlined style={{ color: '#5645d4' }} />
@@ -542,7 +551,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
         styles={{ body: { padding: '16px 24px' } }}
-        size={420}
+        width={420}
       >
         {draftsLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>

@@ -450,7 +450,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
               children: (
                 <div>
                   <Alert
-                    title="DOE实验设计"
+                    message="DOE实验设计"
                     description="选择实验设计类型，定义因素和水平，生成实验矩阵。DOE方法可以高效地探索多因素影响，找到最优工艺参数组合。"
                     type="info"
                     showIcon
@@ -660,11 +660,11 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
               children: (
                 <div>
                   {!matrixGenerated ? (
-                    <Alert title="请先在【DOE方案设计】中生成实验矩阵" type="warning" showIcon />
+                    <Alert message="请先在【DOE方案设计】中生成实验矩阵" type="warning" showIcon />
                   ) : (
                     <>
                       <Alert
-                        title={`共 ${runs.length} 组实验，已完成 ${runs.filter(r => r.status === 'completed').length} 组`}
+                        message={`共 ${runs.length} 组实验，已完成 ${runs.filter(r => r.status === 'completed').length} 组`}
                         description="请按实验矩阵完成实验后，在对应行录入实验结果"
                         type="info"
                         showIcon
@@ -702,7 +702,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
               children: (
                 <div>
                   {!analysisResult ? (
-                    <Alert title="请先完成实验数据录入并执行统计分析" type="warning" showIcon />
+                    <Alert message="请先完成实验数据录入并执行统计分析" type="warning" showIcon />
                   ) : (
                     <>
                       {/* 模型概览 */}

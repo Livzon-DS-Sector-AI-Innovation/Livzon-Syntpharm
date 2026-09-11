@@ -47,23 +47,16 @@ async def _get_ai_config() -> dict[str, Any]:
 
 
 async def create_ai_service(config_type: str = "text") -> Any:
-    """创建 AI 服务实例（从数据库读取配置）。
+    """创建 AI 服务实例（使用全局 llm_client 单例）。
 
     config_type: "text"（文本模型）或 "vision"（视觉模型）
+
+    返回 llm_client 单例，配置从 core.llm_configs 表读取。
     """
-    from app.platform.integrations.ai.client import AIService
+    from app.core.llm import llm_client
 
-    cfg = (await _get_ai_config()).get(config_type)
-    if not cfg:
-        raise ValueError(f"不支持的 AI 配置类型: {config_type}，可选: text / vision")
-
-    logger.debug("创建 AI 服务: config_type=%s model=%s", config_type, cfg["model"])
-    return AIService(
-        api_key=cfg["api_key"],
-        base_url=cfg["base_url"],
-        model=cfg["model"],
-        timeout=cfg["timeout"],
-    )
+    logger.debug("使用全局 llm_client (config_type=%s)", config_type)
+    return llm_client
 
 
 class ConfigService:

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     ConfirmCheckRequest,
     SafetyCheckCreate,
@@ -37,7 +37,7 @@ async def get(
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_checks(skip, page_size, status, check_type, department)
-    return ApiResponse(
+    return build_response(
         data=[SafetyCheckResponse.model_validate(c) for c in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -53,8 +53,8 @@ async def handler(
     service = SafetyService(db)
     item = await service.get_check(check_id)
     if not item:
-        return ApiResponse(code=404, message="检查记录不存在")
-    return ApiResponse(data=SafetyCheckResponse.model_validate(item))
+        return build_response(code=404, message="检查记录不存在")
+    return build_response(data=SafetyCheckResponse.model_validate(item))
 
 
 @checks_router.post("/checks", response_model=ApiResponse, summary="创建安全检查")
@@ -67,7 +67,7 @@ async def post(
     service = SafetyService(db)
     item = await service.create_check(data)
     await db.commit()
-    return ApiResponse(data=SafetyCheckResponse.model_validate(item))
+    return build_response(data=SafetyCheckResponse.model_validate(item))
 
 
 @checks_router.put(  # type: ignore[no-redef]
@@ -83,9 +83,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_check(check_id, data)
     if not item:
-        return ApiResponse(code=404, message="检查记录不存在")
+        return build_response(code=404, message="检查记录不存在")
     await db.commit()
-    return ApiResponse(data=SafetyCheckResponse.model_validate(item))
+    return build_response(data=SafetyCheckResponse.model_validate(item))
 
 
 @checks_router.post(  # type: ignore[no-redef]
@@ -100,9 +100,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.submit_check(check_id)
     if not item:
-        return ApiResponse(code=400, message="无法提交，当前状态不允许")
+        return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SafetyCheckResponse.model_validate(item))
+    return build_response(data=SafetyCheckResponse.model_validate(item))
 
 
 @checks_router.post(  # type: ignore[no-redef]
@@ -118,9 +118,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.review_check(check_id, result)
     if not item:
-        return ApiResponse(code=400, message="无法审核，当前状态不允许")
+        return build_response(code=400, message="无法审核，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SafetyCheckResponse.model_validate(item))
+    return build_response(data=SafetyCheckResponse.model_validate(item))
 
 
 @checks_router.post(  # type: ignore[no-redef]
@@ -136,9 +136,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.confirm_check(check_id, data.role)
     if not item:
-        return ApiResponse(code=400, message="确认失败")
+        return build_response(code=400, message="确认失败")
     await db.commit()
-    return ApiResponse(data=SafetyCheckResponse.model_validate(item))
+    return build_response(data=SafetyCheckResponse.model_validate(item))
 
 
 @checks_router.delete(  # type: ignore[no-redef]
@@ -153,6 +153,6 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_check(check_id)
     if not result:
-        return ApiResponse(code=404, message="检查记录不存在")
+        return build_response(code=404, message="检查记录不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")

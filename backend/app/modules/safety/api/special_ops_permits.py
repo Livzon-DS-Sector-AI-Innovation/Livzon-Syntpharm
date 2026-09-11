@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     SpecialOperationPermitCreate,
     SpecialOperationPermitResponse,
@@ -41,7 +41,7 @@ async def handler(
     service = SpecialOperationService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_permits(skip, page_size, status, operation_type, operation_level, keyword)
-    return ApiResponse(
+    return build_response(
         data=[SpecialOperationPermitResponse.model_validate(p) for p in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -61,7 +61,7 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.create_permit(data)
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.get(  # type: ignore[no-redef]
@@ -78,8 +78,8 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.get_permit(permit_id)
     if not item:
-        return ApiResponse(code=404, message="作业票不存在")
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+        return build_response(code=404, message="作业票不存在")
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.put(  # type: ignore[no-redef]
@@ -97,9 +97,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.update_permit(permit_id, data)
     if not item:
-        return ApiResponse(code=404, message="作业票不存在")
+        return build_response(code=404, message="作业票不存在")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.delete(  # type: ignore[no-redef]
@@ -116,9 +116,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     result = await service.delete_permit(permit_id)
     if not result:
-        return ApiResponse(code=404, message="作业票不存在")
+        return build_response(code=404, message="作业票不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 特殊作业票工作流 Routes ====================
@@ -138,9 +138,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.submit_permit(permit_id)
     if not item:
-        return ApiResponse(code=400, message="无法提交，当前状态不允许")
+        return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.post(  # type: ignore[no-redef]
@@ -157,9 +157,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.approve_permit(permit_id)
     if not item:
-        return ApiResponse(code=400, message="无法审批，当前状态不允许")
+        return build_response(code=400, message="无法审批，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.post(  # type: ignore[no-redef]
@@ -177,9 +177,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.reject_permit(permit_id, reason)
     if not item:
-        return ApiResponse(code=400, message="无法驳回，当前状态不允许")
+        return build_response(code=400, message="无法驳回，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.post(  # type: ignore[no-redef]
@@ -196,9 +196,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.start_permit(permit_id)
     if not item:
-        return ApiResponse(code=400, message="无法开始作业，当前状态不允许")
+        return build_response(code=400, message="无法开始作业，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.post(  # type: ignore[no-redef]
@@ -216,9 +216,9 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.complete_permit(permit_id, method)
     if not item:
-        return ApiResponse(code=400, message="无法完工，当前状态不允许")
+        return build_response(code=400, message="无法完工，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))
 
 
 @special_ops_permits_router.post(  # type: ignore[no-redef]
@@ -235,6 +235,6 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.archive_permit(permit_id)
     if not item:
-        return ApiResponse(code=400, message="无法归档，当前状态不允许")
+        return build_response(code=400, message="无法归档，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SpecialOperationPermitResponse.model_validate(item))
+    return build_response(data=SpecialOperationPermitResponse.model_validate(item))

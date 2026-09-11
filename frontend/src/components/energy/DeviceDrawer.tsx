@@ -167,10 +167,10 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   return (
     <Drawer
       title={isEdit ? '编辑数据源' : '新增数据源'}
-      size={480}
+      width={480}
       open={deviceDrawerOpen}
       onClose={closeDeviceDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{
         header: {
           borderBottom: '1px solid #e5e3df',

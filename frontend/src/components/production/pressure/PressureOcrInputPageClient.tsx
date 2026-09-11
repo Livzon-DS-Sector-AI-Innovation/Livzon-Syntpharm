@@ -176,7 +176,7 @@ export function PressureOcrInputPageClient() {
         {currentStep === 0 && (
           <div className="text-center py-12">
             {uploading ? (
-              <Spin size="large" description="正在识别中..." />
+              <Spin size="large" tip="正在识别中..." />
             ) : (
               <Upload.Dragger
                 accept="image/*"

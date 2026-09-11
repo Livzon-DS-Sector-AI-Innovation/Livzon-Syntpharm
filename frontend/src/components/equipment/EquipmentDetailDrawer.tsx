@@ -241,10 +241,10 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
   return (
     <Drawer
       title="设备详情"
-      size={860}
+      width={860}
       open={open}
       onClose={onClose}
-      destroyOnHidden
+      destroyOnClose
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },
@@ -283,7 +283,7 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName, locationN
           <Descriptions.Item label="投用日期">{equipment.commissioning_date || '-'}</Descriptions.Item>
           <Descriptions.Item label="当前成本">{equipment.current_cost ? `¥${equipment.current_cost.toLocaleString()}` : '-'}</Descriptions.Item>
           <Descriptions.Item label="账面净值">{equipment.book_value ? `¥${equipment.book_value.toLocaleString()}` : '-'}</Descriptions.Item>
-          <Descriptions.Item label=" "></Descriptions.Item>
+          <Descriptions.Item label=" ">{""}</Descriptions.Item>
           <Descriptions.Item label="描述" span={2}>{equipment.description || '-'}</Descriptions.Item>
         </Descriptions>
       </div>

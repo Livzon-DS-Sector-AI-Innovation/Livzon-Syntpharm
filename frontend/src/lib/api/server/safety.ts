@@ -926,6 +926,10 @@ export async function syncKnowledgeArticles(authHeaders?: Record<string, string>
   })
 }
 
+export async function batchImportKnowledgeArticles(formData: FormData, authHeaders?: Record<string, string>) {
+  return uploadFetch("/api/v1/safety/knowledge-articles/batch-import", formData, authHeaders)
+}
+
 // ============ SpecialOperationReport ============
 
 export async function getSpecialOperationReports(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
@@ -1371,7 +1375,7 @@ export async function parseSpecialOpsExportQuery(query: string, authHeaders?: Re
   return safeApiFetch<any>('/api/v1/safety/special-ops/parse-export-query', {
     method: 'POST',
     headers: authHeaders,
-    body: JSON.stringify({ query }),
+    body: JSON.stringify({ natural_query: query }),
   })
 }
 

@@ -1190,8 +1190,12 @@ class SpecialOperationPersonnel(BaseModel):
     __tablename__ = "special_operation_personnel"
     __table_args__ = (
         Index(
-            "uq_special_op_personnel_no",
+            "uq_special_op_personnel_duplicate",
             "personnel_no",
+            "department",
+            "certificate_type",
+            "certificate_number",
+            "expiry_date",
             unique=True,
             postgresql_where=text("is_deleted = false"),
         ),
@@ -1336,6 +1340,49 @@ class SafetyKnowledgeArticle(BaseModel):
     card_version: Mapped[int] = mapped_column(
         Integer, default=1, server_default="1", nullable=False, comment="知识卡片版本号"
     )
+    ppt_content: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON,
+        nullable=True,
+        comment="AI 生成的 PPT 内容 JSON",
+    )
+    ppt_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="PPT 生成时间"
+    )
+
+
+# ==================== PPT 生成记录 ====================
+
+
+class PptGenerationRecord(BaseModel):
+    """PPT 生成记录表"""
+
+    __tablename__ = "ppt_generation_records"
+    __table_args__ = (
+        Index("ix_ppt_gen_records_article_id", "article_id", postgresql_where=text("is_deleted = false")),
+        {"schema": "safety"},
+    )
+
+    article_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.knowledge_articles.id"),
+        nullable=False,
+        comment="关联知识库文章ID",
+    )
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False, comment="文件名")
+    template: Mapped[str] = mapped_column(String(32), nullable=False, comment="模板类型: training/briefing/audit")
+    style: Mapped[str] = mapped_column(String(32), nullable=False, comment="配色风格: professional/modern/minimal")
+    page_count: Mapped[int] = mapped_column(
+        Integer, default=0, server_default="0", nullable=False, comment="幻灯片页数"
+    )
+    object_key: Mapped[str] = mapped_column(String(500), nullable=False, comment="MinIO 对象路径")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="失败时的错误信息")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="success",
+        server_default="success",
+        nullable=False,
+        comment="状态: success/failed",
+    )
 
 
 # ==================== 风险作业报备 ====================
@@ -1434,6 +1481,13 @@ class DailyRiskReport(BaseModel):
 
     report_no: Mapped[str] = mapped_column(String(64), nullable=False, comment="报备编号")
     report_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, comment="报备作业日期")
+    report_type: Mapped[str] = mapped_column(
+        String(20),
+        default="regular",
+        server_default="regular",
+        nullable=False,
+        comment="报备类型: regular(常规作业) / non_regular(非常规作业)",
+    )
     department: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="报备部门")
     hazard_identification_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -1957,3 +2011,78 @@ class ScheduledTaskLog(BaseModel):
 
     # 关系
     task: Mapped[ScheduledTask] = relationship("ScheduledTask", back_populates="logs")
+
+
+# ==================== 知识图谱 ====================
+
+
+class GraphKnowledgeNode(BaseModel):
+    """知识图谱节点表"""
+
+    __tablename__ = "graph_knowledge_nodes"
+    __table_args__ = {"schema": "safety"}
+
+    name: Mapped[str] = mapped_column(String(255), nullable=False, comment="节点名称")
+    node_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="节点类型: document/clause/entity/category/concept"
+    )
+    aliases: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="别名列表")
+    article_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="关联知识库文章ID")
+    entity_type: Mapped[str | None] = mapped_column(
+        String(32), nullable=True, comment="实体子类型: equipment/condition/location/operation/material/standard"
+    )
+    ai_summary: Mapped[str | None] = mapped_column(Text, nullable=True, comment="AI 摘要")
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="AI 置信度 0-1")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="ai_generated",
+        server_default="ai_generated",
+        nullable=False,
+        comment="状态: ai_generated/human_confirmed/deprecated/merged",
+    )
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True, comment="合并目标节点ID"
+    )
+    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="扩展元数据")
+
+
+class GraphKnowledgeEdge(BaseModel):
+    """知识图谱边（关系）表"""
+
+    __tablename__ = "graph_knowledge_edges"
+    __table_args__ = {"schema": "safety"}
+
+    source_node_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.graph_knowledge_nodes.id"),
+        nullable=False,
+        comment="源节点ID",
+    )
+    target_node_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.graph_knowledge_nodes.id"),
+        nullable=False,
+        comment="目标节点ID",
+    )
+    relation_type: Mapped[str] = mapped_column(
+        String(32), nullable=False, comment="关系类型: cites/supplements/replaces/belongs_to/related_to/conflicts_with"
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="关系说明")
+    evidence_text: Mapped[str | None] = mapped_column(Text, nullable=True, comment="原文证据")
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="AI 置信度 0-1")
+    status: Mapped[str] = mapped_column(
+        String(32),
+        default="ai_generated",
+        server_default="ai_generated",
+        nullable=False,
+        comment="状态: ai_generated/human_confirmed/human_deleted/human_added",
+    )
+    extra_metadata: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="扩展元数据")
+
+    # 关系
+    source_node: Mapped[GraphKnowledgeNode] = relationship(
+        "GraphKnowledgeNode", foreign_keys=[source_node_id], lazy="select"
+    )
+    target_node: Mapped[GraphKnowledgeNode] = relationship(
+        "GraphKnowledgeNode", foreign_keys=[target_node_id], lazy="select"
+    )

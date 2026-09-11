@@ -75,10 +75,10 @@ export function SparePartDrawer({ onRefresh }: SparePartDrawerProps) {
   return (
     <Drawer
       title={editingSparePart ? '编辑备件' : '新建备件'}
-      size={480}
+      width={480}
       open={sparePartDrawerOpen}
       onClose={closeSparePartDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeSparePartDrawer}>取消</Button>

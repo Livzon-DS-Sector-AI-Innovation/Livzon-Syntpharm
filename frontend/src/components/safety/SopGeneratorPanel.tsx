@@ -577,7 +577,7 @@ export default function SopGeneratorPanel({
         {/* table */}
         {loadingList ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 64 }}>
-            <Spin size="medium" />
+            <Spin size="default" />
           </div>
         ) : generatedSops.length === 0 ? (
           <div style={{ padding: 64 }}>

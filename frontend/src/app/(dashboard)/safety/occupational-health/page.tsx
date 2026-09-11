@@ -727,7 +727,7 @@ export default function OccupationalHealthPage() {
         onOk={handleMonitorSave}
         confirmLoading={monitorSaving}
         styles={{ wrapper: { width: 800 } }}
-        destroyOnHidden
+        destroyOnClose
       >
         <Form form={monitorForm} layout="vertical" preserve={false}>
           <Title level={5}>基本信息</Title>
@@ -865,7 +865,7 @@ export default function OccupationalHealthPage() {
         onOk={handleExamSave}
         confirmLoading={examSaving}
         styles={{ wrapper: { width: 800 } }}
-        destroyOnHidden
+        destroyOnClose
       >
         <Form form={examForm} layout="vertical" preserve={false}>
           <Title level={5}>人员信息</Title>

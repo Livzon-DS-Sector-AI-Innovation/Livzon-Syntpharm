@@ -1,5 +1,6 @@
 """Unified LLM client interface."""
 
+import asyncio
 import json
 from typing import Any
 
@@ -78,21 +79,38 @@ class LLMClient:
             if response_format:
                 body["response_format"] = {"type": response_format}
 
-            resp = await client.post("/chat/completions", json=body)
+            # Retry logic for transient errors (max 3 attempts)
+            last_error: Exception | None = None
+            for attempt in range(3):
+                try:
+                    resp = await client.post("/chat/completions", json=body)
 
-            if resp.status_code == 429:
-                raise LLMRateLimitError("Rate limit exceeded", status_code=429)
+                    if resp.status_code == 429:
+                        raise LLMRateLimitError("Rate limit exceeded", status_code=429)
 
-            if resp.is_error:
-                error_text = resp.text[:500]
-                raise LLMProviderError(
-                    f"LLM API error: {resp.status_code} - {error_text}",
-                    status_code=resp.status_code,
-                    raw_response=error_text,
-                )
+                    if resp.is_error:
+                        error_text = resp.text[:500]
+                        raise LLMProviderError(
+                            f"LLM API error: {resp.status_code} - {error_text}",
+                            status_code=resp.status_code,
+                            raw_response=error_text,
+                        )
 
-            data = resp.json()
-            return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
+                    data = resp.json()
+                    return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
+
+                except (LLMRateLimitError, httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout) as e:
+                    last_error = e
+                    if attempt < 2:
+                        # Exponential backoff: 1s, 2s
+                        await asyncio.sleep(2**attempt)
+                        continue
+                    raise
+
+            # Should not reach here, but just in case
+            if last_error:
+                raise last_error
+            raise LLMProviderError("LLM request failed after 3 attempts")
 
         finally:
             await client.aclose()

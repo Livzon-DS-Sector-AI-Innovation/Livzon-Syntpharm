@@ -376,7 +376,7 @@ export default function WorkflowListPanel() {
       title: '',
       key: '__row_select__',
       width: 48,
-      fixed: 'start',
+      fixed: 'left',
       align: 'center',
       render: (_: unknown, record: HazardIdentification, index: number) => {
         const isSelected = selectedRowKeys.includes(record.id)

@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, select, update
+from sqlalchemy import case, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,6 +20,7 @@ from app.modules.safety.models import (
     OhHazardMonitor,
     OhHealthExam,
     OperationRegulation,
+    PptGenerationRecord,
     RegulationRevision,
     SafetyCheck,
     SafetyKnowledgeArticle,
@@ -174,7 +175,6 @@ class SafetyRepository:
 
     async def get_hazard_stats(self) -> dict[str, int]:
         """获取隐患状态统计数据（全局，不受分页/筛选影响）。"""
-        from sqlalchemy import case
 
         base = select(
             func.count(HazardReport.id).label("total"),
@@ -682,7 +682,6 @@ class SafetyRepository:
             results[key] = await self.session.scalar(select(func.count()).select_from(q.subquery())) or 0
 
         # 待审核：in_progress 且有未审批的脚本
-        from sqlalchemy import or_
 
         pending_q = select(func.count(HazardIdentification.id)).where(
             ~HazardIdentification.is_deleted,
@@ -1081,6 +1080,29 @@ class SafetyRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def check_personnel_duplicate(
+        self,
+        personnel_no: str,
+        department: str | None,
+        certificate_type: str,
+        certificate_number: str | None,
+        expiry_date: datetime | None,
+        exclude_id: uuid.UUID | None = None,
+    ) -> SpecialOperationPersonnel | None:
+        """检查人员资质是否重复（五字段：人员编号 + 部门 + 证书类型 + 证书编号 + 到期日期）"""
+        query = select(SpecialOperationPersonnel).where(
+            ~SpecialOperationPersonnel.is_deleted,
+            SpecialOperationPersonnel.personnel_no == personnel_no,
+            SpecialOperationPersonnel.department == department,
+            SpecialOperationPersonnel.certificate_type == certificate_type,
+            SpecialOperationPersonnel.certificate_number == certificate_number,
+            SpecialOperationPersonnel.expiry_date == expiry_date,
+        )
+        if exclude_id:
+            query = query.where(SpecialOperationPersonnel.id != exclude_id)
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     async def create_special_operation_personnel(self, data: dict[str, Any]) -> SpecialOperationPersonnel:
         """创建特殊作业人员资质"""
         item = SpecialOperationPersonnel(**data)
@@ -1145,6 +1167,12 @@ class SafetyRepository:
                 SpecialOperationPermit.permit_no.ilike(like)
                 | SpecialOperationPermit.location.ilike(like)
                 | SpecialOperationPermit.work_description.ilike(like)
+                | SpecialOperationPermit.equipment_tag.ilike(like)
+                | SpecialOperationPermit.applicant_name.ilike(like)
+                | SpecialOperationPermit.work_leader_name.ilike(like)
+                | SpecialOperationPermit.operator_names.ilike(like)
+                | SpecialOperationPermit.guardian_name.ilike(like)
+                | SpecialOperationPermit.approver_name.ilike(like)
             )
 
         count_query = select(func.count(SpecialOperationPermit.id)).where(~SpecialOperationPermit.is_deleted)
@@ -1160,6 +1188,12 @@ class SafetyRepository:
                 SpecialOperationPermit.permit_no.ilike(like)
                 | SpecialOperationPermit.location.ilike(like)
                 | SpecialOperationPermit.work_description.ilike(like)
+                | SpecialOperationPermit.equipment_tag.ilike(like)
+                | SpecialOperationPermit.applicant_name.ilike(like)
+                | SpecialOperationPermit.work_leader_name.ilike(like)
+                | SpecialOperationPermit.operator_names.ilike(like)
+                | SpecialOperationPermit.guardian_name.ilike(like)
+                | SpecialOperationPermit.approver_name.ilike(like)
             )
 
         total = await self.session.scalar(count_query)
@@ -1270,6 +1304,15 @@ class SafetyRepository:
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
+    async def get_knowledge_article_by_title(self, title: str) -> SafetyKnowledgeArticle | None:
+        """根据标题查找知识库文章"""
+        query = select(SafetyKnowledgeArticle).where(
+            SafetyKnowledgeArticle.title == title,
+            ~SafetyKnowledgeArticle.is_deleted,
+        )
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none()
+
     async def create_knowledge_article(self, data: dict[str, Any]) -> SafetyKnowledgeArticle:
         """创建安全知识库文章"""
         item = SafetyKnowledgeArticle(**data)
@@ -1351,6 +1394,13 @@ class SafetyRepository:
                     SpecialOperationReport.report_no.ilike(like)
                     | SpecialOperationReport.work_description.ilike(like)
                     | SpecialOperationReport.location.ilike(like)
+                    | SpecialOperationReport.equipment_tag.ilike(like)
+                    | SpecialOperationReport.applicant_name.ilike(like)
+                    | SpecialOperationReport.work_leader_name.ilike(like)
+                    | SpecialOperationReport.operator_names.ilike(like)
+                    | SpecialOperationReport.guardian_name.ilike(like)
+                    | SpecialOperationReport.approver_name.ilike(like)
+                    | SpecialOperationReport.department.ilike(like)
                 )
             return q
 
@@ -1497,7 +1547,7 @@ class SafetyRepository:
             select(
                 SpecialOperationReport.operation_type,
                 func.count(SpecialOperationReport.id).label("count"),
-                func.sum(func.cast(SpecialOperationReport.is_critical, type_=func.integer())).label("critical_count"),
+                func.sum(case((SpecialOperationReport.is_critical, 1), else_=0)).label("critical_count"),
             )
             .where(
                 ~SpecialOperationReport.is_deleted,
@@ -1519,6 +1569,7 @@ class SafetyRepository:
         department: str | None = None,
         report_date: datetime | None = None,
         keyword: str | None = None,
+        report_type: str | None = None,
     ) -> tuple[list[DailyRiskReport], int]:
         """获取每日风险作业报备列表"""
         query = select(DailyRiskReport).where(~DailyRiskReport.is_deleted)
@@ -1536,6 +1587,8 @@ class SafetyRepository:
                 | DailyRiskReport.operation_description.ilike(like)
                 | DailyRiskReport.department.ilike(like)
             )
+        if report_type:
+            query = query.where(DailyRiskReport.report_type == report_type)
 
         count_query = select(func.count(DailyRiskReport.id)).where(~DailyRiskReport.is_deleted)
         if status:
@@ -1551,6 +1604,8 @@ class SafetyRepository:
                 | DailyRiskReport.operation_description.ilike(like)
                 | DailyRiskReport.department.ilike(like)
             )
+        if report_type:
+            count_query = count_query.where(DailyRiskReport.report_type == report_type)
 
         total = await self.session.scalar(count_query)
         query = (
@@ -2125,3 +2180,35 @@ class SafetyRepository:
         )
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    # ==================== PPT 生成记录 ====================
+
+    async def get_ppt_generation_records(
+        self,
+        article_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 20,
+    ) -> tuple[list[PptGenerationRecord], int]:
+        """查询某文章的 PPT 生成历史（只返回成功记录）"""
+        query = select(PptGenerationRecord).where(
+            PptGenerationRecord.article_id == article_id,
+            PptGenerationRecord.status == "success",
+            ~PptGenerationRecord.is_deleted,
+        )
+        count_query = select(func.count(PptGenerationRecord.id)).where(
+            PptGenerationRecord.article_id == article_id,
+            PptGenerationRecord.status == "success",
+            ~PptGenerationRecord.is_deleted,
+        )
+        total = await self.session.scalar(count_query)
+        query = query.offset(skip).limit(limit).order_by(PptGenerationRecord.created_at.desc())
+        result = await self.session.execute(query)
+        items = list(result.scalars().all())
+        return items, total or 0
+
+    async def create_ppt_generation_record(self, data: dict[str, Any]) -> PptGenerationRecord:
+        """创建 PPT 生成记录"""
+        item = PptGenerationRecord(**data)
+        self.session.add(item)
+        await self.session.flush()
+        return item

@@ -41,10 +41,10 @@ interface UserOption {
 }
 
 export interface InspectionFormValues {
-  inspection_category?: string     // 逗号分隔的多选值（匹配 Bitable multi_select）
-  discovered_by?: string           // user UUID (person field)
-  discovered_by_name?: string      // display name
-  inspector_department?: string    // 逗号分隔的多选值（匹配 Bitable multi_select）
+  inspection_category?: string | string[]     // 逗号分隔的多选值（匹配 Bitable multi_select）
+  discovered_by?: string                      // user UUID (person field)
+  discovered_by_name?: string                 // display name
+  inspector_department?: string | string[]    // 逗号分隔的多选值（匹配 Bitable multi_select）
   department?: string
   discovered_at?: string
   description?: string
@@ -104,13 +104,17 @@ export default function HazardInspectionForm({
   useEffect(() => {
     if (initialValues) {
       form.setFieldsValue({
-        // inspection_category 是 multi_select → 回填时拆分为数组
-        inspection_category: initialValues.inspection_category
-          ? initialValues.inspection_category.split(/[,，]/).filter(Boolean)
-          : undefined,
-        inspector_department: initialValues.inspector_department
-          ? initialValues.inspector_department.split(/[,，]/).filter(Boolean)
-          : undefined,
+        // inspection_category / inspector_department 兼容字符串和数组
+        inspection_category: Array.isArray(initialValues.inspection_category)
+          ? initialValues.inspection_category
+          : initialValues.inspection_category
+            ? initialValues.inspection_category.split(/[,，]/).filter(Boolean)
+            : undefined,
+        inspector_department: Array.isArray(initialValues.inspector_department)
+          ? initialValues.inspector_department
+          : initialValues.inspector_department
+            ? initialValues.inspector_department.split(/[,，]/).filter(Boolean)
+            : undefined,
         discovered_by: initialValues.discovered_by || undefined,
         discovered_by_name: initialValues.discovered_by_name,
         department: initialValues.department,
@@ -127,7 +131,8 @@ export default function HazardInspectionForm({
         }])
       }
     }
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialValues])
 
   // 从飞书登录信息自动填充检查人员姓名和部门（仅新建表单，草稿不覆盖）
   useEffect(() => {
@@ -248,8 +253,24 @@ export default function HazardInspectionForm({
         form={form}
         layout="vertical"
         initialValues={{
-          discovered_at: dayjs(),
           ...initialValues,
+          // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
+          inspection_category: Array.isArray(initialValues?.inspection_category)
+            ? initialValues.inspection_category
+            : initialValues?.inspection_category
+              ? initialValues.inspection_category.split(/[,，]/).filter(Boolean)
+              : undefined,
+          inspector_department: Array.isArray(initialValues?.inspector_department)
+            ? initialValues.inspector_department
+            : initialValues?.inspector_department
+              ? initialValues.inspector_department.split(/[,，]/).filter(Boolean)
+              : undefined,
+          // DatePicker 需要 dayjs 对象（兼容字符串和 dayjs 对象）
+          discovered_at: initialValues?.discovered_at
+            ? (dayjs.isDayjs(initialValues.discovered_at)
+                ? initialValues.discovered_at
+                : dayjs(initialValues.discovered_at))
+            : dayjs(),
         }}
       >
         <Row gutter={16}>

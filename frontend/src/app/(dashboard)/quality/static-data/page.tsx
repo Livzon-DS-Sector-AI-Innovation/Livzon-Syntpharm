@@ -704,7 +704,7 @@ export default function StaticDataPage() {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          tabPlacement={"left" as any}
+          tabPosition={"left" as any}
           style={{ minHeight: 500 }}
           tabBarStyle={{ width: 170, borderRight: '1px solid #f0f0f0', margin: 0 }}
           items={tabs.map(t => ({

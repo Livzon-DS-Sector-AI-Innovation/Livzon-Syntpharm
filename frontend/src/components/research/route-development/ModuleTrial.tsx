@@ -88,7 +88,7 @@ export function ModuleTrial({ routeId, selectedRouteName, experimentPlan, initia
           size="small"
         >
           <Alert
-            title="请按照以下方案进行实验，实验完成后在此录入数据"
+            message="请按照以下方案进行实验，实验完成后在此录入数据"
             description={`预计周期：${experimentPlan.estimated_duration} | 共 ${experimentPlan.steps.length} 个步骤`}
             type="info"
             showIcon
@@ -168,7 +168,7 @@ export function ModuleTrial({ routeId, selectedRouteName, experimentPlan, initia
       {/* 实验数据录入 */}
       <Card title={`🧪 实验数据录入 — ${selectedRouteName}`} style={{ marginBottom: 16 }}>
         <Alert
-          title="录入实验数据"
+          message="录入实验数据"
           description="按照实验方案完成实验后，在此录入每条实验的结果数据。支持手动录入或上传实验记录图片由LLM辅助提取。"
           type="info"
           showIcon
@@ -275,7 +275,7 @@ export function ModuleTrial({ routeId, selectedRouteName, experimentPlan, initia
           />
         ) : (
           <Alert
-            title="暂无实验记录"
+            message="暂无实验记录"
             description="请按照实验方案完成实验后，点击【添加实验记录】录入数据"
             type="warning"
             showIcon
@@ -284,7 +284,7 @@ export function ModuleTrial({ routeId, selectedRouteName, experimentPlan, initia
 
         {experiments.length > 0 && (
           <Alert
-            title="⚠️ LLM异常检测"
+            message="⚠️ LLM异常检测"
             description={
               <ul style={{ margin: 0, paddingLeft: 20 }}>
                 {experiments.filter(e => e.yield && e.yield < 70).map(e => (

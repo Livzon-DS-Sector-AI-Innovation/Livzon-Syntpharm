@@ -552,7 +552,7 @@ export function EhsChangePageClient() {
         onOk={handleSave}
         confirmLoading={saving}
         styles={{ wrapper: { width: 800 } }}
-        destroyOnHidden
+        destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Title level={5} className="mb-3">基本信息</Title>

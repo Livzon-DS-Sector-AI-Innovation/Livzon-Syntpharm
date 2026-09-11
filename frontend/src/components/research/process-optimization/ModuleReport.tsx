@@ -159,7 +159,7 @@ export function ModuleReport({
         {/* 可下载附件 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>📎 可下载附件</div>
-          <Space orientation="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
             {[
               { name: '工艺优化报告.md', icon: '📄' },
               { name: 'DOE实验数据.xlsx', icon: '📊' },

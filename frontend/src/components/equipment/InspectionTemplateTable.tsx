@@ -41,7 +41,7 @@ export function InspectionTemplateTable({ onRefresh, categories }: Props) {
       render: (v: boolean) => <span style={v ? pillSuccess : pillNeutral}>{v ? '启用' : '停用'}</span>,
     },
     {
-      title: '操作', key: 'action', width: 220, fixed: 'end',
+      title: '操作', key: 'action', width: 220, fixed: 'right',
       render: (_: unknown, r: InspectionTemplate) => (
         <Space size={12}>
           <span role="button" onClick={() => openInspectionItemDrawer(r.id)} style={linkPurple}><UnorderedListOutlined />检查项</span>

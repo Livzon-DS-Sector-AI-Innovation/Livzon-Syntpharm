@@ -84,12 +84,12 @@ export function AIFileParser({
       <Alert
         type="info"
         showIcon
-        title="AI辅助填写"
+        message="AI辅助填写"
         description={hint || defaultHint}
         style={{ marginBottom: 12 }}
       />
 
-      <Space orientation="vertical" style={{ width: '100%' }} size="middle">
+      <Space direction="vertical" style={{ width: '100%' }} size="middle">
         {/* 文件上传 */}
         <div>
           <Text strong style={{ display: 'block', marginBottom: 8 }}>
@@ -127,7 +127,7 @@ export function AIFileParser({
                 点击输入文本内容
               </Button>
             ) : (
-              <Space orientation="vertical" style={{ width: '100%' }}>
+              <Space direction="vertical" style={{ width: '100%' }}>
                 <textarea
                   value={textContent}
                   onChange={(e) => setTextContent(e.target.value)}
@@ -169,7 +169,7 @@ export function AIFileParser({
         <Alert
           type="info"
           showIcon
-          title="AI正在解析中..."
+          message="AI正在解析中..."
           description="请稍候，AI正在识别文件内容并提取关键信息"
           style={{ marginTop: 12 }}
         />

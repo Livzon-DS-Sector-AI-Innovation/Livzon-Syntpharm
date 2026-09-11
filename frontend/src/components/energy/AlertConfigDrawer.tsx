@@ -165,10 +165,10 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
   return (
     <Drawer
       title={isEdit ? '编辑预警规则' : '新建预警规则'}
-      size={480}
+      width={480}
       open={alertConfigDrawerOpen}
       onClose={closeAlertConfigDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },

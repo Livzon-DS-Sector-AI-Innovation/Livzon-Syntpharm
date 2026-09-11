@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.response import ApiResponse, build_response
 from app.modules.safety.schemas import (
     ABNORMALITY_STATUS_OPTIONS,
     ACCIDENT_LEVEL_OPTIONS,
@@ -60,7 +60,7 @@ async def get(
 ) -> Any:
     """获取安全模块的所有枚举值选项"""
 
-    return ApiResponse(
+    return build_response(
         data={
             "check_types": CHECK_TYPE_OPTIONS,
             "hazard_types": HAZARD_TYPE_OPTIONS,

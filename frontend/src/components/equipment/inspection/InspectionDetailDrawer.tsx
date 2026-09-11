@@ -46,7 +46,7 @@ export function InspectionDetailDrawer() {
   }
 
   return (
-    <Drawer title={null} size={780} open={historyDetailOpen} onClose={closeHistoryDetail} destroyOnHidden
+    <Drawer title={null} width={780} open={historyDetailOpen} onClose={closeHistoryDetail} destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}>
       {/* header */}
       <div style={{ background: C.navy, padding: '18px 28px', borderBottom: `3px solid ${C.purple}` }}>

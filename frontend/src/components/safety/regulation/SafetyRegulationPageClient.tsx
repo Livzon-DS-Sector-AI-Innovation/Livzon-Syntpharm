@@ -196,12 +196,12 @@ export function SafetyRegulationPageClient() {
 
   const loadRegulationsForSelect = async () => {
     try {
-      const response = await getRegulations({ page: 1, page_size: 500 })
+      const response = await getRegulations({ page: 1, page_size: 200 })
       if (response.code === 200) {
         setRegulationsForSelect(response.data)
+      } else {
       }
-    } catch {
-      // silent
+    } catch (error) {
     }
   }
 
@@ -978,7 +978,7 @@ export function SafetyRegulationPageClient() {
         open={regDrawerOpen}
         onClose={() => setRegDrawerOpen(false)}
         styles={{ wrapper: { width: 480 } }}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setRegDrawerOpen(false)}>取消</Button>
@@ -1033,7 +1033,7 @@ export function SafetyRegulationPageClient() {
         open={revDrawerOpen}
         onClose={() => setRevDrawerOpen(false)}
         styles={{ wrapper: { width: 480 } }}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setRevDrawerOpen(false)}>取消</Button>
