@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, ReactNode } from 'react'
+import { useState, useEffect, useCallback, ReactNode, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {App, Card, Table, Tag, Button, Input} from 'antd'
 import { ArrowLeftOutlined, SearchOutlined, EnterOutlined } from '@ant-design/icons'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
@@ -33,36 +34,35 @@ interface StageModuleLayoutProps {
 
 export function StageModuleLayout({ title, description, stage, children }: StageModuleLayoutProps) {
   const { message: msgApi } = App.useApp()
-  const [projects, setProjects] = useState<RdProject[]>([])
-  const [_total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
   const [keyword, setKeyword] = useState('')
 
-  const loadProjects = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await fetchRdProjects({ page_size: 100, stage })
-      setProjects(result.items)
-      setTotal(result.total)
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载项目列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [stage, msgApi])
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ['rd-projects', stage],
+    queryFn: async () => {
+      try {
+        const result = await fetchRdProjects({ page_size: 100, stage })
+        return { items: result.items, total: result.total }
+      } catch (e: unknown) {
+        msgApi.error(e instanceof Error ? e.message : '加载项目列表失败')
+        return { items: [], total: 0 }
+      }
+    },
+  })
 
-  useEffect(() => {
-    loadProjects()
-  }, [loadProjects])
+  const projects = queryData?.items || []
 
-  const filteredProjects = keyword
-    ? projects.filter(p =>
-        p.name.toLowerCase().includes(keyword.toLowerCase()) ||
-        p.api_name.toLowerCase().includes(keyword.toLowerCase()) ||
-        (p.cas_number && p.cas_number.toLowerCase().includes(keyword.toLowerCase()))
-      )
-    : projects
+
+
+  const filteredProjects = useMemo(() => {
+    return keyword
+      ? projects.filter(p =>
+          p.name.toLowerCase().includes(keyword.toLowerCase()) ||
+          p.api_name.toLowerCase().includes(keyword.toLowerCase()) ||
+          (p.cas_number && p.cas_number.toLowerCase().includes(keyword.toLowerCase()))
+        )
+      : projects
+  }, [projects, keyword])
 
   if (selectedProjectId) {
     return (
