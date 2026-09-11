@@ -45,7 +45,7 @@ function LedgerContent() {
   const urlType = searchParams.get('type') as LedgerType | null
 
   const [type, setType] = useState<LedgerType>(urlType || 'domestic')
-  const [data, setData] = useState<any[]>([])
+  const [data, setData] = useState<Record<string, unknown>[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
@@ -60,7 +60,7 @@ function LedgerContent() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      let result: any[] = []
+      let result: unknown[] = []
       switch (type) {
         case 'domestic': result = await fetchDomesticApprovals(); break
         case 'overseas': result = await fetchOverseasApprovals(); break
@@ -69,7 +69,7 @@ function LedgerContent() {
         case 'wc': result = await fetchWcCertificates(); break
         case 'reviewing': result = await fetchReviewingDrugs(); break
       }
-      setData(result)
+      setData(result as Record<string, unknown>[])
     } catch {
       message.error('加载数据失败')
     } finally {
@@ -80,7 +80,7 @@ function LedgerContent() {
   const handleImport = async (file: File) => {
     console.log('🚀 Starting import, file:', file.name, 'type:', type)
     try {
-      let result: any
+      let result: Record<string, unknown> = {}
       switch (type) {
         case 'domestic': result = await importDomesticApprovals(file); break
         case 'overseas': result = await importOverseasApprovals(file); break
@@ -90,18 +90,15 @@ function LedgerContent() {
       }
       console.log('✅ Import result:', result)
       
-      const data = result?.data
-      if (data?.success_count === 0) {
+      const data = result?.data as ImportResultData | undefined
+      const successCount = data?.success_count ?? 0
+      if (successCount === 0) {
         // 解析成功但没有有效数据
         message.warning(data?.message || '文件已解析但未导入有效数据，请检查表头或数据行')
-      } else if (data?.success_count > 0) {
-        // 成功导入
-        message.success(data?.message || `成功导入 ${data.success_count} 条记录`)
-        loadData()  // 只在有数据时刷新
       } else {
-        // 其他情况
-        message.success(data?.message || '导入成功')
-        loadData()
+        // 成功导入
+        message.success(data?.message || `成功导入 ${successCount} 条记录`)
+        loadData()  // 只在有数据时刷新
       }
       
       // 如果有错误，显示错误详情
@@ -109,9 +106,9 @@ function LedgerContent() {
         console.warn('⚠️ Import errors:', data.errors)
         message.error(`导入有 ${data.errors.length} 条错误，请查看控制台`)
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('❌ Import error:', err)
-      message.error(err?.message || '导入失败')
+      message.error(err instanceof Error ? err.message : '导入失败')
     }
     return false
   }
@@ -126,7 +123,7 @@ function LedgerContent() {
     }
   }
 
-  const handleAdd = async (values: any) => {
+  const handleAdd = async (values: { issue_date?: string | Date | null; valid_until?: string | Date | null; [key: string]: unknown }) => {
     try {
       const formatted = {
         ...values,
@@ -154,7 +151,7 @@ function LedgerContent() {
     router.push(`/registration/ledger?type=${val}`)
   }
 
-  const getColumns = (): ColumnsType<any> => {
+  const getColumns = (): ColumnsType<Record<string, unknown>> => {
     if (type === 'reviewing') {
       return [
         { title: '药品名称', dataIndex: 'product_name', key: 'product_name', width: 150 },
@@ -368,6 +365,13 @@ function LedgerContent() {
       )}
     </div>
   )
+}
+
+
+interface ImportResultData {
+  success_count?: number
+  message?: string
+  errors?: unknown[]
 }
 
 export default function LedgerPage() {

@@ -445,7 +445,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                 <Form.Item name="template_id" label="选择模板">
                   <Select
                     disabled={!isEditMode}
-                    options={templates.map((t: any) => ({
+                    options={templates.map((t: { id: string; template_name: string }) => ({
                       label: t.template_name,
                       value: t.id,
                     }))}

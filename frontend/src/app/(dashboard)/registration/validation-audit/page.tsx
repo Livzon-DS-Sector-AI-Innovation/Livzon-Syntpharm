@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic'
 export default async function ValidationAuditPage() {
   const res = await fetchTasksServer({ page: 1, page_size: 20 })
   const data = res?.data as Record<string, unknown> | undefined
-  const items = ((data as any)?.items as ValidationAuditTaskListItem[]) || ((res?.data as any) as ValidationAuditTaskListItem[]) || []
+  const items = (data?.items as ValidationAuditTaskListItem[] | undefined) || (res?.data as unknown as ValidationAuditTaskListItem[]) || []
   const meta = res?.meta as Record<string, unknown> | undefined
-  const total = ((meta as any)?.total as number) || ((data as any)?.total as number) || 0
+  const total = (meta?.total as number | undefined) || (data?.total as number | undefined) || 0
 
   return (
     <ValidationAuditListClient

@@ -65,7 +65,7 @@ export default function InspectionTableDetailPage({
   const [recognizeModalVisible, setRecognizeModalVisible] = useState(false)
   const [recognizing, setRecognizing] = useState(false)
   const [recognizeResult, setRecognizeResult] = useState<RecognizeResult | null>(null)
-  const [recognizedRows, setRecognizedRows] = useState<Record<string, any>[]>([])
+  const [recognizedRows, setRecognizedRows] = useState<TableRow[]>([])
   const recognizingRef = useRef(false) // 防止重复识别
 
   // 模板上传状态
@@ -213,12 +213,12 @@ export default function InspectionTableDetailPage({
       if (result.recognized_rows && result.recognized_rows.length > 0) {
         const editableRows = result.recognized_rows.map((row, index) => ({
           ...row,
-          _key: `recognized_${Date.now()}_${index}`,
+          key: `recognized_${Date.now()}_${index}`,
         }))
         setRecognizedRows(editableRows)
       } else {
         // 如果没有识别到数据，创建空行
-        const emptyRow: Record<string, any> = { _key: `recognized_${Date.now()}` }
+        const emptyRow: TableRow = { key: `recognized_${Date.now()}` }
         tableData.columns_config.forEach((col) => {
           emptyRow[col.key] = ''
         })
@@ -256,7 +256,7 @@ export default function InspectionTableDetailPage({
   // 添加新的识别行
   const handleAddRecognizedRow = () => {
     if (!tableData) return
-    const emptyRow: Record<string, any> = { _key: `recognized_${Date.now()}` }
+    const emptyRow: TableRow = { key: `recognized_${Date.now()}` }
     tableData.columns_config.forEach((col) => {
       emptyRow[col.key] = ''
     })
@@ -335,7 +335,7 @@ export default function InspectionTableDetailPage({
 
       // 构建行数据
       const rowsData = rows.map((row) => {
-        const rowData: Record<string, any> = {}
+        const rowData: TableRow = { key: `row_${Date.now()}_${Math.random()}` }
         tableData.columns_config.forEach((col) => {
           rowData[col.key] = row[col.key] || ''
         })

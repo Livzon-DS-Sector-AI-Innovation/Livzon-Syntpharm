@@ -327,7 +327,7 @@ export default function InspectionStandardsPage() {
     setEditingItems(editingItems.filter((_, i) => i !== index))
   }
 
-  const handleItemChange = (index: number, field: string, value: any) => {
+  const handleItemChange = (index: number, field: string, value: unknown) => {
     const newItems = [...editingItems]
     newItems[index] = { ...newItems[index], [field]: value }
     setEditingItems(newItems)

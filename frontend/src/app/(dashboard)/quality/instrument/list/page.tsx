@@ -91,6 +91,18 @@ const resultOptions: Record<string, { label: string; color: string }> = {
   limited: { label: '限用', color: 'warning' },
 }
 
+interface CalibrationRecordItem {
+  id?: string | number;
+  calibration_no: string;
+  calibration_date: string;
+  calibration_result: string;
+  valid_until?: string;
+  certificate_no?: string;
+  calibration_method?: string;
+  [key: string]: string | number | undefined;
+}
+
+
 interface ExpandedRecord {
   instrument: InstrumentListItem
   rules: CalibrationRule[]
@@ -301,7 +313,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
               {ruleRecords.length > 0 ? (
                 isMobile ? (
                   <div className="calibration-record-list">
-                    {ruleRecords.map((r: any) => (
+                    {ruleRecords.map((r: CalibrationRecordItem) => (
                       <div key={r.id || r.calibration_no} className="calibration-record-item">
                         <div className="calibration-record-header">
                           <span className="calibration-record-date">{r.calibration_date ? dayjs(r.calibration_date).format('YYYY-MM-DD') : '-'}</span>
@@ -323,7 +335,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                           )}
                           <div className="calibration-record-row">
                             <span className="calibration-record-label">校准方法</span>
-                            <span className="calibration-record-value">{methodOptions[r.calibration_method] || r.calibration_method}</span>
+                            <span className="calibration-record-value">{methodOptions[r.calibration_method || ""] || r.calibration_method}</span>
                           </div>
                         </div>
                       </div>
@@ -333,7 +345,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                   <Table
                     size="small"
                     pagination={false}
-                    dataSource={ruleRecords.map((r: any, i: number) => ({ ...r, key: r.id || i }))}
+                    dataSource={ruleRecords.map((r: CalibrationRecordListItem, i: number) => ({ ...r, key: r.id || i }))}
                     columns={recordColumns}
                     style={{ marginTop: 8 }}
                   />
@@ -354,7 +366,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
             </div>
             {isMobile ? (
               <div className="calibration-record-list">
-                {recordsMap.get('ungrouped')?.map((r: any) => (
+                {recordsMap.get('ungrouped')?.map((r: CalibrationRecordItem) => (
                   <div key={r.id || r.calibration_no} className="calibration-record-item">
                     <div className="calibration-record-header">
                       <span className="calibration-record-date">{r.calibration_date ? dayjs(r.calibration_date).format('YYYY-MM-DD') : '-'}</span>
@@ -376,7 +388,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                       )}
                       <div className="calibration-record-row">
                         <span className="calibration-record-label">校准方法</span>
-                        <span className="calibration-record-value">{methodOptions[r.calibration_method] || r.calibration_method}</span>
+                        <span className="calibration-record-value">{methodOptions[r.calibration_method || ""] || r.calibration_method}</span>
                       </div>
                     </div>
                   </div>
@@ -386,7 +398,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
               <Table
                 size="small"
                 pagination={false}
-                dataSource={recordsMap.get('ungrouped')?.map((r: any, i: number) => ({ ...r, key: r.id || i }))}
+                dataSource={recordsMap.get('ungrouped')?.map((r: CalibrationRecordListItem, i: number) => ({ ...r, key: r.id || i }))}
                 columns={recordColumns}
               />
             )}

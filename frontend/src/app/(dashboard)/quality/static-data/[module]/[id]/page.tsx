@@ -214,7 +214,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     if (!id) return
     setLoading(true)
     try {
-      let res: any = null
+      let res: { data?: Record<string, unknown> } | null = null
       switch (moduleType) {
         case 'storage-condition': res = await getStorageCondition(Number(id)); break
         case 'unit': res = await getUnit(Number(id)); break
@@ -231,19 +231,19 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       const data = res?.data ?? {}
       setRecord(data as Record<string, unknown>)
       // 加载 items 子表
-      if (isStdWithItems && (data as any).items) {
-        setItems((((data as any).items ?? []) as ItemRecord[]).map((it: ItemRecord, idx: number) => ({ ...it, key: it.id ?? Date.now() + idx })))
+      if (isStdWithItems && data.items) {
+        setItems(((data.items ?? []) as ItemRecord[]).map((it: ItemRecord, idx: number) => ({ ...it, key: it.id ?? Date.now() + idx })))
       }
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
       const fmt: Record<string, unknown> = {}
       dateFields.forEach(f => {
-        if ((data as any)[f] && typeof (data as any)[f] === 'string') fmt[f] = dayjs((data as any)[f])
+        if (data[f] && typeof data[f] === 'string') fmt[f] = dayjs(data[f] as string)
       })
-      form.setFieldsValue({ ...(data as any), ...fmt })
+      form.setFieldsValue({ ...data, ...fmt })
       // 初始化附件列表
-      if (supportsUpload && (data as any).attach_file) {
-        const names = ((data as any).attach_file as string).split(',').filter(Boolean)
+      if (supportsUpload && data.attach_file) {
+        const names = (data.attach_file as string).split(',').filter(Boolean)
         setAttachFiles(names.map((name: string, idx: number) => ({
           uid: String(-idx - 1),
           name,
@@ -274,8 +274,8 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
       dateFields.forEach(f => {
-        if (processed[f] && typeof processed[f] === 'object' && (processed[f] as any).format) {
-          processed[f] = (processed[f] as any).format('YYYY-MM-DD')
+        if (processed[f] && typeof processed[f] === 'object' && (processed[f] as { format?: (f: string) => string }).format) {
+          processed[f] = (processed[f] as { format: (f: string) => string }).format('YYYY-MM-DD')
         }
       })
       processed.create_by = 1
@@ -287,7 +287,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         })
       }
 
-      let fn: any, updateFn: any
+      let fn: (data: Record<string, unknown>) => Promise<unknown>, updateFn: (id: number, data: Record<string, unknown>) => Promise<unknown>
       switch (moduleType) {
         case 'storage-condition': fn = createStorageCondition; updateFn = updateStorageCondition; break
         case 'unit': fn = createUnit; updateFn = updateUnit; break
@@ -347,7 +347,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     if (file.status === 'done') {
       const res = file.response as { code?: number; data?: { stored_name?: string }; message?: string }
       if (res && (res.code === 200 || res.code === 0)) {
-        const uploaded = (res as any)?.data
+        const uploaded = res?.data
         // 将文件名追加到 attach_file 字段
         const currentVal = form.getFieldValue('attach_file') || ''
         const newVal = currentVal ? `${currentVal},${uploaded?.stored_name}` : uploaded?.stored_name

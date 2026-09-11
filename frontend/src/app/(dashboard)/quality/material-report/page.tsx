@@ -252,7 +252,7 @@ export default function MaterialReportPage() {
               placeholder="选择模板"
               style={{ width: 150 }}
               allowClear
-              options={templates.map((t: any) => ({
+              options={templates.map((t: { id: string; template_name: string }) => ({
                 label: t.template_name,
                 value: t.id,
               }))}

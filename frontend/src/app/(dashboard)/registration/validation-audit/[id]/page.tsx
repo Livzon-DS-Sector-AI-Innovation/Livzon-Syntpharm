@@ -29,10 +29,10 @@ export default async function ValidationAuditDetailPage({
 
   return (
     <ValidationAuditDetailClient
-      task={(taskRes?.data as any) as ValidationAuditTask}
-      initialFiles={((filesRes?.data || []) as any) as ValidationAuditFileListItem[]}
-      initialIssues={((issuesRes?.data || []) as any) as ValidationAuditIssue[]}
-      initialReport={((reportRes?.data || null) as any) as ValidationAuditReport | null}
+      task={taskRes?.data as unknown as ValidationAuditTask}
+      initialFiles={(filesRes?.data || []) as unknown as ValidationAuditFileListItem[]}
+      initialIssues={(issuesRes?.data || []) as unknown as ValidationAuditIssue[]}
+      initialReport={(reportRes?.data ?? null) as unknown as ValidationAuditReport | null}
     />
   )
 }

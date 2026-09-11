@@ -476,7 +476,7 @@ export default function DeviationQueryPage() {
                 </thead>
                 <tbody>
                   {data.length > 0 ? (
-                    data.map((item: any) => {
+                    data.map((item: DeviationFlowItem) => {
                       const urgencyColor = URGENCY_COLORS[item.urgency_level_label || ''] || 'default'
                       const statusColor = STATUS_COLORS[item.status || ''] || 'default'
                       const remaining = item.remaining_days
