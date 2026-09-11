@@ -1,5 +1,6 @@
 #!/bin/bash
 # Backend CI — domain checks only.
+export UV_HTTP_TIMEOUT=120
 # Cross-project checks (openapi, e2e) live at root: scripts/ci.sh
 #
 # Usage:
