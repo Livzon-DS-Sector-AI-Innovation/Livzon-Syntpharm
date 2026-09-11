@@ -51,7 +51,10 @@ PREVIEW_HEADERS = [
 logger = logging.getLogger(__name__)
 
 # 这些字段在数据库中均为字符串列，但 Excel 常以数字单元格存储，需归一化
-_TEXT_NORMALIZED_KEYS = ("asset_no", "label_no", "equipment_tag")
+_TEXT_NORMALIZED_KEYS = (
+    "asset_no", "label_no", "equipment_tag", 
+    "model", "location_text"  # Excel 中可能为数字，需转为字符串
+)
 
 # 数据库中为 DATE 列的字段。asyncpg 对其要求 datetime.date 实例，
 # 传字符串会报 `'str' object has no attribute 'toordinal'`。
@@ -252,7 +255,9 @@ async def batch_import_v4(
 
     return build_response(data={
         "batch_id": batch_id, "created_count": created, "updated_count": updated,
-        "skipped_count": skipped, "error_count": failed, "unmapped_departments": unmapped_depts
+        "skipped_count": skipped, "error_count": failed, 
+        "unmapped_departments": unmapped_depts,
+        "errors": errors  # 新增：返回详细错误列表供前端展示
     })
 
 @router.post("/preview", summary="预览导入结果 (v4)")

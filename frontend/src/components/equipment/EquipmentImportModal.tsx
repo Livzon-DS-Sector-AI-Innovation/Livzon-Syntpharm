@@ -366,14 +366,55 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
             批次 ID: {importResult.batch_id}
           </div>
           <h3>导入完成</h3>
-          {importResult.errors && importResult.errors.length > 0 && (
-            <div style={{ marginTop: 16, textAlign: 'left', maxHeight: 200, overflow: 'auto' }}>
-              <p style={{ color: '#e03131' }}>错误详情：</p>
-              {importResult.errors.map((err, idx) => (
-                <p key={idx} style={{ color: '#666', fontSize: 12 }}>
-                  第 {err.row + 1} 行: {err.error}
+          
+          {importResult.error_count > 0 && (
+            <div style={{ marginTop: 24, textAlign: 'left' }}>
+              <h4 style={{ color: '#e03131', marginBottom: 12 }}>
+                ❌ 错误详情 ({importResult.error_count} 条)
+              </h4>
+              
+              {/* 显示未映射部门汇总 */}
+              {importResult.unmapped_departments && Object.keys(importResult.unmapped_departments).length > 0 && (
+                <div style={{ marginBottom: 16, padding: 12, background: '#fff3cd', borderRadius: 6 }}>
+                  <p style={{ fontWeight: 600, marginBottom: 8, margin: '0 0 8px 0' }}>⚠️ 以下部门未在系统中找到：</p>
+                  <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    {Object.entries(importResult.unmapped_departments).map(([dept, rows]) => (
+                      <li key={dept} style={{ marginBottom: 4 }}>
+                        <strong>{dept}</strong> - 影响 {rows.length} 行 
+                        (行号: {rows.slice(0, 5).join(', ')}{rows.length > 5 ? '...' : ''})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {/* 显示具体错误列表 */}
+              {importResult.errors && importResult.errors.length > 0 && (
+                <div style={{ maxHeight: 300, overflow: 'auto', border: '1px solid #eee', borderRadius: 6 }}>
+                  <table style={{ width: '100%', fontSize: 12 }}>
+                    <thead style={{ background: '#f5f5f5' }}>
+                      <tr>
+                        <th style={{ padding: '8px 12px', textAlign: 'left' }}>行号</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left' }}>错误原因</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {importResult.errors.map((err, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+                          <td style={{ padding: '8px 12px', width: 80 }}>第 {err.row + 1} 行</td>
+                          <td style={{ padding: '8px 12px', color: '#e03131' }}>{err.error}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              
+              <div style={{ marginTop: 12, padding: 12, background: '#e7f5ff', borderRadius: 6 }}>
+                <p style={{ margin: 0, fontSize: 13 }}>
+                  💡 <strong>建议</strong>：请检查 Excel 中的部门名称是否与系统一致，或联系管理员添加缺失的部门。
                 </p>
-              ))}
+              </div>
             </div>
           )}
         </div>

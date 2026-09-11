@@ -113,9 +113,18 @@ export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }) =
         columns={columns} 
         dataSource={data} 
         rowKey="row_index"
-        pagination={false}
+        pagination={{
+        pageSize: 30,              // 默认每页 30 条（平衡加载速度和浏览效率）
+        showSizeChanger: true,     // 保留切换功能，用户可根据需要调整
+        pageSizeOptions: ['20', '30', '50', '100'],  // 移除 200，避免单页数据过多
+        showTotal: (total) => `共 ${total} 条数据`,
+        showQuickJumper: true,     // 保留快速跳转
+      }}
         size="small"
-        scroll={{ x: 'max-content' }}
+        scroll={{ 
+        x: 'max-content',
+        y: 600  // 表格主体区域最大高度 600px，超出部分内部滚动，表头固定在顶部
+      }}
       />
     </div>
   );
