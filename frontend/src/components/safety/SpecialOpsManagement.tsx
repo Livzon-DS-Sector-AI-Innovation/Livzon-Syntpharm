@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, DatePicker, Tag, Card,
   Typography, Drawer, Descriptions, Switch, App, Tooltip, Modal,
@@ -60,7 +61,6 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
   const [pageSize, setPageSize] = useState(20)
 
   // ── Stats ──
-  const [stats, setStats] = useState<SpecialOperationLedgerStats[]>(initialStats || [])
 
   // ── Filters ──
   const [statusFilter, setStatusFilter] = useState<string>('')
@@ -104,14 +104,18 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
   }, [editingReport, reportDrawerOpen, form])
 
   // ── Fetch stats ──
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: fetchedStats } = useQuery({
+    queryKey: ['special-ops-mgmt-stats'],
+    queryFn: async () => {
       const res = await getSpecialOperationLedgerStats()
-      if (res.code === 200 && res.data) setStats(res.data)
-    } catch { /* 统计数据获取失败，继续展示列表 */ }
-  }, [])
+      if (res.code === 200 && res.data) return res.data
+      return []
+    },
+    enabled: !initialStats?.length,
+  })
 
-  useEffect(() => { if (!initialStats?.length) fetchStats() }, [fetchStats, initialStats])
+  // Use initialStats if provided, otherwise use fetched stats
+  const stats = initialStats?.length ? initialStats : (fetchedStats || [])
 
   // ── Fetch data (all statuses) ──
   const fetchData = useCallback(async () => {

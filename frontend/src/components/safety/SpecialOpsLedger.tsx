@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, DatePicker, Tag, Card,
   Typography, Drawer, Descriptions, Switch, App, Tooltip, Modal,
@@ -48,9 +49,6 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
-  // ── Stats ──
-  const [stats, setStats] = useState<SpecialOperationLedgerStats[]>(initialStats || [])
-
   // ── Filters ──
   const [opType, setOpType] = useState<string | undefined>()
   const [opLevel, setOpLevel] = useState<string | undefined>()
@@ -71,14 +69,18 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [exportExplanation, setExportExplanation] = useState('')
 
   // ── Fetch stats ──
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: fetchedStats } = useQuery({
+    queryKey: ['special-ops-ledger-stats'],
+    queryFn: async () => {
       const res = await getSpecialOperationLedgerStats()
-      if (res.code === 200 && res.data) setStats(res.data)
-    } catch { /* silent */ }
-  }, [])
+      if (res.code === 200 && res.data) return res.data
+      return []
+    },
+    enabled: !initialStats?.length,
+  })
 
-  useEffect(() => { if (!initialStats?.length) fetchStats() }, [fetchStats, initialStats])
+  // Use initialStats if provided, otherwise use fetched stats
+  const stats = initialStats?.length ? initialStats : (fetchedStats || [])
 
   // ── Fetch data ──
   const fetchData = useCallback(async () => {

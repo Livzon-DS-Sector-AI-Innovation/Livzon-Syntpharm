@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -87,13 +88,13 @@ const $purple = actionLink('#5645d4')
 const $muted = actionLink('#787671')
 
 export function SafetyRegulationPageClient() {
+  const queryClient = useQueryClient()
   const [activeTab, setActiveTab] = useState('regulations')
   const { modal } = App.useApp()
 
   // ========== Regulation States ==========
   const [regForm] = Form.useForm()
   const [regEditForm] = Form.useForm()
-  const [regLoading, setRegLoading] = useState(false)
   const [regDrawerOpen, setRegDrawerOpen] = useState(false)
   const [editingRegulation, setEditingRegulation] = useState<OperationRegulation | null>(null)
   const [regSearchText, setRegSearchText] = useState('')
@@ -103,7 +104,6 @@ export function SafetyRegulationPageClient() {
 
   // ========== Revision States ==========
   const [revForm] = Form.useForm()
-  const [revLoading, setRevLoading] = useState(false)
   const [revDrawerOpen, setRevDrawerOpen] = useState(false)
   const [revSearchText, setRevSearchText] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
@@ -153,9 +153,10 @@ export function SafetyRegulationPageClient() {
 
   // ========== Regulation Handlers ==========
 
-  const loadRegulations = useCallback(async () => {
-    setRegLoading(true)
-    try {
+  const { data: regulationsData, isLoading: regLoading, error: regError } = useQuery({
+    queryKey: ['regulations', regulationQueryParams, regSearchText, positionFilter, statusFilter, activeTab],
+    queryFn: async () => {
+      if (activeTab !== 'regulations') return null
       const response = await getRegulations({
         ...regulationQueryParams,
         keyword: regSearchText || undefined,
@@ -163,19 +164,32 @@ export function SafetyRegulationPageClient() {
         status: statusFilter,
       })
       if (response.code === 200) {
-        setRegulations(response.data)
-        setRegulationTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载操规列表失败')
-    } finally {
-      setRegLoading(false)
-    }
-  }, [regulationQueryParams, regSearchText, positionFilter, statusFilter, setRegulations, setRegulationTotal])
+      return null
+    },
+    enabled: activeTab === 'regulations',
+  })
 
-  const loadRevisions = useCallback(async () => {
-    setRevLoading(true)
-    try {
+  // Update store when data changes
+  useEffect(() => {
+    if (regulationsData) {
+      setRegulations(regulationsData.data)
+      setRegulationTotal(regulationsData.total)
+    }
+  }, [regulationsData, setRegulations, setRegulationTotal])
+
+  // Show error message
+  useEffect(() => {
+    if (regError) {
+      message.error('加载操规列表失败')
+    }
+  }, [regError])
+
+  const { data: revisionsData, isLoading: revLoading, error: revError } = useQuery({
+    queryKey: ['revisions', revisionQueryParams, typeFilter, scopeFilter, opinionFilter, activeTab],
+    queryFn: async () => {
+      if (activeTab !== 'revisions') return null
       const response = await getRevisions({
         ...revisionQueryParams,
         revision_type: typeFilter,
@@ -183,38 +197,45 @@ export function SafetyRegulationPageClient() {
         review_opinion: opinionFilter,
       })
       if (response.code === 200) {
-        setRevisions(response.data)
-        setRevisionTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载修订记录失败')
-    } finally {
-      setRevLoading(false)
-    }
-  }, [revisionQueryParams, typeFilter, scopeFilter, opinionFilter, setRevisions, setRevisionTotal])
+      return null
+    },
+    enabled: activeTab === 'revisions',
+  })
 
-  const loadRegulationsForSelect = async () => {
-    try {
+  // Update store when data changes
+  useEffect(() => {
+    if (revisionsData) {
+      setRevisions(revisionsData.data)
+      setRevisionTotal(revisionsData.total)
+    }
+  }, [revisionsData, setRevisions, setRevisionTotal])
+
+  // Show error message
+  useEffect(() => {
+    if (revError) {
+      message.error('加载修订记录失败')
+    }
+  }, [revError])
+
+  const { data: regulationsForSelectData } = useQuery({
+    queryKey: ['regulations-for-select'],
+    queryFn: async () => {
       const response = await getRegulations({ page: 1, page_size: 500 })
       if (response.code === 200) {
-        setRegulationsForSelect(response.data)
+        return response.data
       }
-    } catch {
-      // silent
+      return []
+    },
+  })
+
+  // Update store when data changes
+  useEffect(() => {
+    if (regulationsForSelectData) {
+      setRegulationsForSelect(regulationsForSelectData)
     }
-  }
-
-  useEffect(() => {
-    if (activeTab === 'regulations') loadRegulations()
-  }, [regulationQueryParams.page, regulationQueryParams.page_size, positionFilter, statusFilter, activeTab, loadRegulations])
-
-  useEffect(() => {
-    if (activeTab === 'revisions') loadRevisions()
-  }, [revisionQueryParams.page, revisionQueryParams.page_size, typeFilter, scopeFilter, opinionFilter, activeTab, loadRevisions])
-
-  useEffect(() => {
-    loadRegulationsForSelect()
-  }, [])
+  }, [regulationsForSelectData, setRegulationsForSelect])
 
   // ---- Regulation CRUD ----
 
@@ -265,7 +286,7 @@ export function SafetyRegulationPageClient() {
     content: string
   }) => {
     setGeneratorModalOpen(false)
-    loadRegulations()
+    queryClient.invalidateQueries({ queryKey: ['regulations'] })
     router.push(`/safety/regulation/generator/${result.regulation_id}`)
   }
 
@@ -316,7 +337,7 @@ export function SafetyRegulationPageClient() {
       const response = await uploadRegulationDocument(id, file)
       if (response.code === 200) {
         message.success('文档上传成功')
-        loadRegulations()
+        queryClient.invalidateQueries({ queryKey: ['regulations'] })
       } else {
         message.error(response.message || '上传失败')
       }
@@ -389,8 +410,8 @@ export function SafetyRegulationPageClient() {
       const response = await manualRevisionComplete(revisionId, file)
       if (response.code === 200) {
         message.success('人工修订完成，已自动审核通过')
-        loadRevisions()
-        loadRegulations()
+        queryClient.invalidateQueries({ queryKey: ['revisions'] })
+        queryClient.invalidateQueries({ queryKey: ['regulations'] })
       } else {
         message.error(response.message || '修订失败')
       }
@@ -440,8 +461,8 @@ export function SafetyRegulationPageClient() {
         setAiModalVisible(false)
         setAiContent('')
         setAiRevisionId(null)
-        loadRevisions()
-        loadRegulations()
+        queryClient.invalidateQueries({ queryKey: ['revisions'] })
+        queryClient.invalidateQueries({ queryKey: ['regulations'] })
       } else {
         message.error(response.message || '确认失败')
       }
@@ -459,7 +480,7 @@ export function SafetyRegulationPageClient() {
       const response = await identifyRevisionScope(revisionId)
       if (response.code === 200) {
         message.success('修订范围识别完成')
-        loadRevisions()
+        queryClient.invalidateQueries({ queryKey: ['revisions'] })
       } else {
         message.error(response.message || '识别失败')
       }
@@ -791,7 +812,7 @@ export function SafetyRegulationPageClient() {
               style={{ width: 240 }}
               value={regSearchText}
               onChange={(e) => setRegSearchText(e.target.value)}
-              onPressEnter={loadRegulations}
+              onPressEnter={() => queryClient.invalidateQueries({ queryKey: ['regulations'] })}
               allowClear
             />
             <div style={{ flex: 1 }} />
@@ -892,7 +913,7 @@ export function SafetyRegulationPageClient() {
               style={{ width: 240 }}
               value={revSearchText}
               onChange={(e) => setRevSearchText(e.target.value)}
-              onPressEnter={loadRevisions}
+              onPressEnter={() => queryClient.invalidateQueries({ queryKey: ['revisions'] })}
               allowClear
             />
             <div style={{ flex: 1 }} />
