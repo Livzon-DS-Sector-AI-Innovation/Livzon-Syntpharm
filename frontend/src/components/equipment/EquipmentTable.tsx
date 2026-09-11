@@ -119,7 +119,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
           setSelectedRowKeys([])
           onPageChange(localPage, localPageSize)
           onRefreshStatistics?.()
-        } catch (error) {
+        } catch (_error) {
           message.error('批量删除失败')
         }
       },

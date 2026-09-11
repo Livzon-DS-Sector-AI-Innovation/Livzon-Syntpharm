@@ -1,5 +1,6 @@
-import type { UploadFile } from "antd";
 'use client'
+
+import type { UploadFile } from "antd";
 
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'

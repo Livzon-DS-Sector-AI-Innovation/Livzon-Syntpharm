@@ -1,14 +1,10 @@
 import type {
   StorageConditionCreate,
   StorageConditionUpdate,
-  MaterialStandardUpdate,
-  ProductStandardCreate,
-  ProductStandardUpdate,
   MediumCreate,
   MediumUpdate,
   StandardCreate,
   StandardUpdate,
-  ApiResponse,
 } from '@/types/static-data'
 /**
  * 业务静态数据模块 — 客户端直连 API 客户端
