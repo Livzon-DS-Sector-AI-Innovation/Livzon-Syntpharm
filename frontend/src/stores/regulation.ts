@@ -45,8 +45,8 @@ export const useRegulationStore = create<RegulationState>((set, get) => ({
         page_size: get().pageSize,
       })
       set({ regulations: res.data, total: res.meta?.total || 0 })
-    } catch (err: any) {
-      set({ error: err.message || '加载失败' })
+    } catch (err: unknown) {
+      set({ error: err instanceof Error ? err.message : '加载失败' })
     } finally {
       set({ loading: false })
     }

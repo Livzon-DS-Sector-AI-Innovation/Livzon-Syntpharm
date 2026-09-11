@@ -4,7 +4,7 @@ import fs from 'fs'
 
 const authFile = path.join(__dirname, '.auth', 'storageState.json')
 
-async function globalSetup(config: any) {
+async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string } }> }) {
   const baseURL = config.projects?.[0]?.use?.baseURL || 'http://localhost:3000'
   const apiURL = process.env.E2E_BACKEND_URL || 'http://localhost:18000'
   const e2eSecret = process.env.E2E_AUTH_SECRET || 'e2e-test-secret'

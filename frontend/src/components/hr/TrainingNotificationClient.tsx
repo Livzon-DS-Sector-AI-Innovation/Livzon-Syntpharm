@@ -339,7 +339,16 @@ export default function TrainingNotificationClient() {
     }
   }
 
-  const createLedgerForNewEmployees = async (newEmployees: string[], values: any) => {
+  const createLedgerForNewEmployees = async (newEmployees: string[], values: {
+    training_date: { format: (f: string) => string };
+    subject: string;
+    training_method: string;
+    training_time?: [string, string];
+    location?: string;
+    trainer?: string;
+    assessment_method?: string;
+    content?: string;
+  }) => {
     if (newEmployees.length === 0) {
       message.info('没有需要创建台账的员工')
       return

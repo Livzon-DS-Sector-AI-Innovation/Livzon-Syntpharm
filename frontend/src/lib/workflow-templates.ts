@@ -1,3 +1,5 @@
+import type { WorkflowStepItem } from '@/types/safety/workflow'
+
 // Stub implementation for workflow templates
 export interface WorkflowStep {
   num: number
@@ -17,7 +19,7 @@ export const BUILT_IN_WORKFLOWS: Array<{
   workflow_name: string
   workflow_description?: string
   trigger_event?: string
-  script_configs?: any[]
+  script_configs?: WorkflowStepItem[]
   steps?: WorkflowStep[]
 }> = []
 
