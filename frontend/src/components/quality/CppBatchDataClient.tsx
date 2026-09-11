@@ -2,6 +2,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from "next/link"
 import * as XLSX from "xlsx"
 import { fetchCppBatchesWide } from "@/lib/api/client/quality-cpv"
@@ -15,20 +16,18 @@ interface Props {
 }
 
 export function CppBatchDataClient({ productId, initialProduct, initialParameters }: Props) {
+  const queryClient = useQueryClient()
   const [parameters] = useState<CpvParameter[]>(initialParameters)
-  const [batches, setBatches] = useState<CpvBatchWide[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [batchNo, setBatchNo] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true)
+  const { data: queryData, isLoading: queryLoading } = useQuery({
+    queryKey: ['cpp-batches', productId, batchNo, startDate, endDate, page],
+    queryFn: async () => {
       const batchesData = await fetchCppBatchesWide(productId, {
         batch_no: batchNo || undefined,
         start_date: startDate || undefined,
@@ -36,15 +35,19 @@ export function CppBatchDataClient({ productId, initialProduct, initialParameter
         page,
         page_size: 20,
       })
-      setBatches(batchesData.items)
-      setTotal(batchesData.total)
-    } catch (err) { console.error(err) } finally { setLoading(false) }
-  }, [productId, batchNo, startDate, endDate, page])
+      return { items: batchesData.items, total: batchesData.total }
+    },
+  })
 
-  useEffect(() => { loadData() }, [loadData])
+  // Use query data directly
+  const batches = queryData?.items || []
+  const total = queryData?.total || 0
+  const loading = queryLoading
 
 
-  function handleSearch() { setPage(1); loadData() }
+
+
+  function handleSearch() { setPage(1) }
 
   async function handleExport() {
     try {
@@ -193,7 +196,7 @@ export function CppBatchDataClient({ productId, initialProduct, initialParameter
         productId={productId}
         productName={initialProduct?.name || ""}
         dataType="CPP"
-        onSuccess={loadData}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['cpp-batches'] })}
       />
     </div>
   )

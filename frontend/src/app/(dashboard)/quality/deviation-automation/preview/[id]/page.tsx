@@ -2,6 +2,7 @@
 import {updateAIResult, generateStandard} from '@/actions/quality'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { use } from 'react'
 import {
   Card,
@@ -54,35 +55,31 @@ export default function PreviewPage({
   const router = useRouter()
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  const [loading, setLoading] = useState(true)
-  const [previewLoading, setPreviewLoading] = useState(false)
-  const [task, setTask] = useState<TaskDetail | null>(null)
-  const [previewData, setPreviewData] = useState<PreviewData | null>(null)
   const [editableContent, setEditableContent] = useState('')
   const [isEdited, setIsEdited] = useState(false)
+
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('preview')
   const editableRef = useRef<HTMLDivElement>(null)
+  const queryClient = useQueryClient()
 
-  const fetchTaskDetail = useCallback(async () => {
-    try {
+  const { data: task, isLoading: loading } = useQuery({
+    queryKey: ['deviation-task', taskId],
+    queryFn: async () => {
       const response = await fetch(
         `${API_BASE}/quality/deviation-automation/tasks/${taskId}`
       )
       if (!response.ok) throw new Error('获取任务详情失败')
       const result = await response.json()
-      setTask(result.data)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '操作失败'))
-    } finally {
-      setLoading(false)
-    }
-  }, [taskId])
+      return result.data as TaskDetail
+    },
+    enabled: !!taskId,
+  })
 
-  const fetchPreview = useCallback(async () => {
-    setPreviewLoading(true)
-    try {
+  const { data: previewData, isLoading: previewLoading } = useQuery({
+    queryKey: ['deviation-preview', taskId],
+    queryFn: async () => {
       const response = await fetch(
         `${API_BASE}/quality/deviation-automation/tasks/${taskId}/preview`
       )
@@ -91,25 +88,14 @@ export default function PreviewPage({
         throw new Error(err.detail || '获取预览失败')
       }
       const result = await response.json()
-      setPreviewData(result.data)
-      setEditableContent(result.data.plain_content || '')
-      setIsEdited(false)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '获取预览失败'))
-    } finally {
-      setPreviewLoading(false)
-    }
-  }, [taskId])
+      return result.data as PreviewData
+    },
+    enabled: !!taskId && !!task?.ai_result,
+  })
 
-  useEffect(() => {
-    fetchTaskDetail()
-  }, [fetchTaskDetail])
 
-  useEffect(() => {
-    if (task?.ai_result) {
-      fetchPreview()
-    }
-  }, [task, fetchPreview])
+
+
 
   const handleContentChange = () => {
     if (editableRef.current) {
@@ -125,7 +111,7 @@ export default function PreviewPage({
       await updateAIResult(taskId, editableContent)
       message.success('保存成功')
       setIsEdited(false)
-      await fetchTaskDetail()
+      await queryClient.invalidateQueries({ queryKey: ['deviation-task', taskId] })
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : '保存失败'))
     } finally {
@@ -145,7 +131,7 @@ export default function PreviewPage({
         throw new Error('生成失败')
       }
       message.success('标准文件生成成功')
-      await fetchTaskDetail()
+      await queryClient.invalidateQueries({ queryKey: ['deviation-task', taskId] })
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : '生成失败'))
     } finally {
@@ -275,7 +261,7 @@ export default function PreviewPage({
             setActiveTab(key)
             // 切换到预览时刷新
             if (key === 'preview' && task?.ai_result) {
-              fetchPreview()
+              queryClient.invalidateQueries({ queryKey: ['deviation-preview', taskId] })
             }
           }}
           items={[
@@ -291,7 +277,7 @@ export default function PreviewPage({
                   size="small"
                   title="标准报告预览"
                   extra={
-                    <Button size="small" onClick={fetchPreview} loading={previewLoading}>
+                    <Button size="small" onClick={() => queryClient.invalidateQueries({ queryKey: ['deviation-preview', taskId] })} loading={previewLoading}>
                       刷新
                     </Button>
                   }
