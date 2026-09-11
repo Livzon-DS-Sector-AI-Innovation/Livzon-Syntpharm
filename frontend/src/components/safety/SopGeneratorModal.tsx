@@ -323,14 +323,6 @@ export default function SopGeneratorModal({
     onClose()
   }, [uploading, onClose])
 
-  React.useEffect(() => {
-    if (open) {
-      setFile(null)
-      setErrorMsg(null)
-      setIsDragOver(false)
-    }
-  }, [open])
-
   /* ── file handling ── */
 
   const acceptFile = useCallback((f: File) => {
