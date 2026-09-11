@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Form, Input, Select, DatePicker, Button, Space,
   Typography, Divider, Upload, message, Steps, Modal, Tag,
@@ -81,20 +82,17 @@ export default function DeviationCreatePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
-  const [isEditMode, setIsEditMode] = useState(!!editId)
-  const [currentDeviationId, setCurrentDeviationId] = useState<string | null>(editId)
-  const [currentStatus, setCurrentStatus] = useState<string>('draft')
   const [form] = Form.useForm()
+  const queryClient = useQueryClient()
+  const formInitializedRef = useRef(false)
   const [loading, setLoading] = useState(false)
-  const [reporterInfo, setReporterInfo] = useState({
-    name: '',
-    department: '',
-    time: '-'
-  })
+  const [userReporterInfo, setUserReporterInfo] = useState<{
+    name: string
+    department: string
+    time: string
+  } | null>(null)
   const [qaUsers, setQaUsers] = useState<FeishuUser[]>([])
   const [deptLeaders, setDeptLeaders] = useState<FeishuUser[]>([])
-  const [reporterOpenId, setReporterOpenId] = useState<string>('')
-  const [attachments, setAttachments] = useState<Attachment[]>([])
   const [uploading, setUploading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -130,67 +128,83 @@ export default function DeviationCreatePage() {
     }
   }
 
-  const loadDeviationData = useCallback(async (id: string) => {
-    try {
-      const response = await fetch(`${API_BASE}/quality/deviation-flow/${id}`)
+  const { data: deviationData } = useQuery({
+    queryKey: ['deviation-flow', editId],
+    queryFn: async () => {
+      if (!editId) return null
+      const response = await fetch(`${API_BASE}/quality/deviation-flow/${editId}`)
       const result = await response.json()
       if (result.code === 200) {
-        const data = result.data
-        setCurrentStatus(data.status || 'draft')
-        setCurrentDeviationId(id)
-        setIsEditMode(true)
-
-        form.setFieldsValue({
-          theme: data.theme,
-          occurred_date: data.occurred_date ? dayjs(data.occurred_date) : null,
-          discovered_date: data.discovered_date ? dayjs(data.discovered_date) : null,
-          responsible_department: data.responsible_department,
-          occurred_area: data.occurred_area,
-          deviation_type: data.deviation_type,
-          urgency_level: data.urgency_level,
-          product_name: data.product_name,
-          batch_no: data.batch_no,
-          equipment: data.equipment,
-          standard_based_on: data.standard_based_on,
-          deviation_description: data.deviation_description,
-          risk_assessment: data.risk_assessment,
-          temp_measures: data.temp_measures,
-          related_deviation_no: data.related_deviation_no,
-          related_capa: data.related_capa,
-          remarks: data.remarks,
-        })
-        setReporterInfo({
-          name: data.reporter || '当前用户',
-          department: data.reporter_department || '生产部',
-          time: data.report_time ? dayjs(data.report_time).format('YYYY-MM-DD HH:mm:ss') : '-'
-        })
-        if (data.reporter_feishu_open_id) {
-          setReporterOpenId(data.reporter_feishu_open_id)
-        }
-        loadAttachments(id)
+        return result.data
       }
-    } catch (_error) {
-      message.error('加载数据失败')
-    }
-  }, [form])
+      return null
+    },
+    enabled: !!editId,
+  })
 
+  // Update state and form when data changes (only once)
   useEffect(() => {
-    if (editId) {
-      loadDeviationData(editId)
-    }
-  }, [editId, loadDeviationData])
+    if (deviationData && editId && !formInitializedRef.current) {
+      formInitializedRef.current = true
 
-  const loadAttachments = async (deviationId: string) => {
-    try {
-      const response = await fetch(`${API_BASE}/quality/deviation-flow/${deviationId}/attachments`)
+      // Reporter info is initialized from deviationData using useMemo below
+
+      form.setFieldsValue({
+        theme: deviationData.theme,
+        occurred_date: deviationData.occurred_date ? dayjs(deviationData.occurred_date) : null,
+        discovered_date: deviationData.discovered_date ? dayjs(deviationData.discovered_date) : null,
+        responsible_department: deviationData.responsible_department,
+        occurred_area: deviationData.occurred_area,
+        deviation_type: deviationData.deviation_type,
+        urgency_level: deviationData.urgency_level,
+        product_name: deviationData.product_name,
+        batch_no: deviationData.batch_no,
+        equipment: deviationData.equipment,
+        standard_based_on: deviationData.standard_based_on,
+        deviation_description: deviationData.deviation_description,
+        risk_assessment: deviationData.risk_assessment,
+        temp_measures: deviationData.temp_measures,
+        related_deviation_no: deviationData.related_deviation_no,
+        related_capa: deviationData.related_capa,
+        remarks: deviationData.remarks,
+      })
+    }
+  }, [deviationData, editId, form])
+
+  // Derive reporter info from deviationData or user input
+  const reporterInfo = useMemo(() => {
+    if (userReporterInfo) {
+      return userReporterInfo
+    }
+    return {
+      name: deviationData?.reporter || '当前用户',
+      department: deviationData?.reporter_department || '生产部',
+      time: deviationData?.report_time ? dayjs(deviationData.report_time).format('YYYY-MM-DD HH:mm:ss') : '-'
+    }
+  }, [deviationData, userReporterInfo])
+  const reporterOpenId = deviationData?.reporter_feishu_open_id || null
+
+  // Derive values from deviationData
+  const currentStatus = deviationData?.status || 'draft'
+  const currentDeviationId = editId || null
+  const isEditMode = !!editId
+
+
+
+
+  const { data: attachments = [] } = useQuery({
+    queryKey: ['deviation-attachments', editId],
+    queryFn: async () => {
+      if (!editId) return []
+      const response = await fetch(`${API_BASE}/quality/deviation-flow/${editId}/attachments`)
       const result = await response.json()
       if (result.code === 200) {
-        setAttachments(result.data || [])
+        return result.data || []
       }
-    } catch (error) {
-      console.error('加载附件失败:', error)
-    }
-  }
+      return []
+    },
+    enabled: !!editId,
+  })
 
   const handleUpload = async (file: File) => {
     if (!currentDeviationId) {
@@ -211,7 +225,7 @@ export default function DeviationCreatePage() {
 
       if (result.code === 200) {
         message.success('附件上传成功')
-        loadAttachments(currentDeviationId)
+        queryClient.invalidateQueries({ queryKey: ['deviation-attachments', currentDeviationId] })
       } else {
         message.error(result.message || '上传失败')
       }
@@ -290,8 +304,6 @@ export default function DeviationCreatePage() {
         await saveData('', 'PUT')
       } else {
         const result = await saveData('', 'POST') as { data: { id: string } }
-        setCurrentDeviationId(result.data.id)
-        setIsEditMode(true)
       }
 
       message.success('保存成功')
@@ -350,8 +362,6 @@ export default function DeviationCreatePage() {
       if (!deviationId) {
         const saveResult = await saveData('', 'POST') as { data: { id: string } }
         deviationId = saveResult.data.id
-        setCurrentDeviationId(deviationId)
-        setIsEditMode(true)
       } else {
         await saveData('', 'PUT')
       }
@@ -360,7 +370,6 @@ export default function DeviationCreatePage() {
 
       if (result.code === 200) {
         message.success(result.message as string)
-        setCurrentStatus(targetStatus)
 
         if (targetStatus === 'completed') {
           Modal.success({
@@ -447,12 +456,11 @@ export default function DeviationCreatePage() {
                         const response = await fetch(`${API_BASE}/quality/deviation-settings/feishu-user/by-mobile?mobile=${mobile}`)
                         const result = await response.json()
                         if (result.code === 200 && result.data) {
-                          setReporterInfo({
+                          setUserReporterInfo({
                             name: result.data.name,
                             department: '',
                             time: dayjs().format('YYYY-MM-DD HH:mm:ss')
                           })
-                          setReporterOpenId(result.data.open_id)
                           form.setFieldsValue({ reporter_department: '' })
                           message.success(`已获取填报人：${result.data.name}`)
                         } else {
