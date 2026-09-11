@@ -4,12 +4,12 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in equipment pages
-- [ ] All `any` types replaced with proper types in production pages
-- [ ] All `any` types replaced with proper types in safety pages
-- [ ] API response callbacks properly typed (e.g., `(cats: any[])` → `(cats: EquipmentCategory[])`)
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] `pnpm lint` shows 0 `@typescript-eslint/no-explicit-any` warnings in equipment, production, safety pages
-- [ ] Affected files: `EquipmentPage.tsx` (6 warnings), `equipment/inspection/page.tsx` (2 warnings), `production/product-output/` pages (17 warnings), `safety/hazard/[id]/page.tsx` (5 warnings)
+- [x] All `any` types replaced with proper types in equipment pages
+- [x] All `any` types replaced with proper types in production pages
+- [x] All `any` types replaced with proper types in safety pages
+- [x] API response callbacks properly typed (e.g., `(cats: any[])` → `(cats: EquipmentCategory[])`)
+- [x] `tsc --noEmit` passes with no errors
+- [x] `pnpm lint` shows 0 `@typescript-eslint/no-explicit-any` warnings in equipment, production, safety pages
+- [x] Affected files: `EquipmentPage.tsx` (6 warnings), `equipment/inspection/page.tsx` (2 warnings), `production/product-output/` pages (17 warnings), `safety/hazard/[id]/page.tsx` (5 warnings)
