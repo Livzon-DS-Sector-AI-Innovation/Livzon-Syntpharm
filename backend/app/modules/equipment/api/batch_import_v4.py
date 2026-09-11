@@ -1,6 +1,7 @@
 """Equipment Import v4 API Routes."""
 import logging
 import time
+from datetime import date, datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, Depends
@@ -11,6 +12,7 @@ from app.core.deps import RequiredUser
 from app.core.response import ApiResponse, build_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment.config.dept_mapping import normalize_department_name
+from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.models.import_audit import ImportAuditLog
 from app.modules.equipment.service.import_engine import (
     apply_incremental_update,
@@ -48,6 +50,119 @@ PREVIEW_HEADERS = [
 
 logger = logging.getLogger(__name__)
 
+# 这些字段在数据库中均为字符串列，但 Excel 常以数字单元格存储，需归一化
+_TEXT_NORMALIZED_KEYS = ("asset_no", "label_no", "equipment_tag")
+
+# 数据库中为 DATE 列的字段。asyncpg 对其要求 datetime.date 实例，
+# 传字符串会报 `'str' object has no attribute 'toordinal'`。
+_DATE_KEYS = ("production_date", "commissioning_date", "scrap_time")
+
+# 数据库中为 INTEGER 列的字段。Excel 里常以浮点单元格存储（1.0），
+# 直接入库会走 PG 的 assignment cast（2.5 -> 3 四舍五入），语义不可控，故显式取整。
+_INT_KEYS = ("quantity",)
+
+# Excel 日期序列号基准（1900 日期系统，含 Excel 的 1900 闰年 bug 修正）
+_EXCEL_EPOCH = date(1899, 12, 30)
+
+_DATE_PATTERNS = ("%Y-%m-%d", "%Y/%m/%d", "%Y.%m.%d", "%Y%m%d", "%Y-%m-%d %H:%M:%S")
+
+
+def _excel_scalar_to_text(value: Any) -> str | None:
+    """把 Excel 单元格标量安全转成字符串；59070.0 -> '59070' 而非 '59070.0'。"""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    text = str(value).strip()
+    return text or None
+
+
+def _coerce_int_value(value: Any) -> int | None:
+    """把各���输入归一化为 int；无法识别返回 None（INTEGER 列可空）。"""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float)):
+        try:
+            return int(value)
+        except (ValueError, OverflowError):
+            return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return int(float(text))  # 兼容 '1.0' 这类文本
+    except ValueError:
+        logger.warning("无法识别的整数值，已置空: %r", value)
+        return None
+
+
+def _coerce_date_value(value: Any) -> date | None:
+    """把各类日期输入归一化为 datetime.date。
+
+    覆盖四种来源：
+      - datetime.date / datetime.datetime  -> 直接取 date 部分
+      - Excel 日期序列号（46196）          -> 按 1899-12-30 基准换算
+      - '2026-04-27' / '2026/4/27' 等文本  -> 按 _DATE_PATTERNS 解析
+      - 空串 / None / 无法识别             -> None（DATE 列可空）
+    """
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        # Excel 日期序列号，如 46196 -> 2026-06-24
+        try:
+            return _EXCEL_EPOCH + timedelta(days=int(value))
+        except (ValueError, OverflowError):
+            return None
+    text = str(value).strip()
+    if not text:
+        return None
+    for pattern in _DATE_PATTERNS:
+        try:
+            return datetime.strptime(text, pattern).date()
+        except ValueError:
+            continue
+    logger.warning("无法识别的日期值，已置空: %r", value)
+    return None
+
+
+# Excel 中文表头 -> 数据库字段。
+# 必须与 /preview、/batch 共用同一份，否则两处行为会静默漂移。
+FIELD_MAP: dict[str, str] = {
+    "资产编号": "asset_no", "标签号": "label_no", "设备名称": "name",
+    "资产类别说明": "category_description", "数量": "quantity",
+    "制造商": "manufacturer", "型号": "model", "当前成本": "current_cost",
+    "帐面净值": "book_value", "启用日期": "commissioning_date",
+    "实物所在部门": "department_name", "实物所在地点": "location_text",
+    "报废状态": "scrap_status", "报废时间": "scrap_time",
+    "设备位号": "equipment_tag", "设备分类": "equipment_class",
+    "负责人": "responsible_person_name", "设备状态": "status",
+    "设备规格": "specification", "供应商": "supplier",
+    "出厂日期": "production_date", "描述": "description"
+}
+
+# Equipment 模型实际存在的列。FIELD_MAP 里有两类键不属于模型：
+#   - department_name：解析用中间变量，最终写入的是 department_id
+#   - quantity：Excel 有该列，但数据库未设计此字段
+# 直接 `Equipment(**row)` 会因多余关键字抛 TypeError，故入库前必须按白名单过滤。
+_EQUIPMENT_COLUMNS = frozenset(Equipment.__table__.columns.keys())
+
+# 被过滤掉的字段及其原因，供日志提示
+_DROPPED_FIELDS = tuple(sorted(set(FIELD_MAP.values()) - _EQUIPMENT_COLUMNS))
+
+
+def _only_model_fields(row: dict[str, Any]) -> dict[str, Any]:
+    """只保留 Equipment 模型真实存在的列，避免 `Equipment(**row)` 抛 TypeError。"""
+    return {k: v for k, v in row.items() if k in _EQUIPMENT_COLUMNS}
+
+
 async def resolve_department_strict(excel_dept: str, db: AsyncSession):
     if not excel_dept or not str(excel_dept).strip(): return None, None, "部门名称为空"
     standard_name = normalize_department_name(str(excel_dept).strip())
@@ -70,20 +185,33 @@ async def batch_import_v4(
     data = request.get("data", [])
     force_override = request.get("force_override_business_fields", False)
 
-    # 字段映射
-    FIELD_MAP = {
-        "资产编号": "asset_no", "标签号": "label_no", "设备名称": "name",
-        "资产类别说明": "category_description", "数量": "quantity",
-        "制造商": "manufacturer", "型号": "model", "当前成本": "current_cost",
-        "帐面净值": "book_value", "启用日期": "commissioning_date",
-        "实物所在部门": "department_name", "实物所在地点": "location_text",
-        "报废状态": "scrap_status", "报废时间": "scrap_time",
-        "设备位号": "equipment_tag", "设备分类": "equipment_class",
-        "负责人": "responsible_person_name", "设备状态": "status",
-        "设备规格": "specification", "供应商": "supplier",
-        "出厂日期": "production_date", "描述": "description"
-    }
+    if _DROPPED_FIELDS:
+        logger.warning(
+            "Excel 中以下字段在 Equipment 模型不存在，导入时会被丢弃: %s",
+            ", ".join(_DROPPED_FIELDS),
+        )
+
     normalized_data = [{FIELD_MAP.get(k.strip(), k.strip()): v for k, v in row.items()} for row in data]
+
+    # Excel 中编号类字段常被存为数字单元格（如资产编号 59070），SheetJS 读出来是 number。
+    # 若直接入库，SQL 会生成 `asset_no = $1::INTEGER`，而该列是 VARCHAR，
+    # PostgreSQL 不允许 varchar = integer 比较，整行都会失败。故统一转为字符串。
+    #
+    # 日期列（DATE 类型）必须转成 datetime.date 实例，传字符串 asyncpg 会报
+    # `'str' object has no attribute 'toordinal'`。
+    for row in normalized_data:
+        for key in _TEXT_NORMALIZED_KEYS:
+            if row.get(key) is None:
+                continue
+            row[key] = _excel_scalar_to_text(row[key])
+        for key in _DATE_KEYS:
+            if row.get(key) is None:
+                continue
+            row[key] = _coerce_date_value(row[key])
+        for key in _INT_KEYS:
+            if row.get(key) is None:
+                continue
+            row[key] = _coerce_int_value(row[key])
 
     duplicates = detect_internal_duplicates(normalized_data)
     batch_id = f"import_{int(time.time())}_{current_user.id.hex[:8]}"
@@ -91,8 +219,11 @@ async def batch_import_v4(
     errors, unmapped_depts = [], {}
 
     for idx, row in enumerate(normalized_data):
-        async with db.begin_nested():
-            try:
+        # try 必须包在 begin_nested 外层：异常若被内层吞掉，savepoint 会在
+        # 退出时尝试 RELEASE，而此时 PG 事务已 aborted，将抛
+        # InFailedSQLTransactionError 并中断整批导入。
+        try:
+            async with db.begin_nested():
                 if idx in duplicates:
                     skipped += 1; continue
 
@@ -113,9 +244,11 @@ async def batch_import_v4(
                     if changes: updated += 1
                     else: skipped += 1
                 else:
-                    await repo.create_equipment(db, row); created += 1
-            except Exception as e:
-                failed += 1; errors.append({"row": idx, "error": str(e)})
+                    # 按模型列白名单过滤，否则多余键（quantity / department_name）会抛 TypeError
+                    await repo.create_equipment(db, _only_model_fields(row)); created += 1
+        except Exception as e:
+            failed += 1; errors.append({"row": idx, "error": str(e)})
+            logger.exception("v4 import row %s failed", idx)
 
     return build_response(data={
         "batch_id": batch_id, "created_count": created, "updated_count": updated,
@@ -130,19 +263,7 @@ async def preview_import_v4(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     results = []
-    FIELD_MAP = {
-        "资产编号": "asset_no", "标签号": "label_no", "设备名称": "name",
-        "资产类别说明": "category_description", "数量": "quantity",
-        "制造商": "manufacturer", "型号": "model", "当前成本": "current_cost",
-        "帐面净值": "book_value", "启用日期": "commissioning_date",
-        "实物所在部门": "department_name", "实物所在地点": "location_text",
-        "报废状态": "scrap_status", "报废时间": "scrap_time",
-        "设备位号": "equipment_tag", "设备分类": "equipment_class",
-        "负责人": "responsible_person_name", "设备状态": "status",
-        "设备规格": "specification", "供应商": "supplier",
-        "出厂日期": "production_date", "描述": "description"
-    }
-    # 对所有行进行完整字段映射，确保 22 个字段全部存在
+    # 对所有行进行完整字段映射，确保业务字段全部存在
     normalized_data = []
     for row in data:
         new_row = {}
@@ -150,6 +271,18 @@ async def preview_import_v4(
             clean_key = str(k).strip()
             mapped_key = FIELD_MAP.get(clean_key, clean_key)
             new_row[mapped_key] = v
+        for key in _TEXT_NORMALIZED_KEYS:
+            if new_row.get(key) is None:
+                continue
+            new_row[key] = _excel_scalar_to_text(new_row[key])
+        for key in _DATE_KEYS:
+            if new_row.get(key) is None:
+                continue
+            new_row[key] = _coerce_date_value(new_row[key])
+        for key in _INT_KEYS:
+            if new_row.get(key) is None:
+                continue
+            new_row[key] = _coerce_int_value(new_row[key])
         normalized_data.append(new_row)
 
     # 使用映射后的数据进行去重检测
@@ -173,6 +306,11 @@ async def preview_import_v4(
         }
         # 将原始 Excel 数据合并进去，确保前端看到的列名和值与 Excel 完全一致
         result_item.update(display_row)
+
+        # 部门列改为展示标准化后的名称（如"检验室" -> "质量控制部"），
+        # 让用户确认映射是否符合预期；解析失败时保留原值以便对照排查。
+        if dept_name:
+            result_item["department_name"] = dept_name
 
         results.append(result_item)
 

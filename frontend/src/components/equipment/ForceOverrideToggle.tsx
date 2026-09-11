@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ShieldOutlined, WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { SafetyOutlined, WarningOutlined } from '@ant-design/icons';
 
 interface ForceOverrideToggleProps {
   enabled: boolean;
@@ -31,7 +31,7 @@ export const ForceOverrideToggle = ({ enabled, onToggle }: ForceOverrideTogglePr
           <span className={`text-sm font-bold flex items-center gap-2 transition-colors ${
             enabled ? 'text-amber-500' : 'text-slate-200'
           }`}>
-            {enabled ? <WarningOutlined /> : <ShieldOutlined />}
+            {enabled ? <WarningOutlined /> : <SafetyOutlined />}
             {enabled ? '强制覆盖业务字段' : '保护模式'}
           </span>
           <span className={`text-xs mt-1 font-mono transition-colors ${

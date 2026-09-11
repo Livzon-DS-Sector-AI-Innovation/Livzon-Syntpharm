@@ -365,7 +365,7 @@ export async function previewEquipmentImportApiTyped(
   headers?: Record<string, string>,
   forceOverride: boolean = false
 ) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-v4/preview`, {
     method: 'POST',
     body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
@@ -377,7 +377,7 @@ export async function batchImportEquipmentApiTyped(
   headers?: Record<string, string>,
   forceOverride: boolean = false
 ) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-v4/batch`, {
     method: 'POST',
     body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,

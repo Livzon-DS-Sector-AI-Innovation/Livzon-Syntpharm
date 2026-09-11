@@ -55,15 +55,51 @@ export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }) =
       render: (text: any) => text !== null && text !== undefined ? String(text) : '-',
     })),
     {
+      title: '错误详情',
+      key: 'error_detail',
+      width: 200,
+      ellipsis: true,
+      render: (_, record: any) => {
+        // V4 格式
+        if (record.error_message) {
+          return <span style={{ color: '#e03131', fontSize: 12 }}>{record.error_message}</span>;
+        }
+        // V3 格式
+        if (record.validation_errors && record.validation_errors.length > 0) {
+          return (
+            <span style={{ color: '#e03131', fontSize: 12 }}>
+              {record.validation_errors.join('; ')}
+            </span>
+          );
+        }
+        return '-';
+      },
+    },
+    {
       title: '验证',
       key: 'validation',
       width: 100,
       fixed: 'right',
       render: (_, record: any) => {
+        // V4 格式：validation_status 字段
         if (record.validation_status === 'pass') return <Tag color="success">通过</Tag>;
         if (record.validation_status === 'duplicate') return <Tag color="warning">重复</Tag>;
+        
+        // V3 格式：validation_errors 数组
+        if (record.validation_errors && Array.isArray(record.validation_errors)) {
+          if (record.validation_errors.length === 0) {
+            return <Tag color="success">通过</Tag>;
+          }
+          return (
+            <Tooltip title={record.validation_errors.join(', ')}>
+              <Tag color="error">异常</Tag>
+            </Tooltip>
+          );
+        }
+        
+        // 兜底：显示异常并尝试展示 error_message
         return (
-          <Tooltip title={record.error_message}>
+          <Tooltip title={record.error_message || '未知错误'}>
             <Tag color="error">异常</Tag>
           </Tooltip>
         );

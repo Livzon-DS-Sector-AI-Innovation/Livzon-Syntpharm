@@ -170,6 +170,7 @@ class Equipment(BaseModel):
     warranty_expire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="保修到期日")
     current_cost: Mapped[float | None] = mapped_column(nullable=True, comment="当前成本（元）")
     book_value: Mapped[float | None] = mapped_column(nullable=True, comment="账面净值（元）")
+    quantity: Mapped[int | None] = mapped_column(nullable=True, comment="数量（台/套）")
     depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
     technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(

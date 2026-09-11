@@ -29,19 +29,43 @@ interface ImportPreviewItem {
   status: string
   scrap_status?: string
   scrap_time?: string
-  validation_errors: string[]
+  // v3 契约：错误数组（后端 v4 不再返回该字段，故改为可选）
+  validation_errors?: string[]
+  // v4 契约：校验三态 pass / error / duplicate
+  validation_status?: string
+  // v4 契约：错误描述，字符串而非数组
+  error_message?: string | null
+  is_duplicate?: boolean
 }
 
 interface ImportResult {
   created_count: number
   skipped_count: number
-  errors: Array<{ row: number; error: string }>
+  // v4 /batch 实际返回：batch_id / created_count / updated_count / skipped_count /
+  // error_count / unmapped_departments —— 注意并不返回 errors 明细数组
+  batch_id?: string
+  updated_count?: number
+  error_count?: number
+  unmapped_departments?: Record<string, number[]>
+  errors?: Array<{ row: number; error: string }>
 }
 
 interface EquipmentImportModalProps {
   open: boolean
   onClose: () => void
   onSuccess: () => void
+}
+
+// Excel 单元格值归一化：cellDates=true 后日期会变成 Date 对象，
+// 需统一格式化为 YYYY-MM-DD，否则会像序列号 46196 那样直接进入数据库。
+function normalizeCellValue(value: unknown): unknown {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const y = value.getFullYear()
+    const m = String(value.getMonth() + 1).padStart(2, '0')
+    const d = String(value.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+  }
+  return value
 }
 
 export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImportModalProps) {
@@ -73,7 +97,8 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
+        // cellDates: true —— 让日期单元格解析为 Date 对象而非序列号（如 46196）
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true })
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         
         // 将 sheet 转换为数组（包含所有行）
@@ -103,7 +128,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
           const obj: any = {}
           headers.forEach((header, idx) => {
             if (header && idx < row.length) {
-              obj[header] = row[idx]
+              obj[header] = normalizeCellValue(row[idx])
             }
           })
           return obj
@@ -196,13 +221,33 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
       dataIndex: 'validation_errors', 
       width: 150,
       fixed: 'right' as const,
-      render: (errors: string[]) => errors.length > 0 
-        ? <span style={{ color: '#e03131', fontSize: 12 }}>{errors.join(', ')}</span>
-        : <Tag color="success">通过</Tag>
+      render: (_: unknown, record: ImportPreviewItem) => {
+        // v4 契约优先：validation_status + error_message
+        if (record.validation_status) {
+          if (record.validation_status === 'pass') return <Tag color="success">通过</Tag>
+          if (record.validation_status === 'duplicate') return <Tag color="warning">重复</Tag>
+          return (
+            <span style={{ color: '#e03131', fontSize: 12 }}>
+              {record.error_message || '校验未通过'}
+            </span>
+          )
+        }
+        // v3 契约兜底：validation_errors 数组（可能缺失，必须防御）
+        const errors = record.validation_errors
+        if (Array.isArray(errors) && errors.length > 0) {
+          return <span style={{ color: '#e03131', fontSize: 12 }}>{errors.join(', ')}</span>
+        }
+        return <Tag color="success">通过</Tag>
+      }
     },
   ]
 
-  const validCount = previewData.filter(item => item.validation_errors.length === 0).length
+  const isValidRow = (item: ImportPreviewItem) =>
+    item.validation_status
+      ? item.validation_status === 'pass'
+      : (item.validation_errors?.length ?? 0) === 0
+
+  const validCount = previewData.filter(isValidRow).length
   const invalidCount = previewData.length - validCount
 
   const steps = [
@@ -321,7 +366,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
             批次 ID: {importResult.batch_id}
           </div>
           <h3>导入完成</h3>
-          {importResult.errors.length > 0 && (
+          {importResult.errors && importResult.errors.length > 0 && (
             <div style={{ marginTop: 16, textAlign: 'left', maxHeight: 200, overflow: 'auto' }}>
               <p style={{ color: '#e03131' }}>错误详情：</p>
               {importResult.errors.map((err, idx) => (
