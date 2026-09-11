@@ -21,6 +21,7 @@ import {
   Tag,
   Radio,
   Timeline,
+  UploadFile,
 } from 'antd'
 
 import {
@@ -43,7 +44,7 @@ import {
   SyncOutlined,
 } from '@ant-design/icons'
 import { getHazard, updateHazard, replyRectification, reworkRectification, uploadRectificationPhoto, getDepartmentLeader, getDepartmentSafetyOfficer, notifyReviewer, notifyRectification, triggerRectificationReview, verifyLevel } from '@/actions/safety'
-import type { HazardReport } from '@/types/safety'
+import type { HazardReport, HazardReportFormData } from '@/types/safety'
 import {
   HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
@@ -440,7 +441,7 @@ export default function HazardLedgerDetailPage() {
   const [saving, setSaving] = useState(false)
 
   // 整改回复状态
-  const [replyFiles, setReplyFiles] = useState<any[]>([])
+  const [replyFiles, setReplyFiles] = useState<UploadFile[]>([])
   const [replySubmitting, setReplySubmitting] = useState(false)
   const [_leaderLoading, setLeaderLoading] = useState(false)
   const [notifyLoading, setNotifyLoading] = useState(false)
@@ -519,10 +520,10 @@ export default function HazardLedgerDetailPage() {
 
 
 
-  // 获取字段当前值
   const fieldVal = (field: string): string => {
-    if (editSection && field in edits) return edits[field] ?? (record as any)?.[field] ?? ''
-    return (record as any)?.[field] ?? ''
+    const rec = record as Record<string, unknown> | null
+    if (editSection && field in edits) return edits[field] ?? (rec?.[field] as string | undefined) ?? ''
+    return (rec?.[field] as string | undefined) ?? ''
   }
 
   const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {
@@ -579,7 +580,7 @@ export default function HazardLedgerDetailPage() {
     if (Object.keys(edits).length === 0) { setEditSection(null); return }
     setSaving(true)
     try {
-      const res = await updateHazard(id, edits as any)
+      const res = await updateHazard(id, edits as unknown as Partial<HazardReportFormData>)
       if (res.code === 200) {
         message.success('修改已保存')
         queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
@@ -880,7 +881,7 @@ export default function HazardLedgerDetailPage() {
     try {
       // 1. 保存字段编辑
       if (Object.keys(edits).length > 0) {
-        const updateRes = await updateHazard(id, edits as any)
+        const updateRes = await updateHazard(id, edits as unknown as Partial<HazardReportFormData>)
         if (updateRes.code !== 200) {
           message.error(updateRes.message || '保存失败')
           setReplySubmitting(false)

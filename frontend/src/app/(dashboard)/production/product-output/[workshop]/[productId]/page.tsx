@@ -23,7 +23,8 @@ import {
   Dropdown,
   Alert,
 } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
+import type { SorterResult, FilterValue } from 'antd/es/table/interface'
 import {
   PlusOutlined,
   SearchOutlined,
@@ -55,10 +56,36 @@ import {
 } from '@/actions/product-output'
 import { getProduct } from '@/actions/product'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ProductOutput, ProductOutputFormData } from '@/types/product-output'
+import type { ProductOutput, ProductOutputFormData, ProductOutputQueryParams } from '@/types/product-output'
 import ProductSyncConfig from '@/components/production/product/ProductSyncConfig'
 import type { Product } from '@/types/product'
 import dayjs from 'dayjs'
+
+interface PreviewRecord {
+  row_num: number
+  workshop: string
+  product_name: string
+  batch_no: string
+  production_date: string
+  weight: number
+  unit?: string
+  is_duplicate: boolean
+  product_found: boolean
+}
+
+interface InvalidDetail {
+  row: number
+  error: string
+}
+
+interface PreviewImportData {
+  total_rows: number
+  new_records: number
+  duplicate_records: number
+  not_found_product: number
+  records: PreviewRecord[]
+  invalid_details?: InvalidDetail[]
+}
 
 const { Title, Text } = Typography
 
@@ -81,7 +108,7 @@ export default function ProductOutputRecordsPage() {
   const [form] = Form.useForm()
 
   const [importModalVisible, setImportModalVisible] = useState(false)
-  const [previewData, setPreviewData] = useState<any>(null)
+  const [previewData, setPreviewData] = useState<PreviewImportData | null>(null)
   const [lastBatchId, setLastBatchId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -113,7 +140,7 @@ export default function ProductOutputRecordsPage() {
   const { data: recordsData, isLoading: loading } = useQuery({
     queryKey: ['product-outputs', { page, pageSize, productId, sortInfo, searchText, dateRange: dateRange ? [dateRange[0]?.toISOString(), dateRange[1]?.toISOString()] : null }],
     queryFn: async () => {
-      const params: any = {
+      const params: ProductOutputQueryParams = {
         page,
         page_size: pageSize,
         product_id: productId,
@@ -256,7 +283,7 @@ export default function ProductOutputRecordsPage() {
     try {
       const response = await fetchPreviewImport(formData) as { code: number; message: string; data: Record<string, unknown> }
       if (response.code === 200) {
-        const respData = response.data
+        const respData = response.data as unknown as PreviewImportData
         setPreviewData(respData)
         message.info(`预览完成：共 ${respData.total_rows} 行，可导入 ${respData.new_records} 行`)
       } else {
@@ -525,7 +552,7 @@ export default function ProductOutputRecordsPage() {
   }
 
   // 表单值变化监听：当结束日期被清空时，自动设置备注为"生产中"
-  const handleFormValuesChange = (changedValues: any, allValues: any) => {
+  const handleFormValuesChange = (changedValues: Partial<ProductOutputFormData>, allValues: ProductOutputFormData) => {
     if ('end_date' in changedValues) {
       if (!changedValues.end_date && allValues.production_date) {
         // 结束日期被清空，且有生产日期，自动设置备注为"生产中"
@@ -597,19 +624,21 @@ export default function ProductOutputRecordsPage() {
     },
   ]
 
-  const handleTableChange = (_pagination: any, _filters: any, sorter: any) => {
-    console.log('handleTableChange called', { sorter, sorterField: sorter?.field, sorterOrder: sorter?.order })
-    if (sorter && sorter.order) {
+  const handleTableChange = (_pagination: TablePaginationConfig, _filters: Record<string, FilterValue | null>, sorter: SorterResult<ProductOutput> | SorterResult<ProductOutput>[]) => {
+    // Multi-sort not supported; use only the first sorter
+    const s: SorterResult<ProductOutput> | undefined = Array.isArray(sorter) ? sorter[0] : sorter
+    console.log('handleTableChange called', { sorter, sorterField: s?.field, sorterOrder: s?.order })
+    if (s && s.order) {
       const fieldMap: Record<string, string> = {
         batch_no: 'batch_no',
         production_date: 'production_date',
         end_date: 'end_date',
         weight: 'weight',
       }
-      const field = fieldMap[sorter.field]
-      console.log('Mapped field:', field, 'from sorter.field:', sorter.field)
+      const field = fieldMap[String(s.field)]
+      console.log('Mapped field:', field, 'from sorter.field:', s.field)
       if (field) {
-        const newSortInfo: { field: string; order: 'asc' | 'desc' } = { field, order: sorter.order === 'ascend' ? 'asc' : 'desc' }
+        const newSortInfo: { field: string; order: 'asc' | 'desc' } = { field, order: s.order === 'ascend' ? 'asc' : 'desc' }
         setSortInfo(newSortInfo)
         setPage(1)
         // useQuery will automatically refetch with new sortInfo
@@ -915,7 +944,7 @@ export default function ProductOutputRecordsPage() {
                 rowKey="row_num"
                 pagination={false}
                 scroll={{ y: 350 }}
-                rowClassName={(record: any) => {
+                rowClassName={(record: PreviewRecord) => {
                   if (record.is_duplicate) return 'bg-orange-50';
                   if (!record.product_found) return 'bg-red-50';
                   return '';
@@ -925,7 +954,7 @@ export default function ProductOutputRecordsPage() {
                     title: '状态', 
                     width: 80, 
                     align: 'center',
-                    render: (_: any, r: any) => {
+                    render: (_: unknown, r: PreviewRecord) => {
                       if (r.is_duplicate) return <Tag color="orange">⚠️ 重复</Tag>;
                       if (!r.product_found) return <Tag color="red">❌ 未匹配</Tag>;
                       return <Tag color="green">✅ 可导入</Tag>;
@@ -936,12 +965,12 @@ export default function ProductOutputRecordsPage() {
                   { title: '产品名称', dataIndex: 'product_name', width: 140, ellipsis: true },
                   { title: '批号', dataIndex: 'batch_no', width: 160, ellipsis: true },
                   { title: '生产日期', dataIndex: 'production_date', width: 110 },
-                  { title: '重量', dataIndex: 'weight', width: 90, render: (val: number, r: any) => `${val} ${r.unit || 'kg'}` },
+                  { title: '重量', dataIndex: 'weight', width: 90, render: (val: number, r: PreviewRecord) => `${val} ${r.unit || 'kg'}` },
                   { 
                     title: '产品匹配', 
                     width: 90, 
                     align: 'center',
-                    render: (_: any, r: any) => r.product_found ? (
+                    render: (_: unknown, r: PreviewRecord) => r.product_found ? (
                       <span className="text-green-600 font-bold">✓</span>
                     ) : (
                       <span className="text-red-600 font-bold">✗</span>
@@ -953,7 +982,7 @@ export default function ProductOutputRecordsPage() {
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                   <Text strong type="danger">无效记录 ({previewData.invalid_details.length} 条):</Text>
                   <ul className="mt-2 text-sm text-red-600 list-disc list-inside max-h-32 overflow-y-auto">
-                    {previewData.invalid_details.map((item: any, idx: number) => (
+                    {previewData.invalid_details.map((item: InvalidDetail, idx: number) => (
                       <li key={idx}>第 {item.row} 行: {item.error}</li>
                     ))}
                   </ul>

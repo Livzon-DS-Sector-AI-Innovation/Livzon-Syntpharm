@@ -103,10 +103,10 @@ export default function WorkshopProductsPage() {
           monthlyBatchRes = await getBatchCount({ start_date: startDate, end_date: endDate, product_id: product.id })
         }
 
-        const extractBatchCount = (res: any) => {
-          const data = res.data
+        const extractBatchCount = (res: { data: unknown }) => {
+          const data = res.data as Array<{ product_id: string; batch_count: number }> | null
           if (Array.isArray(data)) {
-            const item = data.find((d: any) => d.product_id === product.id)
+            const item = data.find((d) => d.product_id === product.id)
             return item?.batch_count || 0
           }
           return 0

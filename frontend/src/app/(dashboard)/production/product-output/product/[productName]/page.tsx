@@ -6,7 +6,7 @@ import { HomeOutlined, AppstoreOutlined } from '@ant-design/icons'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProductOutputs } from '@/actions/product-output'
-import type { ProductOutput } from '@/types/product-output'
+import type { ProductOutput, ProductOutputQueryParams } from '@/types/product-output'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -40,7 +40,7 @@ export default function ProductDetailPage() {
   const loadProductData = useCallback(async () => {
     setLoading(true)
     try {
-      const queryParams: any = { 
+      const queryParams: ProductOutputQueryParams = { 
         product_name: productName,
         page_size: 200 
       }
@@ -140,7 +140,7 @@ export default function ProductDetailPage() {
     {
       title: '每月产量',
       key: 'monthly',
-      render: (_: any, record: WorkshopStats) => (
+      render: (_: unknown, record: WorkshopStats) => (
         <div>
           {Object.entries(record.monthly)
             .sort(([a], [b]) => b.localeCompare(a))
@@ -158,7 +158,7 @@ export default function ProductDetailPage() {
     {
       title: '每年产量',
       key: 'yearly',
-      render: (_: any, record: WorkshopStats) => (
+      render: (_: unknown, record: WorkshopStats) => (
         <div>
           {Object.entries(record.yearly)
             .sort(([a], [b]) => b.localeCompare(a))
