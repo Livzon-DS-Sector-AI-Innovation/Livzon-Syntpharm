@@ -113,8 +113,6 @@ export default function HazardLedgerPanel() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
-  const [data, setData] = useState<HazardIdentification[]>([])
-  const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<HazardLedgerStats>({
     total: 0, level_1: 0, level_2: 0, level_3: 0, level_4: 0,
   })
@@ -252,15 +250,9 @@ export default function HazardLedgerPanel() {
     },
   })
 
-  // Sync query data to state
-  useEffect(() => {
-    if (queryData) {
-      setData(queryData.data)
-      setTotal(queryData.total)
-    }
-  }, [queryData])
-
-  // Use query loading state
+  // Use query data directly
+  const data = queryData?.data || []
+  const total = queryData?.total || 0
   const loading = queryLoading
 
 
