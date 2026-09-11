@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Table,
@@ -95,11 +96,9 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ]
 
 export default function WorkflowListPanel() {
+  const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<HazardIdentification[]>([])
-  const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<HazardIdentificationStats>({
     total_draft: 0,
     total_in_progress: 0,
@@ -190,8 +189,10 @@ export default function WorkflowListPanel() {
     setFilterPopoverOpen(false)
   }
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
+  const { data: queryData, isLoading: queryLoading } = useQuery({
+    queryKey: ['hazard-identifications-workflow', queryParams, statusFilter, progressFilter, deptFilter, activeBatchId, sortField, sortOrder, msgApi, searchKeywordRef.current],
+    queryFn: async () => {
+    
     try {
       const res = await getHazardIdentifications({
         ...queryParams,
@@ -212,15 +213,21 @@ export default function WorkflowListPanel() {
             return sortOrder === 'ascend' ? cmp : -cmp
           })
         }
-        setData(list)
-        setTotal(res.meta?.total || 0)
+        return { data: list, total: res.meta?.total || 0 }
+        
       }
     } catch {
       msgApi.error('加载列表失败')
     } finally {
-      setLoading(false)
+      
     }
-  }, [queryParams, statusFilter, progressFilter, deptFilter, activeBatchId, sortField, sortOrder, msgApi])
+    },
+  })
+
+  // Use query data directly
+  const data = queryData?.data || []
+  const total = queryData?.total || 0
+  const loading = queryLoading
 
   const loadStats = async () => {
     try {
@@ -231,9 +238,7 @@ export default function WorkflowListPanel() {
     } catch { /* 静默失败 */ }
   }
 
-  useEffect(() => {
-    loadData()
-  }, [queryParams.page, queryParams.page_size, statusFilter, progressFilter, deptFilter, loadData])
+
 
   // 排序变化时重新加载
 
@@ -242,14 +247,14 @@ export default function WorkflowListPanel() {
     setSearchApplied(true)
     setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
   }
 
   const handleSearchBack = () => {
     searchKeywordRef.current = ''
     setKeyword('')
     setSearchApplied(false)
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
   }
 
   const handleDelete = async (id: string) => {
@@ -260,7 +265,7 @@ export default function WorkflowListPanel() {
         const res = await deleteHazardIdentification(id)
         if (res.code === 200) {
           msgApi.success('删除成功')
-          loadData()
+          queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
           loadStats()
         } else {
           msgApi.error(res.message || '删除失败')
@@ -294,7 +299,7 @@ export default function WorkflowListPanel() {
           msgApi.warning(`删除完成：${succeeded} 条成功，${failed} 条失败`)
         }
         setSelectedRowKeys([])
-        await loadData()
+        await queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
         loadStats()
         setDeleting(false)
       },
@@ -1050,7 +1055,7 @@ export default function WorkflowListPanel() {
         onClose={() => setDrawerOpen(false)}
         onDone={() => {
           setDrawerOpen(false)
-          loadData()
+          queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
           loadStats()
         }}
       />
@@ -1061,7 +1066,7 @@ export default function WorkflowListPanel() {
         onClose={() => setBatchDrawerOpen(false)}
         onDone={() => {
           setBatchDrawerOpen(false)
-          loadData()
+          queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
           loadStats()
         }}
       />
