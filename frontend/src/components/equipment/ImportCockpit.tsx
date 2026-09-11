@@ -109,12 +109,14 @@ export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }) =
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <Table 
-        columns={columns} 
-        dataSource={data} 
+      <Table
+        columns={columns}
+        dataSource={data}
         rowKey="row_index"
         pagination={{
-        pageSize: 30,              // 默认每页 30 条（平衡加载速度和浏览效率）
+        // 必须用 defaultPageSize（非受控）。pageSize 是受控属性，每次重渲染都会
+        // 覆盖用户选择的每页条数，导致切换后立即弹回默认值。
+        defaultPageSize: 50,
         showSizeChanger: true,     // 保留切换功能，用户可根据需要调整
         pageSizeOptions: ['20', '30', '50', '100'],  // 移除 200，避免单页数据过多
         showTotal: (total) => `共 ${total} 条数据`,

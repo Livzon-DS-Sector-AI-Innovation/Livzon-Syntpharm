@@ -367,7 +367,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
           </div>
           <h3>导入完成</h3>
           
-          {importResult.error_count > 0 && (
+          {(importResult.error_count ?? 0) > 0 && (
             <div style={{ marginTop: 24, textAlign: 'left' }}>
               <h4 style={{ color: '#e03131', marginBottom: 12 }}>
                 ❌ 错误详情 ({importResult.error_count} 条)
