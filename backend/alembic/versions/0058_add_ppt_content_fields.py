@@ -1,7 +1,7 @@
 """add_ppt_content_fields
 
 Revision ID: 0058_add_ppt_content_fields
-Revises: 230e4133f731
+Revises: 0057_merge_0056_heads
 Create Date: 2026-09-03 08:10:00.000000
 """
 from typing import Sequence, Union
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 revision: str = '0058_add_ppt_content_fields'
-down_revision: Union[str, None] = '230e4133f731'
+down_revision: Union[str, None] = '0057_merge_0056_heads'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
