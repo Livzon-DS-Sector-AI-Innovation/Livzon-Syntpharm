@@ -237,6 +237,7 @@ export default function HazardLedgerPage() {
 
   // 清除所有筛选
   const clearAllFilters = useCallback(() => {
+    setSelectedRowKeys([])
     setLevelFilter(undefined)
     setTypeFilter(undefined)
     setCategoryFilter(undefined)
@@ -256,6 +257,7 @@ export default function HazardLedgerPage() {
 
   const handleFilterValueSelect = (fieldKey: string, value: string) => {
     setHazardQueryParams({ page: 1 })
+    setSelectedRowKeys([])
     switch (fieldKey) {
       case 'hazard_level': setLevelFilter(value); break
       case 'hazard_type': setTypeFilter(value); break
@@ -311,9 +313,9 @@ export default function HazardLedgerPage() {
   const refreshStats = () => { loadStats() }
 
   useEffect(() => {
-    setSelectedRowKeys([])
     loadData()
   }, [hazardQueryParams.page, hazardQueryParams.page_size, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, loadData])
+
 
   // 排序变化时重新加载
 
@@ -488,6 +490,7 @@ export default function HazardLedgerPage() {
 
   const handlePillClick = (pill: typeof STATS_PILLS[number]) => {
     if (!pill.filterable) return
+    setSelectedRowKeys([])
     if (pill.key === '') {
       setStatusFilter(undefined)
     } else {

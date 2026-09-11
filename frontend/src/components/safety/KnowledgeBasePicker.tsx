@@ -63,13 +63,14 @@ export default function KnowledgeBasePicker({ open, onClose, onSelect, excludeId
   }, [keyword, category, excludeIds, message])
 
   // 重置状态
-  useEffect(() => {
-    if (!open) {
-      setSelectedIds([])
-      setKeyword('')
-      setCategory('')
-    }
-  }, [open])
+  // Reset state when modal closes - moved to close handler
+  // useEffect(() => {
+  //   if (!open) {
+  //     setSelectedIds([])
+  //     setKeyword('')
+  //     setCategory('')
+  //   }
+  // }, [open])
 
   const handleConfirm = () => {
     const selected = articles.filter((a) => selectedIds.includes(a.id))

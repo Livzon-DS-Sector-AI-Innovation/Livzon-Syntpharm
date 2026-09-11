@@ -171,9 +171,11 @@ export default function HazardLedgerPanel() {
   const removeFilter = useCallback((key: string) => {
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     switch (key) {
-      case 'risk_level': setRiskLevel(undefined); break
+      case 'risk_level': setSelectedRowKeys([])
+ setRiskLevel(undefined); break
       case 'department': setDepartment(undefined); break
-      case 'position': setPosition(undefined); break
+      case 'position': setSelectedRowKeys([])
+ setPosition(undefined); break
     }
   }, [queryParams.page_size, setQueryParams])
 
@@ -254,7 +256,6 @@ export default function HazardLedgerPanel() {
   }, [queryParams, department, position, riskLevel, dateRange, sortField, sortOrder, msgApi])
 
   useEffect(() => {
-    setSelectedRowKeys([])
     loadData()
   }, [queryParams.page, queryParams.page_size, riskLevel, department, position, loadData])
 
@@ -271,6 +272,7 @@ export default function HazardLedgerPanel() {
   const handleSearch = () => {
     searchKeywordRef.current = keyword
     setSearchApplied(true)
+    setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     loadData()
     loadStats()

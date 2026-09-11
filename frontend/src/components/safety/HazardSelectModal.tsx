@@ -44,7 +44,8 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
+    // loadData will be called in the next tick after setPage
+    setTimeout(() => loadData(), 0)
   }
 
   const columns: ColumnsType<HazardRiskOption> = [

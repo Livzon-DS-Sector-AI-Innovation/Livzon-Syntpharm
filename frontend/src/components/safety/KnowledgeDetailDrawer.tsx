@@ -78,11 +78,15 @@ export default function KnowledgeDetailDrawer({
   useEffect(() => {
     if (articleId && open) {
       loadArticle()
-    } else {
+    }
+  }, [articleId, open, loadArticle])
+
+  useEffect(() => {
+    if (!articleId || !open) {
       setArticle(null)
       setVersionChain([])
     }
-  }, [articleId, open, loadArticle])
+  }, [articleId, open])
 
   const getCategoryLabel = (cat: string) =>
     KNOWLEDGE_CATEGORY_OPTIONS.find((o) => o.value === cat)?.label || cat

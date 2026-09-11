@@ -82,7 +82,8 @@ export default function HazardIdentificationBatchDrawer({
 
   const handleRegulationChange = (regId: string) => {
     setSelectedRegulationId(regId)
-    setSelectedStages([]) // 重置已选工段
+    // Use setTimeout to break synchronous setState chain
+    setTimeout(() => setSelectedStages([]), 0)
     form.setFieldValue('regulation_id', regId)
   }
 

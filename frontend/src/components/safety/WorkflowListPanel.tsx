@@ -156,8 +156,10 @@ export default function WorkflowListPanel() {
   const removeFilter = useCallback((key: string) => {
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     switch (key) {
-      case 'ai_node_progress': setProgressFilter(undefined); break
-      case 'department': setDeptFilter(undefined); break
+      case 'ai_node_progress': setSelectedRowKeys([])
+ setProgressFilter(undefined); break
+      case 'department': setSelectedRowKeys([])
+ setDeptFilter(undefined); break
     }
   }, [queryParams.page_size, setQueryParams])
 
@@ -165,6 +167,8 @@ export default function WorkflowListPanel() {
   const clearAllFilters = useCallback(() => {
     setProgressFilter(undefined)
     setDeptFilter(undefined)
+    setSelectedRowKeys([])
+
     setStatusFilter(undefined)
     setKeyword('')
     setSearchApplied(false)
@@ -228,7 +232,6 @@ export default function WorkflowListPanel() {
   }
 
   useEffect(() => {
-    setSelectedRowKeys([])
     loadData()
   }, [queryParams.page, queryParams.page_size, statusFilter, progressFilter, deptFilter, loadData])
 
@@ -237,6 +240,7 @@ export default function WorkflowListPanel() {
   const handleSearch = () => {
     searchKeywordRef.current = keyword
     setSearchApplied(true)
+    setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     loadData()
   }
