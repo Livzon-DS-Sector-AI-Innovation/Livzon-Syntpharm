@@ -360,18 +360,26 @@ export async function updateScheduleApiTyped(routeId: string, scheduleId: string
 }
 
 // Equipment Import (using EquipmentImportRow from backend)
-export async function previewEquipmentImportApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
+export async function previewEquipmentImportApiTyped(
+  data: EquipmentImportRow[], 
+  headers?: Record<string, string>,
+  forceOverride: boolean = false
+) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
   })
 }
 
-export async function batchImportEquipmentApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
+export async function batchImportEquipmentApiTyped(
+  data: EquipmentImportRow[], 
+  headers?: Record<string, string>,
+  forceOverride: boolean = false
+) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
   })
 }

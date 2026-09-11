@@ -126,7 +126,7 @@ async def batch_import_v4(
 async def preview_import_v4(
     current_user: RequiredUser,
     data: Annotated[list[dict[str, Any]], Body(...)],
-    force_override: bool = Body(True),
+    force_override: bool = Body(False),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     results = []

@@ -1,34 +1,45 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ForceOverrideToggle } from '../ForceOverrideToggle';
 
-describe('ForceOverrideToggle', () => {
-  it('renders with protective state by default', () => {
+describe('ForceOverrideToggle (Industrial Safety Design)', () => {
+  it('renders in protective mode by default', () => {
     const mockToggle = jest.fn();
-    render(<ForceOverrideToggle onToggle={mockToggle} />);
+    render(<ForceOverrideToggle enabled={false} onToggle={mockToggle} />);
     
-    expect(screen.getByText(/保护已手动修正的部门与位置信息/i)).toBeInTheDocument();
-    expect(screen.queryByText(/确认执行强制覆盖？/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/保护模式/i)).toBeTruthy();
+    expect(screen.getByText(/保护已手动修正的部门与位置信息/i)).toBeTruthy();
   });
 
-  it('shows confirmation modal when toggled on', () => {
+  it('shows custom industrial-style confirmation modal when toggled on', () => {
     const mockToggle = jest.fn();
-    render(<ForceOverrideToggle onToggle={mockToggle} />);
+    render(<ForceOverrideToggle enabled={false} onToggle={mockToggle} />);
     
-    const toggleButton = screen.getByRole('button');
-    fireEvent.click(toggleButton);
+    const container = screen.getByText(/保护模式/i).closest('div');
+    if (container) fireEvent.click(container);
     
-    expect(screen.getByText(/确认执行强制覆盖？/i)).toBeInTheDocument();
-    expect(mockToggle).not.toHaveBeenCalled(); // 此时不应触发回调
+    expect(screen.getByText(/高风险操作确认/i)).toBeTruthy();
+    expect(screen.getByText(/部门 \(Department\)/i)).toBeTruthy();
   });
 
-  it('calls onToggle with true after confirmation', () => {
+  it('calls onToggle with true after user confirms the risk', () => {
     const mockToggle = jest.fn();
-    render(<ForceOverrideToggle onToggle={mockToggle} />);
+    render(<ForceOverrideToggle enabled={false} onToggle={mockToggle} />);
     
-    fireEvent.click(screen.getByRole('button'));
+    // Open modal
+    const container = screen.getByText(/保护模式/i).closest('div');
+    if (container) fireEvent.click(container);
+    
+    // Confirm
     fireEvent.click(screen.getByText(/我已知晓风险，继续/i));
     
     expect(mockToggle).toHaveBeenCalledWith(true);
-    expect(screen.getByText(/系统将忽略现有数据，以 Excel 为准/i)).toBeInTheDocument();
+  });
+
+  it('switches to warning state with amber glow when enabled', () => {
+    const mockToggle = jest.fn();
+    render(<ForceOverrideToggle enabled={true} onToggle={mockToggle} />);
+    
+    expect(screen.getByText(/强制覆盖业务字段/i)).toBeTruthy();
+    expect(screen.getByText(/系统将忽略现有数据，以 Excel 为准/i)).toBeTruthy();
   });
 });

@@ -6,6 +6,8 @@ import { Modal, Upload, Button, Table, Tag, App, Steps } from 'antd'
 import { InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { previewEquipmentImport, batchImportEquipment } from '@/actions/equipment'
+import { ForceOverrideToggle } from './ForceOverrideToggle'
+import { ImportCockpit } from './ImportCockpit'
 
 const { Dragger } = Upload
 
@@ -130,7 +132,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const fetchPreview = async (data: any[]) => {
     setLoading(true)
     try {
-      const result = await previewEquipmentImport(data)
+      const result = await previewEquipmentImport(data, forceOverride)
       if (result.code === 200) {
         setPreviewData(result.data.items);
         setPreviewHeaders(result.data.headers || []);
@@ -152,7 +154,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   const handleImport = async () => {
     setLoading(true)
     try {
-      const result = await batchImportEquipment(rawData)
+      const result = await batchImportEquipment(rawData, forceOverride)
       if (result.code === 200) {
         setImportResult(result.data)
         setCurrentStep(3)
@@ -211,11 +213,6 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
   ]
 
   
-  const switchStyles = {
-    container: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', fontFamily: 'monospace', fontSize: '12px', color: forceOverride ? '#f97316' : '#6b7280' },
-    track: { width: '36px', height: '20px', backgroundColor: forceOverride ? 'rgba(249, 115, 22, 0.2)' : '#374151', borderRadius: '9999px', position: 'relative', border: '1px solid', borderColor: forceOverride ? '#f97316' : '#4b5563', transition: 'all 0.2s' },
-    thumb: { position: 'absolute', top: '2px', left: forceOverride ? '18px' : '2px', width: '14px', height: '14px', backgroundColor: forceOverride ? '#f97316' : '#9ca3af', borderRadius: '50%', transition: 'all 0.2s', boxShadow: forceOverride ? '0 0 8px rgba(249, 115, 22, 0.6)' : 'none' }
-  };
 
   return (
     <Modal
@@ -275,18 +272,12 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
             <div style={{ display: 'flex', gap: 16 }}>
               <span>总计: <strong>{previewData.length}</strong> 条</span>
               <div className="ml-auto">
-                <ForceOverrideToggle onToggle={setForceOverride} />
+                <ForceOverrideToggle enabled={forceOverride} onToggle={setForceOverride} />
               </div>
               <span style={{ color: '#1aae39' }}>可导入: <strong>{validCount}</strong> 条</span>
               {invalidCount > 0 && (
                 <span style={{ color: '#e03131' }}>异常: <strong>{invalidCount}</strong> 条</span>
               )}
-            </div>
-            <div style={switchStyles.container} onClick={() => setForceOverride(!forceOverride)}>
-              <div style={switchStyles.track}>
-                <div style={switchStyles.thumb}></div>
-              </div>
-              <span>FULL OVERRIDE</span>
             </div>
           </div>
           <ImportCockpit 
