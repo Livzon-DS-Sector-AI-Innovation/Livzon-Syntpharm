@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
   Table,
@@ -145,8 +146,8 @@ const HAZARD_CATEGORY_LABEL_MAP: Record<string, string> = {}
 HAZARD_CATEGORY_OPTIONS.forEach((o) => { HAZARD_CATEGORY_LABEL_MAP[o.value] = o.label })
 
 export default function HazardLedgerPage() {
+  const queryClient = useQueryClient()
   const { message: msgApi, modal } = App.useApp()
-  const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
   const searchKeywordRef = useRef('')
@@ -269,9 +270,9 @@ export default function HazardLedgerPage() {
     setFilterPopoverOpen(false)
   }
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading: queryLoading } = useQuery({
+    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeywordRef.current, sortField, sortOrder],
+    queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
         rectification_status: statusFilter,
@@ -293,15 +294,22 @@ export default function HazardLedgerPage() {
             return sortOrder === 'ascend' ? cmp : -cmp
           })
         }
-        setHazards(data)
-        setHazardTotal(response.meta?.total || 0)
+        return { data, total: response.meta?.total || 0 }
       }
-    } catch {
-      msgApi.error('加载台账失败')
-    } finally {
-      setLoading(false)
+      return { data: [], total: 0 }
+    },
+  })
+
+  // Sync query data to store
+  useEffect(() => {
+    if (queryData) {
+      setHazards(queryData.data)
+      setHazardTotal(queryData.total)
     }
-  }, [hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, sortField, sortOrder, msgApi, setHazards, setHazardTotal])
+  }, [queryData, setHazards, setHazardTotal])
+
+  // Use query loading state
+  const loading = queryLoading
 
   // ── 全局统计（挂载时 + 数据变更后刷新）──
   const loadStats = async () => {
@@ -312,9 +320,7 @@ export default function HazardLedgerPage() {
   }
   const refreshStats = () => { loadStats() }
 
-  useEffect(() => {
-    loadData()
-  }, [hazardQueryParams.page, hazardQueryParams.page_size, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, loadData])
+
 
 
   // 排序变化时重新加载
@@ -323,14 +329,14 @@ export default function HazardLedgerPage() {
     searchKeywordRef.current = searchText
     setSearchApplied(true)
     setHazardQueryParams({ page: 1 })
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazards'] })
   }
 
   const handleSearchBack = () => {
     searchKeywordRef.current = ''
     setSearchText('')
     setSearchApplied(false)
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazards'] })
   }
 
   // ── 排序切换 ──
@@ -406,7 +412,7 @@ export default function HazardLedgerPage() {
             msgApi.warning(`删除完成：${result.succeeded} 条成功，${result.failed} 条失败`)
           }
           setSelectedRowKeys([])
-          await loadData()
+          await queryClient.invalidateQueries({ queryKey: ['hazards'] })
           refreshStats()
         } catch {
           msgApi.error('批量删除失败')
@@ -428,7 +434,7 @@ export default function HazardLedgerPage() {
         try {
           await deleteHazard(record.id)
           msgApi.success('删除成功')
-          await loadData()
+          await queryClient.invalidateQueries({ queryKey: ['hazards'] })
           refreshStats()
         } catch {
           msgApi.error('删除失败')
@@ -1510,7 +1516,7 @@ export default function HazardLedgerPage() {
         onClose={() => setRegistrationDrawerOpen(false)}
         onDone={() => {
           setRegistrationDrawerOpen(false)
-          loadData()
+          queryClient.invalidateQueries({ queryKey: ['hazards'] })
           refreshStats()
         }}
       />
