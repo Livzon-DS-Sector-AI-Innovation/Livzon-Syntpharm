@@ -50,7 +50,6 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
   const [selectedSources, setSelectedSources] = useState<DataSourceItem[]>([])
   const [cardTemplate, setCardTemplate] = useState('')
   const [headerColor, setHeaderColor] = useState<HeaderColor>('blue' as HeaderColor)
-  const [previewData, setPreviewData] = useState<CardPreviewRequest | null>(null)
 
   const isEdit = !!editData
 
@@ -114,20 +113,17 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
     }
   }, [editData, form])
 
-  // Sync preview data
-  const updatePreview = useCallback(() => {
+  // Compute preview data directly
+  const previewData = useMemo(() => {
     if (selectedSources.length > 0 && cardTemplate) {
-      setPreviewData({
+      return {
         data_sources: selectedSources,
         card_template: cardTemplate,
         header_color: headerColor
-      })
+      }
     }
+    return null
   }, [selectedSources, cardTemplate, headerColor])
-
-  useEffect(() => {
-    updatePreview()
-  }, [updatePreview])
 
   const handleSourceToggle = (key: string, checked: boolean) => {
     setSelectedSources((prev) =>
