@@ -126,7 +126,6 @@ export function SafetyRegulationPageClient() {
   const [generatorModalOpen, setGeneratorModalOpen] = useState(false)
 
   // Regulations cache for revision create form
-  const [regulationsForSelect, setRegulationsForSelect] = useState<OperationRegulation[]>([])
 
   // ========== Store ==========
   const {
@@ -230,12 +229,8 @@ export function SafetyRegulationPageClient() {
     },
   })
 
-  // Update store when data changes
-  useEffect(() => {
-    if (regulationsForSelectData) {
-      setRegulationsForSelect(regulationsForSelectData)
-    }
-  }, [regulationsForSelectData, setRegulationsForSelect])
+  // Use query data directly
+  const regulationsForSelect = regulationsForSelectData || []
 
   // ---- Regulation CRUD ----
 
