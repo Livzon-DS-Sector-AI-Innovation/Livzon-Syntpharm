@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -109,9 +110,9 @@ const _HI_FIELD_LABELS: Record<string, string> = {
 }
 
 export default function HazardLedgerPanel() {
+  const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
-  const [loading, setLoading] = useState(false)
   const [data, setData] = useState<HazardIdentification[]>([])
   const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<HazardLedgerStats>({
@@ -221,9 +222,9 @@ export default function HazardLedgerPanel() {
     } catch { /* non-critical */ }
   }, [department, position, riskLevel, dateRange])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading: queryLoading } = useQuery({
+    queryKey: ['hazard-identifications-panel', queryParams, department, position, riskLevel, dateRange, searchKeywordRef.current, sortField, sortOrder],
+    queryFn: async () => {
       const res = await getHazardIdentifications({
         ...queryParams,
         overall_status: 'completed',
@@ -245,36 +246,32 @@ export default function HazardLedgerPanel() {
             return sortOrder === 'ascend' ? cmp : -cmp
           })
         }
-        setData(list)
-        setTotal(res.meta?.total || 0)
+        return { data: list, total: res.meta?.total || 0 }
       }
-    } catch {
-      msgApi.error('加载台账失败')
-    } finally {
-      setLoading(false)
+      return { data: [], total: 0 }
+    },
+  })
+
+  // Sync query data to state
+  useEffect(() => {
+    if (queryData) {
+      setData(queryData.data)
+      setTotal(queryData.total)
     }
-  }, [queryParams, department, position, riskLevel, dateRange, sortField, sortOrder, msgApi])
+  }, [queryData])
 
-  useEffect(() => {
-    loadData()
-  }, [queryParams.page, queryParams.page_size, riskLevel, department, position, loadData])
+  // Use query loading state
+  const loading = queryLoading
 
-  // 排序/日期变化时重新加载
-  useEffect(() => {
-    if (sortField) loadData()
-  }, [sortField, sortOrder, loadData])
 
-  useEffect(() => {
-    loadData()
-    loadStats()
-  }, [dateRange, loadData, loadStats])
+
 
   const handleSearch = () => {
     searchKeywordRef.current = keyword
     setSearchApplied(true)
     setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
     loadStats()
   }
 
@@ -282,7 +279,7 @@ export default function HazardLedgerPanel() {
     searchKeywordRef.current = ''
     setKeyword('')
     setSearchApplied(false)
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
     loadStats()
   }
 
@@ -342,7 +339,7 @@ export default function HazardLedgerPanel() {
           msgApi.warning(`删除完成：${succeeded} 条成功，${failed} 条失败`)
         }
         setSelectedRowKeys([])
-        await loadData()
+        await queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
         loadStats()
         setDeleting(false)
       },
