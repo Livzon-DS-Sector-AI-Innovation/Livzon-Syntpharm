@@ -121,12 +121,7 @@ export default function HazardInspectionForm({
           : undefined,
       } as Record<string, unknown>)
       // 回填时预填当前用户到选项列表，确保 Select 正确显示
-      if (initialValues.discovered_by && initialValues.discovered_by_name) {
-        setUserOptions([{
-          value: initialValues.discovered_by,
-          label: `${initialValues.discovered_by_name} - ${initialValues.inspector_department || ''}`,
-        }])
-      }
+      // This is now handled by useMemo below
     }
   }, [initialValues, form])
 
