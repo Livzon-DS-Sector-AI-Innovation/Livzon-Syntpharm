@@ -921,7 +921,8 @@ export default function SopContentEditor({
 
   /* ── initialise ── */
 
-  useEffect(() => {
+  // Parse initial content once
+  const initialParsed = useMemo(() => {
     const { meta, rest } = parseHeaderMeta(initialContent)
     const parsed = parseChapters(rest)
     const preamble = parsed.preamble
@@ -933,12 +934,23 @@ export default function SopContentEditor({
       finalMeta = guessMetaFromContent(regulationName, preamble)
     }
 
-    setHeaderMeta(finalMeta)
-    setSigTable(sig)
-    setPreambleText(preambleWithoutSig)
-    setChapters(parsed.chapters)
-    setIsDirty(false)
+    return {
+      meta: finalMeta,
+      sig,
+      preamble: preambleWithoutSig,
+      chapters: parsed.chapters
+    }
   }, [initialContent, regulationName])
+
+  // Initialize state with parsed values (only once)
+  const [initialized, setInitialized] = useState(false)
+  if (!initialized) {
+    setHeaderMeta(initialParsed.meta)
+    setSigTable(initialParsed.sig)
+    setPreambleText(initialParsed.preamble)
+    setChapters(initialParsed.chapters)
+    setInitialized(true)
+  }
 
   /* ── clear saved indicator ── */
 
