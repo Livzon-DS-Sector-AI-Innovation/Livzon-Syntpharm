@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { App,
   Button,
   Card,
@@ -68,6 +68,36 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
     })
   }, [])
 
+  // Compute initial values based on editData
+  const initialValues = useMemo(() => {
+    if (editData) {
+      return {
+        sources: editData.data_sources || [],
+        template: editData.card_template || '',
+        color: (editData.header_color as HeaderColor) || 'blue'
+      }
+    } else {
+      // Default: enable first 3 sources
+      const defaults: DataSourceItem[] = dataSourceOptions
+        .filter((o) => o.default_enabled)
+        .map((o) => ({ key: o.key, label: o.label, enabled: true }))
+      return {
+        sources: defaults,
+        template: '',
+        color: 'blue' as HeaderColor
+      }
+    }
+  }, [editData, dataSourceOptions])
+
+  // Initialize state with computed values (only once)
+  const [initialized, setInitialized] = useState(false)
+  if (!initialized) {
+    setSelectedSources(initialValues.sources)
+    setCardTemplate(initialValues.template)
+    setHeaderColor(initialValues.color)
+    setInitialized(true)
+  }
+
   // Initialize form with edit data
   useEffect(() => {
     if (editData) {
@@ -81,18 +111,8 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
         header_color: editData.header_color as HeaderColor,
         is_enabled: editData.is_enabled
       })
-      setSelectedSources(editData.data_sources || [])
-      setCardTemplate(editData.card_template || '')
-      setHeaderColor((editData.header_color as HeaderColor) || 'blue')
-    } else {
-      // Default: enable first 3 sources
-      const defaults: DataSourceItem[] = dataSourceOptions
-        .filter((o) => o.default_enabled)
-        .map((o) => ({ key: o.key, label: o.label, enabled: true }))
-      setSelectedSources(defaults)
-      setCardTemplate('')
     }
-  }, [editData, form, dataSourceOptions])
+  }, [editData, form])
 
   // Sync preview data
   const updatePreview = useCallback(() => {
