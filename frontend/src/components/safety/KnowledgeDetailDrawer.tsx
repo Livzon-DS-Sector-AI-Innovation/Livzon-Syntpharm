@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Drawer,
   Descriptions,
@@ -50,43 +51,36 @@ export default function KnowledgeDetailDrawer({
   onClose,
   onNewVersion,
 }: Props) {
-  const [loading, setLoading] = useState(false)
-  const [article, setArticle] = useState<SafetyKnowledgeArticle | null>(null)
-  const [versionChain, setVersionChain] = useState<VersionChainItem[]>([])
+  const queryClient = useQueryClient()
   const [injectionPreviewOpen, setInjectionPreviewOpen] = useState(false)
   const [generatingSummary, setGeneratingSummary] = useState(false)
 
-  const loadArticle = useCallback(async () => {
-    if (!articleId || !open) return
-    setLoading(true)
-    try {
-      const [articleRes, versionsRes] = await Promise.all([
-        getKnowledgeArticle(articleId),
-        getArticleVersions(articleId),
-      ])
-      if (articleRes.code === 200 && articleRes.data) {
-        setArticle(articleRes.data)
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ['knowledge-article', articleId, open],
+    queryFn: async () => {
+      if (!articleId || !open) return null
+      
+      try {
+        const [articleRes, versionsRes] = await Promise.all([
+          getKnowledgeArticle(articleId),
+          getArticleVersions(articleId),
+        ])
+        const article = articleRes.code === 200 ? articleRes.data : null
+        const versionChain = versionsRes.code === 200 ? versionsRes.data : []
+        return { article, versionChain }
+      } catch {
+        return null
       }
-      if (versionsRes.code === 200 && versionsRes.data) {
-        setVersionChain(versionsRes.data)
-      }
-    } finally {
-      setLoading(false)
-    }
-  }, [articleId, open])
+    },
+    enabled: !!articleId && open,
+  })
 
-  useEffect(() => {
-    if (articleId && open) {
-      loadArticle()
-    }
-  }, [articleId, open, loadArticle])
+  const article = queryData?.article || null
+  const versionChain = queryData?.versionChain || []
 
-  useEffect(() => {
-    if (!articleId || !open) {
-      setArticle(null)
-      setVersionChain([])
-    }
-  }, [articleId, open])
+
+
+
 
   const getCategoryLabel = (cat: string) =>
     KNOWLEDGE_CATEGORY_OPTIONS.find((o) => o.value === cat)?.label || cat
@@ -108,7 +102,7 @@ export default function KnowledgeDetailDrawer({
       const res = await generateSummary(article.id)
       if (res.code === 200 && res.data) {
         message.success(res.data.message || '摘要生成成功')
-        loadArticle()
+        queryClient.invalidateQueries({ queryKey: ['knowledge-article'] })
       } else {
         message.error(res.message || '摘要生成失败')
       }
@@ -414,7 +408,7 @@ export default function KnowledgeDetailDrawer({
                 children: (
                   <KnowledgeCardEditor
                     article={article}
-                    onRefresh={loadArticle}
+                    onRefresh={() => queryClient.invalidateQueries({ queryKey: ['knowledge-article'] })}
                     onPreviewInjection={() => setInjectionPreviewOpen(true)}
                   />
                 ),
