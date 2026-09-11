@@ -3,6 +3,7 @@
 import type { UploadFile } from "antd";
 
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Button,
@@ -422,8 +423,6 @@ export function HazardDetailPageClient() {
   const id = params.id as string
   const { message, modal: _modal } = App.useApp()
 
-  const [record, setRecord] = useState<HazardReport | null>(null)
-  const [loading, setLoading] = useState(true)
 
   // 编辑状态
   const [editSection, setEditSection] = useState<'registration' | 'ai' | 'rectification' | null>(null)
@@ -469,27 +468,27 @@ export function HazardDetailPageClient() {
   // Modal 状态
   const [verifyModalVisible, setVerifyModalVisible] = useState(false)
 
-  const loadRecord = useCallback(async () => {
-    try {
+  const { data: record, isLoading: loading, error: recordError } = useQuery({
+    queryKey: ['hazard-detail', id],
+    queryFn: async () => {
       const response = await getHazard(id)
       if (response.code === 200) {
-        setRecord(response.data as HazardReport)
-      } else {
-        console.error('加载隐患详情失败:', { id, code: response.code, message: response.message })
-        message.error(response.message || `加载失败 (${response.code})`)
-        router.push('/safety/hazard-ledger')
+        return response.data as HazardReport
       }
-    } catch (err) {
-      console.error('加载隐患详情异常:', { id, err })
-      message.error('加载失败，请检查网络或后端服务')
-    } finally {
-      setLoading(false)
-    }
-  }, [id, message, router])
+      throw new Error(response.message || `加载失败 (${response.code})`)
+    },
+    enabled: !!id,
+  })
 
+  // Handle errors
   useEffect(() => {
-    if (id) loadRecord()
-  }, [id, loadRecord])
+    if (recordError) {
+      console.error('加载隐患详情失败:', recordError)
+      message.error(recordError instanceof Error ? recordError.message : '加载失败，请检查网络或后端服务')
+      router.push('/safety/hazard-ledger')
+    }
+  }, [recordError, message, router])
+
 
   // 获取字段当前值
   const fieldVal = (field: string): string => {
@@ -543,7 +542,7 @@ export function HazardDetailPageClient() {
       const res = await updateHazard(id, edits as Record<string, unknown>)
       if (res.code === 200) {
         message.success('修改已保存')
-        setRecord(res.data as HazardReport)
+        
         setEditSection(null)
         setEdits({})
       } else {
@@ -673,7 +672,7 @@ export function HazardDetailPageClient() {
 
       if (replyRes.code === 200) {
         message.success('整改回复已提交')
-        setRecord(replyRes.data as HazardReport)
+        
         setEditSection(null)
         setEdits({})
         setReplyFiles([])
@@ -928,7 +927,7 @@ export function HazardDetailPageClient() {
                     <FieldLabel>检查类别</FieldLabel>
                     <FieldTile>
                       {record.inspection_category
-                        ? record.inspection_category.split(/[,，]/).filter(Boolean).map((c, i) => (
+                        ? record.inspection_category.split(/[,，]/).filter(Boolean).map((c: string, i: number) => (
                           <StatusPill key={i} color="#5d5b54" bg="#f0eeec">{c.trim()}</StatusPill>))
                         : <Text style={{ fontSize: 14, color: '#a4a097' }}>-</Text>}
                     </FieldTile>
@@ -1280,7 +1279,7 @@ export function HazardDetailPageClient() {
         open={verifyModalVisible}
         record={record}
         onClose={() => setVerifyModalVisible(false)}
-        onSuccess={(updated) => { setRecord(updated); setVerifyModalVisible(false) }}
+        onSuccess={(updated) => { ; setVerifyModalVisible(false) }}
       />
     </div>
   )
