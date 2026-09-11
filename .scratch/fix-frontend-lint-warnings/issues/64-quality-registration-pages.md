@@ -4,11 +4,11 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] All `any` types replaced with proper types in quality pages
-- [ ] All `any` types replaced with proper types in registration pages
-- [ ] Dynamic form fields and filter states properly typed
-- [ ] `tsc --noEmit` passes with no errors
-- [ ] `pnpm lint` shows 0 `@typescript-eslint/no-explicit-any` warnings in quality & registration pages
+- [x] All `any` types replaced with proper types in quality pages
+- [x] All `any` types replaced with proper types in registration pages
+- [x] Dynamic form fields and filter states properly typed
+- [x] `tsc --noEmit` passes with no errors
+- [x] `pnpm lint` shows 0 `@typescript-eslint/no-explicit-any` warnings in quality & registration pages
 - [ ] Affected files: `static-data/page.tsx` (20 warnings), `static-data/[module]/[id]/page.tsx` (14 warnings), `inspection-table/[id]/page.tsx`, `instrument/list/page.tsx`, `deviation-flow/query/page.tsx`, `inspection/standards/page.tsx`, `material-report/` pages, `registration/ledger/page.tsx`, `registration/validation-audit/` pages
