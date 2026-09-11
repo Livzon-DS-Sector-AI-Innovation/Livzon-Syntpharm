@@ -1,6 +1,7 @@
 'use client'
 
-import {useState, useEffect, useCallback} from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import {
   Card,
@@ -123,12 +124,22 @@ interface DetailPageProps {
 
 function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [form] = Form.useForm()
-  const [loading, setLoading] = useState(!!id && id !== 'new')
-  const [saving, setSaving] = useState(false)
-  const [_record, setRecord] = useState<Record<string, unknown> | null>(null)
+  const [attachFiles, setAttachFiles] = useState<UploadFile[]>(() => {
+    if (supportsUpload && recordData?.attach_file) {
+      const names = (recordData.attach_file as string).split(',').filter(Boolean)
+      return names.map((name: string, idx: number) => ({
+        uid: String(-idx - 1),
+        name,
+        status: 'done' as const,
+        url: `${API}/download/${encodeURIComponent(name)}`,
+      }))
+    }
+    return []
+  })
   const [items, setItems] = useState<Record<string, unknown>[]>([])
+  const formInitializedRef = useRef(false)
+  const [saving, setSaving] = useState(false)
   const [testItemOptions, setTestItemOptions] = useState<{ label: string; value: string }[]>([])
-  const [attachFiles, setAttachFiles] = useState<UploadFile[]>([])
   const [uploadLoading, setUploadLoading] = useState(false)
   const router = useRouter()
   const isNew = !id || id === 'new'
@@ -210,10 +221,10 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     }
   }, [moduleType, isStdWithItems])
 
-  const loadRecord = useCallback(async () => {
-    if (!id) return
-    setLoading(true)
-    try {
+  const { data: recordData, isLoading: loading } = useQuery({
+    queryKey: ['static-data-record', moduleType, id],
+    queryFn: async () => {
+      if (!id) return null
       let res: { data?: Record<string, unknown> } | null = null
       switch (moduleType) {
         case 'storage-condition': res = await getStorageCondition(Number(id)); break
@@ -226,43 +237,33 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         case 'standard-material': res = await getMaterialStandard(Number(id)); break
         case 'product-standard': res = await getProductStandard(Number(id)); break
         case 'hplc-reference': res = await getHplcReference(Number(id)); break
-        default: return
+        default: return null
       }
-      const data = res?.data ?? {}
-      setRecord(data as Record<string, unknown>)
-      // 加载 items 子表
-      if (isStdWithItems && data.items) {
-        setItems(((data.items ?? []) as ItemRecord[]).map((it: ItemRecord, idx: number) => ({ ...it, key: it.id ?? Date.now() + idx })))
-      }
+      return res?.data ?? {}
+    },
+    enabled: !!id && !isNew,
+  })
+
+  const record = recordData || {}
+
+
+
+  // Set form values and other state when data changes (only once)
+  useEffect(() => {
+    if (recordData && !isNew && !formInitializedRef.current) {
+      formInitializedRef.current = true
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
       const fmt: Record<string, unknown> = {}
       dateFields.forEach(f => {
-        if (data[f] && typeof data[f] === 'string') fmt[f] = dayjs(data[f] as string)
+        if (recordData[f] && typeof recordData[f] === 'string') fmt[f] = dayjs(recordData[f] as string)
       })
-      form.setFieldsValue({ ...data, ...fmt })
-      // 初始化附件列表
-      if (supportsUpload && data.attach_file) {
-        const names = (data.attach_file as string).split(',').filter(Boolean)
-        setAttachFiles(names.map((name: string, idx: number) => ({
-          uid: String(-idx - 1),
-          name,
-          status: 'done',
-          url: `${API}/download/${encodeURIComponent(name)}`,
-        })))
-      }
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '加载失败'))
-    } finally {
-      setLoading(false)
+      form.setFieldsValue({ ...recordData, ...fmt })
+      // attachFiles initialization is handled by useState initializer
     }
-  }, [id, moduleType, isStdWithItems, supportsUpload, form])
+  }, [recordData, isNew, supportsUpload, form])
 
-  useEffect(() => {
-    if (!isNew) {
-      loadRecord()
-    }
-  }, [id, moduleType, isNew, loadRecord])
+
 
 
   async function handleSave(values: Record<string, unknown> & { report_date?: { format: (f: string) => string } }) {
