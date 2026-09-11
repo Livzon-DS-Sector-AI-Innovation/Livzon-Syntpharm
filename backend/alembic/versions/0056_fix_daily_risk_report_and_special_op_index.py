@@ -12,7 +12,7 @@ from sqlalchemy import inspect
 
 
 revision: str = '0056_fix_daily_risk_report_and_special_op_index'
-down_revision: Union[str, None] = 'd89b9d01b93a'
+down_revision: Union[str, None] = '0055_add_sync_operation_log'
 branch_labels: Union[str, None] = None
 depends_on: Union[str, None] = None
 

@@ -1,7 +1,7 @@
 """0056_add_knowledge_graph_tables
 
 Revision ID: 0056_add_knowledge_graph_tables
-Revises: d89b9d01b93a
+Revises: 0055_add_sync_operation_log
 Create Date: 2026-09-02 10:00:00.000000
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ from sqlalchemy import inspect
 from sqlalchemy.dialects import postgresql
 
 revision: str = '0056_add_knowledge_graph_tables'
-down_revision: Union[str, None] = 'd89b9d01b93a'
+down_revision: Union[str, None] = '0055_add_sync_operation_log'
 branch_labels: Union[str, None] = None
 depends_on: Union[str, None] = None
 
