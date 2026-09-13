@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import {
   Button,
   DatePicker,
@@ -82,12 +82,10 @@ export default function TrainingSessionDetailModal({
     },
   })
 
-  // Reset form when modal opens
-  useEffect(() => {
-    if (!open) return
+  // Compute initial form values
+  const initialFormValues = useMemo(() => {
     if (record) {
-      // View/Edit existing record
-      form.setFieldsValue({
+      return {
         factory: record.factory || 'old',
         department: record.department,
         training_date: record.training_date ? dayjs(record.training_date) : undefined,
@@ -105,21 +103,14 @@ export default function TrainingSessionDetailModal({
         issuer_department: record.issuer_department,
         issue_date: record.issue_date ? dayjs(record.issue_date) : undefined,
         remarks: record.remarks,
-      })
-      setEditing(startEditing)
+      }
     } else {
-      // Create mode: reset and start in edit mode
-      setFactory('old')
-      setEmployees([])
-      setNameToNumberMap({})
-      form.resetFields()
-      form.setFieldsValue({
+      return {
         factory: 'old',
         training_time: [dayjs('08:00', 'HH:mm'), dayjs('12:00', 'HH:mm')],
-      })
-      setEditing(true)
+      }
     }
-  }, [open, record, form, startEditing])
+  }, [record])
 
   const _loadEmployees = async (
     depts: string[],
@@ -298,7 +289,7 @@ export default function TrainingSessionDetailModal({
 
       {/* Editable form */}
       {editing && (
-        <Form form={form} layout="vertical" className="mt-4">
+        <Form key={open ? (record?.id || "new") : "closed"} form={form} layout="vertical" className="mt-4" initialValues={initialFormValues}>
           {/* Factory selector: always visible in create, hidden in edit (read from record) */}
           {isCreate && (
             <Form.Item label="选择厂区">

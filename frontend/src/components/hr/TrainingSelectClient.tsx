@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {Button, Card, Checkbox, message, Select, Tag} from 'antd'
 import {
   CalendarOutlined,
@@ -27,12 +28,9 @@ export default function TrainingSelectClient({
   token,
   initialData,
 }: TrainingSelectClientProps) {
-  const [departments, setDepartments] = useState<{ value: string; label: string }[]>([])
-  const [employees, setEmployees] = useState<{ value: string; label: string; number: string }[]>([])
   const taskDept = (initialData?.department as string) || ''
   const [selectedDepts, setSelectedDepts] = useState<string[]>(taskDept ? [taskDept] : [])
   const [selectedNumbers, setSelectedNumbers] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [resultData, setResultData] = useState<Record<string, unknown> | null>(null)
@@ -40,48 +38,45 @@ export default function TrainingSelectClient({
   const factory = (initialData?.factory as string) || 'old'
   const isNew = factory === 'new'
 
-  useEffect(() => {
-    const fetchFn = isNew ? fetchNewDepartments : fetchDepartments
-    fetchFn({ page_size: 100 }).then((res) => {
-      const list = (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
-      setDepartments(list)
-    })
-  }, [isNew])
+const { data: departments = [] } = useQuery({
+    queryKey: ['departments', isNew],
+    queryFn: async () => {
+      const fetchFn = isNew ? fetchNewDepartments : fetchDepartments
+      const res = await fetchFn({ page_size: 100 })
+      return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
+    },
+  })
 
-  const loadEmployees = useCallback(async (depts: string[]) => {
-    if (!depts || depts.length === 0) {
-      setEmployees([])
-      setSelectedNumbers([])
-      return
-    }
-    setLoading(true)
-    const fetchFn = isNew ? fetchNewEmployees : fetchEmployees
-    const all: { value: string; label: string; number: string }[] = []
-    for (const dept of depts) {
-      try {
-        const res = await fetchFn({ department: dept, page_size: 100 })
-        const list = (res.data || []).map((e: Employee) => ({
-          value: e.employee_number,
-          label: `${e.name} (${e.employee_number || ''})`,
-          number: e.employee_number,
-        }))
-        all.push(...list)
-      } catch {
-        // ignore
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees', selectedDepts, isNew],
+    queryFn: async () => {
+      if (!selectedDepts || selectedDepts.length === 0) {
+        return []
       }
-    }
-    const map = new Map(all.map((e) => [e.value, e]))
-    const uniqueList = Array.from(map.values())
-    setEmployees(uniqueList)
-    setLoading(false)
-  }, [isNew])
+      const fetchFn = isNew ? fetchNewEmployees : fetchEmployees
+      const all: { value: string; label: string; number: string }[] = []
+      for (const dept of selectedDepts) {
+        try {
+          const res = await fetchFn({ department: dept, page_size: 100 })
+          const list = (res.data || []).map((e: Employee) => ({
+            value: e.employee_number,
+            label: `${e.name} (${e.employee_number || ''})`,
+            number: e.employee_number,
+          }))
+          all.push(...list)
+        } catch {
+          // ignore
+        }
+      }
+      const map = new Map(all.map((e) => [e.value, e]))
+      return Array.from(map.values())
+    },
+    enabled: departments.length > 0 && selectedDepts.length > 0,
+  })
 
-  // 部门列表加载完成后，自动加载任务对应部门的员工
-  useEffect(() => {
-    if (departments.length > 0 && taskDept) {
-      loadEmployees([taskDept])
-    }
-  }, [departments, taskDept, loadEmployees])
+  const loading = false
+
+
 
   const handleSubmit = async () => {
     if (selectedNumbers.length === 0) {
@@ -199,7 +194,6 @@ export default function TrainingSelectClient({
           className="w-full"
           onChange={(value: string[]) => {
             setSelectedDepts(value)
-            loadEmployees(value)
           }}
           loading={loading}
         />
