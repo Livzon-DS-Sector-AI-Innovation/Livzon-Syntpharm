@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {Card, Spin, Segmented, Empty, Alert} from 'antd'
 import ReactECharts from 'echarts-for-react'
@@ -13,12 +13,6 @@ const CHART_COLORS = [
   '#8b5cf6', '#f59e0b', '#0075de', '#ff64c8', '#2a9d99', '#523410',
 ]
 
-interface WorkshopMonthData {
-  workshop: string
-  months: number[]
-  total: number
-  batches: number
-}
 
 interface Props {
   year: number
@@ -167,7 +161,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
   }, [ranking, visibleSet, months, trendType])
 
   const toggleWorkshop = (workshop: string) => {
-    setVisibleSet((prev) => {
+    setVisibleSet((prev: Set<string>) => {
       const next = new Set(prev)
       if (next.has(workshop)) next.delete(workshop)
       else next.add(workshop)
@@ -258,7 +252,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
 
           {/* Workshop checkboxes */}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-            {ranking.map((w, i) => (
+            {ranking.map((w: any, i: any) => (
               <label key={w.workshop} className="flex items-center gap-1.5 cursor-pointer text-sm">
                 <input
                   type="checkbox"

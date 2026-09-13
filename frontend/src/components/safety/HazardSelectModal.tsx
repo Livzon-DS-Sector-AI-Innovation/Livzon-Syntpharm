@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {Modal, Table, Input, Button, Space, Tag, App} from 'antd'
+import {Modal, Table, Input, Button, Space, Tag} from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getHazardRiskOptions } from '@/actions/safety'
@@ -19,7 +19,6 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
   const [keyword, setKeyword] = useState('')
   const [department, setDepartment] = useState<string | undefined>()
   const [page, setPage] = useState(1)
-  const { message } = App.useApp()
 
   const { data: queryData, isLoading: loading } = useQuery({
     queryKey: ['hazard-risk-options', keyword, department, page],

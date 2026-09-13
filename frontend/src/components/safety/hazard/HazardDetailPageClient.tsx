@@ -1,15 +1,15 @@
 'use client'
 
 import type { UploadFile } from "antd";
+import { App } from 'antd';
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Button,
   Space,
   Typography,
-  App,
   Spin,
   Image,
   Row,
@@ -506,7 +506,7 @@ export function HazardDetailPageClient() {
   }
 
   const handleDepartmentChange = async (dept: string) => {
-    setEdits((p) => ({ ...p, department: dept }))
+    setEdits((p: any) => ({ ...p, department: dept }))
     if (!dept) return
     setLeaderLoading(true)
     try {
@@ -514,15 +514,15 @@ export function HazardDetailPageClient() {
       if (res.code === 200 && res.data?.leader_name) {
         const name: string = res.data.leader_name
         const leaderId: string | null = res.data.leader_id || null
-        setEdits((p) => ({
+        setEdits((p: any) => ({
           ...p,
           rectification_responsible_person: leaderId || '',
           rectification_responsible_person_name: name,
         }))
         // 预填负责人到选项列表，确保 Select 正确显示
         if (leaderId) {
-          setUserOptions((prev) => {
-            const exists = prev.some((o) => o.value === leaderId)
+          setUserOptions((prev: UserOption[]) => {
+            const exists = prev.some((o: UserOption) => o.value === leaderId)
             if (exists) return prev
             return [{ value: leaderId, label: `${name} - ${dept}` }, ...prev]
           })
@@ -628,7 +628,7 @@ export function HazardDetailPageClient() {
       }
 
       // 2. 上传新照片
-      const pendingFiles = replyFiles.filter((f) => f.originFileObj)
+      const pendingFiles = replyFiles.filter((f: UploadFile) => f.originFileObj)
       // 从数据库读取原始路径（不经过 URL 转换），避免存储混合格式
       let existingPaths: string[] = []
       if (record.rectification_photos) {
@@ -850,7 +850,7 @@ export function HazardDetailPageClient() {
                   <FieldEditor label="检查日期">
                     <DatePicker showTime style={{ width: '100%' }}
                       value={fieldVal('discovered_at') ? dayjs(fieldVal('discovered_at')) : null}
-                      onChange={(d) => setEdits((p) => ({ ...p, discovered_at: d?.toISOString() || '' }))} />
+                      onChange={(d) => setEdits((p: any) => ({ ...p, discovered_at: d?.toISOString() || '' }))} />
                   </FieldEditor>
                 </Col>
                 <Col span={8}>
@@ -858,7 +858,7 @@ export function HazardDetailPageClient() {
                     <Input
                       placeholder="多维表格自动填入"
                       value={fieldVal('discovered_by_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, discovered_by_name: e.target.value }))}
+                      onChange={(e) => setEdits((p: any) => ({ ...p, discovered_by_name: e.target.value }))}
                     />
                   </FieldEditor>
                 </Col>
@@ -867,7 +867,7 @@ export function HazardDetailPageClient() {
                     <Input
                       placeholder="多维表格自动填入"
                       value={fieldVal('rectification_responsible_person_name')}
-                      onChange={(e) => setEdits((p) => ({ ...p, rectification_responsible_person_name: e.target.value }))}
+                      onChange={(e) => setEdits((p: any) => ({ ...p, rectification_responsible_person_name: e.target.value }))}
                     />
                   </FieldEditor>
                 </Col>
@@ -875,7 +875,7 @@ export function HazardDetailPageClient() {
                   <FieldEditor label="检查类别">
                     <Select style={{ width: '100%' }}
                       value={fieldVal('inspection_category')}
-                      onChange={(v) => setEdits((p) => ({ ...p, inspection_category: v }))}
+                      onChange={(v) => setEdits((p: any) => ({ ...p, inspection_category: v }))}
                       options={INSPECTION_CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
                   </FieldEditor>
                 </Col>
@@ -898,7 +898,7 @@ export function HazardDetailPageClient() {
                 <Col span={24}>
                   <FieldEditor label="隐患描述">
                     <TextArea rows={3} value={fieldVal('description')}
-                      onChange={(e) => setEdits((p) => ({ ...p, description: e.target.value }))} />
+                      onChange={(e) => setEdits((p: any) => ({ ...p, description: e.target.value }))} />
                   </FieldEditor>
                 </Col>
               </Row>
@@ -981,7 +981,7 @@ export function HazardDetailPageClient() {
                     <FieldEditor label="隐患分类（AI）">
                       <Select style={{ width: '100%' }}
                         value={fieldVal('hazard_type')}
-                        onChange={(v) => setEdits((p) => ({ ...p, hazard_type: v }))}
+                        onChange={(v) => setEdits((p: any) => ({ ...p, hazard_type: v }))}
                         options={HAZARD_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
                     </FieldEditor>
                   </Col>
@@ -989,7 +989,7 @@ export function HazardDetailPageClient() {
                     <FieldEditor label="隐患类别（AI）">
                       <Select style={{ width: '100%' }}
                         value={fieldVal('hazard_category')}
-                        onChange={(v) => setEdits((p) => ({ ...p, hazard_category: v }))}
+                        onChange={(v) => setEdits((p: any) => ({ ...p, hazard_category: v }))}
                         options={HAZARD_CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
                     </FieldEditor>
                   </Col>
@@ -997,26 +997,26 @@ export function HazardDetailPageClient() {
                     <FieldEditor label="隐患级别（AI）">
                       <Select style={{ width: '100%' }}
                         value={fieldVal('hazard_level')}
-                        onChange={(v) => setEdits((p) => ({ ...p, hazard_level: v }))}
+                        onChange={(v) => setEdits((p: any) => ({ ...p, hazard_level: v }))}
                         options={HAZARD_LEVEL_OPTIONS.map((o) => ({ value: o.value, label: o.label }))} />
                     </FieldEditor>
                   </Col>
                   <Col span={24}>
                     <FieldEditor label="隐患描述（AI）">
                       <TextArea rows={3} value={fieldVal('key_defect')}
-                        onChange={(e) => setEdits((p) => ({ ...p, key_defect: e.target.value }))} />
+                        onChange={(e) => setEdits((p: any) => ({ ...p, key_defect: e.target.value }))} />
                     </FieldEditor>
                   </Col>
                   <Col span={24}>
                     <FieldEditor label="隐患判定依据（AI）">
                       <TextArea rows={2} value={fieldVal('major_hazard_basis')}
-                        onChange={(e) => setEdits((p) => ({ ...p, major_hazard_basis: e.target.value }))} />
+                        onChange={(e) => setEdits((p: any) => ({ ...p, major_hazard_basis: e.target.value }))} />
                     </FieldEditor>
                   </Col>
                   <Col span={24}>
                     <FieldEditor label="整改建议（AI）">
                       <TextArea rows={4} value={fieldVal('corrective_preventive_measures')}
-                        onChange={(e) => setEdits((p) => ({ ...p, corrective_preventive_measures: e.target.value }))}
+                        onChange={(e) => setEdits((p: any) => ({ ...p, corrective_preventive_measures: e.target.value }))}
                         placeholder="AI 生成的整改建议，可手动修正" />
                     </FieldEditor>
                   </Col>
@@ -1124,7 +1124,7 @@ export function HazardDetailPageClient() {
                     <FieldEditor label="整改完成时间">
                       <DatePicker style={{ width: '100%' }}
                         value={fieldVal('actual_completion_date') ? dayjs(fieldVal('actual_completion_date')) : null}
-                        onChange={(d) => setEdits((p) => ({ ...p, actual_completion_date: d?.toISOString() || '' }))} />
+                        onChange={(d) => setEdits((p: any) => ({ ...p, actual_completion_date: d?.toISOString() || '' }))} />
                     </FieldEditor>
                   </Col>
                 </Row>
@@ -1132,7 +1132,7 @@ export function HazardDetailPageClient() {
                 <FieldEditor label="纠正预防措施">
                   <TextArea rows={5}
                     value={fieldVal('rectification_reply')}
-                    onChange={(e) => setEdits((p) => ({ ...p, rectification_reply: e.target.value }))}
+                    onChange={(e) => setEdits((p: any) => ({ ...p, rectification_reply: e.target.value }))}
                     placeholder="请详细描述纠正预防措施，包括具体整改措施、实施过程、完成情况等" />
                 </FieldEditor>
 
@@ -1279,7 +1279,7 @@ export function HazardDetailPageClient() {
         open={verifyModalVisible}
         record={record}
         onClose={() => setVerifyModalVisible(false)}
-        onSuccess={(updated) => { ; setVerifyModalVisible(false) }}
+        onSuccess={(_updated) => { ; setVerifyModalVisible(false) }}
       />
     </div>
   )

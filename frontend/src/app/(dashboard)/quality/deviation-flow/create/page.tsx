@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Form, Input, Select, DatePicker, Button, Space,
@@ -216,7 +216,6 @@ export default function DeviationCreatePage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-
       const response = await fetch(`${API_BASE}/quality/deviation-flow/${currentDeviationId}/attachments`, {
         method: 'POST',
         body: formData,
@@ -303,7 +302,7 @@ export default function DeviationCreatePage() {
       if (isEditMode && currentDeviationId) {
         await saveData('', 'PUT')
       } else {
-        const result = await saveData('', 'POST') as { data: { id: string } }
+        await saveData('', 'POST')
       }
 
       message.success('保存成功')

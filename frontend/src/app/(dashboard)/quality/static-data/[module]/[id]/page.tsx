@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import {
@@ -243,8 +243,6 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     },
     enabled: !!id && !isNew,
   })
-
-  const record = recordData || {}
 
 
 
@@ -820,7 +818,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
                 </Upload>
                 {attachFiles.length > 0 && (
                   <div style={{ marginTop: 8 }}>
-                    {attachFiles.map((file) => (
+                    {attachFiles.map((file: any) => (
                       <div key={file.uid} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <PaperClipOutlined />
                         <Text>{file.name}</Text>

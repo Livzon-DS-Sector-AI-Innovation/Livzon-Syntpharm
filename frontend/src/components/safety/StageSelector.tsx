@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Checkbox, Space, Typography, Tag, Spin, Alert } from 'antd'
 import { NodeIndexOutlined } from '@ant-design/icons'
 import { getRegulationStages } from '@/actions/safety'
-import type { RegulationStageInfo } from '@/types/safety'
 
 const { Text } = Typography
 

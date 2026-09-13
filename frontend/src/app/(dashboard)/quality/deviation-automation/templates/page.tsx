@@ -1,8 +1,8 @@
 'use client'
 import {deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -49,7 +49,6 @@ export default function TemplateManagementPage() {
   const [uploadingTemplateId, setUploadingTemplateId] = useState<number | null>(null)
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([])
   const [uploading, setUploading] = useState(false)
-  const queryClient = useQueryClient()
 
   const [paginationState, setPaginationState] = useState({ current: 1, pageSize: 20 })
 

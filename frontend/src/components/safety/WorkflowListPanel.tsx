@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -386,9 +386,9 @@ export default function WorkflowListPanel() {
         const rowNum = ((queryParams.page || 1) - 1) * (queryParams.page_size || 20) + index + 1
 
         const handleToggle = () => {
-          setSelectedRowKeys((prev) =>
+          setSelectedRowKeys((prev: any) =>
             prev.includes(record.id)
-              ? prev.filter((k) => k !== record.id)
+              ? prev.filter((k: any) => k !== record.id)
               : [...prev, record.id]
           )
         }
@@ -652,7 +652,7 @@ export default function WorkflowListPanel() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {FILTER_FIELDS.map((field) => {
-              const isApplied = activeFilters.some((f) => f.key === field.key)
+              const isApplied = activeFilters.some((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => f.key === field.key)
               return (
                 <div
                   key={field.key}
@@ -827,7 +827,7 @@ export default function WorkflowListPanel() {
           }}
         >
           {/* 活跃筛选条件 chips */}
-          {activeFilters.map((f) => (
+          {activeFilters.map((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => (
             <div
               key={f.key}
               style={{
@@ -1028,7 +1028,7 @@ export default function WorkflowListPanel() {
           scroll={{ x: 'max-content' }}
           onRow={(record) => ({
             onMouseEnter: () => setHoveredRowId(record.id),
-            onMouseLeave: () => setHoveredRowId((prev) => (prev === record.id ? null : prev)),
+            onMouseLeave: () => setHoveredRowId((prev: any) => (prev === record.id ? null : prev)),
           })}
           pagination={{
             current: queryParams.page,

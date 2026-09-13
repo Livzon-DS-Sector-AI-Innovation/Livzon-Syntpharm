@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
@@ -61,7 +61,7 @@ export function PressureManualInputPageClient() {
       const initial: Record<string, number | null> = {}
       for (const p of points) {
         for (const slot of timeSlots) {
-          initial[`${p.point_id}::${slot}`] = null
+          initial[`${p.point_id}::${slot}`] = null as number | null
         }
       }
       setValues(initial)
@@ -149,7 +149,7 @@ export function PressureManualInputPageClient() {
       width: 120,
       align: 'center' as const,
     },
-    ...timeSlots.map((slot) => ({
+    ...timeSlots.map((slot: any) => ({
       title: slot,
       key: slot,
       width: 120,
@@ -197,7 +197,7 @@ export function PressureManualInputPageClient() {
         <div className="mb-2">
           <Text type="secondary">时段列：</Text>
           <Space>
-            {timeSlots.map((slot, idx) => (
+            {timeSlots.map((slot: any, idx: any) => (
               <Input
                 key={idx}
                 size="small"

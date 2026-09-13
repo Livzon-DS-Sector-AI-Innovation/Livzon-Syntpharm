@@ -1,7 +1,7 @@
 'use client'
 import {updateAIResult, generateStandard} from '@/actions/quality'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { use } from 'react'
 import {

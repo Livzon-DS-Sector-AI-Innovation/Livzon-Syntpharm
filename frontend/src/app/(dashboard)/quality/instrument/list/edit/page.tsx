@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Card,
@@ -30,7 +30,6 @@ import {
   createCalibrationRule,
 } from '@/actions/instrument'
 import type {
-  Instrument,
   InstrumentUpdate,
   CalibrationRuleCreate,
 } from '@/types/instrument'

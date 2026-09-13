@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Drawer,
@@ -32,7 +32,7 @@ import KnowledgeCardEditor from './KnowledgeCardEditor'
 import InjectionPreviewModal from './InjectionPreviewModal'
 import AgentUsageStats from './AgentUsageStats'
 import PptGeneratorPanel from './PptGeneratorPanel'
-import type { SafetyKnowledgeArticle, VersionChainItem } from '@/types/safety'
+import type { SafetyKnowledgeArticle } from '@/types/safety'
 import { KNOWLEDGE_CATEGORY_OPTIONS } from '@/types/safety'
 import dayjs from 'dayjs'
 
