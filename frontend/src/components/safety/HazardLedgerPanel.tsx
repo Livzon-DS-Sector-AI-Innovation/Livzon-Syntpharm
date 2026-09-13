@@ -119,7 +119,7 @@ export default function HazardLedgerPanel() {
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
-  const searchKeywordRef = useRef('')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [riskLevel, setRiskLevel] = useState<string | undefined>()
   const [department, setDepartment] = useState<string | undefined>()
   const [position, setPosition] = useState<string | undefined>()
@@ -221,12 +221,12 @@ export default function HazardLedgerPanel() {
   }, [department, position, riskLevel, dateRange])
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazard-identifications-panel', queryParams, department, position, riskLevel, dateRange, searchKeywordRef.current, sortField, sortOrder],
+    queryKey: ['hazard-identifications-panel', queryParams, department, position, riskLevel, dateRange, searchKeyword, sortField, sortOrder],
     queryFn: async () => {
       const res = await getHazardIdentifications({
         ...queryParams,
         overall_status: 'completed',
-        keyword: searchKeywordRef.current || undefined,
+        keyword: searchKeyword || undefined,
         department,
         position,
         risk_level: riskLevel,
@@ -259,7 +259,7 @@ export default function HazardLedgerPanel() {
 
 
   const handleSearch = () => {
-    searchKeywordRef.current = keyword
+    setSearchKeyword(keyword)
     setSearchApplied(true)
     setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
@@ -268,7 +268,7 @@ export default function HazardLedgerPanel() {
   }
 
   const handleSearchBack = () => {
-    searchKeywordRef.current = ''
+    setSearchKeyword('')
     setKeyword('')
     setSearchApplied(false)
     queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })

@@ -50,7 +50,7 @@ export function StageModuleLayout({ title, description, stage, children }: Stage
     },
   })
 
-  const projects = queryData?.items || []
+  const projects = useMemo(() => queryData?.items || [], [queryData])
 
 
 

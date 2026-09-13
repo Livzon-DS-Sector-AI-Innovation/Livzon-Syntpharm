@@ -150,7 +150,7 @@ export default function HazardLedgerPage() {
   const { message: msgApi, modal } = App.useApp()
   const [searchText, setSearchText] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
-  const searchKeywordRef = useRef('')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
@@ -271,7 +271,7 @@ export default function HazardLedgerPage() {
   }
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeywordRef.current, sortField, sortOrder],
+    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeyword, sortField, sortOrder],
     queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
@@ -281,7 +281,7 @@ export default function HazardLedgerPage() {
         hazard_category: categoryFilter,
         inspection_category: inspectionCategoryFilter,
         department: deptFilter,
-        keyword: searchKeywordRef.current || undefined,
+        keyword: searchKeyword || undefined,
       } as HazardReportQueryParams)
       if (response.code === 200) {
         let data = response.data || []
@@ -326,14 +326,14 @@ export default function HazardLedgerPage() {
   // 排序变化时重新加载
 
   const handleSearch = () => {
-    searchKeywordRef.current = searchText
+    setSearchKeyword(searchText)
     setSearchApplied(true)
     setHazardQueryParams({ page: 1 })
     queryClient.invalidateQueries({ queryKey: ['hazards'] })
   }
 
   const handleSearchBack = () => {
-    searchKeywordRef.current = ''
+    setSearchKeyword('')
     setSearchText('')
     setSearchApplied(false)
     queryClient.invalidateQueries({ queryKey: ['hazards'] })

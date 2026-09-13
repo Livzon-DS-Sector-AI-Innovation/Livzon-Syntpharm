@@ -65,7 +65,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
     },
   })
 
-  const ranking = queryData || []
+  const ranking = useMemo(() => queryData || [], [queryData])
   const error = queryError?.message || null
   const [visibleSet, setVisibleSet] = useState<Set<string>>(new Set())
   const prevRankingLengthRef = useRef(0)
@@ -73,7 +73,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
   // Initialize visibleSet when ranking changes (only once per data load)
   useEffect(() => {
     if (ranking.length > 0 && prevRankingLengthRef.current === 0) {
-      setVisibleSet(new Set(ranking.slice(0, 3).map((w: any) => w.workshop)))
+      setVisibleSet(new Set(ranking.slice(0, 3).map((w) => w.workshop)))
     }
     prevRankingLengthRef.current = ranking.length
   }, [ranking])

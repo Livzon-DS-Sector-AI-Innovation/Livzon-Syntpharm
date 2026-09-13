@@ -27,7 +27,7 @@ const config = [
           caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/set-state-in-effect": "error",
       
       // React Compiler rules - disable to avoid build failures
       "react-hooks/static-components": "off",

@@ -108,7 +108,7 @@ export default function WorkflowListPanel() {
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
-  const searchKeywordRef = useRef('')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [progressFilter, setProgressFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
@@ -190,13 +190,13 @@ export default function WorkflowListPanel() {
   }
 
   const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazard-identifications-workflow', queryParams, statusFilter, progressFilter, deptFilter, activeBatchId, sortField, sortOrder, msgApi, searchKeywordRef.current],
+    queryKey: ['hazard-identifications-workflow', queryParams, statusFilter, progressFilter, deptFilter, activeBatchId, sortField, sortOrder, msgApi, searchKeyword],
     queryFn: async () => {
     
     try {
       const res = await getHazardIdentifications({
         ...queryParams,
-        keyword: searchKeywordRef.current || undefined,
+        keyword: searchKeyword || undefined,
         overall_status: statusFilter,
         ai_node_progress: progressFilter,
         department: deptFilter,
@@ -243,7 +243,7 @@ export default function WorkflowListPanel() {
   // 排序变化时重新加载
 
   const handleSearch = () => {
-    searchKeywordRef.current = keyword
+    setSearchKeyword(keyword)
     setSearchApplied(true)
     setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
@@ -251,7 +251,7 @@ export default function WorkflowListPanel() {
   }
 
   const handleSearchBack = () => {
-    searchKeywordRef.current = ''
+    setSearchKeyword('')
     setKeyword('')
     setSearchApplied(false)
     queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
