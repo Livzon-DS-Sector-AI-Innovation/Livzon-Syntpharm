@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, Row, Col, Statistic, Table, Spin, Empty, Alert, Button, Tag } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined, DownloadOutlined } from '@ant-design/icons'
 import type { MonthlyTrend, WorkshopRanking } from "@/types/product-output";
@@ -14,31 +15,20 @@ interface Props {
 }
 
 export default function AnnualReviewTab({ year }: Props) {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [data, setData] = useState<AnnualReviewData | null>(null)
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const { data, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['annual-review', year],
+    queryFn: async () => {
       const res = await fetchAnnualReview(year)
       if (res.code !== 200) {
-        setError((res.message as string) || '加载数据失败')
-        return
+        throw new Error((res.message as string) || '加载数据失败')
       }
-      setData(res.data as AnnualReviewData)
-    } catch (err) {
-      console.error('Failed to load annual review:', err)
-      setError('加载年度回顾数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [year])
+      return res.data as AnnualReviewData
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const error = queryError?.message || null
+
+
 
   const handleExport = async () => {
     try {

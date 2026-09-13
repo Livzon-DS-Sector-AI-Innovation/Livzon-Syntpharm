@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Typography,
@@ -32,41 +33,43 @@ const { Title, Text } = Typography
 
 export function PressureManualInputPageClient() {
   const { message } = App.useApp()
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [area, setArea] = useState<string>('无菌区')
   const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs>(dayjs())
-  const [points, setPoints] = useState<PointMapping[]>([])
-  const [values, setValues] = useState<Record<string, number | null>>({})
   const [timeSlots, setTimeSlots] = useState<string[]>(['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'])
   const [addModalOpen, setAddModalOpen] = useState(false)
   const [addForm] = Form.useForm()
+  const queryClient = useQueryClient()
 
-  const loadPoints = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: points = [], isLoading: loading } = useQuery({
+    queryKey: ['point-mappings', area],
+    queryFn: async () => {
       const res = await getPointMappings({ area, page_size: 200 })
       if (res.code === 200) {
-        const data = res.data || []
-        setPoints(data)
-        const initial: Record<string, number | null> = {}
-        for (const p of data) {
-          for (const slot of timeSlots) {
-            initial[`${p.point_id}::${slot}`] = null
-          }
-        }
-        setValues(initial)
+        return res.data || []
       }
-    } catch {
-      message.error('加载位点失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [area, timeSlots, message])
+      return []
+    },
+  })
 
+  const [values, setValues] = useState<Record<string, number | null>>({})
+  const prevPointsLengthRef = useRef(0)
+
+  // Initialize values when points or timeSlots change (only once per data load)
   useEffect(() => {
-    loadPoints()
-  }, [loadPoints])
+    if (points.length > 0 && prevPointsLengthRef.current === 0) {
+      const initial: Record<string, number | null> = {}
+      for (const p of points) {
+        for (const slot of timeSlots) {
+          initial[`${p.point_id}::${slot}`] = null
+        }
+      }
+      setValues(initial)
+    }
+    prevPointsLengthRef.current = points.length
+  }, [points, timeSlots])
+
+
 
   const handleAddPoint = async () => {
     try {
@@ -84,7 +87,7 @@ export function PressureManualInputPageClient() {
         message.success('位点添加成功')
         setAddModalOpen(false)
         addForm.resetFields()
-        loadPoints()
+        queryClient.invalidateQueries({ queryKey: ['point-mappings', area] })
       } else {
         message.error(res.message || '添加失败')
       }
@@ -182,7 +185,7 @@ export function PressureManualInputPageClient() {
             value={selectedDate}
             onChange={(d) => d && setSelectedDate(d)}
           />
-          <Button icon={<ReloadOutlined />} onClick={loadPoints}>刷新位点</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['point-mappings', area] })}>刷新位点</Button>
           <Button icon={<PlusOutlined />} onClick={() => setAddModalOpen(true)}>
             新增位点
           </Button>
