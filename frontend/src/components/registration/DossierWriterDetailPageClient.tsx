@@ -643,6 +643,7 @@ export function DossierWriterDetailPageClient() {
                     label: 'AI 智能填充',
                     children: (
                       <AiFillPanel
+                        key={selectedChapter.id}
                         chapterId={selectedChapter.id}
                         chapterCode={selectedChapter.chapter_code || undefined}
                         assets={selectedChapter.assets || []}

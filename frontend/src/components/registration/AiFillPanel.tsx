@@ -1,6 +1,6 @@
 'use client'
 
-import {useState, useEffect} from 'react'
+import {useState} from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   App, Button, Tag, Select, Input, Space, Alert,
@@ -74,13 +74,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKe
 
 
   // Selected assets (loaded from API)
-  // Reset fill state when chapter changes
-  useEffect(() => {
-    setFillDone(false)
-    setPreviewResult(null)
-    setEditedFields([])
-    setFillResults([])
-  }, [chapterId])
+  // Note: Component remounts when chapterId changes (via key prop in parent)
 
   // Load selected assets (including inherited)
   const { data: selectedAssets = [], refetch: _refetchSelectedAssets } = useQuery({
