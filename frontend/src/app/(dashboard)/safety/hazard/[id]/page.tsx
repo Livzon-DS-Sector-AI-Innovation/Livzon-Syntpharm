@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Button,
@@ -17,13 +18,12 @@ import {
   DatePicker,
   Flex,
   Upload,
-  Avatar,
   Tag,
   Radio,
   Timeline,
+  UploadFile,
 } from 'antd'
 
-const { Paragraph } = Typography
 import {
   ArrowLeftOutlined,
   CheckCircleOutlined,
@@ -44,7 +44,7 @@ import {
   SyncOutlined,
 } from '@ant-design/icons'
 import { getHazard, updateHazard, replyRectification, reworkRectification, uploadRectificationPhoto, getDepartmentLeader, getDepartmentSafetyOfficer, notifyReviewer, notifyRectification, triggerRectificationReview, verifyLevel } from '@/actions/safety'
-import type { HazardReport } from '@/types/safety'
+import type { HazardReport, HazardReportFormData } from '@/types/safety'
 import {
   HAZARD_TYPE_OPTIONS,
   HAZARD_LEVEL_OPTIONS,
@@ -434,8 +434,6 @@ export default function HazardLedgerDetailPage() {
   const id = params.id as string
   const { message, modal } = App.useApp()
 
-  const [record, setRecord] = useState<HazardReport | null>(null)
-  const [loading, setLoading] = useState(true)
 
   // 编辑状态
   const [editSection, setEditSection] = useState<'registration' | 'ai' | 'rectification' | null>(null)
@@ -443,19 +441,56 @@ export default function HazardLedgerDetailPage() {
   const [saving, setSaving] = useState(false)
 
   // 整改回复状态
-  const [replyFiles, setReplyFiles] = useState<any[]>([])
+  const [replyFiles, setReplyFiles] = useState<UploadFile[]>([])
   const [replySubmitting, setReplySubmitting] = useState(false)
   const [_leaderLoading, setLeaderLoading] = useState(false)
   const [notifyLoading, setNotifyLoading] = useState(false)
   const [aiReviewTriggering, setAiReviewTriggering] = useState(false)
   const [notifyRectLoading, setNotifyRectLoading] = useState(false)
-  const [safetyOfficerName, setSafetyOfficerName] = useState<string | null>(null)
 
   // ── 人员搜索状态 ──
   interface UserOption { value: string; label: string }
   const [_userOptions, setUserOptions] = useState<UserOption[]>([])
   const [_userSearchLoading, setUserSearchLoading] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  const queryClient = useQueryClient()
+
+  const { data: record, isLoading: loading, refetch: _refetch } = useQuery({
+    queryKey: ['safety-hazard', id],
+    queryFn: async () => {
+      const response = await getHazard(id)
+      if (response.code === 200) {
+        return response.data as HazardReport
+      }
+      return null
+    },
+    enabled: !!id,
+  })
+
+  // Dependent query for safety officer info
+  const { data: safetyOfficerName } = useQuery({
+    queryKey: ['safety-hazard-officer', record?.department],
+    queryFn: async () => {
+      if (!record?.department) return null
+      try {
+        const soRes = await getDepartmentSafetyOfficer(record.department)
+        if (soRes.code === 200 && soRes.data?.safety_officer_name) {
+          return soRes.data.safety_officer_name
+        }
+      } catch {
+        // silent
+      }
+      return null
+    },
+    enabled: !!record?.department,
+  })
+
+  // Handle error case and redirect
+  if (!loading && !record && id) {
+    message.error('加载失败')
+    router.push('/safety/hazard-ledger')
+  }
 
   const _handleUserSearch = useCallback((keyword: string) => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
@@ -483,46 +518,12 @@ export default function HazardLedgerDetailPage() {
     }, 300)
   }, [])
 
-  const loadRecord = async () => {
-    try {
-      const response = await getHazard(id)
-      if (response.code === 200) {
-        const hazard = response.data as HazardReport
-        setRecord(hazard)
-        // 加载安全员信息
-        if (hazard.department) {
-          try {
-            const soRes = await getDepartmentSafetyOfficer(hazard.department)
-            if (soRes.code === 200 && soRes.data?.safety_officer_name) {
-              setSafetyOfficerName(soRes.data.safety_officer_name)
-            } else {
-              setSafetyOfficerName(null)
-            }
-          } catch {
-            setSafetyOfficerName(null)
-          }
-        }
-      } else {
-        console.error('加载隐患详情失败:', { id, code: response.code, message: response.message })
-        message.error(response.message || `加载失败 (${response.code})`)
-        router.push('/safety/hazard-ledger')
-      }
-    } catch (err) {
-      console.error('加载隐患详情异常:', { id, err })
-      message.error('加载失败，请检查网络或后端服务')
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  useEffect(() => {
-    if (id) loadRecord()
-  }, [id])
 
-  // 获取字段当前值
   const fieldVal = (field: string): string => {
-    if (editSection && field in edits) return edits[field] ?? (record as any)?.[field] ?? ''
-    return (record as any)?.[field] ?? ''
+    const rec = record as Record<string, unknown> | null
+    if (editSection && field in edits) return edits[field] ?? (rec?.[field] as string | undefined) ?? ''
+    return (rec?.[field] as string | undefined) ?? ''
   }
 
   const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {
@@ -561,12 +562,12 @@ export default function HazardLedgerDetailPage() {
       try {
         const soRes = await getDepartmentSafetyOfficer(dept)
         if (soRes.code === 200 && soRes.data?.safety_officer_name) {
-          setSafetyOfficerName(soRes.data.safety_officer_name)
+          
         } else {
-          setSafetyOfficerName(null)
+          
         }
       } catch {
-        setSafetyOfficerName(null)
+        
       }
     } catch {
       // silently ignore — user can search manually
@@ -579,10 +580,10 @@ export default function HazardLedgerDetailPage() {
     if (Object.keys(edits).length === 0) { setEditSection(null); return }
     setSaving(true)
     try {
-      const res = await updateHazard(id, edits as any)
+      const res = await updateHazard(id, edits as unknown as Partial<HazardReportFormData>)
       if (res.code === 200) {
         message.success('修改已保存')
-        setRecord(res.data as HazardReport)
+        queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
         setEditSection(null)
         setEdits({})
       } else {
@@ -689,7 +690,7 @@ export default function HazardLedgerDetailPage() {
         })
         if (res.code === 200) {
           message.success(`${levelLabel}复核${refs.action === 'approved' ? '通过' : '驳回'}`)
-          setRecord(res.data!)
+          queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
         } else {
           message.error(res.message || '复核失败')
           throw new Error(res.message) // 阻止弹窗关闭
@@ -865,7 +866,7 @@ export default function HazardLedgerDetailPage() {
           <div style={{ marginTop: 10, textAlign: 'center' }}>
             <Text style={{ fontSize: 12, color: '#8c8c8c' }}>AI 置信度 </Text>
             <Text style={{ fontSize: 13, fontWeight: 600 }}>
-              {Math.round(aiResult.confidence * 100)}%
+              {Math.round((aiResult.confidence as number) * 100)}%
             </Text>
           </div>
         )}
@@ -880,7 +881,7 @@ export default function HazardLedgerDetailPage() {
     try {
       // 1. 保存字段编辑
       if (Object.keys(edits).length > 0) {
-        const updateRes = await updateHazard(id, edits as any)
+        const updateRes = await updateHazard(id, edits as unknown as Partial<HazardReportFormData>)
         if (updateRes.code !== 200) {
           message.error(updateRes.message || '保存失败')
           setReplySubmitting(false)
@@ -937,7 +938,7 @@ export default function HazardLedgerDetailPage() {
 
       if (replyRes.code === 200) {
         message.success(isRework ? '已重新提交整改回复' : '整改回复已提交')
-        setRecord(replyRes.data as HazardReport)
+        queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
         setEditSection(null)
         setEdits({})
         setReplyFiles([])
@@ -1026,7 +1027,7 @@ export default function HazardLedgerDetailPage() {
                     if (res.code === 200) {
                       message.success(res.message || 'AI 初审已触发')
                       const updated = await getHazard(id)
-                      if (updated?.data) setRecord(updated.data)
+                      if (updated?.data) queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
                     } else {
                       message.error(res.message || '触发失败')
                     }
@@ -1459,7 +1460,7 @@ export default function HazardLedgerDetailPage() {
                           message.success(res.message || '飞书通知已发送')
                           // 刷新数据以展示通知状态
                           const updated = await getHazard(id)
-                          if (updated?.data) setRecord(updated.data)
+                          if (updated?.data) queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
                         } else {
                           message.error(res.message || '发送失败')
                         }
@@ -1698,7 +1699,7 @@ export default function HazardLedgerDetailPage() {
                           if (res.code === 200) {
                             message.success(res.message || '飞书通知已发送')
                             const updated = await getHazard(id)
-                            if (updated?.data) setRecord(updated.data)
+                            if (updated?.data) queryClient.invalidateQueries({ queryKey: ['safety-hazard'] })
                           } else {
                             message.error(res.message || '发送失败')
                           }

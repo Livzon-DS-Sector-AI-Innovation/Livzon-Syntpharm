@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { App, Button, Card, Form, InputNumber, Select, Spin, } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { createAnnualTrainingPlan } from '@/actions/hr'
 import { fetchDepartments } from '@/lib/api/client/hr'
 
@@ -12,22 +13,15 @@ export default function AnnualPlanForm() {
 
   const router = useRouter()
   const [form] = Form.useForm()
-  const [departments, setDepartments] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  useEffect(() => {
-    setLoading(true)
-    fetchDepartments({ page_size: 200 })
-      .then((res) => {
-        const names = (res.data || []).map((d: any) => d.name)
-        setDepartments(names)
-      })
-      .catch(() => {
-        message.error('加载部门列表失败')
-      })
-      .finally(() => setLoading(false))
-  }, [])
+  const { data: departments = [], isLoading: loading } = useQuery<string[]>({
+    queryKey: ['hr-departments-names'],
+    queryFn: async () => {
+      const res = await fetchDepartments({ page_size: 200 })
+      return (res.data || []).map((d: { name: string }) => d.name)
+    },
+  })
 
   const handleSubmit = async (values: { year: number; department: string }) => {
     setSubmitting(true)
@@ -44,8 +38,8 @@ export default function AnnualPlanForm() {
       } else {
         router.push('/hr/training/annual-plan')
       }
-    } catch (err: any) {
-      message.error(err.message || '创建失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '创建失败')
     } finally {
       setSubmitting(false)
     }

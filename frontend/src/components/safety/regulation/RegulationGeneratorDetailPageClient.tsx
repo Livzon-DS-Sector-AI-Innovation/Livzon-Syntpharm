@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Spin, Result, Button } from 'antd'
 import SopContentEditor from '../SopContentEditor'
@@ -36,15 +36,11 @@ export function RegulationGeneratorDetailPageClient() {
         setError(response.message || '未找到该操规记录')
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '加载失败')
+      setError(err instanceof Error ? (err instanceof Error ? err.message : null) : '加载失败')
     } finally {
       setLoading(false)
     }
   }, [id])
-
-  useEffect(() => {
-    fetchRegulation()
-  }, [fetchRegulation])
 
   const handleBack = useCallback(() => {
     router.push('/safety/regulation/generator')
@@ -87,6 +83,7 @@ export function RegulationGeneratorDetailPageClient() {
       top: 0, left: 0, right: 0, bottom: 0,
     }}>
       <SopContentEditor
+        key={`${regData.regulationId}-${regData.regulationName}`}
         regulationId={regData.regulationId}
         regulationName={regData.regulationName}
         content={regData.content}

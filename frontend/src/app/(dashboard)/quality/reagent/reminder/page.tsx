@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Form,
@@ -14,7 +15,6 @@ import {
   Tag,
   Divider,
   Typography,
-  Popconfirm,
   Row,
   Col,
   Alert,
@@ -33,17 +33,8 @@ import {
 } from '@ant-design/icons'
 import { saveReagentReminderConfig, triggerReagentReminderCheck, setReagentItemReminder } from '@/actions/quality-reagent'
 
-const { Title, Text } = Typography
+const { Title: _Title, Text } = Typography
 
-interface ReminderConfig {
-  feishu_app_id?: string
-  feishu_app_secret?: string
-  feishu_chat_id?: string
-  low_stock_threshold: number
-  is_enabled: boolean
-  last_remind_time?: string
-  last_remind_content?: string
-}
 
 interface LowStockItem {
   reagent_name: string
@@ -58,13 +49,11 @@ const API_BASE = '/api/v1'
 
 export default function ReagentReminderPage() {
   const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [checking, setChecking] = useState(false)
-  const [lowStockList, setLowStockList] = useState<LowStockItem[]>([])
-  const [lowStockLoading, setLowStockLoading] = useState(false)
   const [settingItem, setSettingItem] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const queryClient = useQueryClient()
 
   // 检测移动端
   useEffect(() => {
@@ -76,43 +65,39 @@ export default function ReagentReminderPage() {
   }, [])
 
   // 加载配置
-  const loadConfig = async () => {
-    setLoading(true)
-    try {
+  const { data: configData, isLoading: loading } = useQuery({
+    queryKey: ['reagent-reminder-config'],
+    queryFn: async () => {
       const response = await fetch(`${API_BASE}/quality/reagent-reminder/config`)
       const data = await response.json()
-      if (data.code === 200 && data.data) {
-        form.setFieldsValue({
-          feishu_app_id: data.data.feishu_app_id,
-          feishu_app_secret: data.data.feishu_app_secret,
-          feishu_chat_id: data.data.feishu_chat_id,
-          low_stock_threshold: data.data.low_stock_threshold,
-          is_enabled: data.data.is_enabled,
-        })
-      }
-    } catch (_error) {
-      message.error('加载配置失败')
-    } finally {
-      setLoading(false)
+      if (data.code === 200 && data.data) return data.data
+      return null
+    },
+  })
+
+  useEffect(() => {
+    if (configData) {
+      form.setFieldsValue({
+        feishu_app_id: configData.feishu_app_id,
+        feishu_app_secret: configData.feishu_app_secret,
+        feishu_chat_id: configData.feishu_chat_id,
+        low_stock_threshold: configData.low_stock_threshold,
+        is_enabled: configData.is_enabled,
+      })
     }
-  }
+  }, [configData, form])
 
   // 加载库存不足列表
-  const loadLowStock = async () => {
-    setLowStockLoading(true)
-    try {
+  const { data: lowStockList = [], isLoading: lowStockLoading, refetch: refetchLowStock } = useQuery({
+    queryKey: ['reagent-reminder-low-stock'],
+    queryFn: async () => {
       const threshold = form.getFieldValue('low_stock_threshold') || 2
       const response = await fetch(`${API_BASE}/quality/reagent-reminder/low-stock?threshold=${threshold}`)
       const data = await response.json()
-      if (data.code === 200) {
-        setLowStockList(data.data.items || [])
-      }
-    } catch (error) {
-      console.error('加载库存列表失败', error)
-    } finally {
-      setLowStockLoading(false)
-    }
-  }
+      if (data.code === 200) return data.data.items || []
+      return []
+    },
+  })
 
   // 保存配置
   const handleSave = async () => {
@@ -121,6 +106,7 @@ export default function ReagentReminderPage() {
       setSaving(true)
       const data = await saveReagentReminderConfig(values)
       if (data.code === 200) {
+        queryClient.invalidateQueries({ queryKey: ['reagent-reminder-config'] })
         message.success('保存成功')
       } else {
         message.error(data.message || '保存失败')
@@ -139,7 +125,7 @@ export default function ReagentReminderPage() {
       const data = await triggerReagentReminderCheck()
       if (data.code === 200) {
         message.success(data.message || '检查完成')
-        loadLowStock()
+        refetchLowStock()
       } else {
         message.error(data.message || '检查失败')
       }
@@ -156,7 +142,7 @@ export default function ReagentReminderPage() {
       const data = await setReagentItemReminder(reagentName, isEnabled)
       if (data.code === 200) {
         message.success(isEnabled ? '已开启提醒' : '已关闭提醒')
-        setLowStockList(prev => prev.map(item => item.reagent_name === reagentName ? { ...item, is_enabled: isEnabled } : item))
+        queryClient.invalidateQueries({ queryKey: ['low-stock-reagents'] })
       } else {
         message.error(data.message || '设置失败')
       }
@@ -167,9 +153,7 @@ export default function ReagentReminderPage() {
     }
   }
 
-  useEffect(() => {
-    loadConfig()
-  }, [])
+
 
   const columns = [
     { title: '试剂名称', dataIndex: 'reagent_name', key: 'reagent_name', ellipsis: true },
@@ -281,7 +265,7 @@ export default function ReagentReminderPage() {
                   {lowStockList.length > 0 && <Tag color="orange">{lowStockList.length}</Tag>}
                 </div>
               }
-              extra={<Button size="small" icon={<SyncOutlined spin={lowStockLoading} />} onClick={loadLowStock}>刷新</Button>}
+              extra={<Button size="small" icon={<SyncOutlined spin={lowStockLoading} />} onClick={() => refetchLowStock()}>刷新</Button>}
             >
               <Table
                 columns={columns}

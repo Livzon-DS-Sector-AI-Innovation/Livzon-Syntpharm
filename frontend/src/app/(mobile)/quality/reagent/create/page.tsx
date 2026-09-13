@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Button,
   Form,
@@ -518,39 +519,35 @@ export default function MobileReagentCreatePage() {
   const router = useRouter()
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
-  const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
+  const [uploadedUrls, _setUploadedUrls] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [_recognizedData, setRecognizedData] = useState<Record<string, string>>({})
 
-  // 初始化表单
-  const initForm = async () => {
-    form.resetFields()
-    let incomingLotNo = ''
-    try {
-      const response = await getNextIncomingLotNo()
-      if (response.code === 200 && response.data) {
-        incomingLotNo = response.data.incoming_lot_no
+  // 获取入场批号
+  const { data: lotNoData } = useQuery({
+    queryKey: ['next-incoming-lot-no'],
+    queryFn: async () => {
+      try {
+        const response = await getNextIncomingLotNo()
+        if (response.code === 200 && response.data) {
+          return response.data.incoming_lot_no
+        }
+      } catch (e) {
+        console.error('获取入场批号失败:', e)
       }
-    } catch (e) {
-      console.error('获取入场批号失败:', e)
-    }
-    form.setFieldsValue({
-      arrival_date: dayjs(),
-      category: '/',
-      quantity: 0,
-      unit: 'g',
-      incoming_lot_no: incomingLotNo,
-    })
-    setFileList([])
-    setUploadedUrls([])
-    setRecognizedData({})
-  }
+      return ''
+    },
+  })
 
-  // 初始化
+  // 初始化表单 - 使用 Form initialValues 和 lotNoData
   useEffect(() => {
-    initForm()
-  }, [])
+    if (lotNoData !== undefined) {
+      form.setFieldsValue({
+        incoming_lot_no: lotNoData,
+      })
+    }
+  }, [lotNoData, form])
 
   // AI识别
   const handleAiRecognize = async () => {
@@ -613,7 +610,7 @@ export default function MobileReagentCreatePage() {
       } else {
         message.error(response.message || 'AI识别失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('AI识别失败，请重试')
     } finally {
       setAiLoading(false)

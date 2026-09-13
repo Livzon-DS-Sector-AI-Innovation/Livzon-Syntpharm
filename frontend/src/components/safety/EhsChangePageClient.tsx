@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -13,12 +13,10 @@ import {
   Typography,
   Space,
   Tag,
-  Spin,
   Popconfirm,
   Descriptions,
   Drawer,
   Tabs,
-  InputNumber,
   Tooltip,
   Badge,
   Timeline,
@@ -36,8 +34,6 @@ import {
   RocketOutlined,
   LockOutlined,
   MinusCircleOutlined,
-  ExclamationCircleOutlined,
-  SwapOutlined,
 } from '@ant-design/icons'
 import {
   getEhsChanges,
@@ -52,9 +48,9 @@ import {
   closeEhsChange,
   cancelEhsChange,
   addRiskAssessment,
-  updateActionItem,
   updatePSSRChecklist,
   submitVerification,
+  updateActionItem,
 } from '@/actions/safety'
 import {
   CHANGE_TYPE_OPTIONS,
@@ -71,15 +67,11 @@ import {
 import type {
   EhsChange,
   EhsChangeFormData,
-  RiskAssessmentItem,
-  ApprovalChainItem,
-  ActionItem,
-  PSSRChecklistItem,
 } from '@/types/safety'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
-const { RangePicker } = DatePicker
+const { RangePicker: _RangePicker } = DatePicker
 
 // Status tag colors
 const statusColorMap: Record<string, string> = {
@@ -145,10 +137,6 @@ export function EhsChangePageClient() {
       setLoading(false)
     }
   }, [pagination.page, pagination.page_size, filters])
-
-  useEffect(() => {
-    loadChanges()
-  }, [loadChanges])
 
   // ── Create / Edit ──
 
@@ -865,10 +853,10 @@ function ApprovalChainTab({ change }: { change: EhsChange }) {
   )
 }
 
+function ActionItemsTab({ change, onRefresh }: { change: EhsChange; onRefresh: () => void }) {
 
 // ── Tab: Action Items ──
 
-function ActionItemsTab({ change, onRefresh }: { change: EhsChange; onRefresh: () => void }) {
   const { message } = App.useApp()
   const items = change.action_items || []
 

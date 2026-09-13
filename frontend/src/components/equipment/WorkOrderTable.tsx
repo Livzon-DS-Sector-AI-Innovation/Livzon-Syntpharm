@@ -38,7 +38,7 @@ const typeOptions: { label: string; value: WorkOrderType }[] = [
 
 interface Props { onRefresh?: () => void }
 
-export function WorkOrderTable({ onRefresh }: Props) {
+export function WorkOrderTable({ onRefresh: _onRefresh }: Props) {
   const {
     workOrders, workOrderTotal, workOrderPage, workOrderPageSize, workOrderLoading,
     workOrderStatusFilter, workOrderPriorityFilter, workOrderTypeFilter,

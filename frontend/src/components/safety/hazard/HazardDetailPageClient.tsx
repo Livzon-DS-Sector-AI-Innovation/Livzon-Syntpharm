@@ -1,6 +1,9 @@
 'use client'
 
+import type { UploadFile } from "antd";
+
 import { useEffect, useState, useRef, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Button,
@@ -16,7 +19,6 @@ import {
   DatePicker,
   Flex,
   Upload,
-  Avatar,
 } from 'antd'
 import {
   ArrowLeftOutlined,
@@ -419,10 +421,8 @@ export function HazardDetailPageClient() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
-  const { message, modal } = App.useApp()
+  const { message, modal: _modal } = App.useApp()
 
-  const [record, setRecord] = useState<HazardReport | null>(null)
-  const [loading, setLoading] = useState(true)
 
   // 编辑状态
   const [editSection, setEditSection] = useState<'registration' | 'ai' | 'rectification' | null>(null)
@@ -430,7 +430,7 @@ export function HazardDetailPageClient() {
   const [saving, setSaving] = useState(false)
 
   // 整改回复状态
-  const [replyFiles, setReplyFiles] = useState<any[]>([])
+  const [replyFiles, setReplyFiles] = useState<UploadFile[]>([])
   const [replySubmitting, setReplySubmitting] = useState(false)
   const [_leaderLoading, setLeaderLoading] = useState(false)
 
@@ -468,32 +468,32 @@ export function HazardDetailPageClient() {
   // Modal 状态
   const [verifyModalVisible, setVerifyModalVisible] = useState(false)
 
-  const loadRecord = async () => {
-    try {
+  const { data: record, isLoading: loading, error: recordError } = useQuery({
+    queryKey: ['hazard-detail', id],
+    queryFn: async () => {
       const response = await getHazard(id)
       if (response.code === 200) {
-        setRecord(response.data as HazardReport)
-      } else {
-        console.error('加载隐患详情失败:', { id, code: response.code, message: response.message })
-        message.error(response.message || `加载失败 (${response.code})`)
-        router.push('/safety/hazard-ledger')
+        return response.data as HazardReport
       }
-    } catch (err) {
-      console.error('加载隐患详情异常:', { id, err })
-      message.error('加载失败，请检查网络或后端服务')
-    } finally {
-      setLoading(false)
-    }
-  }
+      throw new Error(response.message || `加载失败 (${response.code})`)
+    },
+    enabled: !!id,
+  })
 
+  // Handle errors
   useEffect(() => {
-    if (id) loadRecord()
-  }, [id])
+    if (recordError) {
+      console.error('加载隐患详情失败:', recordError)
+      message.error(recordError instanceof Error ? recordError.message : '加载失败，请检查网络或后端服务')
+      router.push('/safety/hazard-ledger')
+    }
+  }, [recordError, message, router])
+
 
   // 获取字段当前值
   const fieldVal = (field: string): string => {
-    if (editSection && field in edits) return edits[field] ?? (record as any)?.[field] ?? ''
-    return (record as any)?.[field] ?? ''
+    if (editSection && field in edits) return edits[field] ?? ((record as unknown as Record<string, unknown>)?.[field] as string) ?? ''
+    return ((record as unknown as Record<string, unknown>)?.[field] as string) ?? ''
   }
 
   const handleEdit = (section: 'registration' | 'ai' | 'rectification') => {
@@ -539,10 +539,10 @@ export function HazardDetailPageClient() {
     if (Object.keys(edits).length === 0) { setEditSection(null); return }
     setSaving(true)
     try {
-      const res = await updateHazard(id, edits as any)
+      const res = await updateHazard(id, edits as Record<string, unknown>)
       if (res.code === 200) {
         message.success('修改已保存')
-        setRecord(res.data as HazardReport)
+        
         setEditSection(null)
         setEdits({})
       } else {
@@ -619,7 +619,7 @@ export function HazardDetailPageClient() {
     try {
       // 1. 保存字段编辑
       if (Object.keys(edits).length > 0) {
-        const updateRes = await updateHazard(id, edits as any)
+        const updateRes = await updateHazard(id, edits as Record<string, unknown>)
         if (updateRes.code !== 200) {
           message.error(updateRes.message || '保存失败')
           setReplySubmitting(false)
@@ -672,7 +672,7 @@ export function HazardDetailPageClient() {
 
       if (replyRes.code === 200) {
         message.success('整改回复已提交')
-        setRecord(replyRes.data as HazardReport)
+        
         setEditSection(null)
         setEdits({})
         setReplyFiles([])
@@ -927,7 +927,7 @@ export function HazardDetailPageClient() {
                     <FieldLabel>检查类别</FieldLabel>
                     <FieldTile>
                       {record.inspection_category
-                        ? record.inspection_category.split(/[,，]/).filter(Boolean).map((c, i) => (
+                        ? record.inspection_category.split(/[,，]/).filter(Boolean).map((c: string, i: number) => (
                           <StatusPill key={i} color="#5d5b54" bg="#f0eeec">{c.trim()}</StatusPill>))
                         : <Text style={{ fontSize: 14, color: '#a4a097' }}>-</Text>}
                     </FieldTile>
@@ -1279,7 +1279,7 @@ export function HazardDetailPageClient() {
         open={verifyModalVisible}
         record={record}
         onClose={() => setVerifyModalVisible(false)}
-        onSuccess={(updated) => { setRecord(updated); setVerifyModalVisible(false) }}
+        onSuccess={(updated) => { ; setVerifyModalVisible(false) }}
       />
     </div>
   )

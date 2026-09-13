@@ -24,15 +24,12 @@ import {
   PlayCircleOutlined,
   DeleteOutlined,
   ArrowLeftOutlined,
-  LoadingOutlined,
   FileTextOutlined,
 } from '@ant-design/icons'
 
 import {
   CheckConfig,
   FILE_TYPE_OPTIONS,
-  RiskLevel,
-  CheckStatus,
 } from '@/types/doc-check'
 
 const { Dragger } = Upload
@@ -53,10 +50,6 @@ interface UploadResponse {
   file_path: string
 }
 
-interface CheckResponse {
-  task_id: string
-  status: string
-}
 
 export default function DocCheckNewPage() {
   const router = useRouter()

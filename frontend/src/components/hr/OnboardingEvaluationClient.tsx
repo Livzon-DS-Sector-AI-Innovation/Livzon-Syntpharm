@@ -81,8 +81,8 @@ export default function OnboardingEvaluationClient() {
       }
       await generateOnboardingEvaluation(payload)
       message.success('员工上岗评估表已生成')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     } finally {
       setSubmitting(false)
     }

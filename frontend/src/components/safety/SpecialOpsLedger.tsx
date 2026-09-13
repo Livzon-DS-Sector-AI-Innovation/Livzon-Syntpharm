@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, DatePicker, Tag, Card,
   Typography, Drawer, Descriptions, Switch, App, Tooltip, Modal,
@@ -8,10 +9,9 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  SearchOutlined, ExportOutlined, EyeOutlined, FilterOutlined,
   SafetyCertificateOutlined,
   EnvironmentOutlined, ClockCircleOutlined, RobotOutlined,
-  AlertOutlined,
+  AlertOutlined, EyeOutlined, ExportOutlined, SearchOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -28,7 +28,7 @@ import {
   STATUS_CONFIG, RISK_LEVEL_OPTIONS, OP_TYPE_KEYS,
 } from './SpecialOpsConstants'
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 const { RangePicker } = DatePicker
 
 // ═══════════════════════════════════════════════════════════
@@ -48,9 +48,6 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-
-  // ── Stats ──
-  const [stats, setStats] = useState<SpecialOperationLedgerStats[]>(initialStats || [])
 
   // ── Filters ──
   const [opType, setOpType] = useState<string | undefined>()
@@ -72,14 +69,18 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [exportExplanation, setExportExplanation] = useState('')
 
   // ── Fetch stats ──
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: fetchedStats } = useQuery({
+    queryKey: ['special-ops-ledger-stats'],
+    queryFn: async () => {
       const res = await getSpecialOperationLedgerStats()
-      if (res.code === 200 && res.data) setStats(res.data)
-    } catch { /* silent */ }
-  }, [])
+      if (res.code === 200 && res.data) return res.data
+      return []
+    },
+    enabled: !initialStats?.length,
+  })
 
-  useEffect(() => { if (!initialStats?.length) fetchStats() }, [fetchStats, initialStats])
+  // Use initialStats if provided, otherwise use fetched stats
+  const stats = initialStats?.length ? initialStats : (fetchedStats || [])
 
   // ── Fetch data ──
   const fetchData = useCallback(async () => {
@@ -103,9 +104,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical])
-
-  useEffect(() => { fetchData() }, [fetchData])
+  }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical, message])
 
   // ── AI Export ──
 

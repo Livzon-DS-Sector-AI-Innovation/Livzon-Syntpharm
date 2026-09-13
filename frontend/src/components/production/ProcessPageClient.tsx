@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -23,7 +23,7 @@ import {
   DeleteOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
-import { useProductionStore } from '@/stores/production'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getProcessSpecs, createProcessSpec, updateProcessSpec, deleteProcessSpec } from '@/actions/production'
 import type { ProcessSpec, ProcessSpecFormData, ProcessSpecStatus } from '@/types/production'
 import { PROCESS_SPEC_STATUS_OPTIONS } from '@/types/production'
@@ -40,52 +40,38 @@ const getStatusLabel = (status: ProcessSpecStatus) => {
 
 export function ProcessPageClient() {
   const { message, modal } = App.useApp()
+  const queryClient = useQueryClient()
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingSpec, setEditingSpec] = useState<ProcessSpec | null>(null)
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<ProcessSpecStatus | undefined>()
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
 
-  const {
-    processSpecs,
-    processSpecTotal,
-    processSpecQueryParams,
-    setProcessSpecs,
-    setProcessSpecTotal,
-    setProcessSpecQueryParams,
-    addProcessSpec,
-    updateProcessSpec: updateSpecInStore,
-    removeProcessSpec,
-  } = useProductionStore()
-
-  const loadProcessSpecs = async () => {
-    setLoading(true)
-    try {
+  const { data: specsData, isLoading: loading } = useQuery({
+    queryKey: ['production-process-specs', { page, page_size: pageSize, status: statusFilter, product_code: searchText || undefined }],
+    queryFn: async () => {
       const response = await getProcessSpecs({
-        ...processSpecQueryParams,
+        page,
+        page_size: pageSize,
         status: statusFilter,
         product_code: searchText || undefined,
       })
       if (response.code === 200) {
-        setProcessSpecs(response.data)
-        setProcessSpecTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载工艺规程列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadProcessSpecs()
-  }, [processSpecQueryParams.page, processSpecQueryParams.page_size, statusFilter])
+  const processSpecs = specsData?.data || []
+  const processSpecTotal = specsData?.total || 0
 
   const handleSearch = () => {
-    setProcessSpecQueryParams({ page: 1 })
-    loadProcessSpecs()
+    setPage(1)
+    queryClient.invalidateQueries({ queryKey: ['production-process-specs'] })
   }
 
   const handleAdd = () => {
@@ -109,7 +95,7 @@ export function ProcessPageClient() {
           const response = await deleteProcessSpec(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeProcessSpec(id)
+            queryClient.invalidateQueries({ queryKey: ['production-process-specs'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -128,8 +114,8 @@ export function ProcessPageClient() {
         const response = await updateProcessSpec(editingSpec.id, values)
         if (response.code === 200) {
           message.success('更新成功')
-          updateSpecInStore(editingSpec.id, response.data)
           setModalVisible(false)
+          queryClient.invalidateQueries({ queryKey: ['production-process-specs'] })
         } else {
           message.error(response.message || '更新失败')
         }
@@ -137,9 +123,9 @@ export function ProcessPageClient() {
         const response = await createProcessSpec(values as ProcessSpecFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          addProcessSpec(response.data)
           setModalVisible(false)
           form.resetFields()
+          queryClient.invalidateQueries({ queryKey: ['production-process-specs'] })
         } else {
           message.error(response.message || '创建失败')
         }
@@ -257,7 +243,7 @@ export function ProcessPageClient() {
               value={statusFilter}
               onChange={(value) => {
                 setStatusFilter(value)
-                setProcessSpecQueryParams({ page: 1 })
+                setPage(1)
               }}
               style={{ width: '100%' }}
               options={[
@@ -282,14 +268,15 @@ export function ProcessPageClient() {
           loading={loading}
           scroll={{ x: 1400 }}
           pagination={{
-            current: processSpecQueryParams.page,
-            pageSize: processSpecQueryParams.page_size,
+            current: page,
+            pageSize: pageSize,
             total: processSpecTotal,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setProcessSpecQueryParams({ page, page_size: pageSize })
+              setPage(page)
+              setPageSize(pageSize)
             },
           }}
         />

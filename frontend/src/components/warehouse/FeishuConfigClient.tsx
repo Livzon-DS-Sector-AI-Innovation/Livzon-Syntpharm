@@ -172,7 +172,7 @@ export function FeishuConfigClient({
       form.setFieldValue('app_secret', '')
       message.success(response.message || '保存成功')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '保存失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -186,7 +186,7 @@ export function FeishuConfigClient({
       setSelectedTableIdsByDomain({})
       message.success(`已发现 ${response.data.length} 张数据表`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '刷新表目录失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '刷新表目录失败')
     } finally {
       setRefreshing(false)
     }
@@ -202,7 +202,7 @@ export function FeishuConfigClient({
         message.warning(response.data.last_error || '长连接未启动')
       }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '重启长连接失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '重启长连接失败')
     } finally {
       setRestarting(false)
     }
@@ -223,7 +223,7 @@ export function FeishuConfigClient({
         message.error('连通性测试未通过')
       }
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '连通性测试失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '连通性测试失败')
     } finally {
       setTesting(false)
     }
@@ -239,7 +239,7 @@ export function FeishuConfigClient({
       )
       message.success(checked ? '已启用并同步数据表' : '已停用数据表')
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '更新启用状态失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '更新启用状态失败')
     } finally {
       setTableBusyId(null)
     }
@@ -277,7 +277,7 @@ export function FeishuConfigClient({
           : `已批量停用 ${response.data.length} 张数据表`,
       )
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '批量更新失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '批量更新失败')
     } finally {
       setBatchBusyDomain(null)
     }
@@ -295,7 +295,7 @@ export function FeishuConfigClient({
       )
       message.success(`已同步 ${response.data.record_count} 条记录`)
     } catch (error) {
-      message.error(error instanceof Error ? error.message : '同步失败')
+      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '同步失败')
     } finally {
       setTableBusyId(null)
     }

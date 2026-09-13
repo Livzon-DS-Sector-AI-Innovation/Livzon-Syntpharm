@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useCallback, useMemo, useState } from 'react'
-import {App, Button, Table, DatePicker, Input} from 'antd'
+import {App, Table, DatePicker, Input} from 'antd'
 import { EyeOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { useInspectionStore } from '@/stores/inspection'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
 import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
-import {statusPill, pillSuccess, pillError, pillTab, linkPrimary} from '@/components/equipment/shared-styles'
+import {pillSuccess, pillError, pillTab, linkPrimary} from '@/components/equipment/shared-styles'
 import type { InspectionTask, InspectionOverallResult } from '@/types/inspection'
 import type { Personnel } from '@/types/equipment-personnel'
 
@@ -51,7 +51,7 @@ export function InspectionHistoryTab({ equipments }: Props) {
 
   // 加载人员配置列表作为巡检人过滤选项（与 InspectionTaskDrawer 保持一致）
   useEffect(() => {
-    fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: any) => p.is_active))).catch(() => {})
+    fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: { is_active: boolean }) => p.is_active))).catch(() => {})
   }, [])
 
   const typeFilters = useMemo(() => [

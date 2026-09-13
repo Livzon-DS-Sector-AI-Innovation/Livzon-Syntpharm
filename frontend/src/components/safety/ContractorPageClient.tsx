@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
-  Table, Button, Space, Input, Select, Modal, Form, DatePicker, InputNumber, message, Tag, Card, Row, Col, Typography, Tabs,
+  Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -33,7 +33,7 @@ export function ContractorPageClient() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [trainingFilter, setTrainingFilter] = useState<string | undefined>()
   const [keyword, setKeyword] = useState('')
-  const [_tab, setTab] = useState('list')
+  const [_tab, _setTab] = useState('list')
 
   const loadData = async () => {
     setLoading(true)
@@ -48,8 +48,6 @@ export function ContractorPageClient() {
       }
     } catch { message.error('加载承包商列表失败') } finally { setLoading(false) }
   }
-
-  useEffect(() => { loadData() }, [page, pageSize, statusFilter, typeFilter, trainingFilter])
 
   const handleAdd = () => { setEditingRecord(null); form.resetFields(); setModalVisible(true) }
 

@@ -1,13 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Button, Space, Upload } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, uploadWorkOrderImages } from '@/actions/equipment'
 import { FailureCode } from '@/types/equipment/generated-bridge'
-import { CreateWorkOrderInput, Maintainer } from '@/types/equipment/generated-bridge'
+import { CreateWorkOrderInput, } from '@/types/equipment/generated-bridge'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
 const { TextArea } = Input
@@ -23,10 +24,15 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [maintainers, setMaintainers] = useState<Maintainer[]>([])
   const { repairDrawerOpen, repairEquipmentId, closeRepairDrawer } = useEquipmentStore()
 
   const selectedEquipment = equipments.find(e => e.id === repairEquipmentId)
+
+  const { data: maintainers = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: fetchAllUsersClient,
+    enabled: repairDrawerOpen,
+  })
 
   useEffect(() => {
     if (repairDrawerOpen) {
@@ -37,14 +43,12 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
         order_type: '故障维修',
         priority: defaultPriority,
       })
-      setFileList([])
-      fetchAllUsersClient().then((users) => setMaintainers(users)).catch(() => {})
       // 默认填入设备责任人
       if (selectedEquipment?.responsible_person_id) {
         form.setFieldsValue({ responsible_person_id: selectedEquipment.responsible_person_id })
       }
     }
-  }, [repairDrawerOpen, repairEquipmentId, form])
+  }, [repairDrawerOpen, repairEquipmentId, form, selectedEquipment?.responsible_person_id])
 
   const handleSubmit = async () => {
     try {
@@ -79,8 +83,8 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
       message.success('报修工单已提交')
       closeRepairDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     } finally {
       setSubmitting(false)
     }

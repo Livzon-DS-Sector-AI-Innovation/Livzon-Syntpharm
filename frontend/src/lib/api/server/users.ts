@@ -10,7 +10,7 @@ export async function getUsers(params?: { keyword?: string; status?: string }, t
   })
 }
 
-export async function createUser(data: any, token?: string) {
+export async function createUser(data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -18,7 +18,7 @@ export async function createUser(data: any, token?: string) {
   })
 }
 
-export async function updateUser(id: string, data: any, token?: string) {
+export async function updateUser(id: string, data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}`, {
     method: 'PUT',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -26,7 +26,7 @@ export async function updateUser(id: string, data: any, token?: string) {
   })
 }
 
-export async function resetUserPassword(id: string, data: any, token?: string) {
+export async function resetUserPassword(id: string, data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/reset-password`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { App, Table, Button, Space, Select, DatePicker } from 'antd'
 import {DeleteOutlined, ImportOutlined} from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
@@ -121,7 +121,7 @@ export function MonthlyRecordTable() {
     }
   }, [workshopFilter, energyTypeFilter, dateRange, page, pageSize, message])
 
-  const loadSummary = useCallback(async () => {
+  const _loadSummary = useCallback(async () => {
     try {
       const result = await fetchMonthlySummaryClient({
         workshop_id: workshopFilter,
@@ -135,26 +135,14 @@ export function MonthlyRecordTable() {
     }
   }, [workshopFilter, energyTypeFilter, dateRange])
 
-  const loadWorkshops = useCallback(async () => {
+  const _loadWorkshops = useCallback(async () => {
     try {
       const result = await fetchWorkshopsClient()
-      setWorkshops((Array.isArray(result) ? result : []).map((w: any) => ({ id: w.id, name: w.name })))
+      setWorkshops((Array.isArray(result) ? result : []).map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })))
     } catch {
       // ignore
     }
   }, [])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  useEffect(() => {
-    loadWorkshops()
-  }, [loadWorkshops])
-
-  useEffect(() => {
-    loadSummary()
-  }, [loadSummary])
 
   const handleDelete = (record: EnergyMonthlyRecord) => {
     modal.confirm({

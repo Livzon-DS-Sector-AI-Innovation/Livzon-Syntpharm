@@ -28,8 +28,8 @@ export default function LcUploader({ onResult }: Props) {
       const result = await uploadLcExcel(file)
       message.success(`解析成功：${result.report?.product_name} / ${result.report?.batch_number}`)
       onResult(result)
-    } catch (err: any) {
-      message.error(err.message || '解析失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '解析失败')
     } finally {
       setUploading(false)
     }

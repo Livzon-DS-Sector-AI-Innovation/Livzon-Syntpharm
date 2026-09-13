@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Switch, Tooltip } from 'antd'
 import { FileTextOutlined } from '@ant-design/icons'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplate, updateInspectionTemplate } from '@/actions/equipment'
 import { fetchInspectionTemplateByIdClient } from '@/lib/api/client/equipment'
-import {CreateInspectionTemplateInput, InspectionTemplate} from '@/types/equipment/generated-bridge'
 
 const C = { navy: '#0a1530', purple: '#5645d4', slate: '#5d5b54', stone: '#a4a097', hairline: '#e5e3df', hairlineSoft: '#ede9e4', surface: '#f6f5f4', surfaceSoft: '#fafaf9', canvas: '#ffffff' }
 
@@ -16,16 +16,23 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const { inspectionTemplateDrawerOpen, editingInspectionTemplate, closeInspectionTemplateDrawer } = useEquipmentStore()
-  const [liveTemplate, setLiveTemplate] = useState<InspectionTemplate | null>(null)
   const isNew = !editingInspectionTemplate
+
+  const { data: liveTemplate } = useQuery({
+    queryKey: ['inspection-template', editingInspectionTemplate?.id],
+    queryFn: async () => {
+      if (!editingInspectionTemplate) return null
+      try {
+        return await fetchInspectionTemplateByIdClient(editingInspectionTemplate.id)
+      } catch {
+        return editingInspectionTemplate
+      }
+    },
+    enabled: inspectionTemplateDrawerOpen && !!editingInspectionTemplate,
+  })
+
   const count = liveTemplate?.items_count ?? editingInspectionTemplate?.items_count ?? 0
   const canEnable = !isNew && count > 0
-
-  useEffect(() => {
-    if (inspectionTemplateDrawerOpen && editingInspectionTemplate) {
-      fetchInspectionTemplateByIdClient(editingInspectionTemplate.id).then(setLiveTemplate).catch(() => setLiveTemplate(editingInspectionTemplate))
-    } else setLiveTemplate(null)
-  }, [inspectionTemplateDrawerOpen, editingInspectionTemplate])
 
   useEffect(() => {
     if (inspectionTemplateDrawerOpen) {
@@ -35,17 +42,17 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
   }, [inspectionTemplateDrawerOpen, editingInspectionTemplate, form])
 
   const handleSubmit = async () => {
-    let v: any
+    let v: Record<string, unknown>
     try {
       v = await form.validateFields()
     } catch { return }
     if (editingInspectionTemplate) {
-      const result: any = await updateInspectionTemplate(editingInspectionTemplate.id, { name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined, is_active: v.is_active })
-      if (!result.success) { message.error(result.error); return }
+      const result: { success?: boolean; error?: string } = await updateInspectionTemplate(editingInspectionTemplate.id, { name: v.name as string, description: (v.description as string) || undefined, equipment_category_id: (v.equipment_category_id as string) || undefined, is_active: v.is_active as boolean })
+      if (result.success === false) { message.error(result.error); return }
       message.success('更新成功')
     } else {
-      const result: any = await createInspectionTemplate({ name: v.name, description: v.description || undefined, equipment_category_id: v.equipment_category_id || undefined })
-      if (!result.success) { message.error(result.error); return }
+      const result: { success?: boolean; error?: string } = await createInspectionTemplate({ name: v.name as string, description: (v.description as string) || undefined, equipment_category_id: (v.equipment_category_id as string) || undefined })
+      if (result.success === false) { message.error(result.error); return }
       message.success('创建成功')
     }
     closeInspectionTemplateDrawer(); onRefresh?.()

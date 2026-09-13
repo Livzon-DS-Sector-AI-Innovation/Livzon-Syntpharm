@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { App,
   Button,
   Card,
@@ -31,7 +31,6 @@ import {
   updateScheduledTask,
   getDataSourceOptions,
   getFeishuChats,
-  previewCard
 } from '@/actions/safety'
 import CronInput from './CronInput'
 import CardTemplateEditor from './CardTemplateEditor'
@@ -51,23 +50,52 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
   const [selectedSources, setSelectedSources] = useState<DataSourceItem[]>([])
   const [cardTemplate, setCardTemplate] = useState('')
   const [headerColor, setHeaderColor] = useState<HeaderColor>('blue' as HeaderColor)
-  const [previewData, setPreviewData] = useState<CardPreviewRequest | null>(null)
 
   const isEdit = !!editData
 
   // Load reference data
   useEffect(() => {
-    getDataSourceOptions().then((res: any) => {
+    getDataSourceOptions().then((res: { code: number; data: DataSourceOption[] }) => {
       if (res.code === 200 && res.data) {
         setDataSourceOptions(res.data)
       }
     })
-    getFeishuChats().then((res: any) => {
+    getFeishuChats().then((res: { code: number; data: FeishuChat[] }) => {
       if (res.code === 200 && res.data) {
         setFeishuChats(res.data)
       }
     })
   }, [])
+
+  // Compute initial values based on editData
+  const initialValues = useMemo(() => {
+    if (editData) {
+      return {
+        sources: editData.data_sources || [],
+        template: editData.card_template || '',
+        color: (editData.header_color as HeaderColor) || 'blue'
+      }
+    } else {
+      // Default: enable first 3 sources
+      const defaults: DataSourceItem[] = dataSourceOptions
+        .filter((o) => o.default_enabled)
+        .map((o) => ({ key: o.key, label: o.label, enabled: true }))
+      return {
+        sources: defaults,
+        template: '',
+        color: 'blue' as HeaderColor
+      }
+    }
+  }, [editData, dataSourceOptions])
+
+  // Initialize state with computed values (only once)
+  const [initialized, setInitialized] = useState(false)
+  if (!initialized) {
+    setSelectedSources(initialValues.sources)
+    setCardTemplate(initialValues.template)
+    setHeaderColor(initialValues.color)
+    setInitialized(true)
+  }
 
   // Initialize form with edit data
   useEffect(() => {
@@ -82,33 +110,20 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
         header_color: editData.header_color as HeaderColor,
         is_enabled: editData.is_enabled
       })
-      setSelectedSources(editData.data_sources || [])
-      setCardTemplate(editData.card_template || '')
-      setHeaderColor((editData.header_color as HeaderColor) || 'blue')
-    } else {
-      // Default: enable first 3 sources
-      const defaults: DataSourceItem[] = dataSourceOptions
-        .filter((o) => o.default_enabled)
-        .map((o) => ({ key: o.key, label: o.label, enabled: true }))
-      setSelectedSources(defaults)
-      setCardTemplate('')
     }
-  }, [editData, form, dataSourceOptions])
+  }, [editData, form])
 
-  // Sync preview data
-  const updatePreview = useCallback(() => {
+  // Compute preview data directly
+  const previewData = useMemo(() => {
     if (selectedSources.length > 0 && cardTemplate) {
-      setPreviewData({
+      return {
         data_sources: selectedSources,
         card_template: cardTemplate,
         header_color: headerColor
-      })
+      }
     }
+    return null
   }, [selectedSources, cardTemplate, headerColor])
-
-  useEffect(() => {
-    updatePreview()
-  }, [updatePreview])
 
   const handleSourceToggle = (key: string, checked: boolean) => {
     setSelectedSources((prev) =>
@@ -260,7 +275,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
           <Select
             value={headerColor}
             onChange={(v) => setHeaderColor(v as HeaderColor)}
-            options={HEADER_COLOR_OPTIONS.map((c: any) => ({
+            options={HEADER_COLOR_OPTIONS.map((c: { value: string; label: string; color: string }) => ({
               value: c.value,
               label: (
                 <Space>
@@ -323,7 +338,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
       {previewData && (
         <Card title="卡片预览" style={{ marginBottom: 16 }}>
           <CardPreview
-            dataSources={previewData.data_sources}
+            dataSources={previewData.data_sources?.map(ds => ({ id: ds.key, name: ds.label }))}
             cardTemplate={previewData.card_template}
             headerColor={previewData.header_color}
           />

@@ -1,7 +1,8 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -17,7 +18,6 @@ import {
   Card,
   Row,
   Col,
-  Typography,
   Tabs,
   Switch,
 } from 'antd'
@@ -32,7 +32,7 @@ import {
   TeamOutlined,
   DownloadOutlined,
 } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
+import { useTrainingStore } from '@/stores/safety'
 import {
   getTrainings,
   createTraining,
@@ -45,7 +45,6 @@ import {
   updateTrainingRecord,
   deleteTrainingRecord,
   getTrainingCertificates,
-  getExpiringCertificates,
 } from '@/actions/safety'
 import type {
   SafetyTraining,
@@ -64,12 +63,9 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text } = Typography
-
 export default function TrainingPage() {
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<SafetyTraining | null>(null)
   const [searchText, setSearchText] = useState('')
@@ -98,43 +94,36 @@ export default function TrainingPage() {
   const [certKeyword, setCertKeyword] = useState('')
 
   const {
-    trainings,
-    trainingTotal,
-    trainingQueryParams,
-    setTrainings,
-    setTrainingTotal,
-    setTrainingQueryParams,
-    addTraining,
-    updateTraining: updateTrainingInStore,
-    removeTraining,
-  } = useSafetyStore()
+    queryParams,
+    setQueryParams,
+  } = useTrainingStore()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const queryClient = useQueryClient()
+
+  const { data: trainingsData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-trainings', { queryParams, statusFilter, typeFilter }],
+    queryFn: async () => {
       const response = await getTrainings({
-        ...trainingQueryParams,
+        ...queryParams,
         status: statusFilter,
         training_type: typeFilter,
       })
       if (response.code === 200) {
-        setTrainings(response.data)
-        setTrainingTotal(response.meta?.total || 0)
+        return { data: response.data, total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载培训列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [trainingQueryParams.page, trainingQueryParams.page_size, statusFilter, typeFilter])
+  const trainings = trainingsData?.data || []
+  const trainingTotal = trainingsData?.total || 0
+  const loading = isLoading
+
+
 
   const handleSearch = () => {
-    setTrainingQueryParams({ page: 1 })
-    loadData()
+    setQueryParams({ page: 1 })
+    refetch()
   }
 
   const handleAdd = () => {
@@ -161,7 +150,7 @@ export default function TrainingPage() {
           const response = await deleteTraining(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeTraining(id)
+            queryClient.invalidateQueries({ queryKey: ['safety-trainings'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -184,7 +173,7 @@ export default function TrainingPage() {
         const response = await updateTraining(editingRecord.id, formattedValues)
         if (response.code === 200) {
           message.success('更新成功')
-          updateTrainingInStore(editingRecord.id, response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-trainings'] })
           setModalVisible(false)
         } else {
           message.error(response.message || '更新失败')
@@ -193,7 +182,7 @@ export default function TrainingPage() {
         const response = await createTraining(formattedValues as SafetyTrainingFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          addTraining(response.data)
+          queryClient.invalidateQueries({ queryKey: ['safety-trainings'] })
           setModalVisible(false)
           form.resetFields()
         } else {
@@ -210,7 +199,7 @@ export default function TrainingPage() {
       const response = await startTraining(id)
       if (response.code === 200) {
         message.success('培训已开始')
-        updateTrainingInStore(id, response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-trainings'] })
       } else {
         message.error(response.message || '操作失败')
       }
@@ -224,7 +213,7 @@ export default function TrainingPage() {
       const response = await completeTraining(id)
       if (response.code === 200) {
         message.success('培训已完成')
-        updateTrainingInStore(id, response.data)
+        queryClient.invalidateQueries({ queryKey: ['safety-trainings'] })
       } else {
         message.error(response.message || '操作失败')
       }
@@ -289,11 +278,6 @@ export default function TrainingPage() {
   }
 
   // Load certificates when tab switches or filters change
-  useEffect(() => {
-    if (activeTab === 'certificate') {
-      loadCertificates()
-    }
-  }, [activeTab, certPage, certPageSize, certStatusFilter])
 
   const handleManageRecords = (record: SafetyTraining) => {
     setCurrentTrainingId(record.id)
@@ -634,7 +618,7 @@ export default function TrainingPage() {
                     value={typeFilter}
                     onChange={(value) => {
                       setTypeFilter(value)
-                      setTrainingQueryParams({ page: 1 })
+                      setQueryParams({ page: 1 })
                     }}
                     style={{ width: '100%' }}
                     options={TRAINING_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -647,7 +631,7 @@ export default function TrainingPage() {
                     value={statusFilter}
                     onChange={(value) => {
                       setStatusFilter(value)
-                      setTrainingQueryParams({ page: 1 })
+                      setQueryParams({ page: 1 })
                     }}
                     style={{ width: '100%' }}
                     options={TRAINING_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -667,14 +651,14 @@ export default function TrainingPage() {
                 loading={loading}
                 scroll={{ x: 1400 }}
                 pagination={{
-                  current: trainingQueryParams.page,
-                  pageSize: trainingQueryParams.page_size,
+                  current: queryParams.page,
+                  pageSize: queryParams.page_size,
                   total: trainingTotal,
                   showSizeChanger: true,
                   showQuickJumper: true,
                   showTotal: (total) => `共 ${total} 条`,
                   onChange: (page, pageSize) => {
-                    setTrainingQueryParams({ page, page_size: pageSize })
+                    setQueryParams({ page, page_size: pageSize })
                   },
                 }}
               />

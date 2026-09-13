@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Switch, Upload } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOutlined, InboxOutlined } from '@ant-design/icons'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
@@ -11,16 +12,28 @@ const { TextArea } = Input
 
 export function DeliverableTemplatePage() {
   const { message: msgApi } = App.useApp()
-  const [templates, setTemplates] = useState<RdDeliverableTemplate[]>([])
-  const [loading, setLoading] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<RdDeliverableTemplate | null>(null)
   const [form] = Form.useForm()
+  const queryClient = useQueryClient()
 
 
   const [batchUploading, setBatchUploading] = useState(false)
 
-  const handleBatchUpload = async (file: File) => {
+  const { data: templates = [], isLoading: loading } = useQuery({
+    queryKey: ['deliverable-templates'],
+    queryFn: async () => {
+      try {
+        const data = await fetchDeliverableTemplates()
+        return data
+      } catch (e: unknown) {
+        msgApi.error(e instanceof Error ? e.message : '加载失败')
+        return []
+      }
+    },
+  })
+
+  const handleBatchUpload = useCallback(async (file: File) => {
     setBatchUploading(true)
     const reader = new FileReader()
     reader.onload = async (e) => {
@@ -33,16 +46,16 @@ export function DeliverableTemplatePage() {
           is_active: true,
         })
         msgApi.success(`模板 "${fileName}" 创建成功`)
-        loadData()
-      } catch (err: any) {
-        msgApi.error(`创建失败: ${err.message}`)
+        queryClient.invalidateQueries({ queryKey: ['deliverable-templates'] })
+      } catch (err: unknown) {
+        msgApi.error(`创建失败: ${err instanceof Error ? err.message : "未知错误"}`)
       } finally {
         setBatchUploading(false)
       }
     }
     reader.readAsText(file)
     return false
-  }
+  }, [queryClient, msgApi])
 
   const handleExportTemplate = (record: RdDeliverableTemplate) => {
     const md = record.template_content || `# ${record.name}\n\n暂无内容`
@@ -58,19 +71,7 @@ export function DeliverableTemplatePage() {
     msgApi.success('导出成功')
   }
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      const data = await fetchDeliverableTemplates()
-      setTemplates(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  useEffect(() => { loadData() }, [])
 
   const openCreate = () => {
     setEditingTemplate(null)
@@ -114,10 +115,10 @@ export function DeliverableTemplatePage() {
         msgApi.success('创建成功')
       }
       setDrawerOpen(false)
-      loadData()
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+      queryClient.invalidateQueries({ queryKey: ['deliverable-templates'] })
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -125,9 +126,9 @@ export function DeliverableTemplatePage() {
     try {
     await deleteDeliverableTemplate(id)
     msgApi.success('删除成功')
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+      queryClient.invalidateQueries({ queryKey: ['deliverable-templates'] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 

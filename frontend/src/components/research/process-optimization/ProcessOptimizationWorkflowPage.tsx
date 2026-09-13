@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Steps, Card, Button, Space, Tag, App, Tabs, Alert } from 'antd'
 import { SaveOutlined, CheckCircleFilled, ClockCircleFilled } from '@ant-design/icons'
 import { ModuleDOE } from './ModuleDOE'
@@ -95,7 +95,7 @@ export function ProcessOptimizationWorkflowPage({
 
   const allParallelComplete = parallelComplete.doe && parallelComplete.impurity && parallelComplete.crystal
 
-  const saveState = async () => {
+  const saveState = useCallback(async () => {
     const moduleKeyMap: Record<number, OptimizationModule> = {
       0: allParallelComplete ? 'quality' : (activeParallelTab as OptimizationModule),
       1: 'quality',
@@ -137,14 +137,14 @@ export function ProcessOptimizationWorkflowPage({
       updatedAt: new Date().toISOString(),
     }
     localStorage.setItem(`optimization-workflow-${optimizationId}`, JSON.stringify(state))
-  }
+  }, [currentStep, activeParallelTab, doeExperiment, impurityStudy, crystalFormStudy, qualityStandardSet, labConfirmationStudy, scaleUpStudy, optimizationId, optimizationName, sourceRouteId, sourceRouteName, allParallelComplete])
 
   useEffect(() => {
     const timer = setTimeout(() => {
       saveState()
     }, 2000)
     return () => clearTimeout(timer)
-  }, [currentStep, activeParallelTab, doeExperiment, impurityStudy, crystalFormStudy, qualityStandardSet, labConfirmationStudy, scaleUpStudy])
+  }, [saveState])
 
   const handleSaveAndExit = () => {
     saveState()

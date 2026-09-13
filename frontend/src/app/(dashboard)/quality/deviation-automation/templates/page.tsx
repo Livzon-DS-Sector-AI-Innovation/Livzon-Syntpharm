@@ -1,7 +1,8 @@
 'use client'
-import {createDeviationTemplate, deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
+import {deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -18,14 +19,13 @@ import {
   Alert,
 } from 'antd'
 import {
-  SearchOutlined,
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   UploadOutlined,
   DownloadOutlined,
 } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import type { UploadFile } from 'antd/es/upload/interface'
 
 const API_BASE = '/api/v1'
@@ -39,58 +39,50 @@ interface Template {
   create_time: string
 }
 
-interface TemplateFormData {
-  name: string
-  description: string
-  is_active: boolean
-}
 
 export default function TemplateManagementPage() {
-  const [form] = Form.useForm()
+  const [_form] = Form.useForm()
   const [modalForm] = Form.useForm()
-  const [data, setData] = useState<Template[]>([])
-  const [loading, setLoading] = useState(false)
-  const [pagination, setPagination] = useState({
-    current: 1,
-    pageSize: 20,
-    total: 0,
-  })
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [uploadModalVisible, setUploadModalVisible] = useState(false)
   const [uploadingTemplateId, setUploadingTemplateId] = useState<number | null>(null)
   const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([])
   const [uploading, setUploading] = useState(false)
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    fetchData()
-  }, [])
+  const [paginationState, setPaginationState] = useState({ current: 1, pageSize: 20 })
 
-  const fetchData = async (page = 1, pageSize = 20) => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ['deviation-templates', paginationState.current, paginationState.pageSize],
+    queryFn: async () => {
       const response = await fetch(
-        `${API_BASE}/quality/deviation-automation/templates?page=${page}&page_size=${pageSize}`
+        `${API_BASE}/quality/deviation-automation/templates?page=${paginationState.current}&page_size=${paginationState.pageSize}`
       )
       if (!response.ok) throw new Error('查询失败')
-
       const result = await response.json()
-      setData(result.data?.items || [])
-      setPagination({
-        ...pagination,
-        current: page,
-        pageSize,
+      return {
+        items: result.data?.items || [],
         total: result.data?.total || 0,
-      })
-    } catch (error: any) {
-      message.error(error.message)
-    } finally {
-      setLoading(false)
-    }
+      }
+    },
+  })
+
+  // Use query data directly
+  const data = queryData?.items || []
+  const pagination = {
+    current: paginationState.current,
+    pageSize: paginationState.pageSize,
+    total: queryData?.total || 0,
   }
 
-  const handleTableChange = (newPagination: any) => {
-    fetchData(newPagination.current, newPagination.pageSize)
+
+
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    setPaginationState({
+      current: newPagination.current ?? 1,
+      pageSize: newPagination.pageSize ?? 20,
+    })
   }
 
   const handleAdd = () => {
@@ -114,9 +106,9 @@ export default function TemplateManagementPage() {
     try {
       await deleteDeviationTemplate(id)
       message.success('删除成功')
-      fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+      setPaginationState({ current: pagination.current, pageSize: pagination.pageSize })
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -124,9 +116,9 @@ export default function TemplateManagementPage() {
     try {
       await updateDeviationTemplateStatus(id, is_active)
       message.success(is_active ? '已启用' : '已停用')
-      fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+      setPaginationState({ current: pagination.current, pageSize: pagination.pageSize })
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -159,9 +151,9 @@ export default function TemplateManagementPage() {
         setUploadModalVisible(true)
       }
 
-      fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+      setPaginationState({ current: pagination.current, pageSize: pagination.pageSize })
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -179,15 +171,15 @@ export default function TemplateManagementPage() {
 
     setUploading(true)
     try {
-      const formData = new FormData()
+      const _formData = new FormData()
       await uploadDeviationTemplate(file.originFileObj as File)
 
       message.success('模板文件上传成功')
       setUploadModalVisible(false)
       setUploadFileList([])
-      fetchData(pagination.current, pagination.pageSize)
-    } catch (error: any) {
-      message.error(error.message)
+      setPaginationState({ current: pagination.current, pageSize: pagination.pageSize })
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setUploading(false)
     }

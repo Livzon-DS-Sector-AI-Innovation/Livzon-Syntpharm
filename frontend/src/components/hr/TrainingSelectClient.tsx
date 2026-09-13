@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {Button, Card, Checkbox, message, Select, Tag} from 'antd'
 import {
   CalendarOutlined,
@@ -16,71 +17,66 @@ import {
   fetchNewEmployees,
 } from '@/lib/api/client/hr'
 import { submitTrainingSelectTaskAction } from '@/actions/hr'
+import type { Employee } from '@/types/hr'
 
 interface TrainingSelectClientProps {
   token: string
-  initialData: any
+  initialData: Record<string, unknown>
 }
 
 export default function TrainingSelectClient({
   token,
   initialData,
 }: TrainingSelectClientProps) {
-  const [departments, setDepartments] = useState<{ value: string; label: string }[]>([])
-  const [employees, setEmployees] = useState<{ value: string; label: string; number: string }[]>([])
-  const taskDept = initialData?.department || ''
+  const taskDept = (initialData?.department as string) || ''
   const [selectedDepts, setSelectedDepts] = useState<string[]>(taskDept ? [taskDept] : [])
   const [selectedNumbers, setSelectedNumbers] = useState<string[]>([])
-  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [resultData, setResultData] = useState<any>(null)
+  const [resultData, setResultData] = useState<Record<string, unknown> | null>(null)
 
-  const factory = initialData?.factory || 'old'
+  const factory = (initialData?.factory as string) || 'old'
   const isNew = factory === 'new'
 
-  useEffect(() => {
-    const fetchFn = isNew ? fetchNewDepartments : fetchDepartments
-    fetchFn({ page_size: 100 }).then((res) => {
-      const list = (res.data || []).map((d: any) => ({ value: d.name, label: d.name }))
-      setDepartments(list)
-    })
-  }, [isNew])
+const { data: departments = [] } = useQuery({
+    queryKey: ['departments', isNew],
+    queryFn: async () => {
+      const fetchFn = isNew ? fetchNewDepartments : fetchDepartments
+      const res = await fetchFn({ page_size: 100 })
+      return (res.data || []).map((d: { name: string }) => ({ value: d.name, label: d.name }))
+    },
+  })
 
-  // 部门列表加载完成后，自动加载任务对应部门的员工
-  useEffect(() => {
-    if (departments.length > 0 && taskDept) {
-      loadEmployees([taskDept])
-    }
-  }, [departments, taskDept])
-
-  const loadEmployees = async (depts: string[]) => {
-    if (!depts || depts.length === 0) {
-      setEmployees([])
-      setSelectedNumbers([])
-      return
-    }
-    setLoading(true)
-    const fetchFn = isNew ? fetchNewEmployees : fetchEmployees
-    const all: { value: string; label: string; number: string }[] = []
-    for (const dept of depts) {
-      try {
-        const res = await fetchFn({ department: dept, page_size: 100 })
-        const list = (res.data || []).map((e: any) => ({
-          value: e.employee_number,
-          label: `${e.name} (${e.employee_number || ''})`,
-          number: e.employee_number,
-        }))
-        all.push(...list)
-      } catch {
-        // ignore
+  const { data: employees = [] } = useQuery({
+    queryKey: ['employees', selectedDepts, isNew],
+    queryFn: async () => {
+      if (!selectedDepts || selectedDepts.length === 0) {
+        return []
       }
-    }
-    const map = new Map(all.map((e) => [e.value, e]))
-    const uniqueList = Array.from(map.values())
-    setEmployees(uniqueList)
-    setLoading(false)
-  }
+      const fetchFn = isNew ? fetchNewEmployees : fetchEmployees
+      const all: { value: string; label: string; number: string }[] = []
+      for (const dept of selectedDepts) {
+        try {
+          const res = await fetchFn({ department: dept, page_size: 100 })
+          const list = (res.data || []).map((e: Employee) => ({
+            value: e.employee_number,
+            label: `${e.name} (${e.employee_number || ''})`,
+            number: e.employee_number,
+          }))
+          all.push(...list)
+        } catch {
+          // ignore
+        }
+      }
+      const map = new Map(all.map((e) => [e.value, e]))
+      return Array.from(map.values())
+    },
+    enabled: departments.length > 0 && selectedDepts.length > 0,
+  })
+
+  const loading = false
+
+
 
   const handleSubmit = async () => {
     if (selectedNumbers.length === 0) {
@@ -96,8 +92,8 @@ export default function TrainingSelectClient({
       setResultData(res.data)
       setSubmitted(true)
       message.success('选择结果已提交')
-    } catch (err: any) {
-      message.error(err.message || '提交失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '提交失败')
     } finally {
       setSubmitting(false)
     }
@@ -110,19 +106,19 @@ export default function TrainingSelectClient({
           <CheckCircleOutlined className="text-5xl text-green-500 mb-4" />
           <h2 className="text-xl font-semibold mb-2">选择结果已提交</h2>
           <p className="text-gray-500 mb-6">
-            已为 {initialData?.department} 的 {initialData?.training_date} {initialData?.subject} 培训
+            已为 {(initialData?.department as string) || ''} 的 {(initialData?.training_date as string) || ''} {(initialData?.subject as string) || ''} 培训
             选择 {selectedNumbers.length} 位受训人员
           </p>
 
           <div className="text-left bg-gray-50 rounded-lg p-4 mb-6">
             <h3 className="font-semibold mb-2">培训信息</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div><span className="text-gray-500">主办部门：</span> {initialData?.department}</div>
-              <div><span className="text-gray-500">培训日期：</span> {initialData?.training_date}</div>
-              <div><span className="text-gray-500">培训主题：</span> {initialData?.subject}</div>
-              <div><span className="text-gray-500">培训地点：</span> {initialData?.location || '待定'}</div>
-              <div><span className="text-gray-500">培训师：</span> {initialData?.trainer || '待定'}</div>
-              <div><span className="text-gray-500">培训方式：</span> {initialData?.training_method || '待定'}</div>
+              <div><span className="text-gray-500">主办部门：</span> {(initialData?.department as string) || ''}</div>
+              <div><span className="text-gray-500">培训日期：</span> {(initialData?.training_date as string) || ''}</div>
+              <div><span className="text-gray-500">培训主题：</span> {(initialData?.subject as string) || ''}</div>
+              <div><span className="text-gray-500">培训地点：</span> {(initialData?.location as string) || '待定'}</div>
+              <div><span className="text-gray-500">培训师：</span> {(initialData?.trainer as string) || '待定'}</div>
+              <div><span className="text-gray-500">培训方式：</span> {(initialData?.training_method as string) || '待定'}</div>
             </div>
           </div>
 
@@ -152,37 +148,37 @@ export default function TrainingSelectClient({
           <div className="flex items-center gap-2">
             <CalendarOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训日期：</span> {initialData?.training_date}
+              <span className="text-gray-500">培训日期：</span> {(initialData?.training_date as string) || ''}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <TeamOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">主办部门：</span> {initialData?.department}
+              <span className="text-gray-500">主办部门：</span> {(initialData?.department as string) || ''}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <UserOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训主题：</span> {initialData?.subject}
+              <span className="text-gray-500">培训主题：</span> {(initialData?.subject as string) || ''}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <EnvironmentOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训地点：</span> {initialData?.location || '待定'}
+              <span className="text-gray-500">培训地点：</span> {(initialData?.location as string) || '待定'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <UserOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训师：</span> {initialData?.trainer || '待定'}
+              <span className="text-gray-500">培训师：</span> {(initialData?.trainer as string) || '待定'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <UserOutlined className="text-gray-400" />
             <span>
-              <span className="text-gray-500">培训方式：</span> {initialData?.training_method || '待定'}
+              <span className="text-gray-500">培训方式：</span> {(initialData?.training_method as string) || '待定'}
             </span>
           </div>
         </div>
@@ -198,7 +194,6 @@ export default function TrainingSelectClient({
           className="w-full"
           onChange={(value: string[]) => {
             setSelectedDepts(value)
-            loadEmployees(value)
           }}
           loading={loading}
         />

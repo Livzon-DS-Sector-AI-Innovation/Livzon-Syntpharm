@@ -3,11 +3,11 @@ import type { components } from '@/types/generated/schema'
 
 const BASE = `${getApiBaseUrl()}/api/v1/equipment/inspection`
 
-export async function createRouteApi(data: any, headers?: Record<string, string>) {
+export async function createRouteApi(data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/routes`, { method: 'POST', body: JSON.stringify(data), headers })
 }
 
-export async function updateRouteApi(id: string, data: any, headers?: Record<string, string>) {
+export async function updateRouteApi(id: string, data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/routes/${id}`, { method: 'PUT', body: JSON.stringify(data), headers })
 }
 
@@ -15,7 +15,7 @@ export async function deleteRouteApi(id: string, headers?: Record<string, string
   return apiFetch(`${BASE}/routes/${id}`, { method: 'DELETE', headers })
 }
 
-export async function setRouteLocationsApi(routeId: string, locations: any[], headers?: Record<string, string>) {
+export async function setRouteLocationsApi(routeId: string, locations: unknown[], headers?: Record<string, string>) {
   return apiFetch(`${BASE}/routes/${routeId}/locations`, {
     method: 'POST',
     body: JSON.stringify({ locations }),
@@ -23,7 +23,7 @@ export async function setRouteLocationsApi(routeId: string, locations: any[], he
   })
 }
 
-export async function createTaskApi(data: any, headers?: Record<string, string>) {
+export async function createTaskApi(data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/tasks`, { method: 'POST', body: JSON.stringify(data), headers })
 }
 
@@ -43,7 +43,7 @@ export async function closeTaskApi(id: string, closureRemark?: string, headers?:
   })
 }
 
-export async function submitEquipmentCheckApi(taskId: string, equipmentId: string, data: any, headers?: Record<string, string>) {
+export async function submitEquipmentCheckApi(taskId: string, equipmentId: string, data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/tasks/${taskId}/equipments/${equipmentId}/check`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -55,7 +55,7 @@ export async function deleteInspectionPhotoApi(taskId: string, photoId: string, 
   return apiFetch(`${BASE}/tasks/${taskId}/photos/${photoId}`, { method: 'DELETE', headers })
 }
 
-export async function submitRouteCheckApi(taskId: string, data: any, headers?: Record<string, string>) {
+export async function submitRouteCheckApi(taskId: string, data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/tasks/${taskId}/route-check`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -71,7 +71,7 @@ export async function analyzeInspectionPhotoApi(taskId: string, equipmentId: str
   })
 }
 
-export async function createScheduleApi(routeId: string, data: any, headers?: Record<string, string>) {
+export async function createScheduleApi(routeId: string, data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/routes/${routeId}/schedules`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -79,7 +79,7 @@ export async function createScheduleApi(routeId: string, data: any, headers?: Re
   })
 }
 
-export async function updateScheduleApi(routeId: string, scheduleId: string, data: any, headers?: Record<string, string>) {
+export async function updateScheduleApi(routeId: string, scheduleId: string, data: unknown, headers?: Record<string, string>) {
   return apiFetch(`${BASE}/routes/${routeId}/schedules/${scheduleId}`, {
     method: 'PUT',
     body: JSON.stringify(data),

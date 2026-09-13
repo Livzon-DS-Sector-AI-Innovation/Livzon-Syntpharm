@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import {App, Table, Button, Typography, Empty, Spin} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -78,10 +78,6 @@ export default function SopGeneratorPanel({
     }
   }, [])
 
-  useEffect(() => {
-    loadGeneratedSops()
-  }, [loadGeneratedSops])
-
   /* ── file handling ── */
 
   const acceptFile = useCallback((f: File) => {
@@ -157,14 +153,14 @@ export default function SopGeneratorPanel({
 
       const result = response.data
       onGenerated({
-        regulation_id: result.regulation_id,
-        meta: result.meta || {},
-        content: result.content || ''
+        regulation_id: (result as { regulation_id: string }).regulation_id,
+        meta: (result as { meta?: Record<string, string> }).meta || {},
+        content: (result as { content?: string }).content || ''
       })
       setFile(null)
       loadGeneratedSops()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '生成失败，请重试'
+      const msg = err instanceof Error ? (err instanceof Error ? err.message : null) : '生成失败，请重试'
       setErrorMsg(msg)
     } finally {
       setUploading(false)

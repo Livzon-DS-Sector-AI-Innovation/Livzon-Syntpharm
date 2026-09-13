@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { 
   App,
   Card, 
@@ -31,7 +32,7 @@ import { TestingRecommendations } from './TestingRecommendations'
 import { analyzeICHFile, deleteICHRecord } from '@/actions/research'
 
 const { Text } = Typography
-const { Option } = Select
+const { Option: _Option } = Select
 
 interface ElementResult {
   symbol: string
@@ -142,47 +143,36 @@ export function ICHAnalysisPage() {
   const [loading, setLoading] = useState(false)
 
   // History
-  const [history, setHistory] = useState<HistoryRecord[]>([])
-  const [historyTotal, setHistoryTotal] = useState(0)
   const [historyPage, setHistoryPage] = useState(1)
-  const [historyLoading, setHistoryLoading] = useState(false)
-
+  const queryClient = useQueryClient()
 
   const { message } = App.useApp()
 
-
-  // Load history
-  const loadHistory = useCallback(async (page = 1) => {
-    setHistoryLoading(true)
-    try {
-      const res = await fetch(`/api/v1/research/ich/records?page=${page}&page_size=10`)
+  const { data: historyData, isLoading: historyLoading } = useQuery({
+    queryKey: ['ich-history', historyPage],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/research/ich/records?page=${historyPage}&page_size=10`)
       const data = await res.json()
       if (data.code === 200) {
-        setHistory(data.data || [])
-        setHistoryTotal(data.meta?.total || 0)
-        setHistoryPage(page)
+        return { items: data.data || [], total: data.meta?.total || 0 }
       }
-    } catch (error) {
-      console.error('加载分析历史失败', error)
-    } finally {
-      setHistoryLoading(false)
-    }
-  }, [])
+      return { items: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadHistory()
-  }, [loadHistory])
+  const history = historyData?.items || []
+  const historyTotal = historyData?.total || 0
 
   // Upload + analyze
   const handleUpload = async (file: File) => {
     setLoading(true)
     try {
-      const data = await analyzeICHFile(file)
+      const data = await analyzeICHFile(file) as { data: { id: string; q3c_result: Q3CResult; q3d_result: Q3DResult } }
       setResult({ id: data.data.id, q3c: data.data.q3c_result, q3d: data.data.q3d_result })
       message.success('ICH Q3C/Q3D 杂质识别完成，已保存')
-      loadHistory(historyPage)
-    } catch (error: any) {
-      message.error(error.message || '分析失败')
+      queryClient.invalidateQueries({ queryKey: ['ich-history'] })
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '分析失败')
     } finally {
       setLoading(false)
     }
@@ -202,7 +192,7 @@ export function ICHAnalysisPage() {
           q3c: data.data.q3c_result,
         })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('加载记录失败')
     } finally {
       setLoading(false)
@@ -212,13 +202,13 @@ export function ICHAnalysisPage() {
   // Delete a history record
   const deleteRecord = async (recordId: string) => {
     try {
-      const data = await deleteICHRecord(recordId)
+      const data = await deleteICHRecord(recordId) as { code: number }
       if (data.code === 200) {
         message.success('记录已删除')
         if (result?.id === recordId) setResult(null)
-        loadHistory(historyPage)
+        queryClient.invalidateQueries({ queryKey: ['ich-history'] })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -293,7 +283,7 @@ export function ICHAnalysisPage() {
               title: '备注',
               key: 'note',
               width: 150,
-              render: (_: any, record: any) => {
+              render: (_: unknown, record: { ctcl?: number }) => {
                 if (record.ctcl) {
                   return <Text type="secondary" style={{ fontSize: 12 }}>CTCL: {record.ctcl} μg/g</Text>
                 }
@@ -331,7 +321,7 @@ export function ICHAnalysisPage() {
     { title: '时间', dataIndex: 'created_at', key: 'created_at', width: 170, render: (v: string) => v ? new Date(v).toLocaleString('zh-CN') : '-' },
     {
       title: '操作', key: 'action', width: 120,
-      render: (_: any, record: HistoryRecord) => (
+      render: (_: unknown, record: HistoryRecord) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => viewRecord(record.id)}>查看</Button>
           <Popconfirm title="确定删除此记录？" onConfirm={() => deleteRecord(record.id)}>
@@ -478,7 +468,7 @@ export function ICHAnalysisPage() {
             current: historyPage,
             pageSize: 10,
             total: historyTotal,
-            onChange: (page) => loadHistory(page),
+            onChange: (page) => setHistoryPage(page),
             showTotal: (total) => `共 ${total} 条记录`,
           }}
         />

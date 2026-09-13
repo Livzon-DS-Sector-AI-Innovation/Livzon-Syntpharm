@@ -85,16 +85,16 @@ export async function deletePilotWorkflow(workflowId: string) {
 
 // ─── Server-side fetch functions (for Server Components) ───
 
-export async function fetchResearchProjects(params: any = {}): Promise<any> {
-  return fetchResearchProjectsApi(params)
+export async function fetchResearchProjects(params: Record<string, unknown> = {}): Promise<unknown> {
+  return fetchResearchProjectsApi(params) as unknown
 }
 
-export async function fetchRoutes(params: any = {}): Promise<any> {
-  return fetchRoutesApi(params)
+export async function fetchRoutes(params: Record<string, unknown> = {}): Promise<unknown> {
+  return fetchRoutesApi(params) as unknown
 }
 
-export async function fetchPilotWorkflows(params: any = {}): Promise<any> {
-  const json = await fetchPilotWorkflowsApi(params) as any
+export async function fetchPilotWorkflows(params: Record<string, unknown> = {}): Promise<unknown> {
+  const json = await fetchPilotWorkflowsApi(params) as { data?: unknown[]; meta?: { total?: number; page?: number; page_size?: number } }
   return {
     items: json.data || [],
     total: json.meta?.total || 0,
@@ -103,13 +103,13 @@ export async function fetchPilotWorkflows(params: any = {}): Promise<any> {
   }
 }
 
-export async function fetchPilotWorkflow(workflowId: string): Promise<any> {
-  const json = await fetchPilotWorkflowApi(workflowId) as any
+export async function fetchPilotWorkflow(workflowId: string): Promise<unknown> {
+  const json = await fetchPilotWorkflowApi(workflowId) as { data: unknown }
   return json.data
 }
 
 // ICH Analysis Actions
-export async function analyzeICHFile(file: File): Promise<any> {
+export async function analyzeICHFile(file: File): Promise<unknown> {
   const formData = new FormData()
   formData.append('file', file)
   const result = await analyzeICHFileApi(formData)
@@ -117,7 +117,7 @@ export async function analyzeICHFile(file: File): Promise<any> {
   return result
 }
 
-export async function deleteICHRecord(recordId: string): Promise<any> {
+export async function deleteICHRecord(recordId: string): Promise<unknown> {
   const result = await deleteICHRecordApi(recordId)
   revalidatePath('/research')
   return result
@@ -158,13 +158,13 @@ export async function generateReactionScope(
   return result
 }
 
-export async function fetchResearchProject(projectId: string): Promise<any> {
-  return fetchResearchProjectApi(projectId)
+export async function fetchResearchProject(projectId: string): Promise<unknown> {
+  return fetchResearchProjectApi(projectId) as unknown
 }
 
 // ─── Literature Analysis Actions ───
 
-export async function analyzeLiterature(file: File): Promise<any> {
+export async function analyzeLiterature(file: File): Promise<unknown> {
   const formData = new FormData()
   formData.append('file', file)
   const result = await analyzeLiteratureApi(formData)

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Form,
@@ -59,53 +60,56 @@ export default function EditInstrumentPage() {
   const instrumentId = searchParams.get('id')
   
   const [loading, setLoading] = useState(false)
-  const [initialLoading, setInitialLoading] = useState(true)
   const [form] = Form.useForm()
   const [ruleForm] = Form.useForm()
-  const [instrument, setInstrument] = useState<Instrument | null>(null)
+
+  const { data: instrument, isLoading: initialLoading } = useQuery({
+    queryKey: ['instrument', instrumentId],
+    queryFn: async () => {
+      if (!instrumentId) return null
+      const response = await getInstrument(instrumentId)
+      return response
+    },
+    enabled: !!instrumentId,
+  })
+
+  const { data: rules } = useQuery({
+    queryKey: ['calibration-rules', instrumentId],
+    queryFn: async () => {
+      if (!instrumentId) return []
+      const rules = await getCalibrationRules(instrumentId)
+      return rules || []
+    },
+    enabled: !!instrumentId,
+  })
+
+  // Set form values when data changes
+  useEffect(() => {
+    if (instrument) {
+      form.setFieldsValue({
+        ...instrument,
+        manufacture_date: instrument.manufacture_date ? dayjs(instrument.manufacture_date) : null,
+      })
+    }
+  }, [instrument, form])
 
   useEffect(() => {
-    if (!instrumentId) {
-      message.error('缺少仪器ID参数')
-      router.push('/quality/instrument/list')
-      return
-    }
-    loadData()
-  }, [instrumentId, router])
-
-  const loadData = async () => {
-    if (!instrumentId) return
-    
-    setInitialLoading(true)
-    try {
-      const response = await getInstrument(instrumentId)
-      setInstrument(response)
-      form.setFieldsValue({
-        ...response,
-        manufacture_date: response.manufacture_date ? dayjs(response.manufacture_date) : null,
+    if (rules && rules.length > 0) {
+      const rule = rules[0]
+      ruleForm.setFieldsValue({
+        calibration_method: rule.calibration_method,
+        calibration_cycle: rule.calibration_cycle,
+        calibration_unit: rule.calibration_unit,
+        last_calibration_date: rule.last_calibration_date ? dayjs(rule.last_calibration_date) : null,
+        next_calibration_date: rule.next_calibration_date ? dayjs(rule.next_calibration_date) : null,
+        calibration_agency: rule.calibration_agency,
+        internal_calibrator_name: rule.internal_calibrator_name,
+        warning_days: rule.warning_days,
       })
-
-      const rules = await getCalibrationRules(instrumentId)
-      if (rules && rules.length > 0) {
-        const rule = rules[0]
-        ruleForm.setFieldsValue({
-          calibration_method: rule.calibration_method,
-          calibration_cycle: rule.calibration_cycle,
-          calibration_unit: rule.calibration_unit,
-          last_calibration_date: rule.last_calibration_date ? dayjs(rule.last_calibration_date) : null,
-          next_calibration_date: rule.next_calibration_date ? dayjs(rule.next_calibration_date) : null,
-          calibration_agency: rule.calibration_agency,
-          internal_calibrator_name: rule.internal_calibrator_name,
-          warning_days: rule.warning_days,
-        })
-      }
-    } catch (error) {
-      message.error('加载数据失败')
-      router.push('/quality/instrument/list')
-    } finally {
-      setInitialLoading(false)
     }
-  }
+  }, [rules, ruleForm])
+
+
 
   const handleSubmit = async () => {
     if (!instrument) return
@@ -151,7 +155,7 @@ export default function EditInstrumentPage() {
 
       message.success('更新成功')
       router.push('/quality/instrument/list')
-    } catch (error) {
+    } catch (_error) {
       message.error('更新失败')
     } finally {
       setLoading(false)

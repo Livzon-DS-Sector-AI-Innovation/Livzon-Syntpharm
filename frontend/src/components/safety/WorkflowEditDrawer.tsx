@@ -15,8 +15,6 @@ import {
   App,
 } from 'antd'
 import {
-  PlusOutlined,
-  DeleteOutlined,
   CaretRightOutlined,
 } from '@ant-design/icons'
 import type { AIWorkflowConfig, WorkflowStepItem, ReferenceDocsValue } from '@/types/safety'
@@ -24,7 +22,7 @@ import { TRIGGER_EVENT_OPTIONS } from '@/types/safety'
 import { updateAIWorkflowConfig, createAIWorkflowConfig } from '@/actions/safety'
 import ReferenceDocsEditor from './ReferenceDocsEditor'
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 const { TextArea } = Input
 
 interface Props {
@@ -51,7 +49,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
         workflow_description: workflow.workflow_description,
         trigger_event: workflow.trigger_event,
         is_enabled: workflow.is_enabled,
-        script_configs: (workflow.script_configs || []).map((s: any) => ({
+        script_configs: (workflow.script_configs || []).map((s: WorkflowStepItem) => ({
           ...s,
           // Ensure 4-field format with backward compat
           input_info: s.input_info || s.prompt_template || '',
@@ -80,7 +78,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
       // Strip prompt_template for clean 4-field storage
       const cleanScripts = (values.script_configs || []).map(
         (s: WorkflowStepItem & { prompt_template?: string }, i: number) => {
-          const { prompt_template, ...rest } = s
+          const { prompt_template: _prompt_template, ...rest } = s
           // 合并预设的 expected_keys（表单中不展示，从原始数据回填）
           return {
             ...rest,
@@ -258,7 +256,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
           </div>
 
           <Form.List name="script_configs">
-            {(fields, { add }) => (
+            {(fields, { add: _add }) => (
               <>
                 <Collapse
                   activeKey={activeScriptKeys}
@@ -268,7 +266,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
                   )}
                   style={{ background: 'transparent' }}
                   expandIconPlacement="end"
-                  items={fields.map(({ key, name, ...restField }) => {
+                  items={fields.map(({ key: _key, name, ...restField }) => {
                     const scriptNum = name + 1
                     const formValues = form.getFieldValue('script_configs') || []
                     const _scriptData = formValues[name] || {}
@@ -353,7 +351,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
                             {...restField}
                             name={[name, 'output_format']}
                             label={<span style={{ fontSize: 12, fontWeight: 600, color: '#37352f' }}>📤 输出格式</span>}
-                            help={<span style={{ fontSize: 11, color: '#bbb8b1' }}>描述你希望 AI 输出的内容格式，如"输出为标准 PDF"、"按标准分点输出"、"输出 JSON 结构化数据"等</span>}
+                            help={<span style={{ fontSize: 11, color: '#bbb8b1' }}>描述你希望 AI 输出的内容格式，如&quot;输出为标准 PDF&quot;、&quot;按标准分点输出&quot;、&quot;输出 JSON 结构化数据&quot;等</span>}
                             style={{ marginBottom: 0 }}
                           >
                             <TextArea

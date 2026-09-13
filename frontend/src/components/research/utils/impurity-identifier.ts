@@ -3,9 +3,9 @@
  * 基于工艺路线、反应条件、DOE 数据推导可能的杂质
  */
 
-import type { Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod } from '@/types/research'
-import type { RouteDevelopment, ExperimentPlan, ExperimentRecord } from '@/types/research'
-import type { DOEExperiment, DOEFactor } from '@/types/research'
+import type { Impurity, ImpurityCategory, ICHSolventClass } from '@/types/research'
+import type { RouteDevelopment } from '@/types/research'
+import type { DOEExperiment } from '@/types/research'
 
 // 常见溶剂及其 ICH 分类
 const SOLVENT_DATABASE: Record<string, { class: ICHSolventClass; limit_ppm: number; risk: 'low' | 'medium' | 'high' }> = {

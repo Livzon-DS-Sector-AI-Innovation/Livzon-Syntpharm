@@ -40,14 +40,14 @@ async function checkRoute(page: Page, route: RouteCase) {
     url.includes('/api/')) &&
     !url.includes('?_rsc=') // exclude Next.js RSC prefetch requests that are legitimately aborted on navigation
 
-  const onResponse = (response: any) => {
+  const onResponse = (response: { url(): string; status(): number; request(): { method(): string; url(): string } }) => {
     if (isApplicationUrl(response.url()) && response.status() >= 400) {
       const req = response.request()
       httpErrors.push(`[${response.status()}] ${req.method()} ${req.url()}`)
     }
   }
 
-  const onRequestFailed = (request: any) => {
+  const onRequestFailed = (request: { failure(): { errorText: string } | null; url(): string }) => {
     // net::ERR_ABORTED occurs when navigating away — pending requests from the
     // previous route are legitimately cancelled. Only flag real failures.
     const errorText = request.failure()?.errorText ?? ''

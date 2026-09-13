@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -9,9 +10,7 @@ import {
   Select,
   Tag,
   Drawer,
-  Modal,
   Form,
-  InputNumber,
   message,
   Popconfirm,
   Card,
@@ -179,9 +178,6 @@ const initialFilters = {
 }
 
 export default function QualityReagentPage() {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<Reagent[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState(initialFilters)
@@ -203,6 +199,7 @@ export default function QualityReagentPage() {
 
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
+  const queryClient = useQueryClient()
 
   // 检测移动端
   useEffect(() => {
@@ -217,9 +214,9 @@ export default function QualityReagentPage() {
   }, [])
 
   // 加载数据
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['reagent-list', filters, page, pageSize],
+    queryFn: async () => {
       const response = await getReagentList({
         keyword: filters.keyword || undefined,
         category: filters.category,
@@ -228,21 +225,14 @@ export default function QualityReagentPage() {
         page_size: pageSize,
       })
       if (response.code === 200) {
-        setData(response.data.items || [])
-        setTotal(response.data.total || 0)
-      } else {
-        message.error(response.message || '加载失败')
+        return { items: response.data.items || [], total: response.data.total || 0 }
       }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page, pageSize])
+      return { items: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   // 统计数据
   const stats = {
@@ -254,13 +244,11 @@ export default function QualityReagentPage() {
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
   }
 
-  const handleReset = () => {
+  const _handleReset = () => {
     setFilters(initialFilters)
     setPage(1)
-    loadData()
   }
 
   const handleExport = async () => {
@@ -272,7 +260,7 @@ export default function QualityReagentPage() {
         status: filters.status,
       })
       message.success('导出成功')
-    } catch (error) {
+    } catch (_error) {
       message.error('导出失败')
     }
   }
@@ -322,7 +310,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -336,7 +324,7 @@ export default function QualityReagentPage() {
       } else {
         message.error(response.message || '获取数据失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('获取数据失败')
     }
   }
@@ -346,11 +334,11 @@ export default function QualityReagentPage() {
       const response = await deleteReagent(id)
       if (response.code === 200) {
         message.success('删除成功')
-        loadData()
+        queryClient.invalidateQueries({ queryKey: ['reagent-list'] })
       } else {
         message.error(response.message || '删除失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -366,45 +354,45 @@ export default function QualityReagentPage() {
     try {
       const response = await recognizeReagentLabel(files)
       if (response.code === 200 && response.data) {
-        const formInstance = form === 'create' ? createForm : editForm
+        const _formInstance = form === 'create' ? createForm : editForm
         const data = response.data
         if (data.reagent_name) {
-          formInstance.setFieldValue('reagent_name', data.reagent_name)
+          _formInstance.setFieldValue('reagent_name', data.reagent_name)
           const reagentNo = findReagentNo(data.reagent_name)
-          if (reagentNo) formInstance.setFieldValue('reagent_no', reagentNo)
+          if (reagentNo) _formInstance.setFieldValue('reagent_no', reagentNo)
         }
-        if (data.lot_no) formInstance.setFieldValue('lot_no', data.lot_no)
-        if (data.manufacturer) formInstance.setFieldValue('manufacturer', data.manufacturer)
-        if (data.content) formInstance.setFieldValue('content', data.content)
+        if (data.lot_no) _formInstance.setFieldValue('lot_no', data.lot_no)
+        if (data.manufacturer) _formInstance.setFieldValue('manufacturer', data.manufacturer)
+        if (data.content) _formInstance.setFieldValue('content', data.content)
         if (data.production_date) {
-          formInstance.setFieldValue('production_date', dayjs(data.production_date))
+          _formInstance.setFieldValue('production_date', dayjs(data.production_date))
           if (data.expiration_date) {
-            formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
+            _formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
           } else {
-            formInstance.setFieldValue('expiration_date', dayjs(data.production_date).add(3, 'year'))
+            _formInstance.setFieldValue('expiration_date', dayjs(data.production_date).add(3, 'year'))
           }
         } else if (data.expiration_date) {
-          formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
+          _formInstance.setFieldValue('expiration_date', dayjs(data.expiration_date))
         }
         if (data.specification) {
-          formInstance.setFieldValue('specification', data.specification)
+          _formInstance.setFieldValue('specification', data.specification)
           const specMatch = data.specification.match(/^(\d+(?:\.\d+)?)\s*(g|kg|ml|l|litre|liter|mg)$/i)
           if (specMatch) {
             const value = parseFloat(specMatch[1])
             const unitLower = specMatch[2].toLowerCase()
-            formInstance.setFieldValue('quantity', value)
+            _formInstance.setFieldValue('quantity', value)
             const unitMap: Record<string, string> = {
               'g': 'g', 'kg': 'kg', 'mg': 'mg',
               'ml': 'ml', 'l': 'L', 'litre': 'L', 'liter': 'L'
             }
-            formInstance.setFieldValue('unit', unitMap[unitLower] || unitLower.toUpperCase())
+            _formInstance.setFieldValue('unit', unitMap[unitLower] || unitLower.toUpperCase())
           }
         }
         message.success(`AI识别完成，置信度: ${(data.confidence * 100).toFixed(0)}%`)
       } else {
         message.error(response.message || 'AI识别失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('AI识别失败，请重试')
     } finally {
       setAiLoading(false)
@@ -434,7 +422,7 @@ export default function QualityReagentPage() {
       if (response.code === 200) {
         message.success('创建成功')
         setCreateDrawerVisible(false)
-        loadData()
+        queryClient.invalidateQueries({ queryKey: ['reagent-list'] })
       } else {
         message.error(response.message || '创建失败')
       }
@@ -470,7 +458,7 @@ export default function QualityReagentPage() {
       if (response.code === 200) {
         message.success('更新成功')
         setEditDrawerVisible(false)
-        loadData()
+        queryClient.invalidateQueries({ queryKey: ['reagent-list'] })
       } else {
         message.error(response.message || '更新失败')
       }
@@ -499,7 +487,7 @@ export default function QualityReagentPage() {
         if (!urls || urls.length === 0) return <div className="reagent-card-image"><PictureOutlined style={{ fontSize: 24, color: '#9ca3af' }} /></div>
         return (
           <Image.PreviewGroup items={urls}>
-            <Image src={urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} placeholder={<PictureOutlined style={{ fontSize: 24 }} />} />
+            <Image alt="试剂图片" src={urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} placeholder={<PictureOutlined style={{ fontSize: 24 }} />} />
           </Image.PreviewGroup>
         )
       },
@@ -535,7 +523,7 @@ export default function QualityReagentPage() {
       <div className="reagent-card-header">
         <div className="reagent-card-image">
           {item.reagent_label_urls && item.reagent_label_urls.length > 0
-            ? <Image src={item.reagent_label_urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} preview={false} />
+            ? <Image alt="试剂标签" src={item.reagent_label_urls[0]} width={60} height={60} style={{ objectFit: 'cover', borderRadius: 8 }} preview={false} />
             : <PictureOutlined style={{ fontSize: 24, color: '#9ca3af' }} />
           }
         </div>
@@ -581,7 +569,7 @@ export default function QualityReagentPage() {
 
   // 表单内容（新建/编辑共用）
   const renderFormContent = (formType: 'create' | 'edit') => {
-    const formInstance = formType === 'create' ? createForm : editForm
+    const _formInstance = formType === 'create' ? createForm : editForm
     const fileList = formType === 'create' ? createFileList : editFileList
     const handleFileChange = formType === 'create' ? handleCreateFileChange : handleEditFileChange
 
@@ -730,7 +718,7 @@ export default function QualityReagentPage() {
               ]}
             />
           )}
-          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={loading}>刷新</Button>
           <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>新建试剂</Button>
         </div>
@@ -857,7 +845,7 @@ export default function QualityReagentPage() {
               <div className="reagent-drawer-image">
                 {viewRecord.reagent_label_urls && viewRecord.reagent_label_urls.length > 0
                   ? <Image.PreviewGroup items={viewRecord.reagent_label_urls}>
-                      <Image src={viewRecord.reagent_label_urls[0]} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 12 }} />
+                      <Image alt="试剂标签预览" src={viewRecord.reagent_label_urls[0]} width={100} height={100} style={{ objectFit: 'cover', borderRadius: 12 }} />
                     </Image.PreviewGroup>
                   : <PictureOutlined style={{ fontSize: 40, color: '#9ca3af' }} />
                 }

@@ -63,40 +63,6 @@ import {
 
 type ActionResult<T = unknown> = { success: true; data: T | null } | { success: false; error: string }
 
-async function actionFetch<T>(
-  url: string,
-  options?: RequestInit,
-): Promise<ActionResult<T>> {
-  try {
-    const authHeaders = await getAuthHeaders()
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...authHeaders,
-        ...options?.headers,
-      },
-    })
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => '')
-      let errorMessage = `请求失败: ${response.status}`
-      try {
-        const errorJson = JSON.parse(errorBody)
-        if (errorJson.message) {
-          errorMessage = errorJson.message
-          if (errorJson.detail) errorMessage += `: ${errorJson.detail}`
-          if (errorJson.request_id) errorMessage += ` (编号: ${errorJson.request_id})`
-        }
-      } catch { /* ignore */ }
-      return { success: false, error: errorMessage }
-    }
-    const text = await response.text()
-    if (!text) return { success: true, data: null }
-    const json = JSON.parse(text)
-    return { success: true, data: (json.data ?? json) as T }
-  } catch (err) {
-    return { success: false, error: (err as Error).message || '请求失败' }
-  }
-}
 
 async function wrapApiCall<T>(fn: () => Promise<T>): Promise<ActionResult<T>> {
   try {

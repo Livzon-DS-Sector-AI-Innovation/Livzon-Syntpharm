@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -14,7 +15,6 @@ import {
   Tag,
   Typography,
   message,
-  Spin,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { SearchOutlined, EyeOutlined, SyncOutlined, ExportOutlined } from '@ant-design/icons'
@@ -56,9 +56,6 @@ const OPERATE_TYPE_LABELS: Record<string, string> = {
 }
 
 export default function AuditLogPage() {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<AuditLogItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [moduleOptions, setModuleOptions] = useState<{ label: string; value: string }[]>([])
@@ -67,24 +64,24 @@ export default function AuditLogPage() {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const [detailVisible, setDetailVisible] = useState(false)
   const [detailRecord, setDetailRecord] = useState<AuditLogItem | null>(null)
-  const [_detailLoading, setDetailLoading] = useState(false)
+  const [_detailLoading, _setDetailLoading] = useState(false)
 
   // 加载模块列表
   useEffect(() => {
     getAuditModules().then(res => {
       if (res.code === 0) {
-        setModuleOptions(res.data.map((m: any) => ({
-          label: MODULE_LABELS[m.module_type] || m.module_type,
-          value: m.module_type,
+        setModuleOptions(res.data.map((m: { module_type: string }) => ({
+          label: MODULE_LABELS[m.module_type as string] || (m.module_type as string),
+          value: m.module_type as string,
         })))
       }
     }).catch(() => {})
   }, [])
 
   // 加载审计日志
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch } = useQuery({
+    queryKey: ['audit-logs', page, pageSize, selectedModule, selectedOperateType, dateRange?.[0]?.format('YYYY-MM-DD'), dateRange?.[1]?.format('YYYY-MM-DD')],
+    queryFn: async () => {
       const [startDate, endDate] = dateRange
         ? [dateRange[0].format('YYYY-MM-DD'), dateRange[1].format('YYYY-MM-DD')]
         : [undefined, undefined]
@@ -99,21 +96,14 @@ export default function AuditLogPage() {
       })
 
       if (res.code === 0) {
-        setData(res.data)
-        setTotal(res.meta?.total || 0)
-      } else {
-        message.error(res.message || '加载失败')
+        return { items: res.data, total: res.meta?.total || 0 }
       }
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { items: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [page, pageSize, selectedModule, selectedOperateType, dateRange])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   // 查看详情
   const handleViewDetail = async (record: AuditLogItem) => {
@@ -146,8 +136,8 @@ export default function AuditLogPage() {
       a.click()
       URL.revokeObjectURL(url)
       message.success('导出成功')
-    } catch (e: any) {
-      message.error(e.message || '导出失败，请稍后重试')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '导出失败，请稍后重试'))
     }
   }
 
@@ -225,7 +215,7 @@ export default function AuditLogPage() {
       <Card title="变更审计日志" extra={
         <Space>
           <Button icon={<ExportOutlined />} onClick={handleExport}>导出</Button>
-          <Button icon={<SyncOutlined />} onClick={loadData}>刷新</Button>
+          <Button icon={<SyncOutlined />} onClick={() => refetch()}>刷新</Button>
         </Space>
       }>
         {/* 筛选区 */}
@@ -258,13 +248,13 @@ export default function AuditLogPage() {
             <Col>
               <RangePicker
                 value={dateRange}
-                onChange={(dates) => { setDateRange(dates as any); setPage(1) }}
+                onChange={(dates) => { setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs] | null); setPage(1) }}
                 format="YYYY-MM-DD"
                 placeholder={['开始日期', '结束日期']}
               />
             </Col>
             <Col>
-              <Button type="primary" icon={<SearchOutlined />} onClick={loadData}>
+              <Button type="primary" icon={<SearchOutlined />} onClick={() => refetch()}>
                 查询
               </Button>
             </Col>

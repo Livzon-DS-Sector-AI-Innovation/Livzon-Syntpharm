@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
-import { App,
+import { App, Space,
   Button,
   Descriptions,
   Tag,
@@ -35,7 +35,7 @@ export default function CandidateDetailClient({
     candidate.recommendation_level || ''
   )
   const [updating, setUpdating] = useState(false)
-  const [navContext, setNavContext] = useState<{
+  const [navContext, _setNavContext] = useState<{
     ids: string[]
     currentIndex: number
   } | null>(null)
@@ -50,19 +50,7 @@ export default function CandidateDetailClient({
   })
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem('candidate_list_context')
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw)
-        if (parsed.ids && parsed.ids.includes(candidate.id)) {
-          setNavContext(parsed)
-        }
-      } catch {
-        // ignore invalid sessionStorage data
-      }
-    }
-  }, [candidate.id])
+
 
   const handlePrev = () => {
     if (!navContext) return
@@ -103,8 +91,8 @@ export default function CandidateDetailClient({
       await updateCandidateRecommendationLevelAction(candidate.id, value)
       setRecommendationLevel(value)
       message.success('推荐等级更新成功')
-    } catch (err: any) {
-      message.error(err.message || '更新失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '更新失败')
     } finally {
       setUpdating(false)
     }
@@ -123,8 +111,8 @@ export default function CandidateDetailClient({
       message.success('保存成功')
       setIsEditing(false)
       router.refresh()
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -165,45 +153,52 @@ export default function CandidateDetailClient({
   }
 
   const processedReport = (candidate.match_report || '暂无报告').replace(
-    /<text_tag\s+color=['"]([^'"]+)['"]\s*>([\s\S]*?)<\/text_tag>/g,
-    (_, color, content) => {
-      const style = tagPalette[color] || `background:${color}20;color:${color}`
-      return `<span style="display:inline-block;padding:1px 8px;border-radius:4px;font-size:12px;${style}">${content}</span>`
+    /<text_tag\s+color=['"]([^'"]+)['"]\s*>(.*?)<\/text_tag>/g,
+    (_match: string, color: string, text: string) => {
+      const style = tagPalette[color] || ''
+      return `<span style="${style};padding:2px 6px;border-radius:4px;font-weight:500;">${text}</span>`
     }
   )
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/hr/recruitment')}>
-          返回列表
-        </Button>
-        {navContext && (
-          <>
-            <Button
-              icon={<ArrowUpOutlined />}
-              onClick={handlePrev}
-              disabled={navContext.currentIndex <= 0}
-            >
-              上一条
-            </Button>
-            <Button
-              icon={<ArrowDownOutlined />}
-              onClick={handleNext}
-              disabled={navContext.currentIndex >= navContext.ids.length - 1}
-            >
-              下一条
-            </Button>
-          </>
-        )}
+    <div className="space-y-6">
+      {/* 顶部导航 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/hr/recruitment')}>
+            返回列表
+          </Button>
+          {navContext && (
+            <Space>
+              <Button
+                icon={<ArrowUpOutlined />}
+                onClick={handlePrev}
+                disabled={navContext.currentIndex === 0}
+              >
+                上一个
+              </Button>
+              <span className="text-sm text-gray-500">
+                {navContext.currentIndex + 1} / {navContext.ids.length}
+              </span>
+              <Button
+                icon={<ArrowDownOutlined />}
+                onClick={handleNext}
+                disabled={navContext.currentIndex === navContext.ids.length - 1}
+              >
+                下一个
+              </Button>
+            </Space>
+          )}
+        </div>
       </div>
 
-      <div className="flex gap-4" style={{ height: 'calc(100vh - 100px)' }}>
-        {/* 左侧：PDF 预览 */}
-        <div className="flex-[3] bg-white rounded-xl border border-[#e5e3df] overflow-hidden relative">
+      <div className="flex gap-6">
+        {/* 左侧：简历预览 */}
+        <div className="flex-1 bg-white rounded-xl border border-[#e5e3df] overflow-hidden relative" style={{ minHeight: 600 }}>
           <Spin
             spinning={pdfLoading}
-            className="absolute inset-0 z-10 flex items-center justify-center"
+            description="加载简历中..."
+            className="absolute inset-0 flex items-center justify-center z-10"
           />
           {pdfError && (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white">

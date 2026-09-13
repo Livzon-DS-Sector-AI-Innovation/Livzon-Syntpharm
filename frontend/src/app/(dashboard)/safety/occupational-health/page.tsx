@@ -3,7 +3,8 @@
 "use client"
 
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState, } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -15,7 +16,6 @@ import {
   Typography,
   Space,
   Tag,
-  Spin,
   Popconfirm,
   Descriptions,
   Drawer,
@@ -34,13 +34,8 @@ import {
   EyeOutlined,
   PlayCircleOutlined,
   CheckCircleOutlined,
-  CloseCircleOutlined,
   VerifiedOutlined,
-  WarningOutlined,
-  ExperimentOutlined,
-  HeartOutlined,
   ExclamationCircleOutlined,
-  FileAddOutlined,
 } from '@ant-design/icons'
 import {
   getOhHazardMonitors,
@@ -52,8 +47,6 @@ import {
   completeMonitor,
   verifyMonitor,
   addDetectionResult,
-  updateDetectionResult,
-  deleteDetectionResult,
   addMonitorAbnormality,
   updateMonitorAbnormalityStatus,
   getOhHealthExams,
@@ -65,8 +58,6 @@ import {
   completeExam,
   archiveExam,
   addExamItem,
-  updateExamItem,
-  deleteExamItem,
   setExamConclusion,
   addExamAbnormality,
   updateExamAbnormalityStatus,
@@ -74,24 +65,17 @@ import {
 import {
   MonitorStatus,
   MONITOR_STATUS_OPTIONS,
-  DetectionType,
   DETECTION_TYPE_OPTIONS,
-  HazardFactorCategory,
   HAZARD_FACTOR_CATEGORY_OPTIONS,
-  OELComplianceStatus,
   OEL_COMPLIANCE_STATUS_OPTIONS,
   ExamStatus,
   EXAM_STATUS_OPTIONS,
-  ExamType,
   EXAM_TYPE_OPTIONS,
-  ExamConclusion,
   EXAM_CONCLUSION_OPTIONS,
-  AbnormalityStatus,
   ABNORMALITY_STATUS_OPTIONS,
   type OhHazardMonitor,
   type OhHealthExam,
   type DetectionResultItem,
-  type ExamResultItem,
   type AbnormalityRecord,
 } from '@/types/safety'
 
@@ -138,8 +122,6 @@ const conclusionColorMap: Record<string, string> = {
 export default function OccupationalHealthPage() {
   const { message } = App.useApp()
   /* ======================== Monitor State ======================== */
-  const [monitors, setMonitors] = useState<OhHazardMonitor[]>([])
-  const [monitorLoading, setMonitorLoading] = useState(true)
   const [monitorModalOpen, setMonitorModalOpen] = useState(false)
   const [editingMonitor, setEditingMonitor] = useState<OhHazardMonitor | null>(null)
   const [monitorSaving, setMonitorSaving] = useState(false)
@@ -155,8 +137,6 @@ export default function OccupationalHealthPage() {
   const [monitorPagination, setMonitorPagination] = useState({ page: 1, page_size: 20, total: 0 })
 
   /* ======================== Exam State ======================== */
-  const [exams, setExams] = useState<OhHealthExam[]>([])
-  const [examLoading, setExamLoading] = useState(true)
   const [examModalOpen, setExamModalOpen] = useState(false)
   const [editingExam, setEditingExam] = useState<OhHealthExam | null>(null)
   const [examSaving, setExamSaving] = useState(false)
@@ -171,49 +151,39 @@ export default function OccupationalHealthPage() {
   })
   const [exampagination, setExamPagination] = useState({ page: 1, page_size: 20, total: 0 })
 
-  /* ===================== Monitor Data Loading ===================== */
-  const loadMonitors = useCallback(async () => {
-    setMonitorLoading(true)
-    try {
+  const _queryClient = useQueryClient()
+
+  const { data: monitorsData, isLoading: monitorLoading, refetch: refetchMonitors } = useQuery({
+    queryKey: ['safety-oh-monitors', { monitorPagination, monitorFilters }],
+    queryFn: async () => {
       const res = await getOhHazardMonitors({
         page: monitorPagination.page,
         page_size: monitorPagination.page_size,
         ...monitorFilters,
       })
-      setMonitors(res.data || [])
-      if (res.meta) {
-        setMonitorPagination((p) => ({ ...p, total: res.meta!.total || 0 }))
-      }
-    } catch (error) {
-      console.error('Failed to load monitors:', error)
-    } finally {
-      setMonitorLoading(false)
-    }
-  }, [monitorPagination.page, monitorPagination.page_size, monitorFilters])
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => { loadMonitors() }, [loadMonitors])
+  const monitors = monitorsData?.data || []
 
-  /* ===================== Exam Data Loading ===================== */
-  const loadExams = useCallback(async () => {
-    setExamLoading(true)
-    try {
+  const { data: examsData, isLoading: examLoading, refetch: refetchExams } = useQuery({
+    queryKey: ['safety-oh-exams', { exampagination, examFilters }],
+    queryFn: async () => {
       const res = await getOhHealthExams({
         page: exampagination.page,
         page_size: exampagination.page_size,
         ...examFilters,
       })
-      setExams(res.data || [])
-      if (res.meta) {
-        setExamPagination((p) => ({ ...p, total: res.meta!.total || 0 }))
-      }
-    } catch (error) {
-      console.error('Failed to load exams:', error)
-    } finally {
-      setExamLoading(false)
-    }
-  }, [exampagination.page, exampagination.page_size, examFilters])
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => { loadExams() }, [loadExams])
+  const exams = examsData?.data || []
+
+
+
+
 
   /* ===================== Monitor Modal ===================== */
   const openMonitorCreateModal = () => {
@@ -254,7 +224,7 @@ export default function OccupationalHealthPage() {
       if (res.code === 200) {
         message.success(editingMonitor ? '监测记录已更新' : '监测记录已创建')
         setMonitorModalOpen(false)
-        loadMonitors()
+        refetchMonitors()
       } else {
         message.error(res.message || '操作失败')
       }
@@ -274,7 +244,7 @@ export default function OccupationalHealthPage() {
     const res = await startMonitor(id)
     if (res.code === 200) {
       message.success('已开始监测')
-      loadMonitors()
+      refetchMonitors()
     } else {
       message.error(res.message || '操作失败')
     }
@@ -284,7 +254,7 @@ export default function OccupationalHealthPage() {
     const res = await completeMonitor(id)
     if (res.code === 200) {
       message.success('监测已完成，已自动计算OEL合规状态')
-      loadMonitors()
+      refetchMonitors()
     } else {
       message.error(res.message || '操作失败')
     }
@@ -294,7 +264,7 @@ export default function OccupationalHealthPage() {
     const res = await verifyMonitor(id, {})
     if (res.code === 200) {
       message.success('监测已验证')
-      loadMonitors()
+      refetchMonitors()
     } else {
       message.error(res.message || '操作失败')
     }
@@ -304,7 +274,7 @@ export default function OccupationalHealthPage() {
     const res = await deleteOhHazardMonitor(id)
     if (res.code === 200) {
       message.success('已删除')
-      loadMonitors()
+      refetchMonitors()
     } else {
       message.error(res.message || '删除失败')
     }
@@ -361,7 +331,7 @@ export default function OccupationalHealthPage() {
       if (res.code === 200) {
         message.success(editingExam ? '体检记录已更新' : '体检记录已创建')
         setExamModalOpen(false)
-        loadExams()
+        refetchExams()
       } else {
         message.error(res.message || '操作失败')
       }
@@ -381,7 +351,7 @@ export default function OccupationalHealthPage() {
     const res = await startExam(id)
     if (res.code === 200) {
       message.success('已开始体检')
-      loadExams()
+      refetchExams()
     } else {
       message.error(res.message || '操作失败')
     }
@@ -391,7 +361,7 @@ export default function OccupationalHealthPage() {
     const res = await completeExam(id)
     if (res.code === 200) {
       message.success('体检已完成')
-      loadExams()
+      refetchExams()
     } else {
       message.error(res.message || '操作失败')
     }
@@ -401,7 +371,7 @@ export default function OccupationalHealthPage() {
     const res = await archiveExam(id)
     if (res.code === 200) {
       message.success('体检已归档')
-      loadExams()
+      refetchExams()
     } else {
       message.error(res.message || '操作失败')
     }
@@ -411,7 +381,7 @@ export default function OccupationalHealthPage() {
     const res = await deleteOhHealthExam(id)
     if (res.code === 200) {
       message.success('已删除')
-      loadExams()
+      refetchExams()
     } else {
       message.error(res.message || '删除失败')
     }
@@ -631,7 +601,7 @@ export default function OccupationalHealthPage() {
                     style={{ width: 250 }}
                     value={monitorFilters.keyword}
                     onChange={(e) => setMonitorFilters((f) => ({ ...f, keyword: e.target.value }))}
-                    onSearch={() => { setMonitorPagination((p) => ({ ...p, page: 1 })); loadMonitors() }}
+                    onSearch={() => { setMonitorPagination((p) => ({ ...p, page: 1 })); refetchMonitors() }}
                   />
                   <Button type="primary" icon={<PlusOutlined />} onClick={openMonitorCreateModal}>
                     新建监测
@@ -685,7 +655,7 @@ export default function OccupationalHealthPage() {
                     style={{ width: 250 }}
                     value={examFilters.keyword}
                     onChange={(e) => setExamFilters((f) => ({ ...f, keyword: e.target.value }))}
-                    onSearch={() => { setExamPagination((p) => ({ ...p, page: 1 })); loadExams() }}
+                    onSearch={() => { setExamPagination((p) => ({ ...p, page: 1 })); refetchExams() }}
                   />
                   <Button type="primary" icon={<PlusOutlined />} onClick={openExamCreateModal}>
                     新建体检

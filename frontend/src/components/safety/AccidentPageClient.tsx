@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -24,7 +24,6 @@ import {
   SearchOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined as SearchIcon,
   AuditOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -51,11 +50,11 @@ import {
   ACCIDENT_TYPE_OPTIONS,
   ACCIDENT_LEVEL_OPTIONS,
   ACCIDENT_STATUS_OPTIONS,
-  INJURY_SEVERITY_OPTIONS,
+  
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text } = Typography
+const { Text: _Text } = Typography
 
 export function AccidentPageClient() {
   const { message, modal } = App.useApp()
@@ -73,9 +72,9 @@ export function AccidentPageClient() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
-  const [deptFilter, setDeptFilter] = useState<string | undefined>()
-  const [dateFromFilter, setDateFromFilter] = useState<string | undefined>()
-  const [dateToFilter, setDateToFilter] = useState<string | undefined>()
+  const [deptFilter, _setDeptFilter] = useState<string | undefined>()
+  const [dateFromFilter, _setDateFromFilter] = useState<string | undefined>()
+  const [dateToFilter, _setDateToFilter] = useState<string | undefined>()
 
   const {
     accidents,
@@ -112,10 +111,6 @@ export function AccidentPageClient() {
       setLoading(false)
     }
   }
-
-  useEffect(() => {
-    loadData()
-  }, [accidentQueryParams.page, accidentQueryParams.page_size, statusFilter, typeFilter, levelFilter])
 
   const handleSearch = () => {
     setAccidentQueryParams({ page: 1 })

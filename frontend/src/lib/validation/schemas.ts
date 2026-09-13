@@ -198,7 +198,7 @@ export function parse<T>(schema: z.ZodSchema<T>, data: unknown): T {
  * 格式化 Zod 错误为可读的中文消息
  */
 export function formatZodError(error: z.ZodError): string {
-  return error.issues.map((issue: any) => {
+  return error.issues.map((issue: z.ZodIssue) => {
     const path = issue.path.join('.')
     return `${path}: ${issue.message}`
   }).join('; ')

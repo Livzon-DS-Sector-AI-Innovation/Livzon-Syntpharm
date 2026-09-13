@@ -1,15 +1,4 @@
-import type { components } from '@/types/generated/schema'
 
-type RdExperimentLogCreate = Omit<components['schemas']['RdExperimentLogCreate'], 'project_id'>
-type RdExperimentLogUpdate = components['schemas']['RdExperimentLogUpdate']
-type RdReportCreate = Omit<components['schemas']['RdReportCreate'], 'project_id'>
-type RdReportUpdate = components['schemas']['RdReportUpdate']
-type RdPilotStudyCreate = Omit<components['schemas']['RdPilotStudyCreate'], 'project_id'>
-type RdPilotStudyUpdate = components['schemas']['RdPilotStudyUpdate']
-type RdProcessValidationCreate = Omit<components['schemas']['RdProcessValidationCreate'], 'project_id'>
-type RdProcessValidationUpdate = components['schemas']['RdProcessValidationUpdate']
-type RdRegistrationFilingCreate = Omit<components['schemas']['RdRegistrationFilingCreate'], 'project_id'>
-type RdRegistrationFilingUpdate = components['schemas']['RdRegistrationFilingUpdate']
 
 import {
   RdProject,
@@ -25,8 +14,8 @@ import {
   RdReport,
   RdInitiation,
   StageTransitionCheck,
-  StageTransitionResult,
   RdDeliverableTemplate,
+  RdTrackConclusionVersion,
 } from '@/types/research/rd-project'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
@@ -61,11 +50,11 @@ export async function fetchTracks(projectId: string): Promise<RdResearchTrack[]>
   return result || []
 }
 
-export async function fetchAllTracks(params: { projectId?: string; trackType?: string } = {}): Promise<any[]> {
+export async function fetchAllTracks(params: { projectId?: string; trackType?: string } = {}): Promise<RdResearchTrack[]> {
   const qs = new URLSearchParams()
   if (params.projectId) qs.set('project_id', params.projectId)
   if (params.trackType) qs.set('track_type', params.trackType)
-  const result = await apiGet<any[]>(`${API_BASE}/research/tracks?${qs}`)
+  const result = await apiGet<RdResearchTrack[]>(`${API_BASE}/research/tracks?${qs}`)
   return result || []
 }
 
@@ -113,8 +102,6 @@ export async function fetchReports(projectId: string): Promise<RdReport[]> {
   return result || []
 }
 
-type RdInitiationCreate = Omit<RdInitiation, 'id' | 'created_at' | 'updated_at'>
-type RdInitiationUpdate = Partial<Omit<RdInitiation, 'id' | 'project_id' | 'created_at' | 'updated_at'>>
 
 export async function fetchInitiations(projectId: string): Promise<RdInitiation[]> {
   const result = await apiGet<RdInitiation[]>(`${API_BASE}/research/initiations?project_id=${projectId}`)
@@ -125,8 +112,8 @@ export async function fetchTrackDetail(trackId: string): Promise<RdResearchTrack
   return apiGet<RdResearchTrack>(`${API_BASE}/research/tracks/${trackId}`)
 }
 
-export async function fetchConclusionVersions(trackId: string): Promise<any[]> {
-  const result = await apiGet<any[]>(`${API_BASE}/research/tracks/${trackId}/conclusion-versions`)
+export async function fetchConclusionVersions(trackId: string): Promise<RdTrackConclusionVersion[]> {
+  const result = await apiGet<RdTrackConclusionVersion[]>(`${API_BASE}/research/tracks/${trackId}/conclusion-versions`)
   return result || []
 }
 

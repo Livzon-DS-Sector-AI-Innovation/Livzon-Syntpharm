@@ -1,6 +1,7 @@
 'use client'
 
-import {useState, useEffect} from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import {
   Card,
@@ -29,10 +30,7 @@ import { ArrowLeftOutlined, SaveOutlined, PlusOutlined, DeleteOutlined, PaperCli
 import {uploadFile as uploadFileApi} from '@/actions/static-data'
 import dayjs from 'dayjs'
 import {
-  EQ_STATUS_OPTIONS,
   STANDARD_STATUS_OPTIONS,
-  CHROM_COLUMN_STATUS_OPTIONS,
-  STD_TYPE_OPTIONS,
   MATERIAL_TYPE_OPTIONS,
   STANDARD_SOURCE_OPTIONS,
   LIMIT_TYPE_OPTIONS,
@@ -46,7 +44,6 @@ import {
   getChromColumn,
   getMedium,
   getReagent,
-  getStandardMaterial,
   getMaterialStandard,
   getProductStandard,
   createStorageCondition,
@@ -56,7 +53,6 @@ import {
   createChromColumn,
   createMedium,
   createReagent,
-  createStandardMaterial,
   createMaterialStandard,
   createProductStandard,
   updateStorageCondition,
@@ -66,7 +62,6 @@ import {
   updateChromColumn,
   updateMedium,
   updateReagent,
-  updateStandardMaterial,
   updateMaterialStandard,
   updateProductStandard,
   getHplcReference,
@@ -98,6 +93,30 @@ const MODULE_LABELS: Record<string, string> = {
   'hplc-reference': '液相色谱对照品',
 }
 
+
+
+interface DictItem {
+  label: string
+  value: string | number
+  cond_name?: string
+  cond_code?: string
+  unit_name?: string
+  unit_code?: string
+  item_code?: string
+  item_name?: string
+  [key: string]: unknown
+}
+
+interface ItemRecord {
+  key: number
+  id?: number
+  test_item_code?: string
+  test_item_name?: string
+  test_method?: string
+  limit_type?: string
+  limit_value?: string
+}
+
 interface DetailPageProps {
   moduleType: string
   id: string | null
@@ -105,12 +124,22 @@ interface DetailPageProps {
 
 function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [form] = Form.useForm()
-  const [loading, setLoading] = useState(!!id && id !== 'new')
+  const [attachFiles, setAttachFiles] = useState<UploadFile[]>(() => {
+    if (supportsUpload && recordData?.attach_file) {
+      const names = (recordData.attach_file as string).split(',').filter(Boolean)
+      return names.map((name: string, idx: number) => ({
+        uid: String(-idx - 1),
+        name,
+        status: 'done' as const,
+        url: `${API}/download/${encodeURIComponent(name)}`,
+      }))
+    }
+    return []
+  })
+  const [items, setItems] = useState<Record<string, unknown>[]>([])
+  const formInitializedRef = useRef(false)
   const [saving, setSaving] = useState(false)
-  const [_record, setRecord] = useState<any>(null)
-  const [items, setItems] = useState<any[]>([])
   const [testItemOptions, setTestItemOptions] = useState<{ label: string; value: string }[]>([])
-  const [attachFiles, setAttachFiles] = useState<UploadFile[]>([])
   const [uploadLoading, setUploadLoading] = useState(false)
   const router = useRouter()
   const isNew = !id || id === 'new'
@@ -132,7 +161,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [chromColumnStatusOptions, setChromColumnStatusOptions] = useState<{ label: string; value: string }[]>([])
   const [unitOptions, setUnitOptions] = useState<{ label: string; value: string }[]>([])
   // 设备管理员选项（待接入人员模块后替换为真实API）
-  const [managerOptions, setManagerOptions] = useState<{ label: string; value: string }[]>([
+  const [managerOptions, _setManagerOptions] = useState<{ label: string; value: string }[]>([
     { label: '张三', value: '1' },
     { label: '李四', value: '2' },
     { label: '王五', value: '3' },
@@ -157,52 +186,46 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           fetch(`${API}/dict/chrom-column-status`).then(r => r.json()),
           fetch(`${API}/unit/options`).then(r => r.json()),
         ])
-        if (sc.code === 200 || sc.code === 0) setStorageCondOptions(sc.data.map((x: any) => ({ label: x.label || x.cond_name, value: x.value || x.cond_code })))
-        if (ec.code === 200 || ec.code === 0) setEquipmentCategoryOptions(ec.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (vs.code === 200 || vs.code === 0) setVerifyStatusOptions(vs.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (lab.code === 200 || lab.code === 0) setLabOptions(lab.data.map((x: any) => ({ label: x.label, value: String(x.value) })))
-        if (eqs.code === 200 || eqs.code === 0) setEqStatusOptions(eqs.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (mt.code === 200 || mt.code === 0) setMediumTypeOptions(mt.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (rp.code === 200 || rp.code === 0) setReagentPurityOptions(rp.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (dt.code === 200 || dt.code === 0) setDangerTypeOptions(dt.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (stt.code === 200 || stt.code === 0) setStdTypeOptions(stt.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (utt.code === 200 || utt.code === 0) setUnitTypeOptions(utt.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (tic.code === 200 || tic.code === 0) setTestItemCategoryOptions(tic.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (ccs.code === 200 || ccs.code === 0) setChromColumnStatusOptions(ccs.data.map((x: any) => ({ label: x.label, value: x.value })))
-        if (uo.code === 200 || uo.code === 0) setUnitOptions(uo.data.map((x: any) => ({ label: x.label || x.unit_name, value: x.value || x.unit_code })))
+        if (sc.code === 200 || sc.code === 0) setStorageCondOptions(sc.data.map((x: Record<string, unknown>) => ({ label: x.label || x.cond_name, value: x.value || x.cond_code })))
+        if (ec.code === 200 || ec.code === 0) setEquipmentCategoryOptions(ec.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (vs.code === 200 || vs.code === 0) setVerifyStatusOptions(vs.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (lab.code === 200 || lab.code === 0) setLabOptions(lab.data.map((x: Record<string, unknown>) => ({ label: x.label, value: String(x.value) })))
+        if (eqs.code === 200 || eqs.code === 0) setEqStatusOptions(eqs.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (mt.code === 200 || mt.code === 0) setMediumTypeOptions(mt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (rp.code === 200 || rp.code === 0) setReagentPurityOptions(rp.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (dt.code === 200 || dt.code === 0) setDangerTypeOptions(dt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (stt.code === 200 || stt.code === 0) setStdTypeOptions(stt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (utt.code === 200 || utt.code === 0) setUnitTypeOptions(utt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (tic.code === 200 || tic.code === 0) setTestItemCategoryOptions(tic.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (ccs.code === 200 || ccs.code === 0) setChromColumnStatusOptions(ccs.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
+        if (uo.code === 200 || uo.code === 0) setUnitOptions(uo.data.map((x: Record<string, unknown>) => ({ label: x.label || x.unit_name, value: x.value || x.unit_code })))
       } catch (_e) {
         // ignore errors
       }
     }
     loadDictData()
-  }, [moduleType])
+  }, [moduleType, isStdWithItems])
 
   // 加载检验项目下拉选项（用于 items 子表）
   useEffect(() => {
     if (isStdWithItems) {
-      listTestItem({ page: 1, page_size: 200 } as any)
-        .then((res: any) => {
-          const opts = (res.data ?? []).map((t: any) => ({
-            label: `${t.item_code} - ${t.item_name}`,
-            value: t.item_code,
+      listTestItem({ page: 1, page_size: 200 } as Record<string, unknown>)
+        .then((res: { data?: DictItem[] }) => {
+          const opts = (res.data ?? []).map((t: DictItem) => ({
+            label: `${t.item_code || ''} - ${t.item_name || ''}`,
+            value: t.item_code || '',
           }))
           setTestItemOptions(opts)
         })
         .catch(() => {})
     }
-  }, [moduleType])
+  }, [moduleType, isStdWithItems])
 
-  useEffect(() => {
-    if (!isNew) {
-      loadRecord()
-    }
-  }, [id, moduleType, isNew, loadRecord])
-
-  async function loadRecord() {
-    if (!id) return
-    setLoading(true)
-    try {
-      let res: any
+  const { data: recordData, isLoading: loading } = useQuery({
+    queryKey: ['static-data-record', moduleType, id],
+    queryFn: async () => {
+      if (!id) return null
+      let res: { data?: Record<string, unknown> } | null = null
       switch (moduleType) {
         case 'storage-condition': res = await getStorageCondition(Number(id)); break
         case 'unit': res = await getUnit(Number(id)); break
@@ -214,39 +237,36 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         case 'standard-material': res = await getMaterialStandard(Number(id)); break
         case 'product-standard': res = await getProductStandard(Number(id)); break
         case 'hplc-reference': res = await getHplcReference(Number(id)); break
-        default: return
+        default: return null
       }
-      const data = res.data
-      setRecord(data)
-      // 加载 items 子表
-      if (isStdWithItems && data.items) {
-        setItems(data.items.map((it: any, idx: number) => ({ ...it, key: it.id ?? Date.now() + idx })))
-      }
+      return res?.data ?? {}
+    },
+    enabled: !!id && !isNew,
+  })
+
+  const record = recordData || {}
+
+
+
+  // Set form values and other state when data changes (only once)
+  useEffect(() => {
+    if (recordData && !isNew && !formInitializedRef.current) {
+      formInitializedRef.current = true
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
-      const fmt: any = {}
+      const fmt: Record<string, unknown> = {}
       dateFields.forEach(f => {
-        if (data[f] && typeof data[f] === 'string') fmt[f] = dayjs(data[f])
+        if (recordData[f] && typeof recordData[f] === 'string') fmt[f] = dayjs(recordData[f] as string)
       })
-      form.setFieldsValue({ ...data, ...fmt })
-      // 初始化附件列表
-      if (supportsUpload && data.attach_file) {
-        const names = data.attach_file.split(',').filter(Boolean)
-        setAttachFiles(names.map((name: string, idx: number) => ({
-          uid: String(-idx - 1),
-          name,
-          status: 'done',
-          url: `${API}/download/${encodeURIComponent(name)}`,
-        })))
-      }
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
+      form.setFieldsValue({ ...recordData, ...fmt })
+      // attachFiles initialization is handled by useState initializer
     }
-  }
+  }, [recordData, isNew, supportsUpload, form])
 
-  async function handleSave(values: any) {
+
+
+
+  async function handleSave(values: Record<string, unknown> & { report_date?: { format: (f: string) => string } }) {
     setSaving(true)
     try {
       const processed = { ...values }
@@ -255,20 +275,20 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
       const dateFields = ['last_cal_date', 'next_cal_date', 'purchase_date', 'use_start_date',
         'expire_date', 'effect_date', 'invalid_date', 'arrival_date', 'produce_date', 'open_date']
       dateFields.forEach(f => {
-        if (processed[f] && typeof processed[f] === 'object' && processed[f].format) {
-          processed[f] = processed[f].format('YYYY-MM-DD')
+        if (processed[f] && typeof processed[f] === 'object' && (processed[f] as { format?: (f: string) => string }).format) {
+          processed[f] = (processed[f] as { format: (f: string) => string }).format('YYYY-MM-DD')
         }
       })
       processed.create_by = 1
       // 质量标准附带 items
       if (isStdWithItems) {
         processed.items = items.map(it => {
-          const { key, ...rest } = it
+          const { key: _key, ...rest } = it
           return rest
         })
       }
 
-      let fn: any, updateFn: any
+      let fn: (data: Record<string, unknown>) => Promise<unknown>, updateFn: (id: number, data: Record<string, unknown>) => Promise<unknown>
       switch (moduleType) {
         case 'storage-condition': fn = createStorageCondition; updateFn = updateStorageCondition; break
         case 'unit': fn = createUnit; updateFn = updateUnit; break
@@ -291,8 +311,8 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         message.success('保存成功')
       }
       router.push('/quality/static-data')
-    } catch (e: any) {
-      message.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setSaving(false)
     }
@@ -326,16 +346,16 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
 
     // 只在上传完成时处理
     if (file.status === 'done') {
-      const res = file.response as any
+      const res = file.response as { code?: number; data?: { stored_name?: string }; message?: string }
       if (res && (res.code === 200 || res.code === 0)) {
-        const uploaded = res.data
+        const uploaded = res?.data
         // 将文件名追加到 attach_file 字段
         const currentVal = form.getFieldValue('attach_file') || ''
-        const newVal = currentVal ? `${currentVal},${uploaded.stored_name}` : uploaded.stored_name
+        const newVal = currentVal ? `${currentVal},${uploaded?.stored_name}` : uploaded?.stored_name
         form.setFieldValue('attach_file', newVal)
         message.success(`${file.name} 上传成功`)
       } else {
-        message.error((file.response as any)?.message || '上传失败')
+        message.error((file.response as { message?: string })?.message || '上传失败')
       }
     } else if (file.status === 'error') {
       message.error(`${file.name} 上传失败`)
@@ -370,24 +390,24 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
         } else {
           onError?.(new Error(res.message || `上传失败(code: ${res.code})`))
         }
-      } catch (e: any) {
-        onError?.(e)
+      } catch (e: unknown) {
+        onError?.(e as Error)
       } finally {
         setUploadLoading(false)
       }
     },
   }
 
-  function updateItem(key: number, field: string, value: any) {
+  function updateItem(key: number, field: string, value: unknown) {
     setItems(prev => prev.map(i => i.key === key ? { ...i, [field]: value } : i))
   }
 
   // 物料标准 items 列定义
-  const matItemColumns: ColumnsType<any> = [
-    { title: '序号', width: 50, render: (_: any, __: any, idx: number) => idx + 1 },
+  const matItemColumns: ColumnsType<ItemRecord> = [
+    { title: '序号', width: 50, render: (_: unknown, __: unknown, idx: number) => idx + 1 },
     {
       title: '检验项目*', dataIndex: 'item_code', width: 200,
-      render: (v: string, record: any) => (
+      render: (v: string, record: ItemRecord) => (
         <Select
           value={v} style={{ width: '100%' }}
           options={testItemOptions} showSearch allowClear
@@ -399,42 +419,42 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     },
     {
       title: '检验方法', dataIndex: 'test_method', width: 160,
-      render: (v: string, record: any) => (
+      render: (v: string, record: ItemRecord) => (
         <Input value={v} placeholder="检验方法简述"
           onChange={e => updateItem(record.key, 'test_method', e.target.value)} />
       ),
     },
     {
       title: '限度类型*', dataIndex: 'limit_type', width: 100,
-      render: (v: string, record: any) => (
+      render: (v: string, record: ItemRecord) => (
         <Select value={v} options={LIMIT_TYPE_OPTIONS}
           onChange={val => updateItem(record.key, 'limit_type', val)} />
       ),
     },
     {
       title: '下限', dataIndex: 'limit_min', width: 90,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <InputNumber value={v} style={{ width: '100%' }} placeholder="下限"
           onChange={val => updateItem(record.key, 'limit_min', val)} />
       ),
     },
     {
       title: '上限', dataIndex: 'limit_max', width: 90,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <InputNumber value={v} style={{ width: '100%' }} placeholder="上限"
           onChange={val => updateItem(record.key, 'limit_max', val)} />
       ),
     },
     {
       title: '放行必检', dataIndex: 'is_release_item', width: 90,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <Select value={v} options={YES_NO_OPTIONS}
           onChange={val => updateItem(record.key, 'is_release_item', val)} />
       ),
     },
     {
       title: '操作', width: 70,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: ItemRecord) => (
         <Popconfirm title="确定删除？" onConfirm={() => removeItem(record.key)} okText="确定" cancelText="取消">
           <Button type="link" danger size="small" icon={<DeleteOutlined />}>删除</Button>
         </Popconfirm>
@@ -443,11 +463,11 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   ]
 
   // 产品标准 items 列定义（法定限度 + 内控限度）
-  const prodItemColumns: ColumnsType<any> = [
-    { title: '序号', width: 50, render: (_: any, __: any, idx: number) => idx + 1 },
+  const prodItemColumns: ColumnsType<ItemRecord> = [
+    { title: '序号', width: 50, render: (_: unknown, __: unknown, idx: number) => idx + 1 },
     {
       title: '检验项目*', dataIndex: 'item_code', width: 180,
-      render: (v: string, record: any) => (
+      render: (v: string, record: ItemRecord) => (
         <Select
           value={v} style={{ width: '100%' }}
           options={testItemOptions} showSearch allowClear
@@ -459,49 +479,49 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     },
     {
       title: '检验方法', dataIndex: 'test_method', width: 130,
-      render: (v: string, record: any) => (
+      render: (v: string, record: ItemRecord) => (
         <Input value={v} placeholder="检验方法简述"
           onChange={e => updateItem(record.key, 'test_method', e.target.value)} />
       ),
     },
     {
       title: '法定下限', dataIndex: 'legal_limit_min', width: 85,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <InputNumber value={v} style={{ width: '100%' }} placeholder="法定下限"
           onChange={val => updateItem(record.key, 'legal_limit_min', val)} />
       ),
     },
     {
       title: '法定上限', dataIndex: 'legal_limit_max', width: 85,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <InputNumber value={v} style={{ width: '100%' }} placeholder="法定上限"
           onChange={val => updateItem(record.key, 'legal_limit_max', val)} />
       ),
     },
     {
       title: '内控下限', dataIndex: 'inner_limit_min', width: 85,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <InputNumber value={v} style={{ width: '100%' }} placeholder="内控下限"
           onChange={val => updateItem(record.key, 'inner_limit_min', val)} />
       ),
     },
     {
       title: '内控上限', dataIndex: 'inner_limit_max', width: 85,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <InputNumber value={v} style={{ width: '100%' }} placeholder="内控上限"
           onChange={val => updateItem(record.key, 'inner_limit_max', val)} />
       ),
     },
     {
       title: '放行必检', dataIndex: 'is_release_item', width: 90,
-      render: (v: number, record: any) => (
+      render: (v: number, record: ItemRecord) => (
         <Select value={v} options={YES_NO_OPTIONS}
           onChange={val => updateItem(record.key, 'is_release_item', val)} />
       ),
     },
     {
       title: '操作', width: 70,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: ItemRecord) => (
         <Popconfirm title="确定删除？" onConfirm={() => removeItem(record.key)} okText="确定" cancelText="取消">
           <Button type="link" danger size="small" icon={<DeleteOutlined />}>删除</Button>
         </Popconfirm>
@@ -571,7 +591,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
             <Col span={24}><Form.Item name="remark" label="备注"><TextArea rows={2} /></Form.Item></Col>
             {/* 设备管理员附件：SOP文件 / 校准证书 / 验证资料 */}
             <Col span={24}>
-              <Divider orientation={"left" as any} style={{ marginTop: 8 }}>设备文件</Divider>
+              <Divider titlePlacement="left" style={{ marginTop: 8 }}>设备文件</Divider>
             </Col>
             <Col span={8}><Form.Item name="sop_file" label="SOP文件" help="操作规程PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
             <Col span={8}><Form.Item name="cal_cert" label="校准证书" help="最近一次校准证书PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
@@ -779,7 +799,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 附件上传区域（仅支持的模块显示） */}
           {supportsUpload && (
             <>
-              <Divider orientation={"left" as any}>
+              <Divider titlePlacement="left">
                 <PaperClipOutlined /> 附件上传
               </Divider>
               <div style={{ marginBottom: 16 }}>
@@ -820,7 +840,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 质量标准检验项目明细子表 */}
           {isStdWithItems && (
             <>
-              <Divider orientation={"left" as any}>
+              <Divider titlePlacement="left">
                 检验项目明细
                 <Button type="link" size="small" icon={<PlusOutlined />} onClick={addItem} style={{ marginLeft: 8 }}>
                   新增项目
@@ -828,7 +848,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
               </Divider>
               <Table
                 columns={moduleType === 'material-standard' ? matItemColumns : prodItemColumns}
-                dataSource={items}
+                dataSource={items as unknown as ItemRecord[]}
                 rowKey="key"
                 pagination={false}
                 size="small"

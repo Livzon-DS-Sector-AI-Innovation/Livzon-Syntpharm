@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Checkbox, Space, Typography, Tag, Spin, Alert } from 'antd'
 import { NodeIndexOutlined } from '@ant-design/icons'
 import { getRegulationStages } from '@/actions/safety'
@@ -19,30 +20,32 @@ export default function StageSelector({
   value = [],
   onChange,
 }: StageSelectorProps) {
-  const [stages, setStages] = useState<RegulationStageInfo[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
-  const loadStages = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+  const { data: stagesData, isLoading: loading, error: stagesError } = useQuery({
+    queryKey: ['regulation-stages', regulationId],
+    queryFn: async () => {
+    
+    // setError(null)
     try {
       const res = await getRegulationStages(regulationId)
       if (res.code === 200 && res.data) {
-        setStages(res.data.stages || [])
+        return res.data.stages || []
       } else {
-        setError(res.message || '无法解析该操规的工艺阶段')
+        throw new Error(res.message || '无法解析该操规的工艺阶段')
       }
     } catch {
-      setError('加载工艺阶段失败')
+      throw new Error('加载工艺阶段失败')
     } finally {
-      setLoading(false)
+      
     }
-  }, [regulationId])
+      },
+    enabled: !!regulationId,
+  })
 
-  useEffect(() => {
-    if (regulationId) loadStages()
-  }, [regulationId, loadStages])
+  const stages = stagesData || []
+  const error = stagesError?.message || null
+
+
 
   const handleCheckAll = () => {
     if (stages.length === 0) return

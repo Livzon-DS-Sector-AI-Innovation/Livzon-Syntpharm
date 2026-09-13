@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { Card, Row, Col, Typography, Spin, Button, Select, Tabs } from 'antd'
+import { useState } from 'react'
+import { Card, Row, Col, Typography, Button, Select, Tabs } from 'antd'
 import { HomeOutlined, AppstoreOutlined, FilterOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
@@ -18,13 +18,8 @@ const YEAR_OPTIONS = Array.from({ length: 5 }, (_, i) => {
 
 export default function ProductOutputPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
   const [chartYear, setChartYear] = useState(dayjs().year())
   const [activeTab, setActiveTab] = useState('workshop')
-
-  useEffect(() => {
-    setLoading(false)
-  }, [])
 
   const handleWorkshopClick = (workshop: string) => {
     router.push(`/production/product-output/${encodeURIComponent(workshop)}`)
@@ -74,14 +69,6 @@ export default function ProductOutputPage() {
       children: <AnnualReviewTab year={chartYear} />,
     },
   ]
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Spin size="large" />
-      </div>
-    )
-  }
 
   return (
     <div className="p-6 space-y-6">

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, Row, Col, Typography, Spin, Empty, Breadcrumb, Table, Tag, DatePicker, Select } from 'antd'
 import { HomeOutlined, AppstoreOutlined } from '@ant-design/icons'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getProductOutputs } from '@/actions/product-output'
-import type { ProductOutput } from '@/types/product-output'
+import type { ProductOutput, ProductOutputQueryParams } from '@/types/product-output'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -26,10 +27,6 @@ export default function ProductDetailPage() {
   const params = useParams()
   const productName = decodeURIComponent(params.productName as string)
   
-  const [loading, setLoading] = useState(true)
-  const [workshopStats, setWorkshopStats] = useState<WorkshopStats[]>([])
-  const [totalWeight, setTotalWeight] = useState(0)
-  const [totalBatches, setTotalBatches] = useState(0)
   
   // 筛选状态
   const [filterType, setFilterType] = useState<'all' | 'date' | 'month' | 'year'>('all')
@@ -37,14 +34,10 @@ export default function ProductDetailPage() {
   const [selectedMonth, setSelectedMonth] = useState<dayjs.Dayjs | null>(null)
   const [selectedYear, setSelectedYear] = useState<number | null>(null)
 
-  useEffect(() => {
-    loadProductData()
-  }, [productName, filterType, dateRange, selectedMonth, selectedYear])
-
-  const loadProductData = async () => {
-    setLoading(true)
-    try {
-      const queryParams: any = { 
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ['product-output-stats', productName, filterType, dateRange, selectedMonth, selectedYear],
+    queryFn: async () => {
+      const queryParams: ProductOutputQueryParams = { 
         product_name: productName,
         page_size: 200 
       }
@@ -106,16 +99,23 @@ export default function ProductDetailPage() {
           }
         })
         
-        setWorkshopStats(Array.from(workshopMap.values()))
-        setTotalWeight(totalW)
-        setTotalBatches(totalB)
+        return {
+          workshopStats: Array.from(workshopMap.values()),
+          totalWeight: totalW,
+          totalBatches: totalB
+        }
       }
-    } catch (error) {
-      console.error('加载产品数据失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+      
+      return { workshopStats: [], totalWeight: 0, totalBatches: 0 }
+    },
+  })
+
+  const workshopStats = queryData?.workshopStats || []
+  const totalWeight = queryData?.totalWeight || 0
+  const totalBatches = queryData?.totalBatches || 0
+
+
+
 
   const columns = [
     {
@@ -139,7 +139,7 @@ export default function ProductDetailPage() {
     {
       title: '每月产量',
       key: 'monthly',
-      render: (_: any, record: WorkshopStats) => (
+      render: (_: unknown, record: WorkshopStats) => (
         <div>
           {Object.entries(record.monthly)
             .sort(([a], [b]) => b.localeCompare(a))
@@ -157,7 +157,7 @@ export default function ProductDetailPage() {
     {
       title: '每年产量',
       key: 'yearly',
-      render: (_: any, record: WorkshopStats) => (
+      render: (_: unknown, record: WorkshopStats) => (
         <div>
           {Object.entries(record.yearly)
             .sort(([a], [b]) => b.localeCompare(a))

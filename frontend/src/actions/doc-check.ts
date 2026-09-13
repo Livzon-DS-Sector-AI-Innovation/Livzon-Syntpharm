@@ -3,11 +3,13 @@
 import { revalidatePath } from 'next/cache'
 import {
   CheckConfig,
-  CheckProgress,
+  CheckItemType,
   CheckMain,
-  CheckMainDetail,
   CheckProblem,
+  CheckStatus,
+  FileType,
   HandleStatus,
+  RiskLevel,
   UploadFileRequest,
   StartCheckRequest,
   HandleProblemRequest,
@@ -67,7 +69,7 @@ export async function startCheck(
 
   return {
     task_id: data.task_id || request.file_id,
-    status: (data.status as any) || 'pending',
+    status: (data.status as CheckStatus) || 'pending',
     message: response.message,
   }
 }
@@ -76,7 +78,10 @@ export async function getCheckProgress(
   taskId: string
 ): Promise<CheckProgressResponse> {
   try {
-    const response = await getCheckProgressApi(taskId) as ApiResponse<any>
+    const response = await getCheckProgressApi(taskId) as ApiResponse<{
+      status?: CheckStatus
+      result_summary?: string
+    }>
 
     const data = response.data || {}
 
@@ -111,7 +116,21 @@ export async function getCheckRecords(
   filter?: QueryCheckRecordsRequest
 ): Promise<CheckRecordResponse> {
   const response = await getCheckRecordsApi(filter) as ApiResponse<{
-    items: any[]
+    items: Array<{
+      id: string
+      file_name?: string
+      file_code?: string
+      file_version?: string
+      file_type?: FileType
+      operator?: string
+      created_at?: string
+      updated_at?: string
+      status?: CheckStatus
+      total_problems?: number
+      risk_high?: number
+      risk_medium?: number
+      risk_low?: number
+    }>
     total: number
     page: number
     page_size: number
@@ -127,14 +146,14 @@ export async function getCheckRecords(
     file_type: item.file_type,
     preparer: item.operator,
     prepare_date: item.created_at,
-    status: item.status,
+    status: item.status || 'pending',
     total_problems: item.total_problems || 0,
     risk_high: item.risk_high || 0,
     risk_medium: item.risk_medium || 0,
     risk_low: item.risk_low || 0,
     operator: item.operator,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
+    created_at: item.created_at || '',
+    updated_at: item.updated_at || '',
   }))
 
   return {
@@ -148,11 +167,37 @@ export async function getCheckRecords(
 export async function getCheckRecordDetail(
   id: string
 ): Promise<CheckRecordDetailResponse> {
-  const response = await getCheckRecordDetailApi(id) as ApiResponse<any>
+  const response = await getCheckRecordDetailApi(id) as ApiResponse<{
+    id?: string
+    file_name?: string
+    file_code?: string
+    file_version?: string
+    file_type?: FileType
+    operator?: string
+    created_at?: string
+    updated_at?: string
+    status?: CheckStatus
+    total_problems?: number
+    risk_high?: number
+    risk_medium?: number
+    risk_low?: number
+    problems?: Array<{
+      id: string
+      main_id?: string
+      problem_type?: CheckItemType
+      risk_level?: RiskLevel
+      location?: string
+      description?: string
+      suggestion?: string
+      handle_status?: HandleStatus
+      created_at?: string
+      updated_at?: string
+    }>
+  }>
 
   const data = response.data || {}
 
-  const problems: CheckProblem[] = (data.problems || []).map((p: any) => ({
+  const problems: CheckProblem[] = (data.problems || []).map((p) => ({
     id: p.id,
     main_id: p.main_id || id,
     problem_type: p.problem_type || 'duplicate',
@@ -161,26 +206,26 @@ export async function getCheckRecordDetail(
     description: p.description || '',
     suggestion: p.suggestion,
     handle_status: p.handle_status || 'pending',
-    created_at: p.created_at,
-    updated_at: p.updated_at,
+    created_at: p.created_at || '',
+    updated_at: p.updated_at || '',
   }))
 
   return {
-    id: data.id,
+    id: data.id || '',
     file_name: data.file_name || '',
-    file_no: data.file_code || data.file_name,
-    file_version: data.file_version,
-    file_type: data.file_type,
-    preparer: data.operator,
-    prepare_date: data.created_at,
-    status: data.status,
+    file_no: data.file_code || data.file_name || "",
+    file_version: data.file_version || "",
+    file_type: data.file_type || "sop",
+    preparer: data.operator || "",
+    prepare_date: data.created_at || "",
+    status: data.status || 'pending',
     total_problems: data.total_problems || 0,
     risk_high: data.risk_high || 0,
     risk_medium: data.risk_medium || 0,
     risk_low: data.risk_low || 0,
-    operator: data.operator,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
+    operator: data.operator || "",
+    created_at: data.created_at || '',
+    updated_at: data.updated_at || '',
     problems,
   }
 }
@@ -197,10 +242,10 @@ export async function handleProblem(
 
   revalidatePath('/quality/doc-check')
 
-  const data = response.data || {}
+  const data = response.data || { id: problemId, handle_status: request.handle_status }
 
   return {
-    id: data.id || problemId,
+    id: data.id,
     handle_status: (data.handle_status as HandleStatus) || request.handle_status,
     ignore_reason: data.ignore_reason,
   }
@@ -242,16 +287,16 @@ export async function exportCheckReport(
 }
 
 export async function confirmCheck(
-  id: string,
-  operator?: string
+  _id: string,
+  _operator?: string
 ): Promise<{ success: boolean }> {
   revalidatePath('/quality/doc-check')
   return { success: true }
 }
 
 export async function cancelCheck(
-  taskId: string,
-  operator?: string
+  _taskId: string,
+  _operator?: string
 ): Promise<{ success: boolean }> {
   revalidatePath('/quality/doc-check')
   return { success: true }
@@ -259,22 +304,25 @@ export async function cancelCheck(
 
 export async function getCheckConfig(): Promise<CheckConfig> {
   try {
-    const response = await getCheckConfigApi() as ApiResponse<any[]>
+    const response = await getCheckConfigApi() as ApiResponse<Array<{
+      config_key: string
+      config_value: unknown
+    }>>
 
     const configs = response.data || []
 
-    const configMap: Record<string, any> = {}
+    const configMap: Record<string, unknown> = {}
     for (const c of configs) {
       configMap[c.config_key] = c.config_value
     }
 
     return {
-      enable_duplicate_check: configMap.enable_duplicate_check !== false,
-      enable_conflict_check: configMap.enable_conflict_check !== false,
-      enable_regulation_check: configMap.enable_regulation_check !== false,
-      enable_internal_control_check: configMap.enable_internal_control_check !== false,
-      severe_duplicate_threshold: configMap.severe_duplicate_threshold || 85,
-      suspected_duplicate_threshold: configMap.suspected_duplicate_threshold || 70,
+      enable_duplicate_check: (configMap.enable_duplicate_check as boolean) !== false,
+      enable_conflict_check: (configMap.enable_conflict_check as boolean) !== false,
+      enable_regulation_check: (configMap.enable_regulation_check as boolean) !== false,
+      enable_internal_control_check: (configMap.enable_internal_control_check as boolean) !== false,
+      severe_duplicate_threshold: (configMap.severe_duplicate_threshold as number) || 85,
+      suspected_duplicate_threshold: (configMap.suspected_duplicate_threshold as number) || 70,
     }
   } catch {
     return {
@@ -292,7 +340,7 @@ export async function updateCheckConfig(
   config: CheckConfig,
   operator?: string
 ): Promise<CheckConfig> {
-  const configKeys = [
+  const configKeys: Array<keyof CheckConfig> = [
     'enable_duplicate_check',
     'enable_conflict_check',
     'enable_regulation_check',
@@ -302,7 +350,7 @@ export async function updateCheckConfig(
   ]
 
   for (const key of configKeys) {
-    const value = (config as any)[key]
+    const value = config[key]
     if (value !== undefined) {
       try {
         await updateCheckConfigApi(key, String(value), operator)

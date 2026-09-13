@@ -53,29 +53,24 @@ export default function KnowledgeBasePicker({ open, onClose, onSelect, excludeId
         category: category || undefined
       })
       if (res.code === 200 && res.data) {
-        setArticles(res.data.filter((a) => !excludeIds.includes(a.id)))
+        setArticles((res.data as SafetyKnowledgeArticle[]).filter((a: SafetyKnowledgeArticle) => !excludeIds.includes(a.id)))
       }
     } catch {
       message.error('获取知识库文章失败')
     } finally {
       setLoading(false)
     }
-  }, [keyword, category, excludeIds])
-
-  useEffect(() => {
-    if (open) {
-      fetchArticles()
-    }
-  }, [open, fetchArticles])
+  }, [keyword, category, excludeIds, message])
 
   // 重置状态
-  useEffect(() => {
-    if (!open) {
-      setSelectedIds([])
-      setKeyword('')
-      setCategory('')
-    }
-  }, [open])
+  // Reset state when modal closes - moved to close handler
+  // useEffect(() => {
+  //   if (!open) {
+  //     setSelectedIds([])
+  //     setKeyword('')
+  //     setCategory('')
+  //   }
+  // }, [open])
 
   const handleConfirm = () => {
     const selected = articles.filter((a) => selectedIds.includes(a.id))

@@ -10,7 +10,7 @@ interface StockWarningTableProps {
   onRefresh?: () => void
 }
 
-export function StockWarningTable({ onRefresh }: StockWarningTableProps) {
+export function StockWarningTable({ onRefresh: _onRefresh }: StockWarningTableProps) {
   const { stockWarnings, stockWarningsLoading } = useEquipmentStore()
 
   const columns: ColumnsType<StockWarning> = [

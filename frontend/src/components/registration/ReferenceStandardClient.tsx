@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
-import { Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
+import { useState, useCallback } from 'react'
+import { UploadFile, Table, Input, Button, Space, App, Card, Modal, Form, Upload, Row, Col, Spin, Alert } from 'antd'
 import {DownloadOutlined, DeleteOutlined, FileSearchOutlined} from '@ant-design/icons'
 import { ReferenceStandardListItem } from '@/types/registration'
 import { fetchReferenceStandards, fetchReferenceStandardDownloadUrl } from '@/lib/api/client/registration'
@@ -30,7 +30,7 @@ export default function ReferenceStandardClient({
   const [parsing, setParsing] = useState(false)
   const [parsedInfo, setParsedInfo] = useState<string>('')
   const [form] = Form.useForm()
-  const [coaFileList, setCoaFileList] = useState<any[]>([])
+  const [coaFileList, setCoaFileList] = useState<UploadFile[]>([])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -42,16 +42,12 @@ export default function ReferenceStandardClient({
       })
       setRecords(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
     } finally {
       setLoading(false)
     }
-  }, [drugName, page, pageSize])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  }, [drugName, page, pageSize, message])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -92,8 +88,8 @@ export default function ReferenceStandardClient({
         setParsedInfo('COA解析完成，但未提取到关键信息，请手动填写')
         message.warning('COA解析完成，但未提取到关键信息，请手动填写')
       }
-    } catch (err: any) {
-      message.error(err.message || 'COA解析失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || 'COA解析失败')
       setParsedInfo('COA解析失败，请手动填写')
     } finally {
       setParsing(false)
@@ -113,7 +109,7 @@ export default function ReferenceStandardClient({
       setGenerating(true)
 
       const formData = new FormData()
-      formData.append('coa', coaFileList[0].originFileObj)
+      formData.append('coa', coaFileList[0].originFileObj as File)
 
       const result = await generateReferenceStandard(formData, {
         drug_name: values.drug_name,
@@ -142,8 +138,8 @@ export default function ReferenceStandardClient({
       } else {
         message.error(result.message)
       }
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '生成失败')
     } finally {
       setGenerating(false)
     }
@@ -154,8 +150,8 @@ export default function ReferenceStandardClient({
       await deleteReferenceStandardAction(id)
       message.success('删除成功')
       loadData()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '删除失败')
     }
   }
 
@@ -202,7 +198,7 @@ export default function ReferenceStandardClient({
       key: 'action',
       width: 150,
       fixed: 'right' as const,
-      render: (_: any, record: ReferenceStandardListItem) => (
+      render: (_: unknown, record: ReferenceStandardListItem) => (
         <Space>
           <Button
             type="link"

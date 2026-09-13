@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import {Card, Button, Space, Tag, Divider, Row, Col, Descriptions, App, Modal, Input} from 'antd'
+import {Card, Button, Space, Tag, Divider, Row, Col, App, Modal, Input} from 'antd'
 import { CheckCircleOutlined, DownloadOutlined, EditOutlined, SendOutlined, FileTextOutlined } from '@ant-design/icons'
 import type {
   LabConfirmationStudy,
@@ -26,7 +26,7 @@ interface ModuleReportProps {
 }
 
 export function ModuleReport({
-  optimizationId,
+  optimizationId: _optimizationId,
   optimizationName,
   doeExperiment,
   impurityStudy,

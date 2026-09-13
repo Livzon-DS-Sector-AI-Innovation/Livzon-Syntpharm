@@ -1,15 +1,16 @@
 'use client'
 
-import {useState, useEffect} from 'react'
+import {useState} from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
-  App, Button, Tag, Select, Table, InputNumber, Input, Space, Alert,
-  Badge, Popconfirm, Empty, Spin, Card, Modal, Typography,
+  App, Button, Tag, Select, Input, Space, Alert,
+  Badge, Empty, Spin, Card, Modal, Typography,
 } from 'antd'
 import {
-  ThunderboltOutlined, CheckOutlined, EditOutlined,
-  ReloadOutlined, EyeOutlined, FileImageOutlined,
+  ThunderboltOutlined, CheckOutlined,
+  ReloadOutlined, FileImageOutlined,
 } from '@ant-design/icons'
-import type { ChapterAsset, AssetCategory } from '@/types/dossier-writer'
+import type { ChapterAsset } from '@/types/dossier-writer'
 import type { AIPreviewResult, AIFieldResult, PageSplitInfo } from '@/types/dossier-writer'
 import { fetchAssetCategories, fetchSelectedAssets } from '@/lib/api/client/dossier-writer'
 import { aiConfirmAndFill, aiPreviewExtraction, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
@@ -26,12 +27,10 @@ interface AiFillPanelProps {
   onFillComplete?: () => void
 }
 
-export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
+export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKey, onAssetsChange, onFillComplete }: AiFillPanelProps) {
   const { message } = App.useApp()
 
   // Categories (for display labels)
-  const [categories, setCategories] = useState<AssetCategory[]>([])
-  const [_categoriesLoading, setCategoriesLoading] = useState(false)
 
   // AI preview
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -56,72 +55,51 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   const [fillResults, setFillResults] = useState<Array<{field_name: string; status: string; message: string}>>([])
 
   // LLM availability
-  const [llmAvailable, setLlmAvailable] = useState<boolean | null>(null)
 
-  useEffect(() => {
-    testLLMConnection()
-      .then(res => {
+  const { data: llmTestResult } = useQuery({
+    queryKey: ['llm-connection-test'],
+    queryFn: async () => {
+      try {
+        const res = await testLLMConnection()
         const ok = res && typeof res === 'object' && 'data' in res
           ? (res.data as { status: string }).status === 'ok'
           : false
-        setLlmAvailable(ok)
-      })
-      .catch(() => {
-        setLlmAvailable(false)
-      })
-  }, [])
+        return ok
+      } catch {
+        return false
+      }
+    },
+  })
+  const llmAvailable = llmTestResult ?? null
 
 
   // Selected assets (loaded from API)
-  const [selectedAssets, setSelectedAssets] = useState<ChapterAsset[]>([])
-  const [_selectedAssetsLoading, setSelectedAssetsLoading] = useState(false)
-  // Reset fill state when chapter changes
-  useEffect(() => {
-    setFillDone(false)
-    setPreviewResult(null)
-    setEditedFields([])
-    setFillResults([])
-  }, [chapterId])
+  // Note: Component remounts when chapterId changes (via key prop in parent)
 
   // Load selected assets (including inherited)
-  useEffect(() => {
-    loadSelectedAssets()
-  }, [chapterId, refreshKey])
+  const { data: selectedAssets = [], refetch: _refetchSelectedAssets } = useQuery({
+    queryKey: ['selected-assets', chapterId, refreshKey],
+    queryFn: async () => {
+      const res = await fetchSelectedAssets(chapterId)
+      return res || []
+    },
+  })
 
   // Load categories for label display
-  useEffect(() => {
-    if (chapterCode) {
-      loadCategories()
-    }
-  }, [chapterCode])
+  const { data: categories = [] } = useQuery({
+    queryKey: ['asset-categories', chapterCode],
+    queryFn: async () => {
+      if (!chapterCode) return []
+      const res = await fetchAssetCategories(chapterCode)
+      return res || []
+    },
+    enabled: !!chapterCode,
+  })
 
-  const loadSelectedAssets = async () => {
-    setSelectedAssetsLoading(true)
-    try {
-      const data = await fetchSelectedAssets(chapterId)
-      setSelectedAssets(Array.isArray(data) ? data : [])
-    } catch {
-      setSelectedAssets([])
-    } finally {
-      setSelectedAssetsLoading(false)
-    }
-  }
-
-  const loadCategories = async () => {
-    if (!chapterCode) return
-    setCategoriesLoading(true)
-    try {
-      const data = await fetchAssetCategories(chapterCode)
-      setCategories(data)
-    } catch {
-      // silently fail
-    } finally {
-      setCategoriesLoading(false)
-    }
-  }
+  // loadSelectedAssets and loadCategories are now handled by useQuery
 
   // Build category name map from assets
-  const getCategoryName = (asset: ChapterAsset): string | undefined => {
+  const _getCategoryName = (asset: ChapterAsset): string | undefined => {
     if (!asset.category_id) return undefined
     const cat = categories.find(c => c.id === asset.category_id)
     return cat?.category_name
@@ -166,8 +144,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         } else {
           // 如果有详细错误信息，构建更详细的提示
           if (result.error_details && Array.isArray(result.error_details)) {
-            const details = result.error_details.slice(0, 3).map((err: any) => {
-              if (err.filename && err.reason) {
+            const details = result.error_details.slice(0, 3).map((err: { filename?: string; reason?: string } | string) => {
+              if (typeof err === "object" && err !== null && "filename" in err && "reason" in err && err.filename && err.reason) {
                 return `${err.filename}: ${err.reason}`
               }
               return typeof err === 'string' ? err : JSON.stringify(err)
@@ -179,11 +157,11 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         
         message.error(errorMsg, 10)  // 显示10秒
       }
-    } catch (err: any) {
-      let errorMsg = err.message || 'AI 提取失败'
+    } catch (err: unknown) {
+      let errorMsg = (err instanceof Error ? err.message : null) || 'AI 提取失败'
       
       // 如果是超时错误
-      if (err.name === 'AbortError' || errorMsg.includes('超时')) {
+      if (err instanceof Error && err.name === 'AbortError' || errorMsg.includes('超时')) {
         errorMsg = 'AI 解析超时，请稍后重试或减少素材数量'
       }
       
@@ -195,10 +173,10 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
   }
 
   // Handle field edit
-  const handleFieldEdit = (index: number, value: any) => {
+  const handleFieldEdit = (index: number, value: unknown) => {
     setEditedFields(prev => {
       const next = [...prev]
-      next[index] = { ...next[index], value }
+      next[index] = { ...next[index], value: value as string | number | null | Array<Array<string>> }
       return next
     })
   }
@@ -212,7 +190,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         setFillResults(result.results || [])
         setFillDone(true)
         onFillComplete?.()
-        const filled = (result.results || []).filter((r: any) => r.status === 'filled').length
+        const filled = (result.results || []).filter((r: { status: string }) => r.status === 'filled').length
         const total = (result.results || []).length
         if (filled === total) {
           message.success(`填充完成: ${filled}/${total} 个字段`)
@@ -222,8 +200,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       } else {
         message.error(result.message || '填充失败', 8)
       }
-    } catch (err: any) {
-      message.error(err.message || '填充失败', 8)
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '填充失败', 8)
       console.error('[AI Fill] 异常:', err)
     } finally {
       setFilling(false)
@@ -281,8 +259,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       const slots = imageFields.map(f => f.field_name)
       const result = await splitPreview(asset.id, slots)
       setSplitPages(result.pages || [])
-    } catch (err: any) {
-      message.error(err.message || '页面拆分失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '页面拆分失败')
     } finally {
       setSplitLoading(false)
     }
@@ -319,8 +297,8 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       
       // Trigger refresh
       onAssetsChange()
-    } catch (err: any) {
-      message.error(err.message || '插入失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '插入失败')
     } finally {
       setSplitInserting(false)
     }
@@ -447,7 +425,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
 
                 {field.field_type === 'table' && Array.isArray(field.value) ? (
                   <div className="text-xs text-gray-500">
-                    表格数据: {field.value.length} 行 × {(field.value[0] as any[])?.length || 0} 列
+                    表格数据: {field.value.length} 行 × {(field.value[0] as unknown[])?.length || 0} 列
                   </div>
                 ) : field.field_type === 'image_appendix' ? (
                   <div className="flex items-center justify-between gap-2">

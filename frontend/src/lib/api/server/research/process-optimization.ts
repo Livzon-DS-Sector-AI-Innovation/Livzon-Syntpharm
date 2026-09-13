@@ -1,6 +1,13 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
-export async function fetchOptimizations(filters: any = {}) {
+interface OptimizationFilters {
+  project_id?: string
+  status?: string
+  page?: number
+  page_size?: number
+}
+
+export async function fetchOptimizations(filters: OptimizationFilters = {}) {
   const params = new URLSearchParams()
   if (filters.project_id) params.set('project_id', filters.project_id)
   if (filters.status) params.set('status', filters.status)

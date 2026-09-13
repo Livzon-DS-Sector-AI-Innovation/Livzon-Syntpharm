@@ -41,7 +41,7 @@ export function AttachmentPreview({
 
   const fetchReviews = async () => {
     try {
-      const data = await apiGet<any[]>(`/api/v1/quality/attachment-reviews?attachment_url=${encodeURIComponent(attachment?.downloadUrl || '')}`)
+      const data = await apiGet<AttachmentReview[]>(`/api/v1/quality/attachment-reviews?attachment_url=${encodeURIComponent(attachment?.downloadUrl || '')}`)
       setReviews(data)
     } catch (err) {
       console.error('Failed to fetch reviews:', err)
@@ -64,7 +64,7 @@ export function AttachmentPreview({
         if (deviationId) params.append('deviation_id', deviationId)
         if (capaId) params.append('capa_id', capaId)
 
-        const result = await apiGet<any[]>(`/api/v1/quality/attachment-reviews?${params.toString()}`)
+        const result = await apiGet<AttachmentReview[]>(`/api/v1/quality/attachment-reviews?${params.toString()}`)
         if (!cancelled) setReviews(result || [])
       } catch {
         if (!cancelled) message.error('加载审阅记录失败')
@@ -78,7 +78,7 @@ export function AttachmentPreview({
     return () => {
       cancelled = true
     }
-  }, [open, attachment, deviationId, capaId])
+  }, [open, attachment, deviationId, capaId, message])
 
   const handleSubmitReview = async () => {
     if (!newComment.trim() || !attachment || !attachment.downloadUrl) return
@@ -182,6 +182,7 @@ export function AttachmentPreview({
                 <List.Item
                   actions={[
                     <Button
+                      key="delete"
                       type="text"
                       size="small"
                       danger

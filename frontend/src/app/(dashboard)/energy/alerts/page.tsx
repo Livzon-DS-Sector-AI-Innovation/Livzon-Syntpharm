@@ -3,11 +3,13 @@
 
 import type { Dayjs } from 'dayjs'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {Button, Space, App, Tabs, DatePicker, Select, Card, Modal, Form, Input} from 'antd'
+import type { FormInstance } from 'antd'
 import { PlusOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import { AlertRuleTable, AlertConfigDrawer, AlertRecordTable } from '@/components/energy'
-import { AlertRule, AlertRecord } from '@/types/energy'
+import { AlertRule, AlertRecord, RecordQueryParams, EnergyType } from '@/types/energy'
 import { deleteAlertRule, syncBitableDailyDataAction, processAlertRecord } from '@/actions/energy'
 import { fetchAlertRecords as fetchAlertRecordsAPI, fetchAlertRules as fetchAlertRulesAPI } from '@/lib/api/client/energy'
 import { useEnergyStore } from '@/stores/energy'
@@ -25,8 +27,8 @@ const ProcessModal = ({
   setProcessModalOpen: (open: boolean) => void
   handleSubmitProcess: () => void
   processing: boolean
-  processForm: any
-  processingRecord: any
+  processForm: FormInstance
+  processingRecord: AlertRecord | null
 }) => (
   <Modal
     title="处理预警记录"
@@ -79,19 +81,13 @@ const ProcessModal = ({
 
 export default function AlertsPage() {
   const { message } = App.useApp()
-  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { openAlertConfigDrawer } = useEnergyStore()
   
   // 预警规则状态
-  const [rules, setRules] = useState<AlertRule[]>([])
-  const [rulesLoading, setRulesLoading] = useState(false)
-  const [rulesTotal, setRulesTotal] = useState(0)
   const [rulesPage, setRulesPage] = useState(1)
   const [rulesPageSize, setRulesPageSize] = useState(10)
 
   // 预警记录状态
-  const [records, setRecords] = useState<AlertRecord[]>([])
-  const [recordsLoading, setRecordsLoading] = useState(false)
-  const [recordsTotal, setRecordsTotal] = useState(0)
   const [recordsPage, setRecordsPage] = useState(1)
   const [recordsPageSize, setRecordsPageSize] = useState(10)
 
@@ -100,51 +96,52 @@ export default function AlertsPage() {
   const [filterEnergyType, setFilterEnergyType] = useState<string | undefined>(undefined)
 
   // 获取预警规则
-  const fetchRules = useCallback(async (showSuccessMessage = false) => {
-    setRulesLoading(true)
-    try {
+  const { data: rulesData, isLoading: rulesLoading, refetch: refetchRules } = useQuery({
+    queryKey: ['alert-rules', { rulesPage, rulesPageSize }],
+    queryFn: async () => {
       const result = await fetchAlertRulesAPI({ page: rulesPage, page_size: rulesPageSize })
-      setRules(result.items)
-      setRulesTotal(result.total)
-      if (showSuccessMessage) {
-        message.success('刷新成功')
-      }
-    } catch (_error) {
-      message.error('获取预警规则失败')
-    } finally {
-      setRulesLoading(false)
+      return result
+    },
+  })
+
+  const rules = rulesData?.items || []
+  const rulesTotal = rulesData?.total || 0
+
+  const fetchRules = (showSuccessMessage = false) => {
+    const promise = refetchRules()
+    if (showSuccessMessage) {
+      message.success('刷新成功')
     }
-  }, [rulesPage, rulesPageSize, message])
+    return promise
+  }
 
   // 获取预警记录（支持筛选）
-  const fetchRecords = useCallback(async (showSuccessMessage = false) => {
-    setRecordsLoading(true)
-    try {
-      const params: any = { page: recordsPage, page_size: recordsPageSize }
+  const { data: recordsData, isLoading: recordsLoading, refetch: refetchRecords } = useQuery({
+    queryKey: ['alert-records', { recordsPage, recordsPageSize, filterDate, filterEnergyType }],
+    queryFn: async () => {
+      const params: RecordQueryParams = { page: recordsPage, page_size: recordsPageSize }
       if (filterDate) {
         params.start_time = filterDate.startOf('day').toISOString()
         params.end_time = filterDate.endOf('day').toISOString()
       }
       if (filterEnergyType) {
-        params.energy_type = filterEnergyType
+        params.energy_type = filterEnergyType as EnergyType
       }
       const result = await fetchAlertRecordsAPI(params)
-      setRecords(result.items)
-      setRecordsTotal(result.total)
-      if (showSuccessMessage) {
-        message.success('刷新成功')
-      }
-    } catch (_error) {
-      message.error('获取预警记录失败')
-    } finally {
-      setRecordsLoading(false)
-    }
-  }, [recordsPage, recordsPageSize, filterDate, filterEnergyType])
+      return result
+    },
+  })
 
-  useEffect(() => {
-    fetchRules()
-    fetchRecords()
-  }, [fetchRules, fetchRecords])
+  const records = recordsData?.items || []
+  const recordsTotal = recordsData?.total || 0
+
+  const fetchRecords = (showSuccessMessage = false) => {
+    const promise = refetchRecords()
+    if (showSuccessMessage) {
+      message.success('刷新成功')
+    }
+    return promise
+  }
 
   const handleRulesPageChange = (p: number, ps: number) => {
     setRulesPage(p)
@@ -165,7 +162,7 @@ export default function AlertsPage() {
       await deleteAlertRule(id)
       message.success('删除成功')
       fetchRules()
-    } catch (error) {
+    } catch (_error) {
       message.error('删除失败')
     }
   }
@@ -196,9 +193,9 @@ export default function AlertsPage() {
       message.success('处理成功')
       setProcessModalOpen(false)
       fetchRecords()
-    } catch (error: any) {
-      if (error?.errorFields) return // 表单验证错误
-      message.error('处理失败：' + (error?.message || '未知错误'))
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'errorFields' in error) return // 表单验证错误
+      message.error('处理失败：' + (error instanceof Error ? error.message : '未知错误'))
     } finally {
       setProcessing(false)
     }
@@ -219,7 +216,7 @@ export default function AlertsPage() {
         message.success(`数据导入成功！新增 ${result.total_created} 条，更新 ${result.total_updated} 条，无新增预警`)
       }
       fetchRecords()
-    } catch (error) {
+    } catch (_error) {
       message.error('数据导入失败')
     } finally {
       setSyncLoading(false)

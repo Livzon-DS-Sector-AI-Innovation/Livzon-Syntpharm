@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Drawer,
@@ -55,34 +56,28 @@ export default function HazardIdentificationBatchDrawer({
   const [currentStep, setCurrentStep] = useState(0)
 
   // Regulations
-  const [regulations, setRegulations] = useState<OperationRegulation[]>([])
-  const [regsLoading, setRegsLoading] = useState(false)
 
   // Selected stages
   const [selectedStages, setSelectedStages] = useState<string[]>([])
   const [selectedRegulationId, setSelectedRegulationId] = useState<string>('')
 
-  const loadRegulations = useCallback(async () => {
-    setRegsLoading(true)
-    try {
+  const { data: regulationsData, isLoading: regsLoading } = useQuery({
+    queryKey: ['regulations-for-batch'],
+    queryFn: async () => {
       const res = await getRegulations({ page_size: 200 })
       if (res.code === 200) {
-        setRegulations((res.data as OperationRegulation[]) || [])
+        return (res.data as OperationRegulation[]) || []
       }
-    } catch {
-      // 静默
-    } finally {
-      setRegsLoading(false)
-    }
-  }, [])
+      return []
+    },
+    enabled: open,
+  })
 
-  useEffect(() => {
-    if (open) loadRegulations()
-  }, [open, loadRegulations])
+  const regulations = regulationsData || []
 
   const handleRegulationChange = (regId: string) => {
     setSelectedRegulationId(regId)
-    setSelectedStages([]) // 重置已选工段
+    setSelectedStages([])
     form.setFieldValue('regulation_id', regId)
   }
 

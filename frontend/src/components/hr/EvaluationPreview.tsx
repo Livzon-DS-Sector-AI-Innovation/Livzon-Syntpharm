@@ -1,7 +1,7 @@
 interface Props {
   topicStr: string; dateStr: string; trainingMethodValue: string
   trainerValue: string; assessmentMethodValue: string; deptValue: string
-  traineeDepts: string[]; previewNames: any[]; evalDurationHours: string | number | undefined
+  traineeDepts: string[]; previewNames: string[]; evalDurationHours: string | number | undefined
 }
 
 const R = { border:'1px solid #666', padding:'4px 8px', fontSize:12, lineHeight:1.5 } as const

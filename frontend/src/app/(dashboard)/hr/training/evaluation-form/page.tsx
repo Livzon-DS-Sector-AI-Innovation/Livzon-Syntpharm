@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, Form, Input, InputNumber, Select, Button, message, Alert } from 'antd'
 import { DownloadOutlined } from '@ant-design/icons'
 import EvaluationPreview from '@/components/hr/EvaluationPreview'
@@ -9,10 +10,20 @@ import { apiGet } from '@/lib/api/client'
 const METHODS = [{v:'面授',l:'面授'},{v:'自学',l:'自学'},{v:'自学+面授',l:'自学+面授'}]
 const ASSESSMENT = [{v:'笔试',l:'笔试'},{v:'问答',l:'问答'}]
 
+interface PendingEvaluation {
+  id: string
+  content?: string
+  method?: string
+  audience?: string
+  remarks?: string
+  expected_count?: number
+  department?: string
+}
+
 export default function EvaluationFormPage() {
+  const queryClient = useQueryClient()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
-  const [pendingList, setPendingList] = useState<any[]>([])
 
   // 实时监听表单字段
   const watchedSubject = Form.useWatch('subject', form)
@@ -22,11 +33,15 @@ export default function EvaluationFormPage() {
   const watchedAssessment = Form.useWatch('assessment_method', form)
   const watchedExpected = Form.useWatch('expected_count', form)
 
-  useEffect(() => {
-    apiGet<any[]>('/api/v1/hr/training-evaluations/pending').then(data => {
-      setPendingList(data || [])
-    })
-  }, [])
+  const { data: pendingListData } = useQuery({
+    queryKey: ['hr-pending-evaluations'],
+    queryFn: async () => {
+      const data = await apiGet<PendingEvaluation[]>('/api/v1/hr/training-evaluations/pending')
+      return data || []
+    },
+  })
+
+  const pendingList = pendingListData || []
 
   const handleSelect = (id: string) => {
     const item = pendingList.find(p => p.id === id)
@@ -74,10 +89,8 @@ export default function EvaluationFormPage() {
       window.URL.revokeObjectURL(url)
       message.success('评估表已生成，台账已更新')
       // 刷新待评估列表
-      apiGet<any[]>('/api/v1/hr/training-evaluations/pending').then(data => {
-        setPendingList(data || [])
-      })
-    } catch (err: any) { message.error(err.message || '生成失败') }
+      queryClient.invalidateQueries({ queryKey: ['hr-pending-evaluations'] })
+    } catch (err: unknown) { message.error(err instanceof Error ? err.message : '生成失败') }
     finally { setLoading(false) }
   }
 

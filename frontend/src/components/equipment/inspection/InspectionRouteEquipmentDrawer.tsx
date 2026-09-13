@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Select, InputNumber } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, EnvironmentOutlined,
@@ -60,35 +61,39 @@ const C = {
 export function InspectionRouteEquipmentDrawer({ equipments, locations, templates }: Props) {
   const { message } = App.useApp()
   const { routeEquipmentDrawerOpen, editingRouteId, closeRouteEquipmentDrawer, triggerRoutesRefresh } = useInspectionStore()
-  const [locationRows, setLocationRows] = useState<LocationRow[]>([])
-  const [_loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   /* ── data ── */
-  const loadData = useCallback(async () => {
-    if (!editingRouteId) return
-    setLoading(true)
-    try {
-      const detail = await fetchInspectionRouteById(editingRouteId)
-      setLocationRows((detail.locations || []).map(loc => ({
-        key: loc.id, location_id: loc.location_id,
-        location_name: loc.location_name || undefined,
-        sort_order: loc.sort_order, collapsed: false,
-        equipments: (loc.equipments || []).map(eq => ({
-          key: eq.id, equipment_id: eq.equipment_id,
-          equipment_name: eq.equipment_name || undefined,
-          asset_no: undefined,
-          sort_order: eq.sort_order,
-          template_ids: (eq.templates || []).map(t => t.template_id),
-        })),
-      })))
-    } catch { message.error('加载路线配置失败') }
-    finally { setLoading(false) }
-  }, [editingRouteId, message])
+  const { data: routeDetail } = useQuery({
+    queryKey: ['inspection-route', editingRouteId],
+    queryFn: async () => {
+      if (!editingRouteId) return null
+      return await fetchInspectionRouteById(editingRouteId)
+    },
+    enabled: routeEquipmentDrawerOpen && !!editingRouteId,
+  })
 
-  useEffect(() => { if (routeEquipmentDrawerOpen && editingRouteId) loadData() },
-    [routeEquipmentDrawerOpen, editingRouteId, loadData])
+  const [locationRows, setLocationRows] = useState<LocationRow[]>([])
+  
+  // Sync location rows when drawer opens (adjusting state during render)
+  const [prevRouteState, setPrevRouteState] = useState<string>('')
+  const routeState = routeEquipmentDrawerOpen && routeDetail ? routeDetail.id || 'open' : 'closed'
+  if (routeState !== prevRouteState && routeEquipmentDrawerOpen && routeDetail) {
+    setPrevRouteState(routeState)
+    setLocationRows((routeDetail.locations || []).map(loc => ({
+      key: loc.id, location_id: loc.location_id,
+      location_name: loc.location_name || undefined,
+      sort_order: loc.sort_order, collapsed: false,
+      equipments: (loc.equipments || []).map(eq => ({
+        key: eq.id, equipment_id: eq.equipment_id,
+        equipment_name: eq.equipment_name || undefined,
+        asset_no: undefined,
+        sort_order: eq.sort_order,
+        template_ids: (eq.templates || []).map(t => t.template_id),
+      })),
+    })))
+  }
 
   /* ── mutations ── */
   const toggle = (k: string) => setLocationRows(prev =>

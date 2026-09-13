@@ -20,7 +20,7 @@ export function RegulationGeneratorPageClient() {
       message.success('标准化操规生成成功！即将进入审阅编辑器')
       router.push(`/safety/regulation/generator/${result.regulation_id}`)
     },
-    [router],
+    [router, message],
   )
 
   const handleOpenEditor = useCallback(
@@ -31,7 +31,7 @@ export function RegulationGeneratorPageClient() {
       }
       router.push(`/safety/regulation/generator/${record.id}`)
     },
-    [router],
+    [router, message],
   )
 
   return (

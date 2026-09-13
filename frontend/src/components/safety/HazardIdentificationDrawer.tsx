@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Drawer,
@@ -42,27 +43,19 @@ export default function HazardIdentificationDrawer({ open, onClose, onDone }: Pr
   const [submitType, setSubmitType] = useState<'save' | 'submit'>('save')
   const { message } = App.useApp()
 
-  // 安全操作规程列表
-  const [regulations, setRegulations] = useState<OperationRegulation[]>([])
-  const [regsLoading, setRegsLoading] = useState(false)
-
-  const loadRegulations = useCallback(async () => {
-    setRegsLoading(true)
-    try {
+  const { data: regulationsData, isLoading: regsLoading } = useQuery({
+    queryKey: ['regulations-for-identification'],
+    queryFn: async () => {
       const res = await getRegulations({ page_size: 200 })
       if (res.code === 200) {
-        setRegulations((res.data as OperationRegulation[]) || [])
+        return (res.data as OperationRegulation[]) || []
       }
-    } catch {
-      // 静默失败
-    } finally {
-      setRegsLoading(false)
-    }
-  }, [])
+      return []
+    },
+    enabled: open,
+  })
 
-  useEffect(() => {
-    if (open) loadRegulations()
-  }, [open, loadRegulations])
+  const regulations = regulationsData || []
 
   const handleSubmit = async (saveOnly: boolean) => {
     try {

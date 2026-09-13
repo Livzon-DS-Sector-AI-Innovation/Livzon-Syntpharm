@@ -9,7 +9,7 @@ import {
   disableAgentSkill as disableAgentSkillApi,
   deleteAgentSkill as deleteAgentSkillApi,
 } from '@/lib/api/server/agent-skills'
-import type { AgentSkill, AgentSkillPayload, AgentSkillUpdatePayload } from '@/types/agent-skills'
+import type { AgentSkillPayload, AgentSkillUpdatePayload } from '@/types/agent-skills'
 
 async function getAuthToken() {
   const cookieStore = await cookies()

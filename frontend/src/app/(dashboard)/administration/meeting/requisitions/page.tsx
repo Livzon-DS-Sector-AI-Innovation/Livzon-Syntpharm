@@ -1,62 +1,72 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Table, Button, Input, Space, Modal, Form, message, Popconfirm } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { fetchGiftRequisitions } from '@/lib/api/client/administration/gift-requisition'
 import { createGiftRequisition, updateGiftRequisition, deleteGiftRequisition } from '@/actions/administration'
 
+interface GiftRequisition {
+  id: string
+  seq_no?: number
+  department: string
+  item_name: string
+  unit_price?: number
+  quantity: number
+  total_amount?: number
+  recipient: string
+  requisition_date: string
+  remarks?: string
+}
+
 export default function RequisitionPage() {
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
   const [department, setDepartment] = useState('')
   const [itemName, setItemName] = useState('')
   const [recipient, setRecipient] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<any>(null)
+  const [editing, setEditing] = useState<GiftRequisition | null>(null)
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
-  const load = async (page = 1) => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['gift-requisitions', { department, itemName, recipient, page: pagination.current, pageSize: pagination.pageSize }],
+    queryFn: async () => {
       const res = await fetchGiftRequisitions({
         department: department || undefined,
         item_name: itemName || undefined,
         recipient: recipient || undefined,
-        page,
+        page: pagination.current,
         page_size: pagination.pageSize,
       })
-      setData(res.data || [])
-      setPagination({ ...pagination, current: page, total: res.meta?.total || 0 })
-    } catch (err: any) {
-      message.error(err.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: res.data || [], total: res.meta?.total || 0 }
+    },
+  })
 
-  useEffect(() => { load(1) }, [])
+  const data = queryData?.data || []
+  const load = (page = 1) => {
+    setPagination({ ...pagination, current: page })
+  }
 
   const handleSearch = () => {
-    load(1)
+    refetch()
   }
 
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: GiftRequisition) => {
     try {
       if (editing) {
-        await updateGiftRequisition(editing.id, values)
+        await updateGiftRequisition(editing.id, values as unknown as Record<string, unknown>)
         message.success('更新成功')
       } else {
-        await createGiftRequisition(values)
+        await createGiftRequisition(values as unknown as Record<string, unknown>)
         message.success('创建成功')
       }
       setModalOpen(false)
       form.resetFields()
       setEditing(null)
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '保存失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '保存失败')
     }
   }
 
@@ -65,8 +75,8 @@ export default function RequisitionPage() {
       await deleteGiftRequisition(id)
       message.success('删除成功')
       load(pagination.current)
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
@@ -84,7 +94,7 @@ export default function RequisitionPage() {
       title: '操作',
       key: 'action',
       width: 160,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: GiftRequisition) => (
         <Space>
           <Button
             icon={<EditOutlined />}
@@ -157,7 +167,7 @@ export default function RequisitionPage() {
         rowKey="id"
         columns={columns}
         dataSource={data}
-        loading={loading}
+        loading={isLoading}
         pagination={{
           ...pagination,
           onChange: (page) => load(page),

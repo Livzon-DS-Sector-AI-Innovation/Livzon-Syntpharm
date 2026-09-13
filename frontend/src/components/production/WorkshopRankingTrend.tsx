@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {Card, Spin, Segmented, Empty, Alert} from 'antd'
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
@@ -24,20 +25,12 @@ interface Props {
 }
 
 export default function WorkshopRankingTrend({ year }: Props) {
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [ranking, setRanking] = useState<WorkshopMonthData[]>([])
-  const [visibleSet, setVisibleSet] = useState<Set<string>>(new Set())
   const [trendType, setTrendType] = useState<string>('折线图')
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    loadData()
-  }, [year])
-
-  const loadData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const { data: queryData, isLoading: loading, error: queryError } = useQuery({
+    queryKey: ['workshop-ranking', year],
+    queryFn: async () => {
       const res = await getProductOutputs({
         start_date: `${year}-01-01`,
         end_date: `${year}-12-31`,
@@ -45,9 +38,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
       })
 
       if (res.code !== 200) {
-        setError(res.message || '加载数据失败')
-        setRanking([])
-        return
+        throw new Error(res.message || '加载数据失败')
       }
 
       const records = res.data || []
@@ -70,16 +61,24 @@ export default function WorkshopRankingTrend({ year }: Props) {
         .map(([workshop, data]) => ({ workshop, ...data }))
         .sort((a, b) => b.total - a.total)
 
-      setRanking(sorted)
-      setVisibleSet(new Set(sorted.slice(0, 3).map((w) => w.workshop)))
-    } catch (err) {
-      console.error('Failed to load workshop ranking data:', err)
-      setError('加载车间产量数据失败')
-      setRanking([])
-    } finally {
-      setLoading(false)
+      return sorted
+    },
+  })
+
+  const ranking = useMemo(() => queryData || [], [queryData])
+  const error = queryError?.message || null
+  const [visibleSet, setVisibleSet] = useState<Set<string>>(new Set())
+  const prevRankingLengthRef = useRef(0)
+
+  // Initialize visibleSet when ranking changes (only once per data load)
+  useEffect(() => {
+    if (ranking.length > 0 && prevRankingLengthRef.current === 0) {
+      setVisibleSet(new Set(ranking.slice(0, 3).map((w) => w.workshop)))
     }
-  }
+    prevRankingLengthRef.current = ranking.length
+  }, [ranking])
+
+
 
   const months = useMemo(
     () => Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
@@ -95,7 +94,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const p = Array.isArray(params) ? params[0] : params
           const item = ranking.find((w) => w.workshop === p.name)
           return `<strong>${p.name}</strong><br/>${p.marker} 总产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batches || 0} 批`
@@ -120,7 +119,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
           label: {
             show: true,
             position: 'right',
-            formatter: (p: any) => `${p.value.toLocaleString()} kg`,
+            formatter: (p: { value: number }) => `${p.value.toLocaleString()} kg`,
             fontSize: 11,
           },
         },
@@ -131,7 +130,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
 
   const trendOption: EChartsOption = useMemo(() => {
     const visible = ranking.filter((w) => visibleSet.has(w.workshop))
-    const series = visible.map((w, i) => ({
+    const series = visible.map((w, _i) => ({
       name: w.workshop,
       type: trendType === '折线图' ? 'line' : 'bar',
       data: w.months.map((v) => Math.round(v * 100) / 100),
@@ -144,7 +143,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
     return {
       tooltip: {
         trigger: 'axis',
-        formatter: (params: any) => {
+        formatter: (params: unknown) => {
           const items = Array.isArray(params) ? params : [params]
           let result = `<strong>${items[0]?.axisValue}</strong><br/>`
           for (const item of items) {
@@ -197,7 +196,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
           showIcon
           action={
             <button
-              onClick={loadData}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['workshop-ranking', year] })}
               className="px-3 py-1 text-sm bg-[var(--color-primary)] text-white rounded hover:opacity-90"
             >
               重试

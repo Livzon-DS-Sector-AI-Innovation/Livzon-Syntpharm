@@ -1,6 +1,6 @@
 'use client'
 
-import {Table, Tag, Button} from 'antd'
+import {Table, Button} from 'antd'
 import { ReloadOutlined, EyeOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import { CollectLog, CollectStatus } from '@/types/energy'
@@ -131,7 +131,7 @@ export function CollectLogTable({
   data,
   loading = false,
   total = 0,
-  onRefresh,
+  onRefresh: _onRefresh,
   onRetry,
 }: CollectLogTableProps) {
   const { logFilters, setLogFilters, openCollectLogDrawer } = useEnergyStore()

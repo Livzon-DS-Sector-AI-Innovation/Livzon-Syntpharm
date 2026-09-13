@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {Modal, Table, Input, Button, Space, Tag, App} from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -15,36 +16,28 @@ interface HazardSelectModalProps {
 }
 
 export default function HazardSelectModal({ open, onSelect, onClose }: HazardSelectModalProps) {
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<HazardRiskOption[]>([])
-  const [total, setTotal] = useState(0)
   const [keyword, setKeyword] = useState('')
   const [department, setDepartment] = useState<string | undefined>()
   const [page, setPage] = useState(1)
   const { message } = App.useApp()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading: loading } = useQuery({
+    queryKey: ['hazard-risk-options', keyword, department, page],
+    queryFn: async () => {
       const res = await getHazardRiskOptions({ keyword: keyword || undefined, department, page, page_size: 20 })
       if (res.code === 200) {
-        setData(res.data as HazardRiskOption[])
-        setTotal(res.meta?.total || 0)
+        return { data: res.data as HazardRiskOption[], total: res.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载危险源列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { data: [], total: 0 }
+    },
+    enabled: open,
+  })
 
-  useEffect(() => {
-    if (open) loadData()
-  }, [open, page])
+  const data = queryData?.data || []
+  const total = queryData?.total || 0
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
   }
 
   const columns: ColumnsType<HazardRiskOption> = [
@@ -103,7 +96,7 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
       </div>
 
       <div style={{ color: '#787671', fontSize: 13, marginBottom: 12 }}>
-        仅列出风险等级为"重大风险(level_1)"和"较大风险(level_2)"的已完成危险源辨识项
+        仅列出风险等级为&quot;重大风险(level_1)&quot;和&quot;较大风险(level_2)&quot;的已完成危险源辨识项
       </div>
 
       <Table

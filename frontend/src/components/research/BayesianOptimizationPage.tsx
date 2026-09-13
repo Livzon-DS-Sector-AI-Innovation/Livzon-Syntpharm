@@ -11,13 +11,10 @@ import { App,
   Typography,
   Select,
   InputNumber,
-  Form,
   Divider,
   Input,
   Tabs,
-  Checkbox
 } from 'antd'
-import type { UploadFile } from 'antd/es/upload'
 import {
   UploadOutlined,
   DownloadOutlined,
@@ -59,7 +56,7 @@ export function BayesianOptimizationPage() {
     { column: '', mode: 'max' },
   ])
   const [batchSize, setBatchSize] = useState(5)
-  const [savePrediction, setSavePrediction] = useState(false)
+  const [savePrediction, _setSavePrediction] = useState(false)
   const [loading, setLoading] = useState(false)
   const [resultData, setResultData] = useState<ResultRow[]>([])
   const [resultColumns, setResultColumns] = useState<string[]>([])
@@ -197,9 +194,9 @@ export function BayesianOptimizationPage() {
       }
       
       message.success(`优化完成，共 ${rows.length} 条结果`)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Optimization error:', error)
-      message.error(error.message || '优化失败')
+      message.error(error instanceof Error ? error.message : '优化失败')
     } finally {
       setLoading(false)
     }
@@ -238,7 +235,7 @@ export function BayesianOptimizationPage() {
     setScopeComponents(updated.length > 0 ? updated : [{ key: '', type: 'categorical', values: '' }])
   }
 
-  const updateScopeComponent = (index: number, field: keyof ScopeComponent, value: any) => {
+  const updateScopeComponent = (index: number, field: keyof ScopeComponent, value: string | number | null | undefined) => {
     const updated = [...scopeComponents]
     updated[index] = { ...updated[index], [field]: value }
     setScopeComponents(updated)
@@ -328,9 +325,9 @@ export function BayesianOptimizationPage() {
           message.success(`反应范围已生成，共 ${result.row_count} 个实验组合`)
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Generate scope error:', error)
-      message.error(error.message || '生成反应范围失败')
+      message.error(error instanceof Error ? error.message : '生成反应范围失败')
     } finally {
       setGeneratingScope(false)
     }
