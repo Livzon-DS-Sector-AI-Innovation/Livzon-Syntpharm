@@ -4,10 +4,23 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The 1 `set-state-in-effect` warning in registration module eliminated
-- [ ] AI fill panel uses proper state patterns
-- [ ] `pnpm typecheck` passes with 0 errors
-- [ ] `pnpm lint` shows 0 `set-state-in-effect` warnings in registration module
+- [x] The 1 `set-state-in-effect` warning in registration module eliminated (1 → 0)
+- [x] AI fill panel uses key prop approach for state reset
+- [x] `pnpm typecheck` passes with 0 errors
+- [x] `pnpm lint` shows 0 `set-state-in-effect` warnings in registration module
 - [ ] Manual smoke test confirms no behavioral regression in registration pages
+
+## Summary of Changes
+
+Successfully migrated 2 files in the registration module to canonical React patterns:
+
+1. **AiFillPanel.tsx** - Removed useEffect for state reset, component now remounts via key prop
+2. **DossierWriterDetailPageClient.tsx** - Added key prop to AiFillPanel to force remount on chapter change
+
+## Patterns Applied
+
+- **Key prop for remount**: Used key prop on component to force remount when dependency changes, naturally resetting all state
+- **Removed unnecessary useEffect**: Eliminated useEffect that was only used to reset state
+
