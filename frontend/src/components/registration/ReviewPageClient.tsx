@@ -99,7 +99,6 @@ export function ReviewPageClient() {
       setDrugs(d)
       setReviewNodes(n)
     } catch (e) {
-      console.error('[DEBUG] loadData error', e)
       message.error('加载数据失败')
     } finally {
       setLoading(false)
@@ -110,7 +109,6 @@ export function ReviewPageClient() {
   useEffect(() => {
     let cancelled = false
     const load = async () => {
-      console.log('[DEBUG] initial load started')
       setLoading(true)
       
       // Add timeout to prevent hanging forever
@@ -119,28 +117,23 @@ export function ReviewPageClient() {
       )
       
       try {
-        console.log('[DEBUG] calling APIs')
         const result = await Promise.race([
           Promise.all([fetchDrugs(), fetchReviewNodes()]),
           timeout
-        ]) as [any[], any[]]
+        ]) as [Drug[], ReviewNodeConfig[]]
         
         const [d, n] = result
-        console.log('[DEBUG] APIs returned', { drugs: d?.length, nodes: n?.length })
         
         if (!cancelled) {
           setDrugs(d || [])
           setReviewNodes(n || [])
-          console.log('[DEBUG] state updated')
         }
       } catch (e) {
-        console.error('[DEBUG] initial load error:', e)
         if (!cancelled) {
           message.error('加载数据失败: ' + (e as Error).message)
         }
       } finally {
         if (!cancelled) {
-          console.log('[DEBUG] setting loading=false')
           setLoading(false)
         }
       }
@@ -148,9 +141,8 @@ export function ReviewPageClient() {
     load()
     return () => { 
       cancelled = true
-      console.log('[DEBUG] cleanup - component unmounted')
     }
-  }, []) // Empty deps - only run once
+  }, [message])
 
   const filtered = drugs.filter(d => {
     if (search && !d.name.includes(search)) return false

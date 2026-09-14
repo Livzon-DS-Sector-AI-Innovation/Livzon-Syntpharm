@@ -31,7 +31,7 @@ export default function RegulationDashboardClient() {
   const [secondaryExpanded, setSecondaryExpanded] = useState(false)
   const queryClient = useQueryClient()
 
-  const { data, isLoading: loading, refetch } = useQuery<DashboardData | null>({
+  const { data, isLoading: loading, refetch: _refetch } = useQuery<DashboardData | null>({
     queryKey: ['regulation-dashboard'],
     queryFn: async () => {
       try {
