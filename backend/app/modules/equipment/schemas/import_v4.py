@@ -1,37 +1,37 @@
 """Schemas for Equipment Import v4."""
-from typing import Any, TypedDict
+from typing import Any
+from pydantic import BaseModel, Field
 
 
-class WarningInfo(TypedDict):
+class WarningInfo(BaseModel):
     field: str
     level: str
     message: str
 
 
-class ChangeRecord(TypedDict):
-    old: Any
-    new: Any
+class ChangeRecord(BaseModel):
+    old: Any = None
+    new: Any = None
 
 
-class EquipmentImportRow(TypedDict, total=False):
-    """定义 Excel 导入行的标准结构"""
-    asset_no: str | None
-    equipment_tag: str | None
-    name: str | None
-    department_id: str | None
-    department_name: str | None
-    department: str | None
-    location_text: str | None
-    current_cost: float | str | None
-    book_value: float | str | None
-    responsible_person_name: str | None
+class ImportErrorItem(BaseModel):
+    row: int
+    error: str
 
 
-class ImportBatchResponse(TypedDict):
+class ImportV4PreviewResponse(BaseModel):
+    """预览接口响应模型"""
+    items: list[dict[str, Any]]
+    total: int
+    headers: list[dict[str, Any]]
+
+
+class ImportV4BatchResponse(BaseModel):
+    """批量导入接口响应模型"""
     batch_id: str
-    created_count: int
-    updated_count: int
-    skipped_count: int
-    error_count: int
-    warnings_count: int
-    errors: list[dict[str, Any]]
+    created_count: int = 0
+    updated_count: int = 0
+    skipped_count: int = 0
+    error_count: int = 0
+    unmapped_departments: dict[str, list[int]] = Field(default_factory=dict)
+    errors: list[ImportErrorItem] = Field(default_factory=list)

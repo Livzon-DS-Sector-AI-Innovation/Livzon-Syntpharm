@@ -14,6 +14,7 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment.config.dept_mapping import normalize_department_name
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.models.import_audit import ImportAuditLog
+from app.modules.equipment.schemas.import_v4 import ImportV4BatchResponse, ImportV4PreviewResponse
 from app.modules.equipment.service.import_engine import (
     apply_incremental_update,
     detect_internal_duplicates,
@@ -184,7 +185,7 @@ async def batch_import_v4(
     current_user: RequiredUser,
     request: Annotated[dict[str, Any], Body(...)],
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> ImportV4BatchResponse:
     data = request.get("data", [])
     force_override = request.get("force_override_business_fields", False)
 
@@ -273,12 +274,12 @@ async def batch_import_v4(
             logger.exception("v4 import row %s failed", idx)
             await log_audit(db, batch_id, "error", error_message=str(e), **audit_kwargs)
 
-    return build_response(data={
-        "batch_id": batch_id, "created_count": created, "updated_count": updated,
-        "skipped_count": skipped, "error_count": failed, 
-        "unmapped_departments": unmapped_depts,
-        "errors": errors  # 新增：返回详细错误列表供前端展示
-    })
+    return ImportV4BatchResponse(
+        batch_id=batch_id, created_count=created, updated_count=updated,
+        skipped_count=skipped, error_count=failed, 
+        unmapped_departments=unmapped_depts,
+        errors=[ImportErrorItem(row=e["row"], error=e["error"]) for e in errors]
+    )
 
 @router.post("/preview", summary="预览导入结果 (v4)")
 async def preview_import_v4(
@@ -286,7 +287,7 @@ async def preview_import_v4(
     data: Annotated[list[dict[str, Any]], Body(...)],
     force_override: bool = Body(False),
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> ImportV4PreviewResponse:
     results = []
     # 对所有行进行完整字段映射，确保业务字段全部存在
     normalized_data = []
@@ -340,8 +341,8 @@ async def preview_import_v4(
         results.append(result_item)
 
     if results:
-        return build_response(data={
-        "items": results,
-        "total": len(results),
-        "headers": PREVIEW_HEADERS
-    })
+        return ImportV4PreviewResponse(
+        items=results,
+        total=len(results),
+        headers=PREVIEW_HEADERS
+    )

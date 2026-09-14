@@ -8,8 +8,16 @@ interface HeaderDef {
   width?: number;
 }
 
+// 对应后端 ImportV4PreviewResponse.items 的结构
+interface ImportPreviewItem extends Record<string, any> {
+  row_index: number;
+  validation_status?: 'pass' | 'duplicate' | 'error';
+  error_message?: string;
+  is_duplicate?: boolean;
+}
+
 interface ImportCockpitProps {
-  data: any[];
+  data: ImportPreviewItem[];
   headers?: HeaderDef[];
 }
 
@@ -40,7 +48,7 @@ const DEFAULT_HEADERS: HeaderDef[] = [
   { key: 'description', title: '描述' },
 ];
 
-export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }) => {
+export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }: ImportCockpitProps) => {
   // 使用后端传来的 headers，如果没有则使用默认值
   const activeHeaders = headers || DEFAULT_HEADERS;
 

@@ -1500,6 +1500,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/equipment/equipments/sync-excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 智能同步 Excel 设备数据
+         * @description 上传 Excel 文件并执行智能同步
+         */
+        post: operations["sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/equipment/spare-parts/": {
         parameters: {
             query?: never;
@@ -2767,6 +2787,60 @@ export interface paths {
         put?: never;
         /** 上传Excel文件并解析 */
         post: operations["import_excel_api_v1_equipment_equipments_import__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/equipment/equipments/import/test-validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试验证错误
+         * @description Test endpoint to debug validation errors without authentication.
+         */
+        post: operations["test_validation_api_v1_equipment_equipments_import_test_validation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/equipment/equipments/import-v4/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 执行批量导入 (v4) */
+        post: operations["batch_import_v4_api_v1_equipment_equipments_import_v4_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/equipment/equipments/import-v4/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 预览导入结果 (v4) */
+        post: operations["preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -18713,6 +18787,18 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post */
+        Body_preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post: {
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Force Override
+             * @default false
+             */
+            force_override: boolean;
+        };
         /** Body_preview_resume_parse_api_v1_hr_candidates_parse_preview_post */
         Body_preview_resume_parse_api_v1_hr_candidates_parse_preview_post: {
             /**
@@ -18738,6 +18824,11 @@ export interface components {
              * File
              * @description 电子发票 PDF 文件
              */
+            file: string;
+        };
+        /** Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post */
+        Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post: {
+            /** File */
             file: string;
         };
         /** Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post */
@@ -22807,6 +22898,54 @@ export interface components {
             scrap_time?: string | null;
         };
         /**
+         * EquipmentImportRow
+         * @description 设备导入行数据
+         */
+        EquipmentImportRow: {
+            /**
+             * 资产编号
+             * @description 资产编号
+             */
+            "\u8D44\u4EA7\u7F16\u53F7"?: string | number | null;
+            /**
+             * 资产说明
+             * @description 资产说明
+             */
+            "\u8D44\u4EA7\u8BF4\u660E"?: string | null;
+            /**
+             * 设备名称
+             * @description 设备名称（别名）
+             */
+            "\u8BBE\u5907\u540D\u79F0"?: string | null;
+            /**
+             * 实物所在部门
+             * @description 实物所在部门
+             */
+            "\u5B9E\u7269\u6240\u5728\u90E8\u95E8"?: string | null;
+            /**
+             * 资产类别说明
+             * @description 资产类别说明
+             */
+            "\u8D44\u4EA7\u7C7B\u522B\u8BF4\u660E"?: string | null;
+            /**
+             * 当前成本
+             * @description 当前成本
+             */
+            "\u5F53\u524D\u6210\u672C"?: string | number | null;
+            /**
+             * 报废状态
+             * @description 报废状态
+             */
+            "\u62A5\u5E9F\u72B6\u6001"?: string | null;
+            /**
+             * 数量
+             * @description 数量
+             */
+            "\u6570\u91CF"?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
          * EquipmentUpdate
          * @description 更新设备请求
          */
@@ -24891,6 +25030,63 @@ export interface components {
          * @enum {string}
          */
         IQStatus: "pending" | "confirmed" | "not_required";
+        /** ImportErrorItem */
+        ImportErrorItem: {
+            /** Row */
+            row: number;
+            /** Error */
+            error: string;
+        };
+        /**
+         * ImportV4BatchResponse
+         * @description 批量导入接口响应模型
+         */
+        ImportV4BatchResponse: {
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Created Count
+             * @default 0
+             */
+            created_count: number;
+            /**
+             * Updated Count
+             * @default 0
+             */
+            updated_count: number;
+            /**
+             * Skipped Count
+             * @default 0
+             */
+            skipped_count: number;
+            /**
+             * Error Count
+             * @default 0
+             */
+            error_count: number;
+            /** Unmapped Departments */
+            unmapped_departments?: {
+                [key: string]: number[];
+            };
+            /** Errors */
+            errors?: components["schemas"]["ImportErrorItem"][];
+        };
+        /**
+         * ImportV4PreviewResponse
+         * @description 预览接口响应模型
+         */
+        ImportV4PreviewResponse: {
+            /** Items */
+            items: {
+                [key: string]: unknown;
+            }[];
+            /** Total */
+            total: number;
+            /** Headers */
+            headers: {
+                [key: string]: unknown;
+            }[];
+        };
         /**
          * InspectionAIAnalyzeRequest
          * @description AI 分析请求
@@ -39361,6 +39557,44 @@ export interface operations {
             };
         };
     };
+    sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post: {
+        parameters: {
+            query?: {
+                /** @description 是否仅预览不执行 */
+                dry_run?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_spare_parts_api_v1_equipment_spare_parts__get: {
         parameters: {
             query?: {
@@ -43245,7 +43479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
         };
@@ -43261,9 +43495,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43273,7 +43505,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43298,9 +43530,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43310,7 +43540,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43345,7 +43575,114 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_validation_api_v1_equipment_equipments_import_test_validation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentImportRow"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_import_v4_api_v1_equipment_equipments_import_v4_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportV4BatchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Body_preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportV4PreviewResponse"];
                 };
             };
             /** @description Validation Error */
