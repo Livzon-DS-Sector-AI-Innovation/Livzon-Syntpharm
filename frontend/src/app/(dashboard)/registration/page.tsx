@@ -60,7 +60,20 @@ export default function RegistrationPage() {
   }
 
   useEffect(() => {
-    loadData()
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      try {
+        const data = await fetchLedgerSummary()
+        if (!cancelled) setSummary(data)
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
   }, [])
 
 

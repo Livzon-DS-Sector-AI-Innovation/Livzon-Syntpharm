@@ -98,7 +98,7 @@ export function ReviewPageClient() {
       const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
       setDrugs(d)
       setReviewNodes(n)
-    } catch (e) {
+    } catch (_e) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)
@@ -128,7 +128,7 @@ export function ReviewPageClient() {
           setDrugs(d || [])
           setReviewNodes(n || [])
         }
-      } catch (e) {
+      } catch (_e) {
         if (!cancelled) {
           message.error('加载数据失败: ' + (e as Error).message)
         }
