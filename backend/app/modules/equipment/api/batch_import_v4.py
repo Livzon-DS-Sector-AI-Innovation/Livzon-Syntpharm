@@ -185,7 +185,7 @@ async def batch_import_v4(
     current_user: RequiredUser,
     request: Annotated[dict[str, Any], Body(...)],
     db: AsyncSession = Depends(get_db),
-) -> ImportV4BatchResponse:
+) -> ApiResponse:
     data = request.get("data", [])
     force_override = request.get("force_override_business_fields", False)
 
@@ -274,12 +274,12 @@ async def batch_import_v4(
             logger.exception("v4 import row %s failed", idx)
             await log_audit(db, batch_id, "error", error_message=str(e), **audit_kwargs)
 
-    return ImportV4BatchResponse(
+    return build_response(data=ImportV4BatchResponse(
         batch_id=batch_id, created_count=created, updated_count=updated,
         skipped_count=skipped, error_count=failed, 
         unmapped_departments=unmapped_depts,
         errors=[ImportErrorItem(row=e["row"], error=e["error"]) for e in errors]
-    )
+    ))
 
 @router.post("/preview", summary="预览导入结果 (v4)")
 async def preview_import_v4(
@@ -287,7 +287,7 @@ async def preview_import_v4(
     data: Annotated[list[dict[str, Any]], Body(...)],
     force_override: bool = Body(False),
     db: AsyncSession = Depends(get_db),
-) -> ImportV4PreviewResponse:
+) -> ApiResponse:
     results = []
     # 对所有行进行完整字段映射，确保业务字段全部存在
     normalized_data = []
@@ -341,8 +341,8 @@ async def preview_import_v4(
         results.append(result_item)
 
     if results:
-        return ImportV4PreviewResponse(
+        return build_response(data=ImportV4PreviewResponse(
         items=results,
         total=len(results),
         headers=PREVIEW_HEADERS
-    )
+    ))
