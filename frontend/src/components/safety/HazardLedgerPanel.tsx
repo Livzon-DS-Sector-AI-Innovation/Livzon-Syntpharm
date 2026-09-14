@@ -445,9 +445,9 @@ export default function HazardLedgerPanel() {
         const rowNum = ((queryParams.page || 1) - 1) * (queryParams.page_size || 20) + index + 1
 
         const handleToggle = () => {
-          setSelectedRowKeys((prev: any) =>
+          setSelectedRowKeys((prev: React.Key[]) =>
             prev.includes(record.id)
-              ? prev.filter((k: any) => k !== record.id)
+              ? prev.filter((k: React.Key) => k !== record.id)
               : [...prev, record.id]
           )
         }
@@ -721,9 +721,9 @@ export default function HazardLedgerPanel() {
             ← 返回
           </div>
           <div style={{ fontSize: 12, color: '#787671', marginBottom: 8 }}>
-            {FILTER_FIELDS.find((f: any) => f.key === pendingFilterField)?.label}
+            {FILTER_FIELDS.find((f: FilterFieldConfig) => f.key === pendingFilterField)?.label}
           </div>
-          {FILTER_FIELDS.find((f: any) => f.key === pendingFilterField)?.type === 'text' ? (
+          {FILTER_FIELDS.find((f: FilterFieldConfig) => f.key === pendingFilterField)?.type === 'text' ? (
             <Input
               placeholder={
                 pendingFilterField === 'department' ? '请输入部门名称' :
@@ -740,7 +740,7 @@ export default function HazardLedgerPanel() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {FILTER_FIELDS
-                .find((f: any) => f.key === pendingFilterField)
+                .find((f: FilterFieldConfig) => f.key === pendingFilterField)
                 ?.options.map((opt) => (
                   <div
                     key={opt.value}
@@ -770,7 +770,7 @@ export default function HazardLedgerPanel() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {FILTER_FIELDS.map((field) => {
-              const isApplied = activeFilters.some((f: any) => f.key === field.key)
+              const isApplied = activeFilters.some((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => f.key === field.key)
               return (
                 <div
                   key={field.key}
@@ -966,7 +966,7 @@ export default function HazardLedgerPanel() {
           }}
         >
           {/* 活跃筛选条件 chips */}
-          {activeFilters.map((f: any) => (
+          {activeFilters.map((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => (
             <div
               key={f.key}
               style={{
@@ -1150,7 +1150,7 @@ export default function HazardLedgerPanel() {
           size="small"
           onRow={(record) => ({
             onMouseEnter: () => setHoveredRowId(record.id),
-            onMouseLeave: () => setHoveredRowId((prev: any) => (prev === record.id ? null : prev)),
+            onMouseLeave: () => setHoveredRowId((prev: string | null) => (prev === record.id ? null : prev)),
           })}
           expandable={{
             expandedRowRender,

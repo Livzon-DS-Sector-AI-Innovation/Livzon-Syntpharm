@@ -386,9 +386,9 @@ export default function WorkflowListPanel() {
         const rowNum = ((queryParams.page || 1) - 1) * (queryParams.page_size || 20) + index + 1
 
         const handleToggle = () => {
-          setSelectedRowKeys((prev: any) =>
+          setSelectedRowKeys((prev: React.Key[]) =>
             prev.includes(record.id)
-              ? prev.filter((k: any) => k !== record.id)
+              ? prev.filter((k: React.Key) => k !== record.id)
               : [...prev, record.id]
           )
         }
@@ -1028,7 +1028,7 @@ export default function WorkflowListPanel() {
           scroll={{ x: 'max-content' }}
           onRow={(record) => ({
             onMouseEnter: () => setHoveredRowId(record.id),
-            onMouseLeave: () => setHoveredRowId((prev: any) => (prev === record.id ? null : prev)),
+            onMouseLeave: () => setHoveredRowId((prev: string | null) => (prev === record.id ? null : prev)),
           })}
           pagination={{
             current: queryParams.page,

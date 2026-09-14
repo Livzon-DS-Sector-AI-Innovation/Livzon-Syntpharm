@@ -77,8 +77,8 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
     } else {
       // Default: enable first 3 sources
       const defaults: DataSourceItem[] = dataSourceOptions
-        .filter((o: any) => o.default_enabled)
-        .map((o: any) => ({ key: o.key, label: o.label, enabled: true }))
+        .filter((o: DataSourceOption) => o.default_enabled)
+        .map((o: DataSourceOption) => ({ key: o.key, label: o.label, enabled: true }))
       return {
         sources: defaults,
         template: '',
@@ -125,13 +125,13 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
   }, [selectedSources, cardTemplate, headerColor])
 
   const handleSourceToggle = (key: string, checked: boolean) => {
-    setSelectedSources((prev: any) =>
-      prev.map((s: any) => (s.key === key ? { ...s, enabled: checked } : s))
+    setSelectedSources((prev: { key: string; label: string; enabled: boolean }[]) =>
+      prev.map((s: { key: string; label: string; enabled: boolean }) => (s.key === key ? { ...s, enabled: checked } : s))
     )
   }
 
   const handleGenerateTemplate = () => {
-    const enabled = selectedSources.filter((s: any) => s.enabled)
+    const enabled = selectedSources.filter((s: { key: string; label: string; enabled: boolean }) => s.enabled)
     if (enabled.length === 0) {
       message.warning('请先选择数据来源')
       return
@@ -150,7 +150,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
 
   const handleSubmit = async () => {
     // Validate at least one data source is enabled
-    const enabledSources = selectedSources.filter((s: any) => s.enabled)
+    const enabledSources = selectedSources.filter((s: { key: string; label: string; enabled: boolean }) => s.enabled)
     if (enabledSources.length === 0) {
       message.warning('请至少选择一个数据来源')
       return
@@ -251,7 +251,7 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
                 placeholder="选择飞书群聊"
                 showSearch
                 allowClear
-                options={feishuChats.map((c: any) => ({
+                options={feishuChats.map((c: FeishuChat) => ({
                   value: c.chat_id,
                   label: c.name
                 }))}
@@ -299,8 +299,8 @@ export default function ScheduledTaskForm({ editData }: ScheduledTaskFormProps) 
       <Card title="数据来源" style={{ marginBottom: 16 }}>
         <Checkbox.Group style={{ width: '100%' }}>
           <Row gutter={[16, 8]}>
-            {dataSourceOptions.map((opt: any) => {
-              const selected = selectedSources.find((s: any) => s.key === opt.key)
+            {dataSourceOptions.map((opt: { key: string; label: string }) => {
+              const selected = selectedSources.find((s: { key: string; label: string; enabled: boolean }) => s.key === opt.key)
               return (
                 <Col span={8} key={opt.key}>
                   <Checkbox

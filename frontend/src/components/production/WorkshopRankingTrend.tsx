@@ -252,7 +252,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
 
           {/* Workshop checkboxes */}
           <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
-            {ranking.map((w: any, i: any) => (
+            {ranking.map((w: { workshop: string; months: number[]; total: number; batches: number }, i: number) => (
               <label key={w.workshop} className="flex items-center gap-1.5 cursor-pointer text-sm">
                 <input
                   type="checkbox"

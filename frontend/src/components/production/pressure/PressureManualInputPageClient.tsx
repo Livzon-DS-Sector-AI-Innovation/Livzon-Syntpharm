@@ -149,7 +149,7 @@ export function PressureManualInputPageClient() {
       width: 120,
       align: 'center' as const,
     },
-    ...timeSlots.map((slot: any) => ({
+    ...timeSlots.map((slot: string) => ({
       title: slot,
       key: slot,
       width: 120,
@@ -197,7 +197,7 @@ export function PressureManualInputPageClient() {
         <div className="mb-2">
           <Text type="secondary">时段列：</Text>
           <Space>
-            {timeSlots.map((slot: any, idx: any) => (
+            {timeSlots.map((slot: string, idx: number) => (
               <Input
                 key={idx}
                 size="small"

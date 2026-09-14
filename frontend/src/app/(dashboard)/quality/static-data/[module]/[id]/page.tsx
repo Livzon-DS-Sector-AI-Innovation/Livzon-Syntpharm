@@ -818,7 +818,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
                 </Upload>
                 {attachFiles.length > 0 && (
                   <div style={{ marginTop: 8 }}>
-                    {attachFiles.map((file: any) => (
+                    {attachFiles.map((file: UploadFile) => (
                       <div key={file.uid} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                         <PaperClipOutlined />
                         <Text>{file.name}</Text>
