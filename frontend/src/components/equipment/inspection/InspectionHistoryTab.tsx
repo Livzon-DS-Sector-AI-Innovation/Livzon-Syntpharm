@@ -8,7 +8,7 @@ import dayjs from 'dayjs'
 import { useInspectionStore } from '@/stores/inspection'
 import { fetchInspectionHistory } from '@/lib/api/client/inspection'
 import { fetchPersonnelList } from '@/lib/api/client/equipment-personnel'
-import {statusPill, pillSuccess, pillError, pillTab, linkPrimary} from '@/components/equipment/shared-styles'
+import {statusPill, pillSuccess, pillError, pillTab, linkPrimary} from '@/components/equipment/shared/shared-styles'
 import type { InspectionTask, InspectionOverallResult } from '@/types/inspection'
 import type { Personnel } from '@/types/equipment-personnel'
 

@@ -8,7 +8,7 @@ import { CalibrationPlan } from '@/types/equipment/generated-bridge'
 import { CalibrationPlanStatus, CalibrationType } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteCalibrationPlan } from '@/actions/equipment'
-import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared-styles'
+import {pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, statusPill, linkPrimary, linkDanger, linkPurple} from '@/components/equipment/shared/shared-styles'
 
 const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,

@@ -377,6 +377,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(IntegrityError)
 async def integrity_error_handler(request: Request, exc: IntegrityError):
+    logger.exception("Database integrity error occurred")
     msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
     # Extract constraint info for a user-friendly message
     if "duplicate key" in msg or "unique constraint" in msg:

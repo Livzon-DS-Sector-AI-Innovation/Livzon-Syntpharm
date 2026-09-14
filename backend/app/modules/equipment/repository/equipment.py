@@ -445,6 +445,27 @@ async def update_equipment(
     # 提取 category_ids
     cids = category_ids if category_ids is not None else data.pop("category_ids", None)
 
+    # 唯一性预检：排除自身，并考虑软删除 (is_deleted=False)
+    asset_no = data.get("asset_no")
+    if asset_no and asset_no != equipment.asset_no:
+        existing = await db.execute(select(Equipment).where(
+            Equipment.asset_no == asset_no, 
+            Equipment.is_deleted.is_(False),
+            Equipment.id != equipment_id
+        ))
+        if existing.scalar_one_or_none():
+            raise ValueError(f"资产编号 '{asset_no}' 已存在")
+
+    equipment_tag = data.get("equipment_tag")
+    if equipment_tag and equipment_tag != equipment.equipment_tag:
+        existing = await db.execute(select(Equipment).where(
+            Equipment.equipment_tag == equipment_tag, 
+            Equipment.is_deleted.is_(False),
+            Equipment.id != equipment_id
+        ))
+        if existing.scalar_one_or_none():
+            raise ValueError(f"设备位号 '{equipment_tag}' 已存在")
+
     for key, value in data.items():
         setattr(equipment, key, value)
     await db.flush()

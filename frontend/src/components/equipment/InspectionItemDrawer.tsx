@@ -7,7 +7,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplateItem, updateInspectionTemplateItem, deleteInspectionTemplateItem } from '@/actions/equipment'
 import { fetchInspectionTemplateByIdClient } from '@/lib/api/client/equipment'
-import { linkPrimary, linkDanger } from '@/components/equipment/shared-styles'
+import { linkPrimary, linkDanger } from '@/components/equipment/shared/shared-styles'
 import type { InspectionTemplateItem } from '@/types/equipment/generated-bridge'
 
 const { Text } = Typography

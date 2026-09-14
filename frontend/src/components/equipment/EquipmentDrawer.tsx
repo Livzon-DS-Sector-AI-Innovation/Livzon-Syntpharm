@@ -61,11 +61,13 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
           supplier: editingEquipment.supplier ?? undefined,
           production_date: editingEquipment.production_date ? dayjs(editingEquipment.production_date) : undefined,
           commissioning_date: editingEquipment.commissioning_date ? dayjs(editingEquipment.commissioning_date) : undefined,
+          current_cost: editingEquipment.current_cost ?? undefined,
+          book_value: editingEquipment.book_value ?? undefined,
           scrap_status: editingEquipment.scrap_status ?? undefined,
           scrap_time: editingEquipment.scrap_time ? dayjs(editingEquipment.scrap_time) : undefined,
           description: editingEquipment.description ?? undefined,
           department_id: editingEquipment.department_id ?? undefined,
-          responsible_person_id: editingEquipment.responsible_person_id ?? undefined,
+          responsible_person_name: editingEquipment.responsible_person_name ?? undefined,
           quantity: (editingEquipment.technical_params as Record<string, unknown>)?.['数量'] ?? 1,
         })
       } else {
@@ -109,7 +111,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
     } catch (err: any) {
       // Ant Design validation errors have an errorFields property
       if (err?.errorFields) return
-      message.error('操作失败')
+      message.error(err?.message || err?.detail || '操作失败')
     } finally {
       setSubmitting(false)
     }
@@ -183,7 +185,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
             options={departments.map(d => ({ label: d.name, value: d.id }))}
           />
         </Form.Item>
-        <Form.Item name="responsible_person_display" label="负责人">
+        <Form.Item name="responsible_person_name" label="负责人">
           <Input placeholder="请输入负责人"  />
         </Form.Item>
         <Form.Item name="responsible_person_id" hidden>
