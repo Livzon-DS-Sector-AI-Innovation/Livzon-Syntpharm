@@ -222,13 +222,18 @@ async def batch_import_v4(
     errors, unmapped_depts = [], {}
 
     for idx, row in enumerate(normalized_data):
-        # try 必须包在 begin_nested 外层：异常若被内层吞掉，savepoint 会在
-        # 退出时尝试 RELEASE，而此时 PG 事务已 aborted，将抛
-        # InFailedSQLTransactionError 并中断整批导入。
+        audit_kwargs = {"row_index": idx, "asset_no": row.get("asset_no"), 
+                        "equipment_tag": row.get("equipment_tag"), 
+                        "department_id": row.get("department_id"),
+                        "location_text": row.get("location_text")}
+        
+        # try 必须包在 begin_nested 外层
         try:
             async with db.begin_nested():
                 if idx in duplicates:
-                    skipped += 1; continue
+                    skipped += 1
+                    await log_audit(db, batch_id, "skip", match_strategy="internal_duplicate", **audit_kwargs)
+                    continue
 
                 dept_raw = row.get("department_name")
                 dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
@@ -236,22 +241,37 @@ async def batch_import_v4(
                 if dept_error:
                     failed += 1; errors.append({"row": idx, "error": dept_error})
                     if dept_raw: unmapped_depts.setdefault(dept_raw, []).append(idx)
+                    await log_audit(db, batch_id, "error", error_message=dept_error, **audit_kwargs)
                     continue
 
                 row["department_id"] = dept_id
                 existing, strategy, warnings = await find_existing_equipment(
                     db, row.get("asset_no"), row.get("equipment_tag"), row.get("name"), dept_id, row.get("location_text"))
 
+                if strategy == "tag_conflict":
+                    failed += 1
+                    err_msg = "设备位号冲突，无法创建"
+                    errors.append({"row": idx, "error": err_msg})
+                    await log_audit(db, batch_id, "error", match_strategy=strategy, error_message=err_msg, **audit_kwargs)
+                    continue
+
                 if existing:
                     changes = apply_incremental_update(existing, row, force_override)
-                    if changes: updated += 1
-                    else: skipped += 1
+                    override_type = "force" if (force_override and changes) else "normal"
+                    if changes: 
+                        updated += 1
+                        await log_audit(db, batch_id, "update", match_strategy=strategy, changes=changes, override_type=override_type, warnings=warnings, **audit_kwargs)
+                    else: 
+                        skipped += 1
+                        await log_audit(db, batch_id, "skip", match_strategy=strategy, **audit_kwargs)
                 else:
-                    # 按模型列白名单过滤，否则多余键（quantity / department_name）会抛 TypeError
-                    await repo.create_equipment(db, _only_model_fields(row)); created += 1
+                    await repo.create_equipment(db, _only_model_fields(row))
+                    created += 1
+                    await log_audit(db, batch_id, "create", match_strategy=strategy, **audit_kwargs)
         except Exception as e:
             failed += 1; errors.append({"row": idx, "error": str(e)})
             logger.exception("v4 import row %s failed", idx)
+            await log_audit(db, batch_id, "error", error_message=str(e), **audit_kwargs)
 
     return build_response(data={
         "batch_id": batch_id, "created_count": created, "updated_count": updated,
@@ -320,8 +340,7 @@ async def preview_import_v4(
         results.append(result_item)
 
     if results:
-        logger.info(f"[DEBUG-PREVIEW] First item keys: {list(results[0].keys())}")
-    return build_response(data={
+        return build_response(data={
         "items": results,
         "total": len(results),
         "headers": PREVIEW_HEADERS
