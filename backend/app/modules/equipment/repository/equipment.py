@@ -379,6 +379,8 @@ async def get_equipments(
     department_id: uuid.UUID | None = None,
     status: str | None = None,
     keyword: str | None = None,
+    sort_by: str = "asset_no",
+    order: str = "asc",
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Equipment], int]:
@@ -422,8 +424,21 @@ async def get_equipments(
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
+    # 动态排序逻辑 (Whitelist mapping)
+    SORT_MAP = {
+        "asset_no": Equipment.asset_no,
+        "name": Equipment.name,
+        "created_at": Equipment.created_at,
+        "department_id": Equipment.department_id,
+    }
+    
+    col = SORT_MAP.get(sort_by, Equipment.asset_no)
+    if order.lower() == "desc":
+        query = query.order_by(nulls_last(desc(col)))
+    else:
+        query = query.order_by(nulls_last(asc(col)))
+
     # 分页查询
-    query = query.order_by(Equipment.created_at.desc())
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     equipments = list(result.scalars().all())
