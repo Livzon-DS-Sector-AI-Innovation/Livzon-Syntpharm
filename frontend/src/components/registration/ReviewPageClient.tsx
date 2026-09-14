@@ -105,24 +105,8 @@ export function ReviewPageClient() {
   }, [message])
 
   useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      setLoading(true)
-      try {
-        const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
-        if (!cancelled) {
-          setDrugs(d)
-          setReviewNodes(n)
-        }
-      } catch {
-        if (!cancelled) message.error('加载数据失败')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
-    return () => { cancelled = true }
-  }, [message])
+    loadData()
+  }, [loadData])
 
   const filtered = drugs.filter(d => {
     if (search && !d.name.includes(search)) return false
