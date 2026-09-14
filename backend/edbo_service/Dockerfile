@@ -9,11 +9,11 @@ RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ patche
 
 # Install other dependencies (botorch will see torch is already installed)
 COPY edbo_service/requirements.txt .
-RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --extra-index-url https://mirrors.nju.edu.cn/pytorch/whl/cpu/ --trusted-host mirrors.nju.edu.cn -r requirements.txt
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --extra-index-url https://download.pytorch.org/whl/cpu/  -r requirements.txt
 
 # Install EDBO+ package
 COPY vendor/edboplus-main /tmp/edboplus-main
-RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --extra-index-url https://mirrors.nju.edu.cn/pytorch/whl/cpu/ --trusted-host mirrors.nju.edu.cn /tmp/edboplus-main && \
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --extra-index-url https://download.pytorch.org/whl/cpu/  /tmp/edboplus-main && \
     rm -rf /tmp/edboplus-main
 
 # Patch PyTorch .so files for executable stack issues
