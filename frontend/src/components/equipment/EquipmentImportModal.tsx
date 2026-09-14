@@ -196,15 +196,6 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     }
   }
 
-        const errors = record.validation_errors
-        if (Array.isArray(errors) && errors.length > 0) {
-          return <span style={{ color: '#e03131', fontSize: 12 }}>{errors.join(', ')}</span>
-        }
-        return <Tag color="success">通过</Tag>
-      }
-    },
-  ]
-
   const isValidRow = (item: ImportPreviewItem) =>
     item.validation_status
       ? item.validation_status === 'pass'
