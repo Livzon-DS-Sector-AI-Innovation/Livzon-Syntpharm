@@ -196,43 +196,6 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     }
   }
 
-  const previewColumns = [
-    { title: '行号', dataIndex: 'row_index', width: 60, fixed: 'left' as const, render: (v: number) => v + 1 },
-    { title: '资产编号', dataIndex: 'asset_no', width: 110, fixed: 'left' as const },
-    { title: '标签号', dataIndex: 'label_no', width: 100, render: (v: string) => v || '-' },
-    { title: '设备名称', dataIndex: 'name', width: 160, ellipsis: true },
-    { title: '资产类别说明', dataIndex: 'category_description', width: 140, ellipsis: true, render: (v: string) => v || '-' },
-    { title: '设备分类', dataIndex: 'equipment_class', width: 80, render: (v: string) => v ? `${v}类` : '-' },
-    { title: '制造商', dataIndex: 'manufacturer', width: 120, ellipsis: true, render: (v: string) => v || '-' },
-    { title: '型号', dataIndex: 'model', width: 120, ellipsis: true, render: (v: string) => v || '-' },
-    { title: '当前成本', dataIndex: 'current_cost', width: 100, render: (v: number) => v != null ? `¥${v.toLocaleString()}` : '-' },
-    { 
-      title: '数量', 
-      dataIndex: 'technical_params', 
-      width: 80, 
-      render: (params: any) => params?.['数量'] ?? '-' 
-    },
-    { title: '部门', dataIndex: 'department_name', width: 120, ellipsis: true, render: (v: string) => v || '-' },
-    { title: '位置', dataIndex: 'location_text', width: 120, ellipsis: true, render: (v: string) => v || '-' },
-    { title: '状态', dataIndex: 'status', width: 80, render: (v: string) => <Tag color={v === '在用' ? 'green' : 'default'}>{v}</Tag> },
-    { title: '报废状态', dataIndex: 'scrap_status', width: 90, render: (v: string) => v || '-' },
-    { 
-      title: '验证', 
-      dataIndex: 'validation_errors', 
-      width: 150,
-      fixed: 'right' as const,
-      render: (_: unknown, record: ImportPreviewItem) => {
-        // v4 契约优先：validation_status + error_message
-        if (record.validation_status) {
-          if (record.validation_status === 'pass') return <Tag color="success">通过</Tag>
-          if (record.validation_status === 'duplicate') return <Tag color="warning">重复</Tag>
-          return (
-            <span style={{ color: '#e03131', fontSize: 12 }}>
-              {record.error_message || '校验未通过'}
-            </span>
-          )
-        }
-        // v3 契约兜底：validation_errors 数组（可能缺失，必须防御）
         const errors = record.validation_errors
         if (Array.isArray(errors) && errors.length > 0) {
           return <span style={{ color: '#e03131', fontSize: 12 }}>{errors.join(', ')}</span>
