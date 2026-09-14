@@ -83,13 +83,12 @@ export default function TrainingNotificationClient() {
   const [submittingExcel, setSubmittingExcel] = useState(false)
   const [_submittingEval, setSubmittingEval] = useState(false)
   const [addingToLedger, setAddingToLedger] = useState(false)
+  const searchParams = useSearchParams()
   const [sendingNotify, setSendingNotify] = useState(false)
   const [trainerDept, setTrainerDept] = useState<string | undefined>(() => {
     const dept = searchParams.get('dept')
     return dept ? decodeURIComponent(dept) : undefined
   })
-
-  const searchParams = useSearchParams()
 
   const { data: departments = [] } = useQuery<{ value: string; label: string }[]>({
     queryKey: ['hr-departments-options'],

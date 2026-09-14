@@ -7,7 +7,7 @@ type ProductionItem = {
 }
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNumber, Table, Input, Space } from 'antd'
 import { PlusOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons'
 import TargetModal from '@/components/energy/TargetModal'
@@ -34,6 +34,7 @@ export default function AIAnalysisPage() {
   const [syncing, setSyncing] = useState(false)
 
   const [modalOpen, setModalOpen] = useState(false)
+  const queryClient = useQueryClient()
 
   // 获取车间列表
   const { data: workshopsData } = useQuery({
@@ -124,6 +125,9 @@ const handleAnalyze = async () => {
   }
 
   const handleTargetSuccess = (_target: UnitConsumptionTarget) => {
+    // Invalidate the target query cache so it refetches the new value
+    queryClient.invalidateQueries({ queryKey: ['target', workshopId, analysisMonth] })
+    
     if (result && productionItems.length > 0) {
       handleAnalyze()
     }

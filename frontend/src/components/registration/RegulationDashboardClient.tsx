@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Row, Col, Tag, Button, Space, App, Spin, Badge } from 'antd'
 import {
@@ -42,6 +42,10 @@ export default function RegulationDashboardClient() {
       setLoading(false)
     }
   }, [message])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   if (loading && !data) {
     return (
