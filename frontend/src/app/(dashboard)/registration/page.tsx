@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Row, Col, Typography, Button, Space, Spin } from 'antd'
 import {
   BookOutlined,
@@ -58,6 +58,10 @@ export default function RegistrationPage() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [])
 
 
   const statCards: StatCard[] = [
