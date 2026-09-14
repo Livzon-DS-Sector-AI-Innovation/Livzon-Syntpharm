@@ -1,4 +1,5 @@
 'use client'
+'use no memo'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -97,16 +98,59 @@ export function ReviewPageClient() {
       const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
       setDrugs(d)
       setReviewNodes(n)
-    } catch {
+    } catch (e) {
+      console.error('[DEBUG] loadData error', e)
       message.error('加载数据失败')
     } finally {
       setLoading(false)
     }
   }, [message])
 
+  // Initial load - only run once on mount
   useEffect(() => {
-    loadData()
-  }, [loadData])
+    let cancelled = false
+    const load = async () => {
+      console.log('[DEBUG] initial load started')
+      setLoading(true)
+      
+      // Add timeout to prevent hanging forever
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+      
+      try {
+        console.log('[DEBUG] calling APIs')
+        const result = await Promise.race([
+          Promise.all([fetchDrugs(), fetchReviewNodes()]),
+          timeout
+        ]) as [any[], any[]]
+        
+        const [d, n] = result
+        console.log('[DEBUG] APIs returned', { drugs: d?.length, nodes: n?.length })
+        
+        if (!cancelled) {
+          setDrugs(d || [])
+          setReviewNodes(n || [])
+          console.log('[DEBUG] state updated')
+        }
+      } catch (e) {
+        console.error('[DEBUG] initial load error:', e)
+        if (!cancelled) {
+          message.error('加载数据失败: ' + (e as Error).message)
+        }
+      } finally {
+        if (!cancelled) {
+          console.log('[DEBUG] setting loading=false')
+          setLoading(false)
+        }
+      }
+    }
+    load()
+    return () => { 
+      cancelled = true
+      console.log('[DEBUG] cleanup - component unmounted')
+    }
+  }, []) // Empty deps - only run once
 
   const filtered = drugs.filter(d => {
     if (search && !d.name.includes(search)) return false
