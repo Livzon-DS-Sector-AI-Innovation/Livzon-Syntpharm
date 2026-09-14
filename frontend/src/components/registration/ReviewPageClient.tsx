@@ -130,7 +130,7 @@ export function ReviewPageClient() {
         }
       } catch (_e) {
         if (!cancelled) {
-          message.error('加载数据失败: ' + (e as Error).message)
+          message.error('加载数据失败')
         }
       } finally {
         if (!cancelled) {
