@@ -1,21 +1,31 @@
 """Import audit log model."""
 
 import uuid
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Integer, String, Text
+from sqlalchemy import JSON, Integer, String, Text, func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.shared.base_model import BaseModel
+from app.shared.base_model import Base
 
 
-class ImportAuditLog(BaseModel):
-    """导入审计日志表"""
+class ImportAuditLog(Base):
+    """导入审计日志表（不继承 BaseModel，避免 updated_by 等不存在字段的冲突）"""
 
     __tablename__ = "import_audit_logs"
     __table_args__ = {"schema": "equipment"}
 
+    id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        server_default=func.now(),
+    )
+    
     batch_id: Mapped[str] = mapped_column(String(50), comment="导入批次ID")
     operation_type: Mapped[str] = mapped_column(String(20), comment="操作类型: create/update/skip/error")
     match_strategy: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="匹配策略")

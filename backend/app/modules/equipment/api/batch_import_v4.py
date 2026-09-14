@@ -14,7 +14,7 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment.config.dept_mapping import normalize_department_name
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.models.import_audit import ImportAuditLog
-from app.modules.equipment.schemas.import_v4 import ImportV4BatchResponse, ImportV4PreviewResponse
+from app.modules.equipment.schemas.import_v4 import ImportV4BatchResponse, ImportV4PreviewResponse, ImportErrorItem
 from app.modules.equipment.service.import_engine import (
     apply_incremental_update,
     detect_internal_duplicates,
