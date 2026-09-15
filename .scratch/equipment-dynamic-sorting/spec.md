@@ -353,22 +353,28 @@ store 里对列表失效的 `page/pageSize` 都已删除，分页与排序的唯
 - **R6（无障碍偏差）**：antd v6 表头不响应 Space，键盘切序仅 Enter。若要满足「Space 也可」需自建
   `onKeyDown` 并因此替换内置单元格渲染——与 D7（复用内置、白拿 `aria-sort`）直接冲突。
   建议接受现状并向无障碍验收方说明，不为一个按键放弃整套内置语义。
-- **R7（已关闭 — 布局改造合并处理）**：台账列多 + `scroll.x`，「操作」列 `fixed: 'end'` 在窄视口下覆盖表头命中区，
+- **R7（已关闭 — 布局改造为三段式一屏显示）**：台账列多 + `scroll.x`，「操作」列 `fixed: 'end'` 在窄视口下覆盖表头命中区，
   用户点击可能落在相邻表头上。E2E 用 1680 视口只是**绕开**它，没有修它。
-  移除 `fixed` 可消除遮挡，但代价是横向滚动时「操作」不再常驻——属于交互取舍。
+  
+  **迭代 v1（自然滚动方案被否决）**：曾尝试「自然页面滚动 + sticky 表头」，但用户反馈无法在一屏内看到完整内容，
+  分页控件需要滚动才能看到，体验不佳。
+  
+  **迭代 v2（当前方案：三段式一屏显示）**：经用户明确要求，改为「三段式布局 + 表格内部滚动」，确保：
+  - 整个页面固定高度（`100vh`），无页面级滚动
+  - 第一段（控制层）：标题 + 统计 + 筛选，紧凑化设计
+  - 第二段（数据层）：表格区域内部滚动（`overflow: auto`），表头 sticky 固定
+  - 第三段（导航层）：分页控件固定在底部，始终可见
+  
+  具体改动：
+  - `frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx` — 页面根容器 `height: 100vh; overflow: hidden`，
+    三段式 flex 布局，第一段压缩间距，表格区域添加 `overflow: auto`
+  - `frontend/src/components/equipment/EquipmentTable.tsx` — 添加 `scroll={{ x: 'max-content', y: '100%' }}`，
+    表头通过 sticky 固定在表格区域顶部
+  - `frontend/src/components/equipment/StatsCards.tsx` — 压缩样式，数字 20px，标签 11px，内边距 8px 12px
+  - `frontend/src/lib/api/equipment-query.ts` — `DEFAULT_EQUIPMENT_PAGE_SIZE` 从 20 改为 15
+  - `frontend/src/styles/industrial-theme.css` — 移除自定义滚动条样式
 
-  **已落地（独立改动，不夹在排序本期）**：经 frontend-design 评审，把台账主区从「`calc(100vh - 280px)` 锁高 + 内部
-  ResizeObserver 测 `scroll.y`」改为「自然页面滚动 + sticky 表头」。根因是锁高容器把表头挤到了分页栏与表体的边界；
-  锁高一去掉，`fixed: 'end'` 的命中区冲突就不再出现，操作列保留常驻。具体改动三处文件：
-
-  - `frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx` — 主区去掉 `calc(100vh - 280px)` 与
-    `minHeight: 400`，右侧卡片不再用 flex column / overflow:hidden，让 `<main>` 的 `overflow-y-auto` 接管滚动。
-  - `frontend/src/components/equipment/EquipmentTable.tsx` — 删除 `rootRef` / `filterRef` / `tableWrapRef` / `scrollY`
-    state 与 ResizeObserver useEffect；Table `scroll` 只保留 `{ x: 'max-content' }`；批量栏已外移、保持原位。
-  - `frontend/src/styles/industrial-theme.css` — 新增 `.equipment-ledger .ant-table-thead > tr > th { position: sticky;
-    top: 0; z-index: 2; background: var(--color-surface); }`，固定列 th 提到 z-index 3。
-
-  `pnpm typecheck`（tsc --noEmit）通过，无遗留 `scrollY` / `useRef` 引用。
+  **效果**：无页面级滚动，三段内容一屏显示；表格内部可滚动，表头固定；分页控件始终可见。
 
   **迭代 v2（用户反馈：去锁高后仍看不到统计与表头）**：v1 改完发现真正的问题是「纵向密度」而非
   「滚动」——标题 + 5 张大卡 + FilterSummary + 筛选条 + 表头堆 ~412px，首屏只能看 7 行。再迭代：
