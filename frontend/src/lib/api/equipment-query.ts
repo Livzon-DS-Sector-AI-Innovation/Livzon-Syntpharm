@@ -29,7 +29,7 @@ const QUERY_KEYS = [
 export const DEFAULT_EQUIPMENT_SORT_BY: EquipmentSortBy = 'asset_no'
 export const DEFAULT_EQUIPMENT_SORT_ORDER: EquipmentSortOrder = 'asc'
 export const DEFAULT_EQUIPMENT_PAGE = 1
-export const DEFAULT_EQUIPMENT_PAGE_SIZE = 20
+export const DEFAULT_EQUIPMENT_PAGE_SIZE = 15
 
 /**
  * URL 是不可信输入，出站前必须做运行时校验（否则 ?sort_by=x 会让列表页 422 空转）。

@@ -96,33 +96,6 @@
 }
 
 
-/**
- * 工业主题滚动条样式 - 应用于表格区域
- */
-.equipment-ledger-table-scroll::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.equipment-ledger-table-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.equipment-ledger-table-scroll::-webkit-scrollbar-thumb {
-  background: #D6D3D1;
-  border-radius: 3px;
-  transition: background 0.2s;
-}
-
-.equipment-ledger-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: #A8A29E;
-}
-
-/* Firefox 滚动条 */
-.equipment-ledger-table-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: #D6D3D1 transparent;
-}
 
 /**
  * 表格表头样式 - 加大字号，增强可读性

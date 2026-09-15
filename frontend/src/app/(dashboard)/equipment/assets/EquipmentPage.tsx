@@ -289,19 +289,17 @@ export function EquipmentPage({
       <App>
         {/* 页面根容器：固定高度，无页面级滚动 */}
         <div style={{ 
-          height: 'calc(100vh - 24px)', 
+          height: '100vh', 
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          padding: '12px',
-          gap: '12px',
         }}>
           {/* 第一段：标题 + 统计 + 筛选栏（固定高度） */}
           <div style={{ flexShrink: 0 }}>
             {/* 标题行 */}
             <div style={{ 
-              marginBottom: 12,
-              paddingBottom: 10,
+              marginBottom: 8,
+              paddingBottom: 6,
               borderBottom: '1px solid #E7E5E4',
             }}>
               <h2 className="equipment-page-title"
@@ -338,13 +336,13 @@ export function EquipmentPage({
             top: 0,
             zIndex: 10,
             background: '#ffffff',
-            padding: '12px 0 8px 0',
+            padding: '8px 0 6px 0',
             borderBottom: '1px solid #E7E5E4',
           }}
         >
           {/* 统计卡片区域 - 横向铺满 */}
           <div style={{ 
-            marginBottom: 12,
+            marginBottom: 8,
           }}>
             <StatsCards statistics={currentStats} compact={false} />
           </div>
@@ -398,7 +396,7 @@ export function EquipmentPage({
             className="flex-1 min-w-0"
             style={{
               background: '#ffffff',
-              padding: '20px 24px',
+              padding: '12px 16px',
               borderRadius: 12,
               border: '1px solid #E7E5E4',
               display: 'flex',
@@ -415,8 +413,8 @@ export function EquipmentPage({
               />
             </div>
 
-            {/* 表格区域（flex: 1，无内部滚动） */}
-            <div style={{ flex: 1, minHeight: 0 }}>
+            {/* 表格区域（flex: 1，内部滚动） */}
+            <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
               <EquipmentTable
                 loading={loading}
                 page={urlState.page}

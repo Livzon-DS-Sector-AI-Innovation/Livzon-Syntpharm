@@ -81,7 +81,7 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
             style={{
               flex: 1,
               minWidth: 0,
-              padding: '10px 16px',
+              padding: '8px 12px',
               background: isActive ? bg : '#FAFAF9',
               border: isActive ? `2px solid ${color}` : '1px solid #E7E5E4',
               borderRadius: 6,
@@ -92,16 +92,16 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
             }}
           >
             <div style={{ 
-              fontSize: 12, 
+              fontSize: 11, 
               color: isActive ? color : '#78716C',
               fontWeight: 500,
-              marginBottom: 4,
+              marginBottom: 2,
               letterSpacing: '0.02em',
             }}>
               {label}
             </div>
             <div style={{ 
-              fontSize: 22, 
+              fontSize: 20, 
               fontWeight: 700, 
               color: isActive ? color : '#1C1917',
               lineHeight: 1,
