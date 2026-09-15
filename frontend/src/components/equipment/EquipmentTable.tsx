@@ -216,13 +216,113 @@ export function EquipmentTable({
       {selectedRowKeys.length > 0 && (
         <div style={{
           marginBottom: 12,
-          padding: '8px 12px',
-          background: '#f5f5f5',
-          borderRadius: 6,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
           display: 'flex',
           alignItems: 'center',
           gap: 12,
-          border: '1px solid #e0e0e0'
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
+        }}>
+        <div style={{
+          marginBottom: 12,
+          padding: '10px 16px',
+          background: '#fffbeb',
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          border: '1px solid #fde68a',
+          borderLeft: '4px solid #f59e0b'
         }}>
           <span style={{
             fontSize: 14,

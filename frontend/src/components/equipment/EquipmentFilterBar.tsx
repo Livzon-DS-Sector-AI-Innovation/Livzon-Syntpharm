@@ -65,7 +65,8 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
         display: 'flex',
         gap: 12,
         alignItems: 'center',
-        flexWrap: 'nowrap',
+        flexWrap: 'wrap',
+        rowGap: 8,
       }}
     >
       <Select
@@ -87,7 +88,12 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
       <Input
         placeholder="搜索设备编号或名称"
         prefix={<SearchOutlined style={{ color: '#a4a097' }} />}
-        style={{ width: 240, flexShrink: 0 }}
+        style={{ 
+          minWidth: 200, 
+          maxWidth: 320, 
+          flex: '1 1 auto',
+          flexShrink: 1 
+        }}
         value={keyword}
         onChange={(e) => setKeyword(e.target.value)}
         allowClear
@@ -107,7 +113,7 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
         categories={categories}
         departments={departments}
       />
-      <div style={{ flex: 1, minWidth: 0 }} />
+      <div style={{ flex: '1 1 100%', minWidth: 0, order: 5 }} />
       <Button icon={<SettingOutlined />} onClick={onOpenColumnConfig}>列配置</Button>
       <Button icon={<ImportOutlined />} onClick={onOpenImport}>导入</Button>
       <Button type="primary" icon={<PlusOutlined />} onClick={onAddNew}>新增设备</Button>
