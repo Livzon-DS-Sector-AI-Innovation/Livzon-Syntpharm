@@ -55,13 +55,16 @@
  */
 
 /**
- * 表头粘性走 antd 内置 `sticky` prop（EquipmentTable.tsx），不在这里手写 CSS。
- * 原因：scroll.x 存在时 rc-table 给滚动容器加 `overflow-x: auto; overflow-y: hidden`（Table.js），
- * 容器自身成为 sticky 吸附框——给 th 手写 `position: sticky; top: N` 只会在容器内部下推/裁切表头，
- * 实测表现为表头空白或叠进数据行（v3 教训）。
- * 内置 sticky 渲染独立 `.ant-table-sticky-holder` 表头（top = offsetHeader 内联样式、
- * z-index 按列数自动计算），表体横向滚动由 rc-table 同步，勿再覆盖。
+ * 表头粘性：antd 6.x 的 `.ant-table-sticky-holder` 内联样式只有 `overflow:hidden;top:N`，
+ * 缺少 `position:sticky`，导致表头不吸附、下拉被工具栏遮挡。
+ * 此处补上 `position:sticky`，确保表头在滚动时固定在工具栏下方。
+ * 注意：不要给 `th` 手写 `position:sticky`，因为 scroll.x 存在时 rc-table 的滚动容器
+ * 会成为吸附框，导致表头空白或叠进数据行。只补 `.ant-table-sticky-holder` 的 position。
  */
+.ant-table-sticky-holder {
+  position: sticky !important;
+  z-index: 2;
+}
 
 /**
  * 侧边栏粘性：top/maxHeight 由 inline style 写 CSS 变量，

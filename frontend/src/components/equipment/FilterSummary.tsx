@@ -20,7 +20,7 @@ interface FilterSummaryProps {
   locations: Location[]
   categories: EquipmentCategory[]
   departments: DepartmentOption[]
-  /** 紧凑模式：渲染为筛选条右侧的 inline 标签组，无外壳、无总数、无「恢复默认」 */
+  /** 紧凑模式：渲染为筛选条右侧的 inline 标签组，无外壳、无总数 */
   compact?: boolean
 }
 
@@ -103,7 +103,7 @@ export function FilterSummary({
     tags.push({ key: 'sort', label: `排序: ${formatSortLabel(sortBy, sortOrder)}`, color: '#5645d4', bg: '#ede9f8' })
   }
 
-  // 紧凑模式：筛选条右侧 inline 标签组，无外壳、无总数、无「恢复默认」。
+  // 紧凑模式：筛选条右侧 inline 标签组，无外壳、无总数。「恢复默认」按钮保留。
   // max-width 防止标签挤掉右侧操作按钮；溢出由 overflow:hidden 截断。
   if (compact) {
     return (
@@ -136,6 +136,11 @@ export function FilterSummary({
             {t.label}
           </span>
         ))}
+        {isCustomSort ? (
+          <Button type="link" size="small" onClick={onResetSort} style={{ padding: "0 4px", fontSize: 12, flexShrink: 0 }}>
+            恢复默认
+          </Button>
+        ) : null}
         {hasInvalidSort ? (
           <span
             key="invalid"
