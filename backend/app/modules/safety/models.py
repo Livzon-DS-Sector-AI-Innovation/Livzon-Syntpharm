@@ -2022,6 +2022,13 @@ class GraphKnowledgeNode(BaseModel):
     __tablename__ = "graph_knowledge_nodes"
     __table_args__ = {"schema": "safety"}
 
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=True,
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True,
+    )
+
     name: Mapped[str] = mapped_column(String(255), nullable=False, comment="节点名称")
     node_type: Mapped[str] = mapped_column(
         String(32), nullable=False, comment="节点类型: document/clause/entity/category/concept"
@@ -2051,6 +2058,13 @@ class GraphKnowledgeEdge(BaseModel):
 
     __tablename__ = "graph_knowledge_edges"
     __table_args__ = {"schema": "safety"}
+
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=True,
+    )
+    updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=True,
+    )
 
     source_node_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

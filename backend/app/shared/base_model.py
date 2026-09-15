@@ -17,16 +17,14 @@ class BaseModel(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
-    created_at: Mapped[datetime | None] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
-        nullable=True,
     )
-    updated_at: Mapped[datetime | None] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
-        nullable=True,
     )
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("identity.users.id"),
