@@ -246,7 +246,7 @@ export function EquipmentTable({
           rowSelection={rowSelection}
           columns={filteredColumns} dataSource={equipments} rowKey="id" size="small"
           loading={loading} 
-          scroll={{ x: 'max-content', y: 'calc(100vh - 220px)' }}
+          scroll={{ x: 'max-content' }}
           onChange={handleTableChange}
           pagination={false}
         />

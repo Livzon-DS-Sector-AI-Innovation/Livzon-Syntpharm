@@ -415,8 +415,8 @@ export function EquipmentPage({
               />
             </div>
 
-            {/* 表格区域（flex: 1，内部滚动） */}
-            <div className="equipment-ledger-table-scroll" style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+            {/* 表格区域（flex: 1，无内部滚动） */}
+            <div style={{ flex: 1, minHeight: 0 }}>
               <EquipmentTable
                 loading={loading}
                 page={urlState.page}
