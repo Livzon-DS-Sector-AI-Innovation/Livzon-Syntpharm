@@ -37,3 +37,61 @@
   color: var(--color-deep-steel);
   opacity: 0.7;
 }
+
+/**
+ * 台账排版：编号 / 位号 / 日期 / 金额列数位对齐（D8）。
+ * 靠等宽 + tabular-nums 建立秩序，不改行高。
+ */
+.equipment-cell-mono {
+  font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/**
+ * 换序动效（D9）：仅表头指示器方向切换与表体淡入，均不超过 150ms。
+ * prefers-reduced-motion 下完全跳过。
+ * 两套同名同构的 keyframes 由 data-fade 两相位交替引用：animation-name 变化即重启动画，
+ * 不必重挂载表体（重挂载会丢失 antd 的列宽测量与滚动位置）。
+ */
+
+/**
+ * 表头粘性走 antd 内置 `sticky` prop（EquipmentTable.tsx），不在这里手写 CSS。
+ * 原因：scroll.x 存在时 rc-table 给滚动容器加 `overflow-x: auto; overflow-y: hidden`（Table.js），
+ * 容器自身成为 sticky 吸附框——给 th 手写 `position: sticky; top: N` 只会在容器内部下推/裁切表头，
+ * 实测表现为表头空白或叠进数据行（v3 教训）。
+ * 内置 sticky 渲染独立 `.ant-table-sticky-holder` 表头（top = offsetHeader 内联样式、
+ * z-index 按列数自动计算），表体横向滚动由 rc-table 同步，勿再覆盖。
+ */
+
+/**
+ * 侧边栏粘性：top/maxHeight 由 inline style 写 CSS 变量，
+ * 这里只补 z-index 与背景，确保 sticky 时不与工具栏混色。
+ */
+.equipment-sidebar-sticky {
+  z-index: 1;
+  background: #ffffff;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .equipment-ledger[data-fade="a"] .ant-table-tbody {
+    animation: equipment-tbody-fade-a 150ms ease-out;
+  }
+
+  .equipment-ledger[data-fade="b"] .ant-table-tbody {
+    animation: equipment-tbody-fade-b 150ms ease-out;
+  }
+
+  .equipment-ledger .ant-table-column-sorter {
+    transition: transform 120ms ease-out;
+  }
+}
+
+@keyframes equipment-tbody-fade-a {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}
+
+@keyframes equipment-tbody-fade-b {
+  from { opacity: 0.4; }
+  to { opacity: 1; }
+}

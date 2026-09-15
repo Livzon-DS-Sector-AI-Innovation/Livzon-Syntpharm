@@ -1,9 +1,14 @@
 
+'use client'
+
 export { StatsCards } from './StatsCards'
 export { StatsDashboard } from './StatsDashboard'
 export { EquipmentTable } from './EquipmentTable'
+export { EquipmentFilterBar } from './EquipmentFilterBar'
 export { EquipmentDrawer } from './EquipmentDrawer'
 export { EquipmentDetailDrawer } from './EquipmentDetailDrawer'
+export { EquipmentImportModal } from './EquipmentImportModal'
+export { ColumnConfigModal } from './ColumnConfigModal'
 export { CategoryDrawer } from './CategoryDrawer'
 export { CategoryTree } from './CategoryTree'
 export { LocationTree } from './LocationTree'

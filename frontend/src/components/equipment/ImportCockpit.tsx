@@ -12,7 +12,7 @@ interface HeaderDef {
 interface ImportPreviewItem extends Record<string, any> {
   row_index: number;
   validation_status?: 'pass' | 'duplicate' | 'error';
-  error_message?: string;
+  error_message?: string | null;
   is_duplicate?: boolean;
 }
 

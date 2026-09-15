@@ -2,7 +2,7 @@ import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import type { Personnel } from '@/types/equipment-personnel'
 import {
-  EquipmentCategory, Location, EquipmentFilters, EquipmentListResponse, EquipmentStatistics,
+  EquipmentCategory, Location, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
   CalibrationPlanFilters, CalibrationPlanListResponse, CalibrationPlan,
   CalibrationRecordFilters, CalibrationRecordListResponse, CalibrationRecord,
@@ -15,16 +15,8 @@ import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 
-// Query parameter types (manually defined to avoid type resolution issues)
-export interface GetEquipmentsQuery {
-  category_id?: string | null
-  location_id?: string | null
-  department_id?: string | null
-  status?: string | null
-  keyword?: string | null
-  page?: number
-  page_size?: number
-}
+// 设备列表查询参数取生成契约（含排序白名单），不在此手写一份
+import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipment-query'
 
 export interface GetStatisticsQuery {
   category_id?: string | null
@@ -60,17 +52,8 @@ export async function fetchLocationTree(): Promise<Location[]> {
 // ═══════════════════════════════════════════════════════════
 //  设备管理
 // ═══════════════════════════════════════════════════════════
-export async function fetchEquipments(filters: EquipmentFilters = {}): Promise<EquipmentListResponse> {
-  const params = new URLSearchParams()
-  if (filters.category_id) params.append('category_id', filters.category_id)
-  if (filters.location_id) params.append('location_id', filters.location_id)
-  if (filters.department_id) params.append('department_id', filters.department_id)
-  if (filters.status) params.append('status', filters.status)
-  if (filters.keyword) params.append('keyword', filters.keyword)
-  if (filters.page) params.append('page', filters.page.toString())
-  if (filters.page_size) params.append('page_size', filters.page_size.toString())
-
-  const queryString = params.toString()
+export async function fetchEquipments(query: EquipmentListQuery = {}): Promise<EquipmentListResponse> {
+  const queryString = buildEquipmentQuery(query).toString()
   const url = queryString
     ? `${API_BASE}/equipment/equipments?${queryString}`
     : `${API_BASE}/equipment/equipments`
@@ -298,21 +281,11 @@ export async function fetchPersonnelList(params?: any): Promise<Personnel[]> {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  Client aliases with null-to-undefined coercion
+//  客户端别名（供 'use client' 组件按名调用）
 // ═══════════════════════════════════════════════════════════
 
-// Use GetEquipmentsQuery from generated types
-
-export async function fetchEquipmentsClient(params: GetEquipmentsQuery = {}): Promise<EquipmentListResponse> {
-  return fetchEquipments({
-    category_id: params.category_id ?? undefined,
-    location_id: params.location_id ?? undefined,
-    department_id: params.department_id ?? undefined,
-    status: params.status ?? undefined,
-    keyword: params.keyword ?? undefined,
-    page: params.page ?? undefined,
-    page_size: params.page_size ?? undefined,
-  })
+export async function fetchEquipmentsClient(query: EquipmentListQuery = {}): Promise<EquipmentListResponse> {
+  return fetchEquipments(query)
 }
 
 export const fetchEquipmentStatisticsClient = fetchEquipmentStatistics

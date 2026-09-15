@@ -1,17 +1,25 @@
 'use client'
 
 import '../../../../styles/industrial-theme.css';
-import { useEffect, useCallback, useState } from 'react'
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Tabs, Button } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
-import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-design/icons'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
 import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
+import {
+  DEFAULT_EQUIPMENT_SORT_BY,
+  DEFAULT_EQUIPMENT_SORT_ORDER,
+  parseEquipmentUrlParams,
+  writeEquipmentUrlQuery,
+  type EquipmentUrlState,
+} from '@/lib/api/equipment-query'
 import { message, Upload } from 'antd'
 import type { UploadProps } from 'antd'
-import { CategoryTree, EquipmentDrawer, EquipmentTable, ExcelSyncButton, FilterSummary, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
+import { CategoryTree, ColumnConfigModal, EquipmentDrawer, EquipmentFilterBar, EquipmentImportModal, EquipmentTable, ExcelSyncButton, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
 
 interface EquipmentPageProps {
   initialCategories: EquipmentCategory[]
@@ -23,6 +31,10 @@ interface EquipmentPageProps {
 }
 
 const SIDEBAR_WIDTH = 280
+const DEFAULT_VISIBLE_COLUMNS = [
+  'asset_no', 'name', 'location_text', 'department',
+  'responsible', 'status', 'commissioning_date',
+]
 
 export function EquipmentPage({
   initialCategories,
@@ -46,6 +58,7 @@ export function EquipmentPage({
     keyword,
     total,
     loading,
+    openEquipmentDrawer,
     setSelectedCategory,
     setSelectedLocation,
     setCategories,
@@ -58,9 +71,71 @@ export function EquipmentPage({
   } = useEquipmentStore()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [resetKey, setResetKey] = useState(0)
   const [initialized, setInitialized] = useState(false)
+  const [columnConfigOpen, setColumnConfigOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_COLUMNS)
+  const toolbarRef = useRef<HTMLDivElement>(null)
+  // sticky 表头的 top 偏移 = 工具栏实测高度；ResizeObserver 挂载即回调，初值仅为首帧兜底
+  const [toolbarH, setToolbarH] = useState(96)
 
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  // 排序与分页以 URL 为唯一来源（可分享、刷新保持）；筛选条件仍由 store 单一持有
+  const { state: urlState, rejectedSort } = useMemo(() => parseEquipmentUrlParams(searchParams), [searchParams])
+
+  const patchQuery = useCallback((patch: Partial<EquipmentUrlState>) => {
+    const nextQs = writeEquipmentUrlQuery(new URLSearchParams(searchParams.toString()), { ...urlState, ...patch })
+    router.replace(nextQs ? `${pathname}?${nextQs}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams, urlState])
+
+  // 测量 sticky 工具栏高度：数值经 state 传给 Table 的 sticky.offsetHeader，
+  // 同步写 CSS 变量 `--equipment-toolbar-h` 供侧边栏 sticky top 使用，三层粘性叠放整齐。
+  // 仅在挂载时挂一次 observer；卸载时移除 CSS 变量与监听器。
+  useEffect(() => {
+    const el = toolbarRef.current
+    if (!el) return
+    const apply = () => {
+      const h = el.getBoundingClientRect().height
+      setToolbarH(h)
+      document.documentElement.style.setProperty('--equipment-toolbar-h', `${h}px`)
+    }
+    apply()
+    const observer = new ResizeObserver(apply)
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      document.documentElement.style.removeProperty('--equipment-toolbar-h')
+    }
+  }, [])
+
+  // 列配置：从 localStorage 加载首次挂载时的可见列。EquipmentTable 受控展示。
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('equipment_visible_columns')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setVisibleColumns(parsed)
+          return
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load column config:', e)
+    }
+  }, [])
+
+  // 持久化列配置变更到 localStorage
+  useEffect(() => {
+    if (visibleColumns.length > 0) {
+      try {
+        localStorage.setItem('equipment_visible_columns', JSON.stringify(visibleColumns))
+      } catch (e) {
+        console.warn('Failed to save column config:', e)
+      }
+    }
+  }, [visibleColumns])
 
   // 初始化 store 数据（包含 SSR 数据）- 只在首次加载时执行
   useEffect(() => {
@@ -105,8 +180,8 @@ export function EquipmentPage({
     loadMissing()
   }, [categories.length, locations.length, departments.length, setCategories, setLocations, setDepartments])
 
-  // 获取列表数据
-  const fetchData = useCallback(async (p: number, ps: number) => {
+  // 列表取数：排序与分页来自 URL，筛选来自 store，二者在此合成唯一一份请求参数
+  const fetchData = useCallback(async (state: EquipmentUrlState) => {
     setLoading(true)
     try {
       const equipmentsResponse = await fetchEquipmentsClient({
@@ -115,8 +190,10 @@ export function EquipmentPage({
         department_id: departmentFilter,
         status: statusFilter || undefined,
         keyword: keyword || undefined,
-        page: p,
-        page_size: ps,
+        sort_by: state.sort_by,
+        sort_order: state.sort_order,
+        page: state.page,
+        page_size: state.page_size,
       })
       setEquipments(equipmentsResponse.items)
       setTotal(equipmentsResponse.total)
@@ -126,6 +203,9 @@ export function EquipmentPage({
       setLoading(false)
     }
   }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
+
+  // 数据变更后重取当前页（新增/编辑/删除/导入完成）
+  const refreshList = useCallback(() => fetchData(urlState), [fetchData, urlState])
 
   // 单独刷新统计（根据当前筛选条件）
   const refreshStatistics = useCallback(async () => {
@@ -156,11 +236,22 @@ export function EquipmentPage({
     }
   }, [setCategories, setLocations])
 
-  // 筛选变化时重置到第一页（含首次加载）
+  // 筛选变化 → 回到第 1 页；URL 与 store 共同决定取数，fetchData 必须在依赖内
+  const filterSignature = `${selectedCategory ?? ''}|${selectedLocation ?? ''}|${departmentFilter ?? ''}|${statusFilter}|${keyword ?? ''}`
+  const previousFilters = useRef(filterSignature)
+  const lastFetchKey = useRef('')
+
   useEffect(() => {
-    fetchData(1, 20)
-    setResetKey(k => k + 1)
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword])
+    const filtersChanged = previousFilters.current !== filterSignature
+    previousFilters.current = filterSignature
+    const state: EquipmentUrlState = filtersChanged ? { ...urlState, page: 1 } : urlState
+    const fetchKey = `${filterSignature}|${state.page}|${state.page_size}|${state.sort_by}|${state.sort_order}`
+    if (fetchKey === lastFetchKey.current) return
+    lastFetchKey.current = fetchKey
+    // 已按第 1 页取数，但 URL 仍停在旧页码时补一次写回，使地址栏与实际视图一致
+    if (filtersChanged && urlState.page !== 1) patchQuery({ page: 1 })
+    fetchData(state)
+  }, [filterSignature, urlState, patchQuery, fetchData])
 
   const tabItems = [
     {
@@ -212,30 +303,49 @@ export function EquipmentPage({
           </p>
         </div>
 
-        {/* 统计概览 - 移到顶部 */}
-        <div style={{ marginBottom: 16 }}>
-          <StatsCards statistics={currentStats} />
+        {/* 工具栏：compact 统计 + 筛选条 + inline 摘要标签，三件套合成一条 sticky 块 */}
+        <div
+          ref={toolbarRef}
+          className="equipment-toolbar"
+          style={{
+            position: 'sticky',
+            top: 0,
+            zIndex: 3,
+            background: 'var(--color-surface)',
+            paddingBottom: 12,
+          }}
+        >
+          <div style={{ marginBottom: 8 }}>
+            <StatsCards statistics={currentStats} compact />
+          </div>
+          <EquipmentFilterBar
+            sortBy={urlState.sort_by}
+            sortOrder={urlState.sort_order}
+            onResetSort={() => patchQuery({
+              sort_by: DEFAULT_EQUIPMENT_SORT_BY,
+              sort_order: DEFAULT_EQUIPMENT_SORT_ORDER,
+              page: 1,
+            })}
+            invalidSort={rejectedSort}
+            locations={locations}
+            categories={categories}
+            departments={departments}
+            onOpenColumnConfig={() => setColumnConfigOpen(true)}
+            onOpenImport={() => setImportOpen(true)}
+            onAddNew={() => openEquipmentDrawer()}
+          />
         </div>
 
-        {/* 筛选摘要 */}
-        <FilterSummary
-          selectedLocation={selectedLocation}
-          selectedCategory={selectedCategory}
-          departmentFilter={departmentFilter}
-          statusFilter={statusFilter}
-          total={total}
-          locations={locations}
-          categories={categories}
-          departments={departments}
-        />
-
-        <div className="flex gap-4" style={{ height: 'calc(100vh - 280px)', minHeight: 400 }}>
-          {/* 左侧：可折叠分类/位置树 */}
+        <div className="flex gap-4" style={{ alignItems: 'flex-start' }}>
+          {/* 左侧：可折叠分类/位置树（sticky 在工具栏下方） */}
           {!sidebarCollapsed && (
             <div
-              className="shrink-0"
+              className="equipment-sidebar-sticky shrink-0"
               style={{
                 width: SIDEBAR_WIDTH,
+                position: 'sticky',
+                top: 'var(--equipment-toolbar-h, 96px)',
+                maxHeight: 'calc(100vh - var(--equipment-toolbar-h, 96px) - 24px)',
                 background: '#ffffff',
                 padding: 16,
                 borderRadius: 12,
@@ -258,42 +368,52 @@ export function EquipmentPage({
               padding: '16px 20px',
               borderRadius: 12,
               border: '1px solid #e5e3df',
-              display: 'flex', flexDirection: 'column',
-              overflow: 'hidden',
             }}
           >
-            {/* 折叠按钮 */}
-            <div className="mb-3 flex items-center gap-3" style={{ flexShrink: 0 }}>
+            <div className="mb-3 flex items-center gap-3">
               <Button
                 type="text"
                 icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                style={{ color: '#5d5b54', flexShrink: 0 }}
+                style={{ color: '#5d5b54' }}
               />
             </div>
 
-            {/* 表格区域 */}
-            <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-              <EquipmentTable 
-                loading={loading} 
-                resetKey={resetKey} 
-                onPageChange={fetchData} 
-                onRefresh={() => fetchData(1, 20)} 
-                onRefreshStatistics={refreshStatistics} 
-              />
-            </div>
+            <EquipmentTable
+              loading={loading}
+              page={urlState.page}
+              pageSize={urlState.page_size}
+              sortBy={urlState.sort_by}
+              sortOrder={urlState.sort_order}
+              onQueryChange={patchQuery}
+              onRefresh={refreshList}
+              onRefreshStatistics={refreshStatistics}
+              visibleColumns={visibleColumns}
+              onVisibleColumnsChange={setVisibleColumns}
+              stickyTop={toolbarH}
+            />
           </div>
         </div>
 
         {/* 抽屉组件 */}
-        <EquipmentDrawer onRefresh={() => { fetchData(1, 20); setResetKey(k => k + 1); refreshStatistics(); }} />
+        <EquipmentDrawer onRefresh={() => { refreshList(); refreshStatistics(); }} />
         <LocationDrawer onRefresh={() => { refreshCategoriesAndLocations(); refreshStatistics(); }} />
         <RepairDrawer
           equipments={equipments.map(e => ({
             id: e.id, asset_no: e.asset_no, name: e.name,
           }))}
           symptoms={failureCodes.symptoms}
-          onRefresh={() => fetchData(1, 20)}
+          onRefresh={refreshList}
+        />
+        <ColumnConfigModal
+          open={columnConfigOpen}
+          onClose={() => setColumnConfigOpen(false)}
+          onSave={(cols: string[]) => setVisibleColumns(cols)}
+        />
+        <EquipmentImportModal
+          open={importOpen}
+          onClose={() => setImportOpen(false)}
+          onSuccess={refreshList}
         />
       </App>
     </ConfigProvider>

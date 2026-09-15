@@ -30,6 +30,7 @@ const ALL_COLUMNS: ColumnOption[] = [
   { key: 'scrap_status', label: '报废状态', defaultVisible: false },
   { key: 'scrap_time', label: '报废时间', defaultVisible: false },
   { key: 'quantity', label: '数量', defaultVisible: false },
+  { key: 'created_at', label: '创建时间', defaultVisible: false },
 ]
 
 const STORAGE_KEY = 'equipment_visible_columns'

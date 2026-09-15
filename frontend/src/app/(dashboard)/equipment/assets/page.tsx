@@ -1,11 +1,16 @@
 import { EquipmentPage } from './EquipmentPage'
 import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/lib/api/server/equipment'
+import { parseEquipmentUrlRecord } from '@/lib/api/equipment-query'
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { unwrapResponse } from '@/lib/api/server/base'
 
 // 强制动态渲染：不在构建时预渲染，每次请求都实时从后端获取数据
 export const dynamic = 'force-dynamic'
+
+interface PageProps {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
 
 // 默认空数据
 const defaultStatistics: EquipmentStatistics = {
@@ -21,13 +26,16 @@ const defaultStatistics: EquipmentStatistics = {
   by_location: {},
 }
 
-export default async function EquipmentPageWrapper() {
+export default async function EquipmentPageWrapper({ searchParams }: PageProps) {
   let categories: EquipmentCategory[] = []
   let locations: Location[] = []
   let equipments: Equipment[] = []
   let total = 0
   let statistics = defaultStatistics
   let departments: DepartmentOption[] = []
+
+  // 服务端首屏按 URL 的排序/分页取数，否则客户端二次请求覆盖时会产生闪变
+  const { state: listQuery } = parseEquipmentUrlRecord(await searchParams)
 
   // 每个 API 独立 try/catch，避免一个失败拖垮全部数据
   try {
@@ -41,7 +49,7 @@ export default async function EquipmentPageWrapper() {
     console.warn('加载位置树失败:', error)
   }
   try {
-    const result = await fetchEquipments({ page: 1, page_size: 20 })
+    const result = await fetchEquipments(listQuery)
     const data = unwrapResponse(result)
     equipments = Array.isArray(data) ? data : ((data as Record<string, unknown>)?.items as Equipment[]) ?? []
     total = (data as Record<string, unknown>)?.total as number ?? equipments.length

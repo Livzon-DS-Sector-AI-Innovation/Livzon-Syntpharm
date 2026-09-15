@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from typing import Any
 
 import sqlalchemy as sa
-from sqlalchemy import and_, func, select, update
+from sqlalchemy import and_, case, func, nulls_last, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,7 +15,7 @@ from app.modules.equipment.models import (
     EquipmentCategoryLink,
     Location,
 )
-from app.platform.identity.models import User
+from app.platform.identity.models import Department, User
 
 
 def _escape_like(value: str) -> str:
@@ -372,6 +372,67 @@ async def get_equipment_by_asset_no(
     return result.scalar_one_or_none()
 
 
+# D5 状态业务序（R4 待业务确认，默认「异常态在前」）：升序时维修中聚簇最前
+_STATUS_SORT_PRIORITY = {
+    "维修中": 1,
+    "停用": 2,
+    "报废": 3,
+    "备用": 4,
+    "在用": 5,
+}
+
+# D3 自然序：桶（有无尾数值）→ 字母前缀 → 补零数值段 → 写法 tiebreak。
+# ORDER BY 方向无法参数化，故用静态 text 片段（不含运行时插值，无注入面）；
+# regexp_match 结果下标必须带括号，裸写 `[1]` 是 PostgreSQL 语法错误。
+_ASSET_NO_NATURAL_ASC = text(
+    "(CASE WHEN equipments.asset_no ~ '[0-9]+$' THEN 0 ELSE 1 END) ASC, "
+    "coalesce((regexp_match(equipments.asset_no, '^[A-Za-z]*'))[1], '') ASC, "
+    "lpad(coalesce((regexp_match(equipments.asset_no, '[0-9]+$'))[1], ''), 12, '0') ASC, "
+    'equipments.asset_no COLLATE "C" ASC'
+)
+_ASSET_NO_NATURAL_DESC = text(
+    "(CASE WHEN equipments.asset_no ~ '[0-9]+$' THEN 0 ELSE 1 END) DESC, "
+    "coalesce((regexp_match(equipments.asset_no, '^[A-Za-z]*'))[1], '') DESC, "
+    "lpad(coalesce((regexp_match(equipments.asset_no, '[0-9]+$'))[1], ''), 12, '0') DESC, "
+    'equipments.asset_no COLLATE "C" DESC'
+)
+
+_SORT_COLUMNS = {
+    "name": Equipment.name,
+    "commissioning_date": Equipment.commissioning_date,
+    "current_cost": Equipment.current_cost,
+    "book_value": Equipment.book_value,
+    "created_at": Equipment.created_at,
+}
+# 仅真可空列适用 NULLS LAST；asset_no/name/status/created_at 均 NOT NULL
+_NULLABLE_SORT_COLUMNS = {"commissioning_date", "current_cost", "book_value"}
+
+
+def _build_order_by(sort_by: str, sort_order: str) -> list:
+    """构造 ORDER BY；末尾追加 Equipment.id 保证 offset 分页稳定（D6）"""
+    is_desc = sort_order == "desc"
+    tiebreak = Equipment.id.asc()
+    if sort_by == "asset_no":
+        return [_ASSET_NO_NATURAL_DESC if is_desc else _ASSET_NO_NATURAL_ASC, tiebreak]
+    if sort_by == "department_name":
+        key = Department.name.desc() if is_desc else Department.name.asc()
+        return [nulls_last(key), tiebreak]
+    if sort_by == "status":
+        priority = case(
+            *((Equipment.status == s, p) for s, p in _STATUS_SORT_PRIORITY.items()),
+            else_=99,
+        )
+        return [priority.desc() if is_desc else priority.asc(), tiebreak]
+    column = _SORT_COLUMNS.get(sort_by)
+    if column is None:
+        supported = ", ".join(["asset_no", "department_name", "status", *_SORT_COLUMNS])
+        raise ValueError(f"不支持的排序字段: {sort_by}，支持: {supported}")
+    key = column.desc() if is_desc else column.asc()
+    if sort_by in _NULLABLE_SORT_COLUMNS:
+        key = nulls_last(key)
+    return [key, tiebreak]
+
+
 async def get_equipments(
     db: AsyncSession,
     category_id: uuid.UUID | None = None,
@@ -380,7 +441,7 @@ async def get_equipments(
     status: str | None = None,
     keyword: str | None = None,
     sort_by: str = "asset_no",
-    order: str = "asc",
+    sort_order: str = "asc",
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Equipment], int]:
@@ -418,25 +479,16 @@ async def get_equipments(
             | Equipment.name.ilike(f"%{escaped}%", escape="\\")
             | Equipment.equipment_tag.ilike(f"%{escaped}%", escape="\\")
         )
+    if sort_by == "department_name":
+        query = query.outerjoin(Department, Equipment.department_id == Department.id)
 
     # 获取总数
     count_query = select(func.count()).select_from(query.with_only_columns(Equipment.id).subquery())
     total_result = await db.execute(count_query)
     total = total_result.scalar() or 0
 
-    # 动态排序逻辑 (Whitelist mapping)
-    SORT_MAP = {
-        "asset_no": Equipment.asset_no,
-        "name": Equipment.name,
-        "created_at": Equipment.created_at,
-        "department_id": Equipment.department_id,
-    }
-    
-    col = SORT_MAP.get(sort_by, Equipment.asset_no)
-    if order.lower() == "desc":
-        query = query.order_by(nulls_last(desc(col)))
-    else:
-        query = query.order_by(nulls_last(asc(col)))
+    # 动态排序：白名单见 _build_order_by，非法字段显式抛错（D12，不做静默兜底）
+    query = query.order_by(*_build_order_by(sort_by, sort_order))
 
     # 分页查询
     query = query.offset((page - 1) * page_size).limit(page_size)
@@ -464,7 +516,7 @@ async def update_equipment(
     asset_no = data.get("asset_no")
     if asset_no and asset_no != equipment.asset_no:
         existing = await db.execute(select(Equipment).where(
-            Equipment.asset_no == asset_no, 
+            Equipment.asset_no == asset_no,
             Equipment.is_deleted.is_(False),
             Equipment.id != equipment_id
         ))
@@ -474,7 +526,7 @@ async def update_equipment(
     equipment_tag = data.get("equipment_tag")
     if equipment_tag and equipment_tag != equipment.equipment_tag:
         existing = await db.execute(select(Equipment).where(
-            Equipment.equipment_tag == equipment_tag, 
+            Equipment.equipment_tag == equipment_tag,
             Equipment.is_deleted.is_(False),
             Equipment.id != equipment_id
         ))

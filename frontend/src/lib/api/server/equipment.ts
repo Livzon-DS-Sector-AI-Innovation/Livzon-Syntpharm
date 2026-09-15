@@ -1,5 +1,6 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
+import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipment-query'
 
 
 // Equipment import row type (matches backend EquipmentImportRow schema)
@@ -622,16 +623,8 @@ export async function fetchLocationTree() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations?tree=true`)
 }
 
-export async function fetchEquipments(filters: any = {}) {
-  const params = new URLSearchParams()
-  if (filters.category_id) params.append('category_id', filters.category_id)
-  if (filters.location_id) params.append('location_id', filters.location_id)
-  if (filters.department_id) params.append('department_id', filters.department_id)
-  if (filters.status) params.append('status', filters.status)
-  if (filters.keyword) params.append('keyword', filters.keyword)
-  if (filters.page) params.append('page', filters.page.toString())
-  if (filters.page_size) params.append('page_size', filters.page_size.toString())
-  const qs = params.toString()
+export async function fetchEquipments(query: EquipmentListQuery = {}) {
+  const qs = buildEquipmentQuery(query).toString()
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments${qs ? `?${qs}` : ''}`)
 }
 

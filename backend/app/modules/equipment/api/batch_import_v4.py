@@ -14,7 +14,13 @@ from app.modules.equipment import repository as repo
 from app.modules.equipment.config.dept_mapping import normalize_department_name
 from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.models.import_audit import ImportAuditLog
-from app.modules.equipment.schemas.import_v4 import ImportV4BatchResponse, ImportV4PreviewResponse, ImportErrorItem
+from app.modules.equipment.schemas.import_v4 import (
+    ImportErrorItem,
+    ImportV4BatchApiResponse,
+    ImportV4BatchResponse,
+    ImportV4PreviewApiResponse,
+    ImportV4PreviewResponse,
+)
 from app.modules.equipment.service.import_engine import (
     apply_incremental_update,
     detect_internal_duplicates,
@@ -180,7 +186,7 @@ async def resolve_department_strict(excel_dept: str, db: AsyncSession):
 async def log_audit(db, batch_id, operation_type, **kwargs):
     db.add(ImportAuditLog(batch_id=batch_id, operation_type=operation_type, **kwargs))
 
-@router.post("/batch", summary="执行批量导入 (v4)")
+@router.post("/batch", summary="执行批量导入 (v4)", response_model=ImportV4BatchApiResponse)
 async def batch_import_v4(
     current_user: RequiredUser,
     request: Annotated[dict[str, Any], Body(...)],
@@ -281,7 +287,7 @@ async def batch_import_v4(
         errors=[ImportErrorItem(row=e["row"], error=e["error"]) for e in errors]
     ))
 
-@router.post("/preview", summary="预览导入结果 (v4)")
+@router.post("/preview", summary="预览导入结果 (v4)", response_model=ImportV4PreviewApiResponse)
 async def preview_import_v4(
     current_user: RequiredUser,
     data: Annotated[list[dict[str, Any]], Body(...)],

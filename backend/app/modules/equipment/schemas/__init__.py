@@ -19,6 +19,8 @@ from app.modules.equipment.schemas.equipment import (
     EquipmentCreate,
     EquipmentImportance,
     EquipmentResponse,
+    EquipmentSortBy,
+    EquipmentSortOrder,
     EquipmentStatistics,
     EquipmentStatus,
     EquipmentSyncResult,

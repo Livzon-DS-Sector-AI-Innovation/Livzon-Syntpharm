@@ -236,12 +236,23 @@ async def get_equipments(
     status: str | None = None,
     keyword: str | None = None,
     sort_by: str = "asset_no",
-    order: str = "asc",
+    sort_order: str = "asc",
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[Equipment], int]:
     """获取设备列表"""
-    return await repo.get_equipments(db, category_id, location_id, department_id, status, keyword, sort_by, order, page, page_size)
+    return await repo.get_equipments(
+        db,
+        category_id=category_id,
+        location_id=location_id,
+        department_id=department_id,
+        status=status,
+        keyword=keyword,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size,
+    )
 
 
 async def update_equipment(

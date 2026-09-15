@@ -32,7 +32,7 @@ interface ImportPreviewItem {
   // v3 契约：错误数组（后端 v4 不再返回该字段，故改为可选）
   validation_errors?: string[]
   // v4 契约：校验三态 pass / error / duplicate
-  validation_status?: string
+  validation_status?: 'pass' | 'error' | 'duplicate'
   // v4 契约：错误描述，字符串而非数组
   error_message?: string | null
   is_duplicate?: boolean

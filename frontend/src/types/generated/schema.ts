@@ -25037,6 +25037,26 @@ export interface components {
             /** Error */
             error: string;
         };
+        /** ImportV4BatchApiResponse */
+        ImportV4BatchApiResponse: {
+            /**
+             * Code
+             * @description 响应状态码
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ImportV4BatchResponse"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /**
          * ImportV4BatchResponse
          * @description 批量导入接口响应模型
@@ -25070,6 +25090,26 @@ export interface components {
             };
             /** Errors */
             errors?: components["schemas"]["ImportErrorItem"][];
+        };
+        /** ImportV4PreviewApiResponse */
+        ImportV4PreviewApiResponse: {
+            /**
+             * Code
+             * @description 响应状态码
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @description 响应消息
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ImportV4PreviewResponse"];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * ImportV4PreviewResponse
@@ -39317,6 +39357,10 @@ export interface operations {
                 status?: string | null;
                 /** @description 关键词搜索 */
                 keyword?: string | null;
+                /** @description 排序字段 */
+                sort_by?: "asset_no" | "name" | "commissioning_date" | "current_cost" | "book_value" | "department_name" | "status" | "created_at";
+                /** @description 排序方向 */
+                sort_order?: "asc" | "desc";
                 /** @description 页码 */
                 page?: number;
                 /** @description 每页数量 */
@@ -43647,7 +43691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportV4BatchResponse"];
+                    "application/json": components["schemas"]["ImportV4BatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43682,7 +43726,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportV4PreviewResponse"];
+                    "application/json": components["schemas"]["ImportV4PreviewApiResponse"];
                 };
             };
             /** @description Validation Error */

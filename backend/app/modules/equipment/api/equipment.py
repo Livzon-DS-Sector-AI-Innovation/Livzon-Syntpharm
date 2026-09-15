@@ -20,6 +20,8 @@ from app.modules.equipment.schemas import (
     EquipmentCategoryUpdate,
     EquipmentCreate,
     EquipmentResponse,
+    EquipmentSortBy,
+    EquipmentSortOrder,
     EquipmentStatistics,
     EquipmentUpdate,
     LocationCreate,
@@ -252,15 +254,24 @@ async def get_equipments(
     department_id: uuid.UUID | None = Query(None, description="归属部门ID"),
     status: str | None = Query(None, description="设备状态"),
     keyword: str | None = Query(None, description="关键词搜索"),
-    sort_by: str = Query("asset_no", description="排序字段 (asset_no, name, created_at, department_id)"),
-    order: str = Query("asc", description="排序方向 (asc, desc)"),
+    sort_by: EquipmentSortBy = Query("asset_no", description="排序字段"),
+    sort_order: EquipmentSortOrder = Query("asc", description="排序方向"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取设备列表"""
     equipments, total = await service.get_equipments(
-        db, category_id, location_id, department_id, status, keyword, sort_by, order, page, page_size
+        db,
+        category_id=category_id,
+        location_id=location_id,
+        department_id=department_id,
+        status=status,
+        keyword=keyword,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        page=page,
+        page_size=page_size,
     )
     equipment_responses = []
     for e in equipments:

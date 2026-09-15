@@ -134,7 +134,10 @@ export const antdTheme: ThemeConfig = {
       borderRadius: 8,
       headerBg: '#ffffff',
       headerColor: '#5d5b54',
-      headerSortActiveBg: '#f6f5f4',
+      // 当前排序列用主题令牌表达（表头底色 + 列身淡底），不另做自研指示器
+      headerSortActiveBg: '#ede9f8',
+      headerSortHoverBg: '#f6f5f4',
+      bodySortBg: '#faf9fd',
       rowHoverBg: '#f6f5f4',
       borderColor: '#ede9e4',
       cellPaddingInline: 12,

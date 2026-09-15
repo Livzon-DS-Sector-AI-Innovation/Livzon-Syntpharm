@@ -41,8 +41,6 @@ interface EquipmentStore {
   setDepartmentFilter: (id: string | null) => void
   setDepartments: (departments: DepartmentOption[]) => void
   keyword: string
-  page: number
-  pageSize: number
   total: number
   loading: boolean
 
@@ -63,8 +61,6 @@ interface EquipmentStore {
   setSelectedLocation: (id: string | null) => void
   setStatusFilter: (status: EquipmentStatus | '') => void
   setKeyword: (keyword: string) => void
-  setPage: (page: number) => void
-  setPageSize: (pageSize: number) => void
   setTotal: (total: number) => void
   setLoading: (loading: boolean) => void
   resetFilters: () => void
@@ -259,8 +255,6 @@ export const useEquipmentStore = create<EquipmentStore>()(
       departmentFilter: null,
       departments: [],
       keyword: '',
-      page: 1,
-      pageSize: 20,
       total: 0,
       loading: false,
       equipmentDrawerOpen: false,
@@ -275,14 +269,12 @@ export const useEquipmentStore = create<EquipmentStore>()(
       setLocations: (locations) => set({ locations }, false, 'equipment/setLocations'),
       setEquipments: (equipments) => set({ equipments }, false, 'equipment/setEquipments'),
       setStatistics: (statistics) => set({ statistics }, false, 'equipment/setStatistics'),
-      setSelectedCategory: (id) => set({ selectedCategory: id, page: 1 }, false, 'equipment/setSelectedCategory'),
-      setSelectedLocation: (id) => set({ selectedLocation: id, page: 1 }, false, 'equipment/setSelectedLocation'),
-      setStatusFilter: (status) => set({ statusFilter: status, page: 1 }, false, 'equipment/setStatusFilter'),
-      setDepartmentFilter: (id) => set({ departmentFilter: id, page: 1 }, false, 'equipment/setDepartmentFilter'),
+      setSelectedCategory: (id) => set({ selectedCategory: id }, false, 'equipment/setSelectedCategory'),
+      setSelectedLocation: (id) => set({ selectedLocation: id }, false, 'equipment/setSelectedLocation'),
+      setStatusFilter: (status) => set({ statusFilter: status }, false, 'equipment/setStatusFilter'),
+      setDepartmentFilter: (id) => set({ departmentFilter: id }, false, 'equipment/setDepartmentFilter'),
       setDepartments: (departments) => set({ departments }, false, 'equipment/setDepartments'),
-      setKeyword: (keyword) => set({ keyword, page: 1 }, false, 'equipment/setKeyword'),
-      setPage: (page) => set({ page }, false, 'equipment/setPage'),
-      setPageSize: (pageSize) => set({ pageSize, page: 1 }, false, 'equipment/setPageSize'),
+      setKeyword: (keyword) => set({ keyword }, false, 'equipment/setKeyword'),
       setTotal: (total) => set({ total }, false, 'equipment/setTotal'),
       setLoading: (loading) => set({ loading }, false, 'equipment/setLoading'),
       resetFilters: () => set({
@@ -291,8 +283,6 @@ export const useEquipmentStore = create<EquipmentStore>()(
         departmentFilter: null,
         statusFilter: '',
         keyword: '',
-        page: 1,
-        pageSize: 20,
       }, false, 'equipment/resetFilters'),
       openEquipmentDrawer: (equipment) =>
         set({

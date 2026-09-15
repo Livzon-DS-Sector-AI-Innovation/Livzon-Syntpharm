@@ -10,6 +10,19 @@ EquipmentStatus = Literal["在用", "备用", "维修中", "停用", "报废"]
 EquipmentImportance = Literal["高", "中", "低"]
 EquipmentClass = Literal["A", "B", "C"]
 
+# 排序白名单（spec D2）：与前端可点列严格一一对应，未列出的列不渲染排序入口
+EquipmentSortBy = Literal[
+    "asset_no",
+    "name",
+    "commissioning_date",
+    "current_cost",
+    "book_value",
+    "department_name",
+    "status",
+    "created_at",
+]
+EquipmentSortOrder = Literal["asc", "desc"]
+
 
 # ==================== 设备分类 ====================
 class EquipmentCategoryCreate(BaseModel):

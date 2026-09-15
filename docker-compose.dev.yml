@@ -2,6 +2,8 @@ services:
   backend:
     volumes:
     - ./backend/app:/app/app:ro
+    # 宿主机无 uv，测试只能在容器里跑；不挂 tests 就得每次 docker cp
+    - ./backend/tests:/app/tests:ro
     environment:
     - UVICORN_RELOAD=true
     command: "bash -c \"\n  cd /app &&\n  uv run uvicorn app.main:app --reload --host\
