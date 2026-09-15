@@ -3,7 +3,7 @@
 import '../../../../styles/industrial-theme.css';
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { App, ConfigProvider, Tabs, Button } from 'antd'
+import { App, ConfigProvider, Tabs, Button, Pagination } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-design/icons'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
@@ -429,6 +429,29 @@ export function EquipmentPage({
                 visibleColumns={visibleColumns}
                 onVisibleColumnsChange={setVisibleColumns}
                 stickyTop={0}
+              />
+            </div>
+
+            {/* 第三段：独立分页控件（固定） */}
+            <div style={{ 
+              flexShrink: 0, 
+              paddingTop: 12,
+              borderTop: '1px solid #E7E5E4',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+              <span style={{ color: '#78716C', fontSize: 14 }}>
+                共 <strong style={{ color: '#1C1917' }}>{total}</strong> 条
+              </span>
+              <Pagination
+                current={urlState.page}
+                pageSize={urlState.page_size}
+                total={total}
+                showSizeChanger
+                showQuickJumper
+                onChange={(page, pageSize) => patchQuery({ page, page_size: pageSize })}
+                size="small"
               />
             </div>
           </div>

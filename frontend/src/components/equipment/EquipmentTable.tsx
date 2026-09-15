@@ -248,14 +248,7 @@ export function EquipmentTable({
           loading={loading} 
           scroll={{ x: 'max-content', y: 'calc(100vh - 450px)' }}
           onChange={handleTableChange}
-          pagination={{
-            current: page,
-            pageSize: pageSize,
-            total: total,
-            showSizeChanger: true,
-            showQuickJumper: true,
-            showTotal: (t) => `共 ${t} 条`,
-          }}
+          pagination={false}
         />
       </div>
       <EquipmentDetailDrawer
