@@ -202,7 +202,7 @@ async def get_ich_records(
                 "q3d_result": r.q3d_result,
                 "llm_used": r.llm_used,
                 "notes": r.notes,
-                "created_at": r.created_at.isoformat(),
+                "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in records
         ],
@@ -230,7 +230,7 @@ async def get_ich_record(
             "q3d_result": record.q3d_result,
             "llm_used": record.llm_used,
             "notes": record.notes,
-            "created_at": record.created_at.isoformat(),
+            "created_at": record.created_at.isoformat() if record.created_at else None,
         }
     )
 
@@ -1157,7 +1157,7 @@ async def get_route(
                 "purity": exp.purity,
                 "impurities": exp.impurities,
                 "result_summary": exp.result_summary,
-                "created_at": exp.created_at.isoformat() if exp.created_at else None,
+                "created_at": exp.created_at.isoformat() if exp.created_at else None if exp.created_at else None,
                 "updated_at": exp.updated_at.isoformat() if exp.updated_at else None,
             }
             for exp in experiments
@@ -1166,7 +1166,7 @@ async def get_route(
         "deliverables": route.deliverables or [],
         "start_date": route.start_date.isoformat() if route.start_date else None,
         "end_date": route.end_date.isoformat() if route.end_date else None,
-        "created_at": route.created_at.isoformat() if route.created_at else None,
+        "created_at": route.created_at.isoformat() if route.created_at else None if route.created_at else None,
         "updated_at": route.updated_at.isoformat() if route.updated_at else None,
         "created_by": str(route.created_by) if route.created_by else None,
     }
@@ -1506,7 +1506,7 @@ async def get_optimizations(
                 "scale_up_study": opt.scale_up_study,
                 "start_date": str(opt.start_date) if opt.start_date else None,
                 "end_date": str(opt.end_date) if opt.end_date else None,
-                "created_at": opt.created_at.isoformat() if opt.created_at else None,
+                "created_at": opt.created_at.isoformat() if opt.created_at else None if opt.created_at else None,
                 "updated_at": opt.updated_at.isoformat() if opt.updated_at else None,
             }
             for opt in optimizations
@@ -1551,7 +1551,7 @@ async def get_optimization(
             "scale_up_study": opt.scale_up_study,
             "start_date": str(opt.start_date) if opt.start_date else None,
             "end_date": str(opt.end_date) if opt.end_date else None,
-            "created_at": opt.created_at.isoformat() if opt.created_at else None,
+            "created_at": opt.created_at.isoformat() if opt.created_at else None if opt.created_at else None,
             "updated_at": opt.updated_at.isoformat() if opt.updated_at else None,
         }
     )
@@ -1846,7 +1846,7 @@ async def get_all_research_tracks(  # type: ignore[no-untyped-def]
                 "conclusion_confidence": track.conclusion_confidence,
                 "active_stages": track.active_stages,
                 "owner_id": str(track.owner_id) if track.owner_id else None,
-                "created_at": track.created_at.isoformat() if track.created_at else None,
+                "created_at": track.created_at.isoformat() if track.created_at else None if track.created_at else None,
                 "updated_at": track.updated_at.isoformat() if track.updated_at else None,
             }
         )
