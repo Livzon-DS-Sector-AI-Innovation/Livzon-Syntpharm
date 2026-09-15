@@ -81,10 +81,10 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
             style={{
               flex: 1,
               minWidth: 0,
-              padding: '16px 20px',
+              padding: '10px 16px',
               background: isActive ? bg : '#FAFAF9',
               border: isActive ? `2px solid ${color}` : '1px solid #E7E5E4',
-              borderRadius: 8,
+              borderRadius: 6,
               cursor: 'pointer',
               opacity: isDimmed ? 0.6 : 1,
               transition: 'all 0.2s ease',
@@ -92,16 +92,16 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
             }}
           >
             <div style={{ 
-              fontSize: 13, 
+              fontSize: 12, 
               color: isActive ? color : '#78716C',
               fontWeight: 500,
-              marginBottom: 8,
+              marginBottom: 4,
               letterSpacing: '0.02em',
             }}>
               {label}
             </div>
             <div style={{ 
-              fontSize: 28, 
+              fontSize: 22, 
               fontWeight: 700, 
               color: isActive ? color : '#1C1917',
               lineHeight: 1,

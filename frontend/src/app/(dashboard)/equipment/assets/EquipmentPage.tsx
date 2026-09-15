@@ -289,19 +289,19 @@ export function EquipmentPage({
       <App>
         {/* 页面根容器：固定高度，无页面级滚动 */}
         <div style={{ 
-          height: 'calc(100vh - 32px)', 
+          height: 'calc(100vh - 24px)', 
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          padding: '16px',
-          gap: '16px',
+          padding: '12px',
+          gap: '12px',
         }}>
           {/* 第一段：标题 + 统计 + 筛选栏（固定高度） */}
           <div style={{ flexShrink: 0 }}>
             {/* 标题行 */}
             <div style={{ 
-              marginBottom: 20,
-              paddingBottom: 16,
+              marginBottom: 12,
+              paddingBottom: 10,
               borderBottom: '1px solid #E7E5E4',
             }}>
               <h2 className="equipment-page-title"
@@ -338,13 +338,13 @@ export function EquipmentPage({
             top: 0,
             zIndex: 10,
             background: '#ffffff',
-            padding: '16px 0 12px 0',
+            padding: '12px 0 8px 0',
             borderBottom: '1px solid #E7E5E4',
           }}
         >
           {/* 统计卡片区域 - 横向铺满 */}
           <div style={{ 
-            marginBottom: 16,
+            marginBottom: 12,
           }}>
             <StatsCards statistics={currentStats} compact={false} />
           </div>
