@@ -57,12 +57,14 @@
 /**
  * 表头粘性：antd 6.x 的 `.ant-table-sticky-holder` 内联样式只有 `overflow:hidden;top:N`，
  * 缺少 `position:sticky`，导致表头不吸附、下拉被工具栏遮挡。
- * 此处补上 `position:sticky`，确保表头在滚动时固定在工具栏下方。
+ * 此处补上 `position:sticky`，并用 CSS 变量 `--equipment-toolbar-h` 驱动 `top`，
+ * 使表头跟随实际工具栏高度（由 ResizeObserver 测量写入），而非硬编码初值。
  * 注意：不要给 `th` 手写 `position:sticky`，因为 scroll.x 存在时 rc-table 的滚动容器
- * 会成为吸附框，导致表头空白或叠进数据行。只补 `.ant-table-sticky-holder` 的 position。
+ * 会成为吸附框，导致表头空白或叠进数据行。只补 `.ant-table-sticky-holder` 的 position 与 top。
  */
 .ant-table-sticky-holder {
   position: sticky !important;
+  top: var(--equipment-toolbar-h, 96px) !important;
   z-index: 2;
 }
 
