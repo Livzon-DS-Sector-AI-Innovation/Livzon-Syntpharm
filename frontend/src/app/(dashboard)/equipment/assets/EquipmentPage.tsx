@@ -289,10 +289,12 @@ export function EquipmentPage({
       <App>
         {/* 页面根容器：固定高度，无页面级滚动 */}
         <div style={{ 
-          height: '100vh', 
+          height: 'calc(100vh - 32px)', 
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
+          padding: '16px',
+          gap: '16px',
         }}>
           {/* 第一段：标题 + 统计 + 筛选栏（固定高度） */}
           <div style={{ flexShrink: 0 }}>
