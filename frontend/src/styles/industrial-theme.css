@@ -123,3 +123,13 @@
   scrollbar-width: thin;
   scrollbar-color: #D6D3D1 transparent;
 }
+
+/**
+ * 表格表头样式 - 加大字号，增强可读性
+ */
+.equipment-ledger-table-scroll .ant-table-thead > tr > th {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  background: #FAFAF9 !important;
+  color: #1C1917 !important;
+}
