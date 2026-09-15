@@ -2023,12 +2023,12 @@ class GraphKnowledgeNode(BaseModel):
     __tablename__ = "graph_knowledge_nodes"
     __table_args__ = {"schema": "safety"}
 
-    created_at: Mapped[datetime | None] = mapped_column(
+    created_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=True,
     )
-    updated_at: Mapped[datetime | None] = mapped_column(
+    updated_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
@@ -2065,12 +2065,12 @@ class GraphKnowledgeEdge(BaseModel):
     __tablename__ = "graph_knowledge_edges"
     __table_args__ = {"schema": "safety"}
 
-    created_at: Mapped[datetime | None] = mapped_column(
+    created_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=True,
     )
-    updated_at: Mapped[datetime | None] = mapped_column(
+    updated_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
