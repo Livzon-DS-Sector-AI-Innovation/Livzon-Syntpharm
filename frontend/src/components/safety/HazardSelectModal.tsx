@@ -77,7 +77,7 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
       onCancel={onClose}
       footer={null}
       width={780}
-      destroyOnHidden
+      destroyOnClose
     >
       <div style={{ marginBottom: 16 }}>
         <Space>

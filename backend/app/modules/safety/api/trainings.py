@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     SafetyTrainingCreate,
     SafetyTrainingResponse,
@@ -39,7 +39,7 @@ async def handler(
     service = SafetyService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_trainings(skip, page_size, status, training_type, department)
-    return ApiResponse(
+    return build_response(
         data=[SafetyTrainingResponse.model_validate(t) for t in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -57,8 +57,8 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.get_training(training_id)
     if not item:
-        return ApiResponse(code=404, message="培训不存在")
-    return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
+        return build_response(code=404, message="培训不存在")
+    return build_response(data=SafetyTrainingResponse.model_validate(item))
 
 
 @trainings_router.post("/trainings", response_model=ApiResponse, summary="创建安全培训")
@@ -71,7 +71,7 @@ async def post(
     service = SafetyService(db)
     item = await service.create_training(data)
     await db.commit()
-    return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
+    return build_response(data=SafetyTrainingResponse.model_validate(item))
 
 
 @trainings_router.put(  # type: ignore[no-redef]
@@ -87,9 +87,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_training(training_id, data)
     if not item:
-        return ApiResponse(code=404, message="培训不存在")
+        return build_response(code=404, message="培训不存在")
     await db.commit()
-    return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
+    return build_response(data=SafetyTrainingResponse.model_validate(item))
 
 
 @trainings_router.post(  # type: ignore[no-redef]
@@ -104,9 +104,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.start_training(training_id)
     if not item:
-        return ApiResponse(code=400, message="无法开始培训，当前状态不允许")
+        return build_response(code=400, message="无法开始培训，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
+    return build_response(data=SafetyTrainingResponse.model_validate(item))
 
 
 @trainings_router.post(  # type: ignore[no-redef]
@@ -121,9 +121,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.complete_training(training_id)
     if not item:
-        return ApiResponse(code=400, message="无法完成培训，当前状态不允许")
+        return build_response(code=400, message="无法完成培训，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=SafetyTrainingResponse.model_validate(item))
+    return build_response(data=SafetyTrainingResponse.model_validate(item))
 
 
 @trainings_router.delete(  # type: ignore[no-redef]
@@ -138,9 +138,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_training(training_id)
     if not result:
-        return ApiResponse(code=404, message="培训不存在")
+        return build_response(code=404, message="培训不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 培训记录 Routes ====================
@@ -159,7 +159,7 @@ async def handler(  # noqa: F811
     """获取培训签到记录列表"""
     service = SafetyService(db)
     items = await service.get_training_records(training_id)
-    return ApiResponse(data=[TrainingRecordResponse.model_validate(r) for r in items])
+    return build_response(data=[TrainingRecordResponse.model_validate(r) for r in items])
 
 
 @trainings_router.post(  # type: ignore[no-redef]
@@ -178,7 +178,7 @@ async def handler(  # noqa: F811
     data.training_id = training_id
     item = await service.create_training_record(data)
     await db.commit()
-    return ApiResponse(data=TrainingRecordResponse.model_validate(item))
+    return build_response(data=TrainingRecordResponse.model_validate(item))
 
 
 @trainings_router.put(  # type: ignore[no-redef]
@@ -196,9 +196,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_training_record(record_id, data)
     if not item:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(data=TrainingRecordResponse.model_validate(item))
+    return build_response(data=TrainingRecordResponse.model_validate(item))
 
 
 @trainings_router.delete(  # type: ignore[no-redef]
@@ -215,9 +215,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_training_record(record_id)
     if not result:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ==================== 培训证书接口 ====================
@@ -243,7 +243,7 @@ async def handler(  # noqa: F811
         certificate_status,
         keyword,
     )
-    return ApiResponse(
+    return build_response(
         data=[TrainingRecordResponse.model_validate(r) for r in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -261,4 +261,4 @@ async def handler(  # noqa: F811
     """获取30天内即将到期的证书"""
     service = SafetyService(db)
     items = await service.get_expiring_certificates()
-    return ApiResponse(data=[TrainingRecordResponse.model_validate(r) for r in items])
+    return build_response(data=[TrainingRecordResponse.model_validate(r) for r in items])

@@ -368,7 +368,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
         <Alert
           type="warning"
           showIcon
-          title="有素材未分类"
+          message="有素材未分类"
           description="请在素材 Tab 中为每个素材指定分类，否则 AI 提取可能不准确。"
           className="text-xs"
         />
@@ -485,7 +485,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets, refreshKey, onAsse
       {fillDone && (
         <Alert
           type="success"
-          title="填充完成"
+          message="填充完成"
           description={(() => {
             const textFilled = fillResults.filter(r => r.status === 'filled').filter(r => !r.message.includes('图片')).length
             const imgFilled = fillResults.filter(r => r.status === 'filled' && r.message.includes('图片')).length

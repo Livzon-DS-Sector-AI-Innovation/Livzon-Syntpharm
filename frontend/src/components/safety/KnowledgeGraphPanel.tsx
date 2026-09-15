@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow,
   Background,
@@ -264,45 +264,67 @@ function mapEdgeToFlowEdge(e: GraphEdgeData): Edge {
 
 export default function KnowledgeGraphPanel() {
   const { message } = App.useApp()
-  const store = useKnowledgeGraphStore()
+  const messageRef = useRef(message)
+  useEffect(() => {
+    messageRef.current = message
+  }, [message])
+  // 用 selector 订阅，避免整个 store 对象变化触发重渲染
+  const nodes = useKnowledgeGraphStore(s => s.nodes)
+  const edges = useKnowledgeGraphStore(s => s.edges)
+  const selectedNodeId = useKnowledgeGraphStore(s => s.selectedNodeId)
+  const selectedEdgeId = useKnowledgeGraphStore(s => s.selectedEdgeId)
+  const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
+  const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
+
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
   const rfInstance = useRef<any>(null)
+  const loadingRef = useRef(false)  // 防重入
+  const [loading, setLoading] = useState(false)  // 本地 loading，避免 useSyncExternalStore 在 commit 阶段触发 error #185
 
-  // 加载数据
+  // 加载数据 — 用 ref 防重入
+  // loading 使用本地 state（非 store），通过 setTimeout 延迟设置，
+  // 完全避免 useSyncExternalStore 在 React commit 阶段触发 error #185
   const loadGraph = useCallback(async () => {
-    store.setLoading(true)
+    if (loadingRef.current) return
+    loadingRef.current = true
+    // setTimeout 将状态更新推到下一个宏任务，完全脱离 React commit 阶段
+    setTimeout(() => setLoading(true), 0)
     try {
+      const state = useKnowledgeGraphStore.getState()
       const data = await getFullGraph({
-        node_types: store.nodeTypeFilter || undefined,
-        relation_types: store.relationTypeFilter || undefined,
+        node_types: state.nodeTypeFilter || undefined,
+        relation_types: state.relationTypeFilter || undefined,
         max_nodes: 500,
       })
-      store.setGraphData(data)
+      useKnowledgeGraphStore.setState({
+        nodes: data.nodes,
+        edges: data.edges,
+        stats: data.stats,
+        error: null,
+      })
+      setLoading(false)
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : '加载图谱失败'
-      store.setError(errMsg)
-      message.error(`加载图谱数据失败: ${errMsg}`)
+      useKnowledgeGraphStore.setState({ error: errMsg })
+      setLoading(false)
+      messageRef.current.error(`加载图谱数据失败: ${errMsg}`)
     } finally {
-      store.setLoading(false)
+      loadingRef.current = false
     }
-  }, [store.nodeTypeFilter, store.relationTypeFilter, message, store])
+  }, [])
 
   useEffect(() => { loadGraph() }, [loadGraph])
 
   // 同步 store → React Flow（聚类布局），只保留 category + document 节点
   useEffect(() => {
-    // 过滤：只保留分类节点 + 文档节点（entity_type=standard 的实体即法规文档）
-    const filteredNodes = store.nodes.filter(
+    const filteredNodes = nodes.filter(
       n => n.node_type === 'category' || n.entity_type === 'standard'
     )
     const filteredNodeIds = new Set(filteredNodes.map(n => n.id))
-
-    // 过滤边：两端都在保留节点中
-    const filteredEdges = store.edges.filter(
+    const filteredEdges = edges.filter(
       e => filteredNodeIds.has(e.source_node_id) && filteredNodeIds.has(e.target_node_id)
     )
-
     const mappedNodes = filteredNodes.map(mapNodeToFlowNode)
     const mappedEdges = filteredEdges.map(mapEdgeToFlowEdge)
     const laidOut = layoutGraph(mappedNodes, mappedEdges)
@@ -311,49 +333,56 @@ export default function KnowledgeGraphPanel() {
     setTimeout(() => {
       rfInstance.current?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
-  }, [store.nodes, store.edges, setFlowEdges, setFlowNodes])
+  }, [nodes, edges]) // setFlowNodes/setFlowEdges 是稳定引用，无需加入依赖
 
   // 节点点击 → 展开邻居
   const onNodeClick = useCallback(
     async (_event: React.MouseEvent, node: Node) => {
-      store.selectNode(node.id)
+      useKnowledgeGraphStore.setState({ selectedNodeId: node.id, selectedEdgeId: null })
       try {
         const expanded = await expandGraphNode({ node_id: node.id, hops: 1, max_nodes: 30 })
         if (expanded.nodes.length > 0) {
-          store.setGraphData(expanded)
+          useKnowledgeGraphStore.setState({
+            nodes: expanded.nodes,
+            edges: expanded.edges,
+            stats: expanded.stats,
+            loading: false,
+            error: null,
+          })
           setTimeout(() => {
             rfInstance.current?.fitView?.({ padding: 0.1, duration: 300 })
           }, 50)
         }
       } catch { /* ignore */ }
     },
-    [store],
+    [],
   )
 
   const onEdgeClick = useCallback(
-    (_event: React.MouseEvent, edge: Edge) => { store.selectEdge(edge.id) },
-    [store],
+    (_event: React.MouseEvent, edge: Edge) => {
+      useKnowledgeGraphStore.setState({ selectedEdgeId: edge.id, selectedNodeId: null })
+    },
+    [],
   )
 
   const onPaneClick = useCallback(() => {
-    store.selectNode(null)
-    store.selectEdge(null)
-  }, [store])
+    useKnowledgeGraphStore.setState({ selectedNodeId: null, selectedEdgeId: null })
+  }, [])
 
   const selectedNode = useMemo(
-    () => store.nodes.find(n => n.id === store.selectedNodeId) || null,
-    [store.nodes, store.selectedNodeId],
+    () => nodes.find(n => n.id === selectedNodeId) || null,
+    [nodes, selectedNodeId],
   )
   const selectedEdge = useMemo(
-    () => store.edges.find(e => e.id === store.selectedEdgeId) || null,
-    [store.edges, store.selectedEdgeId],
+    () => edges.find(e => e.id === selectedEdgeId) || null,
+    [edges, selectedEdgeId],
   )
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <KnowledgeGraphToolbar
         onRefresh={loadGraph}
-        loading={store.loading}
+        loading={loading}
         onFitView={() => rfInstance.current?.fitView?.({ padding: 0.1, duration: 300 })}
       />
 
@@ -393,13 +422,13 @@ export default function KnowledgeGraphPanel() {
         <KnowledgeGraphDetail
           node={selectedNode}
           edge={selectedEdge}
-          nodes={store.nodes}
-          onClose={() => { store.selectNode(null); store.selectEdge(null) }}
-          onNodeClick={(id) => { store.selectNode(id) }}
+          nodes={nodes}
+          onClose={() => { useKnowledgeGraphStore.setState({ selectedNodeId: null, selectedEdgeId: null }) }}
+          onNodeClick={(id) => { useKnowledgeGraphStore.setState({ selectedNodeId: id, selectedEdgeId: null }) }}
         />
       )}
 
-      {store.loading && (
+      {loading && (
         <div style={{
           position: 'absolute', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)', background: 'white',
@@ -413,7 +442,7 @@ export default function KnowledgeGraphPanel() {
         </div>
       )}
 
-      {!store.loading && store.nodes.length === 0 && (
+      {!loading && nodes.length === 0 && (
         <div style={{
           position: 'absolute', top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)', textAlign: 'center', zIndex: 10,

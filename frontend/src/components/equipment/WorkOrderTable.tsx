@@ -48,7 +48,7 @@ export function WorkOrderTable({ onRefresh }: Props) {
   } = useEquipmentStore()
 
   const columns: ColumnsType<WorkOrder> = [
-    { title: '工单号', dataIndex: 'work_order_no', key: 'work_order_no', width: 160, fixed: 'start' },
+    { title: '工单号', dataIndex: 'work_order_no', key: 'work_order_no', width: 160, fixed: 'left' },
     {
       title: '设备名称', dataIndex: 'equipment_name', key: 'equipment_name', width: 150, ellipsis: true,
       render: (t: string | null) => t || '-',
@@ -86,7 +86,7 @@ export function WorkOrderTable({ onRefresh }: Props) {
       },
     },
     {
-      title: '操作', key: 'action', width: 150, fixed: 'end',
+      title: '操作', key: 'action', width: 150, fixed: 'right',
       render: (_: unknown, r: WorkOrder) => (
         <Space size={12}>
           <span role="button" onClick={() => openWorkOrderDetail(r)} style={linkPrimary}><EyeOutlined />详情</span>

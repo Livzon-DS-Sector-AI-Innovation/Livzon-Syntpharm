@@ -88,7 +88,7 @@ class MaterialReportService:
             "static_data": report.static_data or {},
             "status": report.status,
             "generated_file_url": report.generated_file_url,
-            "created_at": report.created_at.isoformat(),
+            "created_at": report.created_at.isoformat() if report.created_at else None,
             "updated_at": report.updated_at.isoformat() if report.updated_at else None,
             "items": [],
         }
@@ -172,7 +172,7 @@ class MaterialReportService:
                 "report_title": report.report_title,
                 "report_date": report.report_date.isoformat() if report.report_date else None,
                 "status": report.status,
-                "created_at": report.created_at.isoformat(),
+                "created_at": report.created_at.isoformat() if report.created_at else None,
             }
             result.append(item)
 
@@ -365,7 +365,7 @@ class MaterialReportService:
                 "field_key": image.field_key,
                 "image_url": image.image_url,
                 "ai_result": image.ai_result,
-                "created_at": image.created_at.isoformat() if image.created_at else None,
+                "created_at": image.created_at.isoformat() if image.created_at else None if image.created_at else None,
             }
             for image in images
         ]
@@ -393,7 +393,7 @@ class ReportTemplateService:
             "field_mapping": template.field_mapping or {},
             "table_fields": template.table_fields or {},
             "is_active": template.is_active,
-            "created_at": template.created_at.isoformat(),
+            "created_at": template.created_at.isoformat() if template.created_at else None,
         }
 
     async def get_template(self, template_id: UUID) -> dict | None:  # type: ignore[type-arg]
@@ -410,7 +410,7 @@ class ReportTemplateService:
             "field_mapping": template.field_mapping or {},
             "table_fields": template.table_fields or {},
             "is_active": template.is_active,
-            "created_at": template.created_at.isoformat(),
+            "created_at": template.created_at.isoformat() if template.created_at else None,
             "updated_at": template.updated_at.isoformat() if template.updated_at else None,
         }
 
@@ -450,7 +450,7 @@ class ReportTemplateService:
                 "template_name": template.template_name,
                 "template_description": template.template_description,
                 "is_active": template.is_active,
-                "created_at": template.created_at.isoformat(),
+                "created_at": template.created_at.isoformat() if template.created_at else None,
             }
             result.append(item)
 

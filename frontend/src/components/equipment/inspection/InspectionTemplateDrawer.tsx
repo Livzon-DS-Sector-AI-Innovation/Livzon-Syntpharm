@@ -52,7 +52,7 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
   }
 
   return (
-    <Drawer title={null} size={460} open={inspectionTemplateDrawerOpen} onClose={closeInspectionTemplateDrawer} destroyOnHidden
+    <Drawer title={null} width={460} open={inspectionTemplateDrawerOpen} onClose={closeInspectionTemplateDrawer} destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}>
       <div style={{ background: C.navy, padding: '18px 28px', borderBottom: `3px solid ${C.purple}` }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>Template {isNew ? 'Creation' : 'Settings'}</div>

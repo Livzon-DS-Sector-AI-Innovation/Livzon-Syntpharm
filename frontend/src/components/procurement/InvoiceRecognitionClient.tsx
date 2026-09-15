@@ -799,7 +799,7 @@ export function InvoiceRecognitionClient({
             className="mt-4"
             type="info"
             showIcon
-            title="识别结果请以原始发票为准，提交入账前需要人工核对。"
+            message="识别结果请以原始发票为准，提交入账前需要人工核对。"
           />
       </section>
     </div>

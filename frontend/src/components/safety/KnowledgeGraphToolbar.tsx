@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button, Input, Select, Space, Tooltip, App } from 'antd'
 import {
   SearchOutlined,
@@ -26,40 +26,46 @@ export default function KnowledgeGraphToolbar({
   onFitView,
 }: ToolbarProps) {
   const { message } = App.useApp()
-  const store = useKnowledgeGraphStore()
+  const messageRef = useRef(message)
+  useEffect(() => {
+    messageRef.current = message
+  }, [message])
+  const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
+  const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
   const [searching, setSearching] = useState(false)
 
   // 搜索
   const handleSearch = useCallback(
     async (value: string) => {
-      store.setSearchQuery(value)
+      useKnowledgeGraphStore.setState({ searchQuery: value })
       if (!value.trim()) {
-        store.setSearchResults([])
+        useKnowledgeGraphStore.setState({ searchResults: [] })
         return
       }
       setSearching(true)
       try {
-        const results = await searchGraphNodes(value, store.nodeTypeFilter || undefined)
-        store.setSearchResults(results)
+        const state = useKnowledgeGraphStore.getState()
+        const results = await searchGraphNodes(value, state.nodeTypeFilter || undefined)
+        useKnowledgeGraphStore.setState({ searchResults: results })
         if (results.length === 0) {
-          message.info('未找到匹配节点')
+          messageRef.current.info('未找到匹配节点')
         } else {
-          message.success(`找到 ${results.length} 个节点`)
+          messageRef.current.success(`找到 ${results.length} 个节点`)
         }
       } catch {
-        message.error('搜索失败')
+        messageRef.current.error('搜索失败')
       } finally {
         setSearching(false)
       }
     },
-    [store, message],
+    [],  // 零依赖
   )
 
   // 导出图片
   const handleExport = useCallback(() => {
     const svgElement = document.querySelector('.react-flow__renderer svg')
     if (!svgElement) {
-      message.warning('未找到画布元素')
+      messageRef.current.warning('未找到画布元素')
       return
     }
     const serializer = new XMLSerializer()
@@ -71,8 +77,8 @@ export default function KnowledgeGraphToolbar({
     a.download = `知识图谱_${new Date().toISOString().slice(0, 10)}.svg`
     a.click()
     URL.revokeObjectURL(url)
-    message.success('导出成功')
-  }, [message])
+    messageRef.current.success('导出成功')
+  }, [])  // 零依赖
 
   return (
     <Panel position="top-left" style={{ margin: 12 }}>
@@ -96,7 +102,7 @@ export default function KnowledgeGraphToolbar({
           style={{ width: 200 }}
           loading={searching}
           onSearch={handleSearch}
-          onClear={() => store.setSearchResults([])}
+          onClear={() => useKnowledgeGraphStore.setState({ searchResults: [] })}
         />
 
         <div style={{ width: 1, height: 20, background: 'var(--color-hairline, #e5e3df)' }} />
@@ -107,8 +113,8 @@ export default function KnowledgeGraphToolbar({
           placeholder="节点类型"
           allowClear
           style={{ minWidth: 110 }}
-          value={store.nodeTypeFilter}
-          onChange={store.setNodeTypeFilter}
+          value={nodeTypeFilter}
+          onChange={(v) => useKnowledgeGraphStore.setState({ nodeTypeFilter: v })}
           options={NODE_TYPE_OPTIONS}
         />
 
@@ -118,8 +124,8 @@ export default function KnowledgeGraphToolbar({
           placeholder="关系类型"
           allowClear
           style={{ minWidth: 100 }}
-          value={store.relationTypeFilter}
-          onChange={store.setRelationTypeFilter}
+          value={relationTypeFilter}
+          onChange={(v) => useKnowledgeGraphStore.setState({ relationTypeFilter: v })}
           options={RELATION_TYPE_OPTIONS}
         />
 

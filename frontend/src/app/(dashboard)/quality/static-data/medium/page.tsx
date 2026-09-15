@@ -757,7 +757,7 @@ export default function MediumPage() {
       <Drawer
         title="调整库存"
         placement="right"
-        size={400}
+        width={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

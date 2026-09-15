@@ -1134,7 +1134,7 @@ export default function IPQCPage() {
             {viewRecord.deviation_id && (
               <>
                 <Divider>关联偏差</Divider>
-                <Alert title={`偏差ID: ${viewRecord.deviation_id}`} type="info" showIcon />
+                <Alert message={`偏差ID: ${viewRecord.deviation_id}`} type="info" showIcon />
               </>
             )}
           </>

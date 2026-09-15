@@ -667,7 +667,7 @@ export function ContractGenerationClient({
 
         <section className="rounded-[12px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6">
           <div className="flex flex-wrap items-center justify-end gap-4">
-            <Space separator={<Divider orientation="vertical" />}>
+            <Space split={<Divider type="vertical" />}>
               <Button onClick={() => form.resetFields()}>重置</Button>
               <Button
                 type="primary"

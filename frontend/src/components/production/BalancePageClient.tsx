@@ -213,9 +213,8 @@ export function BalancePageClient() {
         {materialBalance ? (
           <>
             <Alert
-              variant="filled"
               type={materialBalance.is_balanced ? 'success' : 'warning'}
-              title={materialBalance.is_balanced ? '物料平衡合格' : '物料平衡不合格'}
+              message={materialBalance.is_balanced ? '物料平衡合格' : '物料平衡不合格'}
               description={`平衡率 ${materialBalance.balance_rate?.toFixed(2)}% ${
                 materialBalance.is_balanced
                   ? '满足最低要求'
