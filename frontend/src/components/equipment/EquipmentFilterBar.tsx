@@ -116,7 +116,7 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
       <div style={{ flex: '1 1 100%', minWidth: 0, order: 5 }} />
       <Button icon={<SettingOutlined />} onClick={onOpenColumnConfig}>列配置</Button>
       <Button icon={<ImportOutlined />} onClick={onOpenImport}>导入</Button>
-      <Button type="primary" icon={<PlusOutlined />} onClick={onAddNew}>新增设备</Button>
+      <Button icon={<PlusOutlined />} onClick={onAddNew}>新增设备</Button>
     </div>
   )
 }

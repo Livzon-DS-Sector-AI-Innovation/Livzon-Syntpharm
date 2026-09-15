@@ -50,26 +50,81 @@
 /**
  * 换序动效（D9）：仅表头指示器方向切换与表体淡入，均不超过 150ms。
  * prefers-reduced-motion 下完全跳过。
- * 两套同名同构的 keyframes 由 data-fade 两相位交替引用：animation-name 变化即重启动画，
- * 不必重挂载表体（重挂载会丢失 antd 的列宽测量与滚动位置）。
  */
 
 /**
- * 表头粘性：antd 6.x 的 `.ant-table-sticky-holder` 内联样式只有 `overflow:hidden;top:N`，
- * 缺少 `position:sticky`，导致表头不吸附、下拉被工具栏遮挡。
- * 此处仅补上 `position: sticky`，top 值完全由 antd Table 的 sticky.offsetHeader 内联样式控制。
- * 注意：不要给 `th` 手写 `position:sticky`，因为 scroll.x 存在时 rc-table 的滚动容器
- * 会成为吸附框，导致表头空白或叠进数据行。
+ * 一屏三段式布局：页面 100vh 无滚动，表格内部滚动。
+ * antd Table 的 DOM 层级较深（wrapper > spin > .ant-table > header / body），
+ * 默认按内容撑高，不会在 flex 容器中自动填满。
+ * 以下规则逐层打通 flex 高度链，使 scroll.y 的百分比基准生效。
+ *
+ * 关键：antd 给 .ant-table-body 内联了 height:100%（等于父容器全高），
+ * 加上 header 就溢出。用 height:auto !important 覆盖，让 flex:1 接管。
  */
-.ant-table-sticky-holder {
-  position: sticky !important;
-  /* top 由 antd Table 的 sticky.offsetHeader 内联样式控制，不要覆盖 */
-  z-index: 2;
+.equipment-table-fill {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-/**
- * 侧边栏：在三段式布局中作为第二段的一部分，无需特殊 sticky 处理。
- */
+.equipment-table-fill .equipment-ledger {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.equipment-table-fill .ant-spin-nested-loading {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.equipment-table-fill .ant-spin-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.equipment-table-fill .ant-table {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.equipment-table-fill .ant-table-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.equipment-table-fill .ant-table-header {
+  flex: 0 0 auto;
+}
+
+.equipment-table-fill .ant-table-body {
+  flex: 1;
+  min-height: 0;
+  height: auto !important;
+}
+
+.equipment-table-fill .ant-table-thead > tr > th {
+  font-size: 15px;
+  font-weight: 700;
+  background: #FAFAF9;
+  color: #1C1917;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .equipment-ledger[data-fade="a"] .ant-table-tbody {
@@ -93,16 +148,4 @@
 @keyframes equipment-tbody-fade-b {
   from { opacity: 0.4; }
   to { opacity: 1; }
-}
-
-
-
-/**
- * 表格表头样式 - 加大字号，增强可读性
- */
-.equipment-ledger-table-scroll .ant-table-thead > tr > th {
-  font-size: 15px !important;
-  font-weight: 600 !important;
-  background: #FAFAF9 !important;
-  color: #1C1917 !important;
 }
