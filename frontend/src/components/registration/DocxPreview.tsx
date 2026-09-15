@@ -13,7 +13,7 @@ interface DocxPreviewProps {
 }
 
 export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }: DocxPreviewProps) {
-  const { message } = App.useApp()
+  const { message: _message } = App.useApp()
   const containerRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,9 +69,9 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
         renderHeaders: true,
         renderFooters: true,
       })
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('DocxPreview render error:', err)
-      setError(err.message || '预览加载失败')
+      setError((err instanceof Error ? err.message : null) || '预览加载失败')
       setHasContent(false)
       if (containerRef.current) {
         containerRef.current.innerHTML = ''
@@ -81,9 +81,11 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
     }
   }, [chapterId])
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     renderDocx()
   }, [renderDocx, refreshKey])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleRefresh = () => {
     renderDocx()

@@ -201,7 +201,7 @@ export interface HandleProblemResponse {
 
 // ============ API 通用响应 ============
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   code: number
   message: string
   data: T

@@ -15,14 +15,14 @@ export async function updateConfig(configKey: string, data: { config_value: stri
   })
 }
 
-export async function singleCheck(data: any) {
+export async function singleCheck(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/check/single`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function batchCheck(data: any) {
+export async function batchCheck(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/check/batch`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -49,7 +49,7 @@ export async function exportCheckReport(id: string, format: string = 'excel', in
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/export/${id}?format=${format}&include_problems=${includeProblems}`)
 }
 
-export async function handleProblem(problemId: string, data: any) {
+export async function handleProblem(problemId: string, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/problems/${problemId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -60,7 +60,7 @@ export async function getScheduledJobs() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/jobs`)
 }
 
-export async function createScheduledJob(data: any) {
+export async function createScheduledJob(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/sop-ai/jobs`, {
     method: 'POST',
     body: JSON.stringify(data),

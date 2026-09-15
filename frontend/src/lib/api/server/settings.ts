@@ -16,7 +16,7 @@ export async function getLLMConfig(id: string, token?: string) {
   })
 }
 
-export async function createLLMConfig(data: any, token?: string) {
+export async function createLLMConfig(data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -24,7 +24,7 @@ export async function createLLMConfig(data: any, token?: string) {
   })
 }
 
-export async function updateLLMConfig(id: string, data: any, token?: string) {
+export async function updateLLMConfig(id: string, data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/llm/configs/${id}`, {
     method: 'PUT',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -52,7 +52,7 @@ export async function getLivzonFeishuConfig(token?: string) {
   })
 }
 
-export async function saveLivzonFeishuConfig(data: any, token?: string) {
+export async function saveLivzonFeishuConfig(data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/feishu-config`, {
     method: 'PUT',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -60,7 +60,7 @@ export async function saveLivzonFeishuConfig(data: any, token?: string) {
   })
 }
 
-export async function testLivzonFeishuConfig(data: any, token?: string) {
+export async function testLivzonFeishuConfig(data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/feishu-config/test`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

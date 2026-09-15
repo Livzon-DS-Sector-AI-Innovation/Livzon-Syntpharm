@@ -1,17 +1,17 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Button, Space, Input, Select, Tag, Typography, Modal, message, Empty, Spin } from 'antd'
+import { useState, useEffect, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Button, Space, Input, Select, Tag, Modal, message, Empty, Spin } from 'antd'
 import {
   SearchOutlined, ReloadOutlined, EyeOutlined, EditOutlined, PlusOutlined,
   DeleteOutlined, AppstoreOutlined, TableOutlined, FileTextOutlined,
-  ClockCircleOutlined, ArrowRightOutlined, ExclamationCircleOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import '../deviation-style.css'
 
-const { Text } = Typography
 
 const API_BASE = '/api/v1'
 
@@ -49,13 +49,11 @@ const DEVIATION_TYPES_OPTIONS = [
   { value: 'other', label: '其它' },
 ]
 
+interface DeviationFlowItem { id: string; deviation_no: string; theme?: string; deviation_type_label?: string; urgency_level_label?: string; status: string; status_label: string; responsible_department?: string; occurred_date?: string; reporter?: string; remaining_days?: number; completed_days?: number }
 export default function DeviationQueryPage() {
   const router = useRouter()
-  const [data, setData] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, _setPageSize] = useState(20)
   const [isMobile, setIsMobile] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table')
 
@@ -75,46 +73,42 @@ export default function DeviationQueryPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        page_size: String(pageSize),
-      })
-      if (keyword) params.append('keyword', keyword)
-      if (status) params.append('status', status)
-      if (deviationType) params.append('deviation_type', deviationType)
-      if (urgencyLevel) params.append('urgency_level', urgencyLevel)
+  const queryParams = useMemo(() => {
+    const params = new URLSearchParams({
+      page: String(page),
+      page_size: String(pageSize),
+    })
+    if (keyword) params.append('keyword', keyword)
+    if (status) params.append('status', status)
+    if (deviationType) params.append('deviation_type', deviationType)
+    if (urgencyLevel) params.append('urgency_level', urgencyLevel)
+    return params.toString()
+  }, [page, pageSize, keyword, status, deviationType, urgencyLevel])
 
-      const response = await fetch(`${API_BASE}/quality/deviation-flow?${params}`)
+  const queryClient = useQueryClient()
+
+  const { data: queryResult, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: ['deviation-flow', queryParams],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/quality/deviation-flow?${queryParams}`)
       const result = await response.json()
+      if (result.code === 200) return result.data
+      return null
+    },
+  })
 
-      if (result.code === 200) {
-        setData(result.data.items || [])
-        setTotal(result.data.total || 0)
-      }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, status, deviationType, urgencyLevel, keyword])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
   }
 
-  const handleView = (record: any) => {
+  const handleView = (record: DeviationFlowItem) => {
     router.push(`/quality/deviation-flow/progress?id=${record.id}`)
   }
 
-  const handleEdit = (record: any) => {
+  const handleEdit = (record: DeviationFlowItem) => {
     if (record.status === 'completed') {
       message.warning('已完成状态不能编辑')
       return
@@ -122,7 +116,7 @@ export default function DeviationQueryPage() {
     router.push(`/quality/deviation-flow/create?edit=${record.id}`)
   }
 
-  const handleDelete = async (record: any) => {
+  const handleDelete = async (record: DeviationFlowItem) => {
     if (record.status !== 'draft') {
       message.warning('只有草稿状态可以删除')
       return
@@ -140,18 +134,18 @@ export default function DeviationQueryPage() {
 
           if (result.code === 200) {
             message.success('删除成功')
-            loadData()
+            queryClient.invalidateQueries({ queryKey: ['deviation-flow'] })
           } else {
             message.error(result.message || '删除失败')
           }
-        } catch (error) {
+        } catch (_error) {
           message.error('删除失败')
         }
       },
     })
   }
 
-  const columns = [
+  const _columns = [
     {
       title: '偏差编号',
       dataIndex: 'deviation_no',
@@ -186,7 +180,7 @@ export default function DeviationQueryPage() {
       dataIndex: 'status_label',
       key: 'status',
       width: 100,
-      render: (label: string, record: any) => (
+      render: (label: string, record: DeviationFlowItem) => (
         <Tag color={STATUS_COLORS[record.status]}>{label}</Tag>
       ),
     },
@@ -212,7 +206,7 @@ export default function DeviationQueryPage() {
       title: '剩余天数',
       key: 'days_countdown',
       width: 100,
-      render: (_: any, record: any) => {
+      render: (_: unknown, record: DeviationFlowItem) => {
         if (record.status === 'completed') {
           return <Tag color="success">已完成({record.completed_days || 0}天)</Tag>
         }
@@ -228,7 +222,7 @@ export default function DeviationQueryPage() {
       key: 'action',
       width: 180,
       fixed: 'right' as const,
-      render: (_: any, record: any) => (
+      render: (_: unknown, record: DeviationFlowItem) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>
             查看
@@ -248,9 +242,9 @@ export default function DeviationQueryPage() {
     },
   ]
 
-  const renderCard = (item: any) => {
-    const urgencyColor = URGENCY_COLORS[item.urgency_level_label] || 'default'
-    const statusColor = STATUS_COLORS[item.status] || 'default'
+  const renderCard = (item: DeviationFlowItem) => {
+    const urgencyColor = URGENCY_COLORS[item.urgency_level_label || ''] || 'default'
+    const statusColor = STATUS_COLORS[item.status || ''] || 'default'
     const remaining = item.remaining_days
     const isOverdue = remaining !== undefined && remaining !== null && remaining <= 3 && item.status !== 'completed'
 
@@ -428,7 +422,7 @@ export default function DeviationQueryPage() {
               </Button>
               <Button
                 icon={<ReloadOutlined />}
-                onClick={loadData}
+                onClick={() => loadData()}
                 size={isMobile ? 'small' : 'middle'}
               >
                 刷新
@@ -482,9 +476,9 @@ export default function DeviationQueryPage() {
                 </thead>
                 <tbody>
                   {data.length > 0 ? (
-                    data.map((item) => {
-                      const urgencyColor = URGENCY_COLORS[item.urgency_level_label] || 'default'
-                      const statusColor = STATUS_COLORS[item.status] || 'default'
+                    data.map((item: DeviationFlowItem) => {
+                      const urgencyColor = URGENCY_COLORS[item.urgency_level_label || ''] || 'default'
+                      const statusColor = STATUS_COLORS[item.status || ''] || 'default'
                       const remaining = item.remaining_days
                       return (
                         <tr key={item.id}>

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, BugOutlined, SafetyOutlined, RobotOutlined } from '@ant-design/icons'
-import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod, DOEExperiment } from '@/types/research'
+import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ControlMethod, DOEExperiment } from '@/types/research'
 import { identifyImpurities, generateIdentificationReport } from '@/components/research/utils/impurity-identifier'
 import { fetchRouteById } from '@/lib/api/client/research'
 

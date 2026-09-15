@@ -78,8 +78,8 @@ export function DepartmentContactPage() {
       }
       setDrawerOpen(false)
       loadData()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     } finally {
       setSubmitting(false)
     }
@@ -97,8 +97,8 @@ export function DepartmentContactPage() {
           await deleteDepartmentContact(record.id)
           message.success('删除成功')
           loadData()
-        } catch (error: any) {
-          message.error(error?.message || '删除失败')
+        } catch (error: unknown) {
+          message.error((error instanceof Error ? error.message : null) || '删除失败')
         }
       },
     })

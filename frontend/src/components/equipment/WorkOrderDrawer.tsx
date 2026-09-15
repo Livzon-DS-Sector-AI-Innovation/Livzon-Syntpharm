@@ -35,7 +35,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
 
   useEffect(() => {
     if (workOrderDrawerOpen) {
-      fetchAllUsersClient().then((list: any[]) => {
+      fetchAllUsersClient().then((list: { id: string; name: string }[]) => {
         setMaintainers(list)
         // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
         if (editingWorkOrder?.responsible_person_id) {
@@ -43,7 +43,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
         }
       }).catch(() => {})
     }
-  }, [workOrderDrawerOpen])
+  }, [workOrderDrawerOpen, form, editingWorkOrder])
 
   // 构建 initialValues：编辑时填充已有数据，新建时给默认值
   const initialValues = useMemo(() => {
@@ -66,7 +66,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
     if (workOrderDrawerOpen) {
       form.setFieldsValue(initialValues)
     }
-  }, [workOrderDrawerOpen, initialValues])
+  }, [workOrderDrawerOpen, initialValues, form])
 
   const handleSubmit = async () => {
     try {
@@ -97,9 +97,9 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
       }
       closeWorkOrderDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.errorFields) return
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "errorFields" in error) return
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -94,10 +94,6 @@ export default function RiskReportPanel() {
     }
   }
 
-  useEffect(() => {
-    loadData()
-  }, [dailyRiskReportQueryParams.page, dailyRiskReportQueryParams.page_size, statusFilter, reportTypeFilter])
-
   const handleSearch = () => {
     setDailyRiskReportQueryParams({ page: 1 })
     loadData()
@@ -166,7 +162,7 @@ export default function RiskReportPanel() {
 
       if (editingRecord) {
         // 编辑时不发送 report_type（不可修改）
-        const { report_type, ...updateValues } = formattedValues
+        const { report_type: _report_type, ...updateValues } = formattedValues
         const response = await updateDailyRiskReport(editingRecord.id, updateValues)
         if (response.code === 200) { message.success('更新成功'); updateInStore(editingRecord.id, response.data as DailyRiskReport); setModalVisible(false) }
         else { message.error(response.message || '更新失败') }
@@ -255,7 +251,7 @@ export default function RiskReportPanel() {
   ]
 
   const renderForm = (isEdit: boolean) => {
-    const activeForm = isEdit ? editForm : form
+    const _activeForm = isEdit ? editForm : form
     const reportType = isEdit ? editingRecord?.report_type : reportTypeFilterValue
 
     return (

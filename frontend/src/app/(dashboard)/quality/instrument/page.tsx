@@ -1,7 +1,8 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {Table, Button, Space, Tag, message, Empty, Spin, Modal, Select, Divider} from 'antd'
 import {
   PlusOutlined,
@@ -24,44 +25,15 @@ import {
 import type { InstrumentListItem } from '@/types/instrument'
 import './instrument-style.css'
 
-interface ReminderConfig {
-  id: string
-  name: string
-  feishu_app_id: string | null
-  feishu_app_secret: string | null
-  chat_id: string | null
-  receive_id_type: string
-  is_active: boolean
-}
-
 export default function InstrumentDashboardPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState({ total: 0, active: 0, warning: 0, overdue: 0 })
-  const [warningDevices, setWarningDevices] = useState<InstrumentListItem[]>([])
-  const [overdueDevices, setOverdueDevices] = useState<InstrumentListItem[]>([])
   const [isMobile, setIsMobile] = useState(false)
 
   const [remindModalVisible, setRemindModalVisible] = useState(false)
   const [remindLoading, setRemindLoading] = useState(false)
   const [remindDays, setRemindDays] = useState(30)
   const [selectedConfigId, setSelectedConfigId] = useState<string | null>(null)
-  const [upcomingRecords, setUpcomingRecords] = useState<Array<{
-    id: string
-    instrument_name: string | null
-    instrument_no: string | null
-    valid_until: string | null
-    days_until_expiry: number | null
-  }>>([])
-  const [overdueRecords, setOverdueRecords] = useState<Array<{
-    id: string
-    instrument_name: string | null
-    instrument_no: string | null
-    valid_until: string | null
-    days_until_expiry: number | null
-  }>>([])
-  const [loadingPreview, setLoadingPreview] = useState(false)
-  const [reminderConfigs, setReminderConfigs] = useState<ReminderConfig[]>([])
+
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -71,97 +43,92 @@ export default function InstrumentDashboardPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const loadReminderConfigs = useCallback(async () => {
-    try {
-      const configs = await getReminderConfigs()
-      const activeConfigs = configs.items?.filter((c) => c.is_active) || []
-      setReminderConfigs(activeConfigs)
-      if (activeConfigs.length > 0 && !selectedConfigId) {
-        setSelectedConfigId(activeConfigs[0].id)
-      }
-    } catch {
-      console.error('获取提醒配置失败')
-    }
-  }, [selectedConfigId])
-
-  useEffect(() => {
-    if (remindModalVisible) {
-      loadReminderConfigs()
-      setLoadingPreview(true)
-      getRecordsForReminder(remindDays)
-        .then((data) => {
-          setOverdueRecords(data.overdue || [])
-          setUpcomingRecords(data.upcoming || [])
-        })
-        .catch(() => message.error('获取到期记录失败'))
-        .finally(() => setLoadingPreview(false))
-    }
-  }, [remindModalVisible, remindDays, loadReminderConfigs])
-
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  // 加载仪器数据
+  const { data: instrumentsData, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: ['instruments-dashboard'],
+    queryFn: async () => {
       const response = await getInstruments({ page: 1, page_size: 100 })
-      const items = response.items || []
-      const now = dayjs()
+      return response.items || []
+    },
+  })
 
-      const total = items.length
-      const active = items.filter((i: InstrumentListItem) => i.is_active).length
+  const items = instrumentsData || []
+  const now = dayjs()
 
-      const overdueCount = items.filter((i: InstrumentListItem) => {
-        if (!i.valid_until) return false
-        return dayjs(i.valid_until).isBefore(now)
-      }).length
+  const stats = {
+    total: items.length,
+    active: items.filter((i: InstrumentListItem) => i.is_active).length,
+    warning: items.filter((i: InstrumentListItem) => {
+      if (!i.valid_until) return false
+      const isOverdue = dayjs(i.valid_until).isBefore(now)
+      if (isOverdue) return false
+      const daysUntil = dayjs(i.valid_until).diff(now, 'day')
+      return daysUntil >= 0 && daysUntil <= 30
+    }).length,
+    overdue: items.filter((i: InstrumentListItem) => {
+      if (!i.valid_until) return false
+      return dayjs(i.valid_until).isBefore(now)
+    }).length,
+  }
 
-      const warningCount = items.filter((i: InstrumentListItem) => {
-        if (!i.valid_until) return false
-        const isOverdue = dayjs(i.valid_until).isBefore(now)
-        if (isOverdue) return false
-        const daysUntil = dayjs(i.valid_until).diff(now, 'day')
-        return daysUntil >= 0 && daysUntil <= 30
-      }).length
+  const warningDevices = items
+    .filter((i: InstrumentListItem) => {
+      if (!i.valid_until) return false
+      const isOverdue = dayjs(i.valid_until).isBefore(now)
+      if (isOverdue) return false
+      const daysUntil = dayjs(i.valid_until).diff(now, 'day')
+      return daysUntil >= 0 && daysUntil <= 30
+    })
+    .sort((a: InstrumentListItem, b: InstrumentListItem) => {
+      const aDate = dayjs(a.valid_until).unix()
+      const bDate = dayjs(b.valid_until).unix()
+      return aDate - bDate
+    })
+    .slice(0, 10)
 
-      setStats({ total, active, warning: warningCount, overdue: overdueCount })
+  const overdueDevices = items
+    .filter((i: InstrumentListItem) => {
+      if (!i.valid_until) return false
+      return dayjs(i.valid_until).isBefore(now)
+    })
+    .sort((a: InstrumentListItem, b: InstrumentListItem) => {
+      const aDate = dayjs(a.valid_until).unix()
+      const bDate = dayjs(b.valid_until).unix()
+      return aDate - bDate
+    })
+    .slice(0, 10)
 
-      const warningList = items
-        .filter((i: InstrumentListItem) => {
-          if (!i.valid_until) return false
-          const isOverdue = dayjs(i.valid_until).isBefore(now)
-          if (isOverdue) return false
-          const daysUntil = dayjs(i.valid_until).diff(now, 'day')
-          return daysUntil >= 0 && daysUntil <= 30
-        })
-        .sort((a: InstrumentListItem, b: InstrumentListItem) => {
-          const aDate = dayjs(a.valid_until).unix()
-          const bDate = dayjs(b.valid_until).unix()
-          return aDate - bDate
-        })
-        .slice(0, 10)
-      setWarningDevices(warningList)
+  // 提醒配置
+  const { data: reminderConfigsData } = useQuery({
+    queryKey: ['reminder-configs-dashboard'],
+    queryFn: async () => {
+      const configs = await getReminderConfigs()
+      return configs.items?.filter((c) => c.is_active) || []
+    },
+    enabled: remindModalVisible,
+  })
 
-      const overdueList = items
-        .filter((i: InstrumentListItem) => {
-          if (!i.valid_until) return false
-          return dayjs(i.valid_until).isBefore(now)
-        })
-        .sort((a: InstrumentListItem, b: InstrumentListItem) => {
-          const aDate = dayjs(a.valid_until).unix()
-          const bDate = dayjs(b.valid_until).unix()
-          return aDate - bDate
-        })
-        .slice(0, 10)
-      setOverdueDevices(overdueList)
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : '加载数据失败，请检查后端服务'
-      message.error(errorMsg)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const reminderConfigs = reminderConfigsData || []
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  // Compute effective config ID: use selected or default to first available
+  const effectiveConfigId = selectedConfigId || reminderConfigs[0]?.id || null
+
+  // 到期记录预览
+  const { data: reminderPreviewData, isLoading: loadingPreview } = useQuery({
+    queryKey: ['reminder-preview', remindModalVisible, remindDays],
+    queryFn: async () => {
+      if (!remindModalVisible) return null
+      const data = await getRecordsForReminder(remindDays)
+      return {
+        overdue: data.overdue || [],
+        upcoming: data.upcoming || [],
+      }
+    },
+    enabled: remindModalVisible,
+  })
+
+  const overdueRecords = reminderPreviewData?.overdue || []
+  const upcomingRecords = reminderPreviewData?.upcoming || []
 
   const getDaysColor = (days: number) => {
     if (days <= 7) return 'red'
@@ -181,7 +148,7 @@ export default function InstrumentDashboardPage() {
           </p>
         </div>
         <Space wrap size={8}>
-          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading} size={isMobile ? 'small' : 'middle'}>
+          <Button icon={<ReloadOutlined />} onClick={() => loadData()} loading={loading} size={isMobile ? 'small' : 'middle'}>
             刷新
           </Button>
           <Button
@@ -375,8 +342,6 @@ export default function InstrumentDashboardPage() {
         open={remindModalVisible}
         onCancel={() => {
           setRemindModalVisible(false)
-          setUpcomingRecords([])
-          setOverdueRecords([])
         }}
         footer={null}
         width={isMobile ? '100%' : 600}
@@ -412,18 +377,8 @@ export default function InstrumentDashboardPage() {
                 <span>提前提醒天数：</span>
                 <Select
                   value={remindDays}
-                  onChange={async (value) => {
+                  onChange={(value) => {
                     setRemindDays(value)
-                    setLoadingPreview(true)
-                    try {
-                      const data = await getRecordsForReminder(value)
-                      setOverdueRecords(data.overdue || [])
-                      setUpcomingRecords(data.upcoming || [])
-                    } catch {
-                      message.error('获取到期记录失败')
-                    } finally {
-                      setLoadingPreview(false)
-                    }
                   }}
                   style={{ width: isMobile ? '100%' : 120 }}
                 >
@@ -439,7 +394,7 @@ export default function InstrumentDashboardPage() {
             <Spin spinning={loadingPreview}>
               {overdueRecords.length > 0 && (
                 <>
-                  <Divider orientation={'left' as any} style={{ margin: '12px 0' }}>
+                  <Divider titlePlacement='left' style={{ margin: '12px 0' }}>
                     <Tag color="red">⚠️ 已超期 {overdueRecords.length} 条</Tag>
                   </Divider>
                   {isMobile ? (
@@ -476,7 +431,7 @@ export default function InstrumentDashboardPage() {
 
               {upcomingRecords.length > 0 && (
                 <>
-                  <Divider orientation={'left' as any} style={{ margin: overdueRecords.length > 0 ? '12px 0' : 0 }}>
+                  <Divider titlePlacement='left' style={{ margin: overdueRecords.length > 0 ? '12px 0' : 0 }}>
                     <Tag color="orange">📅 即将到期 {upcomingRecords.length} 条</Tag>
                   </Divider>
                   {isMobile ? (
@@ -525,9 +480,9 @@ export default function InstrumentDashboardPage() {
                   type="primary"
                   icon={<SendOutlined />}
                   loading={remindLoading}
-                  disabled={(upcomingRecords.length === 0 && overdueRecords.length === 0) || !selectedConfigId}
+                  disabled={(upcomingRecords.length === 0 && overdueRecords.length === 0) || !effectiveConfigId}
                   onClick={async () => {
-                    const config = reminderConfigs.find((c) => c.id === selectedConfigId)
+                    const config = reminderConfigs.find((c) => c.id === effectiveConfigId)
                     if (!config) {
                       message.error('请选择提醒配置')
                       return

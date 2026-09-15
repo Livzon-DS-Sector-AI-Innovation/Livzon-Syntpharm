@@ -323,14 +323,6 @@ export default function SopGeneratorModal({
     onClose()
   }, [uploading, onClose])
 
-  React.useEffect(() => {
-    if (open) {
-      setFile(null)
-      setErrorMsg(null)
-      setIsDragOver(false)
-    }
-  }, [open])
-
   /* ── file handling ── */
 
   const acceptFile = useCallback((f: File) => {
@@ -408,13 +400,13 @@ export default function SopGeneratorModal({
       const result = response.data
       message.success('标准化操规生成成功！')
       onGenerated({
-        regulation_id: result.regulation_id,
-        meta: result.meta || {},
-        content: result.content || ''
+        regulation_id: (result as { regulation_id: string }).regulation_id,
+        meta: (result as { meta?: Record<string, string> }).meta || {},
+        content: (result as { content?: string }).content || ''
       })
       setFile(null)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '生成失败，请重试'
+      const msg = err instanceof Error ? (err instanceof Error ? err.message : null) : '生成失败，请重试'
       setErrorMsg(msg)
     } finally {
       setUploading(false)

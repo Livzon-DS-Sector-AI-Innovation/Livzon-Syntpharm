@@ -1,10 +1,12 @@
 'use client'
 import { uploadAnnualTrainingPlan } from '@/actions/hr'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {App, Button, Card, Row, Col, Popconfirm, Spin, Modal, Form, Select, Upload} from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, UploadOutlined } from '@ant-design/icons'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnnualTrainingPlan } from '@/types/hr'
 import { fetchAnnualTrainingPlans, fetchDepartments } from '@/lib/api/client/hr'
 import { createAnnualTrainingPlan, deleteAnnualTrainingPlan } from '@/actions/hr'
@@ -12,58 +14,48 @@ import { createAnnualTrainingPlan, deleteAnnualTrainingPlan } from '@/actions/hr
 const YEAR_OPTIONS = [2024, 2025, 2026, 2027, 2028]
 
 export default function AnnualPlanListClient() {
+  const router = useRouter()
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
 
-  const [plans, setPlans] = useState<AnnualTrainingPlan[]>([])
-  const [loading, setLoading] = useState(true)
   const [selectedYear, setSelectedYear] = useState<number | undefined>(2026)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [form] = Form.useForm()
-  const [departments, setDepartments] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [modalLoading, setModalLoading] = useState(false)
+  const modalLoading = false
 
-  const loadPlans = async () => {
-    setLoading(true)
-    try {
+  const { data: plans = [], isLoading: loading } = useQuery<AnnualTrainingPlan[]>({
+    queryKey: ['hr-annual-plans', { year: selectedYear, page_size: 200 }],
+    queryFn: async () => {
       const res = await fetchAnnualTrainingPlans({
         year: selectedYear,
         page_size: 200
       })
-      setPlans(res.data || [])
-    } catch (err: any) {
-      message.error('加载计划列表失败: ' + (err.message || '未知错误'))
-    } finally {
-      setLoading(false)
-    }
-  }
+      return res.data || []
+    },
+  })
 
-  useEffect(() => {
-    loadPlans()
-  }, [selectedYear])
+  const { data: departments = [] } = useQuery<string[]>({
+    queryKey: ['hr-departments-names'],
+    queryFn: async () => {
+      const res = await fetchDepartments({ page_size: 200 })
+      return (res.data || []).map((d: { name: string }) => d.name)
+    },
+    enabled: isModalOpen,
+  })
 
   const handleDelete = async (id: string) => {
     try {
       await deleteAnnualTrainingPlan(id)
-      setPlans((prev) => prev.filter((p) => p.id !== id))
+      queryClient.invalidateQueries({ queryKey: ['hr-annual-plans'] })
       message.success('删除成功')
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     }
   }
 
   const openModal = () => {
     setIsModalOpen(true)
-    setModalLoading(true)
-    fetchDepartments({ page_size: 200 })
-      .then((res) => {
-        const names = (res.data || []).map((d: any) => d.name)
-        setDepartments(names)
-      })
-      .catch(() => {
-        message.error('加载部门列表失败')
-      })
-      .finally(() => setModalLoading(false))
   }
 
   const handleCreate = async (values: { year: number; department: string }) => {
@@ -79,12 +71,12 @@ export default function AnnualPlanListClient() {
       form.resetFields()
       const planId = res.data?.id
       if (planId) {
-        window.location.href = `/hr/training/annual-plan?id=${planId}`
+        router.push(`/hr/training/annual-plan?id=${planId}`)
       } else {
-        loadPlans()
+        queryClient.invalidateQueries({ queryKey: ['hr-annual-plans'] })
       }
-    } catch (err: any) {
-      const msg = err.message || ''
+    } catch (err: unknown) {
+      const msg = (err instanceof Error ? err.message : '')
       if (msg.includes('已存在') || msg.includes('Duplicate')) {
         message.error('该部门年度培训计划已存在')
       } else {
@@ -117,7 +109,7 @@ export default function AnnualPlanListClient() {
           try {
             const d = await uploadAnnualTrainingPlan(file as File)
             message.success(d.message)
-            loadPlans()
+            queryClient.invalidateQueries({ queryKey: ['hr-annual-plans'] })
           } catch { message.error('上传失败') }
         }}>
           <Button icon={<UploadOutlined />}>上传计划明细</Button>

@@ -3,28 +3,28 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
-  App, Card, Tree, Button, Space, Tag, Upload, Spin, Empty, Descriptions,
-  Divider, Popconfirm, Breadcrumb, Typography, Tabs, Modal, Select, Checkbox,
+  App, Tree, Button, Space, Tag, Upload, Spin, Empty,
+  Popconfirm, Typography, Tabs, Modal, Select, Checkbox,
 } from 'antd'
 import {
   ArrowLeftOutlined, FileWordOutlined, UploadOutlined, DeleteOutlined,
-  DownloadOutlined, FolderOutlined, FileOutlined, ReloadOutlined,
-  EyeOutlined, CheckCircleOutlined, ThunderboltOutlined,
+  ThunderboltOutlined,
   WarningOutlined, NodeIndexOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import type { DataNode } from "antd/es/tree";
 import { useDossierWriterStore } from '@/stores/dossier-writer'
 import {
-  getDownloadUrl, getChapterPreview, fetchChapterAssets,
+  getDownloadUrl, fetchChapterAssets,
   getChapterDocxUrl, fetchAssetCategories, fetchAvailableAssets,
 } from '@/lib/api/client/dossier-writer'
 import {uploadTemplates, uploadChapterAsset, deleteChapterAsset, exportDossier, matchAssetsToChapters, fillChapterFields, updateAssetCategory, toggleAssetUsage} from '@/actions/dossier-writer'
 import type { Chapter, ChapterAsset, AssetCategory, AvailableAsset } from '@/types/dossier-writer'
-import type { UploadResponse, ChapterPreview } from '@/types/dossier-writer'
+import type { UploadResponse } from '@/types/dossier-writer'
 import { AiFillPanel } from './AiFillPanel'
 import { DocxPreview } from './DocxPreview'
 
-const { Text, Title, Paragraph } = Typography
+const { Text: _Text, Title: _Title, Paragraph: _Paragraph } = Typography
 
 // M3 标准目录结构（固定）
 const _M3_STRUCTURE = [
@@ -71,7 +71,7 @@ export function DossierWriterDetailPageClient() {
   const dossierId = params.id as string
 
   const {
-    currentDossier, currentDossierLoading, loadDossier,
+    currentDossier, currentDossierLoading: _currentDossierLoading, loadDossier,
     chapterTree, chapterTreeLoading, loadChapterTree,
   } = useDossierWriterStore()
 
@@ -100,7 +100,7 @@ export function DossierWriterDetailPageClient() {
   // Sync selectedChapter when chapterTree updates (e.g. after template re-upload)
   useEffect(() => {
     if (!selectedChapterId || chapterTree.length === 0) return
-    const findChapter = (chapters: any[]): any => {
+    const findChapter = (chapters: Chapter[]): Chapter | null => {
       for (const ch of chapters) {
         if (ch.id === selectedChapterId) return ch
         if (ch.children) {
@@ -112,11 +112,12 @@ export function DossierWriterDetailPageClient() {
     }
     const updated = findChapter(chapterTree)
     if (updated) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing chapter state
       setSelectedChapter(prev => {
         if (!prev) return prev
         // Only update if something changed (working_file, has_content, etc.)
-        if (prev.working_file !== updated.working_file ||
-            prev.source_file !== updated.source_file ||
+        if (prev.working_file !== (updated as ChapterWithAssets).working_file ||
+            prev.source_file !== (updated as ChapterWithAssets).source_file ||
             prev.has_content !== updated.has_content) {
           return { ...prev, ...updated }
         }
@@ -159,8 +160,8 @@ export function DossierWriterDetailPageClient() {
         prev.map(a => a.id === assetId ? { ...a, is_selected: !currentSelected } : a)
       )
       message.success(!currentSelected ? '已选择使用' : '已取消使用')
-    } catch (err: any) {
-      message.error(err.message || '操作失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '操作失败')
     } finally {
       setTogglingAssetId(null)
     }
@@ -168,7 +169,7 @@ export function DossierWriterDetailPageClient() {
 
   // 构建树数据
   const buildTreeData = () => {
-    const convertToTreeData = (chapters: any[]): any[] => {
+    const convertToTreeData = (chapters: Chapter[]): DataNode[] => {
       return chapters.map(ch => {
         const children = ch.children ? convertToTreeData(ch.children) : []
         return {
@@ -202,7 +203,7 @@ export function DossierWriterDetailPageClient() {
   const handleSelectChapter = async (selectedKeys: React.Key[]) => {
     if (selectedKeys.length > 0) {
       const chapterId = selectedKeys[0] as string
-      const findChapter = (chapters: any[]): any => {
+      const findChapter = (chapters: Chapter[]): Chapter | null => {
         for (const ch of chapters) {
           if (ch.id === chapterId) return ch
           if (ch.children) {
@@ -284,8 +285,8 @@ export function DossierWriterDetailPageClient() {
       loadAvailableAssets(selectedChapterId!)
       setAssetRefreshKey(prev => prev + 1)
       message.success('分类已更新')
-    } catch (err: any) {
-      message.error(err.message || '更新分类失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '更新分类失败')
     }
   }
 
@@ -294,7 +295,7 @@ export function DossierWriterDetailPageClient() {
     if (!files || files.length === 0) return
     setParsing(true)
     try {
-      const fileArray = Array.from(files)
+      const _fileArray = Array.from(files)
       const result: UploadResponse = await uploadTemplates(dossierId, files)
       if (result.success_count > 0) {
         message.success(`上传成功 ${result.success_count} 个文件，已自动匹配 ${result.matched_count || 0} 个章节`)
@@ -314,8 +315,8 @@ export function DossierWriterDetailPageClient() {
       
       // Trigger preview refresh
       setPreviewRefreshKey(prev => prev + 1)
-    } catch (err: any) {
-      message.error(err?.message || '上传失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '上传失败')
     } finally {
       setParsing(false)
     }
@@ -329,8 +330,8 @@ export function DossierWriterDetailPageClient() {
       const result = await matchAssetsToChapters(dossierId)
       message.success(result.message)
       loadChapterTree(dossierId)
-    } catch (err: any) {
-      message.error(err?.message || '匹配失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '匹配失败')
     } finally {
       setMatching(false)
     }
@@ -349,8 +350,8 @@ export function DossierWriterDetailPageClient() {
       } else {
         message.error(result.message)
       }
-    } catch (err: any) {
-      message.error(err?.message || '导出失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '导出失败')
     } finally {
       setExporting(false)
     }
@@ -368,8 +369,8 @@ export function DossierWriterDetailPageClient() {
       } else {
         message.error(result.message)
       }
-    } catch (err: any) {
-      message.error(err?.message || '导出失败')
+    } catch (err: unknown) {
+      message.error((err instanceof Error ? err.message : null) || '导出失败')
     } finally {
       setExporting(false)
     }
@@ -400,9 +401,9 @@ export function DossierWriterDetailPageClient() {
       } else {
         message.warning(result.message)
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       message.destroy('filling')
-      message.error(error.message || '填充失败')
+      message.error((error instanceof Error ? error.message : null) || '填充失败')
     } finally {
       setFilling(false)
     }
@@ -642,6 +643,7 @@ export function DossierWriterDetailPageClient() {
                     label: 'AI 智能填充',
                     children: (
                       <AiFillPanel
+                        key={selectedChapter.id}
                         chapterId={selectedChapter.id}
                         chapterCode={selectedChapter.chapter_code || undefined}
                         assets={selectedChapter.assets || []}

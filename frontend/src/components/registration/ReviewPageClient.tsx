@@ -1,4 +1,5 @@
 'use client'
+'use no memo'
 
 import { useEffect, useState, useCallback } from 'react'
 import {
@@ -10,9 +11,9 @@ import {
   PlusOutlined, SearchOutlined, ReloadOutlined, DeleteOutlined,
   EditOutlined, BarChartOutlined, BarsOutlined,
 } from '@ant-design/icons'
-import dayjs, { Dayjs } from 'dayjs'
+import type { Dayjs } from 'dayjs'
 import {
-  Drug, DrugCreate, DrugUpdate, ReviewNodeConfig,
+  Drug, ReviewNodeConfig,
   fetchDrugs, fetchReviewNodes,
 } from '@/lib/api/client/registration'
 import { createDrug, updateDrug, deleteDrug } from '@/actions/registration'
@@ -97,32 +98,51 @@ export function ReviewPageClient() {
       const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
       setDrugs(d)
       setReviewNodes(n)
-    } catch {
+    } catch (_e) {
       message.error('加载数据失败')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [message])
 
+  // Initial load - only run once on mount
   useEffect(() => {
     let cancelled = false
     const load = async () => {
       setLoading(true)
+      
+      // Add timeout to prevent hanging forever
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      )
+      
       try {
-        const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
+        const result = await Promise.race([
+          Promise.all([fetchDrugs(), fetchReviewNodes()]),
+          timeout
+        ]) as [Drug[], ReviewNodeConfig[]]
+        
+        const [d, n] = result
+        
         if (!cancelled) {
-          setDrugs(d)
-          setReviewNodes(n)
+          setDrugs(d || [])
+          setReviewNodes(n || [])
         }
-      } catch {
-        if (!cancelled) message.error('加载数据失败')
+      } catch (_e) {
+        if (!cancelled) {
+          message.error('加载数据失败')
+        }
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
     load()
-    return () => { cancelled = true }
-  }, [])
+    return () => { 
+      cancelled = true
+    }
+  }, [message])
 
   const filtered = drugs.filter(d => {
     if (search && !d.name.includes(search)) return false

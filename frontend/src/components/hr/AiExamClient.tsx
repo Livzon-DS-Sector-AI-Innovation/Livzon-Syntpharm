@@ -91,8 +91,8 @@ export default function AiExamClient() {
         setTrueFalseQuestions(res.data.true_false_questions)
       }
       message.success('试卷题目生成成功')
-    } catch (err: any) {
-      message.error(err.message || '出题失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '出题失败')
     } finally {
       setGenerating(false)
     }
@@ -133,14 +133,14 @@ export default function AiExamClient() {
       document.body.removeChild(link)
       window.URL.revokeObjectURL(url)
       message.success('试卷导出成功')
-    } catch (err: any) {
-      message.error(err.message || '导出失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导出失败')
     } finally {
       setExporting(false)
     }
   }
 
-  const updateChoiceQuestion = (index: number, field: keyof ChoiceQuestion, value: any) => {
+  const updateChoiceQuestion = (index: number, field: keyof ChoiceQuestion, value: string | number | ChoiceOption[] | undefined) => {
     setChoiceQuestions((prev) => {
       const next = [...prev]
       next[index] = { ...next[index], [field]: value }
@@ -163,7 +163,7 @@ export default function AiExamClient() {
     })
   }
 
-  const updateTrueFalseQuestion = (index: number, field: keyof TrueFalseQuestion, value: any) => {
+  const updateTrueFalseQuestion = (index: number, field: keyof TrueFalseQuestion, value: string | number | undefined) => {
     setTrueFalseQuestions((prev) => {
       const next = [...prev]
       next[index] = { ...next[index], [field]: value }

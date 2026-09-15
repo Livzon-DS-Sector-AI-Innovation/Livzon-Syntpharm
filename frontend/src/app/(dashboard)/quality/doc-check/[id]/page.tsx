@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, use } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -28,7 +29,6 @@ import {
   ArrowLeftOutlined,
   DownloadOutlined,
   CheckCircleOutlined,
-  ReloadOutlined,
   FileSearchOutlined,
   ExclamationCircleOutlined,
   SafetyOutlined,
@@ -40,7 +40,6 @@ import {
   CheckProblem,
   CheckMainDetail,
   RiskLevel,
-  HandleStatus,
   HANDLE_STATUS_OPTIONS,
   CheckItemType,
 } from '@/types/doc-check'
@@ -84,9 +83,8 @@ interface PageProps {
 export default function DocCheckDetailPage({ params }: PageProps) {
   const resolvedParams = use(params)
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [checkDetail, setCheckDetail] = useState<CheckMainDetail | null>(null)
   const [activeTab, setActiveTab] = useState<string>('duplicate')
+  const queryClient = useQueryClient()
 
   // 问题处理弹窗
   const [problemModalVisible, setProblemModalVisible] = useState(false)
@@ -94,30 +92,21 @@ export default function DocCheckDetailPage({ params }: PageProps) {
   const [handleForm] = Form.useForm()
 
   // 加载详情
-  const loadDetail = async () => {
-    setLoading(true)
-    try {
+  const { data: checkDetail, isLoading: loading, refetch: loadDetail } = useQuery({
+    queryKey: ['doc-check-detail', resolvedParams.id],
+    queryFn: async () => {
       const response = await fetch(
         `/api/v1/doc-check/records/${resolvedParams.id}`
       )
       const data = await response.json()
 
       if (data.code === 200) {
-        setCheckDetail(data.data)
-      } else {
-        message.error(data.message || '加载详情失败')
+        return data.data as CheckMainDetail
       }
-    } catch (error) {
-      console.error('加载详情失败:', error)
-      message.error('加载详情失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadDetail()
-  }, [resolvedParams.id])
+      message.error(data.message || '加载详情失败')
+      return null
+    },
+  })
 
   // 处理问题
   const handleViewProblem = (problem: CheckProblem) => {
@@ -152,11 +141,11 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       if (data.code === 200) {
         message.success('处理成功')
         setProblemModalVisible(false)
-        loadDetail()
+        queryClient.invalidateQueries({ queryKey: ['doc-check-detail'] })
       } else {
         message.error(data.message || '处理失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('处理失败')
     }
   }
@@ -180,7 +169,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       } else {
         message.error({ content: data.message || '生成失败', key: 'export' })
       }
-    } catch (error) {
+    } catch (_error) {
       message.error({ content: '生成失败', key: 'export' })
     }
   }
@@ -202,11 +191,11 @@ export default function DocCheckDetailPage({ params }: PageProps) {
 
       if (data.code === 200) {
         message.success('确认通过成功')
-        loadDetail()
+        queryClient.invalidateQueries({ queryKey: ['doc-check-detail'] })
       } else {
         message.error(data.message || '确认失败')
       }
-    } catch (error) {
+    } catch (_error) {
       message.error('确认失败')
     }
   }
@@ -483,7 +472,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
         title="问题列表"
         extra={
           <Space>
-            <Button icon={<ReloadIcon />} onClick={loadDetail}>
+            <Button icon={<ReloadIcon />} onClick={() => loadDetail()}>
               刷新
             </Button>
             <Button icon={<DownloadOutlined />} onClick={handleExportReport}>

@@ -1,5 +1,6 @@
 'use client'
 
+import NextImage from 'next/image'
 import { useState } from 'react'
 import { Modal, Form, Input, Upload, App, Image } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
@@ -12,7 +13,7 @@ const { TextArea } = Input
 const { Dragger } = Upload
 
 // ── 图片后端基础 URL ──
-const BACKEND_HOST = ''
+const _BACKEND_HOST = ''
   .replace(/\/api\/v1$/, '')
 
 interface Props {
@@ -77,7 +78,7 @@ export default function HazardRectificationReplyModal({
               }
             }
           } catch (err) {
-            const detail = err instanceof Error ? err.message : '请稍后重试'
+            const detail = err instanceof Error ? (err instanceof Error ? err.message : null) : '请稍后重试'
             message.error(`图片上传失败：${detail}`)
           }
         }
@@ -241,11 +242,12 @@ export default function HazardRectificationReplyModal({
                     : undefined)
                 return (
                   <div key={file.uid} style={{ position: 'relative' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <NextImage
                       src={previewUrl || ''}
+                      width={80}
+                      height={80}
                       alt={file.name}
-                      style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e3df' }}
+                      style={{ objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e3df' }}
                     />
                   </div>
                 )

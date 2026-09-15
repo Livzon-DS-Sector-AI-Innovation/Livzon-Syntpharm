@@ -13,7 +13,7 @@ export default async function PilotWorkflowListPage() {
   }
 
   try {
-    initialData = await fetchPilotWorkflows({ page: 1, page_size: 20 })
+    initialData = await fetchPilotWorkflows({ page: 1, page_size: 20 }) as PilotWorkflowListResponse
   } catch (error) {
     console.warn('中试工作流加载失败:', error)
   }

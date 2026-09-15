@@ -1,4 +1,3 @@
-import type { components } from '@/types/generated/schema'
 
 /**
  * Domain model types (ViewModels) — not in OpenAPI spec.

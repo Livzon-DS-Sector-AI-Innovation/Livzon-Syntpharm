@@ -1,17 +1,14 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
   Table,
   Button,
   Input,
-  Select,
   message,
   Typography,
-  Modal,
-  Descriptions,
-  Alert,
   App,
   Space,
   Checkbox,
@@ -24,8 +21,6 @@ import {
   PlayCircleOutlined,
   CheckCircleOutlined,
   SafetyCertificateOutlined,
-  RobotOutlined,
-  AuditOutlined,
   CloseCircleOutlined,
   EditOutlined,
   DeleteOutlined,
@@ -151,11 +146,11 @@ const HAZARD_CATEGORY_LABEL_MAP: Record<string, string> = {}
 HAZARD_CATEGORY_OPTIONS.forEach((o) => { HAZARD_CATEGORY_LABEL_MAP[o.value] = o.label })
 
 export default function HazardLedgerPage() {
+  const queryClient = useQueryClient()
   const { message: msgApi, modal } = App.useApp()
-  const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
-  const searchKeywordRef = useRef('')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [levelFilter, setLevelFilter] = useState<string | undefined>()
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
@@ -243,6 +238,7 @@ export default function HazardLedgerPage() {
 
   // 清除所有筛选
   const clearAllFilters = useCallback(() => {
+    setSelectedRowKeys([])
     setLevelFilter(undefined)
     setTypeFilter(undefined)
     setCategoryFilter(undefined)
@@ -262,6 +258,7 @@ export default function HazardLedgerPage() {
 
   const handleFilterValueSelect = (fieldKey: string, value: string) => {
     setHazardQueryParams({ page: 1 })
+    setSelectedRowKeys([])
     switch (fieldKey) {
       case 'hazard_level': setLevelFilter(value); break
       case 'hazard_type': setTypeFilter(value); break
@@ -273,9 +270,9 @@ export default function HazardLedgerPage() {
     setFilterPopoverOpen(false)
   }
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryData, isLoading: queryLoading } = useQuery({
+    queryKey: ['hazards', hazardQueryParams, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter, searchKeyword, sortField, sortOrder],
+    queryFn: async () => {
       const response = await getHazards({
         ...hazardQueryParams,
         rectification_status: statusFilter,
@@ -284,28 +281,35 @@ export default function HazardLedgerPage() {
         hazard_category: categoryFilter,
         inspection_category: inspectionCategoryFilter,
         department: deptFilter,
-        keyword: searchKeywordRef.current || undefined,
+        keyword: searchKeyword || undefined,
       } as HazardReportQueryParams)
       if (response.code === 200) {
         let data = response.data || []
         // 客户端排序（多维表格即时排序体验）
         if (sortField && sortOrder) {
-          data = [...data].sort((a: any, b: any) => {
-            const aVal = a[sortField] ?? ''
-            const bVal = b[sortField] ?? ''
+          data = [...data].sort((a: HazardReport, b: HazardReport) => {
+            const aVal = (a as unknown as Record<string, unknown>)[sortField] ?? ''
+            const bVal = (b as unknown as Record<string, unknown>)[sortField] ?? ''
             const cmp = String(aVal).localeCompare(String(bVal), 'zh-CN')
             return sortOrder === 'ascend' ? cmp : -cmp
           })
         }
-        setHazards(data)
-        setHazardTotal(response.meta?.total || 0)
+        return { data, total: response.meta?.total || 0 }
       }
-    } catch {
-      msgApi.error('加载台账失败')
-    } finally {
-      setLoading(false)
+      return { data: [], total: 0 }
+    },
+  })
+
+  // Sync query data to store
+  useEffect(() => {
+    if (queryData) {
+      setHazards(queryData.data)
+      setHazardTotal(queryData.total)
     }
-  }
+  }, [queryData, setHazards, setHazardTotal])
+
+  // Use query loading state
+  const loading = queryLoading
 
   // ── 全局统计（挂载时 + 数据变更后刷新）──
   const loadStats = async () => {
@@ -316,32 +320,23 @@ export default function HazardLedgerPage() {
   }
   const refreshStats = () => { loadStats() }
 
-  useEffect(() => { loadStats() }, [])
 
-  useEffect(() => {
-    setSelectedRowKeys([])
-    loadData()
-  }, [hazardQueryParams.page, hazardQueryParams.page_size, statusFilter, typeFilter, levelFilter, categoryFilter, inspectionCategoryFilter, deptFilter])
+
 
   // 排序变化时重新加载
-  useEffect(() => {
-    if (sortField) {
-      loadData()
-    }
-  }, [sortField, sortOrder])
 
   const handleSearch = () => {
-    searchKeywordRef.current = searchText
+    setSearchKeyword(searchText)
     setSearchApplied(true)
     setHazardQueryParams({ page: 1 })
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazards'] })
   }
 
   const handleSearchBack = () => {
-    searchKeywordRef.current = ''
+    setSearchKeyword('')
     setSearchText('')
     setSearchApplied(false)
-    loadData()
+    queryClient.invalidateQueries({ queryKey: ['hazards'] })
   }
 
   // ── 排序切换 ──
@@ -417,7 +412,7 @@ export default function HazardLedgerPage() {
             msgApi.warning(`删除完成：${result.succeeded} 条成功，${result.failed} 条失败`)
           }
           setSelectedRowKeys([])
-          await loadData()
+          await queryClient.invalidateQueries({ queryKey: ['hazards'] })
           refreshStats()
         } catch {
           msgApi.error('批量删除失败')
@@ -439,7 +434,7 @@ export default function HazardLedgerPage() {
         try {
           await deleteHazard(record.id)
           msgApi.success('删除成功')
-          await loadData()
+          await queryClient.invalidateQueries({ queryKey: ['hazards'] })
           refreshStats()
         } catch {
           msgApi.error('删除失败')
@@ -456,11 +451,11 @@ export default function HazardLedgerPage() {
         msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
         return
       }
-      updateHazardInStore(record.id, r1.data)
+      updateHazardInStore(record.id, r1.data as HazardReport)
       const r2 = await runHazardAI(record.id, 2)
       if (r2.code === 200) {
         msgApi.success('AI 已重新执行完成')
-        updateHazardInStore(record.id, r2.data)
+        updateHazardInStore(record.id, r2.data as HazardReport)
         refreshStats()
       } else {
         msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
@@ -472,7 +467,7 @@ export default function HazardLedgerPage() {
     }
   }
 
-  const getLevelColor = (level: HazardLevel) => {
+  const _getLevelColor = (level: HazardLevel) => {
     const option = HAZARD_LEVEL_OPTIONS.find((o) => o.value === level)
     return option?.color || 'default'
   }
@@ -501,6 +496,7 @@ export default function HazardLedgerPage() {
 
   const handlePillClick = (pill: typeof STATS_PILLS[number]) => {
     if (!pill.filterable) return
+    setSelectedRowKeys([])
     if (pill.key === '') {
       setStatusFilter(undefined)
     } else {
@@ -528,7 +524,7 @@ export default function HazardLedgerPage() {
 
   // ── 操作按钮渲染（状态操作 + 删除）──
   const renderAction = (record: HazardReport) => {
-    const deleteButton = (
+    const _deleteButton = (
       <span
         role="button"
         onClick={() => handleDeleteRecord(record)}
@@ -1520,7 +1516,7 @@ export default function HazardLedgerPage() {
         onClose={() => setRegistrationDrawerOpen(false)}
         onDone={() => {
           setRegistrationDrawerOpen(false)
-          loadData()
+          queryClient.invalidateQueries({ queryKey: ['hazards'] })
           refreshStats()
         }}
       />
