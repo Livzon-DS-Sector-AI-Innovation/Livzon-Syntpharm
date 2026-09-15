@@ -11,7 +11,6 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import (
-    func,
     JSON,
     Boolean,
     DateTime,
@@ -21,6 +20,7 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    func,
     text,
 )
 from sqlalchemy.dialects.postgresql import UUID
