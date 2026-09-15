@@ -63,7 +63,15 @@
 ### 模块修改
 
 - **前端组件**：
-  - `EquipmentPage.tsx`：重构布局结构，将 StatsCards 移到顶部
+  - `EquipmentPage.tsx`：重构为三段式布局（标题+统计+筛选、表格、分页），实现一屏显示
+    - 页面根容器设置为 `height: 100vh; overflow: hidden`，无页面级滚动
+    - 第一段（控制层）紧凑化设计：标题行 marginBottom 8px, paddingBottom 6px；统计卡片数字 20px、内边距 8px 12px；工具栏 padding 8px 0 6px
+    - 第二段（数据层）表格区域启用内部滚动（`overflow: auto`），右侧容器 padding 12px 16px
+    - 第三段（导航层）分页控件固定在底部（flexShrink: 0），始终可见
+  - `EquipmentTable.tsx`：配置 `scroll={{ x: 'max-content', y: '100%' }}`，表头通过 sticky 固定在表格区域顶部
+  - `StatsCards.tsx`：压缩样式，数字字号 20px，标签 11px，内边距 8px 12px
+  - `equipment-query.ts`：`DEFAULT_EQUIPMENT_PAGE_SIZE` 从 20 改为 15
+  - `industrial-theme.css`：移除 `.equipment-ledger-table-scroll` 自定义滚动条样式
   - `EquipmentTable.tsx`：添加列配置功能，优化状态渲染
   - `CategoryTree.tsx`：增强"新建分类"按钮可见性，添加工具提示
   - `LocationTree.tsx`：同上
