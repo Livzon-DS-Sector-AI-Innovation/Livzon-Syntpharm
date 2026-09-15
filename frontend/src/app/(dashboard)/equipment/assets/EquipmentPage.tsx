@@ -429,11 +429,6 @@ export function EquipmentPage({
                 stickyTop={0}
               />
             </div>
-
-            {/* 第三段：分页控件（固定） */}
-            <div style={{ flexShrink: 0, paddingTop: 12 }}>
-              {/* 分页由 Table 内部渲染 */}
-            </div>
           </div>
         </div>
         </div>
