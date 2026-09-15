@@ -58,15 +58,13 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
     )
   }
 
-  // 仪表盘型视图（主页面）
+  // 仪表盘型视图（主页面）- 大气舒展风格
   return (
     <div 
       style={{ 
         display: 'flex', 
-        gap: 16, 
-        marginBottom: 24,
-        overflowX: 'auto',
-        paddingBottom: 4
+        gap: 12,
+        width: '100%',
       }}
     >
       {STATUS_CONFIG.map(({ key, label, color, bg }) => {
@@ -75,42 +73,46 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
         const value = key === '' ? statistics.total : (statistics.by_status[key] || 0)
 
         return (
-          <Card
+          <div
             key={key}
-            hoverable
             onMouseEnter={() => setHoveredKey(key)}
             onMouseLeave={() => setHoveredKey(null)}
             onClick={() => handleClick(key)}
             style={{
               flex: 1,
-              minWidth: 140,
-              opacity: isDimmed ? 0.5 : 1,
-              transform: isActive ? 'translateY(-4px)' : 'none',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              border: isActive ? `2px solid ${color}` : '1px solid #f0f0f0',
-              boxShadow: isActive ? `0 8px 24px -8px ${color}40` : 'none',
-              borderRadius: 12,
+              minWidth: 0,
+              padding: '16px 20px',
+              background: isActive ? bg : '#FAFAF9',
+              border: isActive ? `2px solid ${color}` : '1px solid #E7E5E4',
+              borderRadius: 8,
+              cursor: 'pointer',
+              opacity: isDimmed ? 0.6 : 1,
+              transition: 'all 0.2s ease',
+              textAlign: 'center',
             }}
-            styles={{ body: { padding: '20px 16px', textAlign: 'center' } }}
           >
-            <Statistic
-              title={<span style={{ color: '#8c8c8c', fontSize: 14, fontWeight: 500 }}>{label}</span>}
-              value={value}
-              valueStyle={{ 
-                color, 
-                fontSize: 28, 
-                fontWeight: 700,
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace'
-              }}
-            />
-            {isActive && (
-              <div style={{ marginTop: 8, fontSize: 12, color, fontWeight: 600 }}>
-                已筛选
-              </div>
-            )}
-          </Card>
+            <div style={{ 
+              fontSize: 13, 
+              color: isActive ? color : '#78716C',
+              fontWeight: 500,
+              marginBottom: 8,
+              letterSpacing: '0.02em',
+            }}>
+              {label}
+            </div>
+            <div style={{ 
+              fontSize: 28, 
+              fontWeight: 700, 
+              color: isActive ? color : '#1C1917',
+              lineHeight: 1,
+              fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+            }}>
+              {value.toLocaleString()}
+            </div>
+          </div>
         )
       })}
     </div>
   )
 }
+

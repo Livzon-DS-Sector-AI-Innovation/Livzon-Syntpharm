@@ -287,21 +287,45 @@ export function EquipmentPage({
   return (
     <ConfigProvider theme={antdTheme} locale={zhCN}>
       <App>
-        {/* 标题行 */}
-        <div style={{ marginBottom: 16 }}>
-          <h2 className="equipment-page-title"
-            style={{
-              fontSize: 22, fontWeight: 600,
-              margin: 0, marginBottom: 4, lineHeight: 1.3,
-            }}
-          >
-            设备台账
-          </h2>
-          <p className="equipment-page-subtitle"
-            style={{ fontSize: 14, margin: 0, lineHeight: 1.5 }}>
-            分类管理 · 位置管理 · 设备档案 · 状态追踪
-          </p>
-        </div>
+        {/* 页面根容器：固定高度，无页面级滚动 */}
+        <div style={{ 
+          height: '100vh', 
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+        }}>
+          {/* 第一段：标题 + 统计 + 筛选栏（固定高度） */}
+          <div style={{ flexShrink: 0 }}>
+            {/* 标题行 */}
+            <div style={{ 
+              marginBottom: 20,
+              paddingBottom: 16,
+              borderBottom: '1px solid #E7E5E4',
+            }}>
+              <h2 className="equipment-page-title"
+                style={{
+                  fontSize: 24, 
+                  fontWeight: 700,
+                  margin: 0, 
+                  marginBottom: 6, 
+                  lineHeight: 1.2,
+                  color: '#1C1917',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                设备台账
+              </h2>
+              <p className="equipment-page-subtitle"
+                style={{ 
+                  fontSize: 14, 
+                  margin: 0, 
+                  lineHeight: 1.5,
+                  color: '#78716C',
+                  fontWeight: 400,
+                }}>
+                分类管理 · 位置管理 · 设备档案 · 状态追踪
+              </p>
+            </div>
 
         {/* 工具栏：compact 统计 + 筛选条 + inline 摘要标签，三件套合成一条 sticky 块 */}
         <div
@@ -310,13 +334,17 @@ export function EquipmentPage({
           style={{
             position: 'sticky',
             top: 0,
-            zIndex: 3,
-            background: 'var(--color-surface)',
-            paddingBottom: 12,
+            zIndex: 10,
+            background: '#ffffff',
+            padding: '16px 0 12px 0',
+            borderBottom: '1px solid #E7E5E4',
           }}
         >
-          <div style={{ marginBottom: 8 }}>
-            <StatsCards statistics={currentStats} compact />
+          {/* 统计卡片区域 - 横向铺满 */}
+          <div style={{ 
+            marginBottom: 16,
+          }}>
+            <StatsCards statistics={currentStats} compact={false} />
           </div>
           <EquipmentFilterBar
             sortBy={urlState.sort_by}
@@ -334,40 +362,46 @@ export function EquipmentPage({
             onOpenImport={() => setImportOpen(true)}
             onAddNew={() => openEquipmentDrawer()}
           />
-        </div>
+          </div>
+          </div>
 
-        <div className="flex gap-4" style={{ alignItems: 'flex-start' }}>
-          {/* 左侧：可折叠分类/位置树（sticky 在工具栏下方） */}
+          {/* 第二段：左右分栏（无滚动，内部子元素控制滚动） */}
+          <div 
+            className="flex gap-4"
+            style={{ 
+              flex: 1, 
+              overflow: 'hidden',
+              alignItems: 'stretch',
+            }}
+          >
+          {/* 左侧：可折叠分类/位置树（随第二段滚动） */}
           {!sidebarCollapsed && (
             <div
-              className="equipment-sidebar-sticky shrink-0"
+              className="shrink-0"
               style={{
                 width: SIDEBAR_WIDTH,
-                position: 'sticky',
-                top: 'var(--equipment-toolbar-h, 96px)',
-                maxHeight: 'calc(100vh - var(--equipment-toolbar-h, 96px) - 24px)',
                 background: '#ffffff',
-                padding: 16,
+                padding: 20,
                 borderRadius: 12,
-                border: '1px solid #e5e3df',
-                display: 'flex', flexDirection: 'column',
-                overflow: 'hidden',
+                border: '1px solid #E7E5E4',
+                alignSelf: 'flex-start',
               }}
             >
-              <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-                <Tabs items={tabItems} tabBarExtraContent={tabBarExtra} />
-              </div>
+              <Tabs items={tabItems} tabBarExtraContent={tabBarExtra} />
             </div>
           )}
 
-          {/* 右侧：设备列表 */}
+          {/* 右侧：设备列表（flex column 布局） */}
           <div
             className="flex-1 min-w-0"
             style={{
               background: '#ffffff',
-              padding: '16px 20px',
+              padding: '20px 24px',
               borderRadius: 12,
-              border: '1px solid #e5e3df',
+              border: '1px solid #E7E5E4',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
             }}
           >
             <div className="mb-3 flex items-center gap-3">
@@ -379,23 +413,32 @@ export function EquipmentPage({
               />
             </div>
 
-            <EquipmentTable
-              loading={loading}
-              page={urlState.page}
-              pageSize={urlState.page_size}
-              sortBy={urlState.sort_by}
-              sortOrder={urlState.sort_order}
-              onQueryChange={patchQuery}
-              onRefresh={refreshList}
-              onRefreshStatistics={refreshStatistics}
-              visibleColumns={visibleColumns}
-              onVisibleColumnsChange={setVisibleColumns}
-              stickyTop={toolbarH}
-            />
+            {/* 表格区域（flex: 1，内部滚动） */}
+            <div className="equipment-ledger-table-scroll" style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+              <EquipmentTable
+                loading={loading}
+                page={urlState.page}
+                pageSize={urlState.page_size}
+                sortBy={urlState.sort_by}
+                sortOrder={urlState.sort_order}
+                onQueryChange={patchQuery}
+                onRefresh={refreshList}
+                onRefreshStatistics={refreshStatistics}
+                visibleColumns={visibleColumns}
+                onVisibleColumnsChange={setVisibleColumns}
+                stickyTop={0}
+              />
+            </div>
+
+            {/* 第三段：分页控件（固定） */}
+            <div style={{ flexShrink: 0, paddingTop: 12 }}>
+              {/* 分页由 Table 内部渲染 */}
+            </div>
           </div>
         </div>
+        </div>
 
-        {/* 抽屉组件 */}
+        {/* 抽屉组件（在页面根容器外） */}
         <EquipmentDrawer onRefresh={() => { refreshList(); refreshStatistics(); }} />
         <LocationDrawer onRefresh={() => { refreshCategoriesAndLocations(); refreshStatistics(); }} />
         <RepairDrawer

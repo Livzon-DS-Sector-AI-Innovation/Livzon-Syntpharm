@@ -57,25 +57,19 @@
 /**
  * 表头粘性：antd 6.x 的 `.ant-table-sticky-holder` 内联样式只有 `overflow:hidden;top:N`，
  * 缺少 `position:sticky`，导致表头不吸附、下拉被工具栏遮挡。
- * 此处补上 `position:sticky`，并用 CSS 变量 `--equipment-toolbar-h` 驱动 `top`，
- * 使表头跟随实际工具栏高度（由 ResizeObserver 测量写入），而非硬编码初值。
+ * 此处仅补上 `position: sticky`，top 值完全由 antd Table 的 sticky.offsetHeader 内联样式控制。
  * 注意：不要给 `th` 手写 `position:sticky`，因为 scroll.x 存在时 rc-table 的滚动容器
- * 会成为吸附框，导致表头空白或叠进数据行。只补 `.ant-table-sticky-holder` 的 position 与 top。
+ * 会成为吸附框，导致表头空白或叠进数据行。
  */
 .ant-table-sticky-holder {
   position: sticky !important;
-  top: var(--equipment-toolbar-h, 96px) !important;
+  /* top 由 antd Table 的 sticky.offsetHeader 内联样式控制，不要覆盖 */
   z-index: 2;
 }
 
 /**
- * 侧边栏粘性：top/maxHeight 由 inline style 写 CSS 变量，
- * 这里只补 z-index 与背景，确保 sticky 时不与工具栏混色。
+ * 侧边栏：在三段式布局中作为第二段的一部分，无需特殊 sticky 处理。
  */
-.equipment-sidebar-sticky {
-  z-index: 1;
-  background: #ffffff;
-}
 
 @media (prefers-reduced-motion: no-preference) {
   .equipment-ledger[data-fade="a"] .ant-table-tbody {
@@ -99,4 +93,33 @@
 @keyframes equipment-tbody-fade-b {
   from { opacity: 0.4; }
   to { opacity: 1; }
+}
+
+
+/**
+ * 工业主题滚动条样式 - 应用于表格区域
+ */
+.equipment-ledger-table-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.equipment-ledger-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.equipment-ledger-table-scroll::-webkit-scrollbar-thumb {
+  background: #D6D3D1;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.equipment-ledger-table-scroll::-webkit-scrollbar-thumb:hover {
+  background: #A8A29E;
+}
+
+/* Firefox 滚动条 */
+.equipment-ledger-table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #D6D3D1 transparent;
 }
