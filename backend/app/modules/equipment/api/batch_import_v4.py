@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 # 这些字段在数据库中均为字符串列，但 Excel 常以数字单元格存储，需归一化
 _TEXT_NORMALIZED_KEYS = (
-    "asset_no", "label_no", "equipment_tag", 
+    "asset_no", "label_no", "equipment_tag",
     "model", "location_text"  # Excel 中可能为数字，需转为字符串
 )
 
@@ -193,9 +193,11 @@ def _only_model_fields(row: dict[str, Any]) -> dict[str, Any]:
 
 
 async def resolve_department_strict(excel_dept: str, db: AsyncSession):
-    if not excel_dept or not str(excel_dept).strip(): return None, None, "部门名称为空"
+    if not excel_dept or not str(excel_dept).strip():
+        return None, None, "部门名称为空"
     standard_name = normalize_department_name(str(excel_dept).strip())
-    if not standard_name: return None, None, f"部门'{excel_dept}'未在映射表中定义"
+    if not standard_name:
+        return None, None, f"部门'{excel_dept}'未在映射表中定义"
 
     from app.modules.hr.public_api import get_department_by_name
     if not (dept := await get_department_by_name(db, standard_name)):
@@ -228,8 +230,8 @@ async def batch_import_v4(
     errors, unmapped_depts = [], {}
 
     for idx, row in enumerate(normalized_data):
-        audit_kwargs = {"row_index": idx, "asset_no": row.get("asset_no"), 
-                        "equipment_tag": row.get("equipment_tag"), 
+        audit_kwargs = {"row_index": idx, "asset_no": row.get("asset_no"),
+                        "equipment_tag": row.get("equipment_tag"),
                         "department_id": row.get("department_id"),
                         "location_text": row.get("location_text")}
         
@@ -275,14 +277,14 @@ async def batch_import_v4(
                     await repo.create_equipment(db, _only_model_fields(row))
                     created += 1
                     await log_audit(db, batch_id, "create", match_strategy=strategy, **audit_kwargs)
-        except Exception as e:
+        except Exception:
             failed += 1; errors.append({"row": idx, "error": "导入处理异常，请检查数据格式"})
             logger.exception("v4 import row %s failed", idx)
             await log_audit(db, batch_id, "error", error_message="导入处理异常", **audit_kwargs)
 
     return build_response(data=ImportV4BatchResponse(
         batch_id=batch_id, created_count=created, updated_count=updated,
-        skipped_count=skipped, error_count=failed, 
+        skipped_count=skipped, error_count=failed,
         unmapped_departments=unmapped_depts,
         errors=[ImportErrorItem(row=e["row"], error=e["error"]) for e in errors]
     ))

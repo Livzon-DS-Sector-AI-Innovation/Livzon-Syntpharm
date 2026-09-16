@@ -111,6 +111,12 @@ class TestSequenceMatcher:
         score = SequenceMatcher(None, str1, str2).ratio()
         assert expected_min <= score <= expected_max
 
+
+class MockEquipment:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
 def test_force_override_business_fields():
     """测试强制覆盖模式下，B类字段（部门、位置）即使有值也会被更新。"""
     # 模拟一个已有部门和位置的现有设备
