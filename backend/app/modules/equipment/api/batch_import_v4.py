@@ -144,6 +144,24 @@ def _coerce_date_value(value: Any) -> date | None:
     return None
 
 
+def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
+    """Apply FIELD_MAP key mapping and type coercion to a single Excel row."""
+    new_row = {FIELD_MAP.get(str(k).strip(), str(k).strip()): v for k, v in row.items()}
+    for key in _TEXT_NORMALIZED_KEYS:
+        if new_row.get(key) is None:
+            continue
+        new_row[key] = _excel_scalar_to_text(new_row[key])
+    for key in _DATE_KEYS:
+        if new_row.get(key) is None:
+            continue
+        new_row[key] = _coerce_date_value(new_row[key])
+    for key in _INT_KEYS:
+        if new_row.get(key) is None:
+            continue
+        new_row[key] = _coerce_int_value(new_row[key])
+    return new_row
+
+
 # Excel 中文表头 -> 数据库字段。
 # 必须与 /preview、/batch 共用同一份，否则两处行为会静默漂移。
 FIELD_MAP: dict[str, str] = {
@@ -202,27 +220,7 @@ async def batch_import_v4(
             ", ".join(_DROPPED_FIELDS),
         )
 
-    normalized_data = [{FIELD_MAP.get(k.strip(), k.strip()): v for k, v in row.items()} for row in data]
-
-    # Excel 中编号类字段常被存为数字单元格（如资产编号 59070），SheetJS 读出来是 number。
-    # 若直接入库，SQL 会生成 `asset_no = $1::INTEGER`，而该列是 VARCHAR，
-    # PostgreSQL 不允许 varchar = integer 比较，整行都会失败。故统一转为字符串。
-    #
-    # 日期列（DATE 类型）必须转成 datetime.date 实例，传字符串 asyncpg 会报
-    # `'str' object has no attribute 'toordinal'`。
-    for row in normalized_data:
-        for key in _TEXT_NORMALIZED_KEYS:
-            if row.get(key) is None:
-                continue
-            row[key] = _excel_scalar_to_text(row[key])
-        for key in _DATE_KEYS:
-            if row.get(key) is None:
-                continue
-            row[key] = _coerce_date_value(row[key])
-        for key in _INT_KEYS:
-            if row.get(key) is None:
-                continue
-            row[key] = _coerce_int_value(row[key])
+    normalized_data = [_normalize_row(row) for row in data]
 
     duplicates = detect_internal_duplicates(normalized_data)
     batch_id = f"import_{int(time.time())}_{current_user.id.hex[:8]}"
@@ -298,26 +296,7 @@ async def preview_import_v4(
 ) -> ApiResponse:
     results = []
     # 对所有行进行完整字段映射，确保业务字段全部存在
-    normalized_data = []
-    for row in data:
-        new_row = {}
-        for k, v in row.items():
-            clean_key = str(k).strip()
-            mapped_key = FIELD_MAP.get(clean_key, clean_key)
-            new_row[mapped_key] = v
-        for key in _TEXT_NORMALIZED_KEYS:
-            if new_row.get(key) is None:
-                continue
-            new_row[key] = _excel_scalar_to_text(new_row[key])
-        for key in _DATE_KEYS:
-            if new_row.get(key) is None:
-                continue
-            new_row[key] = _coerce_date_value(new_row[key])
-        for key in _INT_KEYS:
-            if new_row.get(key) is None:
-                continue
-            new_row[key] = _coerce_int_value(new_row[key])
-        normalized_data.append(new_row)
+    normalized_data = [_normalize_row(row) for row in data]
 
     # 使用映射后的数据进行去重检测
     duplicates = detect_internal_duplicates(normalized_data)
