@@ -82,7 +82,7 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
               flex: 1,
               minWidth: 0,
               padding: '8px 12px',
-              background: isActive ? bg : '#FAFAF9',
+              background: bg,
               border: isActive ? `2px solid ${color}` : '1px solid #E7E5E4',
               borderRadius: 6,
               cursor: 'pointer',
