@@ -974,8 +974,8 @@ export default function RegulationPage() {
         title={editingRegulation ? '编辑操规' : '新建操规'}
         open={regDrawerOpen}
         onClose={() => setRegDrawerOpen(false)}
-        size={480}
-        destroyOnHidden
+        width={480}
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setRegDrawerOpen(false)}>取消</Button>
@@ -1029,8 +1029,8 @@ export default function RegulationPage() {
         title="新建修订记录"
         open={revDrawerOpen}
         onClose={() => setRevDrawerOpen(false)}
-        size={480}
-        destroyOnHidden
+        width={480}
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setRevDrawerOpen(false)}>取消</Button>

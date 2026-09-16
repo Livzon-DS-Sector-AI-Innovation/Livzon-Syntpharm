@@ -153,7 +153,7 @@ export function PressurePageClient() {
                 <Statistic
                   title="今日记录"
                   value={stats.today_count}
-                  styles={{ content: { color: '#5645d4' } }}
+                  valueStyle={{ color: '#5645d4'  }}
                 />
               </Card>
             </Col>
@@ -162,7 +162,7 @@ export function PressurePageClient() {
                 <Statistic
                   title="待审核"
                   value={stats.pending_count}
-                  styles={{ content: { color: '#dd5b00' } }}
+                  valueStyle={{ color: '#dd5b00'  }}
                 />
               </Card>
             </Col>
@@ -175,7 +175,7 @@ export function PressurePageClient() {
                       ? new Date(stats.last_record_time).toLocaleString('zh-CN')
                       : '暂无'
                   }
-                  styles={{ content: { fontSize: 16 } }}
+                  valueStyle={{ fontSize: 16  }}
                 />
               </Card>
             </Col>

@@ -193,6 +193,23 @@ export function BalancePageClient() {
           </div>
         ) : materialBalance ? (
           <>
+<<<<<<< HEAD
+=======
+            <Alert
+              type={materialBalance.is_balanced ? 'success' : 'warning'}
+              message={materialBalance.is_balanced ? '物料平衡合格' : '物料平衡不合格'}
+              description={`平衡率 ${materialBalance.balance_rate?.toFixed(2)}% ${
+                materialBalance.is_balanced
+                  ? '满足最低要求'
+                  : `低于最低要求 ${materialBalance.min_balance_rate}%`
+              }`}
+              showIcon
+              className="mb-4"
+              style={{ borderRadius: 8 }}
+            />
+
+            {/* 投入产出编辑区域 */}
+>>>>>>> origin/main
             {editMode && (
               <Alert
                 type="info"

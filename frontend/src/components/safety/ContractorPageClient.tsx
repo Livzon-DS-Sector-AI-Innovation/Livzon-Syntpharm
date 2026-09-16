@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dayjs from 'dayjs'
 import {
   Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
@@ -53,7 +54,12 @@ export function ContractorPageClient() {
 
   const handleEdit = (record: Contractor) => {
     setEditingRecord(record)
-    form.setFieldsValue({ ...record })
+    form.setFieldsValue({
+      ...record,
+      qualification_expiry: record.qualification_expiry ? dayjs(record.qualification_expiry) : null,
+      safety_license_expiry: record.safety_license_expiry ? dayjs(record.safety_license_expiry) : null,
+      insurance_expiry: record.insurance_expiry ? dayjs(record.insurance_expiry) : null,
+    })
     setModalVisible(true)
   }
 

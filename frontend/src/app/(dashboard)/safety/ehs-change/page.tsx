@@ -152,8 +152,8 @@ export default function EhsChangePage() {
     setEditingChange(record)
     form.setFieldsValue({
       ...record,
-      expected_start: record.expected_start ? record.expected_start : undefined,
-      expected_completion: record.expected_completion ? record.expected_completion : undefined,
+      expected_start: record.expected_start ? record.expected_start.split('T')[0] : undefined,
+      expected_completion: record.expected_completion ? record.expected_completion.split('T')[0] : undefined,
     })
     setModalOpen(true)
   }
@@ -190,7 +190,7 @@ export default function EhsChangePage() {
 
   const handleSubmit = async (id: string) => {
     const res = await submitEhsChange(id)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('变更已提交')
       refetch()
       if (selectedChange?.id === id) {
@@ -203,7 +203,7 @@ export default function EhsChangePage() {
 
   const handleApprove = async (id: string, decision: string, comments?: string) => {
     const res = await approveEhsChange(id, decision, comments)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success(decision === 'approved' ? '变更已批准' : '变更已驳回')
       refetch()
       if (selectedChange?.id === id) {
@@ -216,7 +216,7 @@ export default function EhsChangePage() {
 
   const handleReject = async (id: string) => {
     const res = await rejectEhsChange(id, '驳回')
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('变更已驳回')
       refetch()
       if (selectedChange?.id === id) {
@@ -229,7 +229,7 @@ export default function EhsChangePage() {
 
   const handleStartImpl = async (id: string) => {
     const res = await startImplementationEhsChange(id)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('变更已开始实施')
       refetch()
       if (selectedChange?.id === id) {
@@ -242,7 +242,7 @@ export default function EhsChangePage() {
 
   const handleCommission = async (id: string) => {
     const res = await commissionEhsChange(id)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('变更已投用')
       refetch()
       if (selectedChange?.id === id) {
@@ -255,7 +255,7 @@ export default function EhsChangePage() {
 
   const handleClose = async (id: string) => {
     const res = await closeEhsChange(id)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('变更已关闭')
       refetch()
       if (selectedChange?.id === id) {
@@ -268,7 +268,7 @@ export default function EhsChangePage() {
 
   const handleCancel = async (id: string) => {
     const res = await cancelEhsChange(id)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('变更已取消')
       refetch()
       if (selectedChange?.id === id) {
@@ -281,7 +281,7 @@ export default function EhsChangePage() {
 
   const handleDelete = async (id: string) => {
     const res = await deleteEhsChange(id)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('删除成功')
       refetch()
     } else {
@@ -538,7 +538,7 @@ export default function EhsChangePage() {
         onOk={handleSave}
         confirmLoading={saving}
         width={800}
-        destroyOnHidden
+        destroyOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Title level={5} className="mb-3">基本信息</Title>
@@ -585,10 +585,10 @@ export default function EhsChangePage() {
           <Title level={5} className="mb-3 mt-4">计划</Title>
           <Space size="middle" wrap>
             <Form.Item name="expected_start" label="预期开始日期">
-              <DatePicker style={{ width: 180 }} />
+              <Input type="date" style={{ width: 180 }} />
             </Form.Item>
             <Form.Item name="expected_completion" label="预期完成日期">
-              <DatePicker style={{ width: 180 }} />
+              <Input type="date" style={{ width: 180 }} />
             </Form.Item>
           </Space>
 
@@ -603,7 +603,7 @@ export default function EhsChangePage() {
         title={selectedChange ? `变更详情 - ${selectedChange.change_no}` : '变更详情'}
         open={drawerOpen}
         onClose={() => { setDrawerOpen(false); setSelectedChange(null) }}
-        size={800}
+        width={800}
         extra={
           selectedChange ? (
             <Space>
@@ -739,7 +739,7 @@ function RiskAssessmentTab({ change, onRefresh }: { change: EhsChange; onRefresh
     try {
       const values = await assessmentForm.validateFields()
       const res = await addRiskAssessment(change.id, values)
-      if (res.code === 0) {
+      if (res.code === 200) {
         message.success('风险评估记录已添加')
         setAdding(false)
         assessmentForm.resetFields()
@@ -795,7 +795,7 @@ function RiskAssessmentTab({ change, onRefresh }: { change: EhsChange; onRefresh
         <Text type="secondary">暂无风险评估记录</Text>
       ) : (
         assessments.map((item, idx) => (
-          <Card key={idx} size="small" className="mb-2" title={`评估 #${idx + 1} - ${item.method || '未知方法'}`}>
+          <Card key={idx} size="small" className="mb-2" title={`评估 #${idx + 1} - ${RISK_ASSESSMENT_METHOD_OPTIONS.find((o) => o.value === item.method)?.label || item.method || '未知方法'}`}>
             <Descriptions column={2} size="small">
               <Descriptions.Item label="风险等级">
                 <Tag color={RISK_LEVEL_OPTIONS.find((o) => o.value === item.risk_level)?.color}>
@@ -859,7 +859,7 @@ function ActionItemsTab({ change, onRefresh }: { change: EhsChange; onRefresh: (
   const handleToggleStatus = async (index: number, currentStatus: string) => {
     const nextStatus = currentStatus === 'completed' ? 'pending' : currentStatus === 'in_progress' ? 'completed' : 'in_progress'
     const res = await updateActionItem(change.id, index, nextStatus)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('行动项状态已更新')
       if (res.data) {
         // Trigger refresh by reloading
@@ -917,7 +917,7 @@ function PSSRTab({ change, onRefresh }: { change: EhsChange; onRefresh: () => vo
       idx === index ? { ...item, result: nextResult } : item
     )
     const res = await updatePSSRChecklist(change.id, updated)
-    if (res.code === 0) {
+    if (res.code === 200) {
       message.success('PSSR检查结果已更新')
       onRefresh()
     } else {
@@ -969,7 +969,7 @@ function VerificationTab({ change, onRefresh }: { change: EhsChange; onRefresh: 
       const values = await form.validateFields()
       setSaving(true)
       const res = await submitVerification(change.id, values)
-      if (res.code === 0) {
+      if (res.code === 200) {
         message.success('验证数据已保存')
         onRefresh()
       } else {

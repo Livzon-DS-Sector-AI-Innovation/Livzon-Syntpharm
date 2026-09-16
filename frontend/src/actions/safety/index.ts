@@ -727,9 +727,14 @@ export async function generateSop(file: File): Promise<ApiResponse<unknown>> {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
-  const response = await safetyApi.generateSop(formData, authHeaders)
-  revalidatePath('/safety/regulation')
-  return response as ApiResponse<unknown>
+  try {
+    const response = await safetyApi.generateSop(formData, authHeaders)
+    revalidatePath('/safety/regulation')
+    return response
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : '生成失败'
+    return { code: 500, message: msg, data: null }
+  }
 }
 
 export async function updateSopContent(regulationId: string, content: string, status?: string): Promise<ApiResponse<OperationRegulation>> {
@@ -1090,6 +1095,24 @@ export async function syncKnowledgeArticles(): Promise<ApiResponse<SyncKnowledge
   const response = await safetyApi.syncKnowledgeArticles(authHeaders)
   revalidatePath('/safety/knowledge-base')
   return response as ApiResponse<SyncKnowledgeResponse>
+}
+
+// ── 批量导入 ──
+
+export async function batchImportKnowledgeArticles(files: File[], category?: string) {
+  try {
+    const formData = new FormData()
+    files.forEach(f => formData.append("files", f))
+    if (category) formData.append("category", category)
+    
+    const authHeaders = await getAuthHeaders()
+    const response = await safetyApi.batchImportKnowledgeArticles(formData, authHeaders)
+    revalidatePath("/safety/knowledge-base")
+    return response
+  } catch (error) {
+    console.error("batchImportKnowledgeArticles failed:", error)
+    return { code: 500, message: "批量导入失败", data: null }
+  }
 }
 
 // ==================== 八大特殊作业报备 Actions ====================

@@ -149,7 +149,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
       }
       open={open}
       onClose={onClose}
-      size={720}
+      width={720}
       afterOpenChange={(visible) => { if (visible) handleOpen() }}
       extra={
         <Space>

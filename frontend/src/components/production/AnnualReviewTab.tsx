@@ -62,7 +62,11 @@ export default function AnnualReviewTab({ year }: Props) {
     return <Empty description="暂无数据" />
   }
 
-  const { overview, monthly_trend, workshop_ranking, top_products } = data
+  const { overview, monthly_trend, workshop_ranking, top_products } = data || {}
+  const safeOverview = overview || { total_weight: 0, previous_year_weight: 0, weight_yoy: 0, total_batches: 0, previous_year_batches: 0, batch_yoy: 0, active_workshops: 0, active_products: 0 }
+  const safeMonthlyTrend = monthly_trend || []
+  const safeWorkshopRanking = workshop_ranking || []
+  const safeTopProducts = top_products || []
 
   // 月度趋势图配置
   const trendOption = {
@@ -84,7 +88,11 @@ export default function AnnualReviewTab({ year }: Props) {
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: {
       type: 'category',
+<<<<<<< HEAD
       data: monthly_trend.map((m: MonthlyTrend) => `${m.month}月`),
+=======
+      data: safeMonthlyTrend.map((m: { month: number }) => `${m.month}月`),
+>>>>>>> origin/main
     },
     yAxis: {
       type: 'value',
@@ -94,14 +102,22 @@ export default function AnnualReviewTab({ year }: Props) {
       {
         name: `${year}年`,
         type: 'line',
+<<<<<<< HEAD
         data: monthly_trend.map((m: MonthlyTrend) => m.current_year_weight),
+=======
+        data: safeMonthlyTrend.map((m: { current_year_weight: number }) => m.current_year_weight),
+>>>>>>> origin/main
         smooth: true,
         itemStyle: { color: '#5645d4' },
       },
       {
         name: `${year - 1}年`,
         type: 'line',
+<<<<<<< HEAD
         data: monthly_trend.map((m: MonthlyTrend) => m.previous_year_weight),
+=======
+        data: safeMonthlyTrend.map((m: { previous_year_weight: number }) => m.previous_year_weight),
+>>>>>>> origin/main
         smooth: true,
         itemStyle: { color: '#1aae39' },
         lineStyle: { type: 'dashed' },
@@ -116,7 +132,11 @@ export default function AnnualReviewTab({ year }: Props) {
       axisPointer: { type: 'shadow' },
       formatter: (params: Array<{ name: string; value: number }>) => {
         const p = params[0]
+<<<<<<< HEAD
         const item = workshop_ranking.find((w: WorkshopRanking) => w.workshop === p.name)
+=======
+        const item = safeWorkshopRanking.find((w: { workshop: string }) => w.workshop === p.name)
+>>>>>>> origin/main
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
       },
     },
@@ -127,12 +147,20 @@ export default function AnnualReviewTab({ year }: Props) {
     },
     yAxis: {
       type: 'category',
+<<<<<<< HEAD
       data: workshop_ranking.map((w: WorkshopRanking) => w.workshop).reverse(),
+=======
+      data: safeWorkshopRanking.map((w: { workshop: string }) => w.workshop).reverse(),
+>>>>>>> origin/main
     },
     series: [
       {
         type: 'bar',
+<<<<<<< HEAD
         data: workshop_ranking.map((w: WorkshopRanking) => w.total_weight).reverse(),
+=======
+        data: safeWorkshopRanking.map((w: { total_weight: number }) => w.total_weight).reverse(),
+>>>>>>> origin/main
         itemStyle: {
           color: (params: { dataIndex: number }) => {
             const colors = ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2']
@@ -179,8 +207,13 @@ export default function AnnualReviewTab({ year }: Props) {
         emphasis: {
           label: { show: true, fontSize: 14, fontWeight: 'bold' },
         },
+<<<<<<< HEAD
         data: top_products.map((p: TopProduct, i: number) => ({
           name: `${p.product_name}(${p.key})`,
+=======
+        data: safeTopProducts.map((p: { product_name: string; workshop: string; total_weight: number }, i: number) => ({
+          name: `${p.product_name}(${p.workshop})`,
+>>>>>>> origin/main
           value: p.total_weight,
           itemStyle: {
             color: ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2', '#8b5cf6', '#f59e0b', '#0075de', '#ff64c8', '#2a9d99'][i % 10],
@@ -247,19 +280,19 @@ export default function AnnualReviewTab({ year }: Props) {
           <Card>
             <Statistic
               title="年度总产量"
-              value={overview.total_weight}
+              value={safeOverview.total_weight}
               suffix="kg"
               precision={0}
               valueStyle={{ color: '#5645d4' }}
             />
             <div className="mt-2">
-              {overview.weight_yoy >= 0 ? (
+              {safeOverview.weight_yoy >= 0 ? (
                 <span className="text-green-600 text-sm">
-                  <ArrowUpOutlined /> {overview.weight_yoy}% 同比
+                  <ArrowUpOutlined /> {safeOverview.weight_yoy}% 同比
                 </span>
               ) : (
                 <span className="text-red-600 text-sm">
-                  <ArrowDownOutlined /> {Math.abs(overview.weight_yoy)}% 同比
+                  <ArrowDownOutlined /> {Math.abs(safeOverview.weight_yoy)}% 同比
                 </span>
               )}
             </div>
@@ -269,17 +302,17 @@ export default function AnnualReviewTab({ year }: Props) {
           <Card>
             <Statistic
               title="年度总批次"
-              value={overview.total_batches}
+              value={safeOverview.total_batches}
               valueStyle={{ color: '#1aae39' }}
             />
             <div className="mt-2">
-              {overview.batch_yoy >= 0 ? (
+              {safeOverview.batch_yoy >= 0 ? (
                 <span className="text-green-600 text-sm">
-                  <ArrowUpOutlined /> {overview.batch_yoy}% 同比
+                  <ArrowUpOutlined /> {safeOverview.batch_yoy}% 同比
                 </span>
               ) : (
                 <span className="text-red-600 text-sm">
-                  <ArrowDownOutlined /> {Math.abs(overview.batch_yoy)}% 同比
+                  <ArrowDownOutlined /> {Math.abs(safeOverview.batch_yoy)}% 同比
                 </span>
               )}
             </div>
@@ -289,7 +322,7 @@ export default function AnnualReviewTab({ year }: Props) {
           <Card>
             <Statistic
               title="活跃车间"
-              value={overview.active_workshops}
+              value={safeOverview.active_workshops}
               suffix="个"
               valueStyle={{ color: '#dd5b00' }}
             />
@@ -299,7 +332,7 @@ export default function AnnualReviewTab({ year }: Props) {
           <Card>
             <Statistic
               title="活跃产品"
-              value={overview.active_products}
+              value={safeOverview.active_products}
               suffix="个"
               valueStyle={{ color: '#13c2c2' }}
             />
@@ -313,15 +346,15 @@ export default function AnnualReviewTab({ year }: Props) {
       </Card>
 
       {/* 车间排名图 */}
-      {workshop_ranking.length > 0 && (
+      {safeWorkshopRanking.length > 0 && (
         <Card title="车间年度产量排名">
-          <ReactECharts option={rankingOption} style={{ height: Math.max(280, workshop_ranking.length * 42 + 60) }} />
+          <ReactECharts option={rankingOption} style={{ height: Math.max(280, safeWorkshopRanking.length * 42 + 60) }} />
         </Card>
       )}
 
       {/* TOP产品饼图 + 表格 */}
-      {top_products.length > 0 && (
-        <Card title={`年度 TOP ${top_products.length} 产品产量分布`}>
+      {safeTopProducts.length > 0 && (
+        <Card title={`年度 TOP ${safeTopProducts.length} 产品产量分布`}>
           <Row gutter={24}>
             <Col xs={24} md={12}>
               <ReactECharts option={pieOption} style={{ height: 380 }} />
@@ -329,7 +362,7 @@ export default function AnnualReviewTab({ year }: Props) {
             <Col xs={24} md={12}>
               <Table
                 columns={topProductColumns}
-                dataSource={top_products}
+                dataSource={safeTopProducts}
                 rowKey="rank"
                 pagination={false}
                 size="middle"
@@ -339,7 +372,7 @@ export default function AnnualReviewTab({ year }: Props) {
         </Card>
       )}
 
-      {workshop_ranking.length === 0 && top_products.length === 0 && (
+      {safeWorkshopRanking.length === 0 && safeTopProducts.length === 0 && (
         <Empty description={`${year}年暂无生产数据`} />
       )}
     </div>

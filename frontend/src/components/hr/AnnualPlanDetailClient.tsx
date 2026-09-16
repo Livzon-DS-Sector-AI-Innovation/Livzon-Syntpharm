@@ -196,7 +196,7 @@ export default function AnnualPlanDetailClient({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Spin size="large" description="加载中..." />
+        <Spin size="large" tip="加载中..." />
       </div>
     )
   }
@@ -416,7 +416,7 @@ export default function AnnualPlanDetailClient({
                     </td>
                     <td className="border border-gray-300 px-1 py-2 text-center align-top no-print">
                       {isBlank ? null : editing ? (
-                        <Space size="small" orientation="vertical" className="w-full">
+                        <Space size="small" direction="vertical" className="w-full">
                           <Button
                             size="small"
                             onClick={handleCancel}
@@ -425,7 +425,7 @@ export default function AnnualPlanDetailClient({
                           </Button>
                         </Space>
                       ) : (
-                        <Space size="small" orientation="vertical" className="w-full">
+                        <Space size="small" direction="vertical" className="w-full">
                           <Button
                             size="small"
                             type="primary"

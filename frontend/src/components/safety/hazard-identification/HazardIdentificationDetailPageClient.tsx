@@ -448,7 +448,7 @@ export function HazardIdentificationDetailPageClient() {
         okText="确认"
         cancelText="取消"
         width={600}
-        destroyOnHidden
+        destroyOnClose
       >
         {Object.entries(editForm).map(([key, val]) => (
           <div key={key} style={{ marginBottom: 12 }}>
@@ -554,7 +554,7 @@ function renderRiskCard(label: string, levelKey?: string, levelLabel?: string, d
           title={label}
           value={dValue ?? '-'}
           suffix={dValue ? 'D值' : ''}
-          styles={{ content: { color: opt?.color || '#000' } }}
+          valueStyle={{ color: opt?.color || '#000' }}
         />
         <Tag color={opt?.color} style={{ marginTop: 8 }}>{levelLabel || levelKey}</Tag>
       </Card>

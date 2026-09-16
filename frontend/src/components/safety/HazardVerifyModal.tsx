@@ -106,7 +106,7 @@ export default function HazardVerifyModal({
       okText="提交复核"
       cancelText="取消"
       width={650}
-      destroyOnHidden
+      destroyOnClose
     >
       {/* 隐患信息摘要 */}
       {record && (

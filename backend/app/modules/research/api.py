@@ -202,7 +202,7 @@ async def get_ich_records(
                 "q3d_result": r.q3d_result,
                 "llm_used": r.llm_used,
                 "notes": r.notes,
-                "created_at": r.created_at.isoformat(),
+                "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in records
         ],
@@ -230,7 +230,7 @@ async def get_ich_record(
             "q3d_result": record.q3d_result,
             "llm_used": record.llm_used,
             "notes": record.notes,
-            "created_at": record.created_at.isoformat(),
+            "created_at": record.created_at.isoformat() if record.created_at else None,
         }
     )
 

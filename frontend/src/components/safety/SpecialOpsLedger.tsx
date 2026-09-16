@@ -56,6 +56,15 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [dept, setDept] = useState<string | undefined>()
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
   const [keyword, setKeyword] = useState('')
+  const [debouncedKeyword, setDebouncedKeyword] = useState('')
+  const keywordTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handleKeywordChange = (value: string) => {
+    setKeyword(value)
+    clearTimeout(keywordTimer.current)
+    keywordTimer.current = setTimeout(() => setDebouncedKeyword(value), 300)
+  }
+
   const [isCritical, setIsCritical] = useState<boolean | undefined>()
 
   // ── Detail drawer ──
@@ -94,7 +103,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
         department: dept,
         date_from: dateRange?.[0]?.format('YYYY-MM-DD'),
         date_to: dateRange?.[1]?.format('YYYY-MM-DD'),
-        keyword: keyword || undefined,
+        keyword: debouncedKeyword || undefined,
         is_critical: isCritical,
       })
       setData(res.data || [])
@@ -307,7 +316,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
                   </div>
                   <Statistic
                     value={st.count}
-                    styles={{ content: { fontSize: 24, fontWeight: 700, color: T.ink } }}
+                    valueStyle={{ fontSize: 24, fontWeight: 700, color: T.ink }}
                     suffix={
                       st.critical > 0
                         ? <Tag style={{ fontSize: 10, color: T.error, backgroundColor: T.rose, border: 'none', borderRadius: 4, marginLeft: 6 }}>关键{st.critical}</Tag>
@@ -373,8 +382,8 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
             prefix={<SearchOutlined style={{ color: T.muted }} />}
             style={{ width: 200, borderRadius: 8 }}
             value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onPressEnter={() => { setPage(1); fetchData() }}
+            onChange={(e) => handleKeywordChange(e.target.value)}
+            onPressEnter={(e) => { const v = (e.target as HTMLInputElement).value; setKeyword(v); setDebouncedKeyword(v); setPage(1); fetchData() }}
             allowClear
           />
           <Space>

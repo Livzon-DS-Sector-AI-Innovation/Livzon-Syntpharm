@@ -360,7 +360,7 @@ function PhotoGallery({ photos: urls }: { photos: string[] }) {
               width={130}
               height={130}
               style={{ objectFit: 'cover', display: 'block' }}
-              preview={{ cover: <CameraOutlined style={{ fontSize: 20 }} /> }}
+              preview={true}
             />
           </div>
         ))}

@@ -215,7 +215,7 @@ export default function AiExamClient() {
 
       {/* ─── 文件上传区域 ─── */}
       <Card title="上传培训文件" className="shadow-sm">
-        <Space orientation="vertical" size="middle" className="w-full">
+        <Space direction="vertical" size="middle" className="w-full">
           <Upload
             fileList={fileList}
             onChange={handleUploadChange}

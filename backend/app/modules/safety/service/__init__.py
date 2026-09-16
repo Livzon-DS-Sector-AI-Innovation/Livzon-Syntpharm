@@ -9,6 +9,7 @@ from app.modules.safety.service.daily_risk_report import DailyRiskReportService
 from app.modules.safety.service.ehs_change import EhsChangeService
 from app.modules.safety.service.hazard import HazardService
 from app.modules.safety.service.knowledge import KnowledgeService
+from app.modules.safety.service.knowledge_graph import KnowledgeGraphService
 from app.modules.safety.service.oh_hazard_monitor import OhHazardMonitorService
 from app.modules.safety.service.oh_health_exam import OhHealthExamService
 from app.modules.safety.service.regulation import RegulationService
@@ -31,6 +32,7 @@ __all__ = [
     "create_ai_service",
     "SpecialOperationService",
     "KnowledgeService",
+    "KnowledgeGraphService",
     "SpecialOperationReportService",
     "DailyRiskReportService",
     "EhsChangeService",

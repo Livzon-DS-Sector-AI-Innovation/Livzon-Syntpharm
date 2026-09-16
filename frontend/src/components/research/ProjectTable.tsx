@@ -113,14 +113,14 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
       dataIndex: 'project_no',
       key: 'project_no',
       width: 130,
-      fixed: 'start' as const
+      fixed: 'left' as const
     },
     {
       title: '项目名称',
       dataIndex: 'name',
       key: 'name',
       width: 200,
-      fixed: 'start' as const
+      fixed: 'left' as const
     },
     {
       title: '项目类型',
@@ -182,7 +182,7 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
       title: '操作',
       key: 'action',
       width: 130,
-      fixed: 'end' as const,
+      fixed: 'right' as const,
       render: (_: unknown, record: ResearchProject) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => openDrawer(record)} style={{ padding: 0 }}>

@@ -112,10 +112,10 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
   return (
     <Drawer
       title={editingEquipment ? '编辑设备' : '新增设备'}
-      size={480}
+      width={480}
       open={equipmentDrawerOpen}
       onClose={closeEquipmentDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },
@@ -133,7 +133,6 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
         form={form}
         layout="vertical"
         requiredMark="optional"
-        styles={{ label: { fontWeight: 500, color: '#1a1a1a' } }}
       >
         <Form.Item
           name="name"

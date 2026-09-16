@@ -56,7 +56,7 @@ export default function SystemSettingsClient() {
       </div>
 
       <Form form={form} layout="vertical">
-        <Divider orientation="horizontal">飞书 - 主 Bot（招聘 / 人事）</Divider>
+        <Divider>飞书 - 主 Bot（招聘 / 人事）</Divider>
         <Form.Item label={feishuLabel('FEISHU_APP_ID')} name="FEISHU_APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
@@ -64,7 +64,7 @@ export default function SystemSettingsClient() {
           <Input.Password placeholder="飞书 App Secret" />
         </Form.Item>
 
-        <Divider orientation="horizontal">飞书 - 车辆 Bot</Divider>
+        <Divider>飞书 - 车辆 Bot</Divider>
         <Form.Item label={feishuLabel('FEISHU_VEHICLE_APP_ID')} name="FEISHU_VEHICLE_APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
@@ -72,7 +72,7 @@ export default function SystemSettingsClient() {
           <Input.Password placeholder="飞书 Vehicle App Secret" />
         </Form.Item>
 
-        <Divider orientation="horizontal">飞书 - 培训 Bot</Divider>
+        <Divider>飞书 - 培训 Bot</Divider>
         <Form.Item label={feishuLabel('FEISHU_TRAINING_APP_ID')} name="FEISHU_TRAINING_APP_ID">
           <Input placeholder="cli_xxxx..." />
         </Form.Item>
@@ -80,7 +80,7 @@ export default function SystemSettingsClient() {
           <Input.Password placeholder="飞书 Training App Secret" />
         </Form.Item>
 
-        <Divider orientation="horizontal">AI 模型</Divider>
+        <Divider>AI 模型</Divider>
         <Form.Item label="AI_BASE_URL" name="AI_BASE_URL">
           <Input placeholder="https://api.moonshot.cn/v1" />
         </Form.Item>

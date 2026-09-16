@@ -64,7 +64,7 @@ export function CalibrationPlanTable({ onRefresh, onRecordRefresh: _onRecordRefr
       render: (s: CalibrationPlanStatus) => <span style={statusMap[s]}>{s}</span>,
     },
     {
-      title: '操作', key: 'action', width: 180, fixed: 'end',
+      title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_: unknown, r: CalibrationPlan) => (
         <Space size={12}>
           <span role="button" onClick={() => openCalibrationRecordDrawer(undefined)} style={linkPurple}><FileTextOutlined />记录</span>

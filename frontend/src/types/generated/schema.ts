@@ -1441,7 +1441,7 @@ export interface paths {
         };
         /**
          * 获取设备统计
-         * @description 获取设备统计（支持筛选）
+         * @description 获取设备统计
          */
         get: operations["get_equipment_statistics_api_v1_equipment_equipments_statistics_get"];
         put?: never;
@@ -1475,26 +1475,6 @@ export interface paths {
          * @description 删除设备
          */
         delete: operations["delete_equipment_api_v1_equipment_equipments__equipment_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/equipment/equipments/batch-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 批量删除设备
-         * @description 批量删除设备
-         */
-        post: operations["batch_delete_equipments_api_v1_equipment_equipments_batch_delete_post"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2705,24 +2685,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/equipment/equipments/import/template": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 下载导入模板 */
-        get: operations["download_template_api_v1_equipment_equipments_import_template_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/equipment/equipments/import/preview": {
+    "/api/v1/equipment/import/preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -2731,15 +2694,36 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 预览导入数据 */
-        post: operations["preview_import_api_v1_equipment_equipments_import_preview_post"];
+        /**
+         * 预览导入数据
+         * @description 预览导入数据，返回转换后的结果（不入库）
+         *
+         *     数据格式（来自 Excel）：
+         *     [
+         *         {
+         *             "资产编号": "59070",
+         *             "标签号": "107001252",
+         *             "资产说明": "生化培养箱",
+         *             "资产类别说明": "固定资产.电子设备",
+         *             "制造商": "重庆永生",
+         *             "型号": "SHH-L",
+         *             "当前成本": 22123.89,
+         *             "启用日期": 46196.0,
+         *             "实物所在部门": "检验室",
+         *             "实物所在地点": "微生物室",
+         *             "报废状态": "未报废",
+         *             "报废时间": ""
+         *         }
+         *     ]
+         */
+        post: operations["preview_import_api_v1_equipment_import_preview_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/equipment/equipments/import/batch": {
+    "/api/v1/equipment/import/batch": {
         parameters: {
             query?: never;
             header?: never;
@@ -2748,25 +2732,13 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 执行批量导入 */
-        post: operations["batch_import_api_v1_equipment_equipments_import_batch_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/equipment/equipments/import/": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 上传Excel文件并解析 */
-        post: operations["import_excel_api_v1_equipment_equipments_import__post"];
+        /**
+         * 批量导入设备
+         * @description 批量导入设备（先预览，再导入）
+         *
+         *     数据格式同 preview 接口
+         */
+        post: operations["batch_import_api_v1_equipment_import_batch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4572,6 +4544,226 @@ export interface paths {
          * @description 上传知识库文章附件
          */
         post: operations["handler_api_v1_safety_knowledge_articles__article_id__upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/full-graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取完整知识图谱
+         * @description 获取完整知识图谱数据
+         */
+        get: operations["get_full_graph_api_v1_safety_knowledge_graph_full_graph_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取图谱节点列表
+         * @description 获取图谱节点列表
+         */
+        get: operations["get_graph_nodes_api_v1_safety_knowledge_graph_nodes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/edges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取图谱边列表
+         * @description 获取图谱边列表
+         */
+        get: operations["get_graph_edges_api_v1_safety_knowledge_graph_edges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 搜索图谱节点
+         * @description 搜索图谱节点
+         */
+        get: operations["search_graph_nodes_api_v1_safety_knowledge_graph_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/expand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 展开节点邻居
+         * @description 展开指定节点的邻居节点
+         */
+        get: operations["expand_graph_node_api_v1_safety_knowledge_graph_expand_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * AI 生成知识图谱
+         * @description 从知识库文章 AI 生成知识图谱
+         */
+        post: operations["generate_graph_api_v1_safety_knowledge_graph_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/batch-import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量导入知识库文章
+         * @description 批量导入知识库文章
+         */
+        post: operations["handler_api_v1_safety_knowledge_articles_batch_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成知识卡片
+         * @description 使用 AI 从文章内容生成结构化知识卡片
+         */
+        post: operations["generate_card_api_v1_safety_knowledge_articles__article_id__generate_card_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-ppt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成 PPT
+         * @description 使用 AI 从文章内容生成 PPT（.pptx 文件）
+         */
+        post: operations["generate_ppt_api_v1_safety_knowledge_articles__article_id__generate_ppt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/ppt-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 PPT 生成历史
+         * @description 查询某文章的 PPT 生成历史记录
+         */
+        get: operations["get_ppt_history_api_v1_safety_knowledge_articles__article_id__ppt_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成摘要
+         * @description 使用 AI 从文章内容生成摘要
+         */
+        post: operations["generate_summary_api_v1_safety_knowledge_articles__article_id__generate_summary_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -17847,17 +18039,6 @@ export interface components {
             rows?: components["schemas"]["DeleteMergedRowRequest"][];
         };
         /**
-         * BatchDeleteRequest
-         * @description 批量删除请求
-         */
-        BatchDeleteRequest: {
-            /**
-             * Ids
-             * @description 设备ID列表
-             */
-            ids: string[];
-        };
-        /**
          * BatchLockRequest
          * @description 批次锁定请求
          */
@@ -18297,6 +18478,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_handler_api_v1_safety_knowledge_articles_batch_import_post */
+        Body_handler_api_v1_safety_knowledge_articles_batch_import_post: {
+            /** Files */
+            files: string[];
+        };
         /** Body_handler_api_v1_safety_regulations__regulation_id__upload_post */
         Body_handler_api_v1_safety_regulations__regulation_id__upload_post: {
             /** File */
@@ -18309,11 +18495,6 @@ export interface components {
         };
         /** Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post */
         Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post: {
-            /** File */
-            file: string;
-        };
-        /** Body_import_excel_api_v1_equipment_equipments_import__post */
-        Body_import_excel_api_v1_equipment_equipments_import__post: {
             /** File */
             file: string;
         };
@@ -39189,16 +39370,7 @@ export interface operations {
     };
     get_equipment_statistics_api_v1_equipment_equipments_statistics_get: {
         parameters: {
-            query?: {
-                /** @description 设备分类ID */
-                category_id?: string | null;
-                /** @description 设备位置ID */
-                location_id?: string | null;
-                /** @description 归属部门ID */
-                department_id?: string | null;
-                /** @description 设备状态 */
-                status?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -39212,15 +39384,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -39305,41 +39468,6 @@ export interface operations {
             };
         };
         requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    batch_delete_equipments_api_v1_equipment_equipments_batch_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BatchDeleteRequest"];
-            };
-        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -43230,27 +43358,7 @@ export interface operations {
             };
         };
     };
-    download_template_api_v1_equipment_equipments_import_template_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    preview_import_api_v1_equipment_equipments_import_preview_post: {
+    preview_import_api_v1_equipment_import_preview_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -43273,7 +43381,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -43287,7 +43397,7 @@ export interface operations {
             };
         };
     };
-    batch_import_api_v1_equipment_equipments_import_batch_post: {
+    batch_import_api_v1_equipment_import_batch_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -43310,42 +43420,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    import_excel_api_v1_equipment_equipments_import__post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_import_excel_api_v1_equipment_equipments_import__post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -47228,6 +47305,400 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["Body_handler_api_v1_safety_knowledge_articles__article_id__upload_post"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_full_graph_api_v1_safety_knowledge_graph_full_graph_get: {
+        parameters: {
+            query?: {
+                node_types?: string | null;
+                relation_types?: string | null;
+                max_nodes?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_graph_nodes_api_v1_safety_knowledge_graph_nodes_get: {
+        parameters: {
+            query?: {
+                node_type?: string | null;
+                entity_type?: string | null;
+                status?: string | null;
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_graph_edges_api_v1_safety_knowledge_graph_edges_get: {
+        parameters: {
+            query?: {
+                relation_type?: string | null;
+                status?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_graph_nodes_api_v1_safety_knowledge_graph_search_get: {
+        parameters: {
+            query: {
+                query: string;
+                node_types?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    expand_graph_node_api_v1_safety_knowledge_graph_expand_get: {
+        parameters: {
+            query: {
+                node_id: string;
+                hops?: number;
+                relation_types?: string | null;
+                max_nodes?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_graph_api_v1_safety_knowledge_graph_generate_post: {
+        parameters: {
+            query?: {
+                force_rebuild?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": string[] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handler_api_v1_safety_knowledge_articles_batch_import_post: {
+        parameters: {
+            query?: {
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_handler_api_v1_safety_knowledge_articles_batch_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_card_api_v1_safety_knowledge_articles__article_id__generate_card_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_ppt_api_v1_safety_knowledge_articles__article_id__generate_ppt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ppt_history_api_v1_safety_knowledge_articles__article_id__ppt_history_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_summary_api_v1_safety_knowledge_articles__article_id__generate_summary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import {
   Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
@@ -62,7 +63,12 @@ export default function ContractorPage() {
 
   const handleEdit = (record: Contractor) => {
     setEditingRecord(record)
-    form.setFieldsValue({ ...record })
+    form.setFieldsValue({
+      ...record,
+      qualification_expiry: record.qualification_expiry ? dayjs(record.qualification_expiry) : null,
+      safety_license_expiry: record.safety_license_expiry ? dayjs(record.safety_license_expiry) : null,
+      insurance_expiry: record.insurance_expiry ? dayjs(record.insurance_expiry) : null,
+    })
     setModalVisible(true)
   }
 
