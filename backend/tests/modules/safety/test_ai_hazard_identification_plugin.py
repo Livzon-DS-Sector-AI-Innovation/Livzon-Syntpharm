@@ -195,9 +195,9 @@ class TestPrompts:
     def test_fewshot_example1_demonstrates_shutdown_priority(self) -> Any:
         """示例1（防爆电箱堵头）应演示停产整改优先判定：加装堵头无需断电 → general。"""
         ex1 = FEWSHOT_EXAMPLES[0]
-        assert (
-            ex1["output"]["hazard_level"] == "general"
-        ), "示例1应判定为general（加装堵头无需设备断电，可直接在线操作）"
+        assert ex1["output"]["hazard_level"] == "general", (
+            "示例1应判定为general（加装堵头无需设备断电，可直接在线操作）"
+        )
         assert (
             "无需设备断电" in ex1["output"]["rectification_suggestion"]["corrective"]
             or "无需断电" in ex1["output"]["rectification_suggestion"]["corrective"]

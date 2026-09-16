@@ -89,7 +89,7 @@ async def run():
 
             if (r + 1) % 100 == 0:
                 await db.commit()
-                print(f"已处理 {r+1} 条...")
+                print(f"已处理 {r + 1} 条...")
 
         await db.commit()
 
