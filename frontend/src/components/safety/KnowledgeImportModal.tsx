@@ -12,9 +12,12 @@ const { Dragger } = Upload
 
 interface BatchImportResult {
   results: Array<{
-    file_name: string
-    success: boolean
-    error?: string
+    filename: string
+    status: 'success' | 'error' | 'skipped'
+    message?: string
+    article_id?: string
+    title?: string
+    category?: string
   }>
   summary: {
     success: number
