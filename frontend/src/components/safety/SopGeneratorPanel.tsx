@@ -144,7 +144,7 @@ export default function SopGeneratorPanel({
     setErrorMsg(null)
     try {
       const { generateSop } = await import('@/actions/safety')
-      const response = await generateSop(file)
+      const response: any = await generateSop(file)
 
       if (response.code && response.code !== 200) {
         setErrorMsg(response.message || '生成失败，请重试')

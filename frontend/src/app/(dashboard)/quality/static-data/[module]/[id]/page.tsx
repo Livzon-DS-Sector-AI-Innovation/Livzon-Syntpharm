@@ -589,7 +589,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
             <Col span={24}><Form.Item name="remark" label="备注"><TextArea rows={2} /></Form.Item></Col>
             {/* 设备管理员附件：SOP文件 / 校准证书 / 验证资料 */}
             <Col span={24}>
-              <Divider titlePlacement="left" style={{ marginTop: 8 }}>设备文件</Divider>
+              <Divider orientation="left" style={{ marginTop: 8 }}>设备文件</Divider>
             </Col>
             <Col span={8}><Form.Item name="sop_file" label="SOP文件" help="操作规程PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
             <Col span={8}><Form.Item name="cal_cert" label="校准证书" help="最近一次校准证书PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
@@ -797,7 +797,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 附件上传区域（仅支持的模块显示） */}
           {supportsUpload && (
             <>
-              <Divider titlePlacement="left">
+              <Divider orientation="left">
                 <PaperClipOutlined /> 附件上传
               </Divider>
               <div style={{ marginBottom: 16 }}>
@@ -838,7 +838,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 质量标准检验项目明细子表 */}
           {isStdWithItems && (
             <>
-              <Divider titlePlacement="left">
+              <Divider orientation="left">
                 检验项目明细
                 <Button type="link" size="small" icon={<PlusOutlined />} onClick={addItem} style={{ marginLeft: 8 }}>
                   新增项目

@@ -87,7 +87,7 @@ export default function AnnualReviewTab({ year }: Props) {
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: {
       type: 'category',
-      data: monthly_trend.map((m: MonthlyTrend) => `${m.month}月`),
+      data: (monthly_trend || []).map((m: MonthlyTrend) => `${m.month}月`),
     },
     yAxis: {
       type: 'value',
@@ -97,14 +97,14 @@ export default function AnnualReviewTab({ year }: Props) {
       {
         name: `${year}年`,
         type: 'line',
-        data: monthly_trend.map((m: MonthlyTrend) => m.current_year_weight),
+        data: (monthly_trend || []).map((m: MonthlyTrend) => m.current_year_weight),
         smooth: true,
         itemStyle: { color: '#5645d4' },
       },
       {
         name: `${year - 1}年`,
         type: 'line',
-        data: monthly_trend.map((m: MonthlyTrend) => m.previous_year_weight),
+        data: (monthly_trend || []).map((m: MonthlyTrend) => m.previous_year_weight),
         smooth: true,
         itemStyle: { color: '#1aae39' },
         lineStyle: { type: 'dashed' },
@@ -119,7 +119,7 @@ export default function AnnualReviewTab({ year }: Props) {
       axisPointer: { type: 'shadow' },
       formatter: (params: Array<{ name: string; value: number }>) => {
         const p = params[0]
-        const item = workshop_ranking.find((w: WorkshopRanking) => w.workshop === p.name)
+        const item = (workshop_ranking || []).find((w: WorkshopRanking) => w.workshop === p.name)
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
       },
     },
@@ -130,12 +130,12 @@ export default function AnnualReviewTab({ year }: Props) {
     },
     yAxis: {
       type: 'category',
-      data: workshop_ranking.map((w: WorkshopRanking) => w.workshop).reverse(),
+      data: (workshop_ranking || []).map((w: WorkshopRanking) => w.workshop).reverse(),
     },
     series: [
       {
         type: 'bar',
-        data: workshop_ranking.map((w: WorkshopRanking) => w.total_weight).reverse(),
+        data: (workshop_ranking || []).map((w: WorkshopRanking) => w.total_weight).reverse(),
         itemStyle: {
           color: (params: { dataIndex: number }) => {
             const colors = ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2']
@@ -182,8 +182,8 @@ export default function AnnualReviewTab({ year }: Props) {
         emphasis: {
           label: { show: true, fontSize: 14, fontWeight: 'bold' },
         },
-        data: top_products.map((p: TopProduct, i: number) => ({
-          name: `${p.product_name}(${p.key})`,
+        data: (top_products || []).map((p: TopProduct, i: number) => ({
+          name: `${p.product_name}(${p.workshop})`,
           value: p.total_weight,
           itemStyle: {
             color: ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2', '#8b5cf6', '#f59e0b', '#0075de', '#ff64c8', '#2a9d99'][i % 10],
