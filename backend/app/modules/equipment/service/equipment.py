@@ -1,10 +1,9 @@
 """Equipment service layer: business logic, validation, transaction orchestration."""
 
-import datetime
 import uuid
 from collections.abc import Sequence
 from io import BytesIO
-from typing import Any, NamedTuple, TypedDict
+from typing import Any, NamedTuple
 
 import pandas as pd
 from sqlalchemy import select, update
@@ -376,7 +375,6 @@ def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
         raise ValueError(f"Excel 解析失败: {str(e)}")
 
 
-
 async def sync_equipments_with_audit(
     db: AsyncSession,
     file_content: bytes,
@@ -490,5 +488,3 @@ async def sync_equipments_with_audit(
     return EquipmentSyncResult(
         updated=updated, inserted=inserted, migrated=migrated, deleted=deleted, warnings=warnings
     )
-
-

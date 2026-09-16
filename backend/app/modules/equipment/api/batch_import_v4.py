@@ -1,4 +1,5 @@
 """Equipment Import v4 API Routes."""
+
 import logging
 import time
 from datetime import date, datetime, timedelta
@@ -60,8 +61,11 @@ logger = logging.getLogger(__name__)
 
 # 这些字段在数据库中均为字符串列，但 Excel 常以数字单元格存储，需归一化
 _TEXT_NORMALIZED_KEYS = (
-    "asset_no", "label_no", "equipment_tag",
-    "model", "location_text"  # Excel 中可能为数字，需转为字符串
+    "asset_no",
+    "label_no",
+    "equipment_tag",
+    "model",
+    "location_text",  # Excel 中可能为数字，需转为字符串
 )
 
 # 数据库中为 DATE 列的字段。asyncpg 对其要求 datetime.date 实例，
@@ -96,7 +100,7 @@ def _coerce_int_value(value: Any) -> int | None:
         return None
     if isinstance(value, bool):
         return int(value)
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         try:
             return int(value)
         except (ValueError, OverflowError):
@@ -126,7 +130,7 @@ def _coerce_date_value(value: Any) -> date | None:
         return value.date()
     if isinstance(value, date):
         return value
-    if isinstance(value, (int, float)) and not isinstance(value, bool):
+    if isinstance(value, int | float) and not isinstance(value, bool):
         # Excel 日期序列号，如 46196 -> 2026-06-24
         try:
             return _EXCEL_EPOCH + timedelta(days=int(value))
@@ -165,16 +169,28 @@ def _normalize_row(row: dict[str, Any]) -> dict[str, Any]:
 # Excel 中文表头 -> 数据库字段。
 # 必须与 /preview、/batch 共用同一份，否则两处行为会静默漂移。
 FIELD_MAP: dict[str, str] = {
-    "资产编号": "asset_no", "标签号": "label_no", "设备名称": "name",
-    "资产类别说明": "category_description", "数量": "quantity",
-    "制造商": "manufacturer", "型号": "model", "当前成本": "current_cost",
-    "帐面净值": "book_value", "启用日期": "commissioning_date",
-    "实物所在部门": "department_name", "实物所在地点": "location_text",
-    "报废状态": "scrap_status", "报废时间": "scrap_time",
-    "设备位号": "equipment_tag", "设备分类": "equipment_class",
-    "负责人": "responsible_person_name", "设备状态": "status",
-    "设备规格": "specification", "供应商": "supplier",
-    "出厂日期": "production_date", "描述": "description"
+    "资产编号": "asset_no",
+    "标签号": "label_no",
+    "设备名称": "name",
+    "资产类别说明": "category_description",
+    "数量": "quantity",
+    "制造商": "manufacturer",
+    "型号": "model",
+    "当前成本": "current_cost",
+    "帐面净值": "book_value",
+    "启用日期": "commissioning_date",
+    "实物所在部门": "department_name",
+    "实物所在地点": "location_text",
+    "报废状态": "scrap_status",
+    "报废时间": "scrap_time",
+    "设备位号": "equipment_tag",
+    "设备分类": "equipment_class",
+    "负责人": "responsible_person_name",
+    "设备状态": "status",
+    "设备规格": "specification",
+    "供应商": "supplier",
+    "出厂日期": "production_date",
+    "描述": "description",
 }
 
 # Equipment 模型实际存在的列。FIELD_MAP 里有两类键不属于模型：
@@ -200,12 +216,15 @@ async def resolve_department_strict(excel_dept: str, db: AsyncSession):
         return None, None, f"部门'{excel_dept}'未在映射表中定义"
 
     from app.modules.hr.public_api import get_department_by_name
+
     if not (dept := await get_department_by_name(db, standard_name)):
         return None, None, f"标准化部门'{standard_name}'在数据库中不存在"
     return standard_name, dept.id, None
 
+
 async def log_audit(db, batch_id, operation_type, **kwargs):
     db.add(ImportAuditLog(batch_id=batch_id, operation_type=operation_type, **kwargs))
+
 
 @router.post("/batch", summary="执行批量导入 (v4)", response_model=ImportV4BatchApiResponse)
 async def batch_import_v4(
@@ -230,11 +249,14 @@ async def batch_import_v4(
     errors, unmapped_depts = [], {}
 
     for idx, row in enumerate(normalized_data):
-        audit_kwargs = {"row_index": idx, "asset_no": row.get("asset_no"),
-                        "equipment_tag": row.get("equipment_tag"),
-                        "department_id": row.get("department_id"),
-                        "location_text": row.get("location_text")}
-        
+        audit_kwargs = {
+            "row_index": idx,
+            "asset_no": row.get("asset_no"),
+            "equipment_tag": row.get("equipment_tag"),
+            "department_id": row.get("department_id"),
+            "location_text": row.get("location_text"),
+        }
+
         # try 必须包在 begin_nested 外层
         try:
             async with db.begin_nested():
@@ -247,30 +269,49 @@ async def batch_import_v4(
                 dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
 
                 if dept_error:
-                    failed += 1; errors.append({"row": idx, "error": dept_error})
-                    if dept_raw: unmapped_depts.setdefault(dept_raw, []).append(idx)
+                    failed += 1
+                    errors.append({"row": idx, "error": dept_error})
+                    if dept_raw:
+                        unmapped_depts.setdefault(dept_raw, []).append(idx)
                     await log_audit(db, batch_id, "error", error_message=dept_error, **audit_kwargs)
                     continue
 
                 row["department_id"] = dept_id
                 existing, strategy, warnings = await find_existing_equipment(
-                    db, row.get("asset_no"), row.get("equipment_tag"), row.get("name"), dept_id, row.get("location_text"),
-                    force_override)
+                    db,
+                    row.get("asset_no"),
+                    row.get("equipment_tag"),
+                    row.get("name"),
+                    dept_id,
+                    row.get("location_text"),
+                    force_override,
+                )
 
                 if strategy == MatchStrategy.TAG_CONFLICT:
                     failed += 1
                     err_msg = "设备位号冲突，无法创建"
                     errors.append({"row": idx, "error": err_msg})
-                    await log_audit(db, batch_id, "error", match_strategy=strategy, error_message=err_msg, **audit_kwargs)
+                    await log_audit(
+                        db, batch_id, "error", match_strategy=strategy, error_message=err_msg, **audit_kwargs
+                    )
                     continue
 
                 if existing:
                     changes = apply_incremental_update(existing, row, force_override)
                     override_type = "force" if (force_override and changes) else "normal"
-                    if changes: 
+                    if changes:
                         updated += 1
-                        await log_audit(db, batch_id, "update", match_strategy=strategy, changes=changes, override_type=override_type, warnings=warnings, **audit_kwargs)
-                    else: 
+                        await log_audit(
+                            db,
+                            batch_id,
+                            "update",
+                            match_strategy=strategy,
+                            changes=changes,
+                            override_type=override_type,
+                            warnings=warnings,
+                            **audit_kwargs,
+                        )
+                    else:
                         skipped += 1
                         await log_audit(db, batch_id, "skip", match_strategy=strategy, **audit_kwargs)
                 else:
@@ -278,16 +319,23 @@ async def batch_import_v4(
                     created += 1
                     await log_audit(db, batch_id, "create", match_strategy=strategy, **audit_kwargs)
         except Exception:
-            failed += 1; errors.append({"row": idx, "error": "导入处理异常，请检查数据格式"})
+            failed += 1
+            errors.append({"row": idx, "error": "导入处理异常，请检查数据格式"})
             logger.exception("v4 import row %s failed", idx)
             await log_audit(db, batch_id, "error", error_message="导入处理异常", **audit_kwargs)
 
-    return build_response(data=ImportV4BatchResponse(
-        batch_id=batch_id, created_count=created, updated_count=updated,
-        skipped_count=skipped, error_count=failed,
-        unmapped_departments=unmapped_depts,
-        errors=[ImportErrorItem(row=e["row"], error=e["error"]) for e in errors]
-    ))
+    return build_response(
+        data=ImportV4BatchResponse(
+            batch_id=batch_id,
+            created_count=created,
+            updated_count=updated,
+            skipped_count=skipped,
+            error_count=failed,
+            unmapped_departments=unmapped_depts,
+            errors=[ImportErrorItem(row=e["row"], error=e["error"]) for e in errors],
+        )
+    )
+
 
 @router.post("/preview", summary="预览导入结果 (v4)", response_model=ImportV4PreviewApiResponse)
 async def preview_import_v4(
@@ -316,9 +364,13 @@ async def preview_import_v4(
         if not dept_error and idx not in duplicates and dept_id:
             row["department_id"] = dept_id
             existing, strategy, warnings = await find_existing_equipment(
-                db, row.get("asset_no"), row.get("equipment_tag"),
-                row.get("name"), dept_id, row.get("location_text"),
-                force_override
+                db,
+                row.get("asset_no"),
+                row.get("equipment_tag"),
+                row.get("name"),
+                dept_id,
+                row.get("location_text"),
+                force_override,
             )
             match_strategy = strategy
             if warnings:
@@ -344,8 +396,4 @@ async def preview_import_v4(
         results.append(result_item)
 
     if results:
-        return build_response(data=ImportV4PreviewResponse(
-        items=results,
-        total=len(results),
-        headers=PREVIEW_HEADERS
-    ))
+        return build_response(data=ImportV4PreviewResponse(items=results, total=len(results), headers=PREVIEW_HEADERS))
