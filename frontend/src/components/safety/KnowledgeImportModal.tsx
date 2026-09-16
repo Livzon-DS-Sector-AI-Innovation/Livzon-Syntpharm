@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 'use client'
 
 import { useState } from 'react'
@@ -67,16 +68,17 @@ export default function KnowledgeImportModal({
 
 
       
-      const response: any = await batchImportKnowledgeArticles(files, category || undefined)
+      const response = await batchImportKnowledgeArticles(files, category || undefined)
 
 
-      if (response.code === 200) {
-        setResults(response.data.results)
-        const summary = response.data.summary
+      const apiResponse = response as components['schemas']['ApiResponse']
+      if (apiResponse.code === 200) {
+        setResults((apiResponse.data as any).results)
+        const summary = (apiResponse.data as any).summary
         message.success(`导入完成：成功 ${summary.success} 篇，失败 ${summary.error} 篇`)
         onSuccess()
       } else {
-        message.error(response.message || '导入失败')
+        message.error(apiResponse.message || '导入失败')
       }
     } catch (error) {
       console.error('Import error:', error)

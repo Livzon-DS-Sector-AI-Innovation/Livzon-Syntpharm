@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 'use client'
 
 import React, { useState, useCallback, useRef } from 'react'
@@ -68,8 +69,9 @@ export default function SopGeneratorPanel({
         page_size: 200,
         status: 'generated'
       })
-      if (response.code === 200) {
-        setGeneratedSops(response.data as OperationRegulation[])
+      const apiResponse = response as components[\'schemas\'][\'ApiResponse\']
+      if (apiResponse.code === 200) {
+        setGeneratedSops(apiResponse.data as OperationRegulation[])
       }
     } catch {
       // silent
@@ -144,14 +146,14 @@ export default function SopGeneratorPanel({
     setErrorMsg(null)
     try {
       const { generateSop } = await import('@/actions/safety')
-      const response: any = await generateSop(file)
+      const response = await generateSop(file)
 
       if (response.code && response.code !== 200) {
-        setErrorMsg(response.message || '生成失败，请重试')
+        setErrorMsg(apiResponse.message || '生成失败，请重试')
         return
       }
 
-      const result = response.data
+      const result = apiResponse.data
       onGenerated({
         regulation_id: (result as { regulation_id: string }).regulation_id,
         meta: (result as { meta?: Record<string, string> }).meta || {},

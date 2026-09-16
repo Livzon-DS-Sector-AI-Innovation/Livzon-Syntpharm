@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 'use client'
 
 import React, { useState, useRef, useCallback } from 'react'
@@ -390,14 +391,14 @@ export default function SopGeneratorModal({
     setErrorMsg(null)
     try {
       const { generateSop } = await import('@/actions/safety')
-      const response: any = await generateSop(file)
+      const response = await generateSop(file)
 
       if (response.code && response.code !== 200) {
-        setErrorMsg(response.message || '生成失败，请重试')
+        setErrorMsg(apiResponse.message || '生成失败，请重试')
         return
       }
 
-      const result = response.data
+      const result = apiResponse.data
       message.success('标准化操规生成成功！')
       onGenerated({
         regulation_id: (result as { regulation_id: string }).regulation_id,
