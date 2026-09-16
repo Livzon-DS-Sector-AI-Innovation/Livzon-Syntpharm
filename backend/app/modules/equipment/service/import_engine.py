@@ -95,7 +95,7 @@ async def find_existing_equipment(
                 logger.info("Matched by normalized asset_no: DB=%s vs Excel=%s", eq.asset_no, asset_no)
 
         if eq:
-            warnings.append(
+            warnings.append(  # type: ignore[arg-type]
                 {
                     "field": "asset_no",
                     "level": "WARN",
@@ -155,7 +155,7 @@ def apply_incremental_update(
         if isinstance(new_val, str) and not new_val.strip():
             new_val = None
         if getattr(existing, field) != new_val:
-            changes[field] = {"old": getattr(existing, field), "new": new_val}
+            changes[field] = {"old": getattr(existing, field), "new": new_val}  # type: ignore[assignment]
             setattr(existing, field, new_val)
 
     for field in OVERRIDEABLE_BUSINESS_FIELDS:
@@ -164,14 +164,14 @@ def apply_incremental_update(
             continue
         if force_override or getattr(existing, field) is None:
             if getattr(existing, field) != new_val:
-                changes[field] = {"old": getattr(existing, field), "new": new_val}
+                changes[field] = {"old": getattr(existing, field), "new": new_val}  # type: ignore[assignment]
                 setattr(existing, field, new_val)
     return changes
 
 
 def preprocess_excel_row(row: dict[str, Any]) -> dict[str, Any]:
     """将 Excel 中的空字符串转换为 None，并处理日期格式。"""
-    processed = {}
+    processed: dict[str, Any] = {}
     for k, v in row.items():
         if isinstance(v, str) and not v.strip():
             processed[k] = None

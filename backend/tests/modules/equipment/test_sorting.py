@@ -1,4 +1,3 @@
-from typing import Any
 """设备列表排序集成测试（Ticket 01 返工）。
 
 真实调用 repo.get_equipments 并断言返回顺序。
@@ -9,6 +8,7 @@ from typing import Any
 
 import time
 import uuid
+from typing import Any
 from datetime import date
 
 import pytest
