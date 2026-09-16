@@ -213,7 +213,7 @@ async def test_full_dataset_status_pages_are_row_conserving(db_session):
     if total < _DATASET_BASELINE_ROWS:
         pytest.skip(f"当前数据量 {total} 行，低于验收基线 {_DATASET_BASELINE_ROWS} 行，跳过全量翻页")
 
-    seen: list = []
+    seen: list[Any] = []
     page = 1
     while len(seen) < total:
         rows, _ = await get_equipments(db_session, sort_by="status", sort_order="asc", page=page, page_size=200)

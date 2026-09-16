@@ -8,6 +8,7 @@
 """
 
 from typing import Any
+
 _PREVIEW = "/api/v1/equipment/equipments/import-v4/preview"
 _BATCH = "/api/v1/equipment/equipments/import-v4/batch"
 

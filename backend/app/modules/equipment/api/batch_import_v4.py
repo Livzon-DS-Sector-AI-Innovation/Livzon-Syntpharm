@@ -375,7 +375,7 @@ async def preview_import_v4(
             )
             match_strategy = strategy
             if warnings:
-                display_row["match_warnings"] = [w["message"] for w in warnings]
+                display_row["match_warnings"] = [w.message for w in warnings]
 
         # 4. 组装返回结果
         result_item = {
