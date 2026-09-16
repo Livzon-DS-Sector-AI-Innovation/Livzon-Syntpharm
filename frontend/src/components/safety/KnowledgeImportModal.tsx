@@ -9,6 +9,19 @@ import { batchImportKnowledgeArticles } from '@/actions/safety'
 
 const { Dragger } = Upload
 
+interface BatchImportResult {
+  results: Array<{
+    file_name: string
+    success: boolean
+    error?: string
+  }>
+  summary: {
+    success: number
+    error: number
+  }
+}
+
+
 interface ImportResult {
   filename: string
   status: 'success' | 'error' | 'skipped'
@@ -73,8 +86,8 @@ export default function KnowledgeImportModal({
 
       const apiResponse = response as components['schemas']['ApiResponse']
       if (apiResponse.code === 200) {
-        setResults((apiResponse.data as any).results)
-        const summary = (apiResponse.data as any).summary
+        setResults((apiResponse.data as BatchImportResult).results)
+        const summary = (apiResponse.data as BatchImportResult).summary
         message.success(`导入完成：成功 ${summary.success} 篇，失败 ${summary.error} 篇`)
         onSuccess()
       } else {

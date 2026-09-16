@@ -393,16 +393,17 @@ export default function SopGeneratorModal({
       const { generateSop } = await import('@/actions/safety')
       const response = await generateSop(file)
 
-      if (response.code && response.code !== 200) {
+      const apiResponse = response as components['schemas']['ApiResponse']
+      if (apiResponse.code && apiResponse.code !== 200) {
         setErrorMsg(apiResponse.message || '生成失败，请重试')
         return
       }
 
-      const result = apiResponse.data
+      const result = apiResponse.data as { regulation_id: string; meta?: Record<string, string> }
       message.success('标准化操规生成成功！')
       onGenerated({
-        regulation_id: (result as { regulation_id: string }).regulation_id,
-        meta: (result as { meta?: Record<string, string> }).meta || {},
+        regulation_id: result.regulation_id,
+        meta: result.meta || {},
         content: (result as { content?: string }).content || ''
       })
       setFile(null)
