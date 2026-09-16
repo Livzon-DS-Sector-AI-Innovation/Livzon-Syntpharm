@@ -193,8 +193,6 @@ export function BalancePageClient() {
           </div>
         ) : materialBalance ? (
           <>
-<<<<<<< HEAD
-=======
             <Alert
               type={materialBalance.is_balanced ? 'success' : 'warning'}
               message={materialBalance.is_balanced ? '物料平衡合格' : '物料平衡不合格'}
@@ -209,7 +207,6 @@ export function BalancePageClient() {
             />
 
             {/* 投入产出编辑区域 */}
->>>>>>> origin/main
             {editMode && (
               <Alert
                 type="info"
