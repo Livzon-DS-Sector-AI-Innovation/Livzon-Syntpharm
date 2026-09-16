@@ -96,11 +96,11 @@ async def find_existing_equipment(
 
         if eq:
             warnings.append(  # type: ignore[arg-type]
-                {
+                WarningInfo(
                     field="asset_no",
                     level="WARN",
                     message=f"资产编号匹配但部门/位置不一致，强制覆盖将更新 (DB: {eq.asset_no})",
-                }
+                )
             )
             return eq, MatchStrategy.ASSET_NO_ONLY, warnings
 

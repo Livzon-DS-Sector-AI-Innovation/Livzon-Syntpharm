@@ -15,7 +15,7 @@ def test_force_override_updates_business_fields():
     changes = apply_incremental_update(existing, excel_data, force_override=True)
 
     assert "department_id" in changes
-    assert changes["department_id"]["new"] == "dept_new"
+    assert changes["department_id"]["new"] == "dept_new"  # type: ignore[index]
     assert existing.department_id == "dept_new"
 
 def test_protective_mode_skips_existing_business_fields():
