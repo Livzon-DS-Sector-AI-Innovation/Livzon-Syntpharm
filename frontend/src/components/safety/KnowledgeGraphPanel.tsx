@@ -314,10 +314,11 @@ export default function KnowledgeGraphPanel() {
     }
   }, [])
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- loadGraph uses refs and setTimeout, not direct setState
+  /* eslint-disable react-hooks/set-state-in-effect -- loadGraph uses refs and setTimeout, not direct setState */
   useEffect(() => {
     loadGraph()
   }, [loadGraph])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // 同步 store → React Flow（聚类布局），只保留 category + document 节点
   useEffect(() => {
