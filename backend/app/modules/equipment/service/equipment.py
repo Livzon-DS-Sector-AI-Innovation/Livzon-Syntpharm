@@ -24,7 +24,7 @@ from app.modules.equipment.schemas import (
     LocationCreate,
     LocationUpdate,
 )
-from app.modules.hr.models import HrDepartment
+from app.modules.hr.public_api import list_all_departments
 
 from .validation import (
     validate_asset_no_unique,
@@ -347,8 +347,8 @@ class SyncContext(NamedTuple):
 
 async def _prepare_sync_context(db: AsyncSession) -> SyncContext:
     """准备同步所需的映射表和索引"""
-    dept_result = await db.execute(select(HrDepartment.id, HrDepartment.name))
-    dept_map: dict[str, Any] = {n: i for i, n in dept_result.fetchall()}
+    departments = await list_all_departments(db)
+    dept_map: dict[str, Any] = {d.name: d.id for d in departments}
     valid_depts: set[str] = set(dept_map.keys())
 
     loc_result = await db.execute(select(Location.id, Location.name))

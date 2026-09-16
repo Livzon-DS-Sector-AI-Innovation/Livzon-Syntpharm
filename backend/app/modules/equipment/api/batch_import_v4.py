@@ -277,9 +277,9 @@ async def batch_import_v4(
                     created += 1
                     await log_audit(db, batch_id, "create", match_strategy=strategy, **audit_kwargs)
         except Exception as e:
-            failed += 1; errors.append({"row": idx, "error": str(e)})
+            failed += 1; errors.append({"row": idx, "error": "导入处理异常，请检查数据格式"})
             logger.exception("v4 import row %s failed", idx)
-            await log_audit(db, batch_id, "error", error_message=str(e), **audit_kwargs)
+            await log_audit(db, batch_id, "error", error_message="导入处理异常", **audit_kwargs)
 
     return build_response(data=ImportV4BatchResponse(
         batch_id=batch_id, created_count=created, updated_count=updated,

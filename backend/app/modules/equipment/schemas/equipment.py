@@ -273,3 +273,10 @@ class EquipmentSyncResult(BaseModel):
     inserted: int = Field(0, description="新增的设备数量")
     migrated: int = Field(0, description="迁移位置的设备数量")
     deleted: int = Field(0, description="停用的设备数量")
+
+class EquipmentSyncResponse(BaseModel):
+    code: int = Field(200, description="响应状态码")
+    message: str = Field("success", description="响应消息")
+    data: EquipmentSyncResult
+    meta: dict[str, Any] | None = None
+

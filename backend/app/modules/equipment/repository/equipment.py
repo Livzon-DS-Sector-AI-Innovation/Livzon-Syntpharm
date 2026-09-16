@@ -768,11 +768,10 @@ async def get_sync_context(
     dict[str, list[Equipment]],
 ]:
     """获取同步所需的部门和位置映射及活跃设备索引"""
-    # 使用原始 SQL 查询部门数据，避免直接导入 HR 模型
-    from sqlalchemy import text
+    from app.modules.hr.public_api import list_all_departments
 
-    dept_result = await session.execute(text("SELECT id, name FROM identity.departments WHERE is_deleted = false"))
-    dept_map: dict[str, Any] = {n: i for i, n in dept_result.fetchall()}
+    departments = await list_all_departments(session)
+    dept_map: dict[str, Any] = {d.name: d.id for d in departments}
 
     loc_result = await session.execute(select(Location.id, Location.name))
     loc_map: dict[str, Any] = {n: i for i, n in loc_result.fetchall()}

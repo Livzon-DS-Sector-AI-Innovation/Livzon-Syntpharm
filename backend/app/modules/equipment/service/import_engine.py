@@ -31,7 +31,7 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
     if force_override and asset_no:
         # 标准化资产编号：去除首尾空格和前导零，确保 "059070" 和 "59070" 能匹配
         normalized_asset_no = str(asset_no).strip().lstrip('0') or '0'
-        logger.info(f"Force override: searching for asset_no='{asset_no}' (normalized='{normalized_asset_no}')")
+        logger.info("Force override: searching for asset_no=%s (normalized=%s)", asset_no, normalized_asset_no)
         
         # 先尝试精确匹配
         result = await db.execute(select(Equipment).where(

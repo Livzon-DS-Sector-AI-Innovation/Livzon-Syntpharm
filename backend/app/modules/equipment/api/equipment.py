@@ -341,7 +341,7 @@ async def batch_delete_equipments(
     return build_response(message=f"成功删除 {deleted_count} 台设备")
 
 
-@router.post("/equipments/sync-excel", summary="智能同步 Excel 设备数据")
+@router.post("/equipments/sync-excel", summary="智能同步 Excel 设备数据", response_model=EquipmentSyncResponse)
 async def sync_equipments_excel(
     current_user: RequiredUser,
     file: UploadFile = File(...),
