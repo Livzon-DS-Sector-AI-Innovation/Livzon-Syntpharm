@@ -1,7 +1,8 @@
 """Knowledge Graph repository — database access for graph nodes and edges."""
 
-import logging
 from __future__ import annotations
+
+import logging
 
 import uuid
 from typing import Any

@@ -1,7 +1,8 @@
 """Knowledge Graph Service — 知识图谱数据服务"""
 
-import logging
 from __future__ import annotations
+
+import logging
 
 import uuid
 from typing import Any
