@@ -268,16 +268,14 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
       {currentStep === 2 && (
         <div>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: 16 }}>
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
               <span>总计: <strong>{previewData.length}</strong> 条</span>
-              <div className="ml-auto">
-                <ForceOverrideToggle enabled={forceOverride} onToggle={setForceOverride} />
-              </div>
-              <span style={{ color: '#1aae39' }}>可导入: <strong>{validCount}</strong> 条</span>
+              <span style={{ color: '#10b981' }}>可导入: <strong>{validCount}</strong> 条</span>
               {invalidCount > 0 && (
-                <span style={{ color: '#e03131' }}>异常: <strong>{invalidCount}</strong> 条</span>
+                <span style={{ color: '#ef4444' }}>异常: <strong>{invalidCount}</strong> 条</span>
               )}
             </div>
+            <ForceOverrideToggle enabled={forceOverride} onToggle={setForceOverride} />
           </div>
           <ImportCockpit 
             data={previewData} 

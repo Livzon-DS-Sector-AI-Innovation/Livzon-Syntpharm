@@ -253,7 +253,8 @@ async def batch_import_v4(
 
                 row["department_id"] = dept_id
                 existing, strategy, warnings = await find_existing_equipment(
-                    db, row.get("asset_no"), row.get("equipment_tag"), row.get("name"), dept_id, row.get("location_text"))
+                    db, row.get("asset_no"), row.get("equipment_tag"), row.get("name"), dept_id, row.get("location_text"),
+                    force_override)
 
                 if strategy == "tag_conflict":
                     failed += 1

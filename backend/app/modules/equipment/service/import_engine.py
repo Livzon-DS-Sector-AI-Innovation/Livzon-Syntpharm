@@ -17,7 +17,8 @@ B_FIELDS = ["label_no", "equipment_tag", "equipment_class", "name", "responsible
             "description", "department_id", "location_text"]
 
 async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipment_tag: str | None,
-                                  name: str | None, department_id: uuid.UUID | None, location_text: str | None):
+                                  name: str | None, department_id: uuid.UUID | None, location_text: str | None,
+                                  force_override: bool = False):
     warnings: list[WarningInfo] = []
     # P1: 复合主键精确匹配
     if asset_no and department_id and location_text:
@@ -25,6 +26,15 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
             Equipment.asset_no == asset_no, Equipment.department_id == department_id,
             Equipment.location_text == location_text, Equipment.is_deleted.is_(False)))
         if (eq := result.scalar_one_or_none()): return eq, "composite", warnings
+
+    # P1.5: 强制覆盖模式下，仅按资产编号匹配（部门/位置可能不一致）
+    if force_override and asset_no:
+        result = await db.execute(select(Equipment).where(
+            Equipment.asset_no == asset_no, Equipment.is_deleted.is_(False)))
+        if (eq := result.scalar_one_or_none()):
+            warnings.append({"field": "asset_no", "level": "WARN",
+                             "message": "资产编号匹配但部门/位置不一致，强制覆盖将更新"})
+            return eq, "asset_no_only", warnings
 
     # P2: 设备位号匹配
     if equipment_tag:
