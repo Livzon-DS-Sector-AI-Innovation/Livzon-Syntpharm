@@ -67,7 +67,7 @@ export default function KnowledgeImportModal({
 
 
       
-      const response = await batchImportKnowledgeArticles(files, category || undefined)
+      const response: any = await batchImportKnowledgeArticles(files, category || undefined)
 
 
       if (response.code === 200) {
