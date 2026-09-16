@@ -199,9 +199,9 @@ export function SafetyRegulationPageClient() {
       const response = await getRegulations({ page: 1, page_size: 200 })
       if (response.code === 200) {
         setRegulationsForSelect(response.data)
-      } else {
       }
     } catch (error) {
+      console.error('loadRegulationsForSelect failed:', error)
     }
   }
 

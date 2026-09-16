@@ -2021,7 +2021,12 @@ class GraphKnowledgeNode(BaseModel):
     """知识图谱节点表"""
 
     __tablename__ = "graph_knowledge_nodes"
-    __table_args__ = {"schema": "safety"}
+    __table_args__ = (
+        Index("ix_graph_knowledge_nodes_node_type", "node_type"),
+        Index("ix_graph_knowledge_nodes_status", "status"),
+        Index("ix_graph_knowledge_nodes_article_id", "article_id"),
+        {"schema": "safety"},
+    )
 
     created_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime(timezone=True),
@@ -2063,7 +2068,12 @@ class GraphKnowledgeEdge(BaseModel):
     """知识图谱边（关系）表"""
 
     __tablename__ = "graph_knowledge_edges"
-    __table_args__ = {"schema": "safety"}
+    __table_args__ = (
+        Index("ix_graph_knowledge_edges_source", "source_node_id"),
+        Index("ix_graph_knowledge_edges_target", "target_node_id"),
+        Index("ix_graph_knowledge_edges_relation", "relation_type"),
+        {"schema": "safety"},
+    )
 
     created_at: Mapped[datetime | None] = mapped_column(  # type: ignore[assignment]
         DateTime(timezone=True),

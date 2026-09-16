@@ -365,7 +365,7 @@ class MaterialReportService:
                 "field_key": image.field_key,
                 "image_url": image.image_url,
                 "ai_result": image.ai_result,
-                "created_at": image.created_at.isoformat() if image.created_at else None if image.created_at else None,
+                "created_at": image.created_at.isoformat() if image.created_at else None,
             }
             for image in images
         ]

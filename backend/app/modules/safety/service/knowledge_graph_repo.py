@@ -1,5 +1,6 @@
 """Knowledge Graph repository — database access for graph nodes and edges."""
 
+import logging
 from __future__ import annotations
 
 import uuid
@@ -9,6 +10,8 @@ from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.models import GraphKnowledgeEdge, GraphKnowledgeNode
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeGraphRepository:

@@ -1,5 +1,6 @@
 """Knowledge Graph Service — 知识图谱数据服务"""
 
+import logging
 from __future__ import annotations
 
 import uuid
@@ -9,6 +10,8 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.safety.models import GraphKnowledgeEdge, GraphKnowledgeNode
+
+logger = logging.getLogger(__name__)
 
 
 class KnowledgeGraphService:

@@ -8,7 +8,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy import inspect
+from sqlalchemy import text,  inspect
 
 
 revision: str = '0056_fix_daily_risk_report_and_special_op_index'
@@ -54,6 +54,7 @@ def upgrade() -> None:
             ['personnel_no', 'department', 'certificate_type', 'certificate_number', 'expiry_date'],
             unique=True,
             schema='safety',
+            postgresql_where=text('is_deleted = false'),
         )
 
 
