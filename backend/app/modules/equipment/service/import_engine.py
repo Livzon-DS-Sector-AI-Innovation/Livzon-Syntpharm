@@ -29,11 +29,28 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
 
     # P1.5: 强制覆盖模式下，仅按资产编号匹配（部门/位置可能不一致）
     if force_override and asset_no:
+        # 标准化资产编号：去除首尾空格和前导零，确保 "059070" 和 "59070" 能匹配
+        normalized_asset_no = str(asset_no).strip().lstrip('0') or '0'
+        logger.info(f"Force override: searching for asset_no='{asset_no}' (normalized='{normalized_asset_no}')")
+        
+        # 先尝试精确匹配
         result = await db.execute(select(Equipment).where(
             Equipment.asset_no == asset_no, Equipment.is_deleted.is_(False)))
-        if (eq := result.scalar_one_or_none()):
+        eq = result.scalar_one_or_none()
+        
+        # 如果精确匹配失败，尝试标准化后匹配
+        if not eq:
+            result = await db.execute(select(Equipment).where(
+                Equipment.is_deleted.is_(False)))
+            for row in result.scalars():
+                if str(row.asset_no).strip().lstrip('0') == normalized_asset_no:
+                    eq = row
+                    logger.info(f"Matched by normalized asset_no: DB='{row.asset_no}' vs Excel='{asset_no}'")
+                    break
+        
+        if eq:
             warnings.append({"field": "asset_no", "level": "WARN",
-                             "message": "资产编号匹配但部门/位置不一致，强制覆盖将更新"})
+                             "message": f"资产编号匹配但部门/位置不一致，强制覆盖将更新 (DB: {eq.asset_no})"})
             return eq, "asset_no_only", warnings
 
     # P2: 设备位号匹配
