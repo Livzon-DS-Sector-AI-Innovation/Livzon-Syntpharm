@@ -120,7 +120,7 @@ export default function DailyRiskReportPanel() {
         planned_end_time: editingRecord.planned_end_time ? dayjs(editingRecord.planned_end_time) : undefined
       })
     }
-  }, [editingRecord, modalVisible])
+  }, [editingRecord, modalVisible, editForm])
 
   const handleDelete = (id: string) => {
     modal.confirm({

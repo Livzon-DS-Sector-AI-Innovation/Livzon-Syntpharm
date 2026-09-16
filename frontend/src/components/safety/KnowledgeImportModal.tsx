@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Modal, Upload, Button, Select, App, Progress, Tag, Space } from 'antd'
+import { Modal, Upload, Button, Select, App, Tag, Space } from 'antd'
 import { InboxOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { batchImportKnowledgeArticles } from '@/actions/safety'

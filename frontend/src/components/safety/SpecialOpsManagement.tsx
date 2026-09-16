@@ -149,7 +149,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, statusFilter, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical, message])
+  }, [page, pageSize, statusFilter, opType, opLevel, riskLevel, dept, dateRange, debouncedKeyword, isCritical, message])
 
   // ── AI Export ──
 

@@ -273,12 +273,12 @@ export default function KnowledgeGraphPanel() {
   const edges = useKnowledgeGraphStore(s => s.edges)
   const selectedNodeId = useKnowledgeGraphStore(s => s.selectedNodeId)
   const selectedEdgeId = useKnowledgeGraphStore(s => s.selectedEdgeId)
-  const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
-  const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
+  const _nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
+  const _relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
-  const rfInstance = useRef<any>(null)
+  const rfInstance = useRef<unknown>(null)
   const loadingRef = useRef(false)  // 防重入
   const [loading, setLoading] = useState(false)  // 本地 loading，避免 useSyncExternalStore 在 commit 阶段触发 error #185
 
@@ -312,9 +312,12 @@ export default function KnowledgeGraphPanel() {
     } finally {
       loadingRef.current = false
     }
-  }, [message, store])
+  }, [])
 
-  useEffect(() => { loadGraph() }, [loadGraph])
+  useEffect(() => {
+    loadGraph()
+  }, [loadGraph])
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- loadGraph uses refs and setTimeout, not direct setState
 
   // 同步 store → React Flow（聚类布局），只保留 category + document 节点
   useEffect(() => {
@@ -333,7 +336,7 @@ export default function KnowledgeGraphPanel() {
     setTimeout(() => {
       (rfInstance.current as { fitView?: (options: { padding: number; duration: number }) => void })?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
-  }, [nodes, edges]) // setFlowNodes/setFlowEdges 是稳定引用，无需加入依赖
+  }, [nodes, edges, setFlowNodes, setFlowEdges])
 
   // 节点点击 → 展开邻居
   const onNodeClick = useCallback(
