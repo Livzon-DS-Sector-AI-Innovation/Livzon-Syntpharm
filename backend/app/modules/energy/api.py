@@ -716,7 +716,6 @@ async def create_target(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     target = await service.create_target(
         db,
         workshop_id=UUID(body.workshop_id),

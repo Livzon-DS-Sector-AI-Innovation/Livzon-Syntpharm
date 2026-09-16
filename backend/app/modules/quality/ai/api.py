@@ -56,8 +56,7 @@ def _detect_query_intent(text: str) -> tuple[str, dict[str, Any]] | None:
     """Detect user intent for HR database queries."""
     # 1. 某部门有哪些人 / 某部门的人 / 某部门名单
     m = re.search(
-        r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))"
-        r".*?(?:有哪些人|的人|名单|员工|成员)",
+        r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))" r".*?(?:有哪些人|的人|名单|员工|成员)",
         text,
     )
     if m:
@@ -73,8 +72,7 @@ def _detect_query_intent(text: str) -> tuple[str, dict[str, Any]] | None:
 
     # 3. 某部门有多少（人/员工）
     m = re.search(
-        r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))"
-        r".*?(?:有多少|共多少|人数|几人)",
+        r"([一-龥\w\-]{2,20}(?:部门|车间|科室|组|部|中心))" r".*?(?:有多少|共多少|人数|几人)",
         text,
     )
     if m:
