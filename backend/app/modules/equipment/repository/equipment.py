@@ -405,7 +405,7 @@ _SORT_COLUMNS = {
     "created_at": Equipment.created_at,
 }
 # 仅真可空列适用 NULLS LAST；asset_no/name/status/created_at 均 NOT NULL
-_NULLABLE_SORT_COLUMNS = {"commissioning_date", "current_cost", "book_value"}
+_NULLABLE_SORT_COLUMNS = {"commissioning_date", "current_cost", "book_value", "department_name"}
 
 
 def _build_order_by(sort_by: str, sort_order: str) -> list:

@@ -20,7 +20,7 @@ created: 2026-09-08
 ## Implementation Decisions
 *   **API 接口变更**: `POST /api/v1/equipment/import/batch` 增加可选布尔字段 `force_override_business_fields` (default: `false`)。
 *   **后端逻辑调整**: 在 `apply_incremental_update` 函数中增加 `force_override` 参数。如果为 `True`，B类字段无论当前值是否为 NULL，均与 Excel 数据进行比对并更新。
-*   **前端交互设计**: 在导入预览界面添加带有警示 tooltip 的复选框，并在勾选时弹出二次确认对话框。
+*   **前端交互设计**: 在导入预览界面添加带有警示 tooltip 的复选框，并在勾选时通过 Popconfirm 气泡确认框进行二次确认。
 *   **审计日志增强**: 在 `import_audit_logs` 表中，当发生强制覆盖时，在 `changes` 字段中明确标记 `"override_type": "force"`。
 
 ## Testing Decisions

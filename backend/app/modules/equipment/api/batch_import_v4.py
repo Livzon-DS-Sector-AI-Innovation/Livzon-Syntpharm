@@ -329,13 +329,27 @@ async def preview_import_v4(
         dept_raw = row.get("department_name")
         dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
 
-        # 3. 组装返回结果
+        # 3. 调用匹配引擎预览匹配策略（P2: 使用 forceOverride 参数）
+        match_strategy = None
+        if not dept_error and idx not in duplicates and dept_id:
+            row["department_id"] = dept_id
+            existing, strategy, warnings = await find_existing_equipment(
+                db, row.get("asset_no"), row.get("equipment_tag"),
+                row.get("name"), dept_id, row.get("location_text"),
+                force_override
+            )
+            match_strategy = strategy
+            if warnings:
+                display_row["match_warnings"] = [w["message"] for w in warnings]
+
+        # 4. 组装返回结果
         result_item = {
             "row_index": idx,
             "is_duplicate": idx in duplicates,
             "validation_status": "error" if dept_error else ("duplicate" if idx in duplicates else "pass"),
             "error_message": dept_error,
-            "resolved_department": dept_name, # 仅用于调试或额外展示
+            "resolved_department": dept_name,
+            "match_strategy": match_strategy,
         }
         # 将原始 Excel 数据合并进去，确保前端看到的列名和值与 Excel 完全一致
         result_item.update(display_row)

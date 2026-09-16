@@ -17,7 +17,7 @@
     *   重构 `frontend/src/components/equipment/ImportCockpit.tsx`。
     *   使用 `FIELD_DEFINITIONS` 硬编码 22 列（或改为从后端 `PREVIEW_HEADERS` 动态获取）。
 *   **Database**: 
-    *   需执行迁移脚本将唯一约束升级为 `(asset_no, department_id, location_text)`。
+    *   需执行迁移脚本将唯一约束升级为 `(asset_no, department_id, location_text, is_deleted)`（含软删除标记，允许同一编号在软删除后重建）。
 
 ## User Stories
 1. As a **设备管理员**, I want to **preview all 22 fields** in the `ImportCockpit`, so that I can verify data before import.
