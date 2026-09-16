@@ -10,6 +10,7 @@ import {
   useEdgesState,
   type Node,
   type Edge,
+  type ReactFlowInstance,
   MarkerType,
   BackgroundVariant,
   Panel,
@@ -278,7 +279,7 @@ export default function KnowledgeGraphPanel() {
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
-  const rfInstance = useRef<unknown>(null)
+  const rfInstance = useRef<ReactFlowInstance<Node, Edge> | null>(null)
   const loadingRef = useRef(false)  // 防重入
   const [loading, setLoading] = useState(false)  // 本地 loading，避免 useSyncExternalStore 在 commit 阶段触发 error #185
 
@@ -335,7 +336,7 @@ export default function KnowledgeGraphPanel() {
     setFlowNodes(laidOut)
     setFlowEdges(mappedEdges)
     setTimeout(() => {
-      (rfInstance.current as any)?.fitView?.({ padding: 0.05, duration: 200 })
+      rfInstance.current?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
   }, [nodes, edges, setFlowNodes, setFlowEdges])
 
@@ -354,7 +355,7 @@ export default function KnowledgeGraphPanel() {
             error: null,
           })
           setTimeout(() => {
-            (rfInstance.current as any)?.fitView?.({ padding: 0.1, duration: 300 })
+            rfInstance.current?.fitView?.({ padding: 0.1, duration: 300 })
           }, 50)
         }
       } catch { /* ignore */ }
