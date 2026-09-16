@@ -7,8 +7,8 @@
 否则 FastAPI 会在运行时抛校验错误。
 """
 
-_PREVIEW = "/api/v1/equipment/equipments/import-v4/preview"
 from typing import Any
+_PREVIEW = "/api/v1/equipment/equipments/import-v4/preview"
 _BATCH = "/api/v1/equipment/equipments/import-v4/batch"
 
 
