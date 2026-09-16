@@ -40,13 +40,14 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
         
         # 如果精确匹配失败，尝试标准化后匹配
         if not eq:
+            from sqlalchemy import func
             result = await db.execute(select(Equipment).where(
-                Equipment.is_deleted.is_(False)))
-            for row in result.scalars():
-                if str(row.asset_no).strip().lstrip('0') == normalized_asset_no:
-                    eq = row
-                    logger.info(f"Matched by normalized asset_no: DB='{row.asset_no}' vs Excel='{asset_no}'")
-                    break
+                Equipment.is_deleted.is_(False),
+                func.ltrim(Equipment.asset_no, '0') == normalized_asset_no
+            ))
+            eq = result.scalar_one_or_none()
+            if eq:
+                logger.info("Matched by normalized asset_no: DB=%s vs Excel=%s", eq.asset_no, asset_no)
         
         if eq:
             warnings.append({"field": "asset_no", "level": "WARN",
