@@ -397,3 +397,5 @@ async def preview_import_v4(
 
     if results:
         return build_response(data=ImportV4PreviewResponse(items=results, total=len(results), headers=PREVIEW_HEADERS))
+
+    return build_response(data=ImportV4PreviewResponse(items=[], total=0, headers=PREVIEW_HEADERS))
