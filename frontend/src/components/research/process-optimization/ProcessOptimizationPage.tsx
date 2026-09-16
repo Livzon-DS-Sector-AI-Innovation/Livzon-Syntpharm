@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {Button, Input, Table, Tag, Card, App, Space, Popconfirm, Alert} from 'antd'
+import {Button, Input, Table, Tag, Card, App, Space, Popconfirm} from 'antd'
 import {PlayCircleOutlined, DeleteOutlined, PlusOutlined} from '@ant-design/icons'
 import { ProcessOptimizationWorkflowPage } from './ProcessOptimizationWorkflowPage'
 import { fetchOptimizations } from '@/lib/api/client/research'
