@@ -8,8 +8,8 @@
 """
 
 _PREVIEW = "/api/v1/equipment/equipments/import-v4/preview"
-_BATCH = "/api/v1/equipment/equipments/import-v4/batch"
 from typing import Any
+_BATCH = "/api/v1/equipment/equipments/import-v4/batch"
 
 
 def _response_ref(schema: dict[str, Any], path: str) -> str:
