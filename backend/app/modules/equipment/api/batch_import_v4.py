@@ -266,7 +266,7 @@ async def batch_import_v4(
                     continue
 
                 dept_raw = row.get("department_name")
-                dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
+                dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)  # type: ignore[arg-type]
 
                 if dept_error:
                     failed += 1
@@ -357,7 +357,7 @@ async def preview_import_v4(
 
         # 2. 后台静默解析部门，用于校验和匹配逻辑
         dept_raw = row.get("department_name")
-        dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)
+        dept_name, dept_id, dept_error = await resolve_department_strict(dept_raw, db)  # type: ignore[arg-type]
 
         # 3. 调用匹配引擎预览匹配策略（P2: 使用 forceOverride 参数）
         match_strategy = None

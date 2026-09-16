@@ -427,10 +427,10 @@ def _build_order_by(sort_by: str, sort_order: str) -> list[Any]:
     if column is None:
         supported = ", ".join(["asset_no", "department_name", "status", *_SORT_COLUMNS])
         raise ValueError(f"不支持的排序字段: {sort_by}，支持: {supported}")
-    key: Any = column.desc() if is_desc else column.asc()
+    _key: Any = column.desc() if is_desc else column.asc()
     if sort_by in _NULLABLE_SORT_COLUMNS:
-        key = nulls_last(key)
-    return [key, tiebreak]
+        _key = nulls_last(_key)
+    return [_key, tiebreak]
 
 
 async def get_equipments(
