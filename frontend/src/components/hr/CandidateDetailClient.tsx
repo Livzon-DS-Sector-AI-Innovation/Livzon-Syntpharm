@@ -197,7 +197,6 @@ export default function CandidateDetailClient({
         <div className="flex-1 bg-white rounded-xl border border-[#e5e3df] overflow-hidden relative" style={{ minHeight: 600 }}>
           <Spin
             spinning={pdfLoading}
-            description="加载简历中..."
             className="absolute inset-0 flex items-center justify-center z-10"
           />
           {pdfError && (

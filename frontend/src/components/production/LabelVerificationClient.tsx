@@ -379,7 +379,7 @@ export default function LabelVerificationClient({
               <Statistic
                 title="全部一致"
                 value={statistics?.all_match}
-                styles={{ content: { color: '#52c41a' } }}
+                valueStyle={{ color: '#52c41a' }}
                 prefix={<CheckCircleOutlined />}
               />
             </Card>
@@ -389,7 +389,7 @@ export default function LabelVerificationClient({
               <Statistic
                 title="存在差异"
                 value={statistics?.has_difference}
-                styles={{ content: { color: '#ff4d4f' } }}
+                valueStyle={{ color: '#ff4d4f' }}
                 prefix={<CloseCircleOutlined />}
               />
             </Card>
@@ -401,7 +401,7 @@ export default function LabelVerificationClient({
                 value={statistics?.match_rate}
                 precision={1}
                 suffix="%"
-                styles={{ content: { color: statistics?.match_rate >= 90 ? '#52c41a' : '#faad14' } }}
+                valueStyle={{ color: statistics?.match_rate >= 90 ? '#52c41a' : '#faad14' }}
               />
             </Card>
           </Col>

@@ -251,15 +251,6 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
 
   return (
     <div>
-      {!apiAvailable && (
-        <Alert
-          message="后端服务不可用"
-          description="API 服务器未启动，当前显示的是空数据。工作流功能仍可正常使用，数据保存在浏览器本地。"
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
 
       <Card title="🔬 创建新优化任务" style={{ marginBottom: 16 }}>
         {!showCreateForm ? (

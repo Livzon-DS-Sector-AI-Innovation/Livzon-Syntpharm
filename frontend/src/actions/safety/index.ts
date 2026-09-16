@@ -723,7 +723,7 @@ export async function uploadRegulationDocument(id: string, file: File): Promise<
 
 // ============ SOP Generator Actions ============
 
-export async function generateSop(file: File): Promise<ApiResponse<unknown>> {
+export async function generateSop(file: File) {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()

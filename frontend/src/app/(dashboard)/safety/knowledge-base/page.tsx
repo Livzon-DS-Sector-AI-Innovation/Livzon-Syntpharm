@@ -491,7 +491,7 @@ export default function KnowledgeBasePage() {
       <KnowledgeImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onSuccess={() => { loadData(); setImportOpen(false) }}
+        onSuccess={() => { refetch(); setImportOpen(false) }}
       />
       </div>
     </div>

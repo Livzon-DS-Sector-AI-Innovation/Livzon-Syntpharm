@@ -335,7 +335,7 @@ export default function KnowledgeGraphPanel() {
     setFlowNodes(laidOut)
     setFlowEdges(mappedEdges)
     setTimeout(() => {
-      (rfInstance.current as { fitView?: (options: { padding: number; duration: number }) => void })?.fitView?.({ padding: 0.05, duration: 200 })
+      (rfInstance.current as any)?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
   }, [nodes, edges, setFlowNodes, setFlowEdges])
 
@@ -354,7 +354,7 @@ export default function KnowledgeGraphPanel() {
             error: null,
           })
           setTimeout(() => {
-            (rfInstance.current as { fitView?: (options: { padding: number; duration: number }) => void })?.fitView?.({ padding: 0.1, duration: 300 })
+            (rfInstance.current as any)?.fitView?.({ padding: 0.1, duration: 300 })
           }, 50)
         }
       } catch { /* ignore */ }
