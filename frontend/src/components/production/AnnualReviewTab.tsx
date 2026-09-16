@@ -64,7 +64,6 @@ export default function AnnualReviewTab({ year }: Props) {
 
   const { overview, monthly_trend, workshop_ranking, top_products } = data || {}
   const safeOverview = overview || { total_weight: 0, previous_year_weight: 0, weight_yoy: 0, total_batches: 0, previous_year_batches: 0, batch_yoy: 0, active_workshops: 0, active_products: 0 }
-  const safeMonthlyTrend = monthly_trend || []
   const safeWorkshopRanking = workshop_ranking || []
   const safeTopProducts = top_products || []
 
