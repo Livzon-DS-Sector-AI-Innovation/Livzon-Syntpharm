@@ -1,7 +1,9 @@
 """快速补全部门 ID 的脚本。"""
+
 import asyncio
 import sys
-sys.path.insert(0, '/home/zhuangweizi/Livzon-Syntpharm/backend')
+
+sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
 
 import xlrd
 from app.core.database import async_session_factory
@@ -9,8 +11,9 @@ from app.modules.equipment.api.batch_import import map_department_name_v3
 from sqlalchemy import select
 from app.modules.equipment.models.equipment import Equipment
 
+
 async def run():
-    excel_path = '/home/zhuangweizi/.codex/202606sbgz.xls'
+    excel_path = "/home/zhuangweizi/.codex/202606sbgz.xls"
     wb = xlrd.open_workbook(excel_path)
     ws = wb.sheet_by_index(0)
     headers = ws.row_values(4)
@@ -45,6 +48,7 @@ async def run():
         await db.commit()
 
     print(f"\n🎉 部门补全完成！共更新: {updated} 条")
+
 
 if __name__ == "__main__":
     asyncio.run(run())

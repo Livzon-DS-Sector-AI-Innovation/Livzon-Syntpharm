@@ -1,14 +1,17 @@
 """验证设备导入 v4 迁移是否完成。"""
+
 import asyncio
 import sys
 import os
-sys.path.insert(0, '/home/zhuangweizi/Livzon-Syntpharm/backend')
+
+sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
 
 # 强制使用 Docker 内部主机名
-os.environ['DATABASE_URL'] = 'postgresql+asyncpg://postgres:postgres123@erp-postgres:5432/dazah'
+os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:postgres123@erp-postgres:5432/dazah"
 
 from app.core.database import async_session_factory
 from sqlalchemy import text
+
 
 async def verify():
     async with async_session_factory() as db:
@@ -23,10 +26,12 @@ async def verify():
             return False
 
         # 2. 检查 equipment_tag 唯一索引
-        result = await db.execute(text("""
+        result = await db.execute(
+            text("""
             SELECT indexname FROM pg_indexes
             WHERE schemaname = 'equipment' AND tablename = 'equipments' AND indexname = 'uq_equipments_equipment_tag'
-        """))
+        """)
+        )
         if result.scalar():
             print("✅ [PASS] uq_equipments_equipment_tag 索引存在")
         else:
@@ -43,6 +48,7 @@ async def verify():
 
         print("\n🎉 所有迁移验证通过！")
         return True
+
 
 if __name__ == "__main__":
     success = asyncio.run(verify())

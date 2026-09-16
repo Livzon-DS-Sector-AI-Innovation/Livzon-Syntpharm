@@ -21,8 +21,10 @@ def test_openapi_declares_concrete_import_v4_envelopes():
     from app.main import app
 
     schema = app.openapi()  # type: ignore[attr-defined]
-    for path, envelope, payload in [(_PREVIEW, "ImportV4PreviewApiResponse", "ImportV4PreviewResponse"),
-                                    (_BATCH, "ImportV4BatchApiResponse", "ImportV4BatchResponse")]:
+    for path, envelope, payload in [
+        (_PREVIEW, "ImportV4PreviewApiResponse", "ImportV4PreviewResponse"),
+        (_BATCH, "ImportV4BatchApiResponse", "ImportV4BatchResponse"),
+    ]:
         assert _response_ref(schema, path).endswith(envelope), f"{path} 未声明具体 envelope"
         props = schema["components"]["schemas"][envelope]["properties"]
         assert set(props) == {"code", "message", "data", "meta"}

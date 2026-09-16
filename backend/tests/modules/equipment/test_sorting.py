@@ -35,9 +35,7 @@ async def _create_department(db, *, name: str) -> Department:
 
 
 async def _list_sorted(db, sort_by: str, sort_order: str = "asc") -> list[Equipment]:
-    rows, _ = await get_equipments(
-        db, keyword=_KEYWORD, sort_by=sort_by, sort_order=sort_order, page=1, page_size=50
-    )
+    rows, _ = await get_equipments(db, keyword=_KEYWORD, sort_by=sort_by, sort_order=sort_order, page=1, page_size=50)
     return rows
 
 
@@ -179,8 +177,16 @@ _DATASET_BASELINE_ROWS = 2000
 # 三者的期望序列都不能用 Python sorted() 判定；department_name 来自 JOIN，不是模型属性。
 # 这里只对日期/数值列做单调性复核，其余字段的序由专项用例断言。
 _MONOTONIC_CHECKABLE = ["commissioning_date", "current_cost", "book_value", "created_at"]
-_ALL_SORT_FIELDS = ["asset_no", "name", "commissioning_date", "current_cost", "book_value", "department_name",
-                    "status", "created_at"]
+_ALL_SORT_FIELDS = [
+    "asset_no",
+    "name",
+    "commissioning_date",
+    "current_cost",
+    "book_value",
+    "department_name",
+    "status",
+    "created_at",
+]
 
 
 @pytest.mark.parametrize("sort_by", _ALL_SORT_FIELDS)
@@ -192,9 +198,7 @@ async def test_full_dataset_sort_stays_within_budget(db_session, sort_by, sort_o
         pytest.skip(f"当前数据量 {total} 行，低于验收基线 {_DATASET_BASELINE_ROWS} 行，跳过性能断言")
 
     started = time.perf_counter()
-    rows, total = await get_equipments(
-        db_session, sort_by=sort_by, sort_order=sort_order, page=1, page_size=200
-    )
+    rows, total = await get_equipments(db_session, sort_by=sort_by, sort_order=sort_order, page=1, page_size=200)
     elapsed = time.perf_counter() - started
 
     assert len(rows) == 200

@@ -207,6 +207,7 @@ def _only_model_fields(row: dict[str, Any]) -> dict[str, Any]:
     """只保留 Equipment 模型真实存在的列，避免 `Equipment(**row)` 抛 TypeError。"""
     return {k: v for k, v in row.items() if k in _EQUIPMENT_COLUMNS}
 
+
 async def resolve_department_strict(excel_dept: str, db: AsyncSession) -> tuple[str | None, Any, str | None]:
     if not excel_dept or not str(excel_dept).strip():
         return None, None, "部门名称为空"

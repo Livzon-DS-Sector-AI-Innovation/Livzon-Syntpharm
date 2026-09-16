@@ -1,8 +1,10 @@
 """初始化基础部门数据脚本。"""
+
 import asyncio
 import uuid
 import sys
-sys.path.insert(0, '/home/zhuangweizi/Livzon-Syntpharm/backend')
+
+sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
 
 from app.core.database import async_session_factory
 from app.modules.hr.models import HrDepartment
@@ -33,6 +35,7 @@ CORE_DEPARTMENTS = [
     {"name": "仓库", "code": "WAREHOUSE"},
 ]
 
+
 async def seed():
     print("🌱 开始初始化基础部门数据...")
     async with async_session_factory() as db:
@@ -41,10 +44,7 @@ async def seed():
             result = await db.execute(select(HrDepartment).where(HrDepartment.name == dept_info["name"]))
             if not result.scalar_one_or_none():
                 new_dept = HrDepartment(
-                    id=uuid.uuid4(),
-                    name=dept_info["name"],
-                    code=dept_info["code"],
-                    is_deleted=False
+                    id=uuid.uuid4(), name=dept_info["name"], code=dept_info["code"], is_deleted=False
                 )
                 db.add(new_dept)
                 print(f"   ➕ 创建部门: {dept_info['name']}")
@@ -53,6 +53,7 @@ async def seed():
 
         await db.commit()
         print("🎉 部门种子数据初始化完成！")
+
 
 if __name__ == "__main__":
     try:

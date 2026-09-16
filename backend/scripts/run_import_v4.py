@@ -1,8 +1,10 @@
 """执行 v4 导入逻辑的独立脚本。"""
+
 import asyncio
 import sys
 import os
-sys.path.insert(0, '/home/zhuangweizi/Livzon-Syntpharm/backend')
+
+sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
 
 import xlrd
 from app.core.database import async_session_factory
@@ -10,8 +12,9 @@ from app.modules.equipment.service.import_engine import find_existing_equipment
 from app.modules.equipment import repository as repo
 from app.modules.equipment.api.batch_import import map_department_name_v3
 
+
 async def run():
-    excel_path = '/home/zhuangweizi/.codex/202606sbgz.xls'
+    excel_path = "/home/zhuangweizi/.codex/202606sbgz.xls"
     if not os.path.exists(excel_path):
         print("❌ Excel 文件不存在")
         return
@@ -39,12 +42,12 @@ async def run():
 
             # 解析成本
             try:
-                current_cost = float(str(row.get("当前成本", "0")).replace("¥","").replace(",",""))
+                current_cost = float(str(row.get("当前成本", "0")).replace("¥", "").replace(",", ""))
             except Exception:
                 current_cost = None
 
             try:
-                book_value = float(str(row.get("帐面净值", "0")).replace("¥","").replace(",",""))
+                book_value = float(str(row.get("帐面净值", "0")).replace("¥", "").replace(",", ""))
             except Exception:
                 book_value = None
 
@@ -70,11 +73,18 @@ async def run():
                     skipped += 1
             else:
                 # 创建新记录
-                await repo.create_equipment(db, {
-                    "asset_no": asset_no, "name": name, "department_id": dept_id,
-                    "location_text": location_text, "current_cost": current_cost,
-                    "book_value": book_value, "is_fixed_asset": bool(asset_no)
-                })
+                await repo.create_equipment(
+                    db,
+                    {
+                        "asset_no": asset_no,
+                        "name": name,
+                        "department_id": dept_id,
+                        "location_text": location_text,
+                        "current_cost": current_cost,
+                        "book_value": book_value,
+                        "is_fixed_asset": bool(asset_no),
+                    },
+                )
                 created += 1
 
             if (r + 1) % 100 == 0:
@@ -84,6 +94,7 @@ async def run():
         await db.commit()
 
     print(f"\n🎉 导入完成！新增: {created}, 更新: {updated}, 跳过: {skipped}")
+
 
 if __name__ == "__main__":
     asyncio.run(run())

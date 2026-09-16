@@ -1,8 +1,10 @@
 """从飞书同步部门数据到本地数据库。"""
+
 import asyncio
 import os
 import sys
-sys.path.insert(0, '/home/zhuangweizi/Livzon-Syntpharm/backend')
+
+sys.path.insert(0, "/home/zhuangweizi/Livzon-Syntpharm/backend")
 
 from app.core.database import async_session_factory
 from app.modules.hr.models import HrDepartment
@@ -17,6 +19,7 @@ if not APP_ID or not APP_SECRET:
     print("❌ 错误: 请在 .env 文件中设置 FEISHU__PLATFORM__APP_ID 和 FEISHU__PLATFORM__APP_SECRET")
     sys.exit(1)
 
+
 async def get_tenant_access_token():
     url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
     payload = {"app_id": APP_ID, "app_secret": APP_SECRET}
@@ -27,6 +30,7 @@ async def get_tenant_access_token():
             return data["tenant_access_token"]
         else:
             raise Exception(f"获取 Token 失败: {data}")
+
 
 async def sync_departments():
     print("🔄 开始从飞书同步部门...")
@@ -49,11 +53,9 @@ async def sync_departments():
     all_depts = []
     items = data.get("data", {}).get("items", [])
     for item in items:
-        all_depts.append({
-            "id": item["department_id"],
-            "name": item["name"],
-            "parent_id": item.get("parent_department_id")
-        })
+        all_depts.append(
+            {"id": item["department_id"], "name": item["name"], "parent_id": item.get("parent_department_id")}
+        )
 
     print(f"✅ 从飞书获取到 {len(all_depts)} 个部门")
 
@@ -69,13 +71,14 @@ async def sync_departments():
                     name=dept_data["name"],
                     code=dept_data["id"],
                     feishu_department_id=dept_data["id"],
-                    is_deleted=False
+                    is_deleted=False,
                 )
                 db.add(new_dept)
                 print(f"  ➕ 新增部门: {dept_data['name']}")
 
         await db.commit()
         print("🎉 部门同步完成！")
+
 
 if __name__ == "__main__":
     asyncio.run(sync_departments())

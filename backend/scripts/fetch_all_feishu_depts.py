@@ -5,11 +5,14 @@ import httpx
 APP_ID = os.getenv("FEISHU__PLATFORM__APP_ID")
 APP_SECRET = os.getenv("FEISHU__PLATFORM__APP_SECRET")
 
+
 async def fetch():
     async with httpx.AsyncClient() as client:
         # 1. Get Token
-        resp = await client.post("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
-                                json={"app_id": APP_ID, "app_secret": APP_SECRET})
+        resp = await client.post(
+            "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
+            json={"app_id": APP_ID, "app_secret": APP_SECRET},
+        )
         token = resp.json()["tenant_access_token"]
         headers = {"Authorization": f"Bearer {token}"}
 
@@ -20,8 +23,9 @@ async def fetch():
         # Use search endpoint which is often more permissive than list
         async def search_depts(parent_id="0"):
             payload = {"parent_department_id": parent_id, "page_size": 50}
-            resp = await client.post("https://open.feishu.cn/open-apis/contact/v3/departments/search",
-                                   headers=headers, json=payload)
+            resp = await client.post(
+                "https://open.feishu.cn/open-apis/contact/v3/departments/search", headers=headers, json=payload
+            )
             data = resp.json()
             if data.get("code") == 0:
                 items = data.get("data", {}).get("items", [])
@@ -54,5 +58,6 @@ async def fetch():
             print("\n--- 部门列表 ---")
             for d in sorted(set(all_depts)):
                 print(f"   - {d}")
+
 
 asyncio.run(fetch())
