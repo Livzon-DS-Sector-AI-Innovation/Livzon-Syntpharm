@@ -337,6 +337,7 @@ async def batch_import_v4(
     )
 
 
+    return build_response(data=ImportV4PreviewResponse(items=[], total=0, headers=PREVIEW_HEADERS))
 @router.post("/preview", summary="预览导入结果 (v4)", response_model=ImportV4PreviewApiResponse)
 async def preview_import_v4(
     current_user: RequiredUser,
