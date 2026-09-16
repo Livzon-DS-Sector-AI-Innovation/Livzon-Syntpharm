@@ -1,3 +1,4 @@
+from typing import Any
 """[DEBUG-eqedit] 临时诊断测试：设备台账编辑保存无效果 — 反馈环。
 
 模拟用户症状：PUT 更新设备后数据未变化。
@@ -9,7 +10,7 @@ import uuid
 BASE = "/api/v1/equipment/equipments"
 
 
-async def _create_equipment(auth_client) -> tuple[str, dict]:
+async def _create_equipment(auth_client) -> tuple[str, dict[str, Any]]:
     payload = {
         "name": "诊断设备",
         "asset_no": f"DIAG-{uuid.uuid4().hex[:8]}",

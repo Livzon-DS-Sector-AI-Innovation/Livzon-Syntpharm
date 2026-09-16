@@ -146,7 +146,7 @@ def detect_internal_duplicates(rows: list[dict[str, Any]]) -> set[int]:
     return duplicates
 
 
-def apply_incremental_update(existing: Equipment, excel_data: dict[str, Any], force_override: bool = False):
+def apply_incremental_update(existing: Equipment, excel_data: dict[str, Any], force_override: bool = False) -> dict[str, ChangeRecord]:
     changes: dict[str, ChangeRecord] = {}
     for field in MONEY_FIELDS:
         new_val = excel_data.get(field)

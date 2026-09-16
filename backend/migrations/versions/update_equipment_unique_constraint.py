@@ -1,7 +1,7 @@
 """update equipment unique constraint to include department and location
 
 Revision ID: update_equip_uq_20260909
-Revises: 
+Revises:
 Create Date: 2026-09-09
 
 """

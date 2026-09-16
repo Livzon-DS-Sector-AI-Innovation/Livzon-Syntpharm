@@ -208,7 +208,7 @@ def _only_model_fields(row: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in row.items() if k in _EQUIPMENT_COLUMNS}
 
 
-async def resolve_department_strict(excel_dept: str, db: AsyncSession):
+async def resolve_department_strict(excel_dept: str, db: AsyncSession) -> tuple[str | None, uuid.UUID | None, str | None]:
     if not excel_dept or not str(excel_dept).strip():
         return None, None, "部门名称为空"
     standard_name = normalize_department_name(str(excel_dept).strip())
@@ -222,7 +222,7 @@ async def resolve_department_strict(excel_dept: str, db: AsyncSession):
     return standard_name, dept.id, None
 
 
-async def log_audit(db, batch_id, operation_type, **kwargs):
+async def log_audit(db: AsyncSession, batch_id: str, operation_type: str, **kwargs: Any) -> None:
     db.add(ImportAuditLog(batch_id=batch_id, operation_type=operation_type, **kwargs))
 
 
@@ -246,7 +246,8 @@ async def batch_import_v4(
     duplicates = detect_internal_duplicates(normalized_data)
     batch_id = f"import_{int(time.time())}_{current_user.id.hex[:8]}"
     created = updated = skipped = failed = 0
-    errors, unmapped_depts = [], {}
+    errors: list[dict[str, Any]] = []
+    unmapped_depts: dict[str, list[int]] = {}
 
     for idx, row in enumerate(normalized_data):
         audit_kwargs = {

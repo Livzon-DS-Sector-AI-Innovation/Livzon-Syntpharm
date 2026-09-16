@@ -31,17 +31,22 @@ async def run():
             dept_raw = row.get("实物所在部门")
             location_text = str(row.get("实物所在地点", "")).strip() or None
 
-            if not name: continue
+            if not name:
+                continue
 
             # 映射部门
             dept_name, dept_id = await map_department_name_v3(dept_raw, db) if dept_raw else (None, None)
 
             # 解析成本
-            try: current_cost = float(str(row.get("当前成本", "0")).replace("¥","").replace(",",""))
-            except: current_cost = None
+            try:
+                current_cost = float(str(row.get("当前成本", "0")).replace("¥","").replace(",",""))
+            except Exception:
+                current_cost = None
 
-            try: book_value = float(str(row.get("帐面净值", "0")).replace("¥","").replace(",",""))
-            except: book_value = None
+            try:
+                book_value = float(str(row.get("帐面净值", "0")).replace("¥","").replace(",",""))
+            except Exception:
+                book_value = None
 
             # 查找
             existing, strategy = await find_existing_equipment(db, asset_no, None, name, dept_id, location_text)
@@ -50,14 +55,19 @@ async def run():
                 # 强制更新逻辑
                 changed = False
                 if existing.current_cost != current_cost:
-                    existing.current_cost = current_cost; changed = True
+                    existing.current_cost = current_cost
+                    changed = True
                 if existing.book_value != book_value:
-                    existing.book_value = book_value; changed = True
+                    existing.book_value = book_value
+                    changed = True
                 if dept_id and existing.department_id != dept_id:
-                    existing.department_id = dept_id; changed = True
+                    existing.department_id = dept_id
+                    changed = True
 
-                if changed: updated += 1
-                else: skipped += 1
+                if changed:
+                    updated += 1
+                else:
+                    skipped += 1
             else:
                 # 创建新记录
                 await repo.create_equipment(db, {

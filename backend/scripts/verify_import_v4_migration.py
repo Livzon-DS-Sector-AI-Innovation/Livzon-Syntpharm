@@ -24,7 +24,7 @@ async def verify():
 
         # 2. 检查 equipment_tag 唯一索引
         result = await db.execute(text("""
-            SELECT indexname FROM pg_indexes 
+            SELECT indexname FROM pg_indexes
             WHERE schemaname = 'equipment' AND tablename = 'equipments' AND indexname = 'uq_equipments_equipment_tag'
         """))
         if result.scalar():

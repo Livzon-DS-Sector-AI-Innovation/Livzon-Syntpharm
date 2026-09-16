@@ -22,7 +22,8 @@ async def run():
             asset_no = str(ws.cell_value(r, headers.index("资产编号"))).strip()
             dept_raw = ws.cell_value(r, headers.index("实物所在部门"))
 
-            if not asset_no: continue
+            if not asset_no:
+                continue
 
             # 1. 找到数据库里的设备
             result = await db.execute(select(Equipment).where(Equipment.asset_no == asset_no))

@@ -16,7 +16,8 @@ async def check():
         # 2. 尝试获取根部门下的子部门 (page_size=50)
         headers = {"Authorization": f"Bearer {token}"}
         resp = await client.get("https://open.feishu.cn/open-apis/contact/v3/departments",
-                               params={"parent_department_id": "0", "page_size": 50, "department_id_type": "open_department_id"},
+                               params={"parent_department_id": "0", "page_size": 50,
+                               "department_id_type": "open_department_id"},
                                headers=headers)
         data = resp.json()
 

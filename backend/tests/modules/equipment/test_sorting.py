@@ -1,3 +1,4 @@
+from typing import Any
 """设备列表排序集成测试（Ticket 01 返工）。
 
 真实调用 repo.get_equipments 并断言返回顺序。
@@ -156,7 +157,7 @@ async def test_tied_sort_key_pages_without_duplicates_or_gaps(db_session):
     )
     assert total == len(single) == 5
 
-    paged: list = []
+    paged: list[Any] = []
     for page in range(1, 4):
         rows, _ = await get_equipments(
             db_session, keyword=_KEYWORD, sort_by="name", sort_order="asc", page=page, page_size=2

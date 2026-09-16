@@ -38,7 +38,8 @@ async def sync():
                         all_depts.append({"id": data["department_id"], "name": data["name"]})
                         # Get children
                         resp_children = await client.get("https://open.feishu.cn/open-apis/contact/v3/departments",
-                                                       params={"parent_department_id": current_id, "page_size": 50}, headers=headers)
+                                                       params={"parent_department_id": current_id, "page_size": 50},
+                                                       headers=headers)
                         children = resp_children.json().get("data", {}).get("items", [])
                         for c in children:
                             queue.append(c["department_id"])
@@ -50,7 +51,10 @@ async def sync():
             for d in all_depts:
                 exists = await db.execute(select(HrDepartment).where(HrDepartment.feishu_department_id == d["id"]))
                 if not exists.scalar_one_or_none():
-                    db.add(HrDepartment(id=uuid.uuid4(), name=d["name"], code=d["id"], feishu_department_id=d["id"], is_deleted=False))
+                    db.add(HrDepartment(
+                        id=uuid.uuid4(), name=d["name"], code=d["id"],
+                        feishu_department_id=d["id"], is_deleted=False
+                    ))
             await db.commit()
             print("🎉 部门同步完成！")
 

@@ -408,7 +408,7 @@ _SORT_COLUMNS = {
 _NULLABLE_SORT_COLUMNS = {"commissioning_date", "current_cost", "book_value", "department_name"}
 
 
-def _build_order_by(sort_by: str, sort_order: str) -> list:
+def _build_order_by(sort_by: str, sort_order: str) -> list[Any]:
     """构造 ORDER BY；末尾追加 Equipment.id 保证 offset 分页稳定（D6）"""
     is_desc = sort_order == "desc"
     tiebreak = Equipment.id.asc()
@@ -427,7 +427,7 @@ def _build_order_by(sort_by: str, sort_order: str) -> list:
     if column is None:
         supported = ", ".join(["asset_no", "department_name", "status", *_SORT_COLUMNS])
         raise ValueError(f"不支持的排序字段: {sort_by}，支持: {supported}")
-    key = column.desc() if is_desc else column.asc()
+    key: Any = column.desc() if is_desc else column.asc()
     if sort_by in _NULLABLE_SORT_COLUMNS:
         key = nulls_last(key)
     return [key, tiebreak]

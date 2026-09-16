@@ -29,9 +29,14 @@ async def sync():
     # 3. 存入数据库
     async with async_session_factory() as db:
         for d in depts:
-            exists = await db.execute(select(HrDepartment).where(HrDepartment.feishu_department_id == d["department_id"]))
+            exists = await db.execute(
+                select(HrDepartment).where(HrDepartment.feishu_department_id == d["department_id"])
+            )
             if not exists.scalar_one_or_none():
-                db.add(HrDepartment(id=uuid.uuid4(), name=d["name"], code=d["department_id"], feishu_department_id=d["department_id"], is_deleted=False))
+                db.add(HrDepartment(
+                    id=uuid.uuid4(), name=d["name"], code=d["department_id"],
+                    feishu_department_id=d["department_id"], is_deleted=False
+                ))
         await db.commit()
         print("🎉 同步完成！")
 

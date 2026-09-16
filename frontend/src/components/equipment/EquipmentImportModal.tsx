@@ -92,7 +92,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         
         const normalized = jsonData.map(row => {
           const normalizedRow: any = {}
-          for (const [key, value] of Object.entries(row)) {
+          for (const [key, value] of Object.entries(row as Record<string, unknown>)) {
             normalizedRow[key] = normalizeCellValue(value)
           }
           return normalizedRow
