@@ -1,4 +1,3 @@
-from typing import Any
 """v4 导入接口响应契约（防止 `-> ApiResponse` 再次吃掉前端类型）。
 
 `ApiResponse.data` 是 `Any`，一旦端点靠它推断响应，OpenAPI 就退化成裸 object，
@@ -10,6 +9,7 @@ from typing import Any
 
 _PREVIEW = "/api/v1/equipment/equipments/import-v4/preview"
 _BATCH = "/api/v1/equipment/equipments/import-v4/batch"
+from typing import Any
 
 
 def _response_ref(schema: dict[str, Any], path: str) -> str:
