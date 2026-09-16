@@ -19,7 +19,7 @@ export default function EquipmentErrorPage({
       <Alert
         type="error"
         showIcon
-        title="设备模块加载失败"
+        message="设备模块加载失败"
         description={
           <div>
             <p style={{ margin: '4px 0' }}>{error.message}</p>

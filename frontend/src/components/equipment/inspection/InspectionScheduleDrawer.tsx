@@ -144,10 +144,10 @@ export function InspectionScheduleDrawer() {
   return (
     <Drawer
       title={null}
-      size={480}
+      width={480}
       open={scheduleDrawerOpen}
       onClose={closeScheduleDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}
     >
       {/* HEADER */}
@@ -277,7 +277,7 @@ export function InspectionScheduleDrawer() {
           </div>
         )}
 
-        <Space orientation="vertical" size={12} style={{ width: '100%' }}>
+        <Space direction="vertical" size={12} style={{ width: '100%' }}>
           {schedules.map(s => (
             <div key={s.id} style={{
               padding: '16px 18px', background: C.canvas,

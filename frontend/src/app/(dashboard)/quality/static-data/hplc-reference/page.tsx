@@ -979,10 +979,10 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        size={680}
+        width={680}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <div style={{ display: 'flex', gap: 8 }}>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
@@ -1191,10 +1191,10 @@ export default function HplcReferencePage() {
       <Drawer
         title="批量导入"
         placement="right"
-        size={480}
+        width={480}
         open={importModalOpen}
         onClose={() => setImportModalOpen(false)}
-        destroyOnHidden
+        destroyOnClose
       >
         <div style={{ marginBottom: 24 }}>
           <p style={{ color: '#64748b', marginBottom: 12 }}>
@@ -1216,10 +1216,10 @@ export default function HplcReferencePage() {
       <Drawer
         title="调整数量"
         placement="right"
-        size={400}
+        width={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setStockDrawerOpen(false)}>取消</Button>
@@ -1272,10 +1272,10 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        size={480}
+        width={480}
         open={usageDrawerOpen}
         onClose={() => setUsageDrawerOpen(false)}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setUsageDrawerOpen(false)}>取消</Button>
@@ -1375,10 +1375,10 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        size={720}
+        width={720}
         open={usageHistoryOpen}
         onClose={() => setUsageHistoryOpen(false)}
-        destroyOnHidden
+        destroyOnClose
       >
         {usageHistoryRecord && (
           <>

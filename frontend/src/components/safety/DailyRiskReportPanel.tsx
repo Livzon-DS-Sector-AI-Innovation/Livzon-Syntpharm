@@ -111,14 +111,20 @@ export default function DailyRiskReportPanel() {
 
   const handleEdit = (record: DailyRiskReport) => {
     setEditingRecord(record)
-    editForm.setFieldsValue({
-      ...record,
-      report_date: record.report_date ? dayjs(record.report_date) : undefined,
-      planned_start_time: record.planned_start_time ? dayjs(record.planned_start_time) : undefined,
-      planned_end_time: record.planned_end_time ? dayjs(record.planned_end_time) : undefined
-    })
     setModalVisible(true)
   }
+
+  // 当 editingRecord 变化且 modal 打开时，设置表单值
+  useEffect(() => {
+    if (editingRecord && modalVisible) {
+      editForm.setFieldsValue({
+        ...editingRecord,
+        report_date: editingRecord.report_date ? dayjs(editingRecord.report_date) : undefined,
+        planned_start_time: editingRecord.planned_start_time ? dayjs(editingRecord.planned_start_time) : undefined,
+        planned_end_time: editingRecord.planned_end_time ? dayjs(editingRecord.planned_end_time) : undefined
+      })
+    }
+  }, [editingRecord, modalVisible])
 
   const handleDelete = (id: string) => {
     modal.confirm({
@@ -137,6 +143,7 @@ export default function DailyRiskReportPanel() {
       const values = editingRecord ? await editForm.validateFields() : await form.validateFields()
       const formattedValues = {
         ...values,
+        report_type: values.report_type || 'regular',
         report_date: values.report_date ? values.report_date.toISOString() : undefined,
         planned_start_time: values.planned_start_time ? values.planned_start_time.toISOString() : undefined,
         planned_end_time: values.planned_end_time ? values.planned_end_time.toISOString() : undefined
@@ -216,7 +223,9 @@ export default function DailyRiskReportPanel() {
               <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleOpenReject(record.id)}>驳回</Button>
             </>
           )}
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          {(record.status === 'draft' || record.status === 'rejected') && (
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
+          )}
           <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record.id)}>删除</Button>
         </Space>
       )

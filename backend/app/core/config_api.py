@@ -76,8 +76,8 @@ async def get(
                 value=s.value,
                 value_type=s.value_type,
                 description=s.description,
-                created_at=s.created_at.isoformat(),
-                updated_at=s.updated_at.isoformat(),
+                created_at=s.created_at.isoformat() if s.created_at else None,
+                updated_at=s.updated_at.isoformat() if s.updated_at else None,
             )
             for s in settings
         ]
@@ -112,8 +112,8 @@ async def get(  # noqa: F811
             value=setting.value,
             value_type=setting.value_type,
             description=setting.description,
-            created_at=setting.created_at.isoformat(),
-            updated_at=setting.updated_at.isoformat(),
+            created_at=setting.created_at.isoformat() if setting.created_at else None,
+            updated_at=setting.updated_at.isoformat() if setting.updated_at else None,
         )
     )
 
@@ -153,8 +153,8 @@ async def put(
             value=setting.value,
             value_type=setting.value_type,
             description=setting.description,
-            created_at=setting.created_at.isoformat(),
-            updated_at=setting.updated_at.isoformat(),
+            created_at=setting.created_at.isoformat() if setting.created_at else None,
+            updated_at=setting.updated_at.isoformat() if setting.updated_at else None,
         )
     )
 
@@ -200,8 +200,8 @@ async def post(
             value=setting.value,
             value_type=setting.value_type,
             description=setting.description,
-            created_at=setting.created_at.isoformat(),
-            updated_at=setting.updated_at.isoformat(),
+            created_at=setting.created_at.isoformat() if setting.created_at else None,
+            updated_at=setting.updated_at.isoformat() if setting.updated_at else None,
         )
     )
 

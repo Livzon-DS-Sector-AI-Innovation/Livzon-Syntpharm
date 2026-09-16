@@ -762,7 +762,7 @@ export default function HazardLedgerPage() {
       title: '',
       key: '__row_select__',
       width: 48,
-      fixed: 'start',
+      fixed: 'left',
       align: 'center',
       render: (_: unknown, record: HazardReport, index: number) => {
         const isSelected = selectedRowKeys.includes(record.id)

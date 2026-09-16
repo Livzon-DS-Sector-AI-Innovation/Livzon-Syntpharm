@@ -164,7 +164,7 @@ export default function SmartImportModal({ open, onClose, onSuccess }: Props) {
       onCancel={handleClose}
       width={800}
       footer={null}
-      destroyOnHidden
+      destroyOnClose
     >
       {/* Step indicator */}
       <Steps

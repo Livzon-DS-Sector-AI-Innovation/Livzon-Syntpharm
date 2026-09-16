@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     AccidentCreate,
     AccidentResponse,
@@ -51,7 +51,7 @@ async def get(
         datetime.fromisoformat(date_to) if date_to else None,
         keyword,
     )
-    return ApiResponse(
+    return build_response(
         data=[AccidentResponse.model_validate(a) for a in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -67,8 +67,8 @@ async def handler(
     service = SafetyService(db)
     item = await service.get_accident(accident_id)
     if not item:
-        return ApiResponse(code=404, message="事故不存在")
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+        return build_response(code=404, message="事故不存在")
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post("/accidents", response_model=ApiResponse, summary="创建事故")
@@ -81,7 +81,7 @@ async def post(
     service = SafetyService(db)
     item = await service.create_accident(data)
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.put(  # type: ignore[no-redef]
@@ -97,9 +97,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_accident(accident_id, data)
     if not item:
-        return ApiResponse(code=404, message="事故不存在")
+        return build_response(code=404, message="事故不存在")
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
@@ -118,9 +118,9 @@ async def handler(  # noqa: F811
     user_name = current_user.name if current_user else None
     item = await service.investigate_accident(accident_id, user_id, user_name)
     if not item:
-        return ApiResponse(code=400, message="无法开始调查，当前状态不允许")
+        return build_response(code=400, message="无法开始调查，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
@@ -151,9 +151,9 @@ async def handler(  # noqa: F811
         investigation_method,
     )
     if not item:
-        return ApiResponse(code=400, message="无法完成调查，当前状态不允许")
+        return build_response(code=400, message="无法完成调查，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
@@ -176,9 +176,9 @@ async def handler(  # noqa: F811
         corrective_action_responsible,
     )
     if not item:
-        return ApiResponse(code=400, message="无法启动CAPA，当前状态不允许")
+        return build_response(code=400, message="无法启动CAPA，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
@@ -197,9 +197,9 @@ async def handler(  # noqa: F811
     user_name = current_user.name if current_user else None
     item = await service.verify_capa(accident_id, user_id, user_name)
     if not item:
-        return ApiResponse(code=400, message="无法验证CAPA，当前状态不允许")
+        return build_response(code=400, message="无法验证CAPA，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
@@ -216,9 +216,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.close_accident(accident_id)
     if not item:
-        return ApiResponse(code=400, message="无法关闭，当前状态不允许")
+        return build_response(code=400, message="无法关闭，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=AccidentResponse.model_validate(item))
+    return build_response(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.delete(  # type: ignore[no-redef]
@@ -233,6 +233,6 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_accident(accident_id)
     if not result:
-        return ApiResponse(code=404, message="事故不存在")
+        return build_response(code=404, message="事故不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")

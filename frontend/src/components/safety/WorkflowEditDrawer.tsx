@@ -151,7 +151,7 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
       }
       open={open}
       onClose={onClose}
-      size={720}
+      width={720}
       afterOpenChange={(visible) => { if (visible) handleOpen() }}
       extra={
         <Space>
@@ -267,7 +267,6 @@ export default function WorkflowEditDrawer({ open, workflow, onClose, onSaved }:
                     <CaretRightOutlined rotate={isActive ? 90 : 0} />
                   )}
                   style={{ background: 'transparent' }}
-                  expandIconPlacement="end"
                   items={fields.map(({ key, name, ...restField }) => {
                     const scriptNum = name + 1
                     const formValues = form.getFieldValue('script_configs') || []

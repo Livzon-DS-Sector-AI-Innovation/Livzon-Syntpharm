@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.response import ApiResponse, build_response
 from app.modules.safety.schemas import (
     OhHealthExamCreate,
     OhHealthExamResponse,
@@ -37,7 +37,7 @@ async def handler(
     service = OhHealthExamService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_exams(skip, page_size, status, exam_type, department, keyword)
-    return ApiResponse(
+    return build_response(
         data=[OhHealthExamResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -55,7 +55,7 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.create_exam(data)
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.get(  # type: ignore[no-redef]
@@ -72,8 +72,8 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.get_exam(exam_id)
     if not item:
-        return ApiResponse(code=404, message="体检记录不存在")
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+        return build_response(code=404, message="体检记录不存在")
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.put(  # type: ignore[no-redef]
@@ -89,9 +89,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.update_exam(exam_id, data)
     if not item:
-        return ApiResponse(code=404, message="体检记录不存在")
+        return build_response(code=404, message="体检记录不存在")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.delete(  # type: ignore[no-redef]
@@ -106,9 +106,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     ok = await service.delete_exam(exam_id)
     if not ok:
-        return ApiResponse(code=404, message="体检记录不存在")
+        return build_response(code=404, message="体检记录不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ── Exam Workflow ──
@@ -126,9 +126,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.start_exam(exam_id)
     if not item:
-        return ApiResponse(code=400, message="无法开始体检，当前状态不允许")
+        return build_response(code=400, message="无法开始体检，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.post(  # type: ignore[no-redef]
@@ -145,9 +145,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.complete_exam(exam_id)
     if not item:
-        return ApiResponse(code=400, message="无法完成体检，当前状态不允许")
+        return build_response(code=400, message="无法完成体检，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.post(  # type: ignore[no-redef]
@@ -162,9 +162,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.archive_exam(exam_id)
     if not item:
-        return ApiResponse(code=400, message="无法归档，当前状态不允许")
+        return build_response(code=400, message="无法归档，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 # ── Exam JSON Sub-records ──
@@ -185,9 +185,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.add_exam_item(exam_id, data)
     if not item:
-        return ApiResponse(code=404, message="体检记录不存在")
+        return build_response(code=404, message="体检记录不存在")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.put(  # type: ignore[no-redef]
@@ -206,9 +206,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.update_exam_item(exam_id, index, data)
     if not item:
-        return ApiResponse(code=400, message="无法更新，体检记录不存在或索引无效")
+        return build_response(code=400, message="无法更新，体检记录不存在或索引无效")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.delete(  # type: ignore[no-redef]
@@ -226,9 +226,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.remove_exam_item(exam_id, index)
     if not item:
-        return ApiResponse(code=400, message="无法删除，体检记录不存在或索引无效")
+        return build_response(code=400, message="无法删除，体检记录不存在或索引无效")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.put(  # type: ignore[no-redef]
@@ -246,9 +246,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.set_conclusion(exam_id, data.conclusion, data.remarks)
     if not item:
-        return ApiResponse(code=404, message="体检记录不存在")
+        return build_response(code=404, message="体检记录不存在")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.post(  # type: ignore[no-redef]
@@ -266,9 +266,9 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.add_abnormality_record(exam_id, data)
     if not item:
-        return ApiResponse(code=404, message="体检记录不存在")
+        return build_response(code=404, message="体检记录不存在")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))
 
 
 @oh_health_exams_router.put(  # type: ignore[no-redef]
@@ -287,6 +287,6 @@ async def handler(  # noqa: F811
     service = OhHealthExamService(db)
     item = await service.update_abnormality_record_status(exam_id, index, status)
     if not item:
-        return ApiResponse(code=400, message="无法更新，体检记录不存在或索引无效")
+        return build_response(code=400, message="无法更新，体检记录不存在或索引无效")
     await db.commit()
-    return ApiResponse(data=OhHealthExamResponse.model_validate(item))
+    return build_response(data=OhHealthExamResponse.model_validate(item))

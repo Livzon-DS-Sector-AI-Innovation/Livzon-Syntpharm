@@ -300,7 +300,7 @@ export default function ReferenceStandardClient({
 
           {parsedInfo && (
             <Alert
-              title={parsedInfo}
+              message={parsedInfo}
               type={parsedInfo.includes('失败') || parsedInfo.includes('未提取') ? 'warning' : 'success'}
               showIcon
               style={{ marginBottom: 16 }}

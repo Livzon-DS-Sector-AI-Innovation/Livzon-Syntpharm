@@ -76,7 +76,7 @@ export function ModuleScaleUp({ optimizationId, doeExperiment, labConfirmationSt
           <Alert
             type="info"
             showIcon
-            title="公斤级放大试验"
+            message="公斤级放大试验"
             description="基于小试工艺确认批的结果，制定公斤级放大试验方案。通常只进行一批试验，验证工艺在放大规模下的可行性。"
             style={{ marginBottom: 16 }}
           />

@@ -570,7 +570,7 @@ export default function SopManagementPage() {
           </Form.Item>
         </Form>
 
-        <Divider titlePlacement="left">SOP文件管理</Divider>
+        <Divider orientation="left">SOP文件管理</Divider>
 
         <div style={{ marginBottom: 16 }}>
           <Space direction="vertical" style={{ width: '100%' }}>

@@ -172,7 +172,7 @@ export function InspectionExecuteView({ onClose }: Props) {
             {doneN}<span style={{ fontSize: 16, fontWeight: 400, color: C.stone }}> / {total}</span>
           </div>
         </div>
-        <Progress type="circle" percent={pct} size={60} strokeColor={pct === 100 ? C.green : C.purple} railColor={C.hairline} />
+        <Progress type="circle" percent={pct} width={60} strokeColor={pct === 100 ? C.green : C.purple} trailColor={C.hairline} />
       </div>
 
       {/* Equipment step indicator */}

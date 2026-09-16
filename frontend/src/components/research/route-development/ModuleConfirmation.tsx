@@ -334,7 +334,7 @@ export function ModuleConfirmation({
 
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>📎 可下载附件</div>
-          <Space orientation="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
             <div style={{ padding: '10px 12px', backgroundColor: '#fafafa', borderRadius: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span><FileTextOutlined style={{ marginRight: 8 }} />工艺路线确认报告.docx</span>
               <Button size="small" icon={<DownloadOutlined />} onClick={handleDownload}>下载</Button>

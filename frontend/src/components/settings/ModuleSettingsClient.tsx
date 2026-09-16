@@ -144,7 +144,7 @@ export default function ModuleSettingsClient({
       key: 'key',
       width: 300,
       render: (key: string, setting: ModuleSetting) => (
-        <Space orientation="vertical" size={0}>
+        <Space direction="vertical" size={0}>
           <Text strong>{key}</Text>
           {setting.description && (
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -190,7 +190,7 @@ export default function ModuleSettingsClient({
   return (
     <>
       <Card>
-        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
             <Title level={4}>{moduleName}配置</Title>
             <Text type="secondary">{moduleDescription}</Text>
