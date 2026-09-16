@@ -1,4 +1,3 @@
-import uuid
 """Equipment Import v4 API Routes."""
 
 import logging
