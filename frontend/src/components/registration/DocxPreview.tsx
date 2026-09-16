@@ -81,7 +81,7 @@ export function DocxPreview({ chapterId, chapterTitle, onDownload, refreshKey }:
     }
   }, [chapterId])
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/set-state-in-effect -- Imperative DOM rendering (docx.js into ref), not React state data fetching */
   useEffect(() => {
     renderDocx()
   }, [renderDocx, refreshKey])

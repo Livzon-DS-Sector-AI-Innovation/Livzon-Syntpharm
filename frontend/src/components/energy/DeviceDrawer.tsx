@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   App,
   Drawer,
@@ -78,8 +79,6 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
-  const [platforms, setPlatforms] = useState<PlatformOption[]>([])
-  const [platformsLoading, setPlatformsLoading] = useState(false)
 
   const {
     deviceDrawerOpen,
@@ -91,24 +90,22 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   const isEdit = deviceDrawerMode === 'edit'
   const selectedPlatform = Form.useWatch('platform_code', form)
 
-  // 获取平台列表
-  const loadPlatforms = async () => {
-    setPlatformsLoading(true)
-    try {
-      const data = await fetchPlatformsClient()
-      setPlatforms(data)
-    } catch {
-      setPlatforms([
-        { code: 'zhiheng', name: '智恒水耗平台' },
-        { code: 'platform_b', name: '平台B（待接入）' },
-        { code: 'platform_c', name: '平台C（待接入）' },
-      ])
-    } finally {
-      setPlatformsLoading(false)
-    }
-  }
+  const { data: platforms = [], isLoading: platformsLoading } = useQuery({
+    queryKey: ['energy-platforms'],
+    queryFn: async () => {
+      try {
+        return await fetchPlatformsClient()
+      } catch {
+        return [
+          { code: 'zhiheng', name: '智恒水耗平台' },
+          { code: 'platform_b', name: '平台B（待接入）' },
+          { code: 'platform_c', name: '平台C（待接入）' },
+        ] as PlatformOption[]
+      }
+    },
+    enabled: deviceDrawerOpen,
+  })
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   const loadDeviceData = useCallback(async (id: string) => {
     try {
       form.resetFields()
@@ -121,7 +118,6 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
 
   useEffect(() => {
     if (deviceDrawerOpen) {
-      loadPlatforms()
       if (isEdit && deviceDrawerId) {
         loadDeviceData(deviceDrawerId)
       } else {
@@ -130,7 +126,6 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
       }
     }
   }, [deviceDrawerOpen, deviceDrawerId, isEdit, form, loadDeviceData])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
 
   const handleSubmit = async () => {

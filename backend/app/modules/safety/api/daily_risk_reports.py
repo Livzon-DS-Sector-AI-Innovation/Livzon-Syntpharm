@@ -34,7 +34,6 @@ async def handler(
     department: str | None = None,
     report_date: str | None = Query(None, description="报备日期 (YYYY-MM-DD)"),
     keyword: str | None = None,
-    report_type: str | None = Query(None, description="报备类型: regular/non_regular"),
     db: AsyncSession = Depends(get_db),
     current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]

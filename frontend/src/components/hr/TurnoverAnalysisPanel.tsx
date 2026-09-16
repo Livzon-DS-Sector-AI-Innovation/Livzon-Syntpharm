@@ -58,7 +58,7 @@ export default function TurnoverAnalysisPanel() {
     return () => clearInterval(timer)
   }, [stage, fullMarkdown])
 
-  /* eslint-disable react-hooks/set-state-in-effect */
+  /* eslint-disable react-hooks/set-state-in-effect -- Animation timer (setInterval + setStepIndex), not data fetching */
   useEffect(() => {
     if (stage !== 'extracting' && stage !== 'thinking') {
       setStepIndex(0)
