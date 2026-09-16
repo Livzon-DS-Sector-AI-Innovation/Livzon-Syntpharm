@@ -24,6 +24,7 @@ from app.modules.equipment.schemas.equipment import (
     EquipmentStatistics,
     EquipmentStatus,
     EquipmentSyncResult,
+    EquipmentSyncResponse,
     EquipmentUpdate,
     LocationCreate,
     LocationResponse,

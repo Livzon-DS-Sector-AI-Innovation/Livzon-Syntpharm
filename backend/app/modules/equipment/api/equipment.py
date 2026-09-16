@@ -20,6 +20,7 @@ from app.modules.equipment.schemas import (
     EquipmentCategoryUpdate,
     EquipmentCreate,
     EquipmentResponse,
+    EquipmentSyncResponse,
     EquipmentSortBy,
     EquipmentSortOrder,
     EquipmentStatistics,
