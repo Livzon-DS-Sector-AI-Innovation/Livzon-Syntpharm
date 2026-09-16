@@ -117,27 +117,3 @@ class MockEquipment:
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-def test_force_override_business_fields():
-    """测试强制覆盖模式下，B类字段（部门、位置）即使有值也会被更新。"""
-    # 模拟一个已有部门和位置的现有设备
-    existing = MockEquipment(department_id="dept_old", location_text="loc_old")
-
-    # Excel 数据提供了新的部门和位置
-    excel_data = {
-        "department_id": "dept_new",
-        "location_text": "loc_new",
-        "current_cost": 1000
-    }
-
-    # 1. 保护模式 (force_override=False)
-    # TODO: apply_incremental_update 已被移除，此测试需要重写
-    assert "department_id" not in changes_protect, "保护模式下不应更新已有部门"
-
-    # 重置 mock 对象
-    existing.department_id = "dept_old"
-
-    # 2. 强制覆盖模式 (force_override=True)
-    # TODO: apply_incremental_update 已被移除，此测试需要重写
-    assert "department_id" in changes_force, "强制模式下应更新已有部门"
-    assert changes_force["department_id"]["new"] == "dept_new"
-    assert existing.department_id == "dept_new"

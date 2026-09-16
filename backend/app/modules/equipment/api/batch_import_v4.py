@@ -247,7 +247,6 @@ async def batch_import_v4(
     created = updated = skipped = failed = 0
     errors: list[dict[str, Any]] = []
     unmapped_depts: dict[str, list[int]] = {}
-    unmapped_depts: dict[str, list[int]] = {}
 
     for idx, row in enumerate(normalized_data):
         audit_kwargs = {

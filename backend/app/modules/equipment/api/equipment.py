@@ -12,7 +12,7 @@ from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
 from app.modules.equipment.models.equipment import Equipment
-from app.modules.equipment.schemas import (  # type: ignore[attr-defined]
+from app.modules.equipment.schemas import (  # type: ignore[attr-defined]  # type: ignore[attr-defined]
     BatchDeleteRequest,
     EquipmentCategoryCreate,
     EquipmentCategoryResponse,

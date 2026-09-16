@@ -415,7 +415,7 @@ def _build_order_by(sort_by: str, sort_order: str) -> list[Any]:
     if sort_by == "asset_no":
         return [_ASSET_NO_NATURAL_DESC if is_desc else _ASSET_NO_NATURAL_ASC, tiebreak]
     if sort_by == "department_name":
-        key = Department.name.desc() if is_desc else Department.name.asc()
+        key: Any = Department.name.desc() if is_desc else Department.name.asc()
         return [nulls_last(key), tiebreak]
     if sort_by == "status":
         priority = case(
