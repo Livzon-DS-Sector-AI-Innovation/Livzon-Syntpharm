@@ -18,9 +18,9 @@ def _response_ref(schema: dict[str, Any], path: str) -> str:
 
 
 def test_openapi_declares_concrete_import_v4_envelopes():
-    from app.main import app  # type: ignore[attr-defined]
+    from app.main import app
 
-    schema = app.openapi()
+    schema = app.openapi()  # type: ignore[attr-defined]
     for path, envelope, payload in [(_PREVIEW, "ImportV4PreviewApiResponse", "ImportV4PreviewResponse"),
                                     (_BATCH, "ImportV4BatchApiResponse", "ImportV4BatchResponse")]:
         assert _response_ref(schema, path).endswith(envelope), f"{path} 未声明具体 envelope"
