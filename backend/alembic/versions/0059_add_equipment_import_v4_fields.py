@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers
-revision = '0059'
+revision = '0059_add_equipment_import_v4_fields'
 down_revision = '0058_add_sync_logs_table'
 branch_labels = None
 depends_on = None
