@@ -209,6 +209,7 @@ def _only_model_fields(row: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in row.items() if k in _EQUIPMENT_COLUMNS}
 
 async def resolve_department_strict(excel_dept: str, db: AsyncSession) -> tuple[str | None, Any, str | None]:
+async def resolve_department_strict(excel_dept: str, db: AsyncSession) -> tuple[str | None, uuid.UUID | None, str | None]:
     if not excel_dept or not str(excel_dept).strip():
         return None, None, "部门名称为空"
     standard_name = normalize_department_name(str(excel_dept).strip())
