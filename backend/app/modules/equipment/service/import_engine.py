@@ -1,6 +1,7 @@
 """Equipment Import v4 Core Logic Engine."""
 import logging
 import uuid
+from enum import StrEnum
 from typing import Any
 
 from sqlalchemy import select
@@ -10,8 +11,17 @@ from app.modules.equipment.models.equipment import Equipment
 from app.modules.equipment.schemas.import_v4 import ChangeRecord, WarningInfo
 
 logger = logging.getLogger(__name__)
-A_FIELDS = ["current_cost", "book_value"]
-B_FIELDS = ["label_no", "equipment_tag", "equipment_class", "name", "responsible_person_name",
+
+class MatchStrategy(StrEnum):
+    COMPOSITE = "composite"
+    ASSET_NO_ONLY = "asset_no_only"
+    TAG = "tag"
+    TAG_CONFLICT = "tag_conflict"
+    FUZZY = "fuzzy"
+    NONE = "none"
+
+MONEY_FIELDS = ["current_cost", "book_value"]
+OVERRIDEABLE_BUSINESS_FIELDS = ["label_no", "equipment_tag", "equipment_class", "name", "responsible_person_name",
             "status", "category_description", "model", "specification", "manufacturer",
             "supplier", "scrap_status", "scrap_time", "production_date", "commissioning_date",
             "description", "department_id", "location_text"]
@@ -25,7 +35,7 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
         result = await db.execute(select(Equipment).where(
             Equipment.asset_no == asset_no, Equipment.department_id == department_id,
             Equipment.location_text == location_text, Equipment.is_deleted.is_(False)))
-        if (eq := result.scalar_one_or_none()): return eq, "composite", warnings
+        if (eq := result.scalar_one_or_none()): return eq, MatchStrategy.COMPOSITE, warnings
 
     # P1.5: 强制覆盖模式下，仅按资产编号匹配（部门/位置可能不一致）
     if force_override and asset_no:
@@ -52,7 +62,7 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
         if eq:
             warnings.append({"field": "asset_no", "level": "WARN",
                              "message": f"资产编号匹配但部门/位置不一致，强制覆盖将更新 (DB: {eq.asset_no})"})
-            return eq, "asset_no_only", warnings
+            return eq, MatchStrategy.ASSET_NO_ONLY, warnings
 
     # P2: 设备位号匹配
     if equipment_tag:
@@ -60,17 +70,17 @@ async def find_existing_equipment(db: AsyncSession, asset_no: str | None, equipm
             Equipment.equipment_tag == equipment_tag, Equipment.is_deleted.is_(False)))
         if (eq := result.scalar_one_or_none()):
             if asset_no and eq.asset_no != asset_no:
-                return None, "tag_conflict", [{"field": "equipment_tag", "level": "ERROR", "message": "Tag conflict"}]
-            return eq, "tag", warnings
+                return None, MatchStrategy.TAG_CONFLICT, [{"field": "equipment_tag", "level": "ERROR", "message": "Tag conflict"}]
+            return eq, MatchStrategy.TAG, warnings
 
     # P3: 模糊匹配
     if not asset_no and not equipment_tag and name and department_id and location_text:
         result = await db.execute(select(Equipment).where(
             Equipment.name == name, Equipment.department_id == department_id,
             Equipment.location_text == location_text, Equipment.is_deleted.is_(False)))
-        if (eq := result.scalar_one_or_none()): return eq, "fuzzy", warnings
+        if (eq := result.scalar_one_or_none()): return eq, MatchStrategy.FUZZY, warnings
 
-    return None, "none", warnings
+    return None, MatchStrategy.NONE, warnings
 
 def detect_internal_duplicates(rows: list[dict[str, Any]]) -> set[int]:
     seen, duplicates = {}, set()
@@ -83,14 +93,14 @@ def detect_internal_duplicates(rows: list[dict[str, Any]]) -> set[int]:
 
 def apply_incremental_update(existing: Equipment, excel_data: dict[str, Any], force_override: bool = False):
     changes: dict[str, ChangeRecord] = {}
-    for field in A_FIELDS:
+    for field in MONEY_FIELDS:
         new_val = excel_data.get(field)
         if isinstance(new_val, str) and not new_val.strip(): new_val = None
         if getattr(existing, field) != new_val:
             changes[field] = {"old": getattr(existing, field), "new": new_val}
             setattr(existing, field, new_val)
 
-    for field in B_FIELDS:
+    for field in OVERRIDEABLE_BUSINESS_FIELDS:
         new_val = excel_data.get(field)
         if new_val is None: continue
         if force_override or getattr(existing, field) is None:

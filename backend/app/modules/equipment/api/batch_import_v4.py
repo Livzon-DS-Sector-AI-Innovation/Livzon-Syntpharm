@@ -22,6 +22,7 @@ from app.modules.equipment.schemas.import_v4 import (
     ImportV4PreviewResponse,
 )
 from app.modules.equipment.service.import_engine import (
+    MatchStrategy,
     apply_incremental_update,
     detect_internal_duplicates,
     find_existing_equipment,
@@ -256,7 +257,7 @@ async def batch_import_v4(
                     db, row.get("asset_no"), row.get("equipment_tag"), row.get("name"), dept_id, row.get("location_text"),
                     force_override)
 
-                if strategy == "tag_conflict":
+                if strategy == MatchStrategy.TAG_CONFLICT:
                     failed += 1
                     err_msg = "设备位号冲突，无法创建"
                     errors.append({"row": idx, "error": err_msg})
