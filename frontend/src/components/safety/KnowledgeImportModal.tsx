@@ -1,5 +1,6 @@
-import type { components } from '@/types/generated/schema'
 'use client'
+
+import type { components } from '@/types/generated/schema'
 
 import { useState } from 'react'
 import { Modal, Upload, Button, Select, App, Tag, Space } from 'antd'

@@ -1,5 +1,6 @@
-import type { components } from '@/types/generated/schema'
 'use client'
+
+import type { components } from '@/types/generated/schema'
 
 import React, { useState, useCallback, useRef } from 'react'
 import {App, Table, Button, Typography, Empty, Spin} from 'antd'
@@ -69,7 +70,7 @@ export default function SopGeneratorPanel({
         page_size: 200,
         status: 'generated'
       })
-      const apiResponse = response as components[\'schemas\'][\'ApiResponse\']
+      const apiResponse = response as components['schemas']['ApiResponse']
       if (apiResponse.code === 200) {
         setGeneratedSops(apiResponse.data as OperationRegulation[])
       }

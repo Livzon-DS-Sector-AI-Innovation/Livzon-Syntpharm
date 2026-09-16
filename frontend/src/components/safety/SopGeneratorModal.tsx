@@ -1,5 +1,6 @@
-import type { components } from '@/types/generated/schema'
 'use client'
+
+import type { components } from '@/types/generated/schema'
 
 import React, { useState, useRef, useCallback } from 'react'
 import { App, Modal, Button, Typography } from 'antd'
