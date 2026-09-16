@@ -1,4 +1,3 @@
-from typing import Any
 """[DEBUG-eqedit] 临时诊断测试：设备台账编辑保存无效果 — 反馈环。
 
 模拟用户症状：PUT 更新设备后数据未变化。
@@ -6,6 +5,8 @@ from typing import Any
 """
 
 import uuid
+
+from typing import Any
 
 BASE = "/api/v1/equipment/equipments"
 
