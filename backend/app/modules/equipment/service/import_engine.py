@@ -54,8 +54,8 @@ async def find_existing_equipment(
     department_id: uuid.UUID | None,
     location_text: str | None,
     force_override: bool = False,
-):  # type: ignore[no-untyped-def]
-    warnings: list[WarningInfo] = []
+) -> tuple[Equipment | None, MatchStrategy, list[dict[str, str]]]:
+    warnings: list[dict[str, str]] = []
     # P1: 复合主键精确匹配
     if asset_no and department_id and location_text:
         result = await db.execute(

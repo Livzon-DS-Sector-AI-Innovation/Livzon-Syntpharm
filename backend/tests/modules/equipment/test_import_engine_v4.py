@@ -41,9 +41,9 @@ class TestFindExistingEquipmentWarnings:
         assert len(warnings) > 0
         # Check structured warning
         warning = warnings[0]
-        assert warning.field == "asset_no"
-        assert warning.level == "WARN"
-        assert "EXISTING_ASSET_001" in warning.message
+        assert warning["field"] == "asset_no"
+        assert warning["level"] == "WARN"
+        assert "EXISTING_ASSET_001" in warning["message"]
 
 
 class TestIncrementalUpdateProtection:

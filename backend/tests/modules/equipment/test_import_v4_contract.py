@@ -14,7 +14,7 @@ _BATCH = "/api/v1/equipment/equipments/import-v4/batch"
 
 
 def _response_ref(schema: dict[str, Any], path: str) -> str:
-    return schema["paths"][path]["post"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"]
+    return str(schema["paths"][path]["post"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"])
 
 
 def test_openapi_declares_concrete_import_v4_envelopes():

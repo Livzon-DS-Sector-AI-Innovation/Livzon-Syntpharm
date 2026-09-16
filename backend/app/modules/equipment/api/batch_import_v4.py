@@ -337,7 +337,7 @@ async def batch_import_v4(
     )
 
 
-    return build_response(data=ImportV4PreviewResponse(items=[], total=0, headers=PREVIEW_HEADERS))
+        return build_response(data=ImportV4PreviewResponse(items=[], total=0, headers=PREVIEW_HEADERS))
 @router.post("/preview", summary="预览导入结果 (v4)", response_model=ImportV4PreviewApiResponse)
 async def preview_import_v4(
     current_user: RequiredUser,
@@ -375,7 +375,7 @@ async def preview_import_v4(
             )
             match_strategy = strategy
             if warnings:
-                display_row["match_warnings"] = [w.message for w in warnings]
+                display_row["match_warnings"] = [w["message"] for w in warnings]
 
         # 4. 组装返回结果
         result_item = {
