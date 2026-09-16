@@ -377,12 +377,118 @@ def _parse_excel_file(file_content: bytes) -> pd.DataFrame:
 
 
 
-    name: str
-    current_cost: float | None
-    book_value: float | None
-    department_id: uuid.UUID | None
-    location_id: uuid.UUID | None
-    location_text: str | None
-    model: str | None
-    manufacturer: str | None
-    commissioning_date: datetime.date | None
+async def sync_equipments_with_audit(
+    db: AsyncSession,
+    file_content: bytes,
+    operator_id: uuid.UUID | None = None,
+    file_name: str = "unknown.xlsx",
+    dry_run: bool = False,
+) -> EquipmentSyncResult:
+    """TB-04: 带审计追踪、熔断保护及 Dry Run 的最终版同步逻辑"""
+    try:
+        df = pd.read_excel(BytesIO(file_content), header=EXCEL_HEADER_ROW)
+    except Exception as e:
+        raise ValueError(f"Excel 解析失败: {str(e)}")
+
+    context = await _prepare_sync_context(db)
+    dept_map, valid_depts, loc_map, all_active, combo_index, asset_index = context
+
+    updated, inserted, migrated, deleted = 0, 0, 0, 0
+    processed_ids = set()
+    changes_log: list[dict[str, Any]] = []
+    warnings = []
+
+    for _, row in df.iterrows():
+        asset_no = str(row["资产编号"]).strip()
+        if not asset_no:
+            continue
+
+        std_dept = _get_standard_dept(row["实物所在部门"], valid_depts)
+        dept_id = dept_map.get(std_dept) if std_dept else None
+        loc_text = (
+            str(row["实物所在地点"]).strip()
+            if pd.notna(row["实物所在地点"]) and str(row["实物所在地点"]).strip() != "-"
+            else None
+        )
+        loc_id = loc_map.get(loc_text) if loc_text else None
+
+        # 修复匹配逻辑：优先精确匹配，其次容错匹配
+        target_equip = combo_index.get((asset_no, dept_id, loc_id))
+
+        if not target_equip and loc_id is None:
+            # 如果位置为空，尝试只匹配资产号和部门
+            candidates = [e for e in asset_index.get(asset_no, []) if e.department_id == dept_id]
+            if len(candidates) > 1:
+                # 发现多条潜在记录，记录警告并跳过，防止误更新
+                warnings.append(f"资产 {asset_no} 在部门 {std_dept} 下存在多条位置为空的记录，已跳过同步。")
+                continue
+            elif len(candidates) == 1:
+                target_equip = candidates[0]
+
+        new_vals = {
+            "name": str(row["设备名称"]).strip(),
+            "current_cost": float(row["当前成本"]) if pd.notna(row["当前成本"]) else None,
+            "book_value": float(row["帐面净值"]) if pd.notna(row["帐面净值"]) else None,
+            "department_id": dept_id,
+            "location_id": loc_id,
+            "location_text": loc_text,
+            "model": str(row["型号"]).strip() if pd.notna(row["型号"]) else None,
+            "manufacturer": str(row["制造商"]).strip() if pd.notna(row["制造商"]) else None,
+            "commissioning_date": row["启用日期"] if pd.notna(row["启用日期"]) else None,
+        }
+
+        if target_equip:
+            for field, new_val in new_vals.items():
+                old_val = getattr(target_equip, field, None)
+                if old_val != new_val:
+                    changes_log.append({"asset_no": asset_no, "field": field, "old": str(old_val), "new": str(new_val)})
+
+            if not dry_run:
+                await db.execute(update(Equipment).where(Equipment.id == target_equip.id).values(**new_vals))
+            processed_ids.add(target_equip.id)
+            updated += 1
+        elif asset_no in asset_index:
+            # 真正的迁移：资产号存在但部门/位置都变了
+            old_equip = asset_index[asset_no][0]
+            if not dry_run:
+                await db.execute(update(Equipment).where(Equipment.id == old_equip.id).values(**new_vals))
+            processed_ids.add(old_equip.id)
+            migrated += 1
+        else:
+            if not dry_run:
+                db.add(Equipment(asset_no=asset_no, is_deleted=False, **new_vals))
+            inserted += 1
+
+    # 熔断检查
+    active_asset_nos = {e.asset_no for e in all_active}
+    excel_asset_nos = set(df["资产编号"].dropna().astype(str).str.strip())
+    missing_assets = active_asset_nos - excel_asset_nos
+
+    if len(active_asset_nos) > 0 and len(missing_assets) / len(active_asset_nos) > MISSING_ASSET_THRESHOLD:
+        raise ValueError(
+            f"安全熔断：Excel 中缺失 {len(missing_assets)} 台在用设备（占比 > 5%），请确认是否上传了错误的文件！"
+        )
+
+    for equip in all_active:
+        if equip.id not in processed_ids:
+            if not dry_run:
+                await db.execute(update(Equipment).where(Equipment.id == equip.id).values(is_deleted=True))
+            deleted += 1
+            changes_log.append({"asset_no": equip.asset_no, "field": "status", "old": "Active", "new": "Deleted"})
+
+    if not dry_run:
+        log_entry = EquipmentSyncLog(
+            operator_id=operator_id,
+            file_name=file_name,
+            summary={"updated": updated, "inserted": inserted, "migrated": migrated, "deleted": deleted},
+            changes_detail=changes_log[:MAX_CHANGES_LOG_ENTRIES],
+            is_dry_run=False,
+        )
+        db.add(log_entry)
+        await db.commit()
+
+    return EquipmentSyncResult(
+        updated=updated, inserted=inserted, migrated=migrated, deleted=deleted, warnings=warnings
+    )
+
+
