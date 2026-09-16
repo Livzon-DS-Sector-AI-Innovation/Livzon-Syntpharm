@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.equipment.models.equipment import Equipment
-from app.modules.equipment.schemas.import_v4 import ChangeRecord, WarningInfo
+from app.modules.equipment.schemas.import_v4 import ChangeRecord
 
 logger = logging.getLogger(__name__)
 
