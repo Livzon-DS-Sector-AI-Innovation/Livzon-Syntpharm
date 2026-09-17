@@ -545,6 +545,14 @@ class UnitConsumptionTargetApiResponse(BaseModel):
     data: UnitConsumptionTargetResponse
 
 
+class EnergyDeleteResponse(BaseModel):
+    """通用删除响应"""
+
+    code: int = 200
+    message: str = "删除成功"
+    data: None = None
+
+
 class AIAnalysisApiResponse(BaseModel):
     code: int = 200
     message: str = "success"

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -12,11 +11,9 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
-from app.core.response import ApiResponse
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
-from app.modules.energy.models import EnergyUnitConsumptionTarget
 from app.modules.energy.schemas import (
     AIAnalysisApiResponse,
     AIAnalysisRequest,
@@ -39,6 +36,7 @@ from app.modules.energy.schemas import (
     EnergyAlertRuleUpdate,
     EnergyDataListApiResponse,
     EnergyDataResponse,
+    EnergyDeleteResponse,
     EnergyDeviceConfigApiResponse,
     EnergyDeviceConfigCreate,
     EnergyDeviceConfigListApiResponse,
@@ -238,10 +236,10 @@ async def delete_device_config(
     config_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyDeleteResponse:
     await service.delete_device_config(db, config_id)
     await db.commit()
-    return ApiResponse(code=200, message="删除成功", data=None)
+    return EnergyDeleteResponse()
 
 
 # ── 能耗数据 ──
@@ -555,10 +553,10 @@ async def delete_alert_rule(
     rule_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyDeleteResponse:
     await service.delete_alert_rule(db, rule_id)
     await db.commit()
-    return ApiResponse(code=200, message="删除成功", data=None)
+    return EnergyDeleteResponse()
 
 
 # ── 预警记录 ──
@@ -758,10 +756,10 @@ async def delete_workshop(
     workshop_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyDeleteResponse:
     await service.delete_workshop(db, workshop_id)
     await db.commit()
-    return ApiResponse(code=200, message="删除成功", data=None)
+    return EnergyDeleteResponse()
 
 
 # ── 月度记录 ──
@@ -919,9 +917,9 @@ async def delete_monthly_record(
     record_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyDeleteResponse:
     await service.delete_monthly_record(db, record_id)
-    return ApiResponse(code=200, message="删除成功", data=None)
+    return EnergyDeleteResponse()
 
 
 # 注册新的路由
@@ -1097,17 +1095,6 @@ async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiR
 
 
 # ── 单耗目标 ──────────────────────────────────────────────────────────────
-
-
-def _target_to_response(target: EnergyUnitConsumptionTarget) -> dict[str, Any]:
-    """将 ORM 对象转换为响应格式"""
-    return {
-        "id": str(target.id),
-        "workshop_id": str(target.workshop_id),
-        "target_month": target.target_month.strftime("%Y-%m"),
-        "target_unit_consumption": float(target.target_unit_consumption),
-        "created_at": target.created_at.isoformat() if target.created_at else None,
-    }
 
 
 @router.post("/targets", summary="创建单耗目标")
