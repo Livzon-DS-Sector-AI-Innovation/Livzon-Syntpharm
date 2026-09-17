@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -30,7 +29,7 @@ import {
   SafetyCertificateOutlined,
   AuditOutlined,
 } from '@ant-design/icons'
-import { useCheckStore } from '@/stores/safety'
+import { useSafetyStore } from '@/stores/safety'
 import {
   getChecks,
   createCheck,
@@ -47,6 +46,7 @@ import type {
   ConfirmCheckRequest,
 } from '@/types/safety'
 import {
+  CheckType as CheckTypeEnum,
   CHECK_TYPE_OPTIONS,
   CHECK_STATUS_OPTIONS,
   CHECK_RESULT_OPTIONS,
@@ -69,6 +69,7 @@ const getStatusLabel = (status: string) => {
 export default function SafetyCheckPage() {
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
+  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<SafetyCheck | null>(null)
   const [searchText, setSearchText] = useState('')
@@ -76,36 +77,43 @@ export default function SafetyCheckPage() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
 
   const {
-    queryParams,
-    setQueryParams,
-  } = useCheckStore()
+    checks,
+    checkTotal,
+    checkQueryParams,
+    setChecks,
+    setCheckTotal,
+    setCheckQueryParams,
+    addCheck,
+    updateCheck: updateCheckInStore,
+    removeCheck,
+  } = useSafetyStore()
 
-  const queryClient = useQueryClient()
-
-  const { data: checksData, isLoading, refetch } = useQuery({
-    queryKey: ['safety-checks', { queryParams, statusFilter, typeFilter }],
-    queryFn: async () => {
+  const loadData = async () => {
+    setLoading(true)
+    try {
       const response = await getChecks({
-        ...queryParams,
+        ...checkQueryParams,
         status: statusFilter,
         check_type: typeFilter,
       })
       if (response.code === 200) {
-        return { data: response.data, total: response.meta?.total || 0 }
+        setChecks(response.data)
+        setCheckTotal(response.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-  })
+    } catch {
+      message.error('加载安全检查列表失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const checks = checksData?.data || []
-  const checkTotal = checksData?.total || 0
-  const loading = isLoading
-
-
+  useEffect(() => {
+    loadData()
+  }, [checkQueryParams.page, checkQueryParams.page_size, statusFilter, typeFilter])
 
   const handleSearch = () => {
-    setQueryParams({ page: 1 })
-    refetch()
+    setCheckQueryParams({ page: 1 })
+    loadData()
   }
 
   const handleAdd = () => {
@@ -133,7 +141,7 @@ export default function SafetyCheckPage() {
           const response = await deleteCheck(id)
           if (response.code === 200) {
             message.success('删除成功')
-            queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+            removeCheck(id)
           } else {
             message.error(response.message || '删除失败')
           }
@@ -157,7 +165,7 @@ export default function SafetyCheckPage() {
         const response = await updateCheck(editingRecord.id, formattedValues)
         if (response.code === 200) {
           message.success('更新成功')
-          queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+          updateCheckInStore(editingRecord.id, response.data)
           setModalVisible(false)
         } else {
           message.error(response.message || '更新失败')
@@ -166,7 +174,7 @@ export default function SafetyCheckPage() {
         const response = await createCheck(formattedValues as SafetyCheckFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+          addCheck(response.data)
           setModalVisible(false)
           form.resetFields()
         } else {
@@ -183,7 +191,7 @@ export default function SafetyCheckPage() {
       const response = await submitCheck(id)
       if (response.code === 200) {
         message.success('提交成功')
-        queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+        updateCheckInStore(id, response.data)
       } else {
         message.error(response.message || '提交失败')
       }
@@ -206,7 +214,7 @@ export default function SafetyCheckPage() {
         const response = await reviewCheck(id, 'qualified')
         if (response.code === 200) {
           message.success('审核通过')
-          queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+          updateCheckInStore(id, response.data)
         } else {
           message.error(response.message || '审核失败')
         }
@@ -215,7 +223,7 @@ export default function SafetyCheckPage() {
         const response = await reviewCheck(id, 'unqualified')
         if (response.code === 200) {
           message.success('已标记为不合格')
-          queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+          updateCheckInStore(id, response.data)
         } else {
           message.error(response.message || '审核失败')
         }
@@ -229,7 +237,7 @@ export default function SafetyCheckPage() {
       if (response.code === 200) {
         const roleLabel = role === 'inspector' ? '检查人员' : '安全办'
         message.success(`${roleLabel}确认成功`)
-        queryClient.invalidateQueries({ queryKey: ['safety-checks'] })
+        updateCheckInStore(id, response.data)
       } else {
         message.error(response.message || '确认失败')
       }
@@ -430,7 +438,7 @@ export default function SafetyCheckPage() {
               value={typeFilter}
               onChange={(value) => {
                 setTypeFilter(value)
-                setQueryParams({ page: 1 })
+                setCheckQueryParams({ page: 1 })
               }}
               style={{ width: '100%' }}
               options={CHECK_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -443,7 +451,7 @@ export default function SafetyCheckPage() {
               value={statusFilter}
               onChange={(value) => {
                 setStatusFilter(value)
-                setQueryParams({ page: 1 })
+                setCheckQueryParams({ page: 1 })
               }}
               style={{ width: '100%' }}
               options={CHECK_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -463,14 +471,14 @@ export default function SafetyCheckPage() {
           loading={loading}
           scroll={{ x: 1400 }}
           pagination={{
-            current: queryParams.page,
-            pageSize: queryParams.page_size,
+            current: checkQueryParams.page,
+            pageSize: checkQueryParams.page_size,
             total: checkTotal,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setQueryParams({ page, page_size: pageSize })
+              setCheckQueryParams({ page, page_size: pageSize })
             },
           }}
         />

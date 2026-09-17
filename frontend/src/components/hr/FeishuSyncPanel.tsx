@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { App, Card, Button, Statistic, Row, Col, Tag, Spin } from 'antd'
 import {SyncOutlined, CloudSyncOutlined, ExclamationCircleOutlined} from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchSyncStatus } from '@/lib/api/client/hr'
 import { syncFromFeishuAction as syncFromFeishu } from '@/actions/hr'
 
@@ -18,27 +17,35 @@ interface SyncStatus {
 
 export default function FeishuSyncPanel({ onSynced }: { onSynced?: () => void }) {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [status, setStatus] = useState<SyncStatus | null>(null)
+  const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
 
-  const { data: status, isLoading: loading, refetch } = useQuery<SyncStatus | null>({
-    queryKey: ['hr-sync-status'],
-    queryFn: async () => {
+  const loadStatus = async () => {
+    setLoading(true)
+    try {
       const res = await fetchSyncStatus()
-      return res.data
-    },
-  })
+      setStatus(res.data)
+    } catch (err: any) {
+      message.error(err.message || '获取同步状态失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadStatus()
+  }, [])
 
   const handleSync = async () => {
     setSyncing(true)
     try {
       const res = await syncFromFeishu()
       message.success(res.message)
-      await refetch()
-      queryClient.invalidateQueries({ queryKey: ['hr-sync-status'] })
+      await loadStatus()
       onSynced?.()
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '同步失败')
+    } catch (err: any) {
+      message.error(err.message || '同步失败')
     } finally {
       setSyncing(false)
     }

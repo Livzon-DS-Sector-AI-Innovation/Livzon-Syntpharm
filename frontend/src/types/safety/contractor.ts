@@ -6,7 +6,7 @@
 
 // ============ Contractor Types ============
 
-import {QualificationTypeEnum, QualificationLevelEnum} from "./enums"
+import {ContractorStatus, QualificationTypeEnum, QualificationLevelEnum, ContractorTrainingStatusEnum} from "./enums"
 export interface Contractor {
   id: string
   contractor_no: string

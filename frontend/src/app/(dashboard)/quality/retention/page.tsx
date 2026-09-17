@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Table,
   Button,
@@ -16,6 +15,7 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
+  HistoryOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -28,7 +28,7 @@ import {
 } from '@/types/sampling'
 import { getRetentionLedger } from '@/actions/quality'
 
-const { Text: _Text } = Typography
+const { Text } = Typography
 
 // 初始筛选条件
 const initialFilters: RetentionLedgerFilter = {
@@ -41,38 +41,50 @@ const initialFilters: RetentionLedgerFilter = {
 
 export default function RetentionLedgerPage() {
   // 状态
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<SampleRetentionLedger[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState<RetentionLedgerFilter>(initialFilters)
 
   // 加载数据
-  const { data: queryResult, isLoading: loading } = useQuery({
-    queryKey: ['retention-ledger', filters, page, pageSize],
-    queryFn: async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
       const response = await getRetentionLedger({
         ...filters,
         page,
         page_size: pageSize,
       })
+      // 后端返回格式: {items, total, page, page_size}
       if (response.code === 200 || response.code === 0) {
-        return response.data as RetentionLedgerListResponse
+        const data = response.data as RetentionLedgerListResponse
+        setData(data?.items || [])
+        setTotal(data?.total || 0)
       }
-      return null
-    },
-  })
+    } catch (error) {
+      console.error('加载数据失败', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [filters, page, pageSize])
 
-  const data = queryResult?.items || []
-  const total = queryResult?.total || 0
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   // 筛选
   const handleSearch = () => {
     setPage(1)
+    loadData()
   }
 
   // 重置筛选
   const handleReset = () => {
     setFilters(initialFilters)
     setPage(1)
+    loadData()
   }
 
   // 表格列定义

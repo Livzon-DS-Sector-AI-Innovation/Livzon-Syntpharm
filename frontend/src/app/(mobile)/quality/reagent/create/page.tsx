@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import {
   Button,
   Form,
@@ -519,35 +518,39 @@ export default function MobileReagentCreatePage() {
   const router = useRouter()
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
-  const [uploadedUrls, _setUploadedUrls] = useState<string[]>([])
+  const [uploadedUrls, setUploadedUrls] = useState<string[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [submitLoading, setSubmitLoading] = useState(false)
   const [_recognizedData, setRecognizedData] = useState<Record<string, string>>({})
 
-  // 获取入场批号
-  const { data: lotNoData } = useQuery({
-    queryKey: ['next-incoming-lot-no'],
-    queryFn: async () => {
-      try {
-        const response = await getNextIncomingLotNo()
-        if (response.code === 200 && response.data) {
-          return response.data.incoming_lot_no
-        }
-      } catch (e) {
-        console.error('获取入场批号失败:', e)
+  // 初始化表单
+  const initForm = async () => {
+    form.resetFields()
+    let incomingLotNo = ''
+    try {
+      const response = await getNextIncomingLotNo()
+      if (response.code === 200 && response.data) {
+        incomingLotNo = response.data.incoming_lot_no
       }
-      return ''
-    },
-  })
-
-  // 初始化表单 - 使用 Form initialValues 和 lotNoData
-  useEffect(() => {
-    if (lotNoData !== undefined) {
-      form.setFieldsValue({
-        incoming_lot_no: lotNoData,
-      })
+    } catch (e) {
+      console.error('获取入场批号失败:', e)
     }
-  }, [lotNoData, form])
+    form.setFieldsValue({
+      arrival_date: dayjs(),
+      category: '/',
+      quantity: 0,
+      unit: 'g',
+      incoming_lot_no: incomingLotNo,
+    })
+    setFileList([])
+    setUploadedUrls([])
+    setRecognizedData({})
+  }
+
+  // 初始化
+  useEffect(() => {
+    initForm()
+  }, [])
 
   // AI识别
   const handleAiRecognize = async () => {
@@ -610,7 +613,7 @@ export default function MobileReagentCreatePage() {
       } else {
         message.error(response.message || 'AI识别失败')
       }
-    } catch (_error) {
+    } catch (error) {
       message.error('AI识别失败，请重试')
     } finally {
       setAiLoading(false)

@@ -9,10 +9,10 @@ FROM node:22-alpine AS base
 WORKDIR /app
 
 # Enable corepack and install pnpm
-# Set npm registry before corepack
-RUN npm config set registry https://registry.npmmirror.com
-RUN corepack enable && COREPACK_NPM_REGISTRY=https://registry.npmmirror.com corepack prepare pnpm@10.33.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
+# Use Chinese npm mirror for faster downloads
+RUN npm config set registry https://registry.npmmirror.com
 
 # Copy dependency files
 COPY package.json pnpm-lock.yaml* ./

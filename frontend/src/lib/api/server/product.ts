@@ -22,19 +22,19 @@ export async function deleteProduct(id: string) {
   })
 }
 
-export async function getProducts(): Promise<unknown> {
+export async function getProducts(): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/products`, { cache: 'no-store' })
 }
 
-export async function getProductsByWorkshop(workshop: string): Promise<unknown> {
+export async function getProductsByWorkshop(workshop: string): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/products/workshop/${encodeURIComponent(workshop)}`, { cache: 'no-store' })
 }
 
-export async function getProduct(productId: string): Promise<unknown> {
+export async function getProduct(productId: string): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/products/${productId}`, { cache: 'no-store' })
 }
 
-export async function createWorkshopProduct(data: WorkshopProductCreate): Promise<unknown> {
+export async function createWorkshopProduct(data: WorkshopProductCreate): Promise<any> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/production/products`, {
     method: 'POST',
     body: JSON.stringify(data),

@@ -1,7 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import type { CreateTableRequest, UpdateTableRequest, InspectionTable, InspectionTableDetail, TableListItem } from '@/types/inspection-table'
+import type { ColumnConfig, CreateTableRequest, UpdateTableRequest } from '@/types/inspection-table'
 import {
   getInspectionTables as fetchInspectionTables,
   getInspectionTable as fetchInspectionTable,
@@ -23,36 +23,37 @@ export async function getInspectionTables(params?: {
   keyword?: string
   page?: number
   page_size?: number
-}): Promise<{ items: TableListItem[]; total: number }> {
+}) {
   return fetchInspectionTables(params)
 }
 
-export async function getInspectionTable(id: string): Promise<InspectionTableDetail> {
+export async function getInspectionTable(id: string) {
   return fetchInspectionTable(id)
 }
 
-export async function createInspectionTable(data: CreateTableRequest): Promise<InspectionTable> {
+export async function createInspectionTable(data: CreateTableRequest) {
   const result = await apiCreateInspectionTable(data)
   revalidatePath('/quality/inspection-table')
   return result
 }
 
-export async function updateInspectionTable(id: string, data: UpdateTableRequest): Promise<InspectionTable> {
+export async function updateInspectionTable(id: string, data: UpdateTableRequest) {
   const result = await apiUpdateInspectionTable(id, data)
   revalidatePath('/quality/inspection-table')
   return result
 }
 
-export async function deleteInspectionTable(id: string): Promise<void> {
-  await apiDeleteInspectionTable(id)
+export async function deleteInspectionTable(id: string) {
+  const result = await apiDeleteInspectionTable(id)
   revalidatePath('/quality/inspection-table')
+  return result
 }
 
-export async function addTableRow(tableId: string, rowData: Record<string, unknown>) {
+export async function addTableRow(tableId: string, rowData: Record<string, any>) {
   return apiAddTableRow(tableId, rowData)
 }
 
-export async function updateTableRow(tableId: string, rowId: number, rowData: Record<string, unknown>) {
+export async function updateTableRow(tableId: string, rowId: number, rowData: Record<string, any>) {
   return apiUpdateTableRow(tableId, rowId, rowData)
 }
 
@@ -60,7 +61,7 @@ export async function deleteTableRow(tableId: string, rowId: number) {
   return apiDeleteTableRow(tableId, rowId)
 }
 
-export async function batchSaveTableRows(tableId: string, rows: Record<string, unknown>[]) {
+export async function batchSaveTableRows(tableId: string, rows: Record<string, any>[]) {
   return apiBatchSaveTableRows(tableId, rows)
 }
 

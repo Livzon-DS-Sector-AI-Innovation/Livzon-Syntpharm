@@ -5,6 +5,7 @@ import {
   ReportCreate,
   ReportUpdate,
   ReportItemsBatchSave,
+  TemplateCreate,
   TemplateUpdate,
 } from '@/types/material-report'
 import {
@@ -35,15 +36,15 @@ export async function getReports(params?: {
   keyword?: string
   page?: number
   page_size?: number
-}): Promise<Record<string, unknown>> {
-  return fetchReports(params) as Promise<Record<string, unknown>>
+}) {
+  return fetchReports(params)
 }
 
-export async function getReportById(id: string): Promise<Record<string, unknown>> {
-  return fetchReportById(id) as Promise<Record<string, unknown>>
+export async function getReportById(id: string) {
+  return fetchReportById(id)
 }
 
-export async function createReport(data: ReportCreate): Promise<Record<string, unknown>> {
+export async function createReport(data: ReportCreate) {
   const processedData = {
     ...data,
     report_date: typeof data.report_date === 'object' && 'format' in data.report_date
@@ -52,10 +53,10 @@ export async function createReport(data: ReportCreate): Promise<Record<string, u
   }
   const result = await apiCreateReport(processedData)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
-export async function updateReport(id: string, data: ReportUpdate): Promise<Record<string, unknown>> {
+export async function updateReport(id: string, data: ReportUpdate) {
   const processedData = {
     ...data,
     report_date: data.report_date && typeof data.report_date === 'object' && 'format' in data.report_date
@@ -64,29 +65,29 @@ export async function updateReport(id: string, data: ReportUpdate): Promise<Reco
   }
   const result = await apiUpdateReport(id, processedData)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
-export async function deleteReport(id: string): Promise<Record<string, unknown>> {
+export async function deleteReport(id: string) {
   const result = await apiDeleteReport(id)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
-export async function saveReportItems(id: string, data: ReportItemsBatchSave): Promise<Record<string, unknown>> {
+export async function saveReportItems(id: string, data: ReportItemsBatchSave) {
   const result = await apiSaveReportItems(id, data)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
 export async function generateReport(id: string) {
   return apiGenerateReport(id)
 }
 
-export async function submitReport(id: string): Promise<Record<string, unknown>> {
+export async function submitReport(id: string) {
   const result = await apiSubmitReport(id)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
 export async function getReportStatistics() {
@@ -109,24 +110,24 @@ export async function uploadTemplate(
   file: File,
   templateName: string,
   templateDescription?: string,
-  fieldMapping?: Record<string, unknown>,
-  tableFields?: Record<string, unknown>
-): Promise<Record<string, unknown>> {
+  fieldMapping?: Record<string, any>,
+  tableFields?: Record<string, any>
+) {
   const result = await apiUploadTemplate(file, templateName, templateDescription, fieldMapping, tableFields)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
-export async function updateTemplate(id: string, data: TemplateUpdate): Promise<Record<string, unknown>> {
+export async function updateTemplate(id: string, data: TemplateUpdate) {
   const result = await apiUpdateTemplate(id, data)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
-export async function deleteTemplate(id: string): Promise<Record<string, unknown>> {
+export async function deleteTemplate(id: string) {
   const result = await apiDeleteTemplate(id)
   revalidatePath('/quality/material-report')
-  return result as Record<string, unknown>
+  return result
 }
 
 export async function previewTemplate(id: string) {
@@ -138,10 +139,10 @@ export async function uploadReportImage(
   file: File,
   fieldKey?: string,
   rowIndex?: number
-): Promise<Record<string, unknown>> {
-  return apiUploadReportImage(reportId, file, fieldKey, rowIndex) as Promise<Record<string, unknown>>
+): Promise<any> {
+  return apiUploadReportImage(reportId, file, fieldKey, rowIndex)
 }
 
-export async function getReportImages(reportId: string): Promise<Record<string, unknown>> {
-  return apiGetReportImages(reportId) as Promise<Record<string, unknown>>
+export async function getReportImages(reportId: string): Promise<any> {
+  return apiGetReportImages(reportId)
 }

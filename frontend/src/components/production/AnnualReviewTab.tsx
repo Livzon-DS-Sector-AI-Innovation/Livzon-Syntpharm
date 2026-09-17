@@ -1,9 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Card, Row, Col, Statistic, Table, Spin, Empty, Alert, Button, Tag } from 'antd'
 import { ArrowUpOutlined, ArrowDownOutlined, DownloadOutlined } from '@ant-design/icons'
-import type { MonthlyTrend, WorkshopRanking } from "@/types/product-output";
 import ReactECharts from 'echarts-for-react'
 import type { EChartsOption } from 'echarts'
 import { fetchAnnualReview, fetchExportAnnualReview } from '@/actions/product-output'
@@ -14,25 +13,36 @@ interface Props {
 }
 
 export default function AnnualReviewTab({ year }: Props) {
-  const { data, isLoading: loading, error: queryError } = useQuery({
-    queryKey: ['annual-review', year],
-    queryFn: async () => {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [data, setData] = useState<AnnualReviewData | null>(null)
+
+  useEffect(() => {
+    loadData()
+  }, [year])
+
+  const loadData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
       const res = await fetchAnnualReview(year)
       if (res.code !== 200) {
-        throw new Error((res.message as string) || '加载数据失败')
+        setError(res.message || '加载数据失败')
+        return
       }
-      return res.data as AnnualReviewData
-    },
-  })
-
-  const error = queryError?.message || null
-
-
+      setData(res.data)
+    } catch (err) {
+      console.error('Failed to load annual review:', err)
+      setError('加载年度回顾数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleExport = async () => {
     try {
       const response = await fetchExportAnnualReview(year)
-      const blob = await (response as unknown as Response).blob()
+      const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -64,17 +74,18 @@ export default function AnnualReviewTab({ year }: Props) {
 
   const { overview, monthly_trend, workshop_ranking, top_products } = data || {}
   const safeOverview = overview || { total_weight: 0, previous_year_weight: 0, weight_yoy: 0, total_batches: 0, previous_year_batches: 0, batch_yoy: 0, active_workshops: 0, active_products: 0 }
+  const safeMonthlyTrend = monthly_trend || []
   const safeWorkshopRanking = workshop_ranking || []
   const safeTopProducts = top_products || []
 
   // 月度趋势图配置
-  const trendOption = {
+  const trendOption: EChartsOption = {
     tooltip: {
       trigger: 'axis',
-      formatter: (params: Array<{ name: string; value: number; marker: string; seriesName: string }>) => {
+      formatter: (params: any) => {
         const month = params[0].name
         let html = `<strong>${month}月</strong><br/>`
-        params.forEach((p: { name: string; value: number; marker: string; seriesName: string }) => {
+        params.forEach((p: any) => {
           html += `${p.marker} ${p.seriesName}: ${p.value.toLocaleString()} kg<br/>`
         })
         return html
@@ -87,7 +98,7 @@ export default function AnnualReviewTab({ year }: Props) {
     grid: { left: 60, right: 20, top: 20, bottom: 40 },
     xAxis: {
       type: 'category',
-      data: (monthly_trend || []).map((m: MonthlyTrend) => `${m.month}月`),
+      data: safeMonthlyTrend.map((m: { month: number }) => `${m.month}月`),
     },
     yAxis: {
       type: 'value',
@@ -97,14 +108,14 @@ export default function AnnualReviewTab({ year }: Props) {
       {
         name: `${year}年`,
         type: 'line',
-        data: (monthly_trend || []).map((m: MonthlyTrend) => m.current_year_weight),
+        data: safeMonthlyTrend.map((m: { current_year_weight: number }) => m.current_year_weight),
         smooth: true,
         itemStyle: { color: '#5645d4' },
       },
       {
         name: `${year - 1}年`,
         type: 'line',
-        data: (monthly_trend || []).map((m: MonthlyTrend) => m.previous_year_weight),
+        data: safeMonthlyTrend.map((m: { previous_year_weight: number }) => m.previous_year_weight),
         smooth: true,
         itemStyle: { color: '#1aae39' },
         lineStyle: { type: 'dashed' },
@@ -113,13 +124,13 @@ export default function AnnualReviewTab({ year }: Props) {
   }
 
   // 车间排名图配置
-  const rankingOption = {
+  const rankingOption: EChartsOption = {
     tooltip: {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      formatter: (params: Array<{ name: string; value: number }>) => {
+      formatter: (params: any) => {
         const p = params[0]
-        const item = (workshop_ranking || []).find((w: WorkshopRanking) => w.workshop === p.name)
+        const item = safeWorkshopRanking.find((w: { workshop: string }) => w.workshop === p.name)
         return `<strong>${p.name}</strong><br/>产量: ${p.value.toLocaleString()} kg<br/>批次: ${item?.batch_count || 0}`
       },
     },
@@ -130,14 +141,14 @@ export default function AnnualReviewTab({ year }: Props) {
     },
     yAxis: {
       type: 'category',
-      data: (workshop_ranking || []).map((w: WorkshopRanking) => w.workshop).reverse(),
+      data: safeWorkshopRanking.map((w: { workshop: string }) => w.workshop).reverse(),
     },
     series: [
       {
         type: 'bar',
-        data: (workshop_ranking || []).map((w: WorkshopRanking) => w.total_weight).reverse(),
+        data: safeWorkshopRanking.map((w: { total_weight: number }) => w.total_weight).reverse(),
         itemStyle: {
-          color: (params: { dataIndex: number }) => {
+          color: (params: any) => {
             const colors = ['#5645d4', '#1aae39', '#dd5b00', '#e03131', '#13c2c2']
             return colors[params.dataIndex % colors.length]
           },
@@ -145,7 +156,7 @@ export default function AnnualReviewTab({ year }: Props) {
         label: {
           show: true,
           position: 'right',
-          formatter: (params: { value: number }) => `${params.value.toLocaleString()} kg`,
+          formatter: (params: any) => `${params.value.toLocaleString()} kg`,
         },
       },
     ],
@@ -182,7 +193,7 @@ export default function AnnualReviewTab({ year }: Props) {
         emphasis: {
           label: { show: true, fontSize: 14, fontWeight: 'bold' },
         },
-        data: (top_products || []).map((p: TopProduct, i: number) => ({
+        data: safeTopProducts.map((p: { product_name: string; workshop: string; total_weight: number }, i: number) => ({
           name: `${p.product_name}(${p.workshop})`,
           value: p.total_weight,
           itemStyle: {

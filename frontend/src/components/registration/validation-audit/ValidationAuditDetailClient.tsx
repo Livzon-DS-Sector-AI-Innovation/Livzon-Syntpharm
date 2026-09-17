@@ -1,9 +1,11 @@
 'use client'
 
+ 'use client'
 
-import { useState, useCallback, type JSX } from 'react'
-import { UploadFile, 
-  Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty, Typography,
+import { useState, useCallback, useEffect, type JSX } from 'react'
+import {
+  Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty,
+  Typography, Spin,
 } from 'antd'
 import {
   ArrowLeftOutlined, UploadOutlined, PlayCircleOutlined, FileTextOutlined,
@@ -86,6 +88,11 @@ export default function ValidationAuditDetailClient({
     }
   }, [task.id])
 
+  // Fetch fresh data on mount to fix stale initial data from Server Component
+  useEffect(() => {
+    refreshData()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const statusCfg = STATUS_LABELS[task.status as keyof typeof STATUS_LABELS]
   const conclusionCfg = task.conclusion
     ? CONCLUSION_LABELS[task.conclusion as keyof typeof CONCLUSION_LABELS]
@@ -95,7 +102,7 @@ export default function ValidationAuditDetailClient({
     ? issues
     : issues.filter(i => i.issue_type === issueFilter)
 
-  const [uploadFileList, setUploadFileList] = useState<UploadFile[]>([])
+  const [uploadFileList, setUploadFileList] = useState<any[]>([])
 
   const handleUpload = async () => {
     if (uploadFileList.length === 0) {
@@ -106,7 +113,7 @@ export default function ValidationAuditDetailClient({
     const formData = new FormData()
     for (const file of uploadFileList) {
       const originFile = file.originFileObj || file
-      formData.append('files', originFile as File)
+      formData.append('files', originFile)
     }
     formData.append('file_type', task.audit_mode === 'report' ? 'report' : 'protocol')
 

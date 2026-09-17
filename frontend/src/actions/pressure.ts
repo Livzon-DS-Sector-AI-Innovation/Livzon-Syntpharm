@@ -3,9 +3,19 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import type {
+  ApiResponse,
+  AuditStats,
   BatchManualEntryRequest,
+  BatchManualEntryResponse,
   CreateOcrRecordRequest,
+  DashboardStats,
   DeleteMergedRowRequest,
+  MergedPressureRow,
+  NotificationListResponse,
+  OcrSubmitResponse,
+  OcrTask,
+  PointMapping,
+  PressureRecord,
   UpdateMergedRowRequest,
 } from '@/types/pressure'
 import {
@@ -240,7 +250,7 @@ export async function createOcrTask(data: { image_url: string }) {
 
 export async function submitOcrTaskResult(
   taskId: string,
-  data: { records: Record<string, unknown>[] }
+  data: { records: any[] }
 ) {
   const headers = await getAuthHeaders()
   const response = await apiSubmitOcrTaskResult(headers, taskId, data)

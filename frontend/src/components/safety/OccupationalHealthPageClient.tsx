@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Table,
   Button,
@@ -12,6 +12,7 @@ import {
   Typography,
   Space,
   Tag,
+  Spin,
   Popconfirm,
   Descriptions,
   Drawer,
@@ -30,8 +31,13 @@ import {
   EyeOutlined,
   PlayCircleOutlined,
   CheckCircleOutlined,
+  CloseCircleOutlined,
   VerifiedOutlined,
+  WarningOutlined,
+  ExperimentOutlined,
+  HeartOutlined,
   ExclamationCircleOutlined,
+  FileAddOutlined,
 } from '@ant-design/icons'
 import {
   getOhHazardMonitors,
@@ -43,6 +49,8 @@ import {
   completeMonitor,
   verifyMonitor,
   addDetectionResult,
+  updateDetectionResult,
+  deleteDetectionResult,
   addMonitorAbnormality,
   updateMonitorAbnormalityStatus,
   getOhHealthExams,
@@ -54,24 +62,33 @@ import {
   completeExam,
   archiveExam,
   addExamItem,
+  updateExamItem,
+  deleteExamItem,
+  setExamConclusion,
   addExamAbnormality,
   updateExamAbnormalityStatus,
-  setExamConclusion,
 } from '@/actions/safety'
 import {
   MonitorStatus,
   MONITOR_STATUS_OPTIONS,
+  DetectionType,
   DETECTION_TYPE_OPTIONS,
+  HazardFactorCategory,
   HAZARD_FACTOR_CATEGORY_OPTIONS,
+  OELComplianceStatus,
   OEL_COMPLIANCE_STATUS_OPTIONS,
   ExamStatus,
   EXAM_STATUS_OPTIONS,
+  ExamType,
   EXAM_TYPE_OPTIONS,
+  ExamConclusion,
   EXAM_CONCLUSION_OPTIONS,
+  AbnormalityStatus,
   ABNORMALITY_STATUS_OPTIONS,
   type OhHazardMonitor,
   type OhHealthExam,
   type DetectionResultItem,
+  type ExamResultItem,
   type AbnormalityRecord,
 } from '@/types/safety'
 
@@ -171,6 +188,8 @@ export function OccupationalHealthPageClient() {
     }
   }, [monitorPagination.page, monitorPagination.page_size, monitorFilters])
 
+  useEffect(() => { loadMonitors() }, [loadMonitors])
+
   /* ===================== Exam Data Loading ===================== */
   const loadExams = useCallback(async () => {
     setExamLoading(true)
@@ -190,6 +209,8 @@ export function OccupationalHealthPageClient() {
       setExamLoading(false)
     }
   }, [exampagination.page, exampagination.page_size, examFilters])
+
+  useEffect(() => { loadExams() }, [loadExams])
 
   /* ===================== Monitor Modal ===================== */
   const openMonitorCreateModal = () => {

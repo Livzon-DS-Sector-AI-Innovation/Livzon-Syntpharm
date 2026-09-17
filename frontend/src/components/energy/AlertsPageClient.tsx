@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button, Space, App } from 'antd'
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { AlertRuleTable } from './AlertRuleTable'
@@ -11,7 +11,7 @@ import { useEnergyStore } from '@/stores/energy'
 
 export function AlertsPageClient() {
   const { message } = App.useApp()
-  const { alertConfigDrawerOpen: _alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
+  const { alertConfigDrawerOpen, openAlertConfigDrawer } = useEnergyStore()
   const [data, setData] = useState<AlertRule[]>([])
   const [loading, setLoading] = useState(false)
   const [total, setTotal] = useState(0)
@@ -29,7 +29,11 @@ export function AlertsPageClient() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, message])
+  }, [page, pageSize])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const handlePageChange = (p: number, ps: number) => {
     setPage(p)
@@ -45,7 +49,7 @@ export function AlertsPageClient() {
       await deleteAlertRule(id)
       message.success('删除成功')
       fetchData()
-    } catch (_error) {
+    } catch (error) {
       message.error('删除失败')
     }
   }

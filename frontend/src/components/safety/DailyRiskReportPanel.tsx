@@ -45,7 +45,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text: _Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 export default function DailyRiskReportPanel() {
@@ -94,6 +94,10 @@ export default function DailyRiskReportPanel() {
     }
   }
 
+  useEffect(() => {
+    loadData()
+  }, [dailyRiskReportQueryParams.page, dailyRiskReportQueryParams.page_size, statusFilter, deptFilter])
+
   const handleSearch = () => {
     setDailyRiskReportQueryParams({ page: 1 })
     loadData()
@@ -120,7 +124,7 @@ export default function DailyRiskReportPanel() {
         planned_end_time: editingRecord.planned_end_time ? dayjs(editingRecord.planned_end_time) : undefined
       })
     }
-  }, [editingRecord, modalVisible, editForm])
+  }, [editingRecord, modalVisible])
 
   const handleDelete = (id: string) => {
     modal.confirm({

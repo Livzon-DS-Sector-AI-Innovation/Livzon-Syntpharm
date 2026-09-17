@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Button,
   Select,
@@ -47,7 +47,7 @@ interface Props {
 
 export default function PptGeneratorPanel({
   articleId,
-  articleTitle: _articleTitle,
+  articleTitle,
   hasContent,
 }: Props) {
   const [template, setTemplate] = useState<string>('training')
@@ -69,6 +69,10 @@ export default function PptGeneratorPanel({
       setLoadingHistory(false)
     }
   }, [articleId])
+
+  useEffect(() => {
+    loadHistory()
+  }, [loadHistory])
 
   const handleGenerate = async () => {
     if (!hasContent) {

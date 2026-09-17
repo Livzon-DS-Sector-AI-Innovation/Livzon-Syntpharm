@@ -1,8 +1,7 @@
 'use client'
 "use client"
 
-import { useState } from "react"
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import * as XLSX from "xlsx"
 import { fetchCqaBatchesWide } from "@/lib/api/client/quality-cpv"
@@ -16,18 +15,22 @@ interface Props {
 }
 
 export function CqaBatchDataClient({ productId, initialProduct, initialParameters }: Props) {
-  const queryClient = useQueryClient()
   const [parameters] = useState<CpvParameter[]>(initialParameters)
+  const [batches, setBatches] = useState<CpvBatchWide[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(true)
   const [exporting, setExporting] = useState(false)
   const [batchNo, setBatchNo] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['cqa-batches', productId, batchNo, startDate, endDate, page],
-    queryFn: async () => {
+  useEffect(() => { loadData() }, [productId, page])
+
+  async function loadData() {
+    try {
+      setLoading(true)
       const batchesData = await fetchCqaBatchesWide(productId, {
         batch_no: batchNo || undefined,
         start_date: startDate || undefined,
@@ -35,19 +38,12 @@ export function CqaBatchDataClient({ productId, initialProduct, initialParameter
         page,
         page_size: 20,
       })
-      return { items: batchesData.items, total: batchesData.total }
-    },
-  })
+      setBatches(batchesData.items)
+      setTotal(batchesData.total)
+    } catch (err) { console.error(err) } finally { setLoading(false) }
+  }
 
-  // Use query data directly
-  const batches = queryData?.items || []
-  const total = queryData?.total || 0
-  const loading = queryLoading
-
-
-
-
-  function handleSearch() { setPage(1) }
+  function handleSearch() { setPage(1); loadData() }
 
   async function handleExport() {
     try {
@@ -196,7 +192,7 @@ export function CqaBatchDataClient({ productId, initialProduct, initialParameter
         productId={productId}
         productName={initialProduct?.name || ""}
         dataType="CQA"
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['cqa-batches'] })}
+        onSuccess={loadData}
       />
     </div>
   )

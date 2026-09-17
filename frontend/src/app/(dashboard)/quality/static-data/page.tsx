@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   Card,
   Tabs,
@@ -19,8 +18,7 @@ import {
   Modal,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { AnyObject } from 'antd/es/_util/type'
-import type { UploadProps, FormInstance } from 'antd'
+import type { UploadProps } from 'antd'
 import {
   PlusOutlined,
   EditOutlined,
@@ -48,12 +46,23 @@ import {
   MaterialStandard,
   ProductStandard,
   HplcReference,
+  ApiResponse,
   EQ_STATUS_OPTIONS,
   STANDARD_STATUS_OPTIONS,
   CHROM_COLUMN_STATUS_OPTIONS,
   HPLC_REF_STATUS_OPTIONS,
 } from '@/types/static-data'
 import {
+  listStorageCondition,
+  listUnit,
+  listTestItem,
+  listEquipment,
+  listChromColumn,
+  listMedium,
+  listReagent,
+  listStandardMaterial,
+  listMaterialStandard,
+  listProductStandard,
   deleteStorageCondition,
   deleteUnit,
   deleteTestItem,
@@ -84,72 +93,76 @@ import {
 
 const { RangePicker } = DatePicker
 
-// Extend Window for cross-component communication (RangePicker callbacks)
-declare global {
-  interface Window {
-    __listPanelForm__?: FormInstance
-    __listPanelSearchValues__?: Record<string, unknown>
-    __currentListTab__?: string
-  }
-}
-
 // ============ 通用列表组件 ============
 
 interface ListPageProps {
   tabKey: string
-  columns: ColumnsType<AnyObject>
+  columns: ColumnsType<any>
   rowKey: string
   // Write operations via Server Action
-  deleteFn?(id: number): Promise<void>
+  deleteFn?: (id: number) => Promise<any>
   // List query via client direct call (bypass Server Action network isolation)
-  clientListFn(params: Record<string, unknown>): Promise<unknown>
+  clientListFn: (params: any) => Promise<any>
   searchForm?: React.ReactNode
   // Import/Template download
-  onTemplateDownload?(): Promise<void>
-  onBatchImport?(file: File): Promise<{ message?: string }>
+  onTemplateDownload?: () => Promise<void>
+  onBatchImport?: (file: File) => Promise<any>
   importModule?: string
 }
 
-function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, importModule: _importModule }: ListPageProps) {
+function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm, onTemplateDownload, onBatchImport, importModule }: ListPageProps) {
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [searchValues, setSearchValues] = useState<Record<string, unknown>>({})
+  const [total, setTotal] = useState(0)
+  const [searchValues, setSearchValues] = useState<Record<string, any>>({})
   const [form] = Form.useForm()
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [importLoading, setImportLoading] = useState(false)
   const router = useRouter()
-  const queryClient = useQueryClient()
-
-  const { data: queryResult, isLoading: loading, refetch: _refetch } = useQuery({
-    queryKey: ['static-data-list', tabKey, page, pageSize, searchValues],
-    queryFn: async () => {
-      const params = { page, page_size: pageSize, ...searchValues }
-      const res = await clientListFn(params) as { data?: unknown[]; meta?: { total?: number } } | unknown[] | null
-      const items = (!Array.isArray(res) && res?.data ? res.data : (Array.isArray(res) ? res : [])) as AnyObject[]
-      const totalVal = (!Array.isArray(res) ? res?.meta?.total : undefined) ?? (Array.isArray(res) ? res.length : 0)
-      return { items, total: totalVal }
-    },
-  })
-
-  const data = queryResult?.items || []
-  const total = queryResult?.total || 0
-
-  // Stable reference for external calls
+  // Stable reference, no rebuild on tab switch
   const fetchDataRef = useRef<() => void>(() => {})
-  useEffect(() => {
-    fetchDataRef.current = () => {
-      queryClient.invalidateQueries({ queryKey: ['static-data-list', tabKey] })
+
+  const fetchData = useCallback(async (overrides: Record<string, any> = {}) => {
+    setLoading(true)
+    try {
+      const params = { page, page_size: pageSize, ...searchValues, ...overrides }
+      const res = await clientListFn(params)
+      setData((res?.data ?? res ?? []) as any[])
+      const totalVal = res?.meta?.total ?? (Array.isArray(res) ? res.length : 0)
+      setTotal(totalVal)
+    } catch (e: any) {
+      message.error(e.message || '加载失败')
+      console.error('[ListPanel] fetchData error:', e)
+    } finally {
+      setLoading(false)
     }
-  }, [queryClient, tabKey])
+  }, [page, pageSize, searchValues, clientListFn])
+
+  // 更新 ref，让 RangePicker 等可以直接调用
+  useEffect(() => {
+    fetchDataRef.current = fetchData
+  }, [fetchData])
+
+  // 仅在 page / pageSize / searchValues / tabKey 变化时重新加载
+  useEffect(() => {
+    setPage(1)
+    fetchData()
+  }, [searchValues]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchData()
+  }, [page, pageSize]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 暴露表单和搜索值给 RangePicker 回调
   useEffect(() => {
-    window.__listPanelForm__ = form
-    window.__listPanelSearchValues__ = searchValues
-    window.__currentListTab__ = tabKey
+    ;(window as any).__listPanelForm__ = form
+    ;(window as any).__listPanelSearchValues__ = searchValues
+    ;(window as any).__currentListTab__ = tabKey
   }, [form, searchValues, tabKey])
 
-  const handleSearch = (vals: Record<string, unknown>) => {
+  const handleSearch = (vals: any) => {
     setSearchValues(vals)
     setPage(1)
   }
@@ -165,26 +178,26 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
     try {
       await deleteFn(id)
       message.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: ['static-data-list', tabKey] })
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '删除失败'))
+      fetchDataRef.current()
+    } catch (e: any) {
+      message.error(e.message || '删除失败')
     }
   }
 
-  const cols: ColumnsType<AnyObject> = [
+  const cols: ColumnsType<any> = [
     ...columns,
     {
       title: '操作',
       key: 'actions',
       width: 120,
-      render: (_: unknown, record: AnyObject) => (
+      render: (_: any, record: any) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />}
             onClick={() => router.push(`/quality/static-data/${tabKey}/${record[rowKey]}`)}>
             编辑
           </Button>
           {deleteFn && (
-            <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record[rowKey] as number)}
+            <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record[rowKey])}
               okText="确定" cancelText="取消">
               <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
             </Popconfirm>
@@ -199,8 +212,8 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
     try {
       await onTemplateDownload()
       message.success('模板下载成功')
-    } catch (e: unknown) {
-      message.error((e as Error)?.message || "模板下载失败")
+    } catch (e: any) {
+      message.error(e.message || '模板下载失败')
     }
   }
 
@@ -211,9 +224,9 @@ function ListPanel({ tabKey, columns, rowKey, deleteFn, clientListFn, searchForm
       const res = await onBatchImport(file)
       message.success(res.message || '导入成功')
       setImportModalOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['static-data-list', tabKey] })
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '导入失败'))
+      fetchDataRef.current()
+    } catch (e: any) {
+      message.error(e.message || '导入失败')
     } finally {
       setImportLoading(false)
     }
@@ -456,7 +469,7 @@ export default function StaticDataPage() {
     switch (key) {
       case 'storage-condition':
         return (
-          <ListPanel tabKey={key} columns={storageConditionColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={storageConditionColumns} rowKey="id"
             clientListFn={clientListStorageCondition}
             deleteFn={deleteStorageCondition}
             searchForm={<>
@@ -473,7 +486,7 @@ export default function StaticDataPage() {
         )
       case 'unit':
         return (
-          <ListPanel tabKey={key} columns={unitColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={unitColumns} rowKey="id"
             clientListFn={clientListUnit}
             deleteFn={deleteUnit}
             searchForm={<>
@@ -489,7 +502,7 @@ export default function StaticDataPage() {
         )
       case 'test-item':
         return (
-          <ListPanel tabKey={key} columns={testItemColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={testItemColumns} rowKey="id"
             clientListFn={clientListTestItem}
             deleteFn={deleteTestItem}
             searchForm={<>
@@ -505,7 +518,7 @@ export default function StaticDataPage() {
         )
       case 'equipment':
         return (
-          <ListPanel tabKey={key} columns={equipmentColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={equipmentColumns} rowKey="id"
             clientListFn={clientListEquipment}
             deleteFn={deleteEquipment}
             searchForm={<>
@@ -518,7 +531,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="start_date" label="下次校准日期" hidden><Input /></Form.Item>
               <Form.Item name="end_date" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = window.__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ start_date: dateStrings[0] || undefined, end_date: dateStrings[1] || undefined })
                 }
@@ -528,7 +541,7 @@ export default function StaticDataPage() {
         )
       case 'chrom-column':
         return (
-          <ListPanel tabKey={key} columns={chromColumnColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={chromColumnColumns} rowKey="id"
             clientListFn={clientListChromColumn}
             deleteFn={deleteChromColumn}
             searchForm={<>
@@ -544,7 +557,7 @@ export default function StaticDataPage() {
         )
       case 'medium':
         return (
-          <ListPanel tabKey={key} columns={mediumColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={mediumColumns} rowKey="id"
             clientListFn={clientListMedium}
             deleteFn={deleteMedium}
             searchForm={<>
@@ -558,7 +571,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = window.__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -568,7 +581,7 @@ export default function StaticDataPage() {
         )
       case 'reagent':
         return (
-          <ListPanel tabKey={key} columns={reagentColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={reagentColumns} rowKey="id"
             clientListFn={clientListReagent}
             deleteFn={deleteReagent}
             searchForm={<>
@@ -581,7 +594,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = window.__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -591,7 +604,7 @@ export default function StaticDataPage() {
         )
       case 'standard-material':
         return (
-          <ListPanel tabKey={key} columns={stdMatColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={stdMatColumns} rowKey="id"
             clientListFn={clientListStandardMaterial}
             deleteFn={deleteStandardMaterial}
             searchForm={<>
@@ -604,7 +617,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期至" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 240 }} onChange={(_, dateStrings) => {
-                const form = window.__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -614,7 +627,7 @@ export default function StaticDataPage() {
         )
       case 'material-standard':
         return (
-          <ListPanel tabKey={key} columns={matStdColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={matStdColumns} rowKey="id"
             clientListFn={clientListMaterialStandard}
             deleteFn={deleteMaterialStandard}
             searchForm={<>
@@ -630,7 +643,7 @@ export default function StaticDataPage() {
         )
       case 'product-standard':
         return (
-          <ListPanel tabKey={key} columns={prodStdColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={prodStdColumns} rowKey="id"
             clientListFn={clientListProductStandard}
             deleteFn={deleteProductStandard}
             searchForm={<>
@@ -646,7 +659,7 @@ export default function StaticDataPage() {
         )
       case 'hplc-reference':
         return (
-          <ListPanel tabKey={key} columns={hplcRefColumns as ColumnsType<AnyObject>} rowKey="id"
+          <ListPanel tabKey={key} columns={hplcRefColumns} rowKey="id"
             clientListFn={clientListHplcReference}
             deleteFn={deleteHplcReference}
             onTemplateDownload={downloadHplcReferenceTemplate}
@@ -669,7 +682,7 @@ export default function StaticDataPage() {
               </Form.Item>
               <Form.Item name="expire_start" label="有效期" hidden><Input /></Form.Item>
               <Form.Item name="expire_end" label=" " colon={false}><RangePicker format="YYYY-MM-DD" style={{ width: 220 }} placeholder={['有效期起','有效期止']} onChange={(_, dateStrings) => {
-                const form = window.__listPanelForm__
+                const form = (window as any).__listPanelForm__
                 if (form) {
                   form.setFieldsValue({ expire_start: dateStrings[0] || undefined, expire_end: dateStrings[1] || undefined })
                 }
@@ -691,7 +704,7 @@ export default function StaticDataPage() {
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
-          tabPosition="left"
+          tabPosition={"left" as any}
           style={{ minHeight: 500 }}
           tabBarStyle={{ width: 170, borderRight: '1px solid #f0f0f0', margin: 0 }}
           items={tabs.map(t => ({

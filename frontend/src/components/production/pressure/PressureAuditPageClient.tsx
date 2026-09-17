@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { App,
   Table,
   Button,
@@ -22,8 +22,8 @@ import {
   CheckOutlined,
   CloseOutlined,
   ReloadOutlined,
+  SearchOutlined
 } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getPressureRecords,
   auditPressureRecord,
@@ -31,7 +31,7 @@ import {
   getAuditStats
 } from '@/actions/pressure'
 import { AREA_OPTIONS, AUDIT_STATUS_OPTIONS } from '@/types/pressure'
-import type { PressureRecord } from '@/types/pressure'
+import type { PressureRecord, AuditStats } from '@/types/pressure'
 import dayjs from 'dayjs'
 
 const { Title, Text } = Typography
@@ -39,54 +39,56 @@ const { RangePicker } = DatePicker
 
 export function PressureAuditPageClient() {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [loading, setLoading] = useState(false)
+  const [records, setRecords] = useState<PressureRecord[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [area, setArea] = useState<string>()
   const [status, setStatus] = useState<string>('pending')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
+  const [auditStats, setAuditStats] = useState<AuditStats>({ pending_count: 0, today_approved_count: 0, rejected_count: 0 })
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [rejectTarget, setRejectTarget] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState('')
 
-  const { data: recordsData, isLoading: loading } = useQuery({
-    queryKey: ['pressure-audit-records', { page, page_size: pageSize, status, area, dateRange: dateRange ? [dateRange[0].toISOString(), dateRange[1].toISOString()] : null }],
-    queryFn: async () => {
-      const params: Record<string, unknown> = { page, page_size: pageSize, status }
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params: any = { page, page_size: pageSize, status }
       if (area) params.area = area
       if (dateRange) {
         params.start_date = dateRange[0].startOf('day').toISOString()
         params.end_date = dateRange[1].endOf('day').toISOString()
       }
-      const recordsRes = await getPressureRecords(params)
+      const [recordsRes, statsRes] = await Promise.all([
+        getPressureRecords(params),
+        getAuditStats(),
+      ])
       if (recordsRes.code === 200) {
-        return { data: recordsRes.data || [], total: recordsRes.meta?.total || 0 }
+        setRecords(recordsRes.data || [])
+        setTotal(recordsRes.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-  })
-
-  const { data: auditStats = { pending_count: 0, today_approved_count: 0, rejected_count: 0 } } = useQuery({
-    queryKey: ['pressure-audit-stats'],
-    queryFn: async () => {
-      const statsRes = await getAuditStats()
       if (statsRes.code === 200) {
-        return statsRes.data
+        setAuditStats(statsRes.data)
       }
-      return { pending_count: 0, today_approved_count: 0, rejected_count: 0 }
-    },
-  })
+    } catch {
+      message.error('加载数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize, area, status, dateRange])
 
-  const records = recordsData?.data || []
-  const total = recordsData?.total || 0
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleApprove = async (id: string) => {
     const res = await auditPressureRecord(id, { status: 'approved' })
     if (res.code === 200) {
       message.success('审核通过')
-      queryClient.invalidateQueries({ queryKey: ['pressure-audit-records'] })
-      queryClient.invalidateQueries({ queryKey: ['pressure-audit-stats'] })
+      loadData()
     }
   }
 
@@ -104,8 +106,7 @@ export function PressureAuditPageClient() {
       setRejectModalOpen(false)
       setRejectTarget(null)
       setRejectReason('')
-      queryClient.invalidateQueries({ queryKey: ['pressure-audit-records'] })
-      queryClient.invalidateQueries({ queryKey: ['pressure-audit-stats'] })
+      loadData()
     }
   }
 
@@ -117,8 +118,7 @@ export function PressureAuditPageClient() {
     if (res.code === 200) {
       message.success(`批量通过 ${res.data?.success_count || 0} 条`)
       setSelectedRowKeys([])
-      queryClient.invalidateQueries({ queryKey: ['pressure-audit-records'] })
-      queryClient.invalidateQueries({ queryKey: ['pressure-audit-stats'] })
+      loadData()
     }
   }
 
@@ -140,7 +140,7 @@ export function PressureAuditPageClient() {
       title: '操作',
       key: 'action',
       width: 120,
-      render: (_: unknown, record: PressureRecord) =>
+      render: (_: any, record: PressureRecord) =>
         record.status === 'pending' ? (
           <Space>
             <Button type="link" size="small" icon={<CheckOutlined />} style={{ color: '#52c41a' }} onClick={() => handleApprove(record.id)} />
@@ -193,7 +193,7 @@ export function PressureAuditPageClient() {
               setPage(1)
             }}
           />
-          <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['pressure-audit-records'] })}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
           {selectedRowKeys.length > 0 && (
             <Popconfirm title={`确认通过 ${selectedRowKeys.length} 条记录？`} onConfirm={handleBatchApprove}>
               <Button type="primary" icon={<CheckOutlined />}>批量通过 ({selectedRowKeys.length})</Button>

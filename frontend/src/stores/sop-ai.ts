@@ -7,9 +7,12 @@ import { create } from 'zustand'
 import {
   CheckMain,
   CheckMainDetail,
+  CheckProblem,
   CheckRecordFilter,
   SopAiConfig,
   ScheduledJob,
+  PaginatedResponse,
+  ApiResponse,
 } from '@/types/sop-ai'
 
 interface SopAiState {

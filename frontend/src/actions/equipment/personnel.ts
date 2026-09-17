@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import type {
-  CreateRoleInput, UpdateRoleInput,
+  CreateRoleInput, UpdateRoleInput, AddPersonnelInput,
   AssignRolesInput, AssignCategoriesInput,
 } from '@/types/equipment/generated-bridge'
 import {
@@ -17,6 +17,13 @@ import {
   refreshFeishuApi,
 } from '@/lib/api/server/equipment'
 
+async function wrapApiCall<T>(fn: () => Promise<T>): Promise<T | null> {
+  try {
+    return await fn()
+  } catch {
+    return null
+  }
+}
 
 // ── 角色 Actions ──
 
@@ -43,9 +50,9 @@ export async function deleteRole(id: string) {
 
 // ── 人员 Actions ──
 
-export async function addPersonnel(data: { user_ids: string[] }) {
+export async function addPersonnel(data: AddPersonnelInput) {
   const authHeaders = await getAuthHeaders()
-  const result = await addPersonnelApiTyped(data, authHeaders)
+  const result = await addPersonnelApiTyped(data as any, authHeaders)
   revalidatePath('/equipment/personnel')
   return result
 }

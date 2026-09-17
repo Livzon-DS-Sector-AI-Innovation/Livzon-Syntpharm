@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -44,6 +44,7 @@ import {
   updateTrainingRecord,
   deleteTrainingRecord,
   getTrainingCertificates,
+  getExpiringCertificates,
 } from '@/actions/safety'
 import type {
   SafetyTraining,
@@ -62,7 +63,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text: _Text } = Typography
+const { Text } = Typography
 
 export function SafetyTrainingPageClient() {
   const { message, modal } = App.useApp()
@@ -126,6 +127,10 @@ export function SafetyTrainingPageClient() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [trainingQueryParams.page, trainingQueryParams.page_size, statusFilter, typeFilter])
 
   const handleSearch = () => {
     setTrainingQueryParams({ page: 1 })
@@ -284,6 +289,11 @@ export function SafetyTrainingPageClient() {
   }
 
   // Load certificates when tab switches or filters change
+  useEffect(() => {
+    if (activeTab === 'certificate') {
+      loadCertificates()
+    }
+  }, [activeTab, certPage, certPageSize, certStatusFilter])
 
   const handleManageRecords = (record: SafetyTraining) => {
     setCurrentTrainingId(record.id)

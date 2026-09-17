@@ -50,7 +50,7 @@ export async function fetchReport(taskId: string) {
   return apiFetch(`${BASE}/tasks/${taskId}/report`)
 }
 
-export async function createTask(data: unknown) {
+export async function createTask(data: any) {
   return apiFetch(`${BASE}/tasks`, {
     method: 'POST',
     body: JSON.stringify(data),

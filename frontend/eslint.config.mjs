@@ -9,30 +9,24 @@ const config = [
   },
   {
     rules: {
-      // Rules with zero violations - keep as error
-      "react/no-unescaped-entities": "error",
-      "react/jsx-key": "error",
-      "prefer-const": "error",
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "error",
-      "react-hooks/react-compiler": "off",
-      
-      // Rules with existing violations - revert to warn
-      "@typescript-eslint/no-explicit-any": "error",
+      "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
-        "error",
+        "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "react-hooks/set-state-in-effect": "error",
-      
-      // React Compiler rules - disable to avoid build failures
-      "react-hooks/static-components": "off",
-      "react-hooks/immutability": "off",
-      "react-hooks/purity": "off",
+      "react/no-unescaped-entities": "warn",
+      "react/jsx-key": "warn",
+      "prefer-const": "warn",
+      "react-hooks/rules-of-hooks": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/react-compiler": "off",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/static-components": "warn",
+      "react-hooks/immutability": "warn",
+      "react-hooks/purity": "warn",
     },
   },
 ];

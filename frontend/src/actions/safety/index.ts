@@ -5,18 +5,18 @@ import { getAuthHeaders } from '@/lib/auth'
 import * as safetyApi from '@/lib/api/server/safety'
 import type { components } from '@/types/generated/schema'
 import type {
+  Accident,
   AccidentFormData,
   AccidentQueryParams,
-  Accident,
   ConfirmCheckRequest,
+  Contractor,
   ContractorFormData,
   ContractorQueryParams,
-  ContractorWorkRecordFormData,
-  Contractor,
   ContractorWorkRecord,
+  ContractorWorkRecordFormData,
+  HazardReport,
   HazardReportFormData,
   HazardReportQueryParams,
-  HazardReport,
   HazardStats,
   OperationRegulation,
   OperationRegulationFormData,
@@ -32,10 +32,13 @@ import type {
   SafetyKnowledgeArticleQueryParams,
   ParseDocumentResponse,
   DuplicateCheckRequest,
+  DuplicateCheckResponse,
+  NewVersionResponse,
+  VersionChainItem,
+  SemanticSearchResult,
+  SafetyTraining,
   SafetyTrainingFormData,
   SafetyTrainingQueryParams,
-  SafetyTraining,
-  TrainingRecord,
   SpecialOperationPermit,
   SpecialOperationPermitFormData,
   SpecialOperationPermitQueryParams,
@@ -47,10 +50,13 @@ import type {
   SpecialOperationReportQueryParams,
   SpecialOperationLedgerQueryParams,
   SpecialOperationLedgerStats,
+  DailyRiskReport,
   DailyRiskReportFormData,
   DailyRiskReportQueryParams,
+  HazardRiskOption,
   RectificationReplyRequest,
   VerifyLevelRequest,
+  TrainingRecord,
   TrainingRecordFormData,
   ApiResponse,
   EhsChange,
@@ -63,181 +69,161 @@ import type {
   OhHealthExamFormData,
   OhHealthExamQueryParams,
   // knowledge
-  GeneratePptRequest,
   GenerateCardResponse,
   AgentUsageStats,
   BatchGenerateCardsResponse,
+  GeneratePptRequest,
   GeneratePptResponse,
-  PptHistoryResponse,
   GenerateSummaryResponse,
-  DuplicateCheckResponse,
-  VersionChainItem,
-  NewVersionResponse,
-  SemanticSearchResult,
+  PptHistoryResponse,
   SyncKnowledgeResponse,
-  HazardIdentification,
-  HazardIdentificationStats,
-  HazardIdentificationBatchResponse,
-  HazardLedgerStats,
-  HazardLedgerExportParsedFilters,
-  RegulationStagesResponse,
-  HazardRiskOption,
-  DailyRiskReport,
-  AIWorkflowConfig,
-  ScheduledTask,
-  ScheduledTaskLog,
-  DataSourceOption,
-  FeishuChat,
-  HazardRevisionRecord,
-  HazardRevisionArchive,
 } from '@/types/safety'
 
 // ============ SafetyCheck Actions ============
 
-export async function getChecks(params: SafetyCheckQueryParams = {}): Promise<ApiResponse<SafetyCheck[]>> {
+export async function getChecks(params: SafetyCheckQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  const result = await safetyApi.getChecks(params as Record<string, unknown>, authHeaders)
-  return result as ApiResponse<SafetyCheck[]>
+  return safetyApi.getChecks(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getCheck(id: string): Promise<ApiResponse<SafetyCheck>> {
+export async function getCheck(id: string) {
   const authHeaders = await getAuthHeaders()
-  const result = await safetyApi.getCheck(id, authHeaders)
-  return result as ApiResponse<SafetyCheck>
+  return safetyApi.getCheck(id, authHeaders)
 }
 
-export async function createCheck(data: SafetyCheckFormData): Promise<ApiResponse<SafetyCheck>> {
+export async function createCheck(data: SafetyCheckFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createCheck(data, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<SafetyCheck>
+  return response
 }
 
-export async function updateCheck(id: string, data: Partial<SafetyCheckFormData>): Promise<ApiResponse<SafetyCheck>> {
+export async function updateCheck(id: string, data: Partial<SafetyCheckFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateCheck(id, data, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<SafetyCheck>
+  return response
 }
-export async function submitCheck(id: string): Promise<ApiResponse<SafetyCheck>> {
+
+export async function submitCheck(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitCheck(id, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<SafetyCheck>
+  return response
 }
 
-export async function reviewCheck(id: string, result: string): Promise<ApiResponse<SafetyCheck>> {
+export async function reviewCheck(id: string, result: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reviewCheck(id, result, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<SafetyCheck>
+  return response
 }
 
-export async function deleteCheck(id: string): Promise<ApiResponse<null>> {
+export async function deleteCheck(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteCheck(id, authHeaders)
   revalidatePath('/safety/check')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ HazardReport Actions ============
 
-export async function fetchHazardStats(): Promise<ApiResponse<HazardStats>> {
+export async function fetchHazardStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.fetchHazardStats(authHeaders) as Promise<ApiResponse<HazardStats>>
+  return safetyApi.fetchHazardStats(authHeaders)
 }
 
-export async function getHazards(params: HazardReportQueryParams = {}): Promise<ApiResponse<HazardReport[]>> {
+export async function getHazards(params: HazardReportQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazards(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardReport[]>>
+  return safetyApi.getHazards(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getHazard(id: string): Promise<ApiResponse<HazardReport>> {
+export async function getHazard(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazard(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.getHazard(id, authHeaders)
 }
 
 /** 根据部门名称查询部门负责人 */
-export async function getDepartmentLeader(departmentName: string): Promise<ApiResponse<{ leader_name: string; leader_id: string }>> {
+export async function getDepartmentLeader(departmentName: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentLeader(departmentName, authHeaders) as Promise<ApiResponse<{ leader_name: string; leader_id: string }>>
+  return safetyApi.getDepartmentLeader(departmentName, authHeaders)
 }
 
 /** 根据部门名称查询分管安全员 */
-export async function getDepartmentSafetyOfficer(departmentName: string): Promise<ApiResponse<{ safety_officer_name: string }>> {
+export async function getDepartmentSafetyOfficer(departmentName: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders) as Promise<ApiResponse<{ safety_officer_name: string }>>
+  return safetyApi.getDepartmentSafetyOfficer(departmentName, authHeaders)
 }
 
-export async function createHazard(data: HazardReportFormData): Promise<ApiResponse<HazardReport>> {
+export async function createHazard(data: HazardReportFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazard(data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
+export async function updateHazard(id: string, data: Partial<HazardReportFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazard(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function startRectification(id: string): Promise<ApiResponse<HazardReport>> {
+export async function startRectification(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startRectification(id, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function confirmCheck(id: string, data: ConfirmCheckRequest): Promise<ApiResponse<HazardReport>> {
+export async function confirmCheck(id: string, data: ConfirmCheckRequest) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.confirmCheckApi(id, data, authHeaders)
   revalidatePath('/safety')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function replyRectification(id: string, data: RectificationReplyRequest): Promise<ApiResponse<HazardReport>> {
+export async function replyRectification(id: string, data: RectificationReplyRequest) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.replyRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function verifyLevel(id: string, data: VerifyLevelRequest): Promise<ApiResponse<HazardReport>> {
+export async function verifyLevel(id: string, data: VerifyLevelRequest) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyLevel(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function notifyReviewer(id: string): Promise<ApiResponse<HazardReport>> {
+export async function notifyReviewer(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.notifyReviewer(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.notifyReviewer(id, authHeaders)
 }
 
-export async function notifyRectification(id: string): Promise<ApiResponse<HazardReport>> {
+export async function notifyRectification(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.notifyRectification(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.notifyRectification(id, authHeaders)
 }
 
-export async function triggerRectificationReview(id: string): Promise<ApiResponse<HazardReport>> {
+export async function triggerRectificationReview(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.triggerRectificationReview(id, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.triggerRectificationReview(id, authHeaders)
 }
 
-export async function reworkRectification(id: string, data: RectificationReplyRequest): Promise<ApiResponse<HazardReport>> {
+export async function reworkRectification(id: string, data: RectificationReplyRequest) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reworkRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
-export async function deleteHazard(id: string): Promise<ApiResponse<null>> {
+export async function deleteHazard(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazard(id, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<null>
+  return response
 }
 
 export async function deleteHazards(ids: string[]) {
@@ -251,54 +237,54 @@ export async function deleteHazards(ids: string[]) {
   return { succeeded, failed, total: ids.length }
 }
 
-export async function uploadHazardPhoto(id: string, file: File): Promise<ApiResponse<HazardReport>> {
+export async function uploadHazardPhoto(id: string, file: File) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-photo`, file, authHeaders)
 }
 
-export async function uploadRectificationPhoto(id: string, file: File): Promise<ApiResponse<HazardReport>> {
+export async function uploadRectificationPhoto(id: string, file: File) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders) as Promise<ApiResponse<HazardReport>>
+  return safetyApi.uploadHazardPhoto(`/safety/hazards/${id}/upload-rectification-photo`, file, authHeaders)
 }
 
-export async function runHazardAI(hazardId: string, scriptNumber: number): Promise<ApiResponse<unknown>> {
+export async function runHazardAI(hazardId: string, scriptNumber: number) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardAI(hazardId, scriptNumber, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<unknown>
+  return response
 }
 
 // ============ Accident Actions ============
 
-export async function getAccidents(params: AccidentQueryParams = {}): Promise<ApiResponse<Accident[]>> {
+export async function getAccidents(params: AccidentQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAccidents(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<Accident[]>>
+  return safetyApi.getAccidents(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getAccident(id: string): Promise<ApiResponse<Accident>> {
+export async function getAccident(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAccident(id, authHeaders) as Promise<ApiResponse<Accident>>
+  return safetyApi.getAccident(id, authHeaders)
 }
 
-export async function createAccident(data: AccidentFormData): Promise<ApiResponse<Accident>> {
+export async function createAccident(data: AccidentFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createAccident(data, authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
-export async function updateAccident(id: string, data: Partial<AccidentFormData>): Promise<ApiResponse<Accident>> {
+export async function updateAccident(id: string, data: Partial<AccidentFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateAccident(id, data, authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
-export async function investigateAccident(id: string): Promise<ApiResponse<Accident>> {
+export async function investigateAccident(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.investigateAccident(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
 export async function resolveAccident(
@@ -309,7 +295,7 @@ export async function resolveAccident(
   correctiveActions?: string,
   investigationFindings?: string,
   investigationMethod?: string
-): Promise<ApiResponse<Accident>> {
+) {
   const params = new URLSearchParams({ direct_cause: directCause, root_cause: rootCause, handling_measures: handlingMeasures })
   if (correctiveActions) params.set('corrective_actions', correctiveActions)
   if (investigationFindings) params.set('investigation_findings', investigationFindings)
@@ -318,128 +304,128 @@ export async function resolveAccident(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.resolveAccident(id, params.toString(), authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
 export async function startCapa(
   id: string,
   deadline: string,
   responsible: string
-): Promise<ApiResponse<Accident>> {
+) {
   const params = new URLSearchParams({ corrective_action_deadline: deadline, corrective_action_responsible: responsible })
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startCapa(id, params.toString(), authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
-export async function verifyCapa(id: string): Promise<ApiResponse<Accident>> {
+export async function verifyCapa(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyCapa(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
-export async function closeAccident(id: string): Promise<ApiResponse<Accident>> {
+export async function closeAccident(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.closeAccident(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<Accident>
+  return response
 }
 
-export async function deleteAccident(id: string): Promise<ApiResponse<null>> {
+export async function deleteAccident(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteAccident(id, authHeaders)
   revalidatePath('/safety/accident')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ Contractor Actions ============
 
-export async function getContractors(params: ContractorQueryParams = {}): Promise<ApiResponse<Contractor[]>> {
+export async function getContractors(params: ContractorQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getContractors(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<Contractor[]>>
+  return safetyApi.getContractors(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getContractor(id: string): Promise<ApiResponse<Contractor>> {
+export async function getContractor(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getContractor(id, authHeaders) as Promise<ApiResponse<Contractor>>
+  return safetyApi.getContractor(id, authHeaders)
 }
 
-export async function createContractor(data: ContractorFormData): Promise<ApiResponse<Contractor>> {
+export async function createContractor(data: ContractorFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createContractor(data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<Contractor>
+  return response
 }
 
-export async function updateContractor(id: string, data: Partial<ContractorFormData>): Promise<ApiResponse<Contractor>> {
+export async function updateContractor(id: string, data: Partial<ContractorFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateContractor(id, data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<Contractor>
+  return response
 }
 
-export async function deleteContractor(id: string): Promise<ApiResponse<null>> {
+export async function deleteContractor(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteContractor(id, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<null>
+  return response
 }
 
-export async function blacklistContractor(id: string): Promise<ApiResponse<Contractor>> {
+export async function blacklistContractor(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.blacklistContractor(id, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<Contractor>
+  return response
 }
 
-export async function activateContractor(id: string): Promise<ApiResponse<Contractor>> {
+export async function activateContractor(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.activateContractor(id, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<Contractor>
+  return response
 }
 
-export async function updateContractorTraining(id: string, trainingStatus: string): Promise<ApiResponse<Contractor>> {
+export async function updateContractorTraining(id: string, trainingStatus: string) {
   const params = new URLSearchParams({ training_status: trainingStatus })
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateContractorTraining(id, params.toString(), authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<Contractor>
+  return response
 }
 
-export async function getWorkRecords(contractorId: string): Promise<ApiResponse<ContractorWorkRecord[]>> {
+export async function getWorkRecords(contractorId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getWorkRecords(contractorId, authHeaders) as Promise<ApiResponse<ContractorWorkRecord[]>>
+  return safetyApi.getWorkRecords(contractorId, authHeaders)
 }
 
-export async function createWorkRecord(contractorId: string, data: ContractorWorkRecordFormData): Promise<ApiResponse<ContractorWorkRecord>> {
+export async function createWorkRecord(contractorId: string, data: ContractorWorkRecordFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createWorkRecord(contractorId, data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<ContractorWorkRecord>
+  return response
 }
 
 export async function updateWorkRecord(
   contractorId: string, recordId: string, data: Partial<ContractorWorkRecordFormData>
-): Promise<ApiResponse<ContractorWorkRecord>> {
+) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateWorkRecord(contractorId, recordId, data, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<ContractorWorkRecord>
+  return response
 }
 
-export async function deleteWorkRecord(contractorId: string, recordId: string): Promise<ApiResponse<null>> {
+export async function deleteWorkRecord(contractorId: string, recordId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteWorkRecord(contractorId, recordId, authHeaders)
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<null>
+  return response
 }
 
 export async function evaluateWorkRecord(
   contractorId: string, recordId: string, score: number, comments?: string, evaluator?: string
-): Promise<ApiResponse<ContractorWorkRecord>> {
+) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.evaluateWorkRecord(
     contractorId,
@@ -448,82 +434,82 @@ export async function evaluateWorkRecord(
     authHeaders
   )
   revalidatePath('/safety/contractor')
-  return response as ApiResponse<ContractorWorkRecord>
+  return response
 }
 
 // ============ SafetyTraining Actions ============
 
-export async function getTrainings(params: SafetyTrainingQueryParams = {}): Promise<ApiResponse<SafetyTraining[]>> {
+export async function getTrainings(params: SafetyTrainingQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTrainings(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SafetyTraining[]>>
+  return safetyApi.getTrainings(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getTraining(id: string): Promise<ApiResponse<SafetyTraining>> {
+export async function getTraining(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTraining(id, authHeaders) as Promise<ApiResponse<SafetyTraining>>
+  return safetyApi.getTraining(id, authHeaders)
 }
 
-export async function createTraining(data: SafetyTrainingFormData): Promise<ApiResponse<SafetyTraining>> {
+export async function createTraining(data: SafetyTrainingFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createTraining(data, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<SafetyTraining>
+  return response
 }
 
-export async function updateTraining(id: string, data: Partial<SafetyTrainingFormData>): Promise<ApiResponse<SafetyTraining>> {
+export async function updateTraining(id: string, data: Partial<SafetyTrainingFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateTraining(id, data, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<SafetyTraining>
+  return response
 }
 
-export async function startTraining(id: string): Promise<ApiResponse<SafetyTraining>> {
+export async function startTraining(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startTraining(id, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<SafetyTraining>
+  return response
 }
 
-export async function completeTraining(id: string): Promise<ApiResponse<SafetyTraining>> {
+export async function completeTraining(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completeTraining(id, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<SafetyTraining>
+  return response
 }
 
-export async function deleteTraining(id: string): Promise<ApiResponse<null>> {
+export async function deleteTraining(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteTraining(id, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ TrainingRecord Actions ============
 
-export async function getTrainingRecords(trainingId: string): Promise<ApiResponse<TrainingRecord[]>> {
+export async function getTrainingRecords(trainingId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTrainingRecords(trainingId, authHeaders) as Promise<ApiResponse<TrainingRecord[]>>
+  return safetyApi.getTrainingRecords(trainingId, authHeaders)
 }
 
-export async function createTrainingRecord(trainingId: string, data: TrainingRecordFormData): Promise<ApiResponse<TrainingRecord>> {
+export async function createTrainingRecord(trainingId: string, data: TrainingRecordFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createTrainingRecord(trainingId, { ...data, training_id: trainingId }, authHeaders)
   revalidatePath(`/safety/training`)
-  return response as ApiResponse<TrainingRecord>
+  return response
 }
 
-export async function updateTrainingRecord(recordId: string, data: Partial<TrainingRecordFormData>): Promise<ApiResponse<TrainingRecord>> {
+export async function updateTrainingRecord(recordId: string, data: Partial<TrainingRecordFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateTrainingRecord(recordId, data, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<TrainingRecord>
+  return response
 }
 
-export async function deleteTrainingRecord(recordId: string): Promise<ApiResponse<null>> {
+export async function deleteTrainingRecord(recordId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteTrainingRecord(recordId, authHeaders)
   revalidatePath('/safety/training')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ Training Certificate Actions ============
@@ -532,12 +518,12 @@ export async function getTrainingCertificates(
   params: { page?: number; page_size?: number; certificate_status?: string; keyword?: string } = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getTrainingCertificates(params, authHeaders) as Promise<ApiResponse<TrainingRecord[]>>
+  return safetyApi.getTrainingCertificates(params, authHeaders)
 }
 
 export async function getExpiringCertificates() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getExpiringCertificates(authHeaders) as Promise<ApiResponse<TrainingRecord[]>>
+  return safetyApi.getExpiringCertificates(authHeaders)
 }
 
 // ============ HazardIdentification Actions ============
@@ -546,12 +532,12 @@ export async function getHazardIdentifications(
   params: import('@/types/safety').HazardIdentificationQueryParams = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardIdentifications(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<HazardIdentification[]>>
+  return safetyApi.getHazardIdentifications(params as Record<string, unknown>, authHeaders)
 }
 
 export async function getHIStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHIStats(authHeaders) as Promise<ApiResponse<HazardIdentificationStats>>
+  return safetyApi.getHIStats(authHeaders)
 }
 
 export async function getHILedgerStats(
@@ -564,12 +550,12 @@ export async function getHILedgerStats(
   } = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHILedgerStats(params, authHeaders) as Promise<ApiResponse<HazardLedgerStats>>
+  return safetyApi.getHILedgerStats(params, authHeaders)
 }
 
 export async function getHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardIdentification(id, authHeaders) as Promise<ApiResponse<HazardIdentification>>
+  return safetyApi.getHazardIdentification(id, authHeaders)
 }
 
 export async function createHazardIdentification(
@@ -578,14 +564,14 @@ export async function createHazardIdentification(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardIdentification(data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response
 }
 
 // ── 批量辨识 ──
 
 export async function getRegulationStages(regulationId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRegulationStages(regulationId, authHeaders) as Promise<ApiResponse<RegulationStagesResponse>>
+  return safetyApi.getRegulationStages(regulationId, authHeaders)
 }
 
 export async function createHazardIdentificationBatch(
@@ -594,7 +580,7 @@ export async function createHazardIdentificationBatch(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardIdentificationBatch(data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentificationBatchResponse>
+  return response
 }
 
 export async function updateHazardIdentification(
@@ -604,14 +590,14 @@ export async function updateHazardIdentification(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardIdentification(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response
 }
 
 export async function submitHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitHazardIdentification(id, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response
 }
 
 export async function runHazardScript(
@@ -626,7 +612,7 @@ export async function runHazardScript(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardScript(id, body, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response
 }
 
 export async function reviewHazardScript(
@@ -641,7 +627,7 @@ export async function reviewHazardScript(
     authHeaders
   )
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response
 }
 
 export async function uploadHazardAttachment(id: string, file: File) {
@@ -650,75 +636,75 @@ export async function uploadHazardAttachment(id: string, file: File) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.uploadHazardAttachment(id, formData, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<{ attachment_path: string }>
+  return response
 }
 
 export async function deleteHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazardIdentification(id, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ Hazard Identification AI Export ============
 
 export async function parseHazardExportQuery(naturalQuery: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.parseHazardExportQuery(naturalQuery, authHeaders) as Promise<ApiResponse<HazardLedgerExportParsedFilters>>
+  return safetyApi.parseHazardExportQuery(naturalQuery, authHeaders)
 }
 
 export async function exportHazardLedgerPdf(
   params: import('@/types/safety').HazardLedgerExportRequest
 ): Promise<ApiResponse<string>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.exportHazardLedgerPdf(params, authHeaders) as Promise<ApiResponse<string>>
+  return safetyApi.exportHazardLedgerPdf(params, authHeaders)
 }
 
 export async function getSafetyEnums() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSafetyEnums(authHeaders) as Promise<ApiResponse<Record<string, unknown>>>
+  return safetyApi.getSafetyEnums(authHeaders)
 }
 
 // ============ OperationRegulation Actions ============
 
-export async function getRegulations(params: OperationRegulationQueryParams = {}): Promise<ApiResponse<OperationRegulation[]>> {
+export async function getRegulations(params: OperationRegulationQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRegulations(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<OperationRegulation[]>>
+  return safetyApi.getRegulations(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getRegulation(id: string): Promise<ApiResponse<OperationRegulation>> {
+export async function getRegulation(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRegulation(id, authHeaders) as Promise<ApiResponse<OperationRegulation>>
+  return safetyApi.getRegulation(id, authHeaders)
 }
 
-export async function createRegulation(data: OperationRegulationFormData): Promise<ApiResponse<OperationRegulation>> {
+export async function createRegulation(data: OperationRegulationFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createRegulation(data, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<OperationRegulation>
+  return response
 }
 
-export async function updateRegulation(id: string, data: Partial<OperationRegulationFormData>): Promise<ApiResponse<OperationRegulation>> {
+export async function updateRegulation(id: string, data: Partial<OperationRegulationFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateRegulation(id, data, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<OperationRegulation>
+  return response
 }
 
-export async function deleteRegulation(id: string): Promise<ApiResponse<null>> {
+export async function deleteRegulation(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteRegulation(id, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<null>
+  return response
 }
 
-export async function uploadRegulationDocument(id: string, file: File): Promise<ApiResponse<OperationRegulation>> {
+export async function uploadRegulationDocument(id: string, file: File) {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.uploadRegulationDocument(id, formData, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<OperationRegulation>
+  return response
 }
 
 // ============ SOP Generator Actions ============
@@ -737,11 +723,11 @@ export async function generateSop(file: File) {
   }
 }
 
-export async function updateSopContent(regulationId: string, content: string, status?: string): Promise<ApiResponse<OperationRegulation>> {
+export async function updateSopContent(regulationId: string, content: string, status?: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateSopContent(regulationId, { content, status }, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<OperationRegulation>
+  return response
 }
 
 export async function exportSopPdf(regulationId: string): Promise<ApiResponse<Blob>> {
@@ -751,7 +737,7 @@ export async function exportSopPdf(regulationId: string): Promise<ApiResponse<Bl
 
 export async function exportRegulationPdfBase64(regulationId: string): Promise<ApiResponse<string>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.exportRegulationPdfBase64(regulationId, authHeaders) as Promise<ApiResponse<string>>
+  return safetyApi.exportRegulationPdfBase64(regulationId, authHeaders)
 }
 
 export async function reviseRegulation(
@@ -759,7 +745,7 @@ export async function reviseRegulation(
   content: string,
   revisionOpinion?: string,
   reviserName?: string,
-): Promise<ApiResponse<RegulationRevision>> {
+) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reviseRegulation(regulationId, {
     content,
@@ -767,230 +753,230 @@ export async function reviseRegulation(
     reviser_name: reviserName || null,
   }, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<RegulationRevision>
+  return response
 }
 
 // ============ RegulationRevision Actions ============
 
-export async function getRevisions(params: RegulationRevisionQueryParams = {}): Promise<ApiResponse<RegulationRevision[]>> {
+export async function getRevisions(params: RegulationRevisionQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRevisions(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<RegulationRevision[]>>
+  return safetyApi.getRevisions(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getRevision(id: string): Promise<ApiResponse<RegulationRevision>> {
+export async function getRevision(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRevision(id, authHeaders) as Promise<ApiResponse<RegulationRevision>>
+  return safetyApi.getRevision(id, authHeaders)
 }
 
-export async function createRevision(data: RegulationRevisionFormData): Promise<ApiResponse<RegulationRevision>> {
+export async function createRevision(data: RegulationRevisionFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createRevision(data, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response
 }
 
-export async function updateRevision(id: string, data: Partial<RegulationRevision>): Promise<ApiResponse<RegulationRevision>> {
+export async function updateRevision(id: string, data: Partial<RegulationRevision>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateRevision(id, data, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response
 }
 
-export async function deleteRevision(id: string): Promise<ApiResponse<null>> {
+export async function deleteRevision(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteRevision(id, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<null>
+  return response
 }
 
-export async function manualRevisionComplete(revisionId: string, file: File): Promise<ApiResponse<RegulationRevision>> {
+export async function manualRevisionComplete(revisionId: string, file: File) {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.manualRevisionComplete(revisionId, formData, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response
 }
 
-export async function aiRevisionGenerate(revisionId: string): Promise<ApiResponse<unknown>> {
+export async function aiRevisionGenerate(revisionId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.aiRevisionGenerate(revisionId, authHeaders) as Promise<ApiResponse<unknown>>
+  return safetyApi.aiRevisionGenerate(revisionId, authHeaders)
 }
 
 export async function aiRevisionConfirm(
   revisionId: string,
   generatedContent: string,
   documentName?: string
-): Promise<ApiResponse<RegulationRevision>> {
+) {
   const params = new URLSearchParams({ generated_content: generatedContent })
   if (documentName) params.set('document_name', documentName)
 
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.aiRevisionConfirm(revisionId, params.toString(), authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response
 }
 
-export async function identifyRevisionScope(revisionId: string): Promise<ApiResponse<RegulationRevision>> {
+export async function identifyRevisionScope(revisionId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.identifyRevisionScope(revisionId, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response
 }
 
 // ============ SpecialOperationPersonnel Actions ============
 
-export async function getPersonnelList(params: SpecialOperationPersonnelQueryParams = {}): Promise<ApiResponse<SpecialOperationPersonnel[]>> {
+export async function getPersonnelList(params: SpecialOperationPersonnelQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPersonnelList(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationPersonnel[]>>
+  return safetyApi.getPersonnelList(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getPersonnel(id: string): Promise<ApiResponse<SpecialOperationPersonnel>> {
+export async function getPersonnel(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPersonnel(id, authHeaders) as Promise<ApiResponse<SpecialOperationPersonnel>>
+  return safetyApi.getPersonnel(id, authHeaders)
 }
 
-export async function createPersonnel(data: SpecialOperationPersonnelFormData): Promise<ApiResponse<SpecialOperationPersonnel>> {
+export async function createPersonnel(data: SpecialOperationPersonnelFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createPersonnel(data, authHeaders)
   revalidatePath('/safety/special-ops-personnel')
-  return response as ApiResponse<SpecialOperationPersonnel>
+  return response
 }
 
-export async function updatePersonnel(id: string, data: Partial<SpecialOperationPersonnelFormData>): Promise<ApiResponse<SpecialOperationPersonnel>> {
+export async function updatePersonnel(id: string, data: Partial<SpecialOperationPersonnelFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updatePersonnel(id, data, authHeaders)
   revalidatePath('/safety/special-ops-personnel')
-  return response as ApiResponse<SpecialOperationPersonnel>
+  return response
 }
 
-export async function deletePersonnel(id: string): Promise<ApiResponse<null>> {
+export async function deletePersonnel(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deletePersonnel(id, authHeaders)
   revalidatePath('/safety/special-ops-personnel')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ SpecialOperationPermit Actions ============
 
-export async function getPermitList(params: SpecialOperationPermitQueryParams = {}): Promise<ApiResponse<SpecialOperationPermit[]>> {
+export async function getPermitList(params: SpecialOperationPermitQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPermitList(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationPermit[]>>
+  return safetyApi.getPermitList(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getPermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function getPermit(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPermit(id, authHeaders) as Promise<ApiResponse<SpecialOperationPermit>>
+  return safetyApi.getPermit(id, authHeaders)
 }
 
-export async function createPermit(data: SpecialOperationPermitFormData): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function createPermit(data: SpecialOperationPermitFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createPermit(data, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function updatePermit(id: string, data: Partial<SpecialOperationPermitFormData>): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function updatePermit(id: string, data: Partial<SpecialOperationPermitFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updatePermit(id, data, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function deletePermit(id: string): Promise<ApiResponse<null>> {
+export async function deletePermit(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deletePermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<null>
+  return response
 }
 
-export async function submitPermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function submitPermit(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitPermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function approvePermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function approvePermit(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approvePermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function rejectPermit(id: string, reason: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function rejectPermit(id: string, reason: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectPermit(id, reason, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function startPermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function startPermit(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startPermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function completePermit(id: string, method: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function completePermit(id: string, method: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completePermit(id, method, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
-export async function archivePermit(id: string): Promise<ApiResponse<SpecialOperationPermit>> {
+export async function archivePermit(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.archivePermit(id, authHeaders)
   revalidatePath('/safety/special-ops-permits')
-  return response as ApiResponse<SpecialOperationPermit>
+  return response
 }
 
 // ============ Safety Knowledge Article Actions ============
 
-export async function getKnowledgeArticles(params: SafetyKnowledgeArticleQueryParams = {}): Promise<ApiResponse<SafetyKnowledgeArticle[]>> {
+export async function getKnowledgeArticles(params: SafetyKnowledgeArticleQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getKnowledgeArticles(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SafetyKnowledgeArticle[]>>
+  return safetyApi.getKnowledgeArticles(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getKnowledgeArticle(id: string): Promise<ApiResponse<SafetyKnowledgeArticle>> {
+export async function getKnowledgeArticle(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getKnowledgeArticle(id, authHeaders) as Promise<ApiResponse<SafetyKnowledgeArticle>>
+  return safetyApi.getKnowledgeArticle(id, authHeaders)
 }
 
-export async function createKnowledgeArticle(data: SafetyKnowledgeArticleFormData): Promise<ApiResponse<SafetyKnowledgeArticle>> {
+export async function createKnowledgeArticle(data: SafetyKnowledgeArticleFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createKnowledgeArticle(data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<SafetyKnowledgeArticle>
+  return response
 }
 
-export async function updateKnowledgeArticle(id: string, data: Partial<SafetyKnowledgeArticleFormData>): Promise<ApiResponse<SafetyKnowledgeArticle>> {
+export async function updateKnowledgeArticle(id: string, data: Partial<SafetyKnowledgeArticleFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateKnowledgeArticle(id, data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<SafetyKnowledgeArticle>
+  return response
 }
 
-export async function deleteKnowledgeArticle(id: string): Promise<ApiResponse<null>> {
+export async function deleteKnowledgeArticle(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteKnowledgeArticle(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<null>
+  return response
 }
 
-export async function publishKnowledgeArticle(id: string): Promise<ApiResponse<SafetyKnowledgeArticle>> {
+export async function publishKnowledgeArticle(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.publishKnowledgeArticle(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<SafetyKnowledgeArticle>
+  return response
 }
 
-export async function archiveKnowledgeArticle(id: string): Promise<ApiResponse<SafetyKnowledgeArticle>> {
+export async function archiveKnowledgeArticle(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.archiveKnowledgeArticle(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<SafetyKnowledgeArticle>
+  return response
 }
 
 // ── AI 智能解析 ──
@@ -1011,90 +997,90 @@ export async function batchParseKnowledgeDocuments(files: File[]) {
 
 // ── 附件上传 ──
 
-export async function uploadKnowledgeAttachment(articleId: string, file: File): Promise<ApiResponse<{ attachment_path: string; attachment_original_name: string }>> {
+export async function uploadKnowledgeAttachment(articleId: string, file: File) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.uploadKnowledgeAttachment(articleId, file, authHeaders) as Promise<ApiResponse<{ attachment_path: string; attachment_original_name: string }>>
+  return safetyApi.uploadKnowledgeAttachment(articleId, file, authHeaders)
 }
 
 // ── 重复检测 ──
 
-export async function checkDuplicateArticle(data: DuplicateCheckRequest): Promise<ApiResponse<DuplicateCheckResponse>> {
+export async function checkDuplicateArticle(data: DuplicateCheckRequest) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.checkDuplicateArticle(data, authHeaders) as Promise<ApiResponse<DuplicateCheckResponse>>
+  return safetyApi.checkDuplicateArticle(data, authHeaders)
 }
 
 // ── 版本管理 ──
 
-export async function getArticleVersions(id: string): Promise<ApiResponse<VersionChainItem[]>> {
+export async function getArticleVersions(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getArticleVersions(id, authHeaders) as Promise<ApiResponse<VersionChainItem[]>>
+  return safetyApi.getArticleVersions(id, authHeaders)
 }
 
-export async function createNewArticleVersion(id: string): Promise<ApiResponse<NewVersionResponse>> {
+export async function createNewArticleVersion(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createNewArticleVersion(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<NewVersionResponse>
+  return response
 }
 
 // ── 语义搜索 ──
 
-export async function semanticSearchArticles(q: string, page = 1, page_size = 20): Promise<ApiResponse<SemanticSearchResult[]>> {
+export async function semanticSearchArticles(q: string, page = 1, page_size = 20) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.semanticSearchArticles({ q, page: String(page), page_size: String(page_size) }, authHeaders) as Promise<ApiResponse<SemanticSearchResult[]>>
+  return safetyApi.semanticSearchArticles({ q, page: String(page), page_size: String(page_size) }, authHeaders)
 }
 
 // ── 知识卡片管理 ──
 
-export async function generateKnowledgeCard(articleId: string): Promise<ApiResponse<GenerateCardResponse>> {
+export async function generateKnowledgeCard(articleId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generateKnowledgeCard(articleId, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<GenerateCardResponse>
+  return response
 }
 
-export async function getAgentUsageStats(articleId: string): Promise<ApiResponse<AgentUsageStats>> {
+export async function getAgentUsageStats(articleId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAgentUsageStats(articleId, authHeaders) as Promise<ApiResponse<AgentUsageStats>>
+  return safetyApi.getAgentUsageStats(articleId, authHeaders)
 }
 
-export async function batchGenerateKnowledgeCards(articleIds: string[]): Promise<ApiResponse<BatchGenerateCardsResponse>> {
+export async function batchGenerateKnowledgeCards(articleIds: string[]) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.batchGenerateKnowledgeCards(articleIds, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<BatchGenerateCardsResponse>
+  return response
 }
 
 // ── AI PPT 生成 ──
 
-export async function generatePpt(articleId: string, data: GeneratePptRequest): Promise<ApiResponse<GeneratePptResponse>> {
+export async function generatePpt(articleId: string, data: GeneratePptRequest) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generatePpt(articleId, data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<GeneratePptResponse>
+  return response
 }
 
-export async function getPptHistory(articleId: string): Promise<ApiResponse<PptHistoryResponse>> {
+export async function getPptHistory(articleId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPptHistory(articleId, authHeaders) as Promise<ApiResponse<PptHistoryResponse>>
+  return safetyApi.getPptHistory(articleId, authHeaders)
 }
 
 // ── AI 摘要生成 ──
 
-export async function generateSummary(articleId: string): Promise<ApiResponse<GenerateSummaryResponse>> {
+export async function generateSummary(articleId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generateSummary(articleId, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<GenerateSummaryResponse>
+  return response
 }
 
 // ── Bitable 同步 ──
 
-export async function syncKnowledgeArticles(): Promise<ApiResponse<SyncKnowledgeResponse>> {
+export async function syncKnowledgeArticles() {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.syncKnowledgeArticles(authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<SyncKnowledgeResponse>
+  return response
 }
 
 // ── 批量导入 ──
@@ -1117,64 +1103,64 @@ export async function batchImportKnowledgeArticles(files: File[], category?: str
 
 // ==================== 八大特殊作业报备 Actions ====================
 
-export async function getSpecialOperationReports(params?: SpecialOperationReportQueryParams): Promise<ApiResponse<SpecialOperationReport[]>> {
+export async function getSpecialOperationReports(params?: SpecialOperationReportQueryParams) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationReports((params || {}) as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationReport[]>>
+  return safetyApi.getSpecialOperationReports((params || {}) as Record<string, unknown>, authHeaders)
 }
 
-export async function getSpecialOperationReport(id: string): Promise<ApiResponse<SpecialOperationReport>> {
+export async function getSpecialOperationReport(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationReport(id, authHeaders) as Promise<ApiResponse<SpecialOperationReport>>
+  return safetyApi.getSpecialOperationReport(id, authHeaders)
 }
 
-export async function createSpecialOperationReport(data: SpecialOperationReportFormData): Promise<ApiResponse<SpecialOperationReport>> {
+export async function createSpecialOperationReport(data: SpecialOperationReportFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createSpecialOperationReport(data, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as ApiResponse<SpecialOperationReport>
+  return response
 }
 
-export async function updateSpecialOperationReport(id: string, data: Partial<SpecialOperationReportFormData>): Promise<ApiResponse<SpecialOperationReport>> {
+export async function updateSpecialOperationReport(id: string, data: Partial<SpecialOperationReportFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateSpecialOperationReport(id, data, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as ApiResponse<SpecialOperationReport>
+  return response
 }
 
-export async function deleteSpecialOperationReport(id: string): Promise<ApiResponse<null>> {
+export async function deleteSpecialOperationReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteSpecialOperationReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<null>
+  return response
 }
 
-export async function submitSpecialOperationReport(id: string): Promise<ApiResponse<SpecialOperationReport>> {
+export async function submitSpecialOperationReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitSpecialOperationReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as ApiResponse<SpecialOperationReport>
+  return response
 }
 
-export async function approveSpecialOperationReport(id: string): Promise<ApiResponse<SpecialOperationReport>> {
+export async function approveSpecialOperationReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveSpecialOperationReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as ApiResponse<SpecialOperationReport>
+  return response
 }
 
-export async function rejectSpecialOperationReport(id: string, reason: string): Promise<ApiResponse<SpecialOperationReport>> {
+export async function rejectSpecialOperationReport(id: string, reason: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectSpecialOperationReport(id, reason, authHeaders)
   revalidatePath('/safety/risk-reporting')
   revalidatePath('/safety/special-ops')
-  return response as ApiResponse<SpecialOperationReport>
+  return response
 }
 
-export async function setSpecialOperationReportCritical(id: string, is_critical: boolean, reason?: string): Promise<ApiResponse<SpecialOperationReport>> {
+export async function setSpecialOperationReportCritical(id: string, is_critical: boolean, reason?: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.setSpecialOperationReportCritical(
     id,
@@ -1182,73 +1168,73 @@ export async function setSpecialOperationReportCritical(id: string, is_critical:
     authHeaders
   )
   revalidatePath('/safety/special-ops')
-  return response as ApiResponse<SpecialOperationReport>
+  return response
 }
 
 // ==================== 特殊作业台账 Actions ====================
 
-export async function getSpecialOperationLedger(params?: SpecialOperationLedgerQueryParams): Promise<ApiResponse<SpecialOperationReport[]>> {
+export async function getSpecialOperationLedger(params?: SpecialOperationLedgerQueryParams) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationLedger((params || {}) as Record<string, unknown>, authHeaders) as Promise<ApiResponse<SpecialOperationReport[]>>
+  return safetyApi.getSpecialOperationLedger((params || {}) as Record<string, unknown>, authHeaders)
 }
 
 export async function getSpecialOperationLedgerStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationLedgerStats(authHeaders) as Promise<ApiResponse<SpecialOperationLedgerStats[]>>
+  return safetyApi.getSpecialOperationLedgerStats(authHeaders)
 }
 
 // ==================== 每日风险作业报备 Actions ====================
 
 export async function getDailyRiskReports(params?: DailyRiskReportQueryParams) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDailyRiskReports((params || {}) as Record<string, unknown>, authHeaders) as Promise<ApiResponse<DailyRiskReport[]>>
+  return safetyApi.getDailyRiskReports((params || {}) as Record<string, unknown>, authHeaders)
 }
 
 export async function getDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDailyRiskReport(id, authHeaders) as Promise<ApiResponse<DailyRiskReport>>
+  return safetyApi.getDailyRiskReport(id, authHeaders)
 }
 
 export async function createDailyRiskReport(data: DailyRiskReportFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createDailyRiskReport(data, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<DailyRiskReport>
+  return response
 }
 
 export async function updateDailyRiskReport(id: string, data: Partial<DailyRiskReportFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateDailyRiskReport(id, data, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<DailyRiskReport>
+  return response
 }
 
 export async function deleteDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteDailyRiskReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<null>
+  return response
 }
 
 export async function submitDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitDailyRiskReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<DailyRiskReport>
+  return response
 }
 
 export async function approveDailyRiskReport(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveDailyRiskReport(id, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<DailyRiskReport>
+  return response
 }
 
 export async function rejectDailyRiskReport(id: string, reason: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectDailyRiskReport(id, reason, authHeaders)
   revalidatePath('/safety/risk-reporting')
-  return response as ApiResponse<DailyRiskReport>
+  return response
 }
 
 export async function getHazardRiskOptions(params?: {
@@ -1258,81 +1244,81 @@ export async function getHazardRiskOptions(params?: {
   page_size?: number
 }) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardRiskOptions(params || {}, authHeaders) as Promise<ApiResponse<HazardRiskOption[]>>
+  return safetyApi.getHazardRiskOptions(params || {}, authHeaders)
 }
 
 
 // ============ EHS变更管理 (MOC) ============
 
 // CRUD
-export async function getEhsChanges(params: EhsChangeQueryParams = {}): Promise<ApiResponse<EhsChange[]>> {
+export async function getEhsChanges(params: EhsChangeQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getEhsChanges(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<EhsChange[]>>
+  return safetyApi.getEhsChanges(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
+export async function getEhsChange(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getEhsChange(id, authHeaders) as Promise<ApiResponse<EhsChange>>
+  return safetyApi.getEhsChange(id, authHeaders)
 }
 
-export async function createEhsChange(data: EhsChangeFormData): Promise<ApiResponse<EhsChange>> {
+export async function createEhsChange(data: EhsChangeFormData) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createEhsChange(data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function updateEhsChange(id: string, data: Partial<EhsChangeFormData>): Promise<ApiResponse<EhsChange>> {
+export async function updateEhsChange(id: string, data: Partial<EhsChangeFormData>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateEhsChange(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function deleteEhsChange(id: string): Promise<ApiResponse<null>> {
+export async function deleteEhsChange(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<null>
+  return response
 }
 
 // Workflow
-export async function submitEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
+export async function submitEhsChange(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function approveEhsChange(id: string, decision: string, comments?: string): Promise<ApiResponse<EhsChange>> {
+export async function approveEhsChange(id: string, decision: string, comments?: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveEhsChange(id, { decision, comments }, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function rejectEhsChange(id: string, comments?: string): Promise<ApiResponse<EhsChange>> {
+export async function rejectEhsChange(id: string, comments?: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.rejectEhsChange(id, comments, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function startImplementationEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
+export async function startImplementationEhsChange(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startImplementationEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function commissionEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
+export async function commissionEhsChange(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.commissionEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function closeEhsChange(id: string, closedBy?: string, tempExpiryDate?: string, restoredDate?: string): Promise<ApiResponse<EhsChange>> {
+export async function closeEhsChange(id: string, closedBy?: string, tempExpiryDate?: string, restoredDate?: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.closeEhsChange(id, {
     closed_by: closedBy,
@@ -1340,338 +1326,338 @@ export async function closeEhsChange(id: string, closedBy?: string, tempExpiryDa
     restored_date: restoredDate,
   }, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function cancelEhsChange(id: string): Promise<ApiResponse<EhsChange>> {
+export async function cancelEhsChange(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.cancelEhsChange(id, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
 // JSON sub-record operations
-export async function addRiskAssessment(id: string, data: Record<string, unknown>): Promise<ApiResponse<EhsChange>> {
+export async function addRiskAssessment(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.addRiskAssessment(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function updateActionItem(id: string, index: number, status: string): Promise<ApiResponse<EhsChange>> {
+export async function updateActionItem(id: string, index: number, status: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateActionItem(id, index, status, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function updatePSSRChecklist(id: string, data: Record<string, unknown>[] | object[]): Promise<ApiResponse<EhsChange>> {
+export async function updatePSSRChecklist(id: string, data: Record<string, unknown>[] | object[]) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updatePSSRChecklist(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
-export async function submitVerification(id: string, data: Record<string, unknown>): Promise<ApiResponse<EhsChange>> {
+export async function submitVerification(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitVerification(id, data, authHeaders)
   revalidatePath('/safety/ehs-change')
-  return response as ApiResponse<EhsChange>
+  return response
 }
 
 
 // ==================== 职业危害因素监测 Actions ====================
 
 
-export async function getOhHazardMonitors(params: OhHazardMonitorQueryParams = {}): Promise<ApiResponse<OhHazardMonitor[]>> {
+export async function getOhHazardMonitors(params: OhHazardMonitorQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHazardMonitors(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<OhHazardMonitor[]>>
+  return safetyApi.getOhHazardMonitors(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getOhHazardMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
+export async function getOhHazardMonitor(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHazardMonitor(id, authHeaders) as Promise<ApiResponse<OhHazardMonitor>>
+  return safetyApi.getOhHazardMonitor(id, authHeaders)
 }
 
-export async function createOhHazardMonitor(data: OhHazardMonitorFormData): Promise<ApiResponse<OhHazardMonitor>> {
+export async function createOhHazardMonitor(data: OhHazardMonitorFormData) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.createOhHazardMonitor(data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function updateOhHazardMonitor(id: string, data: Partial<OhHazardMonitorFormData>): Promise<ApiResponse<OhHazardMonitor>> {
+export async function updateOhHazardMonitor(id: string, data: Partial<OhHazardMonitorFormData>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateOhHazardMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function deleteOhHazardMonitor(id: string): Promise<ApiResponse<null>> {
+export async function deleteOhHazardMonitor(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteOhHazardMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<null>
+  return res
 }
 
 // Monitor Workflow
-export async function startMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
+export async function startMonitor(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.startMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function completeMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
+export async function completeMonitor(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.completeMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function verifyMonitor(id: string, data: { verified_by?: string; comments?: string }): Promise<ApiResponse<OhHazardMonitor>> {
+export async function verifyMonitor(id: string, data: { verified_by?: string; comments?: string }) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.verifyMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
 // Monitor Sub-records
-export async function addDetectionResult(id: string, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
+export async function addDetectionResult(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addDetectionResult(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function updateDetectionResult(id: string, index: number, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
+export async function updateDetectionResult(id: string, index: number, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateDetectionResult(id, index, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function deleteDetectionResult(id: string, index: number): Promise<ApiResponse<null>> {
+export async function deleteDetectionResult(id: string, index: number) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteDetectionResult(id, index, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<null>
+  return res
 }
 
-export async function addMonitorAbnormality(id: string, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
+export async function addMonitorAbnormality(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addMonitorAbnormality(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
-export async function updateMonitorAbnormalityStatus(id: string, index: number, status: string): Promise<ApiResponse<OhHazardMonitor>> {
+export async function updateMonitorAbnormalityStatus(id: string, index: number, status: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateMonitorAbnormalityStatus(id, index, status, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res
 }
 
 
 // ==================== 职业健康体检 Actions ====================
 
 
-export async function getOhHealthExams(params: OhHealthExamQueryParams = {}): Promise<ApiResponse<OhHealthExam[]>> {
+export async function getOhHealthExams(params: OhHealthExamQueryParams = {}) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHealthExams(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<OhHealthExam[]>>
+  return safetyApi.getOhHealthExams(params as Record<string, unknown>, authHeaders)
 }
 
-export async function getOhHealthExam(id: string): Promise<ApiResponse<OhHealthExam>> {
+export async function getOhHealthExam(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getOhHealthExam(id, authHeaders) as Promise<ApiResponse<OhHealthExam>>
+  return safetyApi.getOhHealthExam(id, authHeaders)
 }
 
-export async function createOhHealthExam(data: OhHealthExamFormData): Promise<ApiResponse<OhHealthExam>> {
+export async function createOhHealthExam(data: OhHealthExamFormData) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.createOhHealthExam(data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
-export async function updateOhHealthExam(id: string, data: Partial<OhHealthExamFormData>): Promise<ApiResponse<OhHealthExam>> {
+export async function updateOhHealthExam(id: string, data: Partial<OhHealthExamFormData>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateOhHealthExam(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
-export async function deleteOhHealthExam(id: string): Promise<ApiResponse<null>> {
+export async function deleteOhHealthExam(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteOhHealthExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<null>
+  return res
 }
 
 // Exam Workflow
-export async function startExam(id: string): Promise<ApiResponse<OhHealthExam>> {
+export async function startExam(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.startExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
-export async function completeExam(id: string): Promise<ApiResponse<OhHealthExam>> {
+export async function completeExam(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.completeExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
-export async function archiveExam(id: string): Promise<ApiResponse<OhHealthExam>> {
+export async function archiveExam(id: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.archiveExam(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
 // Exam Sub-records
-export async function addExamItem(id: string, data: Record<string, unknown>): Promise<ApiResponse<OhHealthExam>> {
+export async function addExamItem(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addExamItem(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
 export async function updateExamItem(id: string, index: number, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateExamItem(id, index, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
 export async function deleteExamItem(id: string, index: number) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.deleteExamItem(id, index, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<null>
+  return res
 }
 
 export async function setExamConclusion(id: string, conclusion: string, remarks?: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.setExamConclusion(id, { conclusion, remarks }, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
 export async function addExamAbnormality(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addExamAbnormality(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
 export async function updateExamAbnormalityStatus(id: string, index: number, status: string) {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateExamAbnormalityStatus(id, index, status, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHealthExam>
+  return res
 }
 
 // ── Special Ops Export ──
 
 export async function parseSpecialOpsExportQuery(query: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.parseSpecialOpsExportQuery(query, authHeaders) as Promise<ApiResponse<{ explanation?: string; filters?: Record<string, unknown> }>>
+  return safetyApi.parseSpecialOpsExportQuery(query, authHeaders)
 }
 
 export async function exportSpecialOpsLedger(filters: Record<string, unknown>): Promise<Blob> {
-  return safetyApi.exportSpecialOpsLedger(filters) as Promise<Blob>
+  return safetyApi.exportSpecialOpsLedger(filters)
 }
 
 // ============ AI Workflow Config Actions ============
 
 export async function getAIWorkflowConfigs(params?: { page_size?: number; page?: number }) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAIWorkflowConfigs(params || {}, authHeaders) as Promise<ApiResponse<AIWorkflowConfig[]>>
+  return safetyApi.getAIWorkflowConfigs(params || {}, authHeaders)
 }
 
 export async function createAIWorkflowConfig(data: components['schemas']['AIWorkflowConfigCreate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createAIWorkflowConfig(data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as ApiResponse<AIWorkflowConfig>
+  return response
 }
 
 export async function updateAIWorkflowConfig(id: string, data: components['schemas']['AIWorkflowConfigUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateAIWorkflowConfig(id, data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as ApiResponse<AIWorkflowConfig>
+  return response
 }
 
 export async function deleteAIWorkflowConfig(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteAIWorkflowConfig(id, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as ApiResponse<null>
+  return response
 }
 
 // ============ Scheduled Task Actions ============
 
 export async function getScheduledTasks(params: { page?: number; page_size?: number }) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getScheduledTasks(params, authHeaders) as Promise<ApiResponse<ScheduledTask[]>>
+  return safetyApi.getScheduledTasks(params, authHeaders)
 }
 
 export async function getScheduledTask(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getScheduledTask(id, authHeaders) as Promise<ApiResponse<ScheduledTask>>
+  return safetyApi.getScheduledTask(id, authHeaders)
 }
 
 export async function createScheduledTask(data: components['schemas']['ScheduledTaskCreate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createScheduledTask(data, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
-  return response as ApiResponse<ScheduledTask>
+  return response
 }
 
 export async function updateScheduledTask(id: string, data: components['schemas']['ScheduledTaskUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateScheduledTask(id, data, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
-  return response as ApiResponse<ScheduledTask>
+  return response
 }
 
 export async function deleteScheduledTask(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteScheduledTask(id, authHeaders)
   revalidatePath('/safety/scheduled-tasks')
-  return response as ApiResponse<null>
+  return response
 }
 
 export async function toggleScheduledTask(id: string, enabled: boolean) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.toggleScheduledTask(id, enabled, authHeaders) as Promise<ApiResponse<ScheduledTask>>
+  return safetyApi.toggleScheduledTask(id, enabled, authHeaders)
 }
 
 export async function runScheduledTaskNow(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.runScheduledTaskNow(id, authHeaders) as Promise<ApiResponse<Record<string, unknown>>>
+  return safetyApi.runScheduledTaskNow(id, authHeaders)
 }
 
 export async function getScheduledTaskLogs(taskId: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getScheduledTaskLogs(taskId, authHeaders) as Promise<ApiResponse<ScheduledTaskLog[]>>
+  return safetyApi.getScheduledTaskLogs(taskId, authHeaders)
 }
 
 export async function getDataSourceOptions() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getDataSourceOptions(authHeaders) as Promise<ApiResponse<DataSourceOption[]>>
+  return safetyApi.getDataSourceOptions(authHeaders)
 }
 
 export async function getFeishuChats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getFeishuChats(authHeaders) as Promise<ApiResponse<FeishuChat[]>>
+  return safetyApi.getFeishuChats(authHeaders)
 }
 
 export async function previewCard(data: components['schemas']['CardPreviewRequest']) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.previewCard(data, authHeaders) as Promise<ApiResponse<Record<string, unknown>>>
+  return safetyApi.previewCard(data, authHeaders)
 }
 
 // ============ Hazard Legacy Actions ============
@@ -1680,49 +1666,49 @@ export async function completeRectification(id: string, data?: Record<string, un
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completeRectification(id, data || {}, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
 export async function verifyRectification(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response
 }
 
 // ============ Hazard Revision Actions ============
 
 export async function getHazardRevisionRecords(params: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardRevisionRecords(params, authHeaders) as Promise<ApiResponse<HazardRevisionRecord[]>>
+  return safetyApi.getHazardRevisionRecords(params, authHeaders)
 }
 
 export async function createHazardRevisionRecord(data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardRevisionRecord(data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response
 }
 
 export async function updateHazardRevisionRecord(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardRevisionRecord(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response
 }
 
 export async function deleteHazardRevisionRecord(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazardRevisionRecord(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<null>
+  return response
 }
 
 export async function approveHazardRevision(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveHazardRevision(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response
 }
 
 export async function uploadHazardRevisionDocument(id: string, file: File) {
@@ -1731,38 +1717,38 @@ export async function uploadHazardRevisionDocument(id: string, file: File) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.uploadHazardRevisionDocument(id, formData, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<Record<string, unknown>>
+  return response
 }
 
 export async function linkRevisionToArchive(revisionId: string, archiveId: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.linkRevisionToArchive(revisionId, archiveId, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response
 }
 
 export async function getHazardRevisionArchives(params: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardRevisionArchives(params, authHeaders) as Promise<ApiResponse<HazardRevisionArchive[]>>
+  return safetyApi.getHazardRevisionArchives(params, authHeaders)
 }
 
 export async function createHazardRevisionArchive(data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardRevisionArchive(data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionArchive>
+  return response
 }
 
 export async function updateHazardRevisionArchive(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardRevisionArchive(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionArchive>
+  return response
 }
 
 export async function deleteHazardRevisionArchive(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.deleteHazardRevisionArchive(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<null>
+  return response
 }

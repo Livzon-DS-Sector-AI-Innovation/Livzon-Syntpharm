@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use, useRef, useCallback } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import {
   Card,
   Table,
@@ -12,26 +12,36 @@ import {
   Tag,
   message,
   Spin,
+  Row,
+  Col,
   Modal,
+  Form,
   Upload,
   Image,
   Popconfirm,
+  Dropdown,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
   ArrowLeftOutlined,
   PlusOutlined,
   SaveOutlined,
+  EditOutlined,
   DeleteOutlined,
   ScanOutlined,
   UploadOutlined,
   DownloadOutlined,
   FileWordOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons'
+import type { MenuProps } from 'antd'
 import Link from 'next/link'
 import dayjs from 'dayjs'
 import {
   getInspectionTable,
+  addTableRow,
+  updateTableRow,
+  deleteTableRow,
   batchSaveTableRows,
   recognizeImage,
   recognizeMultipleImagesV3,
@@ -45,7 +55,7 @@ const API_BASE = '/api/v1'
 interface TableRow {
   key: string
   id?: number
-  [key: string]: unknown
+  [key: string]: any
 }
 
 export default function InspectionTableDetailPage({
@@ -65,7 +75,7 @@ export default function InspectionTableDetailPage({
   const [recognizeModalVisible, setRecognizeModalVisible] = useState(false)
   const [recognizing, setRecognizing] = useState(false)
   const [recognizeResult, setRecognizeResult] = useState<RecognizeResult | null>(null)
-  const [recognizedRows, setRecognizedRows] = useState<TableRow[]>([])
+  const [recognizedRows, setRecognizedRows] = useState<Record<string, any>[]>([])
   const recognizingRef = useRef(false) // 防止重复识别
 
   // 模板上传状态
@@ -81,8 +91,8 @@ export default function InspectionTableDetailPage({
       await uploadInspectionTemplate(tableData.id, file)
       message.success('模板上传成功')
       fetchData()
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "模板上传失败") || '模板上传失败')
+    } catch (error: any) {
+      message.error(error.message || '模板上传失败')
     } finally {
       setUploadingTemplate(false)
     }
@@ -97,8 +107,8 @@ export default function InspectionTableDetailPage({
       await deleteInspectionTemplate(tableData.id)
       message.success('模板删除成功')
       fetchData()
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '模板删除失败')
+    } catch (error: any) {
+      message.error(error.message || '模板删除失败')
     }
   }
 
@@ -115,8 +125,8 @@ export default function InspectionTableDetailPage({
       link.click()
       document.body.removeChild(link)
       message.success('导出开始')
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '导出失败')
+    } catch (error: any) {
+      message.error(error.message || '导出失败')
     } finally {
       setExporting(false)
     }
@@ -136,8 +146,8 @@ export default function InspectionTableDetailPage({
       link.click()
       document.body.removeChild(link)
       message.success(`开始导出 ${selectedRowKeys.length} 条数据`)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '导出失败')
+    } catch (error: any) {
+      message.error(error.message || '导出失败')
     } finally {
       setExporting(false)
     }
@@ -156,18 +166,18 @@ export default function InspectionTableDetailPage({
       link.click()
       document.body.removeChild(link)
       message.success('开始导出全部数据')
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '导出失败')
+    } catch (error: any) {
+      message.error(error.message || '导出失败')
     } finally {
       setExporting(false)
     }
   }
 
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     setLoading(true)
     try {
       const result = await getInspectionTable(resolvedParams.id)
-      const data = result as InspectionTableDetail
+      const data = result.data as InspectionTableDetail
       setTableData(data)
 
       // 转换数据行
@@ -182,14 +192,14 @@ export default function InspectionTableDetailPage({
     } finally {
       setLoading(false)
     }
-  }, [resolvedParams.id])
+  }
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, [resolvedParams.id])
 
   // 处理多文件上传并识别
-  const handleFileUpload = async (fileList: File[]) => {
+  const handleFileUpload = async (fileList: FileList | null) => {
     // 防止重复调用
     if (recognizingRef.current) return
     if (!tableData || !fileList || fileList.length === 0) return
@@ -213,12 +223,12 @@ export default function InspectionTableDetailPage({
       if (result.recognized_rows && result.recognized_rows.length > 0) {
         const editableRows = result.recognized_rows.map((row, index) => ({
           ...row,
-          key: `recognized_${Date.now()}_${index}`,
+          _key: `recognized_${Date.now()}_${index}`,
         }))
         setRecognizedRows(editableRows)
       } else {
         // 如果没有识别到数据，创建空行
-        const emptyRow: TableRow = { key: `recognized_${Date.now()}` }
+        const emptyRow: Record<string, any> = { _key: `recognized_${Date.now()}` }
         tableData.columns_config.forEach((col) => {
           emptyRow[col.key] = ''
         })
@@ -227,9 +237,9 @@ export default function InspectionTableDetailPage({
 
       // 显示预览 Modal
       setRecognizeModalVisible(true)
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('识别失败:', error)
-      message.error((error instanceof Error ? error.message : "操作失败") || '识别失败，请查看控制台获取详情')
+      message.error(error.message || '识别失败，请查看控制台获取详情')
     } finally {
       setRecognizing(false)
       recognizingRef.current = false
@@ -240,14 +250,14 @@ export default function InspectionTableDetailPage({
   }
 
   // 处理上传变化（支持多文件）
-  const handleUploadChange = (info: { fileList: Array<{ originFileObj?: File }> }) => {
+  const handleUploadChange = (info: any) => {
     if (info.fileList) {
-      handleFileUpload(info.fileList.map((f: { originFileObj?: File }) => f.originFileObj).filter((f): f is File => f !== undefined))
+      handleFileUpload(info.fileList.map((f: any) => f.originFileObj || f))
     }
   }
 
   // 更新识别结果行的值
-  const handleRecognizedRowChange = (index: number, field: string, value: unknown) => {
+  const handleRecognizedRowChange = (index: number, field: string, value: any) => {
     const newRows = [...recognizedRows]
     newRows[index] = { ...newRows[index], [field]: value }
     setRecognizedRows(newRows)
@@ -256,7 +266,7 @@ export default function InspectionTableDetailPage({
   // 添加新的识别行
   const handleAddRecognizedRow = () => {
     if (!tableData) return
-    const emptyRow: TableRow = { key: `recognized_${Date.now()}` }
+    const emptyRow: Record<string, any> = { _key: `recognized_${Date.now()}` }
     tableData.columns_config.forEach((col) => {
       emptyRow[col.key] = ''
     })
@@ -319,7 +329,7 @@ export default function InspectionTableDetailPage({
   }
 
   // 单元格值变化
-  const handleCellChange = (key: string, fieldKey: string, value: unknown) => {
+  const handleCellChange = (key: string, fieldKey: string, value: any) => {
     setRows(
       rows.map((row) => (row.key === key ? { ...row, [fieldKey]: value } : row))
     )
@@ -335,7 +345,7 @@ export default function InspectionTableDetailPage({
 
       // 构建行数据
       const rowsData = rows.map((row) => {
-        const rowData: TableRow = { key: `row_${Date.now()}_${Math.random()}` }
+        const rowData: Record<string, any> = {}
         tableData.columns_config.forEach((col) => {
           rowData[col.key] = row[col.key] || ''
         })
@@ -347,8 +357,8 @@ export default function InspectionTableDetailPage({
       message.success('保存成功')
       setHasChanges(false)
       fetchData()
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '保存失败')
+    } catch (error: any) {
+      message.error(error.message || '保存失败')
     } finally {
       setSaving(false)
     }
@@ -376,11 +386,11 @@ export default function InspectionTableDetailPage({
         key: col.key,
         width: col.width || 200,
         ellipsis: false,
-        render: (value: unknown, record: TableRow) => {
+        render: (value: any, record: TableRow) => {
           if (col.type === 'date') {
             return (
               <DatePicker
-                value={value ? dayjs(value as string) : null}
+                value={value ? dayjs(value) : null}
                 onChange={(_, dateString) => handleCellChange(record.key, col.key, dateString)}
                 style={{ width: '100%' }}
               />
@@ -399,7 +409,7 @@ export default function InspectionTableDetailPage({
           }
           return (
             <Input
-              value={value as string}
+              value={value}
               onChange={(e) => handleCellChange(record.key, col.key, e.target.value)}
               placeholder={`请输入${col.label}`}
               style={{ minWidth: 150 }}
@@ -652,10 +662,10 @@ export default function InspectionTableDetailPage({
                     dataIndex: col.key,
                     key: col.key,
                     width: 150,
-                    render: (value: unknown, record: Record<string, unknown>) => (
+                    render: (value: any, record: any) => (
                       <Input
-                        value={(value as string) || ''}
-                        onChange={(e) => handleRecognizedRowChange(record._index as number, col.key, e.target.value)}
+                        value={value || ''}
+                        onChange={(e) => handleRecognizedRowChange(record._index, col.key, e.target.value)}
                         placeholder={`识别值: ${value || '(空)'}`}
                       />
                     ),
@@ -664,12 +674,12 @@ export default function InspectionTableDetailPage({
                     title: '操作',
                     key: 'action',
                     width: 80,
-                    render: (_, record: Record<string, unknown>) => (
+                    render: (_, record: any) => (
                       <Button
                         type="link"
                         danger
                         size="small"
-                        onClick={() => handleDeleteRecognizedRow(record._index as number)}
+                        onClick={() => handleDeleteRecognizedRow(record._index)}
                       >
                         删除
                       </Button>

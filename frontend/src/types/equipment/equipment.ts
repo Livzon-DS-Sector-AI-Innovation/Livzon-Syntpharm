@@ -54,10 +54,10 @@ export interface ImportResult {
   failed: number
   errors: ImportRowError[]
   error?: string
-  data?: unknown
+  data?: any
   imported?: number
   skipped?: number
-  warnings?: unknown[]
+  warnings?: any[]
 }
 
 export interface ImportRowError {

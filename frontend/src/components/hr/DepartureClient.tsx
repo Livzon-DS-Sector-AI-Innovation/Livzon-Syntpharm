@@ -6,6 +6,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { PlusOutlined } from "@ant-design/icons"
 import {
   SearchOutlined,
+  SyncOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
 import { fetchDepartments } from '@/lib/api/client/hr'
@@ -40,14 +41,14 @@ export default function DepartureClient({
   const [createLoading, setCreateLoading] = useState(false)
   const [createForm] = Form.useForm()
   const [departments, setDepartments] = useState<{value:string,label:string}[]>([])
-  const [deptEmployees, setDeptEmployees] = useState<{value: string; label: string; name: string; department?: string; position?: string}[]>([])
+  const [deptEmployees, setDeptEmployees] = useState<any[]>([])
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailRecord, setDetailRecord] = useState<DepartureRecord | null>(null)
   const [selectedDept, setSelectedDept] = useState<string>('')
 
   useEffect(() => {
     fetchDepartments({ page_size: 200 }).then(r => {
-      setDepartments((r.data||[]).map((d: { name: string }) => ({ value: d.name, label: d.name })))
+      setDepartments((r.data||[]).map((d:any) => ({ value: d.name, label: d.name })))
     })
   }, [])
 
@@ -57,20 +58,20 @@ export default function DepartureClient({
     if (!dept) { setDeptEmployees([]); return }
     try {
       const url = `/api/v1/hr/employees?department=${encodeURIComponent(dept)}&page=1&page_size=200`
-      const list = (await apiGet<{id: string; employee_number: string; name: string; position?: string; department?: string}[]>(url)).map((e: {id: string; employee_number: string; name: string; position?: string; department?: string}) => ({
+      const list = (await apiGet<any[]>(url)).map((e: any) => ({
         value: e.id, label: `${e.employee_number} ${e.name} (${e.position||''})`,
         name: e.name, department: e.department, position: e.position
       }))
       setDeptEmployees(list)
       if (list.length === 0) message.warning(`${dept} 下暂无在职员工`)
-    } catch (err: unknown) { message.error('加载失败: ' + (err instanceof Error ? err.message : '')) }
+    } catch (err: any) { message.error('加载失败: ' + (err.message||'')) }
   }
 
   const handleCreate = async () => {
     try {
       const vals = await createForm.validateFields()
       setCreateLoading(true)
-      const emp = deptEmployees.find((e: { value: string; name: string; department?: string; position?: string }) => e.value === vals.employee)
+      const emp = deptEmployees.find((e:any) => e.value === vals.employee)
       await createDepartureRecord({
           name: emp?.name || '', department: selectedDept,
           position: emp?.position || '',
@@ -80,7 +81,7 @@ export default function DepartureClient({
         })
       message.success('离职记录创建成功')
       setCreateOpen(false); createForm.resetFields(); loadData()
-    } catch (err: unknown) { message.error(err instanceof Error ? err.message : '创建失败') }
+    } catch (err: any) { message.error(err.message || '创建失败') }
     finally { setCreateLoading(false) }
   }
 
@@ -98,8 +99,8 @@ export default function DepartureClient({
       })
       setRecords(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载数据失败')
+    } catch (err: any) {
+      message.error(err.message || '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -112,7 +113,7 @@ export default function DepartureClient({
 
   useEffect(() => {
     loadData()
-  }, [filterDepartment, filterOffboardingType, searchKeyword, page, pageSize, loadData])
+  }, [filterDepartment, filterOffboardingType, searchKeyword, page, pageSize])
 
   const offboardingTypeColorMap: Record<string, string> = {
     '辞职': 'default',
@@ -226,7 +227,7 @@ export default function DepartureClient({
       key: 'action',
       width: 120,
       fixed: 'right',
-      render: (_: unknown, record: DepartureRecord) => (
+      render: (_: any, record: DepartureRecord) => (
         <Space size="small">
           <Button
             type="text"

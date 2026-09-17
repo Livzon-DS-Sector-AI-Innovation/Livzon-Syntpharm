@@ -5,7 +5,6 @@ import {
   fetchIssuesServer,
   fetchReportServer,
 } from '@/actions/validation-audit'
-import type { ValidationAuditTask, ValidationAuditFileListItem, ValidationAuditIssue, ValidationAuditReport } from '@/types/validation-audit'
 import { ValidationAuditDetailClient } from '@/components/registration'
 
 export const dynamic = 'force-dynamic'
@@ -29,10 +28,10 @@ export default async function ValidationAuditDetailPage({
 
   return (
     <ValidationAuditDetailClient
-      task={taskRes?.data as unknown as ValidationAuditTask}
-      initialFiles={(filesRes?.data || []) as unknown as ValidationAuditFileListItem[]}
-      initialIssues={(issuesRes?.data || []) as unknown as ValidationAuditIssue[]}
-      initialReport={(reportRes?.data ?? null) as unknown as ValidationAuditReport | null}
+      task={taskRes.data}
+      initialFiles={filesRes?.data || []}
+      initialIssues={issuesRes?.data || []}
+      initialReport={reportRes?.data || null}
     />
   )
 }

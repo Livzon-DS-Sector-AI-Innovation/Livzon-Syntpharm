@@ -5,7 +5,6 @@ import { AnnualPlanDeptClient } from '@/components/hr'
 import { AnnualPlanDetailClient } from '@/components/hr'
 import { fetchAnnualTrainingPlanByIdApi as fetchAnnualTrainingPlanById } from '@/lib/api/server/hr'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import type { AnnualTrainingPlan } from '@/types/hr'
 export const dynamic = 'force-dynamic'
 
 
@@ -48,7 +47,7 @@ export default async function AnnualPlanPage({ searchParams }: PageProps) {
 
   // 模式3: 编辑详情页
   if (planId) {
-    let plan: AnnualTrainingPlan | null = null
+    let plan: any = null
     try {
       const res = await fetchAnnualTrainingPlanById(planId)
       plan = res.data

@@ -1,9 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { App, Button, Table, Space, Popconfirm, Input, Tag } from 'antd'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { OffboardingRecord } from '@/types/hr'
 import { fetchOffboardingRecordsAction, deleteOffboardingRecord } from '@/actions/hr'
 import OffboardingForm from './OffboardingForm'
@@ -17,30 +16,38 @@ export default function OffboardingClient({
   initialRecords,
   initialTotal }: OffboardingClientProps) {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [records, setRecords] = useState<OffboardingRecord[]>(initialRecords)
+  const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [formOpen, setFormOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<OffboardingRecord | null>(null)
+  const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
 
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['hr-offboarding', { searchKeyword, page, pageSize }],
-    queryFn: async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
       const res = await fetchOffboardingRecordsAction({
         keyword: searchKeyword || undefined,
         page,
         page_size: pageSize })
-      return { records: res.data, total: res.meta?.total || 0 }
-    },
-  })
-
-  const records = data?.records || initialRecords
-  const total = data?.total || initialTotal
+      setRecords(res.data)
+      setTotal(res.meta?.total || 0)
+    } catch (err: any) {
+      message.error(err.message || '加载数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [searchKeyword, page, pageSize])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
     setPageSize(newPageSize)
+  }
+
+  const _handleRefresh = () => {
+    loadData()
   }
 
   const handleEdit = (record: OffboardingRecord) => {
@@ -54,18 +61,22 @@ export default function OffboardingClient({
   }
 
   const handleFormSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['hr-offboarding'] })
+    loadData()
   }
 
   const handleDelete = async (id: string) => {
     try {
       await deleteOffboardingRecord(id)
       message.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: ['hr-offboarding'] })
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '删除失败')
+      loadData()
+    } catch (err: any) {
+      message.error(err.message || '删除失败')
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [searchKeyword, page, pageSize])
 
   const typeColorMap: Record<string, string> = {
     辞职: 'default',
@@ -84,12 +95,12 @@ export default function OffboardingClient({
       title: '员工姓名',
       key: 'employee_name',
       width: 120,
-      render: (_: unknown, record: OffboardingRecord) => record.employee?.name || '-' },
+      render: (_: any, record: OffboardingRecord) => record.employee?.name || '-' },
     {
       title: '工号',
       key: 'employee_number',
       width: 120,
-      render: (_: unknown, record: OffboardingRecord) => record.employee?.employee_number || '-' },
+      render: (_: any, record: OffboardingRecord) => record.employee?.employee_number || '-' },
     {
       title: '离职日期',
       dataIndex: 'offboarding_date',
@@ -121,7 +132,7 @@ export default function OffboardingClient({
       title: '操作',
       key: 'action',
       width: 150,
-      render: (_: unknown, record: OffboardingRecord) => (
+      render: (_: any, record: OffboardingRecord) => (
         <Space size="small">
           <Button
             type="text"

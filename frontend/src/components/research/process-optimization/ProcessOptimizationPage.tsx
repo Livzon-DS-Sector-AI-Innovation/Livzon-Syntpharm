@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {Button, Input, Table, Tag, Card, App, Space, Popconfirm} from 'antd'
+import { useState, useCallback, useEffect } from 'react'
+import {Button, Input, Table, Tag, Card, App, Alert, Space, Popconfirm} from 'antd'
 import {PlayCircleOutlined, DeleteOutlined, PlusOutlined} from '@ant-design/icons'
 import { ProcessOptimizationWorkflowPage } from './ProcessOptimizationWorkflowPage'
 import { fetchOptimizations } from '@/lib/api/client/research'
@@ -34,24 +33,41 @@ const moduleMap: Record<string, string> = {
 
 export function ProcessOptimizationPage({ initialOptimizations, initialTotal, projectId }: ProcessOptimizationPageProps) {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [optimizations, setOptimizations] = useState<ProcessOptimization[]>(initialOptimizations)
+  const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-
-  const { data: queryData, isLoading: loading } = useQuery({
-    queryKey: ['optimizations', page, pageSize],
-    queryFn: async () => {
-      const result = await fetchOptimizations({ page, page_size: pageSize })
-      return { items: result.items || [], total: result.total || 0 }
-    },
-  })
-
-  const optimizations = queryData?.items || initialOptimizations
-  const total = queryData?.total ?? initialTotal
+  const [loading, setLoading] = useState(false)
   const [workflowOptimization, setWorkflowOptimization] = useState<ProcessOptimization | null>(null)
   const [creating, setCreating] = useState(false)
-  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(() => {
-    if (typeof window === 'undefined') return new Map()
+  const [apiAvailable, setApiAvailable] = useState(true)
+  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(new Map())
+
+  // 创建表单状态
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newDescription, setNewDescription] = useState('')
+
+  const loadOptimizations = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await fetchOptimizations({ page, page_size: pageSize })
+      setOptimizations(result.items)
+      setTotal(result.total)
+      setApiAvailable(true)
+    } catch {
+      setApiAvailable(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize])
+
+  useEffect(() => {
+    loadOptimizations()
+  }, [loadOptimizations])
+
+  // 加载已保存的工作流状态
+  useEffect(() => {
     const saved = new Map<string, { updatedAt: string; step: number }>()
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -66,17 +82,8 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
         } catch {}
       }
     }
-    return saved
-  })
-
-  // 创建表单状态
-  const [showCreateForm, setShowCreateForm] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [newDescription, setNewDescription] = useState('')
-
-  const invalidateOptimizations = () => queryClient.invalidateQueries({ queryKey: ['optimizations'] })
-
-
+    setSavedWorkflows(saved)
+  }, [])
 
   // 创建优化任务
   const handleCreateOptimization = async () => {
@@ -129,7 +136,7 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
   // 返回入口页
   const handleBackToList = () => {
     setWorkflowOptimization(null)
-    invalidateOptimizations()
+    loadOptimizations()
     window.location.reload()
   }
 
@@ -221,12 +228,12 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
                     next.delete(record.id)
                     return next
                   })
-                  invalidateOptimizations()
+                  loadOptimizations()
                   message.success('已删除')
                 } catch (error) {
                   // If record is already deleted (404), just refresh and show success
                   if (error instanceof Error && error.message.includes('404')) {
-                    invalidateOptimizations()
+                    loadOptimizations()
                     message.success('记录已删除')
                   } else {
                     message.error('删除失败')
@@ -251,6 +258,15 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
 
   return (
     <div>
+      {!apiAvailable && (
+        <Alert
+          message="后端服务不可用"
+          description="API 服务器未启动，当前显示的是空数据。工作流功能仍可正常使用，数据保存在浏览器本地。"
+          type="warning"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       <Card title="🔬 创建新优化任务" style={{ marginBottom: 16 }}>
         {!showCreateForm ? (

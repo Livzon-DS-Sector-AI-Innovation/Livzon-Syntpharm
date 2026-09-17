@@ -18,7 +18,7 @@ export default async function TrainingSelectPage({
     )
   }
 
-  let taskData: Record<string, unknown> | null = null
+  let taskData: any = null
   try {
     const res = await fetchTrainingSelectTask(token)
     taskData = res.data

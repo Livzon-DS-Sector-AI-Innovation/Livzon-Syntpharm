@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { Segmented, Input, Select, DatePicker, Spin } from 'antd'
 import {
   LoadingOutlined, SearchOutlined, FilterOutlined, ReloadOutlined,
@@ -83,11 +83,7 @@ function WorkspaceContent() {
   const [filtersOpen, setFiltersOpen] = useState(false)
 
   // 从 URL 参数初始化（Dashboard 跳转）
-  // Sync from searchParams (adjusting state during render)
-  const [prevSearchParams, setPrevSearchParams] = useState<string>('')
-  const currentSearchParams = searchParams.toString()
-  if (currentSearchParams !== prevSearchParams) {
-    setPrevSearchParams(currentSearchParams)
+  useEffect(() => {
     const dateParam = searchParams.get('date')
     const categoryParam = searchParams.get('category')
 
@@ -102,7 +98,7 @@ function WorkspaceContent() {
     } else if (dateParam === '7days') {
       setDateRange([dayjs().subtract(6, 'day'), dayjs()])
     }
-  }
+  }, [searchParams])
 
   // 构建请求参数
   const buildParams = useCallback((): DocumentListParams => {
@@ -143,6 +139,8 @@ function WorkspaceContent() {
       setLoading(false)
     }
   }, [buildParams])
+
+  useEffect(() => { loadDocuments() }, [loadDocuments])
 
   // 搜索处理
   const handleSearch = (value: string) => {
@@ -200,6 +198,12 @@ function WorkspaceContent() {
     )
   }
 
+  const renderBorderBar = (doc: RegulatoryDocument) => {
+    const level = getImpactLevel(doc)
+    if (level === 'high') return 'border-l-[3px] border-l-red-500'
+    if (level === 'medium') return 'border-l-[3px] border-l-amber-400'
+    return 'border-l-[3px] border-l-transparent'
+  }
 
   const renderDocRow = (doc: RegulatoryDocument) => {
     const level = getImpactLevel(doc)

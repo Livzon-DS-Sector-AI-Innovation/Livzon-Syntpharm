@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { App, Select, Button, Segmented } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import { StatsCards } from './StatsCards'
@@ -68,6 +68,10 @@ export function EnergyOverview() {
       setLoading(false)
     }
   }, [overviewTimeRange, selectedEnergyType, message])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   return (
     <div

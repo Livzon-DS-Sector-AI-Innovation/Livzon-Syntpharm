@@ -3,6 +3,7 @@
 import type {
   ApiResponse,
   PageParams,
+  DictOption,
   WarningsResponse,
   AuditLogItem,
   UploadResponse,
@@ -147,10 +148,10 @@ export async function getStorageConditionOptions() {
 export async function getStorageCondition(id: number) {
   return getStorageConditionServer(id)
 }
-export async function createStorageCondition(data: Record<string, unknown>) {
+export async function createStorageCondition(data: any) {
   return createStorageConditionServer(data)
 }
-export async function updateStorageCondition(id: number, data: Record<string, unknown>) {
+export async function updateStorageCondition(id: number, data: any) {
   return updateStorageConditionServer(id, data)
 }
 export async function deleteStorageCondition(id: number) {
@@ -171,10 +172,10 @@ export async function getUnitOptions() {
 export async function getUnit(id: number) {
   return getUnitServer(id)
 }
-export async function createUnit(data: Record<string, unknown>) {
+export async function createUnit(data: any) {
   return createUnitServer(data)
 }
-export async function updateUnit(id: number, data: Record<string, unknown>) {
+export async function updateUnit(id: number, data: any) {
   return updateUnitServer(id, data)
 }
 export async function deleteUnit(id: number) {
@@ -192,10 +193,10 @@ export async function getTestItemOptions() {
 export async function getTestItem(id: number) {
   return getTestItemServer(id)
 }
-export async function createTestItem(data: Record<string, unknown>) {
+export async function createTestItem(data: any) {
   return createTestItemServer(data)
 }
-export async function updateTestItem(id: number, data: Record<string, unknown>) {
+export async function updateTestItem(id: number, data: any) {
   return updateTestItemServer(id, data)
 }
 export async function deleteTestItem(id: number) {
@@ -210,10 +211,10 @@ export async function listEquipment(params: PageParams & { eq_code?: string; eq_
 export async function getEquipment(id: number) {
   return getEquipmentServer(id)
 }
-export async function createEquipment(data: Record<string, unknown>) {
+export async function createEquipment(data: any) {
   return createEquipmentServer(data)
 }
-export async function updateEquipment(id: number, data: Record<string, unknown>) {
+export async function updateEquipment(id: number, data: any) {
   return updateEquipmentServer(id, data)
 }
 export async function deleteEquipment(id: number) {
@@ -228,10 +229,10 @@ export async function listChromColumn(params: PageParams & { col_code?: string; 
 export async function getChromColumn(id: number) {
   return getChromColumnServer(id)
 }
-export async function createChromColumn(data: Record<string, unknown>) {
+export async function createChromColumn(data: any) {
   return createChromColumnServer(data)
 }
-export async function updateChromColumn(id: number, data: Record<string, unknown>) {
+export async function updateChromColumn(id: number, data: any) {
   return updateChromColumnServer(id, data)
 }
 export async function deleteChromColumn(id: number) {
@@ -249,10 +250,10 @@ export async function listMedium(params: PageParams & { medium_code?: string; me
 export async function getMedium(id: number) {
   return getMediumServer(id)
 }
-export async function createMedium(data: Record<string, unknown>) {
+export async function createMedium(data: any) {
   return createMediumServer(data)
 }
-export async function updateMedium(id: number, data: Record<string, unknown>) {
+export async function updateMedium(id: number, data: any) {
   return updateMediumServer(id, data)
 }
 export async function deleteMedium(id: number) {
@@ -267,10 +268,10 @@ export async function listReagent(params: PageParams & { reagent_code?: string; 
 export async function getReagent(id: number) {
   return getReagentServer(id)
 }
-export async function createReagent(data: Record<string, unknown>) {
+export async function createReagent(data: any) {
   return createReagentServer(data)
 }
-export async function updateReagent(id: number, data: Record<string, unknown>) {
+export async function updateReagent(id: number, data: any) {
   return updateReagentServer(id, data)
 }
 export async function deleteReagent(id: number) {
@@ -285,10 +286,10 @@ export async function listStandardMaterial(params: PageParams & { std_code?: str
 export async function getStandardMaterial(id: number) {
   return getStandardMaterialServer(id)
 }
-export async function createStandardMaterial(data: Record<string, unknown>) {
+export async function createStandardMaterial(data: any) {
   return createStandardMaterialServer(data)
 }
-export async function updateStandardMaterial(id: number, data: Record<string, unknown>) {
+export async function updateStandardMaterial(id: number, data: any) {
   return updateStandardMaterialServer(id, data)
 }
 export async function deleteStandardMaterial(id: number) {
@@ -303,10 +304,10 @@ export async function listMaterialStandard(params: PageParams & { material_code?
 export async function getMaterialStandard(id: number) {
   return getMaterialStandardServer(id)
 }
-export async function createMaterialStandard(data: Record<string, unknown>) {
+export async function createMaterialStandard(data: any) {
   return createMaterialStandardServer(data)
 }
-export async function updateMaterialStandard(id: number, data: Record<string, unknown>) {
+export async function updateMaterialStandard(id: number, data: any) {
   return updateMaterialStandardServer(id, data)
 }
 export async function deleteMaterialStandard(id: number) {
@@ -321,10 +322,10 @@ export async function listProductStandard(params: PageParams & { product_code?: 
 export async function getProductStandard(id: number) {
   return getProductStandardServer(id)
 }
-export async function createProductStandard(data: Record<string, unknown>) {
+export async function createProductStandard(data: any) {
   return createProductStandardServer(data)
 }
-export async function updateProductStandard(id: number, data: Record<string, unknown>) {
+export async function updateProductStandard(id: number, data: any) {
   return updateProductStandardServer(id, data)
 }
 export async function deleteProductStandard(id: number) {
@@ -336,10 +337,10 @@ export async function deleteProductStandard(id: number) {
 export async function getHplcReference(id: number) {
   return getHplcReferenceServer(id)
 }
-export async function createHplcReference(data: Record<string, unknown>) {
+export async function createHplcReference(data: any) {
   return createHplcReferenceServer(data)
 }
-export async function updateHplcReference(id: number, data: Record<string, unknown>) {
+export async function updateHplcReference(id: number, data: any) {
   return updateHplcReferenceServer(id, data)
 }
 export async function deleteHplcReference(id: number) {
@@ -376,7 +377,7 @@ export async function getAuditModules(): Promise<ApiResponse<{ module_type: stri
 export async function uploadFile(file: File): Promise<ApiResponse<UploadResponse>> {
   const formData = new FormData()
   formData.append('file', file)
-  return (await uploadFileServer(formData)) as ApiResponse<UploadResponse>
+  return uploadFileServer(formData)
 }
 
 export async function getDownloadUrl(filename: string): Promise<string> {
@@ -392,7 +393,7 @@ export async function downloadExcelTemplate(moduleType: string): Promise<Blob> {
 export async function importExcel(moduleType: string, file: File): Promise<ApiResponse<{ success: number; failed: number; errors: string[] }>> {
   const formData = new FormData()
   formData.append('file', file)
-  return (await importExcelServer(moduleType, formData)) as ApiResponse<{ success: number; failed: number; errors: string[] }>
+  return importExcelServer(moduleType, formData)
 }
 
 export async function exportExcel(params: {

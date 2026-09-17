@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, Row, Col, Tag, Button, Space, App, Spin, Badge } from 'antd'
 import {
+  FileTextOutlined, AlertOutlined, ClockCircleOutlined,
   CheckCircleOutlined, ArrowRightOutlined, SyncOutlined, CalendarOutlined,
-  DownOutlined, UpOutlined, FileTextOutlined, AlertOutlined,
+  DownOutlined, UpOutlined,
 } from '@ant-design/icons'
 import dynamic from 'next/dynamic'
 import dayjs from 'dayjs'
@@ -28,25 +28,23 @@ const IMPACT_CONFIG: Record<string, { color: string; label: string }> = {
 export default function RegulationDashboardClient() {
   const router = useRouter()
   const { message } = App.useApp()
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
   const [secondaryExpanded, setSecondaryExpanded] = useState(false)
-  const queryClient = useQueryClient()
 
-  const { data, isLoading: loading, refetch: _refetch } = useQuery<DashboardData | null>({
-    queryKey: ['regulation-dashboard'],
-    queryFn: async () => {
-      try {
-        const result = await fetchDashboard()
-        return result
-      } catch {
-        message.error('加载仪表盘数据失败')
-        return null
-      }
-    },
-  })
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await fetchDashboard()
+      setData(result)
+    } catch {
+      message.error('加载仪表盘数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const loadData = () => {
-    queryClient.invalidateQueries({ queryKey: ['regulation-dashboard'] })
-  }
+  useEffect(() => { loadData() }, [loadData])
 
   if (loading && !data) {
     return (

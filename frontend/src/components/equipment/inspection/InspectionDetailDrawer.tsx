@@ -1,12 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Drawer, Image, Typography } from 'antd'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { App, Drawer, Image, Typography } from 'antd'
 import { ClockCircleOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, CameraOutlined, FileTextOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
 import { fetchInspectionHistoryDetail, getInspectionPhotoUrl } from '@/lib/api/client/inspection'
-import type { InspectionRecord } from '@/types/inspection'
+import type { InspectionTaskDetail, InspectionRecord } from '@/types/inspection'
 import dayjs from 'dayjs'
 
 const { Text } = Typography
@@ -20,15 +19,19 @@ function groupByEquipment(records: InspectionRecord[]): Map<string, InspectionRe
 }
 
 export function InspectionDetailDrawer() {
+  const { message } = App.useApp()
   const { historyDetailOpen, detailTaskId, closeHistoryDetail } = useInspectionStore()
-  const { data: detail = null, isLoading: loading } = useQuery({
-    queryKey: ['inspection-history-detail', detailTaskId],
-    queryFn: async () => {
-      if (!detailTaskId) return null
-      return await fetchInspectionHistoryDetail(detailTaskId)
-    },
-    enabled: historyDetailOpen && !!detailTaskId,
-  })
+  const [detail, setDetail] = useState<InspectionTaskDetail | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const load = useCallback(async () => {
+    if (!detailTaskId) return; setLoading(true)
+    try { setDetail(await fetchInspectionHistoryDetail(detailTaskId)) }
+    catch { message.error('加载详情失败') }
+    finally { setLoading(false) }
+  }, [detailTaskId, message])
+
+  useEffect(() => { if (historyDetailOpen && detailTaskId) load() }, [historyDetailOpen, detailTaskId, load])
 
   const recordGroups = useMemo(() => {
     if (!detail?.records?.length) return []

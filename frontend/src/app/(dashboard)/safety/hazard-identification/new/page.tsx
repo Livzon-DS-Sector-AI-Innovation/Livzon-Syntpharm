@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -40,17 +39,25 @@ export default function NewHazardIdentificationPage() {
   const [submitType, setSubmitType] = useState<'save' | 'submit'>('save')
   const { message } = App.useApp()
 
-  // React Query for regulations
-  const { data: regulations = [], isLoading: regsLoading } = useQuery({
-    queryKey: ['safety-regulations', { page_size: 200 }],
-    queryFn: async () => {
+  // 安全操作规程列表
+  const [regulations, setRegulations] = useState<OperationRegulation[]>([])
+  const [regsLoading, setRegsLoading] = useState(false)
+
+  const loadRegulations = useCallback(async () => {
+    setRegsLoading(true)
+    try {
       const res = await getRegulations({ page_size: 200 })
       if (res.code === 200) {
-        return (res.data as OperationRegulation[]) || []
+        setRegulations((res.data as OperationRegulation[]) || [])
       }
-      return []
-    },
-  })
+    } catch {
+      // 静默失败
+    } finally {
+      setRegsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadRegulations() }, [loadRegulations])
 
   const handleSubmit = async (saveOnly: boolean) => {
     try {

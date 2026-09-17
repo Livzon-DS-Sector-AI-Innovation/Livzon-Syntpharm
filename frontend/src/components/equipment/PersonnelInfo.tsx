@@ -3,7 +3,7 @@
 import {Avatar, Popover, Typography} from 'antd'
 import {
   UserOutlined, IdcardOutlined, BankOutlined,
-  PhoneOutlined,
+  PhoneOutlined, AimOutlined,
 } from '@ant-design/icons'
 import type { Personnel } from '@/types/equipment-personnel'
 

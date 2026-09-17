@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useCallback, useEffect } from 'react'
 import { Button, Input, Table, Tag, Card, Upload, App, Alert, Progress, Tooltip, Space, Popconfirm } from 'antd'
 import {PlayCircleOutlined, UploadOutlined, FilePdfOutlined, DeleteOutlined} from '@ant-design/icons'
 import { RouteWorkflowPage } from './RouteWorkflowPage'
@@ -18,27 +17,39 @@ interface RouteDevelopmentPageProps {
 
 export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }: RouteDevelopmentPageProps) {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [routes, setRoutes] = useState<RouteDevelopment[]>(initialRoutes)
+  const [total, setTotal] = useState(initialTotal)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-
-  const { data: queryData, isLoading: loading } = useQuery({
-    queryKey: ['routes', page, pageSize],
-    queryFn: async () => {
-      const result = await fetchRoutes({ page, page_size: pageSize })
-      return { items: result.items || [], total: result.total || 0 }
-    },
-  })
-
-  const routes = queryData?.items || initialRoutes
-  const total = queryData?.total ?? initialTotal
+  const [loading, setLoading] = useState(false)
   const [workflowRoute, setWorkflowRoute] = useState<RouteDevelopment | null>(null)
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [literatureFile, setLiteratureFile] = useState<File | null>(null)
   const [literatureInput, setLiteratureInput] = useState('')
   const [creating, setCreating] = useState(false)
-  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(() => {
-    if (typeof window === 'undefined') return new Map()
+  const [_apiAvailable, setApiAvailable] = useState(true)
+  const [savedWorkflows, setSavedWorkflows] = useState<Map<string, { updatedAt: string; step: number }>>(new Map())
+
+  const loadRoutes = useCallback(async () => {
+    setLoading(true)
+    try {
+      const result = await fetchRoutes({ page, page_size: pageSize })
+      setRoutes(result.items)
+      setTotal(result.total)
+      setApiAvailable(true)
+    } catch {
+      setApiAvailable(false)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize])
+
+  useEffect(() => {
+    loadRoutes()
+  }, [loadRoutes])
+
+  // 加载已保存的工作流状态
+  useEffect(() => {
     const saved = new Map<string, { updatedAt: string; step: number }>()
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
@@ -53,12 +64,8 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
         } catch {}
       }
     }
-    return saved
-  })
-
-  const invalidateRoutes = () => queryClient.invalidateQueries({ queryKey: ['routes'] })
-
-
+    setSavedWorkflows(saved)
+  }, [])
 
   // 创建工作流
   const handleCreateWorkflow = async () => {
@@ -130,7 +137,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
     setWorkflowRoute(null)
     setFileList([])
     setLiteratureInput('')
-    invalidateRoutes()
+    loadRoutes()
     // 刷新保存的工作流状态
     window.location.reload()
   }
@@ -259,7 +266,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
                     next.delete(record.id)
                     return next
                   })
-                  invalidateRoutes()
+                  loadRoutes()
                   message.success('已删除')
                 } catch {
                   message.error('删除失败')

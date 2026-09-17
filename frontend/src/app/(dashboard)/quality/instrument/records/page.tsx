@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useCallback, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -41,6 +40,7 @@ import type {
   CalibrationRecordFilter,
   CalibrationRecordCreate,
   CalibrationRecordUpdate,
+  InstrumentListItem,
   CalibrationMethod,
   CalibrationResult,
   RecordStatus,
@@ -85,6 +85,9 @@ const methodColorMap: Record<string, string> = {
 }
 
 export default function CalibrationRecordsPage() {
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<CalibrationRecordListItem[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('table')
@@ -105,7 +108,9 @@ export default function CalibrationRecordsPage() {
 
   const [createForm] = Form.useForm()
   const [editForm] = Form.useForm()
-  const queryClient = useQueryClient()
+
+  const [instruments, setInstruments] = useState<InstrumentListItem[]>([])
+  const [instrumentsLoading, setInstrumentsLoading] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -118,17 +123,28 @@ export default function CalibrationRecordsPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const { data: instruments = [], isLoading: instrumentsLoading } = useQuery({
-    queryKey: ['instruments-for-records'],
-    queryFn: async () => {
+  const loadInstruments = useCallback(async () => {
+    setInstrumentsLoading(true)
+    try {
       const response = await getInstruments({ page: 1, page_size: 1000 })
-      return response.items || []
-    },
-  })
+      const items = response.items || []
+      console.log('仪器列表加载完成:', items.length, '条')
+      setInstruments(items)
+    } catch (error) {
+      console.error('加载仪器列表失败', error)
+      message.error('加载仪器列表失败')
+    } finally {
+      setInstrumentsLoading(false)
+    }
+  }, [])
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
-    queryKey: ['calibration-records', page, pageSize, filters],
-    queryFn: async () => {
+  useEffect(() => {
+    loadInstruments()
+  }, [loadInstruments])
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
       const params: CalibrationRecordFilter = { page, page_size: pageSize }
       if (filters.instrument_id) params.instrument_id = filters.instrument_id
       if (filters.calibration_no) params.calibration_no = filters.calibration_no
@@ -137,14 +153,20 @@ export default function CalibrationRecordsPage() {
       if (filters.calibration_method) params.calibration_method = filters.calibration_method as CalibrationMethod
 
       const response = await getCalibrationRecords(params)
-      return { items: response.items || [], total: response.total || 0 }
-    },
-  })
+      setData(response.items || [])
+      setTotal(response.total || 0)
+    } catch (error) {
+      message.error('加载数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize, filters])
 
-  const data = queryResult?.items || []
-  const total = queryResult?.total || 0
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
-  const handleSearch = () => { setPage(1) }
+  const handleSearch = () => { setPage(1); loadData() }
   const handleReset = () => { setFilters({}); setPage(1) }
 
   const handleCreate = () => {
@@ -185,7 +207,7 @@ export default function CalibrationRecordsPage() {
         valid_period: valid_period,
       })
       setEditDrawerVisible(true)
-    } catch (_error) {
+    } catch (error) {
       message.error('获取数据失败')
     }
   }
@@ -194,8 +216,8 @@ export default function CalibrationRecordsPage() {
     try {
       await deleteCalibrationRecord(id)
       message.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: ['calibration-records'] })
-    } catch (_error) {
+      loadData()
+    } catch (error) {
       message.error('删除失败')
     }
   }
@@ -231,8 +253,8 @@ export default function CalibrationRecordsPage() {
       await createCalibrationRecord(submitData)
       message.success('创建成功')
       setCreateDrawerVisible(false)
-      queryClient.invalidateQueries({ queryKey: ['calibration-records'] })
-    } catch (_error) {
+      loadData()
+    } catch (error) {
       message.error('创建失败')
     } finally {
       setSubmitLoading(false)
@@ -266,8 +288,8 @@ export default function CalibrationRecordsPage() {
       await updateCalibrationRecord(editRecord.id, submitData)
       message.success('更新成功')
       setEditDrawerVisible(false)
-      queryClient.invalidateQueries({ queryKey: ['calibration-records'] })
-    } catch (_error) {
+      loadData()
+    } catch (error) {
       message.error('更新失败')
     } finally {
       setSubmitLoading(false)
@@ -361,7 +383,7 @@ export default function CalibrationRecordsPage() {
               >卡片</Button>
             </Space>
           )}
-          <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={loading} size={isMobile ? 'small' : 'middle'}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading} size={isMobile ? 'small' : 'middle'}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} size={isMobile ? 'small' : 'middle'}>新增记录</Button>
         </Space>
       </div>

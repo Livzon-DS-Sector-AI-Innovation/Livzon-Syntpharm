@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Table, Button, Space, Tag, Input, Select, Modal, App, Form, DatePicker,
   Statistic, Row, Col, Card, Timeline, Popconfirm, Drawer,
@@ -11,9 +10,9 @@ import {
   PlusOutlined, SearchOutlined, ReloadOutlined, DeleteOutlined,
   EditOutlined, BarChartOutlined, BarsOutlined,
 } from '@ant-design/icons'
-import type { Dayjs } from 'dayjs'
+import dayjs, { Dayjs } from 'dayjs'
 import {
-  Drug,
+  Drug, DrugCreate, DrugUpdate, ReviewNodeConfig,
   fetchDrugs, fetchReviewNodes,
 } from '@/lib/api/client/registration'
 import { createDrug, updateDrug, deleteDrug } from '@/actions/registration'
@@ -75,7 +74,10 @@ function addWorkDays(startStr: string, days: number, holidays: string[], workday
 }
 
 export function ReviewPageClient() {
+  const [drugs, setDrugs] = useState<Drug[]>([])
   const { message } = App.useApp()
+  const [reviewNodes, setReviewNodes] = useState<ReviewNodeConfig[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState<string>('全部')
   const [yearFilter, setYearFilter] = useState<string>('全部')
@@ -89,33 +91,47 @@ export function ReviewPageClient() {
   const holidays = [...DEFAULT_HOLIDAYS_2025, ...DEFAULT_HOLIDAYS_2026]
   const workdays = [...DEFAULT_WORKDAYS_2025, ...DEFAULT_WORKDAYS_2026]
 
-  const queryClient = useQueryClient()
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
+      setDrugs(d)
+      setReviewNodes(n)
+    } catch {
+      message.error('加载数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  const { data: drugs = [], isLoading: drugsLoading } = useQuery({
-    queryKey: ['registration-drugs'],
-    queryFn: fetchDrugs,
-  })
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [d, n] = await Promise.all([fetchDrugs(), fetchReviewNodes()])
+        if (!cancelled) {
+          setDrugs(d)
+          setReviewNodes(n)
+        }
+      } catch {
+        if (!cancelled) message.error('加载数据失败')
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
+  }, [])
 
-  const { data: reviewNodes = [], isLoading: nodesLoading } = useQuery({
-    queryKey: ['registration-review-nodes'],
-    queryFn: fetchReviewNodes,
-  })
-
-  const loading = drugsLoading || nodesLoading
-
-  const refreshData = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['registration-drugs'] })
-    queryClient.invalidateQueries({ queryKey: ['registration-review-nodes'] })
-  }, [queryClient])
-
-  const filtered = useMemo(() => drugs.filter(d => {
+  const filtered = drugs.filter(d => {
     if (search && !d.name.includes(search)) return false
     if (typeFilter !== '全部' && d.type !== typeFilter) return false
     if (yearFilter !== '全部' && !d.acceptance_date.startsWith(yearFilter)) return false
     return true
-  }), [drugs, search, typeFilter, yearFilter])
+  })
 
-  const stats = useMemo(() => ({
+  const stats = {
     total: filtered.length,
     firstSubmission: filtered.filter(d => d.type === '创新药').length,
     inProgress: filtered.filter(d => {
@@ -128,7 +144,7 @@ export function ReviewPageClient() {
       const nodes = d.nodes || []
       return nodes.filter(n => n.actual_date).length === 10
     }).length,
-  }), [filtered])
+  }
 
   const handleAdd = async (values: { name: string; type: DrugType; acceptance_date: Dayjs }) => {
     setSubmitting(true)
@@ -141,7 +157,7 @@ export function ReviewPageClient() {
       message.success('添加成功')
       setAddModalOpen(false)
       form.resetFields()
-      refreshData()
+      loadData()
     } catch {
       message.error('添加失败')
     } finally {
@@ -155,7 +171,7 @@ export function ReviewPageClient() {
         nodes: [{ node_index: nodeIndex, actual_date: actualDate?.format('YYYY-MM-DD') ?? null }],
       })
       message.success('节点更新成功')
-      refreshData()
+      loadData()
     } catch {
       message.error('更新失败')
     }
@@ -166,7 +182,7 @@ export function ReviewPageClient() {
       await deleteDrug(id)
       message.success('删除成功')
       if (selectedDrug?.id === id) { setSelectedDrug(null); setDrawerOpen(false) }
-      refreshData()
+      loadData()
     } catch {
       message.error('删除失败')
     }
@@ -280,7 +296,7 @@ export function ReviewPageClient() {
               { label: <span><BarChartOutlined /> 甘特图</span>, value: 'gantt' },
             ]}
           />
-          <Button icon={<ReloadOutlined />} onClick={refreshData} loading={loading}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={loadData} loading={loading}>刷新</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddModalOpen(true)}>
             添加药品
           </Button>

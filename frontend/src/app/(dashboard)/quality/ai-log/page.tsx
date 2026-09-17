@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useState, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -36,6 +35,7 @@ import { getAiLogs } from '@/actions/quality'
 import { AiLogItem, AiLogFilter } from '@/types/quality'
 
 const { RangePicker } = DatePicker
+const { TextArea } = Input
 const { Text } = Typography
 
 // 操作类型映射
@@ -46,65 +46,82 @@ const operateTypeLabels: Record<string, string> = {
 }
 
 export default function AiLogPage() {
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<AiLogItem[]>([])
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 20,
+    total: 0,
   })
   const [filter, setFilter] = useState<AiLogFilter>({})
   const [selectedLog, setSelectedLog] = useState<AiLogItem | null>(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
 
-  // 获取AI日志列表
-  const { data: queryData, isLoading: loading, refetch } = useQuery({
-    queryKey: ['ai-logs', filter, pagination.current, pagination.pageSize],
-    queryFn: async () => {
-      const response = await getAiLogs({
-        ...filter,
-        page: pagination.current,
-        page_size: pagination.pageSize,
-      })
-      if (response.code === 200 && response.data) return response.data
-      return null
-    },
+  // 统计数据
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    today: 0,
+    reason_count: 0,
+    scrap_count: 0,
+    analyse_count: 0,
   })
 
-  const data = React.useMemo(() => queryData?.items || [], [queryData?.items])
-  const paginationWithTotal = {
-    current: queryData?.page || 1,
-    pageSize: queryData?.page_size || 20,
-    total: queryData?.total || 0,
+  // 获取AI日志列表
+  const fetchData = async (params?: { page?: number; page_size?: number }) => {
+    setLoading(true)
+    try {
+      const response = await getAiLogs({
+        ...filter,
+        page: params?.page || pagination.current,
+        page_size: params?.page_size || pagination.pageSize,
+      })
+
+      if (response.code === 200 && response.data) {
+        setData(response.data.items || [])
+        setPagination({
+          current: response.data.page || 1,
+          pageSize: response.data.page_size || 20,
+          total: response.data.total || 0,
+        })
+
+        // 更新统计
+        const items = response.data.items || []
+        const today = dayjs().format('YYYY-MM-DD')
+        setStatistics({
+          total: response.data.total || 0,
+          today: items.filter((item: AiLogItem) => dayjs(item.created_at).format('YYYY-MM-DD') === today).length,
+          reason_count: items.filter((item: AiLogItem) => item.operate_type === '领用事由生成').length,
+          scrap_count: items.filter((item: AiLogItem) => item.operate_type === '报废原因生成').length,
+          analyse_count: items.filter((item: AiLogItem) => item.operate_type === '试剂异常分析').length,
+        })
+      }
+    } catch (error) {
+      console.error('获取AI日志失败:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // 统计数据
-  const statistics = React.useMemo(() => {
-    const items = data
-    const today = dayjs().format('YYYY-MM-DD')
-    return {
-      total: queryData?.total || 0,
-      today: items.filter((item: AiLogItem) => dayjs(item.created_at).format('YYYY-MM-DD') === today).length,
-      reason_count: items.filter((item: AiLogItem) => item.operate_type === '领用事由生成').length,
-      scrap_count: items.filter((item: AiLogItem) => item.operate_type === '报废原因生成').length,
-      analyse_count: items.filter((item: AiLogItem) => item.operate_type === '试剂异常分析').length,
-    }
-  }, [data, queryData?.total])
+  useEffect(() => {
+    fetchData()
+  }, [])
 
   // 搜索
   const handleSearch = () => {
     setPagination({ ...pagination, current: 1 })
+    fetchData({ page: 1, page_size: pagination.pageSize })
   }
 
   // 重置
   const handleReset = () => {
     setFilter({})
     setPagination({ ...pagination, current: 1 })
+    fetchData({ page: 1, page_size: pagination.pageSize })
   }
 
   // 分页变化
-  const handleTableChange = (newPagination: { current?: number; pageSize?: number }) => {
-    setPagination({
-      current: newPagination.current || 1,
-      pageSize: newPagination.pageSize || 20,
-    })
+  const handleTableChange = (newPagination: any) => {
+    fetchData({ page: newPagination.current, page_size: newPagination.pageSize })
   }
 
   // 查看详情
@@ -115,7 +132,7 @@ export default function AiLogPage() {
 
   // 刷新
   const handleRefresh = () => {
-    refetch()
+    fetchData()
   }
 
   // 表格列定义
@@ -349,7 +366,7 @@ export default function AiLogPage() {
             rowKey="id"
             loading={loading}
             pagination={{
-              ...paginationWithTotal,
+              ...pagination,
               showSizeChanger: true,
               showQuickJumper: true,
               showTotal: (total) => `共 ${total} 条`,

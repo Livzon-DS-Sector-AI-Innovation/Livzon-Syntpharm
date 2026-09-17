@@ -1,24 +1,36 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import { Table, Tag, Input, Select, Space, Button } from 'antd'
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
+import type { LoginLog } from '@/types/identity'
 
 export default function LoginLogsPage() {
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<LoginLog[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [status, setStatus] = useState<string | undefined>()
   const [keyword, setKeyword] = useState('')
 
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['login-logs', { page, pageSize, status, keyword }],
-    queryFn: async () => {
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
       const result = await getLoginLogs({ page, page_size: pageSize, status, keyword: keyword || undefined })
-      return result
-    },
-  })
+      setData(result.items)
+      setTotal(result.total)
+    } catch (error) {
+      console.error('获取登录记录失败:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize, status, keyword])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
   const columns = [
     {
@@ -115,10 +127,10 @@ export default function LoginLogsPage() {
           style={{ width: 200 }}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
-          onPressEnter={() => { setPage(1) }}
+          onPressEnter={() => { setPage(1); fetchData() }}
           allowClear
         />
-        <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
+        <Button icon={<ReloadOutlined />} onClick={fetchData}>
           刷新
         </Button>
       </Space>
@@ -126,12 +138,12 @@ export default function LoginLogsPage() {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={data?.items || []}
-        loading={isLoading}
+        dataSource={data}
+        loading={loading}
         pagination={{
           current: page,
           pageSize,
-          total: data?.total || 0,
+          total,
           showSizeChanger: true,
           showTotal: (t) => `共 ${t} 条`,
           onChange: (p, ps) => { setPage(p); setPageSize(ps) },

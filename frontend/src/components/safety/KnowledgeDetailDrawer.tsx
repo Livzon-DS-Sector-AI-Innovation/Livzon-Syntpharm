@@ -1,8 +1,6 @@
 'use client'
 
-import Image from 'next/image'
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Drawer,
   Descriptions,
@@ -32,7 +30,7 @@ import KnowledgeCardEditor from './KnowledgeCardEditor'
 import InjectionPreviewModal from './InjectionPreviewModal'
 import AgentUsageStats from './AgentUsageStats'
 import PptGeneratorPanel from './PptGeneratorPanel'
-import type { SafetyKnowledgeArticle } from '@/types/safety'
+import type { SafetyKnowledgeArticle, VersionChainItem } from '@/types/safety'
 import { KNOWLEDGE_CATEGORY_OPTIONS } from '@/types/safety'
 import dayjs from 'dayjs'
 
@@ -51,36 +49,39 @@ export default function KnowledgeDetailDrawer({
   onClose,
   onNewVersion,
 }: Props) {
-  const queryClient = useQueryClient()
+  const [loading, setLoading] = useState(false)
+  const [article, setArticle] = useState<SafetyKnowledgeArticle | null>(null)
+  const [versionChain, setVersionChain] = useState<VersionChainItem[]>([])
   const [injectionPreviewOpen, setInjectionPreviewOpen] = useState(false)
   const [generatingSummary, setGeneratingSummary] = useState(false)
 
-  const { data: queryData, isLoading: loading } = useQuery({
-    queryKey: ['knowledge-article', articleId, open],
-    queryFn: async () => {
-      if (!articleId || !open) return null
-      
-      try {
-        const [articleRes, versionsRes] = await Promise.all([
-          getKnowledgeArticle(articleId),
-          getArticleVersions(articleId),
-        ])
-        const article = articleRes.code === 200 ? articleRes.data : null
-        const versionChain = versionsRes.code === 200 ? versionsRes.data : []
-        return { article, versionChain }
-      } catch {
-        return null
+  const loadArticle = useCallback(async () => {
+    if (!articleId || !open) return
+    setLoading(true)
+    try {
+      const [articleRes, versionsRes] = await Promise.all([
+        getKnowledgeArticle(articleId),
+        getArticleVersions(articleId),
+      ])
+      if (articleRes.code === 200 && articleRes.data) {
+        setArticle(articleRes.data)
       }
-    },
-    enabled: !!articleId && open,
-  })
+      if (versionsRes.code === 200 && versionsRes.data) {
+        setVersionChain(versionsRes.data)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [articleId, open])
 
-  const article = queryData?.article || null
-  const versionChain = queryData?.versionChain || []
-
-
-
-
+  useEffect(() => {
+    if (articleId && open) {
+      loadArticle()
+    } else {
+      setArticle(null)
+      setVersionChain([])
+    }
+  }, [articleId, open, loadArticle])
 
   const getCategoryLabel = (cat: string) =>
     KNOWLEDGE_CATEGORY_OPTIONS.find((o) => o.value === cat)?.label || cat
@@ -102,7 +103,7 @@ export default function KnowledgeDetailDrawer({
       const res = await generateSummary(article.id)
       if (res.code === 200 && res.data) {
         message.success(res.data.message || '摘要生成成功')
-        queryClient.invalidateQueries({ queryKey: ['knowledge-article'] })
+        loadArticle()
       } else {
         message.error(res.message || '摘要生成失败')
       }
@@ -202,7 +203,7 @@ export default function KnowledgeDetailDrawer({
     if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext || '')) {
       return (
         <div style={{ textAlign: 'center' }}>
-          <Image src={url} alt={name} width={500} height={500} style={{ maxWidth: '100%', maxHeight: 500, objectFit: 'contain' }} />
+          <img src={url} alt={name} style={{ maxWidth: '100%', maxHeight: 500 }} />
         </div>
       )
     }
@@ -408,7 +409,7 @@ export default function KnowledgeDetailDrawer({
                 children: (
                   <KnowledgeCardEditor
                     article={article}
-                    onRefresh={() => queryClient.invalidateQueries({ queryKey: ['knowledge-article'] })}
+                    onRefresh={loadArticle}
                     onPreviewInjection={() => setInjectionPreviewOpen(true)}
                   />
                 ),

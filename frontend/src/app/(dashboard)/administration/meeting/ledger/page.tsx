@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { Table, Button, Input, Tag, Space, Modal, Form, message, Popconfirm, Select } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { fetchGiftInventories } from '@/lib/api/client/administration/gift-inventory'
@@ -20,61 +19,51 @@ const STATUS_COLORS: Record<string, string> = {
   '停用': 'error',
 }
 
-interface GiftInventory {
-  id: string
-  name: string
-  specification?: string
-  unit: string
-  opening_stock: number
-  incoming_qty?: number
-  closing_stock: number
-  unit_price?: number
-  total_amount?: number
-  status: string
-}
-
-
 export default function ItemLedgerPage() {
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<GiftInventory | null>(null)
+  const [editing, setEditing] = useState<any>(null)
   const [form] = Form.useForm()
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
 
-  const { data: queryData, isLoading, refetch: _refetch } = useQuery({
-    queryKey: ['gift-inventories', { keyword, status: statusFilter, page: pagination.current, pageSize: pagination.pageSize }],
-    queryFn: async () => {
+  const load = async (page = 1) => {
+    setLoading(true)
+    try {
       const res = await fetchGiftInventories({
         keyword,
         status: statusFilter || undefined,
-        page: pagination.current,
+        page,
         page_size: pagination.pageSize,
       })
-      return { data: res.data || [], total: res.meta?.total || 0 }
-    },
-  })
-
-  const data = queryData?.data || []
-  const load = (page = 1) => {
-    setPagination({ ...pagination, current: page })
+      setData(res.data || [])
+      setPagination({ ...pagination, current: page, total: res.meta?.total || 0 })
+    } catch (err: any) {
+      message.error(err.message || '加载失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleSave = async (values: GiftInventory) => {
+  useEffect(() => { load(1) }, [keyword, statusFilter])
+
+  const handleSave = async (values: any) => {
     try {
       if (editing) {
-        await updateGiftInventory(editing.id, values as unknown as Record<string, unknown>)
+        await updateGiftInventory(editing.id, values)
         message.success('更新成功')
       } else {
-        await createGiftInventory(values as unknown as Record<string, unknown>)
+        await createGiftInventory(values)
         message.success('创建成功')
       }
       setModalOpen(false)
       form.resetFields()
       setEditing(null)
       load(pagination.current)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '保存失败')
+    } catch (err: any) {
+      message.error(err.message || '保存失败')
     }
   }
 
@@ -83,8 +72,8 @@ export default function ItemLedgerPage() {
       await deleteGiftInventory(id)
       message.success('删除成功')
       load(pagination.current)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '删除失败')
+    } catch (err: any) {
+      message.error(err.message || '删除失败')
     }
   }
 
@@ -108,7 +97,7 @@ export default function ItemLedgerPage() {
       title: '操作',
       key: 'action',
       width: 160,
-      render: (_: unknown, record: GiftInventory) => (
+      render: (_: any, record: any) => (
         <Space>
           <Button
             icon={<EditOutlined />}
@@ -167,7 +156,7 @@ export default function ItemLedgerPage() {
         rowKey="id"
         columns={columns}
         dataSource={data}
-        loading={isLoading}
+        loading={loading}
         pagination={{
           ...pagination,
           onChange: (page) => load(page),

@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { useState, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -17,10 +16,12 @@ import {
   List,
   Divider,
   message,
+  Popconfirm,
   Tooltip,
   Empty,
 } from 'antd'
 import {
+  SearchOutlined,
   EyeOutlined,
   ExportOutlined,
   ReloadOutlined,
@@ -28,6 +29,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   WarningOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import { getCheckRecords, getCheckRecordDetail, exportCheckReport } from '@/actions/sop-ai'
 import {
@@ -35,6 +37,7 @@ import {
   CheckMainDetail,
   CheckProblem,
   CheckRecordFilter,
+  RiskLevel,
   CheckStatus,
 } from '@/types/sop-ai'
 import dayjs from 'dayjs'
@@ -48,6 +51,9 @@ type SopAiRecordsPageProps = Record<string, never>
  * 记录台账页面
  */
 export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
+  const [loading, setLoading] = useState(false)
+  const [records, setRecords] = useState<CheckMain[]>([])
+  const [total, setTotal] = useState(0)
   const [filter, setFilter] = useState<CheckRecordFilter>({
     page: 1,
     page_size: 20,
@@ -56,16 +62,23 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
   const [currentDetail, setCurrentDetail] = useState<CheckMainDetail | null>(null)
 
   // 加载记录
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
-    queryKey: ['sop-ai-records', filter],
-    queryFn: async () => {
+  const loadRecords = async () => {
+    setLoading(true)
+    try {
       const response = await getCheckRecords(filter)
-      return response
-    },
-  })
+      setRecords(response.items)
+      setTotal(response.total)
+    } catch (error: any) {
+      message.error(error.message || '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const records = queryResult?.items || []
-  const total = queryResult?.total || 0
+  // 初始加载
+  useEffect(() => {
+    loadRecords()
+  }, [filter.page, filter.page_size])
 
   // 查看详情
   const handleViewDetail = async (id: string) => {
@@ -73,8 +86,8 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
       const detail = await getCheckRecordDetail(id)
       setCurrentDetail(detail)
       setDetailVisible(true)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '加载详情失败')
+    } catch (error: any) {
+      message.error(error.message || '加载详情失败')
     }
   }
 
@@ -83,18 +96,18 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
     try {
       const result = await exportCheckReport(id, 'excel', true)
       message.success(`导出成功: ${result.download_url}`)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '导出失败')
+    } catch (error: any) {
+      message.error(error.message || '导出失败')
     }
   }
 
   // 筛选变化
-  const handleFilterChange = (key: keyof CheckRecordFilter, value: unknown) => {
+  const handleFilterChange = (key: keyof CheckRecordFilter, value: any) => {
     setFilter({ ...filter, [key]: value, page: 1 })
   }
 
   // 获取风险标签颜色
-  const _getRiskTagColor = (level?: number) => {
+  const getRiskTagColor = (level?: number) => {
     if (level && level > 0) return 'red'
     return 'default'
   }
@@ -155,7 +168,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
     {
       title: '问题统计',
       key: 'problems',
-      render: (_: unknown, record: CheckMain) => (
+      render: (_: any, record: CheckMain) => (
         <Space>
           {record.risk_high > 0 && (
             <Tooltip title="高风险">
@@ -198,7 +211,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
     {
       title: '操作',
       key: 'action',
-      render: (_: unknown, record: CheckMain) => (
+      render: (_: any, record: CheckMain) => (
         <Space>
           <Tooltip title="查看详情">
             <Button
@@ -257,7 +270,7 @@ export default function SopAiRecordsPage(_props: SopAiRecordsPageProps) {
           />
           <Button
             icon={<ReloadOutlined />}
-            onClick={() => refetch()}
+            onClick={() => loadRecords()}
           >
             刷新
           </Button>

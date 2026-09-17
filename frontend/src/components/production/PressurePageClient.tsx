@@ -15,6 +15,7 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
+  DashboardOutlined,
   FormOutlined,
   CameraOutlined,
   UnorderedListOutlined,
@@ -232,7 +233,7 @@ export function PressurePageClient() {
                     size="small"
                     pagination={false}
                     className="cursor-pointer"
-                    onRow={(_record) => ({
+                    onRow={(record) => ({
                       onClick: () =>
                         router.push('/production/pressure/records'),
                     })}

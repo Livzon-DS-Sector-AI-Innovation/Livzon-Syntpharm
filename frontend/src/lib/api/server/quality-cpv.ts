@@ -5,6 +5,8 @@ import type {
   CreateCpvParameterInput,
   CpvProduct,
   CpvParameter,
+  CpvImportPreview,
+  CpvImportTask,
 } from '@/types/quality-cpv'
 import type { components } from '@/types/generated/schema'
 

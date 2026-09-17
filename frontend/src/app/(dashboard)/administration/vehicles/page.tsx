@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { useQuery, } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
 import { Button, Input, Tag, Modal, Form, message, Popconfirm, Upload, Image, Card, Empty } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons'
 import { fetchVehicles } from '@/lib/api/client/administration/vehicle'
@@ -27,42 +26,36 @@ const fileToBase64 = (file: File): Promise<string> => {
   })
 }
 
-interface Vehicle {
-  id: string
-  plate_number: string
-  brand?: string
-  model?: string
-  color?: string
-  mileage?: number
-  status: string
-  owner_department?: string
-  photo_data?: string
-  photo_type?: string
-}
-
 export default function VehiclePage() {
+  const [data, setData] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
-  const [editing, setEditing] = useState<Vehicle | null>(null)
+  const [editing, setEditing] = useState<any>(null)
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const importInputRef = useRef<HTMLInputElement>(null)
 
-  const { data: queryData, isLoading, refetch: _refetch } = useQuery({
-    queryKey: ['vehicles', { keyword, page: pagination.current, pageSize: pagination.pageSize }],
-    queryFn: async () => {
-      const res = await fetchVehicles({ keyword, page: pagination.current, page_size: pagination.pageSize })
-      return { data: res.data || [], total: res.meta?.total || 0 }
-    },
-  })
-
-  const data = queryData?.data || []
-  const load = (page = 1) => {
-    setPagination({ ...pagination, current: page })
+  const load = async (page = 1) => {
+    setLoading(true)
+    try {
+      console.log('开始请求车辆列表...')
+      const res = await fetchVehicles({ keyword, page, page_size: pagination.pageSize })
+      console.log('请求结果:', res)
+      setData(res.data || [])
+      setPagination({ ...pagination, current: page, total: res.meta?.total || 0 })
+    } catch (err: any) {
+      console.error('请求失败:', err)
+      message.error(err.message || '加载失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleSave = async (values: Vehicle) => {
+  useEffect(() => { load(1) }, [keyword])
+
+  const handleSave = async (values: any) => {
     try {
       const payload = { ...values }
       if (fileList.length > 0 && fileList[0].originFileObj) {
@@ -82,8 +75,8 @@ export default function VehiclePage() {
       setEditing(null)
       setFileList([])
       load(pagination.current)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '保存失败')
+    } catch (err: any) {
+      message.error(err.message || '保存失败')
     }
   }
 
@@ -92,8 +85,8 @@ export default function VehiclePage() {
       await deleteVehicle(id)
       message.success('删除成功')
       load(pagination.current)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '删除失败')
+    } catch (err: any) {
+      message.error(err.message || '删除失败')
     }
   }
 
@@ -101,7 +94,7 @@ export default function VehiclePage() {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      const res = (await batchImportVehicles(file)) as { data?: { created?: number; updated?: number; failed?: number; restored?: number; errors?: string[] } }
+      const res = await batchImportVehicles(file)
       const result = res.data || {}
       const parts = [
         `新增 ${result.created || 0} 条`,
@@ -113,14 +106,14 @@ export default function VehiclePage() {
         console.error('导入错误:', result.errors)
       }
       load(1)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '批量导入失败')
+    } catch (err: any) {
+      message.error(err.message || '批量导入失败')
     } finally {
       if (importInputRef.current) importInputRef.current.value = ''
     }
   }
 
-  const openModal = (record?: Vehicle) => {
+  const openModal = (record?: any) => {
     if (record) {
       setEditing(record)
       form.setFieldsValue(record)
@@ -142,7 +135,7 @@ export default function VehiclePage() {
     setModalOpen(true)
   }
 
-  const VehicleCard = ({ record }: { record: Vehicle }) => (
+  const VehicleCard = ({ record }: { record: any }) => (
     <Card
       hoverable
       className="relative overflow-hidden"
@@ -234,12 +227,12 @@ export default function VehiclePage() {
         />
       </div>
 
-      {data.length === 0 && !isLoading ? (
+      {data.length === 0 && !loading ? (
         <Empty description="暂无车辆数据" className="py-20" />
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {data.map((record: Vehicle) => (
+            {data.map((record) => (
               <VehicleCard key={record.id} record={record} />
             ))}
           </div>

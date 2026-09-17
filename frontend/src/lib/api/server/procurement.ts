@@ -280,7 +280,7 @@ export async function generateProcurementContract(
 export async function importSupplierTable(
   headers: HeadersInit,
   formData: FormData
-): Promise<unknown> {
+): Promise<any> {
   const url = `${getApiBaseUrl().replace(/\/$/, '')}/api/v1/procurement/suppliers/import`
   const response = await fetch(url, {
     method: 'POST',

@@ -21,7 +21,7 @@ export async function fetchTasksServer(params?: {
   status?: string
   page?: number
   page_size?: number
-}): Promise<Record<string, unknown> | null> {
+}) {
   try {
     return await fetchTasksApi(params)
   } catch {
@@ -29,7 +29,7 @@ export async function fetchTasksServer(params?: {
   }
 }
 
-export async function fetchTaskByIdServer(id: string): Promise<Record<string, unknown> | null> {
+export async function fetchTaskByIdServer(id: string) {
   try {
     return await fetchTaskByIdApi(id)
   } catch {
@@ -37,7 +37,7 @@ export async function fetchTaskByIdServer(id: string): Promise<Record<string, un
   }
 }
 
-export async function fetchFilesServer(taskId: string): Promise<Record<string, unknown> | null> {
+export async function fetchFilesServer(taskId: string) {
   try {
     return await fetchFilesApi(taskId)
   } catch {
@@ -45,7 +45,7 @@ export async function fetchFilesServer(taskId: string): Promise<Record<string, u
   }
 }
 
-export async function fetchIssuesServer(taskId: string, issueType?: string): Promise<Record<string, unknown> | null> {
+export async function fetchIssuesServer(taskId: string, issueType?: string) {
   try {
     return await fetchIssuesApi(taskId, issueType)
   } catch {
@@ -53,7 +53,7 @@ export async function fetchIssuesServer(taskId: string, issueType?: string): Pro
   }
 }
 
-export async function fetchReportServer(taskId: string): Promise<Record<string, unknown> | null> {
+export async function fetchReportServer(taskId: string) {
   try {
     return await fetchReportApi(taskId)
   } catch {
@@ -63,11 +63,11 @@ export async function fetchReportServer(taskId: string): Promise<Record<string, 
 
 export async function createValidationAuditTask(
   data: ValidationAuditTaskCreate
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: any }> {
   try {
     const result = await createTaskServer(data)
     revalidatePath('/registration/validation-audit')
-    return result as { success: boolean; message: string; data?: Record<string, unknown> }
+    return result
   } catch (error) {
     return {
       success: false,
@@ -82,7 +82,7 @@ export async function deleteValidationAuditTask(
   try {
     const result = await deleteTaskServer(taskId)
     revalidatePath('/registration/validation-audit')
-    return result as { success: boolean; message: string }
+    return result
   } catch (error) {
     return {
       success: false,
@@ -94,11 +94,11 @@ export async function deleteValidationAuditTask(
 export async function uploadValidationAuditFiles(
   taskId: string,
   formData: FormData
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: any }> {
   try {
     const result = await uploadFilesServer(taskId, formData)
     revalidatePath(`/registration/validation-audit/${taskId}`)
-    return result as { success: boolean; message: string; data?: Record<string, unknown> }
+    return result
   } catch (error) {
     return {
       success: false,
@@ -109,11 +109,11 @@ export async function uploadValidationAuditFiles(
 
 export async function parseValidationAuditFiles(
   taskId: string
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: any }> {
   try {
     const result = await parseFilesServer(taskId)
     revalidatePath(`/registration/validation-audit/${taskId}`)
-    return result as { success: boolean; message: string; data?: Record<string, unknown> }
+    return result
   } catch (error) {
     return {
       success: false,
@@ -124,12 +124,12 @@ export async function parseValidationAuditFiles(
 
 export async function runValidationAudit(
   taskId: string
-): Promise<{ success: boolean; message: string; data?: Record<string, unknown> }> {
+): Promise<{ success: boolean; message: string; data?: any }> {
   try {
     const result = await runAuditServer(taskId)
     revalidatePath(`/registration/validation-audit/${taskId}`)
     revalidatePath('/registration/validation-audit')
-    return result as { success: boolean; message: string; data?: Record<string, unknown> }
+    return result
   } catch (error) {
     return {
       success: false,

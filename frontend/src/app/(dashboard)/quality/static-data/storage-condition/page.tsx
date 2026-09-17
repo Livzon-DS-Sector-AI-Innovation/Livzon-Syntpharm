@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Table,
   Button,
@@ -25,6 +24,7 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
+  SearchOutlined,
   ReloadOutlined,
   FilterOutlined,
   DatabaseOutlined,
@@ -51,8 +51,11 @@ const STATUS_META: Record<number, { label: string; color: string }> = {
 }
 
 export default function StorageConditionPage() {
+  const [data, setData] = useState<StorageCondition[]>([])
+  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
+  const [total, setTotal] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
@@ -61,12 +64,11 @@ export default function StorageConditionPage() {
   const [editingRecord, setEditingRecord] = useState<StorageCondition | null>(null)
   const [isNew, setIsNew] = useState(false)
   const [form] = Form.useForm()
-  const queryClient = useQueryClient()
 
-  const { data: queryResult, isLoading: loading, refetch } = useQuery({
-    queryKey: ['storage-condition-list', page, pageSize, searchText, statusFilter],
-    queryFn: async () => {
-      const params: Record<string, unknown> = { page, page_size: pageSize }
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const params: Record<string, any> = { page, page_size: pageSize }
       if (searchText) {
         params.cond_code = searchText
         params.cond_name = searchText
@@ -75,16 +77,23 @@ export default function StorageConditionPage() {
         params.status = statusFilter
       }
       const res = await listStorageCondition(params)
-      return { items: (res?.data ?? []) as StorageCondition[], total: res?.meta?.total ?? 0 }
-    },
-  })
+      setData((res?.data ?? []) as StorageCondition[])
+      setTotal(res?.meta?.total ?? 0)
+    } catch (e: any) {
+      message.error(e.message || '加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize, searchText, statusFilter])
 
-  const data = queryResult?.items || []
-  const total = queryResult?.total || 0
+  useEffect(() => {
+    fetchData()
+  }, [fetchData])
 
-  const { data: statsData = { all: 0, enabled: 0, disabled: 0, withTemp: 0 } } = useQuery({
-    queryKey: ['storage-condition-stats'],
-    queryFn: async () => {
+  const [statsData, setStatsData] = useState({ all: 0, enabled: 0, disabled: 0, withTemp: 0 })
+
+  const fetchStats = useCallback(async () => {
+    try {
       const [allRes, enabledRes, disabledRes] = await Promise.all([
         listStorageCondition({ page: 1, page_size: 1 }),
         listStorageCondition({ page: 1, page_size: 1, status: 0 }),
@@ -93,19 +102,26 @@ export default function StorageConditionPage() {
       const allCount = allRes?.meta?.total ?? 0
       const enabledCount = enabledRes?.meta?.total ?? 0
       const disabledCount = disabledRes?.meta?.total ?? 0
+      // 拉取所有数据计算有温度要求的数量（数据量不会很大）
       const allItemsRes = await listStorageCondition({ page: 1, page_size: 200 })
       const items = (allItemsRes?.data ?? []) as StorageCondition[]
       const withTempCount = items.filter(
         (x) => x.temp_min !== null && x.temp_min !== undefined,
       ).length
-      return {
+      setStatsData({
         all: allCount,
         enabled: enabledCount,
         disabled: disabledCount,
         withTemp: withTempCount,
-      }
-    },
-  })
+      })
+    } catch (e) {
+      // 忽略统计错误
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   const handleStatusFilter = (status: number | 'all') => {
     setStatusFilter(status)
@@ -156,11 +172,11 @@ export default function StorageConditionPage() {
         message.success('更新成功')
       }
       setDrawerOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['storage-condition-list'] })
-      queryClient.invalidateQueries({ queryKey: ['storage-condition-stats'] })
-    } catch (e: unknown) {
-      if (e && typeof e === "object" && "errorFields" in e) return // 表单校验错误
-      message.error((e as Error)?.message || '操作失败')
+      fetchData()
+      fetchStats()
+    } catch (e: any) {
+      if (e?.errorFields) return // 表单校验错误
+      message.error(e.message || '操作失败')
     } finally {
       setDrawerLoading(false)
     }
@@ -170,10 +186,10 @@ export default function StorageConditionPage() {
     try {
       await deleteStorageCondition(id)
       message.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: ['storage-condition-list'] })
-      queryClient.invalidateQueries({ queryKey: ['storage-condition-stats'] })
-    } catch (e: unknown) {
-      message.error((e instanceof Error ? e.message : '删除失败'))
+      fetchData()
+      fetchStats()
+    } catch (e: any) {
+      message.error(e.message || '删除失败')
     }
   }
 
@@ -182,10 +198,10 @@ export default function StorageConditionPage() {
       const newStatus: Status0Or1 = record.status === 0 ? 1 : 0
       await updateStorageCondition(record.id, { status: newStatus })
       message.success(newStatus === 0 ? '已启用' : '已停用')
-      queryClient.invalidateQueries({ queryKey: ['storage-condition-list'] })
-      queryClient.invalidateQueries({ queryKey: ['storage-condition-stats'] })
-    } catch (e: unknown) {
-      message.error((e as Error).message || '操作失败')
+      fetchData()
+      fetchStats()
+    } catch (e: any) {
+      message.error(e.message || '操作失败')
     }
   }
 
@@ -219,7 +235,7 @@ export default function StorageConditionPage() {
       title: '温度范围 (℃)',
       key: 'temp',
       width: 160,
-      render: (_: unknown, record: StorageCondition) => {
+      render: (_: any, record: StorageCondition) => {
         const hasTemp =
           (record.temp_min !== null && record.temp_min !== undefined) ||
           (record.temp_max !== null && record.temp_max !== undefined)
@@ -261,7 +277,7 @@ export default function StorageConditionPage() {
       key: 'actions',
       width: 180,
       fixed: 'right',
-      render: (_: unknown, record: StorageCondition) => (
+      render: (_: any, record: StorageCondition) => (
         <Space>
           <Tooltip title="编辑">
             <Button type="text" icon={<EditOutlined />} onClick={() => openEdit(record)} />
@@ -389,7 +405,7 @@ export default function StorageConditionPage() {
             value={viewMode}
             onChange={(value) => setViewMode(value as 'card' | 'table')}
           />
-          <Button icon={<ReloadOutlined />} onClick={() => { refetch(); queryClient.invalidateQueries({ queryKey: ['storage-condition-stats'] }) }}>
+          <Button icon={<ReloadOutlined />} onClick={fetchData}>
             刷新
           </Button>
         </div>
@@ -405,7 +421,7 @@ export default function StorageConditionPage() {
           <div className="sc-card-grid">
             {data.map((record, index) => {
               const meta = STATUS_META[record.status]
-              const _hasTemp =
+              const hasTemp =
                 (record.temp_min !== null && record.temp_min !== undefined) ||
                 (record.temp_max !== null && record.temp_max !== undefined)
               return (
