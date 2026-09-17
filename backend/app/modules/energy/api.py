@@ -34,11 +34,15 @@ from app.modules.energy.schemas import (
     EnergyMonthlyRecordBatchCreate,
     EnergyMonthlyRecordCreate,
     EnergyMonthlyRecordResponse,
+    EnergyPlatformListApiResponse,
+    EnergyPlatformResponse,
     EnergyWorkshopCreate,
     EnergyWorkshopResponse,
     EnergyWorkshopUpdate,
     FeishuEnergyImportRequest,
     FeishuEnergyImportResponse,
+    MonthlySummaryApiResponse,
+    MonthlySummaryItem,
     UnitConsumptionTargetCreate,
     UnitConsumptionTargetUpdate,
 )
@@ -61,10 +65,11 @@ sync_router = APIRouter()
 # ── 平台信息 ──
 
 
-@router.get("/platforms", summary="获取已登记的平台列表")
-async def list_platforms(current_user: RequiredUser) -> ApiResponse:
-    data = [{"code": code, "name": adapter.platform_name} for code, adapter in ADAPTERS.items()]
-    return build_response(data)
+@router.get("/platforms", summary="获取已登记的平台列表", response_model=EnergyPlatformListApiResponse)
+async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiResponse:
+    from app.modules.energy.schemas import EnergyPlatformResponse, EnergyPlatformListApiResponse
+    data = [EnergyPlatformResponse(code=code, name=adapter.platform_name) for code, adapter in ADAPTERS.items()]
+    return EnergyPlatformListApiResponse(data=data)
 
 
 # ── 设备配置 ──
@@ -480,7 +485,7 @@ async def list_monthly_records(
     return paginated_response(data, page, page_size, total)
 
 
-@monthly_router.get("/summary", summary="月度记录汇总")
+@monthly_router.get("/summary", summary="月度记录汇总", response_model=MonthlySummaryApiResponse)
 async def get_monthly_summary(
     current_user: RequiredUser,
     workshop_id: UUID | None = Query(default=None, description="车间ID"),
@@ -488,8 +493,9 @@ async def get_monthly_summary(
     start_date: str | None = Query(default=None, description="开始日期(YYYY-MM-DD)"),
     end_date: str | None = Query(default=None, description="结束日期(YYYY-MM-DD)"),
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> MonthlySummaryApiResponse:
     from datetime import date as date_type
+    from app.modules.energy.schemas import MonthlySummaryItem, MonthlySummaryApiResponse
 
     start = date_type.fromisoformat(start_date) if start_date else None
     end = date_type.fromisoformat(end_date) if end_date else None
@@ -501,7 +507,9 @@ async def get_monthly_summary(
         start_date=start,
         end_date=end,
     )
-    return build_response(summary)
+    # Convert summary to dict of MonthlySummaryItem
+    summary_data = {k: MonthlySummaryItem(**v) if isinstance(v, dict) else v for k, v in summary.items()}
+    return MonthlySummaryApiResponse(data=summary_data)
 
 
 @monthly_router.get("/{record_id}", summary="查询单个月度记录")

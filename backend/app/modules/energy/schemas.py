@@ -401,3 +401,31 @@ class AIAnalysisResponse(BaseModel):
     ai_suggestion: AISuggestion | None = None
 
     model_config = {"from_attributes": False}
+
+
+# ── 平台信息 ──
+
+
+class EnergyPlatformResponse(BaseModel):
+    code: str
+    name: str
+
+
+class EnergyPlatformListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyPlatformResponse]
+
+
+# ── 月度汇总 ──
+
+
+class MonthlySummaryItem(BaseModel):
+    total_value: float
+    unit: str
+
+
+class MonthlySummaryApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, MonthlySummaryItem]
