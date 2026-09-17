@@ -12,17 +12,20 @@ from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
-from app.core.response import ApiResponse, build_response, paginated_response
+from app.core.response import ApiResponse
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
 from app.modules.energy.models import EnergyUnitConsumptionTarget
 from app.modules.energy.schemas import (
+    AIAnalysisApiResponse,
     AIAnalysisRequest,
+    AIAnalysisResponse,
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
     CollectLogDetailApiResponse,
     CollectLogDetailResponse,
+    CollectLogListApiResponse,
     CollectLogResponse,
     CollectTriggerApiResponse,
     CollectTriggerRequest,
@@ -41,10 +44,13 @@ from app.modules.energy.schemas import (
     EnergyDeviceConfigListApiResponse,
     EnergyDeviceConfigResponse,
     EnergyDeviceConfigUpdate,
+    EnergyMonthlyBatchCreateApiResponse,
     EnergyMonthlyRecordApiResponse,
     EnergyMonthlyRecordBatchCreate,
     EnergyMonthlyRecordCreate,
+    EnergyMonthlyRecordListApiResponse,
     EnergyMonthlyRecordResponse,
+    EnergyOverviewApiResponse,
     EnergyPlatformListApiResponse,
     EnergyPlatformResponse,
     EnergyStatisticsApiResponse,
@@ -56,10 +62,13 @@ from app.modules.energy.schemas import (
     EnergyWorkshopUpdate,
     FeishuEnergyImportRequest,
     FeishuEnergyImportResponse,
+    FeishuImportApiResponse,
     MonthlySummaryApiResponse,
     MonthlySummaryItem,
     SyncJobApiResponse,
+    UnitConsumptionTargetApiResponse,
     UnitConsumptionTargetCreate,
+    UnitConsumptionTargetResponse,
     UnitConsumptionTargetUpdate,
 )
 from app.shared.module_api import create_module_router
@@ -84,7 +93,14 @@ sync_router = APIRouter()
 @router.get("/platforms", summary="获取已登记的平台列表", response_model=EnergyPlatformListApiResponse)
 async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiResponse:
     data = [EnergyPlatformResponse(code=code, name=adapter.platform_name) for code, adapter in ADAPTERS.items()]
-    return build_response([item.model_dump() for item in data])
+    return EnergyPlatformListApiResponse(
+        data=[
+            EnergyPlatformResponse(
+                code=item.code,
+                name=item.name,
+            ) for item in data
+        ]
+    )
 
 
 # ── 设备配置 ──
@@ -98,7 +114,25 @@ async def create_device_config(
 ) -> EnergyDeviceConfigApiResponse:
     obj = await service.create_device_config(db, data)
     await db.commit()
-    return build_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
+    return EnergyDeviceConfigApiResponse(
+        data=EnergyDeviceConfigResponse(
+            id=str(obj.id),
+            platform_code=obj.platform_code,
+            platform_device_code=obj.platform_device_code,
+            device_name=obj.device_name,
+            energy_type=obj.energy_type,
+            api_endpoint=obj.api_endpoint,
+            workshop=obj.workshop,
+            production_line=obj.production_line,
+            monitor_level=obj.monitor_level,
+            unit=obj.unit,
+            collection_interval=obj.collection_interval,
+            is_enabled=obj.is_enabled,
+            remark=obj.remark,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @device_router.get("", summary="查询设备配置列表", response_model=EnergyDeviceConfigListApiResponse)
@@ -124,7 +158,28 @@ async def list_device_configs(
         page_size=page_size,
     )
     data = [EnergyDeviceConfigResponse.model_validate(i) for i in items]
-    return paginated_response([item.model_dump() for item in data], page, page_size, total)
+    return EnergyDeviceConfigListApiResponse(
+        data=[
+            EnergyDeviceConfigResponse(
+                id=str(i.id),
+                platform_code=i.platform_code,
+                platform_device_code=i.platform_device_code,
+                device_name=i.device_name,
+                energy_type=i.energy_type,
+                api_endpoint=i.api_endpoint,
+                workshop=i.workshop,
+                production_line=i.production_line,
+                monitor_level=i.monitor_level,
+                unit=i.unit,
+                collection_interval=i.collection_interval,
+                is_enabled=i.is_enabled,
+                remark=i.remark,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            ) for i in data
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @device_router.get("/{config_id}", summary="查询单个设备配置", response_model=EnergyDeviceConfigApiResponse)
@@ -134,7 +189,25 @@ async def get_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeviceConfigApiResponse:
     obj = await service.get_device_config(db, config_id)
-    return build_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
+    return EnergyDeviceConfigApiResponse(
+        data=EnergyDeviceConfigResponse(
+            id=str(obj.id),
+            platform_code=obj.platform_code,
+            platform_device_code=obj.platform_device_code,
+            device_name=obj.device_name,
+            energy_type=obj.energy_type,
+            api_endpoint=obj.api_endpoint,
+            workshop=obj.workshop,
+            production_line=obj.production_line,
+            monitor_level=obj.monitor_level,
+            unit=obj.unit,
+            collection_interval=obj.collection_interval,
+            is_enabled=obj.is_enabled,
+            remark=obj.remark,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @device_router.put("/{config_id}", summary="修改设备配置", response_model=EnergyDeviceConfigApiResponse)
@@ -146,7 +219,25 @@ async def update_device_config(
 ) -> EnergyDeviceConfigApiResponse:
     obj = await service.update_device_config(db, config_id, data)
     await db.commit()
-    return build_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
+    return EnergyDeviceConfigApiResponse(
+        data=EnergyDeviceConfigResponse(
+            id=str(obj.id),
+            platform_code=obj.platform_code,
+            platform_device_code=obj.platform_device_code,
+            device_name=obj.device_name,
+            energy_type=obj.energy_type,
+            api_endpoint=obj.api_endpoint,
+            workshop=obj.workshop,
+            production_line=obj.production_line,
+            monitor_level=obj.monitor_level,
+            unit=obj.unit,
+            collection_interval=obj.collection_interval,
+            is_enabled=obj.is_enabled,
+            remark=obj.remark,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @device_router.delete("/{config_id}", summary="删除设备配置")
@@ -157,7 +248,7 @@ async def delete_device_config(
 ) -> ApiResponse:
     await service.delete_device_config(db, config_id)
     await db.commit()
-    return build_response(None, message="删除成功")
+    return ApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 能耗数据 ──
@@ -186,7 +277,28 @@ async def list_energy_data(
         page_size=page_size,
     )
     data = [EnergyDataResponse.model_validate(i) for i in items]
-    return paginated_response([item.model_dump() for item in data], page, page_size, total)
+    return EnergyDeviceConfigListApiResponse(
+        data=[
+            EnergyDeviceConfigResponse(
+                id=str(i.id),
+                platform_code=i.platform_code,
+                platform_device_code=i.platform_device_code,
+                device_name=i.device_name,
+                energy_type=i.energy_type,
+                api_endpoint=i.api_endpoint,
+                workshop=i.workshop,
+                production_line=i.production_line,
+                monitor_level=i.monitor_level,
+                unit=i.unit,
+                collection_interval=i.collection_interval,
+                is_enabled=i.is_enabled,
+                remark=i.remark,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            ) for i in data
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @data_router.get("/statistics", summary="能耗统计", response_model=EnergyStatisticsApiResponse)
@@ -205,7 +317,14 @@ async def get_energy_statistics(
         start_time=datetime.fromisoformat(start_time),
         end_time=datetime.fromisoformat(end_time),
     )
-    return build_response(EnergyStatisticsResponse.model_validate(result).model_dump())
+    return EnergyStatisticsApiResponse(
+        data=EnergyStatisticsResponse(
+            total_consumption=result.total_consumption,
+            average_consumption=result.average_consumption,
+            peak_consumption=result.peak_consumption,
+            min_consumption=result.min_consumption,
+        )
+    )
 
 
 # ── 采集管理 ──
@@ -218,7 +337,7 @@ async def trigger_collection(
     db: AsyncSession = Depends(get_db),
 ) -> CollectTriggerApiResponse:
     result = await service.trigger_collection(db, request)
-    return build_response(result, message="采集任务已执行")
+    return CollectTriggerApiResponse(data=result, message="采集任务已执行")
 
 
 @collect_router.get("/logs", summary="查询采集日志")
@@ -237,8 +356,19 @@ async def list_collect_logs(
         page=page,
         page_size=page_size,
     )
-    data = [CollectLogResponse.model_validate(i).model_dump() for i in items]
-    return paginated_response(data, page, page_size, total)
+    return CollectLogListApiResponse(
+        data=[
+            CollectLogResponse(
+                id=str(i.id),
+                platform_code=i.platform_code,
+                device_code=i.device_code,
+                collected_at=i.collected_at,
+                status=i.status,
+                created_at=i.created_at,
+            ) for i in items
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @collect_router.get("/logs/{log_id}/detail", summary="查询采集日志详情", response_model=CollectLogDetailApiResponse)
@@ -248,7 +378,18 @@ async def get_collect_log_detail(
     db: AsyncSession = Depends(get_db),
 ) -> CollectLogDetailApiResponse:
     result = await service.get_collect_log_detail(db, log_id)
-    return build_response(CollectLogDetailResponse.model_validate(result).model_dump())
+    return CollectLogDetailApiResponse(
+        data=CollectLogDetailResponse(
+            id=str(result.id),
+            platform_code=result.platform_code,
+            device_code=result.device_code,
+            collected_at=result.collected_at,
+            status=result.status,
+            data=result.data,
+            error_message=result.error_message,
+            created_at=result.created_at,
+        )
+    )
 
 
 # ── 能源总览 ──
@@ -268,7 +409,7 @@ async def get_energy_overview(
         end_time=datetime.fromisoformat(end_time),
         energy_type=energy_type,
     )
-    return build_response(result)
+    return EnergyOverviewApiResponse(data=result)
 
 
 # ── 预警规则 ──
@@ -282,7 +423,21 @@ async def create_alert_rule(
 ) -> EnergyAlertRuleApiResponse:
     obj = await service.create_alert_rule(db, data)
     await db.commit()
-    return build_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
+    return EnergyAlertRuleApiResponse(
+        data=EnergyAlertRuleResponse(
+            id=str(obj.id),
+            name=obj.name,
+            energy_type=obj.energy_type,
+            threshold=obj.threshold,
+            operator=obj.operator,
+            duration=obj.duration,
+            level=obj.level,
+            enabled=obj.enabled,
+            notification_channels=obj.notification_channels,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @alert_router.get("", summary="查询预警规则列表", response_model=EnergyAlertRuleListApiResponse)
@@ -304,7 +459,28 @@ async def list_alert_rules(
         page_size=page_size,
     )
     data = [EnergyAlertRuleResponse.model_validate(i) for i in items]
-    return paginated_response([item.model_dump() for item in data], page, page_size, total)
+    return EnergyDeviceConfigListApiResponse(
+        data=[
+            EnergyDeviceConfigResponse(
+                id=str(i.id),
+                platform_code=i.platform_code,
+                platform_device_code=i.platform_device_code,
+                device_name=i.device_name,
+                energy_type=i.energy_type,
+                api_endpoint=i.api_endpoint,
+                workshop=i.workshop,
+                production_line=i.production_line,
+                monitor_level=i.monitor_level,
+                unit=i.unit,
+                collection_interval=i.collection_interval,
+                is_enabled=i.is_enabled,
+                remark=i.remark,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            ) for i in data
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @alert_router.get("/{rule_id}", summary="查询单个预警规则", response_model=EnergyAlertRuleApiResponse)
@@ -314,7 +490,21 @@ async def get_alert_rule(
     db: AsyncSession = Depends(get_db),
 ) -> EnergyAlertRuleApiResponse:
     obj = await service.get_alert_rule(db, rule_id)
-    return build_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
+    return EnergyAlertRuleApiResponse(
+        data=EnergyAlertRuleResponse(
+            id=str(obj.id),
+            name=obj.name,
+            energy_type=obj.energy_type,
+            threshold=obj.threshold,
+            operator=obj.operator,
+            duration=obj.duration,
+            level=obj.level,
+            enabled=obj.enabled,
+            notification_channels=obj.notification_channels,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @alert_router.put("/{rule_id}", summary="修改预警规则", response_model=EnergyAlertRuleApiResponse)
@@ -326,7 +516,21 @@ async def update_alert_rule(
 ) -> EnergyAlertRuleApiResponse:
     obj = await service.update_alert_rule(db, rule_id, data)
     await db.commit()
-    return build_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
+    return EnergyAlertRuleApiResponse(
+        data=EnergyAlertRuleResponse(
+            id=str(obj.id),
+            name=obj.name,
+            energy_type=obj.energy_type,
+            threshold=obj.threshold,
+            operator=obj.operator,
+            duration=obj.duration,
+            level=obj.level,
+            enabled=obj.enabled,
+            notification_channels=obj.notification_channels,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @alert_router.delete("/{rule_id}", summary="删除预警规则")
@@ -337,7 +541,7 @@ async def delete_alert_rule(
 ) -> ApiResponse:
     await service.delete_alert_rule(db, rule_id)
     await db.commit()
-    return build_response(None, message="删除成功")
+    return ApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 预警记录 ──
@@ -366,7 +570,28 @@ async def list_alert_records(
         page_size=page_size,
     )
     data = [EnergyAlertRecordResponse.model_validate(i) for i in items]
-    return paginated_response([item.model_dump() for item in data], page, page_size, total)
+    return EnergyDeviceConfigListApiResponse(
+        data=[
+            EnergyDeviceConfigResponse(
+                id=str(i.id),
+                platform_code=i.platform_code,
+                platform_device_code=i.platform_device_code,
+                device_name=i.device_name,
+                energy_type=i.energy_type,
+                api_endpoint=i.api_endpoint,
+                workshop=i.workshop,
+                production_line=i.production_line,
+                monitor_level=i.monitor_level,
+                unit=i.unit,
+                collection_interval=i.collection_interval,
+                is_enabled=i.is_enabled,
+                remark=i.remark,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            ) for i in data
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @alert_record_router.put("/{record_id}/process", summary="处理预警记录", response_model=EnergyAlertRecordApiResponse)
@@ -378,7 +603,23 @@ async def process_alert_record(
 ) -> EnergyAlertRecordApiResponse:
     obj = await service.process_alert_record(db, record_id, request)
     await db.commit()
-    return build_response(EnergyAlertRecordResponse.model_validate(obj).model_dump(), message="处理完成")
+    return EnergyAlertRecordApiResponse(
+        data=EnergyAlertRecordResponse(
+            id=str(obj.id),
+            rule_id=str(obj.rule_id),
+            device_config_id=str(obj.device_config_id),
+            triggered_at=obj.triggered_at,
+            value=obj.value,
+            threshold=obj.threshold,
+            level=obj.level,
+            status=obj.status,
+            acknowledged_at=obj.acknowledged_at,
+            acknowledged_by=obj.acknowledged_by,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        ),
+        message="处理完成"
+    )
 
 
 router.include_router(device_router, prefix="/devices")
@@ -398,7 +639,19 @@ async def create_workshop(
 ) -> EnergyWorkshopApiResponse:
     obj = await service.create_workshop(db, data)
     await db.commit()
-    return build_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
+    return EnergyWorkshopApiResponse(
+        data=EnergyWorkshopResponse(
+            id=str(obj.id),
+            code=obj.code,
+            name=obj.name,
+            category=obj.category,
+            parent_id=str(obj.parent_id) if obj.parent_id else None,
+            sort_order=obj.sort_order,
+            is_active=obj.is_active,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @workshop_router.get("", summary="查询车间列表", response_model=EnergyWorkshopListApiResponse)
@@ -418,7 +671,28 @@ async def list_workshops(
         page_size=page_size,
     )
     data = [EnergyWorkshopResponse.model_validate(i) for i in items]
-    return paginated_response([item.model_dump() for item in data], page, page_size, total)
+    return EnergyDeviceConfigListApiResponse(
+        data=[
+            EnergyDeviceConfigResponse(
+                id=str(i.id),
+                platform_code=i.platform_code,
+                platform_device_code=i.platform_device_code,
+                device_name=i.device_name,
+                energy_type=i.energy_type,
+                api_endpoint=i.api_endpoint,
+                workshop=i.workshop,
+                production_line=i.production_line,
+                monitor_level=i.monitor_level,
+                unit=i.unit,
+                collection_interval=i.collection_interval,
+                is_enabled=i.is_enabled,
+                remark=i.remark,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            ) for i in data
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @workshop_router.get("/{workshop_id}", summary="查询单个车间", response_model=EnergyWorkshopApiResponse)
@@ -428,7 +702,19 @@ async def get_workshop(
     db: AsyncSession = Depends(get_db),
 ) -> EnergyWorkshopApiResponse:
     obj = await service.get_workshop(db, workshop_id)
-    return build_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
+    return EnergyWorkshopApiResponse(
+        data=EnergyWorkshopResponse(
+            id=str(obj.id),
+            code=obj.code,
+            name=obj.name,
+            category=obj.category,
+            parent_id=str(obj.parent_id) if obj.parent_id else None,
+            sort_order=obj.sort_order,
+            is_active=obj.is_active,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @workshop_router.put("/{workshop_id}", summary="修改车间", response_model=EnergyWorkshopApiResponse)
@@ -440,7 +726,19 @@ async def update_workshop(
 ) -> EnergyWorkshopApiResponse:
     obj = await service.update_workshop(db, workshop_id, data)
     await db.commit()
-    return build_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
+    return EnergyWorkshopApiResponse(
+        data=EnergyWorkshopResponse(
+            id=str(obj.id),
+            code=obj.code,
+            name=obj.name,
+            category=obj.category,
+            parent_id=str(obj.parent_id) if obj.parent_id else None,
+            sort_order=obj.sort_order,
+            is_active=obj.is_active,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @workshop_router.delete("/{workshop_id}", summary="删除车间")
@@ -451,7 +749,7 @@ async def delete_workshop(
 ) -> ApiResponse:
     await service.delete_workshop(db, workshop_id)
     await db.commit()
-    return build_response(None, message="删除成功")
+    return ApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 月度记录 ──
@@ -464,7 +762,21 @@ async def create_monthly_record(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.create_monthly_record(db, data)
-    return build_response(EnergyMonthlyRecordResponse.model_validate(obj).model_dump())
+    return EnergyMonthlyRecordApiResponse(
+        data=EnergyMonthlyRecordResponse(
+            id=str(obj.id),
+            workshop_id=str(obj.workshop_id),
+            energy_type=obj.energy_type,
+            record_date=obj.record_date,
+            date_range_end=obj.date_range_end,
+            value=obj.value,
+            unit=obj.unit,
+            source=obj.source,
+            remark=obj.remark,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @monthly_router.post("/batch", summary="批量新增月度记录")
@@ -474,8 +786,22 @@ async def batch_create_monthly_records(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     objs = await service.batch_create_monthly_records(db, data.records)
-    result = [EnergyMonthlyRecordResponse.model_validate(o).model_dump() for o in objs]
-    return build_response(result)
+    result = [
+        EnergyMonthlyRecordResponse(
+            id=str(o.id),
+            workshop_id=str(o.workshop_id),
+            energy_type=o.energy_type,
+            record_date=o.record_date,
+            date_range_end=o.date_range_end,
+            value=o.value,
+            unit=o.unit,
+            source=o.source,
+            remark=o.remark,
+            created_at=o.created_at,
+            updated_at=o.updated_at,
+        ) for o in objs
+    ]
+    return EnergyMonthlyBatchCreateApiResponse(data={"created": len(result), "records": result})
 
 
 @monthly_router.get("", summary="查询月度记录列表")
@@ -503,8 +829,24 @@ async def list_monthly_records(
         page=page,
         page_size=page_size,
     )
-    data = [EnergyMonthlyRecordResponse.model_validate(i).model_dump() for i in items]
-    return paginated_response(data, page, page_size, total)
+    return EnergyMonthlyRecordListApiResponse(
+        data=[
+            EnergyMonthlyRecordResponse(
+                id=str(i.id),
+                workshop_id=str(i.workshop_id),
+                energy_type=i.energy_type,
+                record_date=i.record_date,
+                date_range_end=i.date_range_end,
+                value=i.value,
+                unit=i.unit,
+                source=i.source,
+                remark=i.remark,
+                created_at=i.created_at,
+                updated_at=i.updated_at,
+            ) for i in items
+        ],
+        meta={"page": page, "page_size": page_size, "total": total}
+    )
 
 
 @monthly_router.get("/summary", summary="月度记录汇总", response_model=MonthlySummaryApiResponse)
@@ -529,7 +871,7 @@ async def get_monthly_summary(
         end_date=end,
     )
     summary_data = {k: MonthlySummaryItem(**v) if isinstance(v, dict) else v for k, v in summary.items()}
-    return build_response({k: v.model_dump() for k, v in summary_data.items()})
+    return MonthlySummaryApiResponse(data={k: v.model_dump() for k, v in summary_data.items()})
 
 
 @monthly_router.get("/{record_id}", summary="查询单个月度记录", response_model=EnergyMonthlyRecordApiResponse)
@@ -539,7 +881,21 @@ async def get_monthly_record(
     db: AsyncSession = Depends(get_db),
 ) -> EnergyMonthlyRecordApiResponse:
     obj = await service.get_monthly_record(db, record_id)
-    return build_response(EnergyMonthlyRecordResponse.model_validate(obj).model_dump())
+    return EnergyMonthlyRecordApiResponse(
+        data=EnergyMonthlyRecordResponse(
+            id=str(obj.id),
+            workshop_id=str(obj.workshop_id),
+            energy_type=obj.energy_type,
+            record_date=obj.record_date,
+            date_range_end=obj.date_range_end,
+            value=obj.value,
+            unit=obj.unit,
+            source=obj.source,
+            remark=obj.remark,
+            created_at=obj.created_at,
+            updated_at=obj.updated_at,
+        )
+    )
 
 
 @monthly_router.delete("/{record_id}", summary="删除月度记录")
@@ -549,7 +905,7 @@ async def delete_monthly_record(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await service.delete_monthly_record(db, record_id)
-    return build_response(None, message="删除成功")
+    return ApiResponse(code=200, message="删除成功", data=None)
 
 
 # 注册新的路由
@@ -575,14 +931,14 @@ async def import_from_feishu(
         source=data.source,
         dry_run=data.dry_run,
     )
-    return build_response(
-        FeishuEnergyImportResponse(
+    return FeishuImportApiResponse(
+        data=FeishuEnergyImportResponse(
             workshops_created=result.workshops_created,
             workshops_existing=result.workshops_existing,
             records_created=result.records_created,
             records_skipped=result.records_skipped,
             errors=result.errors,
-        ).model_dump()
+        )
     )
 
 
@@ -609,7 +965,7 @@ async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
-    return build_response({"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
@@ -629,7 +985,7 @@ async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiR
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
-    return build_response({"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
@@ -649,7 +1005,7 @@ async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
-    return build_response({"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
@@ -675,7 +1031,7 @@ async def cross_import_from_bitable(body: BitableCrossImportRequest, current_use
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
-    return build_response({"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
@@ -713,7 +1069,7 @@ async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
-    return build_response({"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.get("/jobs/{job_id}", summary="查询异步任务状态")
@@ -721,7 +1077,7 @@ async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiR
     job = sync_job_store.get(job_id)
     if not job:
         raise NotFoundException("job", job_id)
-    return build_response(job)
+    return SyncJobApiResponse(data=job)
 
 
 # ── 单耗目标 ──────────────────────────────────────────────────────────────
@@ -751,7 +1107,16 @@ async def create_target(
         target_month=body.target_month,
         target_unit_consumption=body.target_unit_consumption,
     )
-    return build_response(_target_to_response(target))
+    return UnitConsumptionTargetApiResponse(
+        data=UnitConsumptionTargetResponse(
+            id=str(target.id),
+            workshop_id=str(target.workshop_id),
+            target_month=target.target_month,
+            target_unit_consumption=target.target_unit_consumption,
+            created_at=target.created_at,
+            updated_at=target.updated_at,
+        )
+    )
 
 
 @router.get("/targets/{workshop_id}/{target_month}", summary="查询单耗目标")
@@ -764,7 +1129,16 @@ async def get_target(
     target = await service.get_target(db, workshop_id, target_month)
     if not target:
         raise NotFoundException("单耗目标", f"{workshop_id}-{target_month}")
-    return build_response(_target_to_response(target))
+    return UnitConsumptionTargetApiResponse(
+        data=UnitConsumptionTargetResponse(
+            id=str(target.id),
+            workshop_id=str(target.workshop_id),
+            target_month=target.target_month,
+            target_unit_consumption=target.target_unit_consumption,
+            created_at=target.created_at,
+            updated_at=target.updated_at,
+        )
+    )
 
 
 @router.put("/targets/{target_id}", summary="更新单耗目标")
@@ -775,19 +1149,29 @@ async def update_target(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     target = await service.update_target(db, target_id, body.target_unit_consumption)
-    return build_response(_target_to_response(target))
+    return UnitConsumptionTargetApiResponse(
+        data=UnitConsumptionTargetResponse(
+            id=str(target.id),
+            workshop_id=str(target.workshop_id),
+            target_month=target.target_month,
+            target_unit_consumption=target.target_unit_consumption,
+            created_at=target.created_at,
+            updated_at=target.updated_at,
+        )
+    )
 
 
 @router.post("/ai-analysis-v2", summary="AI 能耗分析 V2（支持多产品和单耗）")
 async def ai_analysis_v2(
     body: AIAnalysisRequest,
+
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """执行 AI 能耗分析，支持多产品产量输入和单耗计算"""
     from uuid import UUID
 
-    from app.modules.energy.schemas import AIAnalysisResponse, ProductionItemDetail
+    from app.modules.energy.schemas import ProductionItemDetail
 
     result = await service.analyze_energy_v2(
         db,
@@ -822,4 +1206,4 @@ async def ai_analysis_v2(
         ai_suggestion=result["ai_suggestion"],
     )
 
-    return build_response(response.model_dump())
+    return AIAnalysisApiResponse(data=response)

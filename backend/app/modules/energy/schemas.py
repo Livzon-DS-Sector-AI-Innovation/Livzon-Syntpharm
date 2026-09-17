@@ -46,8 +46,6 @@ class EnergyWorkshopResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 # ── 月度记录 ──
 
@@ -75,8 +73,6 @@ class EnergyMonthlyRecordResponse(BaseModel):
     remark: str | None
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class EnergyMonthlyRecordBatchCreate(BaseModel):
@@ -135,8 +131,6 @@ class EnergyDeviceConfigResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class EnergyDataResponse(BaseModel):
     id: StrUUID
@@ -145,8 +139,6 @@ class EnergyDataResponse(BaseModel):
     value: float
     unit: str
     collected_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class EnergyStatisticsResponse(BaseModel):
@@ -165,8 +157,6 @@ class CollectLogResponse(BaseModel):
     success_count: int
     error_message: str | None
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class CollectLogDeviceDetail(BaseModel):
@@ -269,8 +259,6 @@ class EnergyAlertRuleResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class EnergyAlertRecordResponse(BaseModel):
     id: StrUUID
@@ -287,8 +275,6 @@ class EnergyAlertRecordResponse(BaseModel):
     processed_at: datetime | None
     process_note: str | None
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class AlertRecordProcessRequest(BaseModel):
@@ -351,8 +337,6 @@ class UnitConsumptionTargetResponse(BaseModel):
     target_month: str
     target_unit_consumption: float
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class AISuggestion(BaseModel):
