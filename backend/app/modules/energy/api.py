@@ -81,6 +81,7 @@ async def create_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.create_device_config(db, data)
+    await db.commit()
     return build_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
 
@@ -128,6 +129,7 @@ async def update_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.update_device_config(db, config_id, data)
+    await db.commit()
     return build_response(EnergyDeviceConfigResponse.model_validate(obj).model_dump())
 
 
@@ -138,6 +140,7 @@ async def delete_device_config(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await service.delete_device_config(db, config_id)
+    await db.commit()
     return build_response(None, message="删除成功")
 
 
@@ -262,6 +265,7 @@ async def create_alert_rule(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.create_alert_rule(db, data)
+    await db.commit()
     return build_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
 
@@ -305,6 +309,7 @@ async def update_alert_rule(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.update_alert_rule(db, rule_id, data)
+    await db.commit()
     return build_response(EnergyAlertRuleResponse.model_validate(obj).model_dump())
 
 
@@ -315,6 +320,7 @@ async def delete_alert_rule(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await service.delete_alert_rule(db, rule_id)
+    await db.commit()
     return build_response(None, message="删除成功")
 
 
