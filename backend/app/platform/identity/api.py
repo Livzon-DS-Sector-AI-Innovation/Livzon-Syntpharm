@@ -322,6 +322,7 @@ feishu_config_router = APIRouter(prefix="/feishu-config", tags=["Livzon 飞书�
 
 @feishu_config_router.get("", summary="获取 Livzon 飞书配置", response_model=FeishuConfigApiResponse)
 async def get_feishu_config(
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> FeishuConfigApiResponse:
     """获取当前 Livzon 飞书配置"""
@@ -333,6 +334,7 @@ async def get_feishu_config(
 
 @feishu_config_router.put("", summary="保存 Livzon 飞书配置", response_model=FeishuConfigApiResponse)
 async def save_feishu_config(
+    current_user: RequiredUser,
     payload: FeishuConfigUpsert,
     db: AsyncSession = Depends(get_db),
 ) -> FeishuConfigApiResponse:
@@ -346,6 +348,7 @@ async def save_feishu_config(
 
 @feishu_config_router.post("/test", summary="测试 Livzon 飞书配置", response_model=FeishuDiagnosticApiResponse)
 async def test_feishu_config(
+    current_user: RequiredUser,
     payload: FeishuConfigUpsert | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> FeishuDiagnosticApiResponse:
