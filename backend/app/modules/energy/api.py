@@ -377,6 +377,7 @@ async def create_workshop(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.create_workshop(db, data)
+    await db.commit()
     return build_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
 
 
@@ -418,6 +419,7 @@ async def update_workshop(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     obj = await service.update_workshop(db, workshop_id, data)
+    await db.commit()
     return build_response(EnergyWorkshopResponse.model_validate(obj).model_dump())
 
 
@@ -428,6 +430,7 @@ async def delete_workshop(
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await service.delete_workshop(db, workshop_id)
+    await db.commit()
     return build_response(None, message="删除成功")
 
 
