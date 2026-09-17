@@ -92,15 +92,11 @@ sync_router = APIRouter()
 
 @router.get("/platforms", summary="获取已登记的平台列表", response_model=EnergyPlatformListApiResponse)
 async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiResponse:
-    data = [EnergyPlatformResponse(code=code, name=adapter.platform_name) for code, adapter in ADAPTERS.items()]
-    return EnergyPlatformListApiResponse(
-        data=[
-            EnergyPlatformResponse(
-                code=item.code,
-                name=item.name,
-            ) for item in data
-        ]
-    )
+    data = [
+        EnergyPlatformResponse(code=code, name=adapter.platform_name)
+        for code, adapter in ADAPTERS.items()
+    ]
+    return EnergyPlatformListApiResponse(data=data)
 
 
 # ── 设备配置 ──
