@@ -144,11 +144,11 @@ cp .env.uat.example .env.local
 #   - DEBUG=false → true
 #   - FRONTEND_URL → http://localhost:3000
 
-# 3. 只启动前后端
-docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d --build backend frontend
+# 3. 只启动前后端（不启动本地数据库/Redis/MinIO）
+docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
 
-# 4. 首次启动执行迁移
-docker compose --env-file .env.local run --rm migrate
+# 4. 首次启动或 model 变更后执行迁移
+docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
 
 # 5. 访问
 # 前端: http://localhost:3000
