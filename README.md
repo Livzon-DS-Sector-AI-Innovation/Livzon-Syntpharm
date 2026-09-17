@@ -165,21 +165,23 @@ docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm mi
 cp .env.uat.example .env.uat
 # 编辑 .env.uat，填写所有 <从团队获取> 的占位符
 
-# 2. 启动基础设施（数据库/Redis/MinIO）
-docker compose --env-file .env.uat -f docker-compose.uat-infra.yml up -d
+# 2. 启动完整环境（基础设施 + 应用服务）
+docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-compose.uat.yml up -d --build
 
-# 3. 启动应用服务
-docker compose --env-file .env.uat up -d --build
+# 3. 执行数据库迁移（首次启动或 model 变更后）
+docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-compose.uat.yml run --rm migrate
 
-# 4. 执行数据库迁移
-docker compose --env-file .env.uat run --rm migrate
-
-# 5. 访问
+# 4. 访问
 # 前端: http://8.138.204.232
 # 后端: http://8.138.204.232/api/v1/
 ```
 
 **配置文件**：`.env.uat.example`（UAT 服务器专用）
+
+**说明**：
+- `docker-compose.uat-infra.yml` - 基础设施层（PostgreSQL/Redis/MinIO）
+- `docker-compose.uat.yml` - 应用层（backend/frontend/migrate/nginx）
+- 两个文件必须一起使用，应用层依赖基础设施层的健康检查
 
 ### 开发流程
 
