@@ -12,6 +12,9 @@ from app.core.jobs import spawn_task
 from app.core.response import success_response
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
+    FeishuConfigApiResponse,
+    FeishuConfigUpsert,
+    FeishuDiagnosticApiResponse,
     DepartmentResponse,
     DepartmentTreeNode,
     PersonnelItem,
@@ -310,6 +313,46 @@ async def trigger_sync_members(
     return success_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id},
     )
+
+
+
+
+# ── Livzon Feishu Config ──────────────────────────────────────────
+
+feishu_config_router = APIRouter(prefix="/feishu-config", tags=["Livzon 飞书配置"])
+
+
+@feishu_config_router.get("", summary="获取 Livzon 飞书配置", response_model=FeishuConfigApiResponse)
+async def get_feishu_config(
+    db: AsyncSession = Depends(get_db),
+) -> FeishuConfigApiResponse:
+    """获取当前 Livzon 飞书配置"""
+    from app.platform.identity.service import get_livzon_feishu_config_response
+    config = await get_livzon_feishu_config_response(db)
+    return FeishuConfigApiResponse(data=config)
+
+
+@feishu_config_router.put("", summary="保存 Livzon 飞书配置", response_model=FeishuConfigApiResponse)
+async def save_feishu_config(
+    payload: FeishuConfigUpsert,
+    db: AsyncSession = Depends(get_db),
+) -> FeishuConfigApiResponse:
+    """保存 Livzon 飞书配置"""
+    from app.platform.identity.service import save_livzon_feishu_config
+    config = await save_livzon_feishu_config(db, payload)
+    await db.commit()
+    return FeishuConfigApiResponse(data=config)
+
+
+@feishu_config_router.post("/test", summary="测试 Livzon 飞书配置", response_model=FeishuDiagnosticApiResponse)
+async def test_feishu_config(
+    payload: FeishuConfigUpsert | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> FeishuDiagnosticApiResponse:
+    """测试 Livzon 飞书配置连接"""
+    from app.platform.identity.service import diagnose_livzon_feishu_config
+    result = await diagnose_livzon_feishu_config(db, payload)
+    return FeishuDiagnosticApiResponse(data=result)
 
 
 # ── Login Logs ─────────────────────────────────────────────────────
