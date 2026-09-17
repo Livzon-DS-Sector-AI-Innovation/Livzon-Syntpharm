@@ -331,7 +331,7 @@ class UnitConsumptionTargetUpdate(BaseModel):
 class UnitConsumptionTargetResponse(BaseModel):
     """单耗目标响应"""
 
-    id: int
+    id: str
     workshop_id: str
     workshop_name: str | None = None
     target_month: str
