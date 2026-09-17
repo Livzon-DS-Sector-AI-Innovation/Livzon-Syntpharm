@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 
+import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import pool
@@ -120,8 +121,8 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     """
     test_user = _make_user(
         "Test User",
-        "TEST-001",
-        feishu_open_id="test_open_id",
+        f"TEST-{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"test_open_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()
@@ -141,8 +142,8 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     """
     test_user = _make_user(
         "Admin User",
-        "ADMIN-001",
-        feishu_open_id="admin_open_id",
+        f"ADMIN-{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"admin_open_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()
