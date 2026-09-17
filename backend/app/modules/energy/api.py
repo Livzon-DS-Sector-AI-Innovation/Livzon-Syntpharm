@@ -593,7 +593,7 @@ router.include_router(monthly_router, prefix="/monthly", tags=["月度记录"])
 
 
 @router.post("/sync/bitable", summary="从飞书多维表格同步数据")
-async def sync_from_bitable(current_user: RequiredUser) -> ApiResponse:
+async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -613,7 +613,7 @@ async def sync_from_bitable(current_user: RequiredUser) -> ApiResponse:
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
-async def sync_workshops_from_bitable(current_user: RequiredUser) -> ApiResponse:
+async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -633,7 +633,7 @@ async def sync_workshops_from_bitable(current_user: RequiredUser) -> ApiResponse
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
-async def sync_monthly_from_bitable(current_user: RequiredUser) -> ApiResponse:
+async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -653,7 +653,7 @@ async def sync_monthly_from_bitable(current_user: RequiredUser) -> ApiResponse:
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
-async def cross_import_from_bitable(body: BitableCrossImportRequest, current_user: RequiredUser) -> ApiResponse:
+async def cross_import_from_bitable(body: BitableCrossImportRequest, current_user: RequiredUser) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -679,7 +679,7 @@ async def cross_import_from_bitable(body: BitableCrossImportRequest, current_use
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
-async def daily_import_from_bitable(current_user: RequiredUser) -> ApiResponse:
+async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -717,11 +717,11 @@ async def daily_import_from_bitable(current_user: RequiredUser) -> ApiResponse:
 
 
 @router.get("/jobs/{job_id}", summary="查询异步任务状态")
-async def get_job_status(job_id: str, current_user: RequiredUser) -> ApiResponse:
+async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiResponse:
     job = sync_job_store.get(job_id)
     if not job:
         raise NotFoundException("job", job_id)
-    return build_response(job)
+    return SyncJobApiResponse(data=job)
 
 
 # ── 单耗目标 ──────────────────────────────────────────────────────────────
