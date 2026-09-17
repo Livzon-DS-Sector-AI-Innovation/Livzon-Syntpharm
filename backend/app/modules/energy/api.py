@@ -67,7 +67,6 @@ sync_router = APIRouter()
 
 @router.get("/platforms", summary="获取已登记的平台列表", response_model=EnergyPlatformListApiResponse)
 async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiResponse:
-    from app.modules.energy.schemas import EnergyPlatformResponse, EnergyPlatformListApiResponse
     data = [EnergyPlatformResponse(code=code, name=adapter.platform_name) for code, adapter in ADAPTERS.items()]
     return EnergyPlatformListApiResponse(data=data)
 
@@ -495,7 +494,6 @@ async def get_monthly_summary(
     db: AsyncSession = Depends(get_db),
 ) -> MonthlySummaryApiResponse:
     from datetime import date as date_type
-    from app.modules.energy.schemas import MonthlySummaryItem, MonthlySummaryApiResponse
 
     start = date_type.fromisoformat(start_date) if start_date else None
     end = date_type.fromisoformat(end_date) if end_date else None
