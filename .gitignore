@@ -1,10 +1,12 @@
 # Environment variables
 .env
+.env.uat
 
 # Data directories (runtime data, not in repo)
 postgres-data/
 redis-data/
 minio-data/
+uat-data/
 uploads/
 storage/
 logs/
