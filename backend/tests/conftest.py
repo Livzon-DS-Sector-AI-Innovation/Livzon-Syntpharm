@@ -99,7 +99,8 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
     back at teardown, so no test can leak data to another test.
     """
     async with _test_engine.connect() as connection:
-        async with connection.begin():
+        trans = await connection.begin()
+        try:
             factory = async_sessionmaker(
                 bind=connection,
                 class_=AsyncSession,
@@ -108,7 +109,8 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
             )
             async with factory() as session:
                 yield session
-                await session.rollback()
+        finally:
+            await trans.rollback()
 
 
 @pytest.fixture
