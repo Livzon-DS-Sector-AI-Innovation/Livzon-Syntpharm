@@ -92,10 +92,7 @@ sync_router = APIRouter()
 
 @router.get("/platforms", summary="获取已登记的平台列表", response_model=EnergyPlatformListApiResponse)
 async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiResponse:
-    data = [
-        EnergyPlatformResponse(code=code, name=adapter.platform_name)
-        for code, adapter in ADAPTERS.items()
-    ]
+    data = [EnergyPlatformResponse(code=code, name=adapter.platform_name) for code, adapter in ADAPTERS.items()]
     return EnergyPlatformListApiResponse(data=data)
 
 
@@ -172,9 +169,10 @@ async def list_device_configs(
                 remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
-            ) for i in data
+            )
+            for i in data
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -291,9 +289,10 @@ async def list_energy_data(
                 remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
-            ) for i in data
+            )
+            for i in data
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -361,9 +360,10 @@ async def list_collect_logs(
                 collected_at=i.collected_at,
                 status=i.status,
                 created_at=i.created_at,
-            ) for i in items
+            )
+            for i in items
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -473,9 +473,10 @@ async def list_alert_rules(
                 remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
-            ) for i in data
+            )
+            for i in data
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -584,9 +585,10 @@ async def list_alert_records(
                 remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
-            ) for i in data
+            )
+            for i in data
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -614,7 +616,7 @@ async def process_alert_record(
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         ),
-        message="处理完成"
+        message="处理完成",
     )
 
 
@@ -685,9 +687,10 @@ async def list_workshops(
                 remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
-            ) for i in data
+            )
+            for i in data
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -795,7 +798,8 @@ async def batch_create_monthly_records(
             remark=o.remark,
             created_at=o.created_at,
             updated_at=o.updated_at,
-        ) for o in objs
+        )
+        for o in objs
     ]
     return EnergyMonthlyBatchCreateApiResponse(data={"created": len(result), "records": result})
 
@@ -839,9 +843,10 @@ async def list_monthly_records(
                 remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
-            ) for i in items
+            )
+            for i in items
         ],
-        meta={"page": page, "page_size": page_size, "total": total}
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
@@ -1160,7 +1165,6 @@ async def update_target(
 @router.post("/ai-analysis-v2", summary="AI 能耗分析 V2（支持多产品和单耗）")
 async def ai_analysis_v2(
     body: AIAnalysisRequest,
-
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
