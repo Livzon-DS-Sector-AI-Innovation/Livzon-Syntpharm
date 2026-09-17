@@ -270,27 +270,17 @@ async def list_energy_data(
         page=page,
         page_size=page_size,
     )
-    data = [EnergyDataResponse.model_validate(i) for i in items]
-    return EnergyDeviceConfigListApiResponse(
+    return EnergyDataListApiResponse(
         data=[
-            EnergyDeviceConfigResponse(
+            EnergyDataResponse(
                 id=str(i.id),
-                platform_code=i.platform_code,
-                platform_device_code=i.platform_device_code,
-                device_name=i.device_name,
-                energy_type=i.energy_type,
-                api_endpoint=i.api_endpoint,
-                workshop=i.workshop,
-                production_line=i.production_line,
-                monitor_level=i.monitor_level,
+                device_config_id=str(i.device_config_id),
+                timestamp=i.timestamp,
+                value=float(i.value),
                 unit=i.unit,
-                collection_interval=i.collection_interval,
-                is_enabled=i.is_enabled,
-                remark=i.remark,
-                created_at=i.created_at,
-                updated_at=i.updated_at,
+                collected_at=i.collected_at,
             )
-            for i in data
+            for i in items
         ],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -313,12 +303,15 @@ async def get_energy_statistics(
         end_time=datetime.fromisoformat(end_time),
     )
     return EnergyStatisticsApiResponse(
-        data=EnergyStatisticsResponse(
-            total_consumption=result.total_consumption,
-            average_consumption=result.average_consumption,
-            peak_consumption=result.peak_consumption,
-            min_consumption=result.min_consumption,
-        )
+        data=[
+            EnergyStatisticsResponse(
+                group_key=row["group_key"],
+                total_value=row["total_value"],
+                unit=row["unit"],
+                data_count=row["data_count"],
+            )
+            for row in result
+        ]
     )
 
 
@@ -343,7 +336,7 @@ async def list_collect_logs(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> CollectLogListApiResponse:
     items, total = await service.list_collect_logs(
         db,
         platform_code=platform_code,
@@ -356,9 +349,11 @@ async def list_collect_logs(
             CollectLogResponse(
                 id=str(i.id),
                 platform_code=i.platform_code,
-                device_code=i.device_code,
-                collected_at=i.collected_at,
+                collect_time=i.collect_time,
                 status=i.status,
+                device_count=i.device_count,
+                success_count=i.success_count,
+                error_message=i.error_message,
                 created_at=i.created_at,
             )
             for i in items
@@ -376,14 +371,17 @@ async def get_collect_log_detail(
     result = await service.get_collect_log_detail(db, log_id)
     return CollectLogDetailApiResponse(
         data=CollectLogDetailResponse(
-            id=str(result.id),
-            platform_code=result.platform_code,
-            device_code=result.device_code,
-            collected_at=result.collected_at,
-            status=result.status,
-            data=result.data,
-            error_message=result.error_message,
-            created_at=result.created_at,
+            id=result["id"],
+            platform_code=result["platform_code"],
+            collect_time=result["collect_time"],
+            status=result["status"],
+            device_count=result["device_count"],
+            success_count=result["success_count"],
+            error_message=result["error_message"],
+            created_at=result["created_at"],
+            devices=result["devices"],
+            time_range_start=result["time_range_start"],
+            time_range_end=result["time_range_end"],
         )
     )
 
@@ -398,7 +396,7 @@ async def get_energy_overview(
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyOverviewApiResponse:
     result = await service.get_overview(
         db,
         start_time=datetime.fromisoformat(start_time),
@@ -422,14 +420,21 @@ async def create_alert_rule(
     return EnergyAlertRuleApiResponse(
         data=EnergyAlertRuleResponse(
             id=str(obj.id),
-            name=obj.name,
+            rule_name=obj.rule_name,
+            rule_description=obj.rule_description,
             energy_type=obj.energy_type,
-            threshold=obj.threshold,
-            operator=obj.operator,
-            duration=obj.duration,
-            level=obj.level,
-            enabled=obj.enabled,
-            notification_channels=obj.notification_channels,
+            monitor_metric=obj.monitor_metric,
+            threshold_type=obj.threshold_type,
+            threshold_value=float(obj.threshold_value),
+            unit=obj.unit,
+            alert_level=obj.alert_level,
+            notify_method=obj.notify_method,
+            notify_users=obj.notify_users,
+            notify_frequency=obj.notify_frequency,
+            effective_time=obj.effective_time,
+            custom_time_start=obj.custom_time_start,
+            custom_time_end=obj.custom_time_end,
+            is_enabled=obj.is_enabled,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -454,27 +459,29 @@ async def list_alert_rules(
         page=page,
         page_size=page_size,
     )
-    data = [EnergyAlertRuleResponse.model_validate(i) for i in items]
-    return EnergyDeviceConfigListApiResponse(
+    return EnergyAlertRuleListApiResponse(
         data=[
-            EnergyDeviceConfigResponse(
+            EnergyAlertRuleResponse(
                 id=str(i.id),
-                platform_code=i.platform_code,
-                platform_device_code=i.platform_device_code,
-                device_name=i.device_name,
+                rule_name=i.rule_name,
+                rule_description=i.rule_description,
                 energy_type=i.energy_type,
-                api_endpoint=i.api_endpoint,
-                workshop=i.workshop,
-                production_line=i.production_line,
-                monitor_level=i.monitor_level,
+                monitor_metric=i.monitor_metric,
+                threshold_type=i.threshold_type,
+                threshold_value=float(i.threshold_value),
                 unit=i.unit,
-                collection_interval=i.collection_interval,
+                alert_level=i.alert_level,
+                notify_method=i.notify_method,
+                notify_users=i.notify_users,
+                notify_frequency=i.notify_frequency,
+                effective_time=i.effective_time,
+                custom_time_start=i.custom_time_start,
+                custom_time_end=i.custom_time_end,
                 is_enabled=i.is_enabled,
-                remark=i.remark,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
             )
-            for i in data
+            for i in items
         ],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -490,14 +497,21 @@ async def get_alert_rule(
     return EnergyAlertRuleApiResponse(
         data=EnergyAlertRuleResponse(
             id=str(obj.id),
-            name=obj.name,
+            rule_name=obj.rule_name,
+            rule_description=obj.rule_description,
             energy_type=obj.energy_type,
-            threshold=obj.threshold,
-            operator=obj.operator,
-            duration=obj.duration,
-            level=obj.level,
-            enabled=obj.enabled,
-            notification_channels=obj.notification_channels,
+            monitor_metric=obj.monitor_metric,
+            threshold_type=obj.threshold_type,
+            threshold_value=float(obj.threshold_value),
+            unit=obj.unit,
+            alert_level=obj.alert_level,
+            notify_method=obj.notify_method,
+            notify_users=obj.notify_users,
+            notify_frequency=obj.notify_frequency,
+            effective_time=obj.effective_time,
+            custom_time_start=obj.custom_time_start,
+            custom_time_end=obj.custom_time_end,
+            is_enabled=obj.is_enabled,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -516,14 +530,21 @@ async def update_alert_rule(
     return EnergyAlertRuleApiResponse(
         data=EnergyAlertRuleResponse(
             id=str(obj.id),
-            name=obj.name,
+            rule_name=obj.rule_name,
+            rule_description=obj.rule_description,
             energy_type=obj.energy_type,
-            threshold=obj.threshold,
-            operator=obj.operator,
-            duration=obj.duration,
-            level=obj.level,
-            enabled=obj.enabled,
-            notification_channels=obj.notification_channels,
+            monitor_metric=obj.monitor_metric,
+            threshold_type=obj.threshold_type,
+            threshold_value=float(obj.threshold_value),
+            unit=obj.unit,
+            alert_level=obj.alert_level,
+            notify_method=obj.notify_method,
+            notify_users=obj.notify_users,
+            notify_frequency=obj.notify_frequency,
+            effective_time=obj.effective_time,
+            custom_time_start=obj.custom_time_start,
+            custom_time_end=obj.custom_time_end,
+            is_enabled=obj.is_enabled,
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -566,27 +587,25 @@ async def list_alert_records(
         page=page,
         page_size=page_size,
     )
-    data = [EnergyAlertRecordResponse.model_validate(i) for i in items]
-    return EnergyDeviceConfigListApiResponse(
+    return EnergyAlertRecordListApiResponse(
         data=[
-            EnergyDeviceConfigResponse(
+            EnergyAlertRecordResponse(
                 id=str(i.id),
-                platform_code=i.platform_code,
-                platform_device_code=i.platform_device_code,
-                device_name=i.device_name,
+                rule_id=str(i.rule_id) if i.rule_id else "",
+                device_config_id=str(i.device_config_id) if i.device_config_id else None,
                 energy_type=i.energy_type,
-                api_endpoint=i.api_endpoint,
-                workshop=i.workshop,
-                production_line=i.production_line,
-                monitor_level=i.monitor_level,
+                alert_level=i.alert_level,
+                trigger_value=float(i.trigger_value),
+                threshold_value=float(i.threshold_value),
                 unit=i.unit,
-                collection_interval=i.collection_interval,
-                is_enabled=i.is_enabled,
-                remark=i.remark,
+                alert_time=i.alert_time,
+                status=i.status,
+                processed_by=i.processed_by,
+                processed_at=i.processed_at,
+                process_note=i.process_note,
                 created_at=i.created_at,
-                updated_at=i.updated_at,
             )
-            for i in data
+            for i in items
         ],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -604,17 +623,19 @@ async def process_alert_record(
     return EnergyAlertRecordApiResponse(
         data=EnergyAlertRecordResponse(
             id=str(obj.id),
-            rule_id=str(obj.rule_id),
-            device_config_id=str(obj.device_config_id),
-            triggered_at=obj.triggered_at,
-            value=obj.value,
-            threshold=obj.threshold,
-            level=obj.level,
+            rule_id=str(obj.rule_id) if obj.rule_id else "",
+            device_config_id=str(obj.device_config_id) if obj.device_config_id else None,
+            energy_type=obj.energy_type,
+            alert_level=obj.alert_level,
+            trigger_value=float(obj.trigger_value),
+            threshold_value=float(obj.threshold_value),
+            unit=obj.unit,
+            alert_time=obj.alert_time,
             status=obj.status,
-            acknowledged_at=obj.acknowledged_at,
-            acknowledged_by=obj.acknowledged_by,
+            processed_by=obj.processed_by,
+            processed_at=obj.processed_at,
+            process_note=obj.process_note,
             created_at=obj.created_at,
-            updated_at=obj.updated_at,
         ),
         message="处理完成",
     )
@@ -668,27 +689,20 @@ async def list_workshops(
         page=page,
         page_size=page_size,
     )
-    data = [EnergyWorkshopResponse.model_validate(i) for i in items]
-    return EnergyDeviceConfigListApiResponse(
+    return EnergyWorkshopListApiResponse(
         data=[
-            EnergyDeviceConfigResponse(
+            EnergyWorkshopResponse(
                 id=str(i.id),
-                platform_code=i.platform_code,
-                platform_device_code=i.platform_device_code,
-                device_name=i.device_name,
-                energy_type=i.energy_type,
-                api_endpoint=i.api_endpoint,
-                workshop=i.workshop,
-                production_line=i.production_line,
-                monitor_level=i.monitor_level,
-                unit=i.unit,
-                collection_interval=i.collection_interval,
-                is_enabled=i.is_enabled,
-                remark=i.remark,
+                code=i.code,
+                name=i.name,
+                category=i.category,
+                parent_id=str(i.parent_id) if i.parent_id else None,
+                sort_order=i.sort_order,
+                is_active=i.is_active,
                 created_at=i.created_at,
                 updated_at=i.updated_at,
             )
-            for i in data
+            for i in items
         ],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -759,8 +773,9 @@ async def create_monthly_record(
     data: EnergyMonthlyRecordCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyMonthlyRecordApiResponse:
     obj = await service.create_monthly_record(db, data)
+    await db.commit()
     return EnergyMonthlyRecordApiResponse(
         data=EnergyMonthlyRecordResponse(
             id=str(obj.id),
@@ -783,8 +798,9 @@ async def batch_create_monthly_records(
     data: EnergyMonthlyRecordBatchCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyMonthlyBatchCreateApiResponse:
     objs = await service.batch_create_monthly_records(db, data.records)
+    await db.commit()
     result = [
         EnergyMonthlyRecordResponse(
             id=str(o.id),
@@ -814,7 +830,7 @@ async def list_monthly_records(
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=100, ge=1, le=500, description="每页条数"),
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> EnergyMonthlyRecordListApiResponse:
     from datetime import date as date_type
 
     start = date_type.fromisoformat(start_date) if start_date else None
@@ -921,7 +937,7 @@ async def import_from_feishu(
     data: FeishuEnergyImportRequest,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> FeishuImportApiResponse:
     from app.modules.energy.feishu_import import FeishuEnergyImporter
 
     importer = FeishuEnergyImporter()
@@ -1100,8 +1116,7 @@ async def create_target(
     body: UnitConsumptionTargetCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-
+) -> UnitConsumptionTargetApiResponse:
     target = await service.create_target(
         db,
         workshop_id=UUID(body.workshop_id),
@@ -1112,10 +1127,9 @@ async def create_target(
         data=UnitConsumptionTargetResponse(
             id=str(target.id),
             workshop_id=str(target.workshop_id),
-            target_month=target.target_month,
-            target_unit_consumption=target.target_unit_consumption,
+            target_month=target.target_month.strftime("%Y-%m"),
+            target_unit_consumption=float(target.target_unit_consumption),
             created_at=target.created_at,
-            updated_at=target.updated_at,
         )
     )
 
@@ -1126,7 +1140,7 @@ async def get_target(
     target_month: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> UnitConsumptionTargetApiResponse:
     target = await service.get_target(db, workshop_id, target_month)
     if not target:
         raise NotFoundException("单耗目标", f"{workshop_id}-{target_month}")
@@ -1134,10 +1148,9 @@ async def get_target(
         data=UnitConsumptionTargetResponse(
             id=str(target.id),
             workshop_id=str(target.workshop_id),
-            target_month=target.target_month,
-            target_unit_consumption=target.target_unit_consumption,
+            target_month=target.target_month.strftime("%Y-%m"),
+            target_unit_consumption=float(target.target_unit_consumption),
             created_at=target.created_at,
-            updated_at=target.updated_at,
         )
     )
 
@@ -1148,16 +1161,15 @@ async def update_target(
     body: UnitConsumptionTargetUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> UnitConsumptionTargetApiResponse:
     target = await service.update_target(db, target_id, body.target_unit_consumption)
     return UnitConsumptionTargetApiResponse(
         data=UnitConsumptionTargetResponse(
             id=str(target.id),
             workshop_id=str(target.workshop_id),
-            target_month=target.target_month,
-            target_unit_consumption=target.target_unit_consumption,
+            target_month=target.target_month.strftime("%Y-%m"),
+            target_unit_consumption=float(target.target_unit_consumption),
             created_at=target.created_at,
-            updated_at=target.updated_at,
         )
     )
 
@@ -1167,7 +1179,7 @@ async def ai_analysis_v2(
     body: AIAnalysisRequest,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
+) -> AIAnalysisApiResponse:
     """执行 AI 能耗分析，支持多产品产量输入和单耗计算"""
     from uuid import UUID
 
