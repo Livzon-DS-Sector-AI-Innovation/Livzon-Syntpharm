@@ -113,6 +113,15 @@ export async function fetchReports(projectId: string): Promise<RdReport[]> {
   return result || []
 }
 
+export async function updateReport(reportId: string, data: RdReportUpdate): Promise<RdReport> {
+  const { fetchApi } = await import('@/lib/api/client')
+  const json = await fetchApi<{ code: number; data: RdReport; message?: string }>(
+    `${API_BASE}/research/reports/${reportId}`,
+    { method: 'PUT', body: JSON.stringify(data) }
+  )
+  return json.data
+}
+
 type RdInitiationCreate = Omit<RdInitiation, 'id' | 'created_at' | 'updated_at'>
 type RdInitiationUpdate = Partial<Omit<RdInitiation, 'id' | 'project_id' | 'created_at' | 'updated_at'>>
 

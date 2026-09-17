@@ -13,9 +13,12 @@ from sqlalchemy import (
     DateTime,
     Float,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
+    UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -715,10 +718,60 @@ class RdDeliverableTemplate(BaseModel):
     description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板描述")
     template_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="模板内容")
     template_structure: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="模板结构定义")
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")
+    # 新建默认不启用：母本与槽位经人工核对后才允许进入 AI 生成候选
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否启用")
+    file_object_key: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="模板文件存储键")
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="模板母本原始文件名")
+    file_ext: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="模板母本扩展名（docx/dotx/doc）")
+    template_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="关联内置模板的槽位定义 code")
     creator_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("identity.users.id"),
         nullable=True,
         comment="创建者",
+    )
+
+
+class RdDeliverableTemplateVersion(BaseModel):
+    """交付物模板的文件版本（含槽位定义快照）。
+
+    主表 rd_deliverable_templates 始终指向「当前生效版本」，因此生成链路
+    （可用模板列表、母本加载、任务创建）完全不需要感知版本表；版本表只服务于
+    留档、查看/下载历史版本与回滚。
+
+    回滚不在旧记录上原地生效，而是以目标版本的内容新建一条 v(N+1)，
+    版本号单调递增、历史不可改写（类似 git revert）。
+    """
+
+    __tablename__ = "rd_deliverable_template_versions"
+    __table_args__ = (
+        UniqueConstraint("template_id", "version_no", name="uq_rd_deliverable_template_versions_no"),
+        # 同一模板最多一条当前版本；软删记录不占用该位（部分唯一索引）
+        Index(
+            "uq_rd_deliverable_template_versions_current",
+            "template_id",
+            unique=True,
+            postgresql_where=text("is_current = true AND is_deleted = false"),
+        ),
+        {"schema": "research"},
+    )
+
+    template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("research.rd_deliverable_templates.id"),
+        comment="所属交付物模板",
+    )
+    version_no: Mapped[int] = mapped_column(Integer, comment="版本号，从 1 起单调递增")
+    file_object_key: Mapped[str] = mapped_column(String(500), comment="该版本模板文件存储键")
+    file_name: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="原始文件名")
+    file_ext: Mapped[str | None] = mapped_column(String(16), nullable=True, comment="扩展名（docx/dotx/doc）")
+    file_size: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="文件字节数")
+    # 槽位定义快照：不回滚这两列会造成「旧母本 + 新槽位」错配
+    template_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="槽位定义 code 快照")
+    template_structure: Mapped[dict[str, Any] | None] = mapped_column(
+        JSON, nullable=True, comment="槽位结构定义快照"
+    )
+    change_note: Mapped[str | None] = mapped_column(Text, nullable=True, comment="版本说明（变更备注）")
+    is_current: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="false", comment="是否当前生效版本"
     )

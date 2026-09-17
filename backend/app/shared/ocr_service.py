@@ -1,11 +1,21 @@
-"""PaddleOCR service wrapper for the application.
+"""PaddleOCR service wrapper with subprocess isolation.
 
-Supports both PP-OCR (simple text extraction) and PP-StructureV3 (structured document analysis)
-with a hybrid approach that allows automatic or manual engine selection.
+OCR runs in a separate process (ocr_worker.py) to isolate PaddleOCR segfaults.
+If the worker crashes, the main backend process is unaffected and can restart it.
+
+Supports both PP-OCR (simple text extraction) and PP-StructureV3 (structured
+document analysis) with a hybrid approach that allows automatic or manual engine
+selection.
 """
 
+import json
 import logging
+import subprocess
+import sys
+import tempfile
 import threading
+import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -14,175 +24,198 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+WORKER_SCRIPT = str(Path(__file__).parent / "ocr_worker.py")
+REQUEST_TIMEOUT = 300  # 5 minutes per request
 
-class OCRService:
-    """PaddleOCR service supporting both PP-OCR and PP-StructureV3."""
 
-    def __init__(self) -> Any:  # type: ignore[misc]
-        """Initialize both PaddleOCR pipelines."""
-        from paddleocr import PaddleOCR, PPStructureV3
+class SubprocessOCRService:
+    """OCR service that runs PaddleOCR in an isolated subprocess.
 
-        # PP-OCR for simple text extraction (fast)
-        # PP-OCRv6 is the default, supports 50 languages including zh, en, vi, id
-        self.pp_ocr = PaddleOCR(
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
+    Communicates with ocr_worker.py via stdin/stdout JSON protocol.
+    If the worker crashes (e.g. SIGSEGV), it is automatically restarted.
+    """
+
+    def __init__(self) -> None:
+        self._proc: subprocess.Popen | None = None
+        self._lock = threading.Lock()
+        self._start_worker()
+
+    def _start_worker(self) -> None:
+        """Start (or restart) the OCR worker subprocess."""
+        if self._proc is not None:
+            try:
+                self._proc.kill()
+                self._proc.wait(timeout=5)
+            except Exception:
+                pass
+
+        self._proc = subprocess.Popen(
+            [sys.executable, WORKER_SCRIPT],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1,  # line-buffered
         )
-        logger.info("PP-OCR initialized with PP-OCRv6")
 
-        # PP-StructureV3 for structured document analysis
-        # Supports tables, formulas, layout detection, Markdown output
-        self.pp_structure = PPStructureV3(
-            use_doc_orientation_classify=False,
-            use_doc_unwarping=False,
-            use_textline_orientation=False,
-        )
-        logger.info("PP-StructureV3 initialized")
+        # Wait for ready signal
+        try:
+            while True:
+                line = self._proc.stdout.readline()  # type: ignore[union-attr]
+                if not line:
+                    stderr_output = ""
+                    if self._proc.stderr:
+                        stderr_output = self._proc.stderr.read(4096).decode(errors="replace")
+                    raise RuntimeError(f"OCR worker exited unexpectedly. stderr: {stderr_output}")
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    msg = json.loads(line)
+                except json.JSONDecodeError:
+                    # Skip non-JSON lines (e.g. PaddleOCR debug output leaking to stdout)
+                    logger.debug("OCR worker non-JSON output: %s", line[:200])
+                    continue
+                status = msg.get("status", "")
+                if status == "ready":
+                    logger.info("OCR worker subprocess ready")
+                    return
+                elif status == "error":
+                    raise RuntimeError(f"OCR worker init error: {msg.get('message', 'unknown')}")
+                else:
+                    logger.info("OCR worker: %s", msg.get("message", status))
+        except Exception:
+            self._read_stderr()
+            raise
 
-    def _to_input(self, image_input: str | Path | Image.Image) -> str | np.ndarray:
-        """Convert input to format expected by PaddleOCR."""
+    def _read_stderr(self) -> str:
+        """Read any available stderr output for debugging."""
+        stderr_output = ""
+        if self._proc and self._proc.stderr:
+            import select
+
+            ready, _, _ = select.select([self._proc.stderr], [], [], 0.1)
+            if ready:
+                stderr_output = self._proc.stderr.read(8192).decode(errors="replace")
+                if stderr_output:
+                    logger.error("OCR worker stderr: %s", stderr_output[:2000])
+        return stderr_output
+
+    def _send_request(
+        self,
+        input_path: str,
+        engine: str,
+        method: str,
+        timeout: int = REQUEST_TIMEOUT,
+    ) -> Any:
+        """Send a request to the worker and wait for response."""
+        with self._lock:
+            request_id = str(uuid.uuid4())
+            request = json.dumps({
+                "id": request_id,
+                "input_path": input_path,
+                "engine": engine,
+                "method": method,
+            })
+
+            try:
+                assert self._proc is not None and self._proc.stdin is not None
+                self._proc.stdin.write((request + "\n").encode())
+                self._proc.stdin.flush()
+            except (BrokenPipeError, OSError) as e:
+                logger.warning("OCR worker pipe broken: %s — restarting", e)
+                self._start_worker()
+                raise RuntimeError("OCR worker crashed (broken pipe), restarted") from e
+
+            # Read response with timeout using a thread
+            result: list[str | None] = [None]
+            error: list[BaseException | None] = [None]
+
+            def _reader() -> None:
+                try:
+                    assert self._proc is not None and self._proc.stdout is not None
+                    result[0] = self._proc.stdout.readline()
+                except Exception as e:
+                    error[0] = e
+
+            t = threading.Thread(target=_reader, daemon=True)
+            t.start()
+            t.join(timeout=timeout)
+
+            if t.is_alive():
+                # Timeout — kill and restart
+                logger.error("OCR request timed out after %ds — killing worker", timeout)
+                try:
+                    self._proc.kill()
+                except Exception:
+                    pass
+                self._start_worker()
+                raise RuntimeError(f"OCR request timed out after {timeout}s")
+
+            if error[0]:
+                raise RuntimeError(f"OCR read error: {error[0]}") from error[0]
+
+            line = result[0]
+            if not line:
+                # Worker crashed
+                stderr_output = self._read_stderr()
+                logger.warning("OCR worker crashed (no response). stderr: %s", stderr_output[:500])
+                self._start_worker()
+                raise RuntimeError(f"OCR worker crashed, restarted. stderr: {stderr_output[:500]}")
+
+            response = json.loads(line)
+            if response.get("status") == "error":
+                msg = response.get("message", "unknown")
+                tb = response.get("traceback", "")
+                logger.error("OCR error: %s\n%s", msg, tb)
+                raise RuntimeError(f"OCR error: {msg}")
+
+            return response.get("data")
+
+    # ── Input helpers ──────────────────────────────────────────────
+
+    def _to_path(self, image_input: str | Path | Image.Image | np.ndarray) -> str:
+        """Convert input to a file path the worker can read."""
         if isinstance(image_input, Image.Image):
-            return np.array(image_input)
+            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            image_input.save(tmp.name)
+            tmp.close()
+            return tmp.name
+        elif isinstance(image_input, np.ndarray):
+            # numpy array → save as image
+            img = Image.fromarray(image_input)
+            tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+            img.save(tmp.name)
+            tmp.close()
+            return tmp.name
         elif isinstance(image_input, Path):
             return str(image_input)
-        else:
-            return image_input
+        return image_input  # type: ignore[return-value]
 
     def _is_pdf(self, image_input: str | Path | Image.Image) -> bool:
-        """Check if input is a PDF file."""
         if isinstance(image_input, (str, Path)):
             path = Path(image_input) if not isinstance(image_input, Path) else image_input
             return path.suffix.lower() == ".pdf"
         return False
 
+    # ── Public API (same interface as before) ──────────────────────
+
     def extract_text(self, image_input: str | Path | Image.Image) -> str:
-        """
-        Extract text from image using PP-OCR (fast, simple text extraction).
+        path = self._to_path(image_input)
+        return self._send_request(path, "pp_ocr", "extract_text")  # type: ignore[return-value]
 
-        Args:
-            image_input: File path (str or Path) or PIL Image object
-
-        Returns:
-            Extracted text as a single string
-        """
-        input_data = self._to_input(image_input)
-        result = self.pp_ocr.predict(input_data)
-
-        texts = []
-        for res in result:
-            if hasattr(res, "res") and "rec_texts" in res.res:
-                texts.extend(res.res["rec_texts"])
-
-        return "\n".join(texts)
-
-    def extract_with_positions(self, image_input: str | Path | Image.Image) -> list[dict[str, Any]]:
-        """
-        Extract text with bounding boxes and confidence scores using PP-OCR.
-
-        Args:
-            image_input: File path (str or Path) or PIL Image object
-
-        Returns:
-            List of dicts with keys: text, bbox (x_min, y_min, x_max, y_max), confidence
-        """
-        input_data = self._to_input(image_input)
-        result = self.pp_ocr.predict(input_data)
-
-        blocks = []
-        for res in result:
-            if hasattr(res, "res"):
-                rec_data = res.res
-                if "rec_texts" in rec_data and "rec_scores" in rec_data and "rec_polys" in rec_data:
-                    texts = rec_data["rec_texts"]
-                    scores = rec_data["rec_scores"]
-                    polys = rec_data["rec_polys"]
-
-                    for text, score, poly in zip(texts, scores, polys):
-                        x_coords = [p[0] for p in poly]
-                        y_coords = [p[1] for p in poly]
-                        bbox = (
-                            int(min(x_coords)),
-                            int(min(y_coords)),
-                            int(max(x_coords)),
-                            int(max(y_coords)),
-                        )
-
-                        blocks.append({"text": text, "bbox": bbox, "confidence": float(score)})
-
-        return blocks
+    def extract_with_positions(
+        self, image_input: str | Path | Image.Image
+    ) -> list[dict[str, Any]]:
+        path = self._to_path(image_input)
+        return self._send_request(path, "pp_ocr", "extract_with_positions")  # type: ignore[return-value]
 
     def extract_structure(self, image_input: str | Path | Image.Image) -> dict[str, Any]:
-        """
-        Extract structured document content using PP-StructureV3.
-        Detects layout, tables, formulas, and preserves document structure.
-
-        Args:
-            image_input: File path (str or Path) or PIL Image object
-
-        Returns:
-            Dictionary with structured content including:
-            - markdown: Markdown representation
-            - json: JSON representation
-            - layout: Layout detection results
-            - tables: Extracted tables
-        """
-        input_data = self._to_input(image_input)
-        result = self.pp_structure.predict(input_data)
-
-        # Extract structured data from result
-        output = {"markdown": "", "json": {}, "layout": [], "tables": []}
-
-        for res in result:
-            # Get Markdown output
-            if hasattr(res, "save_to_markdown"):
-                import tempfile
-
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    res.save_to_markdown(save_path=tmpdir)
-                    # Read the generated markdown file
-                    md_files = list(Path(tmpdir).glob("*.md"))
-                    if md_files:
-                        output["markdown"] = md_files[0].read_text(encoding="utf-8")
-
-            # Get JSON output
-            if hasattr(res, "save_to_json"):
-                import json
-                import tempfile
-
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    res.save_to_json(save_path=tmpdir)
-                    # Read the generated JSON file
-                    json_files = list(Path(tmpdir).glob("*.json"))
-                    if json_files:
-                        with open(json_files[0], encoding="utf-8") as f:
-                            output["json"] = json.load(f)
-
-            # Extract layout and table information from result
-            if hasattr(res, "res"):
-                res_data = res.res
-                if "layout_parsing_res" in res_data:
-                    for item in res_data["layout_parsing_res"]:
-                        if "block_label" in item:
-                            if item["block_label"] == "table":
-                                output["tables"].append(item)  # type: ignore[attr-defined]
-                            output["layout"].append(item)  # type: ignore[attr-defined]
-
-        return output
+        path = self._to_path(image_input)
+        return self._send_request(path, "pp_structure", "extract_structure")  # type: ignore[return-value]
 
     def extract_markdown(self, image_input: str | Path | Image.Image) -> str:
-        """
-        Extract document as Markdown using PP-StructureV3.
-        Best for documents with tables, formulas, and complex layouts.
-
-        Args:
-            image_input: File path (str or Path) or PIL Image object
-
-        Returns:
-            Markdown representation of the document
-        """
-        result = self.extract_structure(image_input)
-        return result.get("markdown", "")  # type: ignore[no-any-return]
+        path = self._to_path(image_input)
+        return self._send_request(path, "pp_structure", "extract_markdown")  # type: ignore[return-value]
 
     def extract(
         self,
@@ -190,42 +223,24 @@ class OCRService:
         engine: str | None = None,
         output_format: str = "text",
     ) -> str | list[dict[str, Any]] | dict[str, Any]:
-        """
-        Hybrid extraction method with automatic or manual engine selection.
-
-        Args:
-            image_input: File path (str or Path) or PIL Image object
-            engine: "pp_ocr", "pp_structurev3", or None for auto-detection
-            output_format: "text", "markdown", "json", "positions", "structure"
-
-        Returns:
-            Extracted content in the specified format
-        """
-        # Auto-detect engine if not specified
         if engine is None:
-            if self._is_pdf(image_input):
-                engine = "pp_structurev3"
-            else:
-                engine = "pp_ocr"
+            engine = "pp_structure" if self._is_pdf(image_input) else "pp_ocr"
 
-        # Route to appropriate engine and format
         if engine == "pp_ocr":
             if output_format == "positions":
                 return self.extract_with_positions(image_input)
-            else:
-                return self.extract_text(image_input)
+            return self.extract_text(image_input)
 
-        elif engine == "pp_structurev3":
+        elif engine in ("pp_structurev3", "pp_structure"):
             if output_format == "markdown":
                 return self.extract_markdown(image_input)
             elif output_format == "json":
                 result = self.extract_structure(image_input)
-                return result.get("json", {})  # type: ignore[no-any-return]
+                return result.get("json", {})  # type: ignore[return-value]
             elif output_format == "structure":
                 return self.extract_structure(image_input)
-            else:  # text
-                result = self.extract_structure(image_input)
-                return result.get("markdown", "")  # type: ignore[no-any-return]
+            else:  # text → return markdown from structure
+                return self.extract_markdown(image_input)
 
         else:
             raise ValueError(f"Unknown engine: {engine}. Use 'pp_ocr' or 'pp_structurev3'")
@@ -255,7 +270,7 @@ class FakeOCRService:
 
 
 # Global instance
-_ocr_service: OCRService | FakeOCRService | None = None
+_ocr_service: SubprocessOCRService | FakeOCRService | None = None
 _ocr_lock = threading.Lock()
 _ocr_initializing = False
 
@@ -276,8 +291,8 @@ def init_ocr() -> None:
                 _ocr_service = FakeOCRService()
                 _ocr_initializing = False
             return
-        logger.info("Initializing OCR service...")
-        service = OCRService()
+        logger.info("Initializing OCR service (subprocess mode)...")
+        service = SubprocessOCRService()
         with _ocr_lock:
             _ocr_service = service
             _ocr_initializing = False
@@ -288,10 +303,16 @@ def init_ocr() -> None:
         logger.exception("Failed to initialize OCR service")
 
 
-def get_ocr_service() -> OCRService | FakeOCRService:
-    """Get the OCR service instance."""
+def get_ocr_service() -> SubprocessOCRService | FakeOCRService | None:
+    """Get the OCR service instance.
+
+    Returns None if OCR service is disabled or not initialized (instead of raising).
+    Callers should handle None gracefully.
+    """
     if _ocr_service is None:
         if _ocr_initializing:
-            raise RuntimeError("OCR service is still initializing (loading ML models). Please try again in a moment.")
-        raise RuntimeError("OCR service not initialized. Call init_ocr() first.")
+            logger.warning("OCR service is still initializing (loading ML models)")
+            return None
+        logger.debug("OCR service not initialized (disabled or init failed)")
+        return None
     return _ocr_service

@@ -2773,6 +2773,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/equipment/equipments/import/test-validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试验证错误
+         * @description Test endpoint to debug validation errors without authentication.
+         */
+        post: operations["test_validation_api_v1_equipment_equipments_import_test_validation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/safety/accidents": {
         parameters: {
             query?: never;
@@ -9969,6 +9989,676 @@ export interface paths {
         put?: never;
         /** 使用 AI 生成报告 */
         post: operations["generate_report_api_v1_research_generate_report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 文档生成规模限制
+         * @description 前端提交前据此校验文件数量与大小。
+         */
+        get: operations["read_limits_api_v1_research_doc_gen_limits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按项目查询生成任务
+         * @description 一次取回项目下所有生成任务，供报告列表显示最新状态（避免逐报告请求）。
+         */
+        get: operations["read_jobs_for_project_api_v1_research_doc_gen_jobs_get"];
+        put?: never;
+        /**
+         * 新建报告（任务 + 资料一次提交）
+         * @description 「新建报告」一次提交：建任务 + 挂资料，不再分步向导。
+         *
+         *     对话补全开启时任务停在草稿（由 ``/extract`` 触发提取）；关闭时直接排队，
+         *     worker 一路跑完「提取 → 成文 → 渲染」。
+         *
+         *     未传 ``report_id`` 时自动创建一条 ``RdReport`` 记录，使报告列表可见。
+         */
+        post: operations["create_job_api_v1_research_doc_gen_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询生成任务
+         * @description 任务状态与进度（前端轮询此端点）。
+         */
+        get: operations["read_job_api_v1_research_doc_gen_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 修改报告基本信息与补充说明
+         * @description 修改受控编码/版本号/品种与人工补充说明。
+         *
+         *     草稿、复核、失败、已完成状态均可修改元数据；仅运行中（parsing/extracting/composing/rendering）不允许。
+         *     补充说明以 role=supplement 参与提取与成文，改完需重新提取才会生效；
+         *     「重新生成」新建的任务自动沿用最新补充说明，作为使用者的长期背景知识。
+         */
+        patch: operations["update_job_api_v1_research_doc_gen_jobs__job_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 追加资料文件
+         * @description 逐个上传入口：向尚未进入提取流程的任务追加资料。
+         */
+        post: operations["upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_row_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除资料文件
+         * @description 从任务移除一份资料（软删除），返回最新任务详情。
+         */
+        delete: operations["delete_job_input_file_api_v1_research_doc_gen_jobs__job_id__input_files__file_row_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载资料文件
+         * @description 下载任务的一份资料文件原件，供前端预览。
+         */
+        get: operations["download_input_file_api_v1_research_doc_gen_jobs__job_id__input_files__file_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询逐项填充结果
+         * @description 逐项填充结果与依据。
+         */
+        get: operations["read_job_slots_api_v1_research_doc_gen_jobs__job_id__slots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/extracted-info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询结构化提取信息
+         * @description 仅返回已提取的结构化信息（槽位值），用于前端预览与编辑。
+         */
+        get: operations["read_extracted_info_api_v1_research_doc_gen_jobs__job_id__extracted_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/outline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询任务大纲
+         * @description 动态章节大纲：复核界面的结构树数据源（含触发依据与预设标题池）。
+         */
+        get: operations["read_job_outline_api_v1_research_doc_gen_jobs__job_id__outline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/reports/{report_id}/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按报告查询生成任务
+         * @description 某研发报告下的历次生成任务。
+         */
+        get: operations["read_jobs_for_report_api_v1_research_doc_gen_reports__report_id__jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 取消生成任务
+         * @description 取消排队中或进行中的任务。
+         */
+        post: operations["cancel_job_api_v1_research_doc_gen_jobs__job_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 确认提取结果并生成
+         * @description 人工确认（可含修正与大纲调整）后交回 worker 渲染；提取结果已落库，不重复调用模型。
+         */
+        post: operations["confirm_job_api_v1_research_doc_gen_jobs__job_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/conversation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询对话会话
+         * @description 会话与全部消息；任务尚未创建会话（未完成初抽）时返回空 data。
+         */
+        get: operations["read_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 发送对话消息
+         * @description 用户补充信息：模型抽值 → 校验 → 写入槽位结果，返回更新后的会话与全部消息。
+         */
+        post: operations["send_message_api_v1_research_doc_gen_jobs__job_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/conversation/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 完成对话
+         * @description 结束对话（保留已补值），后续到确认页逐项检查并确认生成。
+         */
+        post: operations["complete_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/conversation/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 跳过对话
+         * @description 跳过对话直接前往确认页（与完成等效，语义不同）。
+         */
+        post: operations["skip_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_skip_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/slot-profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 内置填充项配置清单
+         * @description 上传 Word 模板原件时，用它选择这份模板对应哪套填充项配置。
+         */
+        get: operations["read_slot_profiles_api_v1_research_doc_gen_slot_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 可用于 AI 生成的模板
+         * @description 只返回「有 Word 模板原件 + 填充项配置有效」的交付物模板，避免选了必然失败。
+         */
+        get: operations["read_usable_templates_api_v1_research_doc_gen_templates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/builtin-templates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 内置模板定义（排错用）
+         * @description 代码内置的填充项配置视图，供排查与对账。
+         */
+        get: operations["read_builtin_templates_api_v1_research_doc_gen_builtin_templates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/batch-upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量上传 Word 模板
+         * @description 每个文件建一条模板记录；同名文件转为该模板的新版本，格式不符的跳过并说明原因。
+         */
+        post: operations["batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 上传 Word 模板原件
+         * @description 给已存在的交付物模板挂载/替换 Word 模板原件，并自动留档为一个新版本。
+         *
+         *     上传不会自动启用模板：母本与槽位经核对后由用户手动开启，避免半成品被 AI 生成选中。
+         */
+        post: operations["upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载 Word 模板原件
+         * @description 下载模板的 Word 原件（保留原始扩展名）。
+         */
+        get: operations["download_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 交付物模板版本历史
+         * @description 模板的留档版本（新版本在前），据此可预览、下载或回滚任一个历史版本。
+         */
+        get: operations["list_template_versions_api_v1_research_doc_gen_deliverable_templates__template_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载历史版本 Word 原件
+         * @description 下载指定历史版本的 Word 原件（文件名带版本号，避免多次下载互相覆盖）。
+         */
+        get: operations["download_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 回滚到指定历史版本
+         * @description 回滚 = 以该版本内容新建一个版本并设为当前：版本号单调递增，历史不可改写。
+         *
+         *     不就地改写历史版本（类似 git revert），因此审计链完整，且可再次回滚回来。
+         */
+        post: operations["restore_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除历史版本
+         * @description 软删一个历史版本；当前生效版本与唯一版本不允许删除。
+         */
+        delete: operations["delete_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * AI 提取信息
+         * @description 两步流程第一步：排队提取资料信息，完成后停在「等待确认」。
+         *
+         *     提取中/生成中拒绝重入；复核或失败后可再次调用重新提取（会清空上一轮提取
+         *     结果与对话中的人工修改，属明确操作）。
+         */
+        post: operations["extract_job_api_v1_research_doc_gen_jobs__job_id__extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * AI 报告生成（确认后成文）
+         * @description 两步流程第二步：确认提取信息，交回 worker 成文 + 渲染。
+         *
+         *     成文由写作模型把确认值改写成连续叙述；含未确认数字或超字数上限的
+         *     输出整槽回退人工文本。带修正值时即「人工确认后重新生成正文」。
+         */
+        post: operations["generate_job_api_v1_research_doc_gen_jobs__job_id__generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重新生成（新任务，沿用资料与确认值）
+         * @description 在复核/失败/已完成任务上点「重新生成」：新建任务挂在本任务之下。
+         *
+         *     资料、补充说明与已确认填充值全部沿用到新任务（旧产物与审计链完整保留）；
+         *     新任务排队后直接提取 → 成文 → 渲染。旧报告标记为「已被新一轮取代」。
+         */
+        post: operations["regenerate_job_api_v1_research_doc_gen_jobs__job_id__regenerate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/superseded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询被本轮取代的历史任务
+         * @description 重新生成链上的历史节点（上一轮及其祖先、兄弟分支），供详情页展示失效徽标。
+         */
+        get: operations["read_superseded_api_v1_research_doc_gen_jobs__job_id__superseded_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/document": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载文档初版
+         * @description 下载渲染出的 docx。
+         */
+        get: operations["download_document_api_v1_research_doc_gen_jobs__job_id__document_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/jobs/{job_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载生成说明
+         * @description 下载记录取值来源与待人工清单的生成说明。
+         */
+        get: operations["download_report_api_v1_research_doc_gen_jobs__job_id__report_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -18120,6 +18810,26 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post */
+        Body_batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post: {
+            /**
+             * Files
+             * @description Word 模板文件（docx/dotx/doc）
+             */
+            files: string[];
+            /**
+             * Stage
+             * @description 所属阶段，留空则由系统按识别结果填
+             * @default
+             */
+            stage: string;
+            /**
+             * Deliverable Type
+             * @description 交付物类型，留空则用识别出的模板 code
+             * @default
+             */
+            deliverable_type: string;
+        };
         /** Body_confirm_import_api_v1_quality_cpv_import_confirm_post */
         Body_confirm_import_api_v1_quality_cpv_import_confirm_post: {
             /** File */
@@ -18200,6 +18910,83 @@ export interface components {
              * @description 推荐等级
              */
             recommendation_level?: string | null;
+        };
+        /** Body_create_job_api_v1_research_doc_gen_jobs_post */
+        Body_create_job_api_v1_research_doc_gen_jobs_post: {
+            /**
+             * Deliverable Template Id
+             * Format: uuid
+             * @description 交付物模板 ID（Word 母本 + 填充项配置）
+             */
+            deliverable_template_id: string;
+            /**
+             * Files
+             * @description 资料文件（可多个，非必填）
+             */
+            files?: string[] | null;
+            /**
+             * File Roles
+             * @description 与 files 顺序对应的角色：material/literature
+             */
+            file_roles?: string[];
+            /**
+             * Report Id
+             * @description 关联研发报告
+             */
+            report_id?: string | null;
+            /**
+             * Project Id
+             * @description 关联研发项目
+             */
+            project_id?: string | null;
+            /**
+             * Doc Code
+             * @description 受控编码
+             * @default
+             */
+            doc_code: string;
+            /**
+             * Doc Version
+             * @description 版本号
+             * @default
+             */
+            doc_version: string;
+            /**
+             * Drug Name
+             * @description 品种名称（模板占位符替换用）
+             * @default
+             */
+            drug_name: string;
+            /**
+             * Supplement Text
+             * @description 人工补充说明（作为补充资料参与提取与成文）
+             * @default
+             */
+            supplement_text: string;
+            /**
+             * Report Title
+             * @description 报告标题（自动创建 RdReport 时使用）
+             * @default
+             */
+            report_title: string;
+            /**
+             * Report Type
+             * @description 报告类型（自动创建 RdReport 时使用）
+             * @default summary
+             */
+            report_type: string;
+            /**
+             * Report Stage
+             * @description 关联阶段（自动创建 RdReport 时使用）
+             * @default
+             */
+            report_stage: string;
+            /**
+             * Report Summary
+             * @description 报告摘要（自动创建 RdReport 时使用）
+             * @default
+             */
+            report_summary: string;
         };
         /** Body_edbo_generate_scope_api_v1_research_edbo_generate_scope_post */
         Body_edbo_generate_scope_api_v1_research_edbo_generate_scope_post: {
@@ -18758,6 +19545,19 @@ export interface components {
              */
             file: string;
         };
+        /** Body_upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post */
+        Body_upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post: {
+            /**
+             * Files
+             * @description 资料文件
+             */
+            files: string[];
+            /**
+             * File Roles
+             * @description 与 files 顺序对应的角色
+             */
+            file_roles?: string[];
+        };
         /** Body_upload_pilot_document_api_v1_research_pilot_workflow__workflow_id__upload_post */
         Body_upload_pilot_document_api_v1_research_pilot_workflow__workflow_id__upload_post: {
             /** File */
@@ -18770,6 +19570,20 @@ export interface components {
              * @description 照片文件
              */
             file: string;
+        };
+        /** Body_upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post */
+        Body_upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post: {
+            /**
+             * File
+             * @description Word 模板文件（docx/dotx/doc）
+             */
+            file: string;
+            /**
+             * Change Note
+             * @description 版本说明（变更备注，可空）
+             * @default
+             */
+            change_note: string;
         };
         /** Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post */
         Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post: {
@@ -21469,6 +22283,889 @@ export interface components {
              */
             status?: string | null;
         };
+        /**
+         * DocGenBatchUploadResponse
+         * @description POST /doc-gen/deliverable-templates/batch-upload 响应。
+         */
+        DocGenBatchUploadResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenBatchUploadResult"];
+        };
+        /**
+         * DocGenBatchUploadResult
+         * @description 批量上传结果。
+         *
+         *     同名文件不再计入 skipped，而是作为该模板的新版本计入 versioned。
+         */
+        DocGenBatchUploadResult: {
+            /** Created */
+            created?: {
+                [key: string]: string;
+            }[];
+            /** Versioned */
+            versioned?: {
+                [key: string]: string;
+            }[];
+            /** Skipped */
+            skipped?: string[];
+        };
+        /**
+         * DocGenConfirmRequest
+         * @description POST /jobs/{id}/confirm 请求体：人工改过的填充项 + 大纲调整。
+         */
+        DocGenConfirmRequest: {
+            /**
+             * Slots
+             * @description 填充项 key → 人工修正后的文本
+             */
+            slots?: {
+                [key: string]: string;
+            };
+            /**
+             * Outline
+             * @description 大纲调整（启用/禁用/换标题/排序）
+             */
+            outline?: components["schemas"]["DocGenSectionAdjust"][];
+        };
+        /**
+         * DocGenConversationData
+         * @description 会话 + 消息列表（GET conversation 与 POST messages 共用）。
+         */
+        DocGenConversationData: {
+            conversation: components["schemas"]["DocGenConversationResponse"];
+            /** Messages */
+            messages?: components["schemas"]["DocGenMessageResponse"][];
+        };
+        /**
+         * DocGenConversationDataResponse
+         * @description 对话数据响应（信封格式）。
+         */
+        DocGenConversationDataResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocGenConversationData"] | null;
+        };
+        /**
+         * DocGenConversationResponse
+         * @description 任务对话会话状态。
+         */
+        DocGenConversationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Status */
+            status: string;
+            /** Round Count */
+            round_count: number;
+            /** Max Rounds */
+            max_rounds: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * DocGenExtractedInfoResponse
+         * @description GET /jobs/{id}/extracted-info 响应。
+         */
+        DocGenExtractedInfoResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: components["schemas"]["DocGenSlotValueResponse"][];
+            };
+        };
+        /**
+         * DocGenInputFileResponse
+         * @description 资料文件条目。
+         */
+        DocGenInputFileResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "material" | "literature" | "report_draft" | "supplement";
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Page Count
+             * @default 0
+             */
+            page_count: number;
+            /**
+             * Char Count
+             * @default 0
+             */
+            char_count: number;
+            /** Parse Status */
+            parse_status: string;
+            /** Warnings */
+            warnings?: string[] | null;
+        };
+        /**
+         * DocGenJobDataResponse
+         * @description POST /jobs、POST /jobs/{id}/cancel 响应。
+         */
+        DocGenJobDataResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenJobResponse"];
+        };
+        /**
+         * DocGenJobDetail
+         * @description 任务详情（含资料、填充项结果与大纲）。
+         */
+        DocGenJobDetail: {
+            job: components["schemas"]["DocGenJobResponse"];
+            /** Files */
+            files?: components["schemas"]["DocGenInputFileResponse"][];
+            /** Slots */
+            slots?: components["schemas"]["DocGenSlotValueResponse"][];
+            /** Sections */
+            sections?: components["schemas"]["DocGenSectionResponse"][];
+        };
+        /**
+         * DocGenJobDetailResponse
+         * @description GET /jobs/{id} 响应。
+         */
+        DocGenJobDetailResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenJobDetail"];
+        };
+        /**
+         * DocGenJobListResponse
+         * @description GET /jobs?report_id= 响应。
+         */
+        DocGenJobListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenJobResponse"][];
+        };
+        /**
+         * DocGenJobResponse
+         * @description 任务状态（列表与轮询共用）。
+         */
+        DocGenJobResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Report Id */
+            report_id?: string | null;
+            /** Project Id */
+            project_id?: string | null;
+            /** Template Code */
+            template_code: string;
+            /** Template Version */
+            template_version: string;
+            /** Status */
+            status: string;
+            /** Step */
+            step: string;
+            /** Progress */
+            progress: number;
+            /**
+             * Has Document
+             * @default false
+             */
+            has_document: boolean;
+            /**
+             * Has Report
+             * @default false
+             */
+            has_report: boolean;
+            /** Error Code */
+            error_code?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /** Stats */
+            stats?: {
+                [key: string]: unknown;
+            } | null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+            /** Parent Job Id */
+            parent_job_id?: string | null;
+            /** Supplement Text */
+            supplement_text?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at?: string | null;
+        };
+        /**
+         * DocGenJobUpdateRequest
+         * @description PATCH /jobs/{id} 请求体：修改基本信息与补充说明（仅草稿/复核/失败状态可改）。
+         */
+        DocGenJobUpdateRequest: {
+            /**
+             * Doc Code
+             * @description 受控编码
+             */
+            doc_code?: string | null;
+            /**
+             * Doc Version
+             * @description 版本号
+             */
+            doc_version?: string | null;
+            /**
+             * Drug Name
+             * @description 品种名称
+             */
+            drug_name?: string | null;
+            /**
+             * Supplement Text
+             * @description 补充说明（重新生成时自动沿用）
+             */
+            supplement_text?: string | null;
+            /**
+             * Template Code
+             * @description 模板ID（变更模板）
+             */
+            template_code?: string | null;
+        };
+        /**
+         * DocGenLimits
+         * @description 上传与任务规模限制（前端据此做提交前校验）。
+         */
+        DocGenLimits: {
+            /**
+             * Max Files
+             * @default 20
+             */
+            max_files: number;
+            /**
+             * Max Total Pages
+             * @default 150
+             */
+            max_total_pages: number;
+            /**
+             * Max File Mb
+             * @default 30
+             */
+            max_file_mb: number;
+            /**
+             * Max Total Mb
+             * @default 150
+             */
+            max_total_mb: number;
+            /** Allowed Extensions */
+            allowed_extensions?: string[];
+            /** Supported Formats */
+            supported_formats?: components["schemas"]["DocGenSupportedFormat"][];
+        };
+        /**
+         * DocGenLimitsResponse
+         * @description GET /doc-gen/limits 响应。
+         */
+        DocGenLimitsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenLimits"];
+        };
+        /**
+         * DocGenMessageResponse
+         * @description 会话消息条目。
+         */
+        DocGenMessageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Slot Updates */
+            slot_updates?: unknown[] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * DocGenOperationResponse
+         * @description 仅回提示语的写操作响应（如删除历史版本）。
+         */
+        DocGenOperationResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+        };
+        /**
+         * DocGenOutlineResponse
+         * @description GET /jobs/{id}/outline 响应。
+         */
+        DocGenOutlineResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenSectionResponse"][];
+        };
+        /**
+         * DocGenSectionAdjust
+         * @description 人工对大纲中一个章节的调整（确认时随填充项一并提交）。
+         */
+        DocGenSectionAdjust: {
+            /** Section Key */
+            section_key: string;
+            /** State */
+            state?: ("enabled" | "disabled") | null;
+            /** Title */
+            title?: string | null;
+            /** Order Index */
+            order_index?: number | null;
+        };
+        /**
+         * DocGenSectionResponse
+         * @description 大纲中的一个章节实例。
+         */
+        DocGenSectionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Section Key */
+            section_key: string;
+            /** Fragment Key */
+            fragment_key: string;
+            /** Extension Point Key */
+            extension_point_key: string;
+            /** Parent Section Key */
+            parent_section_key?: string | null;
+            /** Level */
+            level: number;
+            /** Title */
+            title: string;
+            /** Order Index */
+            order_index: number;
+            /** Source */
+            source: string;
+            /** State */
+            state: string;
+            /** Trigger Trace */
+            trigger_trace?: {
+                [key: string]: unknown;
+            } | null;
+            /** Title Pool */
+            title_pool?: string[];
+        };
+        /**
+         * DocGenSendMessageRequest
+         * @description POST /jobs/{id}/messages 请求体。
+         */
+        DocGenSendMessageRequest: {
+            /**
+             * Content
+             * @description 用户消息内容
+             */
+            content: string;
+        };
+        /**
+         * DocGenSendMessageResponse
+         * @description 发送消息响应：返回会话状态与全部消息（含刚写入的用户消息与助手回复）。
+         */
+        DocGenSendMessageResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocGenConversationData"] | null;
+        };
+        /**
+         * DocGenSlotProfile
+         * @description 内置填充项配置（上传 Word 模板时选择用）。
+         */
+        DocGenSlotProfile: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
+            /**
+             * Stage
+             * @default
+             */
+            stage: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Slot Count
+             * @default 0
+             */
+            slot_count: number;
+            /**
+             * Required Count
+             * @default 0
+             */
+            required_count: number;
+            /** Unfilled Notes */
+            unfilled_notes?: string[];
+        };
+        /**
+         * DocGenSlotProfileListResponse
+         * @description GET /doc-gen/slot-profiles 响应。
+         */
+        DocGenSlotProfileListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenSlotProfile"][];
+        };
+        /**
+         * DocGenSlotValueResponse
+         * @description 填充项结果条目。
+         */
+        DocGenSlotValueResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slot Key */
+            slot_key: string;
+            /** Label */
+            label: string;
+            /** Text */
+            text?: string | null;
+            /** Rows */
+            rows?: unknown[] | null;
+            /** State */
+            state: string;
+            /** Reason */
+            reason?: string | null;
+            /** Confidence */
+            confidence?: number | null;
+            /** Evidence */
+            evidence?: unknown[] | null;
+            /** Candidates */
+            candidates?: unknown[] | null;
+            /** Section Key */
+            section_key?: string | null;
+            /** Instance Index */
+            instance_index?: number | null;
+            /** Pre Compose Text */
+            pre_compose_text?: string | null;
+        };
+        /**
+         * DocGenSupersededItem
+         * @description 已失效的上轮生成任务（重新生成链上的历史节点）。
+         */
+        DocGenSupersededItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /** Step */
+            step: string;
+            /** Progress */
+            progress: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at?: string | null;
+        };
+        /**
+         * DocGenSupersededList
+         * @description 失效任务清单。
+         */
+        DocGenSupersededList: {
+            /** Items */
+            items?: components["schemas"]["DocGenSupersededItem"][];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /**
+         * DocGenSupersededResponse
+         * @description GET /jobs/{id}/superseded 响应。
+         */
+        DocGenSupersededResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenSupersededList"];
+        };
+        /**
+         * DocGenSupportedFormat
+         * @description 一种受支持的资料类型：扩展名 + 实际使用的提取库。
+         *
+         *     由解析层的类型注册表派生（唯一真相来源），前端提示与运维核对都读它。
+         */
+        DocGenSupportedFormat: {
+            /** Name */
+            name: string;
+            /** Extensions */
+            extensions?: string[];
+            /** Library */
+            library: string;
+            /**
+             * Needs Ocr
+             * @default false
+             */
+            needs_ocr: boolean;
+        };
+        /**
+         * DocGenTemplateFileData
+         * @description 挂载 Word 模板原件后的回显信息。
+         */
+        DocGenTemplateFileData: {
+            /** Id */
+            id: string;
+            /** File Name */
+            file_name?: string | null;
+            /** File Ext */
+            file_ext?: string | null;
+        };
+        /**
+         * DocGenTemplateFileResponse
+         * @description POST /doc-gen/deliverable-templates/{id}/upload 响应。
+         */
+        DocGenTemplateFileResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenTemplateFileData"];
+        };
+        /**
+         * DocGenTemplateListResponse
+         * @description GET /doc-gen/builtin-templates 响应（内置模板，排错用）。
+         */
+        DocGenTemplateListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenTemplateSummary"][];
+        };
+        /**
+         * DocGenTemplateSummary
+         * @description 模板摘要（供前端下拉选择）。
+         */
+        DocGenTemplateSummary: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
+            /**
+             * Stage
+             * @default
+             */
+            stage: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Slot Count
+             * @default 0
+             */
+            slot_count: number;
+            /**
+             * Required Count
+             * @default 0
+             */
+            required_count: number;
+            /** Unfilled Notes */
+            unfilled_notes?: string[];
+        };
+        /**
+         * DocGenTemplateVersionItem
+         * @description 模板的一个历史版本。
+         */
+        DocGenTemplateVersionItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version No */
+            version_no: number;
+            /** File Name */
+            file_name?: string | null;
+            /** File Ext */
+            file_ext?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /** Template Code */
+            template_code?: string | null;
+            /** Change Note */
+            change_note?: string | null;
+            /**
+             * Is Current
+             * @default false
+             */
+            is_current: boolean;
+            /** Created By */
+            created_by?: string | null;
+            /** Created By Name */
+            created_by_name?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * DocGenTemplateVersionListResponse
+         * @description GET /doc-gen/deliverable-templates/{id}/versions 响应。
+         */
+        DocGenTemplateVersionListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenTemplateVersionItem"][];
+        };
+        /**
+         * DocGenTemplateVersionRestoreData
+         * @description 回滚结果：新生成的版本号及其来源版本。
+         */
+        DocGenTemplateVersionRestoreData: {
+            /** Id */
+            id: string;
+            /** Template Id */
+            template_id: string;
+            /** Version No */
+            version_no: number;
+            /** From Version No */
+            from_version_no: number;
+            /** File Name */
+            file_name?: string | null;
+            /** File Ext */
+            file_ext?: string | null;
+        };
+        /**
+         * DocGenTemplateVersionRestoreResponse
+         * @description POST /doc-gen/deliverable-templates/{id}/versions/{vid}/restore 响应。
+         */
+        DocGenTemplateVersionRestoreResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenTemplateVersionRestoreData"];
+        };
+        /**
+         * DocGenUsableTemplate
+         * @description 可用于 AI 生成的交付物模板（必须有 Word 模板原件 + 合法填充项配置）。
+         */
+        DocGenUsableTemplate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Template Code */
+            template_code: string;
+            /** Template Version */
+            template_version: string;
+            /** Stage */
+            stage: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** File Name */
+            file_name?: string | null;
+            /** File Ext */
+            file_ext?: string | null;
+            /**
+             * Slot Count
+             * @default 0
+             */
+            slot_count: number;
+            /**
+             * Required Count
+             * @default 0
+             */
+            required_count: number;
+            /** Unfilled Notes */
+            unfilled_notes?: string[];
+        };
+        /**
+         * DocGenUsableTemplateListResponse
+         * @description GET /doc-gen/templates 响应。
+         */
+        DocGenUsableTemplateListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenUsableTemplate"][];
+        };
         /** DomesticApprovalCreate */
         DomesticApprovalCreate: {
             /** Product Name */
@@ -22805,6 +24502,54 @@ export interface components {
              * @description 报废时间
              */
             scrap_time?: string | null;
+        };
+        /**
+         * EquipmentImportRow
+         * @description 设备导入行数据
+         */
+        EquipmentImportRow: {
+            /**
+             * 资产编号
+             * @description 资产编号
+             */
+            "\u8D44\u4EA7\u7F16\u53F7"?: string | number | null;
+            /**
+             * 资产说明
+             * @description 资产说明
+             */
+            "\u8D44\u4EA7\u8BF4\u660E"?: string | null;
+            /**
+             * 设备名称
+             * @description 设备名称（别名）
+             */
+            "\u8BBE\u5907\u540D\u79F0"?: string | null;
+            /**
+             * 实物所在部门
+             * @description 实物所在部门
+             */
+            "\u5B9E\u7269\u6240\u5728\u90E8\u95E8"?: string | null;
+            /**
+             * 资产类别说明
+             * @description 资产类别说明
+             */
+            "\u8D44\u4EA7\u7C7B\u522B\u8BF4\u660E"?: string | null;
+            /**
+             * 当前成本
+             * @description 当前成本
+             */
+            "\u5F53\u524D\u6210\u672C"?: string | number | null;
+            /**
+             * 报废状态
+             * @description 报废状态
+             */
+            "\u62A5\u5E9F\u72B6\u6001"?: string | null;
+            /**
+             * 数量
+             * @description 数量
+             */
+            "\u6570\u91CF"?: number | null;
+        } & {
+            [key: string]: unknown;
         };
         /**
          * EquipmentUpdate
@@ -29036,14 +30781,20 @@ export interface components {
             } | null;
             /**
              * Is Active
-             * @default true
+             * @default false
              */
             is_active: boolean;
+            /** Template Code */
+            template_code?: string | null;
         };
         /** RdDeliverableTemplateUpdate */
         RdDeliverableTemplateUpdate: {
             /** Name */
             name?: string | null;
+            /** Deliverable Type */
+            deliverable_type?: string | null;
+            /** Stage */
+            stage?: string | null;
             /** Description */
             description?: string | null;
             /** Template Content */
@@ -29052,6 +30803,8 @@ export interface components {
             template_structure?: {
                 [key: string]: unknown;
             } | null;
+            /** Template Code */
+            template_code?: string | null;
             /** Is Active */
             is_active?: boolean | null;
         };
@@ -43245,7 +44998,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
         };
@@ -43261,9 +45014,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43273,7 +45024,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43298,9 +45049,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: unknown;
-                }[];
+                "application/json": components["schemas"]["EquipmentImportRow"][];
             };
         };
         responses: {
@@ -43310,7 +45059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43345,7 +45094,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_validation_api_v1_equipment_equipments_import_test_validation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EquipmentImportRow"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -61237,6 +63021,1154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_limits_api_v1_research_doc_gen_limits_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenLimitsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_jobs_for_project_api_v1_research_doc_gen_jobs_get: {
+        parameters: {
+            query: {
+                /** @description 研发项目ID */
+                project_id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_job_api_v1_research_doc_gen_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_create_job_api_v1_research_doc_gen_jobs_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_job_api_v1_research_doc_gen_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_job_api_v1_research_doc_gen_jobs__job_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenJobUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_job_input_file_api_v1_research_doc_gen_jobs__job_id__input_files__file_row_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                file_row_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_input_file_api_v1_research_doc_gen_jobs__job_id__input_files__file_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                file_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_job_slots_api_v1_research_doc_gen_jobs__job_id__slots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDetailResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_extracted_info_api_v1_research_doc_gen_jobs__job_id__extracted_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenExtractedInfoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_job_outline_api_v1_research_doc_gen_jobs__job_id__outline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenOutlineResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_jobs_for_report_api_v1_research_doc_gen_reports__report_id__jobs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_job_api_v1_research_doc_gen_jobs__job_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_job_api_v1_research_doc_gen_jobs__job_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenConversationDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_message_api_v1_research_doc_gen_jobs__job_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenSendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenSendMessageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_complete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenConversationDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skip_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_skip_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenConversationDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_slot_profiles_api_v1_research_doc_gen_slot_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenSlotProfileListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_usable_templates_api_v1_research_doc_gen_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenUsableTemplateListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_builtin_templates_api_v1_research_doc_gen_builtin_templates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenTemplateListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenBatchUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenTemplateFileResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_template_versions_api_v1_research_doc_gen_deliverable_templates__template_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenTemplateVersionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                version_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                version_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenTemplateVersionRestoreResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+                version_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenOperationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extract_job_api_v1_research_doc_gen_jobs__job_id__extract_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_job_api_v1_research_doc_gen_jobs__job_id__generate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    regenerate_job_api_v1_research_doc_gen_jobs__job_id__regenerate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenJobDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_superseded_api_v1_research_doc_gen_jobs__job_id__superseded_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenSupersededResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_document_api_v1_research_doc_gen_jobs__job_id__document_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_report_api_v1_research_doc_gen_jobs__job_id__report_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

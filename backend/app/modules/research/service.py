@@ -3,12 +3,13 @@
 import logging
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import DuplicateException, NotFoundException
+from app.core.exceptions import BadRequestException, DuplicateException, NotFoundException
 
 logger = logging.getLogger(__name__)
 from app.modules.research import repository as repo  # noqa: E402
@@ -1054,21 +1055,91 @@ async def delete_initiation(db: AsyncSession, initiation_id: uuid.UUID, user_id:
 # ===== 交付物模板 Service =====
 
 
+async def _attach_version_summary(db: AsyncSession, templates: list[Any]) -> None:
+    """给模板列表补上「当前版本号 / 版本数量」。
+
+    这两个值只服务于列表展示，一次聚合查完即可，不必让前端逐行请求版本接口；
+    因此挂在实例属性上，而不是新增数据库列。
+    """
+    if not templates:
+        return
+    from sqlalchemy import case, func, select
+
+    from app.modules.research.models import RdDeliverableTemplateVersion
+
+    rows = (
+        await db.execute(
+            select(
+                RdDeliverableTemplateVersion.template_id,
+                func.count().label("version_count"),
+                func.max(
+                    case(
+                        (
+                            RdDeliverableTemplateVersion.is_current.is_(True),
+                            RdDeliverableTemplateVersion.version_no,
+                        ),
+                        else_=None,
+                    )
+                ).label("current_version_no"),
+            )
+            .where(
+                RdDeliverableTemplateVersion.template_id.in_([t.id for t in templates]),
+                RdDeliverableTemplateVersion.is_deleted.is_(False),
+            )
+            .group_by(RdDeliverableTemplateVersion.template_id)
+        )
+    ).all()
+    summary = {row.template_id: row for row in rows}
+    for template in templates:
+        row = summary.get(template.id)
+        template.current_version_no = int(row.current_version_no) if row and row.current_version_no else None
+        template.version_count = int(row.version_count) if row else 0
+
+
 async def get_deliverable_templates(  # type: ignore[no-untyped-def]
     db: AsyncSession,
     stage: str | None = None,
     deliverable_type: str | None = None,
     is_active: bool | None = None,
 ):
-    """获取交付物模板列表"""
-    return await repo.get_deliverable_templates(db, stage, deliverable_type, is_active)
+    """获取交付物模板列表（附带当前版本号与版本数量）"""
+    templates = await repo.get_deliverable_templates(db, stage, deliverable_type, is_active)
+    await _attach_version_summary(db, templates)
+    return templates
+
+
+def _ensure_template_enableable(  # type: ignore[no-untyped-def]
+    template, update_data: dict | None = None
+) -> None:
+    """启用前的校验：必须有 Word 母本，且槽位定义可解析。
+
+    可用模板列表同时要求「is_active 为真 + 母本存在 + 槽位配置能解析出 spec」，
+    缺任何一条都会表现为「显示已启用、实际选不到」的假状态，所以在启用时就拦下来。
+    """
+    patch = update_data or {}
+    file_object_key = patch.get("file_object_key", getattr(template, "file_object_key", None))
+    if not file_object_key:
+        raise BadRequestException("请先上传 Word 模板原件，再启用该模板")
+    # 延迟导入：doc_gen 依赖 research.models，模块级导入会形成循环
+    from app.modules.research.doc_gen import spec_source
+
+    template_code = patch.get("template_code") or getattr(template, "template_code", None) or ""
+    template_structure = patch.get("template_structure", getattr(template, "template_structure", None))
+    spec = spec_source.spec_from_code(template_code) or spec_source.spec_from_structure(
+        template_structure, code_hint=template_code
+    )
+    if spec is None:
+        raise BadRequestException("该模板的填充项配置无法识别，请重新上传 Word 母本后再启用")
 
 
 async def create_deliverable_template(  # type: ignore[no-untyped-def]
     db: AsyncSession, data, user_id: uuid.UUID | None = None
 ):
-    """创建交付物模板"""
+    """创建交付物模板（默认不启用：母本与槽位核对后才允许启用）。"""
     template_data = data.model_dump()
+    if template_data.get("is_active"):
+        # 新建时必然还没有母本，直接拒绝比静默改成「未启用」更不容易被误解
+        raise BadRequestException("新建模板默认不启用；请先上传 Word 模板原件后再启用")
     if user_id:
         template_data["creator_id"] = user_id
     return await repo.create_deliverable_template(db, template_data)
@@ -1082,6 +1153,8 @@ async def update_deliverable_template(  # type: ignore[no-untyped-def]
     if not template:
         raise HTTPException(status_code=404, detail="模板不存在")
     update_data = data.model_dump(exclude_unset=True)
+    if update_data.get("is_active") is True:
+        _ensure_template_enableable(template, update_data)
     if user_id:
         update_data["updated_by"] = user_id
     return await repo.update_deliverable_template(db, template, update_data)

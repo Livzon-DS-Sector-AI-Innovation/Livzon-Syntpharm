@@ -5,15 +5,17 @@ WORKDIR /app
 # Install patchelf for PyTorch fixes
 RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ patchelf
 
-# Install PyTorch CPU-only FIRST (before requirements.txt pulls in CUDA version)
+# Install PyTorch CPU-only FIRST (PyPI/aliyun linux wheel for torch 1.10 is the CPU build;
+# installing it before requirements.txt keeps botorch/gpytorch from pulling another version)
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --timeout 60 --retries 3 torch==1.10.0
 
 # Install other dependencies (botorch will see torch is already installed)
 COPY edbo_service/requirements.txt .
-RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --extra-index-url https://mirrors.nju.edu.cn/pytorch/whl/cpu/ --trusted-host mirrors.nju.edu.cn -r requirements.txt
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --timeout 60 --retries 3 -r requirements.txt
 
 # Install EDBO+ package
 COPY vendor/edboplus-main /tmp/edboplus-main
-RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --extra-index-url https://mirrors.nju.edu.cn/pytorch/whl/cpu/ --trusted-host mirrors.nju.edu.cn /tmp/edboplus-main && \
+RUN pip install --no-cache-dir -i https://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com --timeout 60 --retries 3 /tmp/edboplus-main && \
     rm -rf /tmp/edboplus-main
 
 # Patch PyTorch .so files for executable stack issues

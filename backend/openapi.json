@@ -14478,7 +14478,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           }
@@ -14517,8 +14519,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14530,7 +14531,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -14579,8 +14582,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14592,7 +14594,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -14649,7 +14653,57 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import/test-validation": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6d4b\u8bd5\u9a8c\u8bc1\u9519\u8bef",
+        "description": "Test endpoint to debug validation errors without authentication.",
+        "operationId": "test_validation_api_v1_equipment_equipments_import_test_validation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/EquipmentImportRow"
+                },
+                "type": "array",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Test Validation Api V1 Equipment Equipments Import Test Validation Post"
+                }
               }
             }
           },
@@ -50279,6 +50333,2138 @@
         }
       }
     },
+    "/api/v1/research/doc-gen/limits": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u6587\u6863\u751f\u6210\u89c4\u6a21\u9650\u5236",
+        "description": "\u524d\u7aef\u63d0\u4ea4\u524d\u636e\u6b64\u6821\u9a8c\u6587\u4ef6\u6570\u91cf\u4e0e\u5927\u5c0f\u3002",
+        "operationId": "read_limits_api_v1_research_doc_gen_limits_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenLimitsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u65b0\u5efa\u62a5\u544a\uff08\u4efb\u52a1 + \u8d44\u6599\u4e00\u6b21\u63d0\u4ea4\uff09",
+        "description": "\u300c\u65b0\u5efa\u62a5\u544a\u300d\u4e00\u6b21\u63d0\u4ea4\uff1a\u5efa\u4efb\u52a1 + \u6302\u8d44\u6599\uff0c\u4e0d\u518d\u5206\u6b65\u5411\u5bfc\u3002\n\n\u5bf9\u8bdd\u8865\u5168\u5f00\u542f\u65f6\u4efb\u52a1\u505c\u5728\u8349\u7a3f\uff08\u7531 ``/extract`` \u89e6\u53d1\u63d0\u53d6\uff09\uff1b\u5173\u95ed\u65f6\u76f4\u63a5\u6392\u961f\uff0c\nworker \u4e00\u8def\u8dd1\u5b8c\u300c\u63d0\u53d6 \u2192 \u6210\u6587 \u2192 \u6e32\u67d3\u300d\u3002\n\n\u672a\u4f20 ``report_id`` \u65f6\u81ea\u52a8\u521b\u5efa\u4e00\u6761 ``RdReport`` \u8bb0\u5f55\uff0c\u4f7f\u62a5\u544a\u5217\u8868\u53ef\u89c1\u3002",
+        "operationId": "create_job_api_v1_research_doc_gen_jobs_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_job_api_v1_research_doc_gen_jobs_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u6309\u9879\u76ee\u67e5\u8be2\u751f\u6210\u4efb\u52a1",
+        "description": "\u4e00\u6b21\u53d6\u56de\u9879\u76ee\u4e0b\u6240\u6709\u751f\u6210\u4efb\u52a1\uff0c\u4f9b\u62a5\u544a\u5217\u8868\u663e\u793a\u6700\u65b0\u72b6\u6001\uff08\u907f\u514d\u9010\u62a5\u544a\u8bf7\u6c42\uff09\u3002",
+        "operationId": "read_jobs_for_project_api_v1_research_doc_gen_jobs_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "\u7814\u53d1\u9879\u76eeID",
+              "title": "Project Id"
+            },
+            "description": "\u7814\u53d1\u9879\u76eeID"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}": {
+      "patch": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4fee\u6539\u62a5\u544a\u57fa\u672c\u4fe1\u606f\u4e0e\u8865\u5145\u8bf4\u660e",
+        "description": "\u4fee\u6539\u53d7\u63a7\u7f16\u7801/\u7248\u672c\u53f7/\u54c1\u79cd\u4e0e\u4eba\u5de5\u8865\u5145\u8bf4\u660e\u3002\n\n\u8349\u7a3f\u3001\u590d\u6838\u3001\u5931\u8d25\u3001\u5df2\u5b8c\u6210\u72b6\u6001\u5747\u53ef\u4fee\u6539\u5143\u6570\u636e\uff1b\u4ec5\u8fd0\u884c\u4e2d\uff08parsing/extracting/composing/rendering\uff09\u4e0d\u5141\u8bb8\u3002\n\u8865\u5145\u8bf4\u660e\u4ee5 role=supplement \u53c2\u4e0e\u63d0\u53d6\u4e0e\u6210\u6587\uff0c\u6539\u5b8c\u9700\u91cd\u65b0\u63d0\u53d6\u624d\u4f1a\u751f\u6548\uff1b\n\u300c\u91cd\u65b0\u751f\u6210\u300d\u65b0\u5efa\u7684\u4efb\u52a1\u81ea\u52a8\u6cbf\u7528\u6700\u65b0\u8865\u5145\u8bf4\u660e\uff0c\u4f5c\u4e3a\u4f7f\u7528\u8005\u7684\u957f\u671f\u80cc\u666f\u77e5\u8bc6\u3002",
+        "operationId": "update_job_api_v1_research_doc_gen_jobs__job_id__patch",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocGenJobUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u67e5\u8be2\u751f\u6210\u4efb\u52a1",
+        "description": "\u4efb\u52a1\u72b6\u6001\u4e0e\u8fdb\u5ea6\uff08\u524d\u7aef\u8f6e\u8be2\u6b64\u7aef\u70b9\uff09\u3002",
+        "operationId": "read_job_api_v1_research_doc_gen_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/files": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u8ffd\u52a0\u8d44\u6599\u6587\u4ef6",
+        "description": "\u9010\u4e2a\u4e0a\u4f20\u5165\u53e3\uff1a\u5411\u5c1a\u672a\u8fdb\u5165\u63d0\u53d6\u6d41\u7a0b\u7684\u4efb\u52a1\u8ffd\u52a0\u8d44\u6599\u3002",
+        "operationId": "upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_row_id}": {
+      "delete": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u5220\u9664\u8d44\u6599\u6587\u4ef6",
+        "description": "\u4ece\u4efb\u52a1\u79fb\u9664\u4e00\u4efd\u8d44\u6599\uff08\u8f6f\u5220\u9664\uff09\uff0c\u8fd4\u56de\u6700\u65b0\u4efb\u52a1\u8be6\u60c5\u3002",
+        "operationId": "delete_job_input_file_api_v1_research_doc_gen_jobs__job_id__input_files__file_row_id__delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_row_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Row Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_id}/download": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4e0b\u8f7d\u8d44\u6599\u6587\u4ef6",
+        "description": "\u4e0b\u8f7d\u4efb\u52a1\u7684\u4e00\u4efd\u8d44\u6599\u6587\u4ef6\u539f\u4ef6\uff0c\u4f9b\u524d\u7aef\u9884\u89c8\u3002",
+        "operationId": "download_input_file_api_v1_research_doc_gen_jobs__job_id__input_files__file_id__download_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/slots": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u67e5\u8be2\u9010\u9879\u586b\u5145\u7ed3\u679c",
+        "description": "\u9010\u9879\u586b\u5145\u7ed3\u679c\u4e0e\u4f9d\u636e\u3002",
+        "operationId": "read_job_slots_api_v1_research_doc_gen_jobs__job_id__slots_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/extracted-info": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u67e5\u8be2\u7ed3\u6784\u5316\u63d0\u53d6\u4fe1\u606f",
+        "description": "\u4ec5\u8fd4\u56de\u5df2\u63d0\u53d6\u7684\u7ed3\u6784\u5316\u4fe1\u606f\uff08\u69fd\u4f4d\u503c\uff09\uff0c\u7528\u4e8e\u524d\u7aef\u9884\u89c8\u4e0e\u7f16\u8f91\u3002",
+        "operationId": "read_extracted_info_api_v1_research_doc_gen_jobs__job_id__extracted_info_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenExtractedInfoResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/outline": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u67e5\u8be2\u4efb\u52a1\u5927\u7eb2",
+        "description": "\u52a8\u6001\u7ae0\u8282\u5927\u7eb2\uff1a\u590d\u6838\u754c\u9762\u7684\u7ed3\u6784\u6811\u6570\u636e\u6e90\uff08\u542b\u89e6\u53d1\u4f9d\u636e\u4e0e\u9884\u8bbe\u6807\u9898\u6c60\uff09\u3002",
+        "operationId": "read_job_outline_api_v1_research_doc_gen_jobs__job_id__outline_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenOutlineResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/reports/{report_id}/jobs": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u6309\u62a5\u544a\u67e5\u8be2\u751f\u6210\u4efb\u52a1",
+        "description": "\u67d0\u7814\u53d1\u62a5\u544a\u4e0b\u7684\u5386\u6b21\u751f\u6210\u4efb\u52a1\u3002",
+        "operationId": "read_jobs_for_report_api_v1_research_doc_gen_reports__report_id__jobs_get",
+        "parameters": [
+          {
+            "name": "report_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/cancel": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u53d6\u6d88\u751f\u6210\u4efb\u52a1",
+        "description": "\u53d6\u6d88\u6392\u961f\u4e2d\u6216\u8fdb\u884c\u4e2d\u7684\u4efb\u52a1\u3002",
+        "operationId": "cancel_job_api_v1_research_doc_gen_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/confirm": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u786e\u8ba4\u63d0\u53d6\u7ed3\u679c\u5e76\u751f\u6210",
+        "description": "\u4eba\u5de5\u786e\u8ba4\uff08\u53ef\u542b\u4fee\u6b63\u4e0e\u5927\u7eb2\u8c03\u6574\uff09\u540e\u4ea4\u56de worker \u6e32\u67d3\uff1b\u63d0\u53d6\u7ed3\u679c\u5df2\u843d\u5e93\uff0c\u4e0d\u91cd\u590d\u8c03\u7528\u6a21\u578b\u3002",
+        "operationId": "confirm_job_api_v1_research_doc_gen_jobs__job_id__confirm_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocGenConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/conversation": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u67e5\u8be2\u5bf9\u8bdd\u4f1a\u8bdd",
+        "description": "\u4f1a\u8bdd\u4e0e\u5168\u90e8\u6d88\u606f\uff1b\u4efb\u52a1\u5c1a\u672a\u521b\u5efa\u4f1a\u8bdd\uff08\u672a\u5b8c\u6210\u521d\u62bd\uff09\u65f6\u8fd4\u56de\u7a7a data\u3002",
+        "operationId": "read_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenConversationDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/messages": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u53d1\u9001\u5bf9\u8bdd\u6d88\u606f",
+        "description": "\u7528\u6237\u8865\u5145\u4fe1\u606f\uff1a\u6a21\u578b\u62bd\u503c \u2192 \u6821\u9a8c \u2192 \u5199\u5165\u69fd\u4f4d\u7ed3\u679c\uff0c\u8fd4\u56de\u66f4\u65b0\u540e\u7684\u4f1a\u8bdd\u4e0e\u5168\u90e8\u6d88\u606f\u3002",
+        "operationId": "send_message_api_v1_research_doc_gen_jobs__job_id__messages_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocGenSendMessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenSendMessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/conversation/complete": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u5b8c\u6210\u5bf9\u8bdd",
+        "description": "\u7ed3\u675f\u5bf9\u8bdd\uff08\u4fdd\u7559\u5df2\u8865\u503c\uff09\uff0c\u540e\u7eed\u5230\u786e\u8ba4\u9875\u9010\u9879\u68c0\u67e5\u5e76\u786e\u8ba4\u751f\u6210\u3002",
+        "operationId": "complete_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_complete_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenConversationDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/conversation/skip": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u8df3\u8fc7\u5bf9\u8bdd",
+        "description": "\u8df3\u8fc7\u5bf9\u8bdd\u76f4\u63a5\u524d\u5f80\u786e\u8ba4\u9875\uff08\u4e0e\u5b8c\u6210\u7b49\u6548\uff0c\u8bed\u4e49\u4e0d\u540c\uff09\u3002",
+        "operationId": "skip_conversation_api_v1_research_doc_gen_jobs__job_id__conversation_skip_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenConversationDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/slot-profiles": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u5185\u7f6e\u586b\u5145\u9879\u914d\u7f6e\u6e05\u5355",
+        "description": "\u4e0a\u4f20 Word \u6a21\u677f\u539f\u4ef6\u65f6\uff0c\u7528\u5b83\u9009\u62e9\u8fd9\u4efd\u6a21\u677f\u5bf9\u5e94\u54ea\u5957\u586b\u5145\u9879\u914d\u7f6e\u3002",
+        "operationId": "read_slot_profiles_api_v1_research_doc_gen_slot_profiles_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenSlotProfileListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/templates": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u53ef\u7528\u4e8e AI \u751f\u6210\u7684\u6a21\u677f",
+        "description": "\u53ea\u8fd4\u56de\u300c\u6709 Word \u6a21\u677f\u539f\u4ef6 + \u586b\u5145\u9879\u914d\u7f6e\u6709\u6548\u300d\u7684\u4ea4\u4ed8\u7269\u6a21\u677f\uff0c\u907f\u514d\u9009\u4e86\u5fc5\u7136\u5931\u8d25\u3002",
+        "operationId": "read_usable_templates_api_v1_research_doc_gen_templates_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenUsableTemplateListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/builtin-templates": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u5185\u7f6e\u6a21\u677f\u5b9a\u4e49\uff08\u6392\u9519\u7528\uff09",
+        "description": "\u4ee3\u7801\u5185\u7f6e\u7684\u586b\u5145\u9879\u914d\u7f6e\u89c6\u56fe\uff0c\u4f9b\u6392\u67e5\u4e0e\u5bf9\u8d26\u3002",
+        "operationId": "read_builtin_templates_api_v1_research_doc_gen_builtin_templates_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenTemplateListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/batch-upload": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u6279\u91cf\u4e0a\u4f20 Word \u6a21\u677f",
+        "description": "\u6bcf\u4e2a\u6587\u4ef6\u5efa\u4e00\u6761\u6a21\u677f\u8bb0\u5f55\uff1b\u540c\u540d\u6587\u4ef6\u8f6c\u4e3a\u8be5\u6a21\u677f\u7684\u65b0\u7248\u672c\uff0c\u683c\u5f0f\u4e0d\u7b26\u7684\u8df3\u8fc7\u5e76\u8bf4\u660e\u539f\u56e0\u3002",
+        "operationId": "batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenBatchUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/upload": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4e0a\u4f20 Word \u6a21\u677f\u539f\u4ef6",
+        "description": "\u7ed9\u5df2\u5b58\u5728\u7684\u4ea4\u4ed8\u7269\u6a21\u677f\u6302\u8f7d/\u66ff\u6362 Word \u6a21\u677f\u539f\u4ef6\uff0c\u5e76\u81ea\u52a8\u7559\u6863\u4e3a\u4e00\u4e2a\u65b0\u7248\u672c\u3002\n\n\u4e0a\u4f20\u4e0d\u4f1a\u81ea\u52a8\u542f\u7528\u6a21\u677f\uff1a\u6bcd\u672c\u4e0e\u69fd\u4f4d\u7ecf\u6838\u5bf9\u540e\u7531\u7528\u6237\u624b\u52a8\u5f00\u542f\uff0c\u907f\u514d\u534a\u6210\u54c1\u88ab AI \u751f\u6210\u9009\u4e2d\u3002",
+        "operationId": "upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenTemplateFileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/download": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4e0b\u8f7d Word \u6a21\u677f\u539f\u4ef6",
+        "description": "\u4e0b\u8f7d\u6a21\u677f\u7684 Word \u539f\u4ef6\uff08\u4fdd\u7559\u539f\u59cb\u6269\u5c55\u540d\uff09\u3002",
+        "operationId": "download_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__download_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4ea4\u4ed8\u7269\u6a21\u677f\u7248\u672c\u5386\u53f2",
+        "description": "\u6a21\u677f\u7684\u7559\u6863\u7248\u672c\uff08\u65b0\u7248\u672c\u5728\u524d\uff09\uff0c\u636e\u6b64\u53ef\u9884\u89c8\u3001\u4e0b\u8f7d\u6216\u56de\u6eda\u4efb\u4e00\u4e2a\u5386\u53f2\u7248\u672c\u3002",
+        "operationId": "list_template_versions_api_v1_research_doc_gen_deliverable_templates__template_id__versions_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenTemplateVersionListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/download": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4e0b\u8f7d\u5386\u53f2\u7248\u672c Word \u539f\u4ef6",
+        "description": "\u4e0b\u8f7d\u6307\u5b9a\u5386\u53f2\u7248\u672c\u7684 Word \u539f\u4ef6\uff08\u6587\u4ef6\u540d\u5e26\u7248\u672c\u53f7\uff0c\u907f\u514d\u591a\u6b21\u4e0b\u8f7d\u4e92\u76f8\u8986\u76d6\uff09\u3002",
+        "operationId": "download_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__download_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/restore": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u56de\u6eda\u5230\u6307\u5b9a\u5386\u53f2\u7248\u672c",
+        "description": "\u56de\u6eda = \u4ee5\u8be5\u7248\u672c\u5185\u5bb9\u65b0\u5efa\u4e00\u4e2a\u7248\u672c\u5e76\u8bbe\u4e3a\u5f53\u524d\uff1a\u7248\u672c\u53f7\u5355\u8c03\u9012\u589e\uff0c\u5386\u53f2\u4e0d\u53ef\u6539\u5199\u3002\n\n\u4e0d\u5c31\u5730\u6539\u5199\u5386\u53f2\u7248\u672c\uff08\u7c7b\u4f3c git revert\uff09\uff0c\u56e0\u6b64\u5ba1\u8ba1\u94fe\u5b8c\u6574\uff0c\u4e14\u53ef\u518d\u6b21\u56de\u6eda\u56de\u6765\u3002",
+        "operationId": "restore_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__restore_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenTemplateVersionRestoreResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}": {
+      "delete": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u5220\u9664\u5386\u53f2\u7248\u672c",
+        "description": "\u8f6f\u5220\u4e00\u4e2a\u5386\u53f2\u7248\u672c\uff1b\u5f53\u524d\u751f\u6548\u7248\u672c\u4e0e\u552f\u4e00\u7248\u672c\u4e0d\u5141\u8bb8\u5220\u9664\u3002",
+        "operationId": "delete_template_version_api_v1_research_doc_gen_deliverable_templates__template_id__versions__version_id__delete",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Version Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenOperationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/extract": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "AI \u63d0\u53d6\u4fe1\u606f",
+        "description": "\u4e24\u6b65\u6d41\u7a0b\u7b2c\u4e00\u6b65\uff1a\u6392\u961f\u63d0\u53d6\u8d44\u6599\u4fe1\u606f\uff0c\u5b8c\u6210\u540e\u505c\u5728\u300c\u7b49\u5f85\u786e\u8ba4\u300d\u3002\n\n\u63d0\u53d6\u4e2d/\u751f\u6210\u4e2d\u62d2\u7edd\u91cd\u5165\uff1b\u590d\u6838\u6216\u5931\u8d25\u540e\u53ef\u518d\u6b21\u8c03\u7528\u91cd\u65b0\u63d0\u53d6\uff08\u4f1a\u6e05\u7a7a\u4e0a\u4e00\u8f6e\u63d0\u53d6\n\u7ed3\u679c\u4e0e\u5bf9\u8bdd\u4e2d\u7684\u4eba\u5de5\u4fee\u6539\uff0c\u5c5e\u660e\u786e\u64cd\u4f5c\uff09\u3002",
+        "operationId": "extract_job_api_v1_research_doc_gen_jobs__job_id__extract_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/generate": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "AI \u62a5\u544a\u751f\u6210\uff08\u786e\u8ba4\u540e\u6210\u6587\uff09",
+        "description": "\u4e24\u6b65\u6d41\u7a0b\u7b2c\u4e8c\u6b65\uff1a\u786e\u8ba4\u63d0\u53d6\u4fe1\u606f\uff0c\u4ea4\u56de worker \u6210\u6587 + \u6e32\u67d3\u3002\n\n\u6210\u6587\u7531\u5199\u4f5c\u6a21\u578b\u628a\u786e\u8ba4\u503c\u6539\u5199\u6210\u8fde\u7eed\u53d9\u8ff0\uff1b\u542b\u672a\u786e\u8ba4\u6570\u5b57\u6216\u8d85\u5b57\u6570\u4e0a\u9650\u7684\n\u8f93\u51fa\u6574\u69fd\u56de\u9000\u4eba\u5de5\u6587\u672c\u3002\u5e26\u4fee\u6b63\u503c\u65f6\u5373\u300c\u4eba\u5de5\u786e\u8ba4\u540e\u91cd\u65b0\u751f\u6210\u6b63\u6587\u300d\u3002",
+        "operationId": "generate_job_api_v1_research_doc_gen_jobs__job_id__generate_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocGenConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/regenerate": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u91cd\u65b0\u751f\u6210\uff08\u65b0\u4efb\u52a1\uff0c\u6cbf\u7528\u8d44\u6599\u4e0e\u786e\u8ba4\u503c\uff09",
+        "description": "\u5728\u590d\u6838/\u5931\u8d25/\u5df2\u5b8c\u6210\u4efb\u52a1\u4e0a\u70b9\u300c\u91cd\u65b0\u751f\u6210\u300d\uff1a\u65b0\u5efa\u4efb\u52a1\u6302\u5728\u672c\u4efb\u52a1\u4e4b\u4e0b\u3002\n\n\u8d44\u6599\u3001\u8865\u5145\u8bf4\u660e\u4e0e\u5df2\u786e\u8ba4\u586b\u5145\u503c\u5168\u90e8\u6cbf\u7528\u5230\u65b0\u4efb\u52a1\uff08\u65e7\u4ea7\u7269\u4e0e\u5ba1\u8ba1\u94fe\u5b8c\u6574\u4fdd\u7559\uff09\uff1b\n\u65b0\u4efb\u52a1\u6392\u961f\u540e\u76f4\u63a5\u63d0\u53d6 \u2192 \u6210\u6587 \u2192 \u6e32\u67d3\u3002\u65e7\u62a5\u544a\u6807\u8bb0\u4e3a\u300c\u5df2\u88ab\u65b0\u4e00\u8f6e\u53d6\u4ee3\u300d\u3002",
+        "operationId": "regenerate_job_api_v1_research_doc_gen_jobs__job_id__regenerate_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenJobDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/superseded": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u67e5\u8be2\u88ab\u672c\u8f6e\u53d6\u4ee3\u7684\u5386\u53f2\u4efb\u52a1",
+        "description": "\u91cd\u65b0\u751f\u6210\u94fe\u4e0a\u7684\u5386\u53f2\u8282\u70b9\uff08\u4e0a\u4e00\u8f6e\u53ca\u5176\u7956\u5148\u3001\u5144\u5f1f\u5206\u652f\uff09\uff0c\u4f9b\u8be6\u60c5\u9875\u5c55\u793a\u5931\u6548\u5fbd\u6807\u3002",
+        "operationId": "read_superseded_api_v1_research_doc_gen_jobs__job_id__superseded_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenSupersededResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/document": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4e0b\u8f7d\u6587\u6863\u521d\u7248",
+        "description": "\u4e0b\u8f7d\u6e32\u67d3\u51fa\u7684 docx\u3002",
+        "operationId": "download_document_api_v1_research_doc_gen_jobs__job_id__document_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/jobs/{job_id}/report": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4e0b\u8f7d\u751f\u6210\u8bf4\u660e",
+        "description": "\u4e0b\u8f7d\u8bb0\u5f55\u53d6\u503c\u6765\u6e90\u4e0e\u5f85\u4eba\u5de5\u6e05\u5355\u7684\u751f\u6210\u8bf4\u660e\u3002",
+        "operationId": "download_report_api_v1_research_doc_gen_jobs__job_id__report_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/registration/": {
       "get": {
         "tags": [
@@ -84565,6 +86751,36 @@
         ],
         "title": "Body_analyze_literature_api_v1_research_literature_analyze_post"
       },
+      "Body_batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "Word \u6a21\u677f\u6587\u4ef6\uff08docx/dotx/doc\uff09"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage",
+            "description": "\u6240\u5c5e\u9636\u6bb5\uff0c\u7559\u7a7a\u5219\u7531\u7cfb\u7edf\u6309\u8bc6\u522b\u7ed3\u679c\u586b",
+            "default": ""
+          },
+          "deliverable_type": {
+            "type": "string",
+            "title": "Deliverable Type",
+            "description": "\u4ea4\u4ed8\u7269\u7c7b\u578b\uff0c\u7559\u7a7a\u5219\u7528\u8bc6\u522b\u51fa\u7684\u6a21\u677f code",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_batch_upload_templates_api_v1_research_doc_gen_deliverable_templates_batch_upload_post"
+      },
       "Body_confirm_import_api_v1_quality_cpv_import_confirm_post": {
         "properties": {
           "file": {
@@ -84715,6 +86931,119 @@
           "resume"
         ],
         "title": "Body_create_candidate_api_v1_hr_candidates_post"
+      },
+      "Body_create_job_api_v1_research_doc_gen_jobs_post": {
+        "properties": {
+          "deliverable_template_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deliverable Template Id",
+            "description": "\u4ea4\u4ed8\u7269\u6a21\u677f ID\uff08Word \u6bcd\u672c + \u586b\u5145\u9879\u914d\u7f6e\uff09"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "contentMediaType": "application/octet-stream"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files",
+            "description": "\u8d44\u6599\u6587\u4ef6\uff08\u53ef\u591a\u4e2a\uff0c\u975e\u5fc5\u586b\uff09"
+          },
+          "file_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "File Roles",
+            "description": "\u4e0e files \u987a\u5e8f\u5bf9\u5e94\u7684\u89d2\u8272\uff1amaterial/literature"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id",
+            "description": "\u5173\u8054\u7814\u53d1\u62a5\u544a"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id",
+            "description": "\u5173\u8054\u7814\u53d1\u9879\u76ee"
+          },
+          "doc_code": {
+            "type": "string",
+            "title": "Doc Code",
+            "description": "\u53d7\u63a7\u7f16\u7801",
+            "default": ""
+          },
+          "doc_version": {
+            "type": "string",
+            "title": "Doc Version",
+            "description": "\u7248\u672c\u53f7",
+            "default": ""
+          },
+          "drug_name": {
+            "type": "string",
+            "title": "Drug Name",
+            "description": "\u54c1\u79cd\u540d\u79f0\uff08\u6a21\u677f\u5360\u4f4d\u7b26\u66ff\u6362\u7528\uff09",
+            "default": ""
+          },
+          "supplement_text": {
+            "type": "string",
+            "title": "Supplement Text",
+            "description": "\u4eba\u5de5\u8865\u5145\u8bf4\u660e\uff08\u4f5c\u4e3a\u8865\u5145\u8d44\u6599\u53c2\u4e0e\u63d0\u53d6\u4e0e\u6210\u6587\uff09",
+            "default": ""
+          },
+          "report_title": {
+            "type": "string",
+            "title": "Report Title",
+            "description": "\u62a5\u544a\u6807\u9898\uff08\u81ea\u52a8\u521b\u5efa RdReport \u65f6\u4f7f\u7528\uff09",
+            "default": ""
+          },
+          "report_type": {
+            "type": "string",
+            "title": "Report Type",
+            "description": "\u62a5\u544a\u7c7b\u578b\uff08\u81ea\u52a8\u521b\u5efa RdReport \u65f6\u4f7f\u7528\uff09",
+            "default": "summary"
+          },
+          "report_stage": {
+            "type": "string",
+            "title": "Report Stage",
+            "description": "\u5173\u8054\u9636\u6bb5\uff08\u81ea\u52a8\u521b\u5efa RdReport \u65f6\u4f7f\u7528\uff09",
+            "default": ""
+          },
+          "report_summary": {
+            "type": "string",
+            "title": "Report Summary",
+            "description": "\u62a5\u544a\u6458\u8981\uff08\u81ea\u52a8\u521b\u5efa RdReport \u65f6\u4f7f\u7528\uff09",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "deliverable_template_id"
+        ],
+        "title": "Body_create_job_api_v1_research_doc_gen_jobs_post"
       },
       "Body_edbo_generate_scope_api_v1_research_edbo_generate_scope_post": {
         "properties": {
@@ -85910,6 +88239,32 @@
         ],
         "title": "Body_upload_equipment_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__photos_post"
       },
+      "Body_upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "\u8d44\u6599\u6587\u4ef6"
+          },
+          "file_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "File Roles",
+            "description": "\u4e0e files \u987a\u5e8f\u5bf9\u5e94\u7684\u89d2\u8272"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_job_files_api_v1_research_doc_gen_jobs__job_id__files_post"
+      },
       "Body_upload_pilot_document_api_v1_research_pilot_workflow__workflow_id__upload_post": {
         "properties": {
           "file": {
@@ -85938,6 +88293,27 @@
           "file"
         ],
         "title": "Body_upload_task_photo_api_v1_equipment_inspection_tasks__task_id__photos_post"
+      },
+      "Body_upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "Word \u6a21\u677f\u6587\u4ef6\uff08docx/dotx/doc\uff09"
+          },
+          "change_note": {
+            "type": "string",
+            "title": "Change Note",
+            "description": "\u7248\u672c\u8bf4\u660e\uff08\u53d8\u66f4\u5907\u6ce8\uff0c\u53ef\u7a7a\uff09",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_template_file_api_v1_research_doc_gen_deliverable_templates__template_id__upload_post"
       },
       "Body_upload_templates_api_v1_registration_dossier_writer_products__dossier_id__templates_post": {
         "properties": {
@@ -92677,6 +95053,1702 @@
         "title": "DocCheckUpdate",
         "description": "\u66f4\u65b0\u6821\u9a8c\u4efb\u52a1"
       },
+      "DocGenBatchUploadResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenBatchUploadResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenBatchUploadResponse",
+        "description": "POST /doc-gen/deliverable-templates/batch-upload \u54cd\u5e94\u3002"
+      },
+      "DocGenBatchUploadResult": {
+        "properties": {
+          "created": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Created"
+          },
+          "versioned": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Versioned"
+          },
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "title": "DocGenBatchUploadResult",
+        "description": "\u6279\u91cf\u4e0a\u4f20\u7ed3\u679c\u3002\n\n\u540c\u540d\u6587\u4ef6\u4e0d\u518d\u8ba1\u5165 skipped\uff0c\u800c\u662f\u4f5c\u4e3a\u8be5\u6a21\u677f\u7684\u65b0\u7248\u672c\u8ba1\u5165 versioned\u3002"
+      },
+      "DocGenConfirmRequest": {
+        "properties": {
+          "slots": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Slots",
+            "description": "\u586b\u5145\u9879 key \u2192 \u4eba\u5de5\u4fee\u6b63\u540e\u7684\u6587\u672c"
+          },
+          "outline": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSectionAdjust"
+            },
+            "type": "array",
+            "title": "Outline",
+            "description": "\u5927\u7eb2\u8c03\u6574\uff08\u542f\u7528/\u7981\u7528/\u6362\u6807\u9898/\u6392\u5e8f\uff09"
+          }
+        },
+        "type": "object",
+        "title": "DocGenConfirmRequest",
+        "description": "POST /jobs/{id}/confirm \u8bf7\u6c42\u4f53\uff1a\u4eba\u5de5\u6539\u8fc7\u7684\u586b\u5145\u9879 + \u5927\u7eb2\u8c03\u6574\u3002"
+      },
+      "DocGenConversationData": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/DocGenConversationResponse"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenMessageResponse"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation"
+        ],
+        "title": "DocGenConversationData",
+        "description": "\u4f1a\u8bdd + \u6d88\u606f\u5217\u8868\uff08GET conversation \u4e0e POST messages \u5171\u7528\uff09\u3002"
+      },
+      "DocGenConversationDataResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocGenConversationData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DocGenConversationDataResponse",
+        "description": "\u5bf9\u8bdd\u6570\u636e\u54cd\u5e94\uff08\u4fe1\u5c01\u683c\u5f0f\uff09\u3002"
+      },
+      "DocGenConversationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "round_count": {
+            "type": "integer",
+            "title": "Round Count"
+          },
+          "max_rounds": {
+            "type": "integer",
+            "title": "Max Rounds"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "job_id",
+          "status",
+          "round_count",
+          "max_rounds",
+          "created_at"
+        ],
+        "title": "DocGenConversationResponse",
+        "description": "\u4efb\u52a1\u5bf9\u8bdd\u4f1a\u8bdd\u72b6\u6001\u3002"
+      },
+      "DocGenExtractedInfoResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/DocGenSlotValueResponse"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenExtractedInfoResponse",
+        "description": "GET /jobs/{id}/extracted-info \u54cd\u5e94\u3002"
+      },
+      "DocGenInputFileResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "material",
+              "literature",
+              "report_draft",
+              "supplement"
+            ],
+            "title": "Role"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count",
+            "default": 0
+          },
+          "char_count": {
+            "type": "integer",
+            "title": "Char Count",
+            "default": 0
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "original_filename",
+          "role",
+          "size_bytes",
+          "parse_status"
+        ],
+        "title": "DocGenInputFileResponse",
+        "description": "\u8d44\u6599\u6587\u4ef6\u6761\u76ee\u3002"
+      },
+      "DocGenJobDataResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenJobResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenJobDataResponse",
+        "description": "POST /jobs\u3001POST /jobs/{id}/cancel \u54cd\u5e94\u3002"
+      },
+      "DocGenJobDetail": {
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/DocGenJobResponse"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenInputFileResponse"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSlotValueResponse"
+            },
+            "type": "array",
+            "title": "Slots"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSectionResponse"
+            },
+            "type": "array",
+            "title": "Sections"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job"
+        ],
+        "title": "DocGenJobDetail",
+        "description": "\u4efb\u52a1\u8be6\u60c5\uff08\u542b\u8d44\u6599\u3001\u586b\u5145\u9879\u7ed3\u679c\u4e0e\u5927\u7eb2\uff09\u3002"
+      },
+      "DocGenJobDetailResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenJobDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenJobDetailResponse",
+        "description": "GET /jobs/{id} \u54cd\u5e94\u3002"
+      },
+      "DocGenJobListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenJobResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenJobListResponse",
+        "description": "GET /jobs?report_id= \u54cd\u5e94\u3002"
+      },
+      "DocGenJobResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "report_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Id"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_version": {
+            "type": "string",
+            "title": "Template Version"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "step": {
+            "type": "string",
+            "title": "Step"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "has_document": {
+            "type": "boolean",
+            "title": "Has Document",
+            "default": false
+          },
+          "has_report": {
+            "type": "boolean",
+            "title": "Has Report",
+            "default": false
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "stats": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stats"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          },
+          "parent_job_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Job Id"
+          },
+          "supplement_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplement Text"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "template_code",
+          "template_version",
+          "status",
+          "step",
+          "progress",
+          "created_at"
+        ],
+        "title": "DocGenJobResponse",
+        "description": "\u4efb\u52a1\u72b6\u6001\uff08\u5217\u8868\u4e0e\u8f6e\u8be2\u5171\u7528\uff09\u3002"
+      },
+      "DocGenJobUpdateRequest": {
+        "properties": {
+          "doc_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc Code",
+            "description": "\u53d7\u63a7\u7f16\u7801"
+          },
+          "doc_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc Version",
+            "description": "\u7248\u672c\u53f7"
+          },
+          "drug_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drug Name",
+            "description": "\u54c1\u79cd\u540d\u79f0"
+          },
+          "supplement_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplement Text",
+            "description": "\u8865\u5145\u8bf4\u660e\uff08\u91cd\u65b0\u751f\u6210\u65f6\u81ea\u52a8\u6cbf\u7528\uff09"
+          },
+          "template_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Code",
+            "description": "\u6a21\u677fID\uff08\u53d8\u66f4\u6a21\u677f\uff09"
+          }
+        },
+        "type": "object",
+        "title": "DocGenJobUpdateRequest",
+        "description": "PATCH /jobs/{id} \u8bf7\u6c42\u4f53\uff1a\u4fee\u6539\u57fa\u672c\u4fe1\u606f\u4e0e\u8865\u5145\u8bf4\u660e\uff08\u4ec5\u8349\u7a3f/\u590d\u6838/\u5931\u8d25\u72b6\u6001\u53ef\u6539\uff09\u3002"
+      },
+      "DocGenLimits": {
+        "properties": {
+          "max_files": {
+            "type": "integer",
+            "title": "Max Files",
+            "default": 20
+          },
+          "max_total_pages": {
+            "type": "integer",
+            "title": "Max Total Pages",
+            "default": 150
+          },
+          "max_file_mb": {
+            "type": "integer",
+            "title": "Max File Mb",
+            "default": 30
+          },
+          "max_total_mb": {
+            "type": "integer",
+            "title": "Max Total Mb",
+            "default": 150
+          },
+          "allowed_extensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Extensions"
+          },
+          "supported_formats": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSupportedFormat"
+            },
+            "type": "array",
+            "title": "Supported Formats"
+          }
+        },
+        "type": "object",
+        "title": "DocGenLimits",
+        "description": "\u4e0a\u4f20\u4e0e\u4efb\u52a1\u89c4\u6a21\u9650\u5236\uff08\u524d\u7aef\u636e\u6b64\u505a\u63d0\u4ea4\u524d\u6821\u9a8c\uff09\u3002"
+      },
+      "DocGenLimitsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenLimits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenLimitsResponse",
+        "description": "GET /doc-gen/limits \u54cd\u5e94\u3002"
+      },
+      "DocGenMessageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "slot_updates": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slot Updates"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "created_at"
+        ],
+        "title": "DocGenMessageResponse",
+        "description": "\u4f1a\u8bdd\u6d88\u606f\u6761\u76ee\u3002"
+      },
+      "DocGenOperationResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          }
+        },
+        "type": "object",
+        "title": "DocGenOperationResponse",
+        "description": "\u4ec5\u56de\u63d0\u793a\u8bed\u7684\u5199\u64cd\u4f5c\u54cd\u5e94\uff08\u5982\u5220\u9664\u5386\u53f2\u7248\u672c\uff09\u3002"
+      },
+      "DocGenOutlineResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSectionResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenOutlineResponse",
+        "description": "GET /jobs/{id}/outline \u54cd\u5e94\u3002"
+      },
+      "DocGenSectionAdjust": {
+        "properties": {
+          "section_key": {
+            "type": "string",
+            "title": "Section Key"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "enabled",
+                  "disabled"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "order_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Index"
+          }
+        },
+        "type": "object",
+        "required": [
+          "section_key"
+        ],
+        "title": "DocGenSectionAdjust",
+        "description": "\u4eba\u5de5\u5bf9\u5927\u7eb2\u4e2d\u4e00\u4e2a\u7ae0\u8282\u7684\u8c03\u6574\uff08\u786e\u8ba4\u65f6\u968f\u586b\u5145\u9879\u4e00\u5e76\u63d0\u4ea4\uff09\u3002"
+      },
+      "DocGenSectionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "section_key": {
+            "type": "string",
+            "title": "Section Key"
+          },
+          "fragment_key": {
+            "type": "string",
+            "title": "Fragment Key"
+          },
+          "extension_point_key": {
+            "type": "string",
+            "title": "Extension Point Key"
+          },
+          "parent_section_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Section Key"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "order_index": {
+            "type": "integer",
+            "title": "Order Index"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "trigger_trace": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trigger Trace"
+          },
+          "title_pool": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Title Pool"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "section_key",
+          "fragment_key",
+          "extension_point_key",
+          "level",
+          "title",
+          "order_index",
+          "source",
+          "state"
+        ],
+        "title": "DocGenSectionResponse",
+        "description": "\u5927\u7eb2\u4e2d\u7684\u4e00\u4e2a\u7ae0\u8282\u5b9e\u4f8b\u3002"
+      },
+      "DocGenSendMessageRequest": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content",
+            "description": "\u7528\u6237\u6d88\u606f\u5185\u5bb9"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "DocGenSendMessageRequest",
+        "description": "POST /jobs/{id}/messages \u8bf7\u6c42\u4f53\u3002"
+      },
+      "DocGenSendMessageResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DocGenConversationData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "DocGenSendMessageResponse",
+        "description": "\u53d1\u9001\u6d88\u606f\u54cd\u5e94\uff1a\u8fd4\u56de\u4f1a\u8bdd\u72b6\u6001\u4e0e\u5168\u90e8\u6d88\u606f\uff08\u542b\u521a\u5199\u5165\u7684\u7528\u6237\u6d88\u606f\u4e0e\u52a9\u624b\u56de\u590d\uff09\u3002"
+      },
+      "DocGenSlotProfile": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "slot_count": {
+            "type": "integer",
+            "title": "Slot Count",
+            "default": 0
+          },
+          "required_count": {
+            "type": "integer",
+            "title": "Required Count",
+            "default": 0
+          },
+          "unfilled_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unfilled Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "version"
+        ],
+        "title": "DocGenSlotProfile",
+        "description": "\u5185\u7f6e\u586b\u5145\u9879\u914d\u7f6e\uff08\u4e0a\u4f20 Word \u6a21\u677f\u65f6\u9009\u62e9\u7528\uff09\u3002"
+      },
+      "DocGenSlotProfileListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSlotProfile"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenSlotProfileListResponse",
+        "description": "GET /doc-gen/slot-profiles \u54cd\u5e94\u3002"
+      },
+      "DocGenSlotValueResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "slot_key": {
+            "type": "string",
+            "title": "Slot Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "rows": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
+          },
+          "candidates": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidates"
+          },
+          "section_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section Key"
+          },
+          "instance_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instance Index"
+          },
+          "pre_compose_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pre Compose Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slot_key",
+          "label",
+          "state"
+        ],
+        "title": "DocGenSlotValueResponse",
+        "description": "\u586b\u5145\u9879\u7ed3\u679c\u6761\u76ee\u3002"
+      },
+      "DocGenSupersededItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "step": {
+            "type": "string",
+            "title": "Step"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "step",
+          "progress",
+          "created_at"
+        ],
+        "title": "DocGenSupersededItem",
+        "description": "\u5df2\u5931\u6548\u7684\u4e0a\u8f6e\u751f\u6210\u4efb\u52a1\uff08\u91cd\u65b0\u751f\u6210\u94fe\u4e0a\u7684\u5386\u53f2\u8282\u70b9\uff09\u3002"
+      },
+      "DocGenSupersededList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenSupersededItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "DocGenSupersededList",
+        "description": "\u5931\u6548\u4efb\u52a1\u6e05\u5355\u3002"
+      },
+      "DocGenSupersededResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenSupersededList"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenSupersededResponse",
+        "description": "GET /jobs/{id}/superseded \u54cd\u5e94\u3002"
+      },
+      "DocGenSupportedFormat": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "extensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Extensions"
+          },
+          "library": {
+            "type": "string",
+            "title": "Library"
+          },
+          "needs_ocr": {
+            "type": "boolean",
+            "title": "Needs Ocr",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "library"
+        ],
+        "title": "DocGenSupportedFormat",
+        "description": "\u4e00\u79cd\u53d7\u652f\u6301\u7684\u8d44\u6599\u7c7b\u578b\uff1a\u6269\u5c55\u540d + \u5b9e\u9645\u4f7f\u7528\u7684\u63d0\u53d6\u5e93\u3002\n\n\u7531\u89e3\u6790\u5c42\u7684\u7c7b\u578b\u6ce8\u518c\u8868\u6d3e\u751f\uff08\u552f\u4e00\u771f\u76f8\u6765\u6e90\uff09\uff0c\u524d\u7aef\u63d0\u793a\u4e0e\u8fd0\u7ef4\u6838\u5bf9\u90fd\u8bfb\u5b83\u3002"
+      },
+      "DocGenTemplateFileData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ext"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "DocGenTemplateFileData",
+        "description": "\u6302\u8f7d Word \u6a21\u677f\u539f\u4ef6\u540e\u7684\u56de\u663e\u4fe1\u606f\u3002"
+      },
+      "DocGenTemplateFileResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenTemplateFileData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenTemplateFileResponse",
+        "description": "POST /doc-gen/deliverable-templates/{id}/upload \u54cd\u5e94\u3002"
+      },
+      "DocGenTemplateListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenTemplateSummary"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenTemplateListResponse",
+        "description": "GET /doc-gen/builtin-templates \u54cd\u5e94\uff08\u5185\u7f6e\u6a21\u677f\uff0c\u6392\u9519\u7528\uff09\u3002"
+      },
+      "DocGenTemplateSummary": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "slot_count": {
+            "type": "integer",
+            "title": "Slot Count",
+            "default": 0
+          },
+          "required_count": {
+            "type": "integer",
+            "title": "Required Count",
+            "default": 0
+          },
+          "unfilled_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unfilled Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "version"
+        ],
+        "title": "DocGenTemplateSummary",
+        "description": "\u6a21\u677f\u6458\u8981\uff08\u4f9b\u524d\u7aef\u4e0b\u62c9\u9009\u62e9\uff09\u3002"
+      },
+      "DocGenTemplateVersionItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ext"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "template_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Code"
+          },
+          "change_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Note"
+          },
+          "is_current": {
+            "type": "boolean",
+            "title": "Is Current",
+            "default": false
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version_no",
+          "created_at"
+        ],
+        "title": "DocGenTemplateVersionItem",
+        "description": "\u6a21\u677f\u7684\u4e00\u4e2a\u5386\u53f2\u7248\u672c\u3002"
+      },
+      "DocGenTemplateVersionListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenTemplateVersionItem"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenTemplateVersionListResponse",
+        "description": "GET /doc-gen/deliverable-templates/{id}/versions \u54cd\u5e94\u3002"
+      },
+      "DocGenTemplateVersionRestoreData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "template_id": {
+            "type": "string",
+            "title": "Template Id"
+          },
+          "version_no": {
+            "type": "integer",
+            "title": "Version No"
+          },
+          "from_version_no": {
+            "type": "integer",
+            "title": "From Version No"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ext"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "template_id",
+          "version_no",
+          "from_version_no"
+        ],
+        "title": "DocGenTemplateVersionRestoreData",
+        "description": "\u56de\u6eda\u7ed3\u679c\uff1a\u65b0\u751f\u6210\u7684\u7248\u672c\u53f7\u53ca\u5176\u6765\u6e90\u7248\u672c\u3002"
+      },
+      "DocGenTemplateVersionRestoreResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenTemplateVersionRestoreData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenTemplateVersionRestoreResponse",
+        "description": "POST /doc-gen/deliverable-templates/{id}/versions/{vid}/restore \u54cd\u5e94\u3002"
+      },
+      "DocGenUsableTemplate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "template_code": {
+            "type": "string",
+            "title": "Template Code"
+          },
+          "template_version": {
+            "type": "string",
+            "title": "Template Version"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "file_ext": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ext"
+          },
+          "slot_count": {
+            "type": "integer",
+            "title": "Slot Count",
+            "default": 0
+          },
+          "required_count": {
+            "type": "integer",
+            "title": "Required Count",
+            "default": 0
+          },
+          "unfilled_notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unfilled Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "template_code",
+          "template_version",
+          "stage"
+        ],
+        "title": "DocGenUsableTemplate",
+        "description": "\u53ef\u7528\u4e8e AI \u751f\u6210\u7684\u4ea4\u4ed8\u7269\u6a21\u677f\uff08\u5fc5\u987b\u6709 Word \u6a21\u677f\u539f\u4ef6 + \u5408\u6cd5\u586b\u5145\u9879\u914d\u7f6e\uff09\u3002"
+      },
+      "DocGenUsableTemplateListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenUsableTemplate"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenUsableTemplateListResponse",
+        "description": "GET /doc-gen/templates \u54cd\u5e94\u3002"
+      },
       "DomesticApprovalCreate": {
         "properties": {
           "product_name": {
@@ -96513,6 +100585,119 @@
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"
+      },
+      "EquipmentImportRow": {
+        "properties": {
+          "\u8d44\u4ea7\u7f16\u53f7": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7f16\u53f7",
+            "description": "\u8d44\u4ea7\u7f16\u53f7"
+          },
+          "\u8d44\u4ea7\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u8bf4\u660e"
+          },
+          "\u8bbe\u5907\u540d\u79f0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8bbe\u5907\u540d\u79f0",
+            "description": "\u8bbe\u5907\u540d\u79f0\uff08\u522b\u540d\uff09"
+          },
+          "\u5b9e\u7269\u6240\u5728\u90e8\u95e8": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8",
+            "description": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8"
+          },
+          "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e"
+          },
+          "\u5f53\u524d\u6210\u672c": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5f53\u524d\u6210\u672c",
+            "description": "\u5f53\u524d\u6210\u672c"
+          },
+          "\u62a5\u5e9f\u72b6\u6001": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u62a5\u5e9f\u72b6\u6001",
+            "description": "\u62a5\u5e9f\u72b6\u6001"
+          },
+          "\u6570\u91cf": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u6570\u91cf",
+            "description": "\u6570\u91cf"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EquipmentImportRow",
+        "description": "\u8bbe\u5907\u5bfc\u5165\u884c\u6570\u636e"
       },
       "EquipmentUpdate": {
         "properties": {
@@ -111877,7 +116062,19 @@
           "is_active": {
             "type": "boolean",
             "title": "Is Active",
-            "default": true
+            "default": false
+          },
+          "template_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Code"
           }
         },
         "type": "object",
@@ -111901,6 +116098,30 @@
               }
             ],
             "title": "Name"
+          },
+          "deliverable_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deliverable Type"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
           },
           "description": {
             "anyOf": [
@@ -111935,6 +116156,18 @@
               }
             ],
             "title": "Template Structure"
+          },
+          "template_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Code"
           },
           "is_active": {
             "anyOf": [

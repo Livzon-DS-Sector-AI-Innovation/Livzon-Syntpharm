@@ -18,7 +18,10 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '50mb',
     },
-    proxyClientMaxBodySize: '50mb',
+    // 资料文件上传走 proxy.ts 转发，超过此上限会被截断成不完整的 multipart，
+    // 导致后端 socket hang up、浏览器 fetch 永不返回（前端表现为一直「上传中」）。
+    // 需 ≥ 后端 DOC_GEN_MAX_TOTAL_MB(150MB)，并与 nginx client_max_body_size 保持一致。
+    proxyClientMaxBodySize: '200mb',
   },
 
   async headers() {

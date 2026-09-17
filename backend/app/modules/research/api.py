@@ -833,7 +833,8 @@ async def upload_pilot_document(
 
     os.makedirs(upload_dir, exist_ok=True)
 
-    file_path = os.path.join(upload_dir, f"{workflow_id}_{file.filename}")
+    safe_filename = os.path.basename(file.filename or "upload")
+    file_path = os.path.join(upload_dir, f"{workflow_id}_{safe_filename}")
 
     content = await file.read()
 
@@ -1620,8 +1621,14 @@ async def update_optimization(
 
     # 更新字段
 
+    _opt_updatable = {
+        "source_route_id", "source_route_name", "name", "description",
+        "status", "current_module", "doe_experiment", "impurity_study",
+        "crystal_form_study", "quality_standard_set", "scale_up_study",
+        "start_date", "end_date",
+    }
     for key, value in data.items():
-        if hasattr(opt, key) and key not in ("id", "created_at"):
+        if key in _opt_updatable:
             setattr(opt, key, value)
 
     await db.commit()
@@ -2373,7 +2380,7 @@ async def upload_deliverable_file(
 
     file_size = len(content)
 
-    filename = file.filename or "unknown"
+    filename = os.path.basename(file.filename or "unknown")
 
     # 保存文件到本地
 
@@ -3460,3 +3467,10 @@ async def generate_report(
     )
 
     return build_response(data=result, message="生成成功")
+
+
+# ===== 文档生成（资料 → 模板 → 初版文档）=====
+
+from app.modules.research.doc_gen.api import router as doc_gen_router  # noqa: E402
+
+router.include_router(doc_gen_router, prefix="/doc-gen", tags=["研发管理-文档生成"])
