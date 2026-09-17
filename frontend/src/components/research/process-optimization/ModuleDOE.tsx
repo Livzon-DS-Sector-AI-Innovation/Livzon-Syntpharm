@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
+import {Card, Button, Space, Tag, Table, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, ExperimentOutlined, BarChartOutlined, TableOutlined, SettingOutlined } from '@ant-design/icons'
 import ReactECharts from 'echarts-for-react'
 import 'echarts-gl'
@@ -13,7 +13,7 @@ function LabeledInput({ label, ...props }: { label: string } & React.ComponentPr
   return (
     <Space.Compact style={{ width: '100%' }}>
       <div style={{ padding: '0 8px', background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>{label}</div>
-      <Input {...props} style={{ ...((props.style as any) || {}), borderRadius: '0 6px 6px 0' }} />
+      <Input {...props} style={{ ...((props.style as React.CSSProperties) || {}), borderRadius: '0 6px 6px 0' }} />
     </Space.Compact>
   )
 }
@@ -22,7 +22,7 @@ function LabeledInputNumber({ label, ...props }: { label: string } & React.Compo
   return (
     <Space.Compact style={{ width: '100%' }}>
       <div style={{ padding: '0 8px', background: '#fafafa', border: '1px solid #d9d9d9', borderRadius: '6px 0 0 6px', display: 'flex', alignItems: 'center', fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>{label}</div>
-      <InputNumber {...props} style={{ ...((props.style as any) || {}), borderRadius: '0 6px 6px 0' }} />
+      <InputNumber {...props} style={{ ...((props.style as React.CSSProperties) || {}), borderRadius: '0 6px 6px 0' }} />
     </Space.Compact>
   )
 }
@@ -525,7 +525,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                       <Button type="link" icon={<PlusOutlined />} onClick={addFactor} size="small">添加因素</Button>
                     </div>
                     <div style={{ fontSize: 12, color: '#666', marginBottom: 8, padding: '4px 8px', background: '#f0f0f0', borderRadius: 4 }}>
-                      调试：{factors.map((f, i) => `${f.name}(${f.symbol}): ${JSON.stringify(f.levels)}`).join(' | ')}
+                      调试：{factors.map((f, _i) => `${f.name}(${f.symbol}): ${JSON.stringify(f.levels)}`).join(' | ')}
                     </div>
                     {factors.map((factor, idx) => (
                       <Card key={idx} size="small" style={{ marginBottom: 8, backgroundColor: '#fafafa' }}>
@@ -897,7 +897,7 @@ export function ModuleDOE({ optimizationId, initialData, reactionSteps, currentS
                           </Card>
                         ) : (
                           <div style={{ padding: '20px', textAlign: 'center', color: '#999', background: '#fafafa', borderRadius: '4px' }}>
-                            点击"AI生成CPP评估"按钮，基于DOE分析结果自动生成关键工艺参数评估
+                            点击&quot;AI生成CPP评估&quot;按钮，基于DOE分析结果自动生成关键工艺参数评估
                           </div>
                         )}
                       </div>

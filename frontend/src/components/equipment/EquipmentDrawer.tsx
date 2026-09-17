@@ -17,12 +17,6 @@ const statusOptions: { label: string; value: EquipmentStatus }[] = [
   { label: '报废', value: '报废' },
 ]
 
-interface StaffOption {
-  id: string
-  name: string
-  employee_no: string | null
-  department: string | null
-}
 
 interface EquipmentDrawerProps {
   onRefresh?: () => void
@@ -106,9 +100,9 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
       }
       closeEquipmentDrawer()
       onRefresh?.()
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Ant Design validation errors have an errorFields property
-      if (err?.errorFields) return
+      if ((err as { errorFields?: unknown[] })?.errorFields) return
       message.error('操作失败')
     } finally {
       setSubmitting(false)

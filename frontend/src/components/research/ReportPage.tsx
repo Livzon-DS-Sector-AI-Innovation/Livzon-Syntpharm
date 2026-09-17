@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchReports } from '@/lib/api/client/research/rd-project'
@@ -36,25 +37,19 @@ const typeColorMap: Record<string, string> = {
 
 export function ReportPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [reports, setReports] = useState<RdReport[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdReport | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: reports = [], isLoading: loading } = useQuery({
+    queryKey: ['reports', projectId],
+    queryFn: async () => {
       const data = await fetchReports(projectId)
-      setReports(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -82,7 +77,7 @@ export function ReportPage({ projectId }: Props) {
     setDrawerOpen(true)
   }
 
-  const collectJsonFields = (values: Record<string, any>) => ({
+  const collectJsonFields = (values: Record<string, unknown>) => ({
     key_findings: {
       summary: values.kf_summary || '',
       key_data: values.kf_data || '',
@@ -115,9 +110,9 @@ export function ReportPage({ projectId }: Props) {
       }
       setDrawerOpen(false)
       form.resetFields()
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+      queryClient.invalidateQueries({ queryKey: ['reports', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -125,9 +120,9 @@ export function ReportPage({ projectId }: Props) {
     try {
       await deleteReport(id)
       msgApi.success('删除成功')
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+      queryClient.invalidateQueries({ queryKey: ['reports', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -143,7 +138,7 @@ export function ReportPage({ projectId }: Props) {
     { title: '摘要', dataIndex: 'summary', key: 'summary', width: 200, ellipsis: true, render: (v: string) => v || '-' },
     {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
-      render: (_: any, record: RdReport) => (
+      render: (_: unknown, record: RdReport) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确认删除此报告？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">

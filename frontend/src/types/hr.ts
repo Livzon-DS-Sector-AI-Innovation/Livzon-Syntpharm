@@ -832,13 +832,13 @@ export interface TrainingSignInSheetData {
 
 // ─── Training Notification Response Types ───
 
-export type SendTrainingNotificationResponse = { code: number; message: string; data: { sent: number; failed: number; details: any[] } }
+export type SendTrainingNotificationResponse = { code: number; message: string; data: { sent: number; failed: number; details: unknown[] } }
 
 // ─── Generic Response Types ───
 
 export type DeleteResponse = { code: number; message: string }
-export type GenericDataResponse = { code: number; message: string; data: any }
-export type GenericDataListResponse = { code: number; message: string; data: any[] }
+export type GenericDataResponse = { code: number; message: string; data: unknown }
+export type GenericDataListResponse = { code: number; message: string; data: unknown[] }
 
 // ─── Training Ledger Page Types ───
 
@@ -861,7 +861,7 @@ export type AnnualTrainingPlanItemListResponse = { code: number; message: string
 
 // ─── SOP Catalog Types ───
 
-export type SopCatalogListResponse = { code: number; message: string; data: any[]; meta: { page: number; page_size: number; total: number } }
+export type SopCatalogListResponse = { code: number; message: string; data: unknown[]; meta: { page: number; page_size: number; total: number } }
 
 // ─── Training Select Task Types ───
 
@@ -881,3 +881,13 @@ export type PrejobTemplateSaveResponse = { code: number; message: string; data: 
 // ─── Upload Types ───
 
 export type UploadEmployeesResponse = { code: number; message: string; data: { created: number; updated: number } }
+
+// SOP Catalog item type
+export interface SopCatalogItem {
+  id: string
+  sop_number?: string
+  file_name?: string
+  category?: string
+  department?: string
+  [key: string]: unknown
+}

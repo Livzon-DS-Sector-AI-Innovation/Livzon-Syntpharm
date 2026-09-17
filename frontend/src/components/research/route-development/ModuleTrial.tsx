@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import {Card, Input, Button, Space, Tag, Table, Form, DatePicker, Select, Alert, App, Collapse, Upload} from 'antd'
+import {Card, Input, Button, Space, Tag, Table, Form, DatePicker, Select, Alert, App, Collapse, Upload, UploadFile} from 'antd'
 import { UploadOutlined, RobotOutlined, WarningOutlined, CheckCircleOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons'
 import type { ExperimentRecord, ExperimentPlan } from '@/types/research'
 
@@ -23,7 +23,7 @@ const statusMap: Record<string, { color: string; label: string }> = {
 export function ModuleTrial({ routeId, selectedRouteName, experimentPlan, initialExperiments = [], onComplete }: ModuleTrialProps) {
   const { message } = App.useApp()
   const [experiments, setExperiments] = useState<ExperimentRecord[]>(initialExperiments)
-  const [experimentFiles, setExperimentFiles] = useState<any[]>([])
+  const [experimentFiles, setExperimentFiles] = useState<UploadFile[]>([])
   const [showForm, setShowForm] = useState(false)
   const [form] = Form.useForm()
 

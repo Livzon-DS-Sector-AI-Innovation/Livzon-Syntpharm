@@ -1,7 +1,7 @@
 'use client'
 import { uploadHazardPhoto } from '@/actions/safety'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Steps,
@@ -88,7 +88,7 @@ function StatusPill({
 }
 
 /** 阶段编号圆点 */
-function StageDot({ num, active }: { num: number; active: boolean }) {
+function _StageDot({ num, active }: { num: number; active: boolean }) {
   return (
     <div
       style={{
@@ -112,7 +112,7 @@ function StageDot({ num, active }: { num: number; active: boolean }) {
 }
 
 /** 阶段连接竖线 */
-function StageConnector() {
+function _StageConnector() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
       <div style={{ width: 2, height: 20, background: '#ede9e4', borderRadius: 1 }} />
@@ -194,10 +194,6 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setDraftsLoading(false)
     }
   }, [])
-
-  useEffect(() => {
-    loadDrafts()
-  }, [loadDrafts])
 
   // ── 提交隐患 → 创建/更新记录 + 上传图片 + 触发AI ──
   const handleSubmit = async (values: InspectionFormValues, files: File[]) => {
@@ -286,7 +282,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setCompletedHazardNo(updated?.hazard_no || hazard.hazard_no)
       setCurrentStep('done')
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : '请重试'
+      const errMsg = err instanceof Error ? (err instanceof Error ? err.message : null) : '请重试'
       message.error(`提交失败：${errMsg}`)
     } finally {
       setSubmitting(false)

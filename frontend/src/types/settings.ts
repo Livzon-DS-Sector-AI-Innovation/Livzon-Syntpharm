@@ -22,11 +22,54 @@ export type LLMConfigFormData = components['schemas']['LLMConfigCreate']
 
 export type LLMConfigUpdate = components['schemas']['LLMConfigUpdate']
 
-export type FeishuConfig = any
+export interface FeishuConfig {
+  config_name: string
+  app_id: string
+  app_secret?: string
+  app_secret_masked?: string
+  app_secret_configured?: boolean
+  card_callback_verification_token?: string
+  card_callback_verification_token_masked?: string
+  card_callback_verification_token_configured?: boolean
+  card_callback_encrypt_key?: string
+  card_callback_encrypt_key_masked?: string
+  card_callback_encrypt_key_configured?: boolean
+  card_callback_url?: string
+  sync_root_department_id: string
+  sync_member_department_id: string
+  is_active: boolean
+  last_synced_at?: string
+  last_sync_message?: string
+  last_diagnostic_result?: string
+  last_diagnostic_status?: string
+  last_diagnostic_message?: string
+}
 
-export type FeishuConfigUpsert = any
+export interface FeishuConfigUpsert {
+  config_name: string
+  app_id: string
+  app_secret?: string
+  card_callback_verification_token?: string
+  card_callback_encrypt_key?: string
+  sync_root_department_id: string
+  sync_member_department_id: string
+  is_active: boolean
+}
 
-export type FeishuDiagnosticResult = any
+export interface FeishuDiagnosticStep {
+  status: "ok" | "warning" | "error" | "success" | "info"
+  name: string
+  message: string
+  suggestion?: string
+}
+
+export interface FeishuDiagnosticResult {
+  status: "ok" | "warning" | "error" | "success" | "info"
+  message?: string
+  department_count?: number
+  sample_user_count?: number
+  steps?: FeishuDiagnosticStep[]
+}
 
 export interface ApiResponse<T> {
   code: number

@@ -9,67 +9,59 @@ import {
   batchImportVehiclesApi,
 } from '@/lib/api/server/administration'
 
-// TODO: add type to OpenAPI schema - administration endpoints not yet in generated schema
-export async function createGiftRequisition(data: any) {
+export async function createGiftRequisition(data: Record<string, unknown>): Promise<unknown> {
   return createGiftRequisitionApi(data)
 }
 
-export async function updateGiftRequisition(id: string, data: any) {
+export async function updateGiftRequisition(id: string, data: Record<string, unknown>): Promise<unknown> {
   return updateGiftRequisitionApi(id, data)
 }
 
-export async function deleteGiftRequisition(id: string) {
+export async function deleteGiftRequisition(id: string): Promise<unknown> {
   return deleteGiftRequisitionApi(id)
 }
 
-// TODO: add type to OpenAPI schema
 export async function createRegulation(data: Record<string, unknown>): Promise<unknown> {
-  return createRegulationApi(data as Record<string, unknown>)
+  return createRegulationApi(data)
 }
 
-// TODO: add type to OpenAPI schema
 export async function updateRegulation(id: string, data: Record<string, unknown>): Promise<unknown> {
-  return updateRegulationApi(id, data as Record<string, unknown>)
+  return updateRegulationApi(id, data)
 }
 
-export async function deleteRegulation(id: string) {
+export async function deleteRegulation(id: string): Promise<unknown> {
   return deleteRegulationApi(id)
 }
 
-export async function extractRegulationText(data: { file_name?: string; file_type?: string; file_data?: string }) {
+export async function extractRegulationText(data: { file_name?: string; file_type?: string; file_data?: string }): Promise<{ code: number; message: string; data: { text: string; source: string } }> {
   return extractRegulationTextApi(data) as Promise<{ code: number; message: string; data: { text: string; source: string } }>
 }
 
-// TODO: add type to OpenAPI schema
-export async function createGiftInventory(data: any) {
+export async function createGiftInventory(data: Record<string, unknown>): Promise<unknown> {
   return createGiftInventoryApi(data)
 }
 
-// TODO: add type to OpenAPI schema
-export async function updateGiftInventory(id: string, data: any) {
+export async function updateGiftInventory(id: string, data: Record<string, unknown>): Promise<unknown> {
   return updateGiftInventoryApi(id, data)
 }
 
-export async function deleteGiftInventory(id: string) {
+export async function deleteGiftInventory(id: string): Promise<unknown> {
   return deleteGiftInventoryApi(id)
 }
 
-// TODO: add type to OpenAPI schema
-export async function createVehicle(data: any) {
+export async function createVehicle(data: Record<string, unknown>): Promise<unknown> {
   return createVehicleApi(data)
 }
 
-// TODO: add type to OpenAPI schema
-export async function updateVehicle(id: string, data: any) {
+export async function updateVehicle(id: string, data: Record<string, unknown>): Promise<unknown> {
   return updateVehicleApi(id, data)
 }
 
-export async function deleteVehicle(id: string) {
+export async function deleteVehicle(id: string): Promise<unknown> {
   return deleteVehicleApi(id)
 }
 
-// TODO: add type to OpenAPI schema
-export async function batchImportVehicles(file: any): Promise<any> {
+export async function batchImportVehicles(file: File): Promise<unknown> {
   const formData = new FormData()
   formData.append('file', file)
   return batchImportVehiclesApi(formData)

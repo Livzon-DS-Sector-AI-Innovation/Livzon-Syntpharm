@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import {App, Card, Select, Table, Tag, Tabs, Space, Button, Drawer, Descriptions, Timeline} from 'antd'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import {Card, Select, Table, Tag, Tabs, Button, Drawer, Descriptions} from 'antd'
 import { ExperimentOutlined, SearchOutlined, EyeOutlined, CheckCircleOutlined, UnorderedListOutlined, ReloadOutlined } from '@ant-design/icons'
 import { fetchAllTracks, fetchRdProjects } from '@/lib/api/client/research/rd-project'
-import { RdProject } from '@/types/research/rd-project'
+import { RdResearchTrack } from '@/types/research/rd-project'
 
 const TRACK_TYPE_TABS = [
   { key: 'all', label: '全部研究项', icon: <UnorderedListOutlined /> },
@@ -59,53 +60,36 @@ const priorityColorMap: Record<string, string> = {
 }
 
 export function ResearchTrackModulePage() {
-  const { message: msgApi } = App.useApp()
-  const [projects, setProjects] = useState<RdProject[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
   const [activeType, setActiveType] = useState<string>('all')
-  const [tracks, setTracks] = useState<any[]>([])
   const [detailOpen, setDetailOpen] = useState(false)
-  const [selectedTrack, setSelectedTrack] = useState<any>(null)
+  const [selectedTrack, setSelectedTrack] = useState<RdResearchTrack | null>(null)
 
-  const loadProjects = useCallback(async () => {
-    try {
+  const { data: projects = [] } = useQuery({
+    queryKey: ['rd-projects-list'],
+    queryFn: async () => {
       const result = await fetchRdProjects({ page_size: 100 })
-      setProjects(result.items)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载项目列表失败')
-    }
-  }, [])
+      return result.items || []
+    },
+  })
 
-  const loadTracks = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: tracks = [], isLoading: loading, refetch: refetchTracks } = useQuery({
+    queryKey: ['research-tracks-all', selectedProjectId, activeType],
+    queryFn: async () => {
       const data = await fetchAllTracks({
         projectId: selectedProjectId || undefined,
         trackType: activeType === 'all' ? undefined : activeType,
       })
-      setTracks(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载研究项失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [selectedProjectId, activeType])
-
-  useEffect(() => {
-    loadProjects()
-  }, [])
-
-  useEffect(() => {
-    loadTracks()
-  }, [loadTracks])
+      return data || []
+    },
+  })
 
   const columns = [
     {
       title: '研究项名称',
       dataIndex: 'name',
       key: 'name',
-      render: (text: string, record: any) => (
+      render: (text: string, record: RdResearchTrack) => (
         <a onClick={() => { setSelectedTrack(record); setDetailOpen(true) }}>{text}</a>
       ),
     },
@@ -167,7 +151,7 @@ export function ResearchTrackModulePage() {
             allowClear
             onClear={() => setSelectedProjectId(null)}
           />
-          <Button icon={<ReloadOutlined />} onClick={loadTracks}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => refetchTracks()}>刷新</Button>
           <span style={{ color: '#999', marginLeft: 'auto' }}>共 {tracks.length} 条研究项</span>
         </div>
 
@@ -207,7 +191,7 @@ export function ResearchTrackModulePage() {
         {selectedTrack && (
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="名称">{selectedTrack.name}</Descriptions.Item>
-            <Descriptions.Item label="所属项目">{selectedTrack.project_name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="所属项目">{(selectedTrack as RdResearchTrack & { project_name?: string }).project_name || '-'}</Descriptions.Item>
             <Descriptions.Item label="类型">
               <Tag color={typeColorMap[selectedTrack.type]}>{typeLabels[selectedTrack.type] || selectedTrack.type}</Tag>
             </Descriptions.Item>

@@ -539,6 +539,19 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 后端 API 变化后，前端必须重新生成类型：`cd ../backend && uv run python scripts/ci/export_openapi.py` 然后 `cd ../frontend && pnpm generate:api`。CI 会检查类型同步。
 
+
+## React Hooks 与 React Compiler
+
+React Compiler 已启用（`reactCompiler: true`），编写代码时必须遵循以下规则以确保编译器能够正确优化：
+
+1. **数据获取**: 使用 React Query，禁止 useEffect + setState
+2. **派生状态**: 使用 useMemo，禁止 useEffect + setState
+3. **useEffect 依赖**: 必须完整，禁止省略或抑制
+4. **不可变状态**: 禁止直接修改，使用展开运算符
+5. **依赖稳定化**: 使用 useCallback/useRef
+
+详细示例和说明参见 [`examples/react-hooks-pattern.md`](examples/react-hooks-pattern.md)。
+
 ## 禁止修改的文件
 
 以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：

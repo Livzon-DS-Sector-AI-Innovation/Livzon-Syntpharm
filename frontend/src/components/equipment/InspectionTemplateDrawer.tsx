@@ -1,14 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Switch, Tooltip } from 'antd'
 import { FileTextOutlined } from '@ant-design/icons'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplate, updateInspectionTemplate } from '@/actions/equipment'
 import { fetchInspectionTemplateByIdClient } from '@/lib/api/client/equipment'
-import { InspectionTemplate } from '@/types/equipment/generated-bridge'
-import { CreateInspectionTemplateInput } from '@/types/equipment/generated-bridge'
-
 const C = { navy: '#0a1530', purple: '#5645d4', slate: '#5d5b54', stone: '#a4a097', hairline: '#e5e3df', hairlineSoft: '#ede9e4', surface: '#f6f5f4', surfaceSoft: '#fafaf9', canvas: '#ffffff' }
 
 interface Props { categories: { id: string; name: string }[]; onRefresh?: () => void }
@@ -17,16 +15,23 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const { inspectionTemplateDrawerOpen, editingInspectionTemplate, closeInspectionTemplateDrawer } = useEquipmentStore()
-  const [liveTemplate, setLiveTemplate] = useState<InspectionTemplate | null>(null)
   const isNew = !editingInspectionTemplate
+
+  const { data: liveTemplate } = useQuery({
+    queryKey: ['inspection-template', editingInspectionTemplate?.id],
+    queryFn: async () => {
+      if (!editingInspectionTemplate) return null
+      try {
+        return await fetchInspectionTemplateByIdClient(editingInspectionTemplate.id)
+      } catch {
+        return editingInspectionTemplate
+      }
+    },
+    enabled: inspectionTemplateDrawerOpen && !!editingInspectionTemplate,
+  })
+
   const count = liveTemplate?.items_count ?? editingInspectionTemplate?.items_count ?? 0
   const canEnable = !isNew && count > 0
-
-  useEffect(() => {
-    if (inspectionTemplateDrawerOpen && editingInspectionTemplate) {
-      fetchInspectionTemplateByIdClient(editingInspectionTemplate.id).then(setLiveTemplate).catch(() => setLiveTemplate(editingInspectionTemplate))
-    } else setLiveTemplate(null)
-  }, [inspectionTemplateDrawerOpen, editingInspectionTemplate])
 
   useEffect(() => {
     if (inspectionTemplateDrawerOpen) {

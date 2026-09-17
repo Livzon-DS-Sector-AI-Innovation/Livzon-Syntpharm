@@ -47,12 +47,13 @@ import type {
   RuleQueryParams,
   ProcessRecordInput,
   WorkshopQueryParams,
+  EnergyOverviewData,
 } from '@/types/energy'
 
 // 数据源配置 Server Actions
 
 export async function getEnergyDevices(params?: DeviceQueryParams) {
-  return fetchEnergyDevices(params)
+  return fetchEnergyDevices(params as Record<string, unknown>)
 }
 
 export async function getEnergyDeviceById(id: string) {
@@ -79,10 +80,10 @@ export async function deleteEnergyDevice(id: string) {
 // 能耗数据 Server Actions
 
 export async function getEnergyData(params: DeviceQueryParams) {
-  return fetchEnergyData(params)
+  return fetchEnergyData(params as Record<string, unknown>)
 }
 
-export async function getEnergyOverview(params?: Record<string, unknown>): Promise<any> {
+export async function getEnergyOverview(params?: Record<string, unknown>): Promise<EnergyOverviewData> {
   // TODO: add type to OpenAPI schema - energy overview query params not yet typed
   return fetchEnergyOverview(params || {})
 }
@@ -102,7 +103,7 @@ export async function getCollectLogs(params?: { page?: number; page_size?: numbe
 // 预警规则 Server Actions
 
 export async function getAlertRules(params?: RuleQueryParams) {
-  return fetchAlertRules(params)
+  return fetchAlertRules(params as Record<string, unknown>)
 }
 
 export async function getAlertRuleById(id: string) {
@@ -129,7 +130,7 @@ export async function deleteAlertRule(id: string) {
 // 预警记录 Server Actions
 
 export async function getAlertRecords(params?: RuleQueryParams) {
-  return fetchAlertRecords(params)
+  return fetchAlertRecords(params as Record<string, unknown>)
 }
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {

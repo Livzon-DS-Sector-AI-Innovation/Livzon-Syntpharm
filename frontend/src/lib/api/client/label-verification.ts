@@ -3,8 +3,6 @@ import {
   LabelVerificationResponse,
   LabelVerificationStatisticsResponse,
   LabelVerificationListParams,
-  AutoCompareRequest,
-  AutoCompareResult,
 } from '@/types/label-verification'
 
 export async function fetchLabelVerifications(

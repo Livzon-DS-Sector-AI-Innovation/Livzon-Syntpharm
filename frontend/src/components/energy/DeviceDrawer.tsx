@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   App,
   Drawer,
@@ -12,14 +13,11 @@ import {
   Button,
   Space,
   Spin,
-  Tag,
 } from 'antd'
 import {
   ApiOutlined,
   EnvironmentOutlined,
-  ClockCircleOutlined,
   SettingOutlined,
-  NumberOutlined,
 } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
 import {
@@ -81,8 +79,6 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   const [form] = Form.useForm()
   const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
-  const [platforms, setPlatforms] = useState<PlatformOption[]>([])
-  const [platformsLoading, setPlatformsLoading] = useState(false)
 
   const {
     deviceDrawerOpen,
@@ -94,36 +90,23 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   const isEdit = deviceDrawerMode === 'edit'
   const selectedPlatform = Form.useWatch('platform_code', form)
 
-  // 获取平台列表
-  const loadPlatforms = async () => {
-    setPlatformsLoading(true)
-    try {
-      const data = await fetchPlatformsClient()
-      setPlatforms(data)
-    } catch {
-      setPlatforms([
-        { code: 'zhiheng', name: '智恒水耗平台' },
-        { code: 'platform_b', name: '平台B（待接入）' },
-        { code: 'platform_c', name: '平台C（待接入）' },
-      ])
-    } finally {
-      setPlatformsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (deviceDrawerOpen) {
-      loadPlatforms()
-      if (isEdit && deviceDrawerId) {
-        loadDeviceData(deviceDrawerId)
-      } else {
-        form.resetFields()
-        form.setFieldsValue(DEFAULT_VALUES)
+  const { data: platforms = [], isLoading: platformsLoading } = useQuery({
+    queryKey: ['energy-platforms'],
+    queryFn: async () => {
+      try {
+        return await fetchPlatformsClient()
+      } catch {
+        return [
+          { code: 'zhiheng', name: '智恒水耗平台' },
+          { code: 'platform_b', name: '平台B（待接入）' },
+          { code: 'platform_c', name: '平台C（待接入）' },
+        ] as PlatformOption[]
       }
-    }
-  }, [deviceDrawerOpen, deviceDrawerId, isEdit, form])
+    },
+    enabled: deviceDrawerOpen,
+  })
 
-  const loadDeviceData = async (id: string) => {
+  const loadDeviceData = useCallback(async (id: string) => {
     try {
       form.resetFields()
       const device = await getEnergyDeviceById(id)
@@ -131,7 +114,19 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
     } catch {
       message.error('获取数据源信息失败')
     }
-  }
+  }, [form, message])
+
+  useEffect(() => {
+    if (deviceDrawerOpen) {
+      if (isEdit && deviceDrawerId) {
+        loadDeviceData(deviceDrawerId)
+      } else {
+        form.resetFields()
+        form.setFieldsValue(DEFAULT_VALUES)
+      }
+    }
+  }, [deviceDrawerOpen, deviceDrawerId, isEdit, form, loadDeviceData])
+
 
   const handleSubmit = async () => {
     try {
@@ -151,7 +146,7 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
       if (err instanceof Error) {
-        message.error(err.message)
+        message.error((err instanceof Error ? err.message : null))
       } else {
         message.error('操作失败')
       }

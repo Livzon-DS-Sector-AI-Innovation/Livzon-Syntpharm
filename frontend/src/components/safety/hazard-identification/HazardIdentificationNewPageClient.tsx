@@ -1,6 +1,6 @@
 'use client'
 
-import { useState , useMemo} from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -10,7 +10,6 @@ import {
   Typography,
   Row,
   Col,
-  Space,
   Upload,
   Steps,
 } from 'antd'

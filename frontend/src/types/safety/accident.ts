@@ -6,7 +6,7 @@
 
 // ============ Accident Types ============
 
-import {AccidentType, AccidentLevel, AccidentStatus, InjurySeverity} from "./enums"
+import {AccidentType, AccidentLevel} from "./enums"
 export interface Accident {
   id: string
   accident_no: string
