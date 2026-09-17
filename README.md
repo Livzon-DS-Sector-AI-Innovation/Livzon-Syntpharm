@@ -125,6 +125,50 @@
 
 ## 开发
 
+### 本地开发（连接 UAT 基础设施）
+
+团队成员内网互通，本地只需启动前后端，数据库/Redis/MinIO 连接 UAT 服务器。
+
+```bash
+# 1. 从 main 拉分支
+git checkout main && git pull origin main
+git checkout -b feature/你的功能名
+
+# 2. 配置本地环境
+cp .env.uat.example .env.local
+# 编辑 .env.local，修改以下变量指向 UAT 内网 IP (172.17.62.101):
+#   - DATABASE_URL: uat-postgres → 172.17.62.101
+#   - REDIS_URL: uat-redis → 172.17.62.101
+#   - MINIO_ENDPOINT: uat-minio:9000 → 172.17.62.101:9000
+#   - APP_ENV=uat → development
+#   - DEBUG=false → true
+#   - FRONTEND_URL → http://localhost:3000
+
+# 3. 只启动前后端
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.dev.yml up -d --build backend frontend
+
+# 4. 首次启动执行迁移
+docker compose --env-file .env.local run --rm migrate
+
+# 5. 访问
+# 前端: http://localhost:3000
+# 后端: http://localhost:8000/docs
+```
+
+### 开发流程
+
+```
+main → feature/xxx → uat (测试) → PR → main
+```
+
+1. 从 `main` 拉分支开发
+2. 完成后合并到 `uat` 测试
+3. UAT 验证通过后，创建 PR 合并到 `main`
+
+### 本地直接启动（不用 Docker）
+
+如果已在本地安装好 Python 和 Node.js 环境，也可以直接启动：
+
 ```bash
 # 后端开发服务器
 cd backend && uv run uvicorn app.main:app --reload
