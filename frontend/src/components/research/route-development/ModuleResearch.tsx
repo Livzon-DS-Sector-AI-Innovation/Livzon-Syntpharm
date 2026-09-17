@@ -2,8 +2,8 @@
 import { analyzeLiterature } from '@/actions/research'
 
 import { useState, useEffect, useRef } from 'react'
-import {Card, Button, Space, Tag, Collapse, App, Alert, Progress, Spin, Tabs, Table, Descriptions, Divider} from 'antd'
-import {CheckCircleOutlined, SaveOutlined, ExperimentOutlined, ShoppingCartOutlined, SafetyOutlined, FileTextOutlined, DownloadOutlined, EditOutlined} from '@ant-design/icons'
+import {Card, Button, Space, Tag, Collapse, App, Alert, Progress, Spin, Tabs, Descriptions, Divider} from 'antd'
+import { ExperimentOutlined, FileTextOutlined, DownloadOutlined, EditOutlined, SaveOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { CandidateRoute, ExperimentPlan } from '@/types/research'
 import { updateRouteAction } from '@/actions/research/route-development'
 
@@ -44,7 +44,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
-  const [, forceUpdate] = useState(0)  // 强制更新
+  const [, _forceUpdate] = useState(0)  // 强制更新
 
   // 独立的计时器 useEffect
   useEffect(() => {
@@ -83,7 +83,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
       setElapsedSeconds(0)
       
       try {
-        const response = await analyzeLiterature(literatureFile)
+        const response = await analyzeLiterature(literatureFile) as Response
         
         if (!response.body) {
           throw new Error('响应体为空')
@@ -192,7 +192,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     }
     
     parseLiterature()
-  }, [initialData, literatureFile, message])
+  }, [initialData, literatureFile, message, routeId])
 
   const handleSelectRoute = (routeId: string) => {
     setSelectedRouteIds(prev =>

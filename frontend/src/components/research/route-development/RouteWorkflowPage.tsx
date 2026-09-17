@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Steps, Card, Button, Space, Tag, App } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import { ModuleResearch } from './ModuleResearch'
@@ -69,7 +69,7 @@ export function RouteWorkflowPage({ routeId, routeName, literatureSource = '', l
   const [assessment, setAssessment] = useState<DimensionAssessment | null>(initialState.assessment)
 
   // 保存状态到后端 + localStorage 备份
-  const saveState = async () => {
+  const saveState = useCallback(async () => {
     const updateData = {
       current_module: stepConfig[currentStep]?.key || 'research',
       status: (currentStep >= 3 ? 'completed' : 'in_progress') as RouteStatus,
@@ -98,7 +98,7 @@ export function RouteWorkflowPage({ routeId, routeName, literatureSource = '', l
       updatedAt: new Date().toISOString(),
     }
     localStorage.setItem(`workflow-${routeId}`, JSON.stringify(state))
-  }
+  }, [currentStep, selectedRouteIds, selectedRoutes, experimentPlans, allExperiments, assessment, routeId, literatureSource])
 
   // 自动保存（防抖）
   useEffect(() => {
@@ -106,7 +106,7 @@ export function RouteWorkflowPage({ routeId, routeName, literatureSource = '', l
       saveState()
     }, 2000) // 2秒防抖
     return () => clearTimeout(timer)
-  }, [currentStep, selectedRouteIds, selectedRoutes, experimentPlans, allExperiments, assessment])
+  }, [saveState])
 
   // 从后端加载最新数据
   useEffect(() => {

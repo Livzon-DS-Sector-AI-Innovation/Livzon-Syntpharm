@@ -3,8 +3,22 @@ export const dynamic = 'force-dynamic'
 import { fetchTrainingSelectTasks } from '@/lib/api/server/hr'
 import TrainingSelectTasksClient from '@/components/hr/TrainingSelectTasksClient'
 
+interface TaskItem {
+  token: string
+  department: string
+  training_date: string
+  subject: string
+  factory: string
+  location: string
+  trainer: string
+  training_method: string
+  has_result: boolean
+  selected_count: number
+  created_at: string
+}
+
 export default async function TrainingSelectTasksPage() {
-  let tasks: any[] = []
+  let tasks: TaskItem[] = []
   try {
     const res = await fetchTrainingSelectTasks()
     tasks = res.data || []

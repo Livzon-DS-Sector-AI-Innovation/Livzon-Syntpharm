@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -18,7 +19,6 @@ import {
   Segmented,
   Pagination,
   Tooltip,
-  Progress,
   Space,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -26,7 +26,6 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  SearchOutlined,
   ReloadOutlined,
   FilterOutlined,
   ExperimentOutlined,
@@ -65,11 +64,8 @@ const VERIFY_STATUS_META: Record<string, { label: string; color: string; icon: R
 }
 
 export default function MediumPage() {
-  const [data, setData] = useState<Medium[]>([])
-  const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [total, setTotal] = useState(0)
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card')
   const [searchText, setSearchText] = useState('')
   const [typeFilter, setTypeFilter] = useState<string | 'all'>('all')
@@ -84,45 +80,44 @@ export default function MediumPage() {
   const [stockDrawerOpen, setStockDrawerOpen] = useState(false)
   const [stockAdjustRecord, setStockAdjustRecord] = useState<Medium | null>(null)
   const [stockForm] = Form.useForm()
+  const _queryClient = useQueryClient()
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: Record<string, any> = { page, page_size: pageSize }
-      if (searchText) {
-        params.medium_code = searchText
-        params.medium_name = searchText
-      }
-      if (typeFilter !== 'all') {
-        params.medium_type = typeFilter
-      }
-      if (statusFilter !== 'all') {
-        params.status = statusFilter
-      }
-      const adv = advancedForm.getFieldsValue()
-      if (adv.manufacturer) params.manufacturer = adv.manufacturer
-      const res = await listMedium(params)
-      setData((res?.data ?? []) as Medium[])
-      setTotal(res?.meta?.total ?? 0)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
+  const queryParams = useCallback((): Record<string, unknown> => {
+    const params: Record<string, unknown> = { page, page_size: pageSize }
+    if (searchText) {
+      params.medium_code = searchText
+      params.medium_name = searchText
     }
+    if (typeFilter !== 'all') {
+      params.medium_type = typeFilter
+    }
+    if (statusFilter !== 'all') {
+      params.status = statusFilter
+    }
+    const adv = advancedForm.getFieldsValue()
+    if (adv.manufacturer) params.manufacturer = adv.manufacturer
+    return params
   }, [page, pageSize, searchText, typeFilter, statusFilter, advancedForm])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const { data: queryResult, isLoading: loading, refetch: fetchData } = useQuery({
+    queryKey: ['medium-list', page, pageSize, searchText, typeFilter, statusFilter],
+    queryFn: async () => {
+      const params = queryParams()
+      const res = await listMedium(params)
+      return { items: (res?.data ?? []) as Medium[], total: res?.meta?.total ?? 0 }
+    },
+  })
 
-  const [statsData, setStatsData] = useState({ all: 0, verified: 0, pending: 0, expired: 0, lowStock: 0 })
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: statsData = { all: 0, verified: 0, pending: 0, expired: 0, lowStock: 0 }, refetch: fetchStats } = useQuery({
+    queryKey: ['medium-stats', typeFilter],
+    queryFn: async () => {
       let allData: Medium[] = []
       let curPage = 1
       while (true) {
-        const params: Record<string, any> = { page: curPage, page_size: 200 }
+        const params: Record<string, unknown> = { page: curPage, page_size: 200 }
         if (typeFilter !== 'all') {
           params.medium_type = typeFilter
         }
@@ -140,15 +135,9 @@ export default function MediumPage() {
         if (dayjs(item.expire_date).isBefore(today)) expired++
         if (item.stock_num <= item.min_stock) lowStock++
       })
-      setStatsData({ all: allData.length, verified, pending, expired, lowStock })
-    } catch (e) {
-      console.error('stats fetch error:', e)
-    }
-  }, [typeFilter])
-
-  useEffect(() => {
-    fetchStats()
-  }, [fetchStats])
+      return { all: allData.length, verified, pending, expired, lowStock }
+    },
+  })
 
   const handleQuickSearch = (val: string) => {
     setSearchText(val)
@@ -184,8 +173,8 @@ export default function MediumPage() {
       message.success('删除成功')
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      message.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      message.error((e instanceof Error ? e.message : '删除失败'))
     }
   }
 
@@ -230,9 +219,9 @@ export default function MediumPage() {
       setDrawerOpen(false)
       fetchData()
       fetchStats()
-    } catch (e: any) {
-      if (e.errorFields) return
-      message.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      message.error((e instanceof Error ? e.message : '保存失败'))
     } finally {
       setDrawerLoading(false)
     }
@@ -255,9 +244,9 @@ export default function MediumPage() {
         fetchData()
         fetchStats()
       }
-    } catch (e: any) {
-      if (e.errorFields) return
-      message.error(e.message || '调整失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      message.error((e instanceof Error ? e.message : '调整失败'))
     }
   }
 

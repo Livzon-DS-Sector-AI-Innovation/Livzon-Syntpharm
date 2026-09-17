@@ -4,12 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { cookies } from 'next/headers'
 
 import type {
-  WarehouseFeishuConfig,
   WarehouseFeishuConfigUpsert,
-  WarehouseFeishuConnectivityResult,
-  WarehouseFeishuTable,
-  WarehouseFeishuTableSyncResult,
-  WarehouseFeishuWsStatus,
 } from '@/types/warehouse'
 import {
   saveWarehouseFeishuConfig as saveWarehouseFeishuConfigServer,

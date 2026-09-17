@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   App,
   Table,
@@ -10,7 +11,6 @@ import {
   Input,
   Select,
   DatePicker,
-  Modal,
   Form,
   Tag,
   Popconfirm,
@@ -39,7 +39,6 @@ import {
 } from '@/actions/material-report'
 import {
   ReportListItem,
-  TemplateListItem,
   reportStatusLabels,
   reportStatusColors,
 } from '@/types/material-report'
@@ -48,8 +47,6 @@ const { RangePicker } = DatePicker
 
 export default function MaterialReportPage() {
   const { message } = App.useApp()
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<ReportListItem[]>([])
   const [pagination, setPagination] = useState({ total: 0, page: 1, pageSize: 20 })
   const [filters, setFilters] = useState<{
     status?: string
@@ -58,42 +55,35 @@ export default function MaterialReportPage() {
     end_date?: string
     keyword?: string
   }>({})
-  const [templates, setTemplates] = useState<TemplateListItem[]>([])
-  const [statistics, setStatistics] = useState({
-    total_count: 0,
-    draft_count: 0,
-    completed_count: 0,
-    approved_count: 0,
-  })
+  const queryClient = useQueryClient()
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch: _refetch } = useQuery({
+    queryKey: ['material-reports', filters, pagination.page, pagination.pageSize],
+    queryFn: async () => {
       const [result, stats, templateResult] = await Promise.all([
         getReports({ ...filters, page: pagination.page, page_size: pagination.pageSize }),
         getReportStatistics(),
         getTemplates({ page: 1, page_size: 100 }),
       ])
-      setData(result.data?.items || [])
-      setPagination((prev) => ({ ...prev, total: result.data?.total || 0 }))
-      setStatistics(stats.data || {})
-      setTemplates(templateResult.data?.items || [])
-    } catch (_error) {
-      message.error('获取数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return {
+        items: ((result.data as Record<string, unknown>)?.items as ReportListItem[] | undefined) || [],
+        total: ((result.data as Record<string, unknown>)?.total as number) || 0,
+        statistics: stats.data || { total_count: 0, draft_count: 0, completed_count: 0, approved_count: 0 },
+        templates: templateResult.data?.items || [],
+      }
+    },
+  })
 
-  useEffect(() => {
-    fetchData()
-  }, [filters, pagination.page, pagination.pageSize])
+  const data = queryResult?.items || []
+  const paginationWithTotal = { ...pagination, total: queryResult?.total || 0 }
+  const statistics = queryResult?.statistics || { total_count: 0, draft_count: 0, completed_count: 0, approved_count: 0 }
+  const templates = queryResult?.templates || []
 
   const handleDelete = async (id: string) => {
     try {
       await deleteReport(id)
       message.success('删除成功')
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['material-reports'] })
     } catch {
       message.error('删除失败')
     }
@@ -103,20 +93,21 @@ export default function MaterialReportPage() {
     try {
       await submitReport(id)
       message.success('提交成功')
-      fetchData()
+      queryClient.invalidateQueries({ queryKey: ['material-reports'] })
     } catch {
       message.error('提交失败')
     }
   }
 
-  const handleSearch = (values: any) => {
-    const [start_date, end_date] = values.dateRange || []
+  const handleSearch = (values: Record<string, unknown>) => {
+    const dateRange = values.dateRange as [dayjs.Dayjs, dayjs.Dayjs] | undefined
+    const [start_date, end_date] = dateRange || []
     setFilters({
-      status: values.status,
-      template_id: values.template_id,
+      status: values.status as string | undefined,
+      template_id: values.template_id as string | undefined,
       start_date: start_date?.format('YYYY-MM-DD'),
       end_date: end_date?.format('YYYY-MM-DD'),
-      keyword: values.keyword,
+      keyword: values.keyword as string | undefined,
     })
     setPagination((prev) => ({ ...prev, page: 1 }))
   }
@@ -261,7 +252,7 @@ export default function MaterialReportPage() {
               placeholder="选择模板"
               style={{ width: 150 }}
               allowClear
-              options={templates.map((t) => ({
+              options={templates.map((t: { id: string; template_name: string }) => ({
                 label: t.template_name,
                 value: t.id,
               }))}
@@ -303,7 +294,7 @@ export default function MaterialReportPage() {
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setPagination({ ...pagination, page, pageSize })
+              setPagination({ ...paginationWithTotal, page, pageSize })
             },
           }}
         />

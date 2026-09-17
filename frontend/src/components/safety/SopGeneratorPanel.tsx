@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import type { components } from '@/types/generated/schema'
+
+import React, { useState, useCallback, useRef } from 'react'
 import {App, Table, Button, Typography, Empty, Spin} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -68,8 +70,9 @@ export default function SopGeneratorPanel({
         page_size: 200,
         status: 'generated'
       })
-      if (response.code === 200) {
-        setGeneratedSops(response.data as OperationRegulation[])
+      const apiResponse = response as components['schemas']['ApiResponse']
+      if (apiResponse.code === 200) {
+        setGeneratedSops(apiResponse.data as OperationRegulation[])
       }
     } catch {
       // silent
@@ -77,10 +80,6 @@ export default function SopGeneratorPanel({
       setLoadingList(false)
     }
   }, [])
-
-  useEffect(() => {
-    loadGeneratedSops()
-  }, [loadGeneratedSops])
 
   /* ── file handling ── */
 
@@ -150,21 +149,22 @@ export default function SopGeneratorPanel({
       const { generateSop } = await import('@/actions/safety')
       const response = await generateSop(file)
 
-      if (response.code && response.code !== 200) {
-        setErrorMsg(response.message || '生成失败，请重试')
+      const apiResponse = response as components['schemas']['ApiResponse']
+      if (apiResponse.code && apiResponse.code !== 200) {
+        setErrorMsg(apiResponse.message || '生成失败，请重试')
         return
       }
 
-      const result = response.data
+      const result = apiResponse.data as { regulation_id: string; meta?: Record<string, string> }
       onGenerated({
         regulation_id: result.regulation_id,
         meta: result.meta || {},
-        content: result.content || ''
+        content: (result as { content?: string }).content || ''
       })
       setFile(null)
       loadGeneratedSops()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '生成失败，请重试'
+      const msg = err instanceof Error ? (err instanceof Error ? err.message : null) : '生成失败，请重试'
       setErrorMsg(msg)
     } finally {
       setUploading(false)

@@ -25,11 +25,11 @@ export async function createPilotStudy(data: {
   batch_no?: string
   batch_size?: number
   status?: string
-  material_balance?: Record<string, any>
-  equipment_selection?: Record<string, any>
-  engineering_calc?: Record<string, any>
-  ehs_assessment?: Record<string, any>
-  scale_up_effect?: Record<string, any>
+  material_balance?: Record<string, unknown>
+  equipment_selection?: Record<string, unknown>
+  engineering_calc?: Record<string, unknown>
+  ehs_assessment?: Record<string, unknown>
+  scale_up_effect?: Record<string, unknown>
   notes?: string
 }) {
   const result = await createPilotStudyDirect(data)
@@ -41,11 +41,11 @@ export async function updatePilotStudy(id: string, data: {
   batch_no?: string
   batch_size?: number
   status?: string
-  material_balance?: Record<string, any>
-  equipment_selection?: Record<string, any>
-  engineering_calc?: Record<string, any>
-  ehs_assessment?: Record<string, any>
-  scale_up_effect?: Record<string, any>
+  material_balance?: Record<string, unknown>
+  equipment_selection?: Record<string, unknown>
+  engineering_calc?: Record<string, unknown>
+  ehs_assessment?: Record<string, unknown>
+  scale_up_effect?: Record<string, unknown>
   notes?: string
 }) {
   const result = await updatePilotStudyDirect(id, data)
@@ -63,9 +63,9 @@ export async function deletePilotStudy(id: string) {
 export async function createValidation(data: {
   project_id: string
   status?: string
-  validation_protocol?: Record<string, any>
-  validation_batches?: Record<string, any>
-  statistical_analysis?: Record<string, any>
+  validation_protocol?: Record<string, unknown>
+  validation_batches?: Record<string, unknown>
+  statistical_analysis?: Record<string, unknown>
   validation_conclusion?: string
   notes?: string
 }) {
@@ -76,9 +76,9 @@ export async function createValidation(data: {
 
 export async function updateValidation(id: string, data: {
   status?: string
-  validation_protocol?: Record<string, any>
-  validation_batches?: Record<string, any>
-  statistical_analysis?: Record<string, any>
+  validation_protocol?: Record<string, unknown>
+  validation_batches?: Record<string, unknown>
+  statistical_analysis?: Record<string, unknown>
   validation_conclusion?: string
   notes?: string
 }) {
@@ -97,9 +97,9 @@ export async function deleteValidation(id: string) {
 export async function createFiling(data: {
   project_id: string
   status?: string
-  ctd_structure?: Record<string, any>
-  filing_progress?: Record<string, any>
-  supplementary_docs?: Record<string, any>
+  ctd_structure?: Record<string, unknown>
+  filing_progress?: Record<string, unknown>
+  supplementary_docs?: Record<string, unknown>
   notes?: string
 }) {
   const result = await createFilingDirect(data)
@@ -109,9 +109,9 @@ export async function createFiling(data: {
 
 export async function updateFiling(id: string, data: {
   status?: string
-  ctd_structure?: Record<string, any>
-  filing_progress?: Record<string, any>
-  supplementary_docs?: Record<string, any>
+  ctd_structure?: Record<string, unknown>
+  filing_progress?: Record<string, unknown>
+  supplementary_docs?: Record<string, unknown>
   notes?: string
 }) {
   const result = await updateFilingDirect(id, data)

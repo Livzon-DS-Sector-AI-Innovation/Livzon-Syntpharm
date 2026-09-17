@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {App, Card, Table, Button, Drawer, Form, Input, InputNumber, Select, Tag, Space, Popconfirm, Tabs, Row} from 'antd'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchValidations } from '@/lib/api/client/research/rd-project'
 import { RdProcessValidation } from '@/types/research/rd-project'
@@ -29,25 +30,19 @@ const statusLabelMap: Record<string, string> = {
 
 export function ProcessValidationPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [validations, setValidations] = useState<RdProcessValidation[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdProcessValidation | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: validations = [], isLoading: loading } = useQuery({
+    queryKey: ['process-validations', projectId],
+    queryFn: async () => {
       const data = await fetchValidations(projectId)
-      setValidations(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -82,7 +77,7 @@ export function ProcessValidationPage({ projectId }: Props) {
     setDrawerOpen(true)
   }
 
-  const collectJsonFields = (values: Record<string, any>) => ({
+  const collectJsonFields = (values: Record<string, unknown>) => ({
     validation_protocol: {
       scope: values.proto_scope || '',
       objectives: values.proto_objectives || '',
@@ -126,9 +121,9 @@ export function ProcessValidationPage({ projectId }: Props) {
       }
       setDrawerOpen(false)
       form.resetFields()
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+      queryClient.invalidateQueries({ queryKey: ['process-validations', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -137,9 +132,9 @@ export function ProcessValidationPage({ projectId }: Props) {
       const { deleteValidation } = await import('@/actions/research/modules')
       await deleteValidation(id)
       msgApi.success('删除成功')
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+      queryClient.invalidateQueries({ queryKey: ['process-validations', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -152,7 +147,7 @@ export function ProcessValidationPage({ projectId }: Props) {
     { title: '备注', dataIndex: 'notes', key: 'notes', width: 150, ellipsis: true, render: (v: string) => v || '-' },
     {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
-      render: (_: any, record: RdProcessValidation) => (
+      render: (_: unknown, record: RdProcessValidation) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">

@@ -213,7 +213,7 @@ export interface LabConfirmationBatch {
   date: string
   operator: string
   equipment: string
-  parameters: Record<string, any>
+  parameters: Record<string, string | number | boolean | null | undefined>
   yield_pct: number
   purity_pct: number
   impurities_pct: number
