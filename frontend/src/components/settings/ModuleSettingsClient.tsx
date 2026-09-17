@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -38,19 +37,29 @@ export default function ModuleSettingsClient({
   moduleDescription,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [settings, setSettings] = useState<ModuleSetting[]>([])
+  const [loading, setLoading] = useState(false)
   const [editingSetting, setEditingSetting] = useState<ModuleSetting | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
 
-  const { data: settings = [], isLoading: loading } = useQuery({
-    queryKey: ['module-settings', moduleCode],
-    queryFn: async () => {
+  const loadSettings = async () => {
+    setLoading(true)
+    try {
       const res = await getModuleSettings(moduleCode)
-      return res.data || []
-    },
-  })
+      setSettings(res.data || [])
+    } catch (error) {
+      console.error('Failed to load settings:', error)
+      message.error('加载配置失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadSettings()
+  }, [moduleCode])
 
   const handleEdit = (setting: ModuleSetting) => {
     setEditingSetting(setting)
@@ -73,7 +82,7 @@ export default function ModuleSettingsClient({
 
       message.success('配置已更新')
       setModalOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['module-settings', moduleCode] })
+      loadSettings()
     } catch (error) {
       console.error('Failed to save setting:', error)
       message.error('保存失败')
@@ -160,13 +169,13 @@ export default function ModuleSettingsClient({
       title: '当前值',
       dataIndex: 'value',
       key: 'value',
-      render: (_: unknown, setting: ModuleSetting) => renderValue(setting),
+      render: (_: any, setting: ModuleSetting) => renderValue(setting),
     },
     {
       title: '操作',
       key: 'action',
       width: 100,
-      render: (_: unknown, setting: ModuleSetting) => (
+      render: (_: any, setting: ModuleSetting) => (
         <Button
           type="link"
           icon={<EditOutlined />}

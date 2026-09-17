@@ -58,7 +58,6 @@ export default function TurnoverAnalysisPanel() {
     return () => clearInterval(timer)
   }, [stage, fullMarkdown])
 
-  /* eslint-disable react-hooks/set-state-in-effect -- Animation timer (setInterval + setStepIndex), not data fetching */
   useEffect(() => {
     if (stage !== 'extracting' && stage !== 'thinking') {
       setStepIndex(0)
@@ -84,7 +83,6 @@ export default function TurnoverAnalysisPanel() {
     }, 3000)
     return () => clearInterval(timer)
   }, [stage])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleAnalyze = useCallback(async () => {
     setStage('extracting')
@@ -100,8 +98,8 @@ export default function TurnoverAnalysisPanel() {
       await new Promise((r) => setTimeout(r, 1500))
 
       setStage('streaming')
-    } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : '分析失败，请稍后重试')
+    } catch (err: any) {
+      setErrorMsg(err.message || '分析失败，请稍后重试')
       setStage('error')
     }
   }, [])

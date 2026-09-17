@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -110,16 +109,18 @@ const _HI_FIELD_LABELS: Record<string, string> = {
 }
 
 export default function HazardLedgerPanel() {
-  const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<HazardIdentification[]>([])
+  const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<HazardLedgerStats>({
     total: 0, level_1: 0, level_2: 0, level_3: 0, level_4: 0,
   })
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
-  const [searchKeyword, setSearchKeyword] = useState('')
+  const searchKeywordRef = useRef('')
   const [riskLevel, setRiskLevel] = useState<string | undefined>()
   const [department, setDepartment] = useState<string | undefined>()
   const [position, setPosition] = useState<string | undefined>()
@@ -170,11 +171,9 @@ export default function HazardLedgerPanel() {
   const removeFilter = useCallback((key: string) => {
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     switch (key) {
-      case 'risk_level': setSelectedRowKeys([])
- setRiskLevel(undefined); break
+      case 'risk_level': setRiskLevel(undefined); break
       case 'department': setDepartment(undefined); break
-      case 'position': setSelectedRowKeys([])
- setPosition(undefined); break
+      case 'position': setPosition(undefined); break
     }
   }, [queryParams.page_size, setQueryParams])
 
@@ -205,7 +204,7 @@ export default function HazardLedgerPanel() {
     setFilterPopoverOpen(false)
   }
 
-  const loadStats = useCallback(async () => {
+  const loadStats = async () => {
     try {
       const res = await getHILedgerStats({
         department,
@@ -218,15 +217,15 @@ export default function HazardLedgerPanel() {
         setStats(res.data as HazardLedgerStats)
       }
     } catch { /* non-critical */ }
-  }, [department, position, riskLevel, dateRange])
+  }
 
-  const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazard-identifications-panel', queryParams, department, position, riskLevel, dateRange, searchKeyword, sortField, sortOrder],
-    queryFn: async () => {
+  const loadData = async () => {
+    setLoading(true)
+    try {
       const res = await getHazardIdentifications({
         ...queryParams,
         overall_status: 'completed',
-        keyword: searchKeyword || undefined,
+        keyword: searchKeywordRef.current || undefined,
         department,
         position,
         risk_level: riskLevel,
@@ -237,41 +236,53 @@ export default function HazardLedgerPanel() {
         let list = (res.data as HazardIdentification[]) || []
         // 客户端排序
         if (sortField && sortOrder) {
-          list = [...list].sort((a: HazardIdentification, b: HazardIdentification) => {
-            const aVal = (a as unknown as Record<string, unknown>)[sortField] ?? ''
-            const bVal = (b as unknown as Record<string, unknown>)[sortField] ?? ''
+          list = [...list].sort((a: any, b: any) => {
+            const aVal = a[sortField] ?? ''
+            const bVal = b[sortField] ?? ''
             const cmp = String(aVal).localeCompare(String(bVal), 'zh-CN')
             return sortOrder === 'ascend' ? cmp : -cmp
           })
         }
-        return { data: list, total: res.meta?.total || 0 }
+        setData(list)
+        setTotal(res.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-  })
+    } catch {
+      msgApi.error('加载台账失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // Use query data directly
-  const data = queryData?.data || []
-  const total = queryData?.total || 0
-  const loading = queryLoading
+  useEffect(() => { loadStats() }, [])
 
+  useEffect(() => {
+    setSelectedRowKeys([])
+    loadData()
+  }, [queryParams.page, queryParams.page_size, riskLevel, department, position])
 
+  // 排序/日期变化时重新加载
+  useEffect(() => {
+    if (sortField) loadData()
+  }, [sortField, sortOrder])
 
+  useEffect(() => {
+    loadData()
+    loadStats()
+  }, [dateRange])
 
   const handleSearch = () => {
-    setSearchKeyword(keyword)
+    searchKeywordRef.current = keyword
     setSearchApplied(true)
-    setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
-    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
+    loadData()
     loadStats()
   }
 
   const handleSearchBack = () => {
-    setSearchKeyword('')
+    searchKeywordRef.current = ''
     setKeyword('')
     setSearchApplied(false)
-    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
+    loadData()
     loadStats()
   }
 
@@ -331,7 +342,7 @@ export default function HazardLedgerPanel() {
           msgApi.warning(`删除完成：${succeeded} 条成功，${failed} 条失败`)
         }
         setSelectedRowKeys([])
-        await queryClient.invalidateQueries({ queryKey: ['hazard-identifications-panel'] })
+        await loadData()
         loadStats()
         setDeleting(false)
       },
@@ -445,9 +456,9 @@ export default function HazardLedgerPanel() {
         const rowNum = ((queryParams.page || 1) - 1) * (queryParams.page_size || 20) + index + 1
 
         const handleToggle = () => {
-          setSelectedRowKeys((prev: React.Key[]) =>
+          setSelectedRowKeys((prev) =>
             prev.includes(record.id)
-              ? prev.filter((k: React.Key) => k !== record.id)
+              ? prev.filter((k) => k !== record.id)
               : [...prev, record.id]
           )
         }
@@ -721,9 +732,9 @@ export default function HazardLedgerPanel() {
             ← 返回
           </div>
           <div style={{ fontSize: 12, color: '#787671', marginBottom: 8 }}>
-            {FILTER_FIELDS.find((f: FilterFieldConfig) => f.key === pendingFilterField)?.label}
+            {FILTER_FIELDS.find((f) => f.key === pendingFilterField)?.label}
           </div>
-          {FILTER_FIELDS.find((f: FilterFieldConfig) => f.key === pendingFilterField)?.type === 'text' ? (
+          {FILTER_FIELDS.find((f) => f.key === pendingFilterField)?.type === 'text' ? (
             <Input
               placeholder={
                 pendingFilterField === 'department' ? '请输入部门名称' :
@@ -740,7 +751,7 @@ export default function HazardLedgerPanel() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {FILTER_FIELDS
-                .find((f: FilterFieldConfig) => f.key === pendingFilterField)
+                .find((f) => f.key === pendingFilterField)
                 ?.options.map((opt) => (
                   <div
                     key={opt.value}
@@ -770,7 +781,7 @@ export default function HazardLedgerPanel() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {FILTER_FIELDS.map((field) => {
-              const isApplied = activeFilters.some((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => f.key === field.key)
+              const isApplied = activeFilters.some((f) => f.key === field.key)
               return (
                 <div
                   key={field.key}
@@ -966,7 +977,7 @@ export default function HazardLedgerPanel() {
           }}
         >
           {/* 活跃筛选条件 chips */}
-          {activeFilters.map((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => (
+          {activeFilters.map((f) => (
             <div
               key={f.key}
               style={{
@@ -1150,7 +1161,7 @@ export default function HazardLedgerPanel() {
           size="small"
           onRow={(record) => ({
             onMouseEnter: () => setHoveredRowId(record.id),
-            onMouseLeave: () => setHoveredRowId((prev: string | null) => (prev === record.id ? null : prev)),
+            onMouseLeave: () => setHoveredRowId((prev) => (prev === record.id ? null : prev)),
           })}
           expandable={{
             expandedRowRender,

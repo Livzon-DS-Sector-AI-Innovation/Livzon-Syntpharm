@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag,
   Card, Row, Col, Typography, App,
@@ -50,6 +50,8 @@ export default function SpecialOpsPersonnelPanel() {
     } catch { message.error('加载人员列表失败') }
     finally { setLoading(false) }
   }
+
+  useEffect(() => { loadData() }, [personnelQueryParams.page, personnelQueryParams.page_size, statusFilter, certTypeFilter])
 
   const handleSearch = () => { setPersonnelQueryParams({ page: 1 }); loadData() }
 

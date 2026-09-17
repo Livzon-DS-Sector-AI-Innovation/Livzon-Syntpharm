@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState, } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -11,14 +10,16 @@ import {
   Form,
   Input,
   Select,
-
+  DatePicker,
   Typography,
   Space,
   Tag,
+  Spin,
   Popconfirm,
   Descriptions,
   Drawer,
   Tabs,
+  InputNumber,
   message,
   Tooltip,
   Badge,
@@ -36,6 +37,8 @@ import {
   RocketOutlined,
   LockOutlined,
   MinusCircleOutlined,
+  ExclamationCircleOutlined,
+  SwapOutlined,
 } from '@ant-design/icons'
 import {
   getEhsChanges,
@@ -69,10 +72,15 @@ import {
 import type {
   EhsChange,
   EhsChangeFormData,
+  RiskAssessmentItem,
+  ApprovalChainItem,
+  ActionItem,
+  PSSRChecklistItem,
 } from '@/types/safety'
 
 const { Title, Text, Paragraph } = Typography
 const { TextArea } = Input
+const { RangePicker } = DatePicker
 
 // Status tag colors
 const statusColorMap: Record<string, string> = {
@@ -96,6 +104,8 @@ const statusLabelMap: Record<string, string> = {
 }
 
 export default function EhsChangePage() {
+  const [changes, setChanges] = useState<EhsChange[]>([])
+  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingChange, setEditingChange] = useState<EhsChange | null>(null)
   const [saving, setSaving] = useState(false)
@@ -117,24 +127,28 @@ export default function EhsChangePage() {
   // Pagination
   const [pagination, setPagination] = useState({ page: 1, page_size: 20, total: 0 })
 
-  const _queryClient = useQueryClient()
-
-  const { data: changesData, isLoading, refetch } = useQuery({
-    queryKey: ['safety-ehs-changes', { pagination, filters }],
-    queryFn: async () => {
+  const loadChanges = useCallback(async () => {
+    setLoading(true)
+    try {
       const res = await getEhsChanges({
         page: pagination.page,
         page_size: pagination.page_size,
         ...filters,
       })
-      return { data: res.data || [], total: res.meta?.total || 0 }
-    },
-  })
+      setChanges(res.data || [])
+      if (res.meta) {
+        setPagination((p) => ({ ...p, total: res.meta!.total || 0 }))
+      }
+    } catch (error) {
+      console.error('Failed to load EHS changes:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [pagination.page, pagination.page_size, filters])
 
-  const changes = changesData?.data || []
-  const loading = isLoading
-
-
+  useEffect(() => {
+    loadChanges()
+  }, [loadChanges])
 
   // ── Create / Edit ──
 
@@ -177,7 +191,7 @@ export default function EhsChangePage() {
         message.success('变更创建成功')
       }
       setModalOpen(false)
-      refetch()
+      loadChanges()
     } catch (error) {
       if (error && typeof error === 'object' && 'errorFields' in error) return // form validation
       message.error('操作失败')
@@ -192,7 +206,7 @@ export default function EhsChangePage() {
     const res = await submitEhsChange(id)
     if (res.code === 200) {
       message.success('变更已提交')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -205,7 +219,7 @@ export default function EhsChangePage() {
     const res = await approveEhsChange(id, decision, comments)
     if (res.code === 200) {
       message.success(decision === 'approved' ? '变更已批准' : '变更已驳回')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -218,7 +232,7 @@ export default function EhsChangePage() {
     const res = await rejectEhsChange(id, '驳回')
     if (res.code === 200) {
       message.success('变更已驳回')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -231,7 +245,7 @@ export default function EhsChangePage() {
     const res = await startImplementationEhsChange(id)
     if (res.code === 200) {
       message.success('变更已开始实施')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -244,7 +258,7 @@ export default function EhsChangePage() {
     const res = await commissionEhsChange(id)
     if (res.code === 200) {
       message.success('变更已投用')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -257,7 +271,7 @@ export default function EhsChangePage() {
     const res = await closeEhsChange(id)
     if (res.code === 200) {
       message.success('变更已关闭')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -270,7 +284,7 @@ export default function EhsChangePage() {
     const res = await cancelEhsChange(id)
     if (res.code === 200) {
       message.success('变更已取消')
-      refetch()
+      loadChanges()
       if (selectedChange?.id === id) {
         setSelectedChange(res.data || null)
       }
@@ -283,7 +297,7 @@ export default function EhsChangePage() {
     const res = await deleteEhsChange(id)
     if (res.code === 200) {
       message.success('删除成功')
-      refetch()
+      loadChanges()
     } else {
       message.error(res.message || '删除失败')
     }
@@ -612,7 +626,7 @@ export default function EhsChangePage() {
           ) : null
         }
       >
-        {selectedChange && <EhsChangeDetail change={selectedChange} onRefresh={() => refetch()} />}
+        {selectedChange && <EhsChangeDetail change={selectedChange} onRefresh={loadChanges} />}
       </Drawer>
     </div>
   )

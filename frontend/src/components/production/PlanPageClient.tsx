@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -22,7 +22,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useProductionStore } from '@/stores/production'
 import { getPlans, createPlan, updatePlan, deletePlan } from '@/actions/production'
 import type { ProductionPlan, ProductionPlanFormData, PlanStatus } from '@/types/production'
 import { PLAN_STATUS_OPTIONS } from '@/types/production'
@@ -39,38 +39,52 @@ const getStatusLabel = (status: PlanStatus) => {
 
 export function PlanPageClient() {
   const { message, modal } = App.useApp()
-  const queryClient = useQueryClient()
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
+  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingPlan, setEditingPlan] = useState<ProductionPlan | null>(null)
   const [searchMonth, setSearchMonth] = useState<string | undefined>()
   const [statusFilter, setStatusFilter] = useState<PlanStatus | undefined>()
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
 
-  const { data: plansData, isLoading: loading } = useQuery({
-    queryKey: ['production-plans', { page, page_size: pageSize, status: statusFilter, plan_month: searchMonth }],
-    queryFn: async () => {
+  const {
+    plans,
+    planTotal,
+    planQueryParams,
+    setPlans,
+    setPlanTotal,
+    setPlanQueryParams,
+    addPlan,
+    updatePlan: updatePlanInStore,
+    removePlan,
+  } = useProductionStore()
+
+  const loadPlans = async () => {
+    setLoading(true)
+    try {
       const response = await getPlans({
-        page,
-        page_size: pageSize,
+        ...planQueryParams,
         status: statusFilter,
         plan_month: searchMonth,
       })
       if (response.code === 200) {
-        return { data: response.data, total: response.meta?.total || 0 }
+        setPlans(response.data)
+        setPlanTotal(response.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-  })
+    } catch {
+      message.error('加载生产计划列表失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const plans = plansData?.data || []
-  const planTotal = plansData?.total || 0
+  useEffect(() => {
+    loadPlans()
+  }, [planQueryParams.page, planQueryParams.page_size, statusFilter])
 
   const handleSearch = () => {
-    setPage(1)
-    queryClient.invalidateQueries({ queryKey: ['production-plans'] })
+    setPlanQueryParams({ page: 1 })
+    loadPlans()
   }
 
   const handleAdd = () => {
@@ -94,7 +108,7 @@ export function PlanPageClient() {
           const response = await deletePlan(id)
           if (response.code === 200) {
             message.success('删除成功')
-            queryClient.invalidateQueries({ queryKey: ['production-plans'] })
+            removePlan(id)
           } else {
             message.error(response.message || '删除失败')
           }
@@ -113,8 +127,8 @@ export function PlanPageClient() {
         const response = await updatePlan(editingPlan.id, values)
         if (response.code === 200) {
           message.success('更新成功')
+          updatePlanInStore(editingPlan.id, response.data)
           setModalVisible(false)
-          queryClient.invalidateQueries({ queryKey: ['production-plans'] })
         } else {
           message.error(response.message || '更新失败')
         }
@@ -122,9 +136,9 @@ export function PlanPageClient() {
         const response = await createPlan(values as ProductionPlanFormData)
         if (response.code === 200) {
           message.success('创建成功')
+          addPlan(response.data)
           setModalVisible(false)
           form.resetFields()
-          queryClient.invalidateQueries({ queryKey: ['production-plans'] })
         } else {
           message.error(response.message || '创建失败')
         }
@@ -242,7 +256,7 @@ export function PlanPageClient() {
               value={statusFilter}
               onChange={(value) => {
                 setStatusFilter(value)
-                setPage(1)
+                setPlanQueryParams({ page: 1 })
               }}
               style={{ width: '100%' }}
               options={[
@@ -267,15 +281,14 @@ export function PlanPageClient() {
           loading={loading}
           scroll={{ x: 1000 }}
           pagination={{
-            current: page,
-            pageSize: pageSize,
+            current: planQueryParams.page,
+            pageSize: planQueryParams.page_size,
             total: planTotal,
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total) => `共 ${total} 条`,
             onChange: (page, pageSize) => {
-              setPage(page)
-              setPageSize(pageSize)
+              setPlanQueryParams({ page, page_size: pageSize })
             },
           }}
         />

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Table, Button, Tag, Space, Input, Select, App, Popconfirm } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined } from '@ant-design/icons'
@@ -37,33 +36,42 @@ interface Props {
 export function PilotWorkflowList({ initialData }: Props) {
   const router = useRouter()
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [data, setData] = useState(initialData.items)
+  const [total, setTotal] = useState(initialData.total)
   const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
   const [keyword, setKeyword] = useState('')
 
-  const { data: queryData, isLoading: loading } = useQuery({
-    queryKey: ['pilot-workflows', page, keyword],
-    queryFn: async () => {
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const loadData = async (p: number, kw?: string) => {
+    setLoading(true)
+    try {
       const result = await fetchPilotWorkflows({
-        page,
+        page: p,
         page_size: 20,
-        keyword: keyword || undefined,
+        keyword: kw,
       })
-      return { items: result.items || [], total: result.total || 0 }
-    },
-  })
-
-  const data = queryData?.items || initialData.items
-  const total = queryData?.total ?? initialData.total
-
+      setData(result.items)
+      setTotal(result.total)
+      setPage(p)
+    } catch (err) {
+      console.error('加载失败:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleDelete = async (id: string) => {
     setDeletingId(id)
     try {
       await deletePilotWorkflow(id)
       message.success('已删除')
-      queryClient.invalidateQueries({ queryKey: ['pilot-workflows'] })
+      await loadData(page, keyword)
     } catch (err) {
       message.error(err instanceof Error ? err.message : '删除失败')
     } finally {
@@ -112,7 +120,7 @@ export function PilotWorkflowList({ initialData }: Props) {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (v: string) => new Date(v).toLocaleString("zh-CN"),
+      render: (v: string) => mounted ? new Date(v).toLocaleString('zh-CN') : v,
     },
     {
       title: '操作',
@@ -151,7 +159,7 @@ export function PilotWorkflowList({ initialData }: Props) {
             prefix={<SearchOutlined />}
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onPressEnter={() => { setPage(1); queryClient.invalidateQueries({ queryKey: ['pilot-workflows'] }) }}
+            onPressEnter={() => loadData(1, keyword)}
             style={{ width: 200 }}
             allowClear
           />
@@ -159,7 +167,7 @@ export function PilotWorkflowList({ initialData }: Props) {
             placeholder="状态筛选"
             allowClear
             style={{ width: 120 }}
-            onChange={() => { setKeyword(''); setPage(1); queryClient.invalidateQueries({ queryKey: ['pilot-workflows'] }) }}
+            onChange={(v) => loadData(1, undefined)}
             options={[
               { value: 'pending', label: '待启动' },
               { value: 'running', label: '执行中' },
@@ -187,7 +195,7 @@ export function PilotWorkflowList({ initialData }: Props) {
           current: page,
           total,
           pageSize: 20,
-          onChange: (p) => setPage(p),
+          onChange: (p) => loadData(p, keyword),
         }}
       />
     </div>

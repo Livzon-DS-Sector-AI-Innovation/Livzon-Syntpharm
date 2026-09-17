@@ -1,8 +1,7 @@
 'use client'
-import {updateAIResult, generateStandard} from '@/actions/quality'
+import {updateDeviationTask, updateDeviationTaskFields, updateAIResult, generateStandard} from '@/actions/quality'
 
-import { useState, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
 import { use } from 'react'
 import {
   Card,
@@ -11,8 +10,10 @@ import {
   Tabs,
   message,
   Spin,
+  Divider,
   Descriptions,
   Tag,
+  Alert,
 } from 'antd'
 import {
   DownloadOutlined,
@@ -55,31 +56,45 @@ export default function PreviewPage({
   const router = useRouter()
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  const [loading, setLoading] = useState(true)
+  const [previewLoading, setPreviewLoading] = useState(false)
+  const [task, setTask] = useState<TaskDetail | null>(null)
+  const [previewData, setPreviewData] = useState<PreviewData | null>(null)
   const [editableContent, setEditableContent] = useState('')
   const [isEdited, setIsEdited] = useState(false)
-
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('preview')
   const editableRef = useRef<HTMLDivElement>(null)
-  const queryClient = useQueryClient()
 
-  const { data: task, isLoading: loading } = useQuery({
-    queryKey: ['deviation-task', taskId],
-    queryFn: async () => {
+  useEffect(() => {
+    fetchTaskDetail()
+  }, [taskId])
+
+  useEffect(() => {
+    if (task?.ai_result) {
+      fetchPreview()
+    }
+  }, [task])
+
+  const fetchTaskDetail = async () => {
+    try {
       const response = await fetch(
         `${API_BASE}/quality/deviation-automation/tasks/${taskId}`
       )
       if (!response.ok) throw new Error('获取任务详情失败')
       const result = await response.json()
-      return result.data as TaskDetail
-    },
-    enabled: !!taskId,
-  })
+      setTask(result.data)
+    } catch (error: any) {
+      message.error(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const { data: previewData, isLoading: previewLoading } = useQuery({
-    queryKey: ['deviation-preview', taskId],
-    queryFn: async () => {
+  const fetchPreview = async () => {
+    setPreviewLoading(true)
+    try {
       const response = await fetch(
         `${API_BASE}/quality/deviation-automation/tasks/${taskId}/preview`
       )
@@ -88,14 +103,15 @@ export default function PreviewPage({
         throw new Error(err.detail || '获取预览失败')
       }
       const result = await response.json()
-      return result.data as PreviewData
-    },
-    enabled: !!taskId && !!task?.ai_result,
-  })
-
-
-
-
+      setPreviewData(result.data)
+      setEditableContent(result.data.plain_content || '')
+      setIsEdited(false)
+    } catch (error: any) {
+      message.error(error.message || '获取预览失败')
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
 
   const handleContentChange = () => {
     if (editableRef.current) {
@@ -111,9 +127,9 @@ export default function PreviewPage({
       await updateAIResult(taskId, editableContent)
       message.success('保存成功')
       setIsEdited(false)
-      await queryClient.invalidateQueries({ queryKey: ['deviation-task', taskId] })
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '保存失败'))
+      await fetchTaskDetail()
+    } catch (error: any) {
+      message.error(error.message || '保存失败')
     } finally {
       setSaving(false)
     }
@@ -131,9 +147,9 @@ export default function PreviewPage({
         throw new Error('生成失败')
       }
       message.success('标准文件生成成功')
-      await queryClient.invalidateQueries({ queryKey: ['deviation-task', taskId] })
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '生成失败'))
+      await fetchTaskDetail()
+    } catch (error: any) {
+      message.error(error.message || '生成失败')
     } finally {
       setGenerating(false)
     }
@@ -261,7 +277,7 @@ export default function PreviewPage({
             setActiveTab(key)
             // 切换到预览时刷新
             if (key === 'preview' && task?.ai_result) {
-              queryClient.invalidateQueries({ queryKey: ['deviation-preview', taskId] })
+              fetchPreview()
             }
           }}
           items={[
@@ -277,7 +293,7 @@ export default function PreviewPage({
                   size="small"
                   title="标准报告预览"
                   extra={
-                    <Button size="small" onClick={() => queryClient.invalidateQueries({ queryKey: ['deviation-preview', taskId] })} loading={previewLoading}>
+                    <Button size="small" onClick={fetchPreview} loading={previewLoading}>
                       刷新
                     </Button>
                   }

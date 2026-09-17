@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Table,
@@ -43,7 +42,7 @@ import BatchProgressPanel from './BatchProgressPanel'
 
 import { statusPill, actionLink } from '@/components/safety/sharedStyles'
 
-const { Text: _Text } = Typography
+const { Text } = Typography
 
 // ── AI 进度颜色配置 ──
 const PROGRESS_COLOR_CONFIG: Record<string, { color: string; bg: string }> = {
@@ -96,9 +95,11 @@ const FILTER_FIELDS: FilterFieldConfig[] = [
 ]
 
 export default function WorkflowListPanel() {
-  const queryClient = useQueryClient()
   const router = useRouter()
   const { message: msgApi } = App.useApp()
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<HazardIdentification[]>([])
+  const [total, setTotal] = useState(0)
   const [stats, setStats] = useState<HazardIdentificationStats>({
     total_draft: 0,
     total_in_progress: 0,
@@ -108,11 +109,11 @@ export default function WorkflowListPanel() {
   const [queryParams, setQueryParams] = useState({ page: 1, page_size: 20 })
   const [keyword, setKeyword] = useState('')
   const [searchApplied, setSearchApplied] = useState(false)
-  const [searchKeyword, setSearchKeyword] = useState('')
+  const searchKeywordRef = useRef('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [progressFilter, setProgressFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
-  const { message: _message, modal } = App.useApp()
+  const { message, modal } = App.useApp()
 
   // ── 排序状态 ──
   const [sortField, setSortField] = useState<string | undefined>()
@@ -155,10 +156,8 @@ export default function WorkflowListPanel() {
   const removeFilter = useCallback((key: string) => {
     setQueryParams({ page: 1, page_size: queryParams.page_size })
     switch (key) {
-      case 'ai_node_progress': setSelectedRowKeys([])
- setProgressFilter(undefined); break
-      case 'department': setSelectedRowKeys([])
- setDeptFilter(undefined); break
+      case 'ai_node_progress': setProgressFilter(undefined); break
+      case 'department': setDeptFilter(undefined); break
     }
   }, [queryParams.page_size, setQueryParams])
 
@@ -166,8 +165,6 @@ export default function WorkflowListPanel() {
   const clearAllFilters = useCallback(() => {
     setProgressFilter(undefined)
     setDeptFilter(undefined)
-    setSelectedRowKeys([])
-
     setStatusFilter(undefined)
     setKeyword('')
     setSearchApplied(false)
@@ -189,14 +186,12 @@ export default function WorkflowListPanel() {
     setFilterPopoverOpen(false)
   }
 
-  const { data: queryData, isLoading: queryLoading } = useQuery({
-    queryKey: ['hazard-identifications-workflow', queryParams, statusFilter, progressFilter, deptFilter, activeBatchId, sortField, sortOrder, msgApi, searchKeyword],
-    queryFn: async () => {
-    
+  const loadData = async () => {
+    setLoading(true)
     try {
       const res = await getHazardIdentifications({
         ...queryParams,
-        keyword: searchKeyword || undefined,
+        keyword: searchKeywordRef.current || undefined,
         overall_status: statusFilter,
         ai_node_progress: progressFilter,
         department: deptFilter,
@@ -206,28 +201,22 @@ export default function WorkflowListPanel() {
         let list = (res.data as HazardIdentification[]) || []
         // 客户端排序
         if (sortField && sortOrder) {
-          list = [...list].sort((a: HazardIdentification, b: HazardIdentification) => {
-            const aVal = (a as unknown as Record<string, unknown>)[sortField] ?? ''
-            const bVal = (b as unknown as Record<string, unknown>)[sortField] ?? ''
+          list = [...list].sort((a: any, b: any) => {
+            const aVal = a[sortField] ?? ''
+            const bVal = b[sortField] ?? ''
             const cmp = String(aVal).localeCompare(String(bVal), 'zh-CN')
             return sortOrder === 'ascend' ? cmp : -cmp
           })
         }
-        return { data: list, total: res.meta?.total || 0 }
-        
+        setData(list)
+        setTotal(res.meta?.total || 0)
       }
     } catch {
       msgApi.error('加载列表失败')
     } finally {
-      
+      setLoading(false)
     }
-    },
-  })
-
-  // Use query data directly
-  const data = queryData?.data || []
-  const total = queryData?.total || 0
-  const loading = queryLoading
+  }
 
   const loadStats = async () => {
     try {
@@ -238,23 +227,32 @@ export default function WorkflowListPanel() {
     } catch { /* 静默失败 */ }
   }
 
+  useEffect(() => { loadStats() }, [])
 
+  useEffect(() => {
+    setSelectedRowKeys([])
+    loadData()
+  }, [queryParams.page, queryParams.page_size, statusFilter, progressFilter, deptFilter])
 
   // 排序变化时重新加载
+  useEffect(() => {
+    if (sortField) {
+      loadData()
+    }
+  }, [sortField, sortOrder])
 
   const handleSearch = () => {
-    setSearchKeyword(keyword)
+    searchKeywordRef.current = keyword
     setSearchApplied(true)
-    setSelectedRowKeys([])
     setQueryParams({ page: 1, page_size: queryParams.page_size })
-    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
+    loadData()
   }
 
   const handleSearchBack = () => {
-    setSearchKeyword('')
+    searchKeywordRef.current = ''
     setKeyword('')
     setSearchApplied(false)
-    queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
+    loadData()
   }
 
   const handleDelete = async (id: string) => {
@@ -265,7 +263,7 @@ export default function WorkflowListPanel() {
         const res = await deleteHazardIdentification(id)
         if (res.code === 200) {
           msgApi.success('删除成功')
-          queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
+          loadData()
           loadStats()
         } else {
           msgApi.error(res.message || '删除失败')
@@ -299,7 +297,7 @@ export default function WorkflowListPanel() {
           msgApi.warning(`删除完成：${succeeded} 条成功，${failed} 条失败`)
         }
         setSelectedRowKeys([])
-        await queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
+        await loadData()
         loadStats()
         setDeleting(false)
       },
@@ -386,9 +384,9 @@ export default function WorkflowListPanel() {
         const rowNum = ((queryParams.page || 1) - 1) * (queryParams.page_size || 20) + index + 1
 
         const handleToggle = () => {
-          setSelectedRowKeys((prev: React.Key[]) =>
+          setSelectedRowKeys((prev) =>
             prev.includes(record.id)
-              ? prev.filter((k: React.Key) => k !== record.id)
+              ? prev.filter((k) => k !== record.id)
               : [...prev, record.id]
           )
         }
@@ -652,7 +650,7 @@ export default function WorkflowListPanel() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {FILTER_FIELDS.map((field) => {
-              const isApplied = activeFilters.some((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => f.key === field.key)
+              const isApplied = activeFilters.some((f) => f.key === field.key)
               return (
                 <div
                   key={field.key}
@@ -827,7 +825,7 @@ export default function WorkflowListPanel() {
           }}
         >
           {/* 活跃筛选条件 chips */}
-          {activeFilters.map((f: { key: string; fieldLabel: string; value: string; valueLabel: string }) => (
+          {activeFilters.map((f) => (
             <div
               key={f.key}
               style={{
@@ -1028,7 +1026,7 @@ export default function WorkflowListPanel() {
           scroll={{ x: 'max-content' }}
           onRow={(record) => ({
             onMouseEnter: () => setHoveredRowId(record.id),
-            onMouseLeave: () => setHoveredRowId((prev: string | null) => (prev === record.id ? null : prev)),
+            onMouseLeave: () => setHoveredRowId((prev) => (prev === record.id ? null : prev)),
           })}
           pagination={{
             current: queryParams.page,
@@ -1055,7 +1053,7 @@ export default function WorkflowListPanel() {
         onClose={() => setDrawerOpen(false)}
         onDone={() => {
           setDrawerOpen(false)
-          queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
+          loadData()
           loadStats()
         }}
       />
@@ -1066,7 +1064,7 @@ export default function WorkflowListPanel() {
         onClose={() => setBatchDrawerOpen(false)}
         onDone={() => {
           setBatchDrawerOpen(false)
-          queryClient.invalidateQueries({ queryKey: ['hazard-identifications-workflow'] })
+          loadData()
           loadStats()
         }}
       />

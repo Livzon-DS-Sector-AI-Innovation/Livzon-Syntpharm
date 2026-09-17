@@ -1,6 +1,5 @@
 import {
   InspectionTemplateListResponse,
-  Equipment,
   InspectionTemplate,
 } from '@/types/equipment/generated-bridge'
 import {
@@ -112,7 +111,7 @@ export async function fetchRouteSchedules(routeId: string): Promise<InspectionRo
 }
 
 // ==================== 设备列表 ====================
-export async function fetchEquipmentsClient(params: { page?: number; page_size?: number; keyword?: string } = {}): Promise<{ items: Equipment[]; total: number }> {
+export async function fetchEquipmentsClient(params: { page?: number; page_size?: number; keyword?: string } = {}): Promise<{ items: any[]; total: number }> {
   const searchParams = new URLSearchParams()
   if (params.keyword) searchParams.append('keyword', params.keyword)
   if (params.page) searchParams.append('page', params.page.toString())

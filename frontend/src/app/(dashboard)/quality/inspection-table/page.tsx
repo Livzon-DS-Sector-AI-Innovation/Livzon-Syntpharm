@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import {
   Card,
   Table,
@@ -13,13 +12,16 @@ import {
   Modal,
   Form,
   Popconfirm,
+  Spin,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
   PlusOutlined,
+  SearchOutlined,
   DeleteOutlined,
   EditOutlined,
   EyeOutlined,
+  TableOutlined,
 } from '@ant-design/icons'
 import Link from 'next/link'
 import dayjs from 'dayjs'
@@ -32,33 +34,41 @@ import {
 import type { TableListItem, ColumnConfig } from '@/types/inspection-table'
 
 export default function InspectionTableListPage() {
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<TableListItem[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [keyword, setKeyword] = useState('')
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [selectedTable, setSelectedTable] = useState<TableListItem | null>(null)
-  const [_columnsModalVisible, _setColumnsModalVisible] = useState(false)
+  const [_columnsModalVisible, setColumnsModalVisible] = useState(false)
   const [columns, setColumns] = useState<ColumnConfig[]>([])
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const queryClient = useQueryClient()
 
-  const { data: queryResult, isLoading: loading } = useQuery({
-    queryKey: ['inspection-tables', keyword, page, pageSize],
-    queryFn: async () => {
+  const fetchData = async () => {
+    setLoading(true)
+    try {
       const result = await getInspectionTables({
         keyword: keyword || undefined,
         page,
         page_size: pageSize,
       })
-      return result
-    },
-  })
+      setData(result.data?.items || [])
+      setTotal(result.data?.total || 0)
+    } catch (_error) {
+      message.error('获取数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const data = queryResult?.items || []
-  const total = queryResult?.total || 0
+  useEffect(() => {
+    fetchData()
+  }, [page, pageSize, keyword])
 
   // 创建数据表
   const handleCreate = async () => {
@@ -76,9 +86,9 @@ export default function InspectionTableListPage() {
       setCreateModalVisible(false)
       form.resetFields()
       setColumns([])
-      queryClient.invalidateQueries({ queryKey: ['inspection-tables'] })
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '创建失败')
+      fetchData()
+    } catch (error: any) {
+      message.error(error.message || '创建失败')
     } finally {
       setSaving(false)
     }
@@ -107,9 +117,9 @@ export default function InspectionTableListPage() {
 
       message.success('更新成功')
       setEditModalVisible(false)
-      queryClient.invalidateQueries({ queryKey: ['inspection-tables'] })
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '更新失败')
+      fetchData()
+    } catch (error: any) {
+      message.error(error.message || '更新失败')
     } finally {
       setSaving(false)
     }
@@ -120,9 +130,9 @@ export default function InspectionTableListPage() {
     try {
       await deleteInspectionTable(id)
       message.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: ['inspection-tables'] })
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '删除失败')
+      fetchData()
+    } catch (error: any) {
+      message.error(error.message || '删除失败')
     }
   }
 
@@ -137,7 +147,7 @@ export default function InspectionTableListPage() {
   }
 
   // 更新列配置
-  const handleUpdateColumn = (index: number, field: string, value: unknown) => {
+  const handleUpdateColumn = (index: number, field: string, value: any) => {
     const newColumns = [...columns]
     newColumns[index] = { ...newColumns[index], [field]: value }
     setColumns(newColumns)

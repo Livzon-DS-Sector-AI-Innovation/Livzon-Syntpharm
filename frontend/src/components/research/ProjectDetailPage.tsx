@@ -1,11 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker} from 'antd'
-import { ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
+import { useState, useEffect, useCallback } from 'react'
+import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Space} from 'antd'
+import {PlusOutlined, EditOutlined, ArrowRightOutlined} from '@ant-design/icons'
 import {
-  RdProject, RdProjectStage,
+  RdProject, RdMilestone, RdStageRecord, RdResearchTrack, RdResearchFinding,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import {fetchMilestones, fetchStages, } from '@/lib/api/client/research/rd-project'
@@ -13,7 +12,7 @@ import { ProcessValidationPage } from './ProcessValidationPage'
 import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'
 import dayjs from 'dayjs'
-import {createMilestone, doTransition} from '@/actions/research/rd-project'
+import {createMilestone, updateMilestone, createStage, doTransition} from '@/actions/research/rd-project'
 
 interface Props { project: RdProject }
 
@@ -36,26 +35,28 @@ const statusColorMap: Record<string, { color: string; bg: string }> = {
 
 export function ProjectDetailPage({ project }: Props) {
   const { modal, message: msgApi } = App.useApp()
-  const queryClient = useQueryClient()
   const [tab, setTab] = useState('overview')
+  const [milestones, setMilestones] = useState<RdMilestone[]>([])
+  const [stages, setStages] = useState<RdStageRecord[]>([])
+  const [loading, setLoading] = useState(false)
 
-  const { data: milestones = [], isLoading: milestonesLoading } = useQuery({
-    queryKey: ['milestones', project.id],
-    queryFn: async () => {
-      const data = await fetchMilestones(project.id)
-      return data || []
-    },
-  })
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [m, s] = await Promise.all([
+        fetchMilestones(project.id),
+        fetchStages(project.id),
+      ])
+      setMilestones(m)
+      setStages(s)
+    } catch (_e) {
+      msgApi.error('加载数据失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [project.id])
 
-  const { data: stages = [], isLoading: stagesLoading } = useQuery({
-    queryKey: ['stages', project.id],
-    queryFn: async () => {
-      const data = await fetchStages(project.id)
-      return data || []
-    },
-  })
-
-  const loading = milestonesLoading || stagesLoading
+  useEffect(() => { loadAll() }, [loadAll])
 
   const stageCfg = stageColorMap[project.current_stage || 'initiation'] || { color: '#787671', bg: '#f0eeec' }
   const statusCfg = statusColorMap[project.status] || { color: '#787671', bg: '#f0eeec' }
@@ -70,19 +71,18 @@ export function ProjectDetailPage({ project }: Props) {
           const result = await doTransition(project.id, targetStage)
           if (result.success) {
             msgApi.success('阶段流转成功')
-            queryClient.invalidateQueries({ queryKey: ['milestones', project.id] })
-            queryClient.invalidateQueries({ queryKey: ['stages', project.id] })
+            loadAll()
           } else {
             msgApi.error('阶段流转失败')
           }
-        } catch (e: unknown) {
-          msgApi.error(e instanceof Error ? e.message : '阶段流转失败')
+        } catch (e: any) {
+          msgApi.error(e.message || '阶段流转失败')
         }
       },
     })
   }
 
-  const nextStage = STAGE_ORDER[STAGE_ORDER.indexOf(project.current_stage as RdProjectStage) + 1]
+  const nextStage = STAGE_ORDER[STAGE_ORDER.indexOf(project.current_stage as any) + 1]
 
   // 里程碑表单
   const [milestoneForm] = Form.useForm()
@@ -97,8 +97,8 @@ export function ProjectDetailPage({ project }: Props) {
       await createMilestone(project.id, { ...values, planned_date: values.planned_date?.format('YYYY-MM-DD') })
       msgApi.success('里程碑创建成功')
       setMilestoneModalOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['milestones', project.id] })
-    } catch (e: unknown) { msgApi.error(e instanceof Error ? e.message : "保存失败") }
+      loadAll()
+    } catch (e: any) { msgApi.error(e.message) }
   }
 
   const tabs = [

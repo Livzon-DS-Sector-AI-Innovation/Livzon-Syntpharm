@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import {Modal, Table, Input, Button, Space, Tag} from 'antd'
+import { useEffect, useState } from 'react'
+import {Modal, Table, Input, Button, Space, Tag, App} from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { getHazardRiskOptions } from '@/actions/safety'
@@ -16,27 +15,36 @@ interface HazardSelectModalProps {
 }
 
 export default function HazardSelectModal({ open, onSelect, onClose }: HazardSelectModalProps) {
+  const [loading, setLoading] = useState(false)
+  const [data, setData] = useState<HazardRiskOption[]>([])
+  const [total, setTotal] = useState(0)
   const [keyword, setKeyword] = useState('')
   const [department, setDepartment] = useState<string | undefined>()
   const [page, setPage] = useState(1)
+  const { message } = App.useApp()
 
-  const { data: queryData, isLoading: loading } = useQuery({
-    queryKey: ['hazard-risk-options', keyword, department, page],
-    queryFn: async () => {
+  const loadData = async () => {
+    setLoading(true)
+    try {
       const res = await getHazardRiskOptions({ keyword: keyword || undefined, department, page, page_size: 20 })
       if (res.code === 200) {
-        return { data: res.data as HazardRiskOption[], total: res.meta?.total || 0 }
+        setData(res.data as HazardRiskOption[])
+        setTotal(res.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-    enabled: open,
-  })
+    } catch {
+      message.error('加载危险源列表失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const data = queryData?.data || []
-  const total = queryData?.total || 0
+  useEffect(() => {
+    if (open) loadData()
+  }, [open, page])
 
   const handleSearch = () => {
     setPage(1)
+    loadData()
   }
 
   const columns: ColumnsType<HazardRiskOption> = [
@@ -95,7 +103,7 @@ export default function HazardSelectModal({ open, onSelect, onClose }: HazardSel
       </div>
 
       <div style={{ color: '#787671', fontSize: 13, marginBottom: 12 }}>
-        仅列出风险等级为&quot;重大风险(level_1)&quot;和&quot;较大风险(level_2)&quot;的已完成危险源辨识项
+        仅列出风险等级为"重大风险(level_1)"和"较大风险(level_2)"的已完成危险源辨识项
       </div>
 
       <Table

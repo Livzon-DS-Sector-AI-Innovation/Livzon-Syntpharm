@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {Modal, InputNumber, Typography, Space, App} from 'antd'
 import {createTarget, updateTarget, type UnitConsumptionTarget} from '@/lib/api/client/energy'
 
@@ -27,20 +27,16 @@ export default function TargetModal({
 }: TargetModalProps) {
   const { message } = App.useApp()
   const [loading, setLoading] = useState(false)
-  const [targetValue, setTargetValue] = useState<number | null>(() => {
-    if (open && existingTarget) {
-      return existingTarget.target_unit_consumption
-    }
-    return null
-  })
+  const [targetValue, setTargetValue] = useState<number | null>(null)
 
-  // Sync targetValue when modal opens (adjusting state during render)
-  const [prevModalState, setPrevModalState] = useState<string>('closed')
-  const modalState = open ? String(existingTarget?.target_unit_consumption ?? 'null') : 'closed'
-  if (modalState !== prevModalState && open) {
-    setPrevModalState(modalState)
-    setTargetValue(existingTarget?.target_unit_consumption ?? null)
-  }
+  // 当 Modal 打开时，初始化目标值
+  useEffect(() => {
+    if (open && existingTarget) {
+      setTargetValue(existingTarget.target_unit_consumption)
+    } else if (open) {
+      setTargetValue(null)
+    }
+  }, [open, existingTarget])
 
   const handleOk = async () => {
     if (!workshopId || !targetValue || targetValue <= 0) {
@@ -70,8 +66,8 @@ export default function TargetModal({
 
       onSuccess(result)
       onClose()
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : null) || '操作失败')
+    } catch (error: any) {
+      message.error(error.message || '操作失败')
     } finally {
       setLoading(false)
     }

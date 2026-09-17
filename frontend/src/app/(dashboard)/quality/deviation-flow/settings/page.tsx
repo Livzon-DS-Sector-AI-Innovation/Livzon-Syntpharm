@@ -61,27 +61,6 @@ const TEMPLATE_TYPES = [
   { value: 'overdue_warning', label: '逾期预警' },
 ]
 
-interface SettingUser {
-  id: string; name: string; open_id: string; department?: string; is_active: boolean; mobile?: string
-}
-interface SettingRule {
-  id: string; deviation_type: string; urgency_level: string; reminder_timing: string
-  reminder_time?: string; auto_reminder?: boolean; is_active: boolean
-}
-interface AutoTrigger {
-  id: string; trigger_event: string; trigger_type?: string; trigger_condition?: string
-  notification_method: string; target_role: string; notify_qa?: boolean; notify_leader?: boolean
-  notify_reporter?: boolean; is_active: boolean; is_enabled?: boolean
-}
-interface MessageTemplate {
-  id: string; template_type: string; template_name?: string; title: string
-  title_template?: string; content: string; is_active: boolean; is_default?: boolean
-}
-interface FeishuBot {
-  bot_name: string; app_id: string; is_enabled: boolean; webhook_url?: string; bot_token?: string
-}
-type SettingItem = SettingUser | SettingRule | AutoTrigger | MessageTemplate
-
 type SectionKey = 'qa' | 'leader' | 'rule' | 'trigger' | 'template' | 'bot'
 
 const SECTIONS: { key: SectionKey; icon: React.ReactNode; title: string; desc: string }[] = [
@@ -103,7 +82,7 @@ function StatusBadge({ active }: { active: boolean }) {
 }
 
 function UserCard({ item, onEdit, onToggle, onDelete }: {
-  item: SettingUser
+  item: any
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
@@ -131,7 +110,7 @@ function UserCard({ item, onEdit, onToggle, onDelete }: {
 }
 
 function RuleCard({ item, onEdit, onToggle, onDelete }: {
-  item: SettingRule
+  item: any
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
@@ -168,7 +147,7 @@ function RuleCard({ item, onEdit, onToggle, onDelete }: {
 }
 
 function TriggerCard({ item, onEdit, onToggle, onDelete }: {
-  item: AutoTrigger
+  item: any
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
@@ -192,7 +171,7 @@ function TriggerCard({ item, onEdit, onToggle, onDelete }: {
             {item.notify_reporter && <Tag color="orange">填报人</Tag>}
           </Space>
         </div>
-        <StatusBadge active={item.is_enabled ?? false} />
+        <StatusBadge active={item.is_enabled} />
       </div>
       <div className="setting-card-actions">
         <Button type="link" size="small" icon={<EditOutlined />} onClick={onEdit}>编辑</Button>
@@ -204,7 +183,7 @@ function TriggerCard({ item, onEdit, onToggle, onDelete }: {
 }
 
 function TemplateCard({ item, onEdit, onToggle, onDelete, onSetDefault }: {
-  item: MessageTemplate
+  item: any
   onEdit: () => void
   onToggle: () => void
   onDelete: () => void
@@ -242,22 +221,22 @@ export default function DeviationSettingsPage() {
   const [loading, setLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionKey>('qa')
-  const [qaUsers, setQaUsers] = useState<SettingUser[]>([])
-  const [leaders, setLeaders] = useState<SettingUser[]>([])
-  const [rules, setRules] = useState<SettingRule[]>([])
-  const [autoTriggers, setAutoTriggers] = useState<AutoTrigger[]>([])
-  const [messageTemplates, setMessageTemplates] = useState<MessageTemplate[]>([])
-  const [feishuBot, setFeishuBot] = useState<FeishuBot | null>(null)
+  const [qaUsers, setQaUsers] = useState<any[]>([])
+  const [leaders, setLeaders] = useState<any[]>([])
+  const [rules, setRules] = useState<any[]>([])
+  const [autoTriggers, setAutoTriggers] = useState<any[]>([])
+  const [messageTemplates, setMessageTemplates] = useState<any[]>([])
+  const [feishuBot, setFeishuBot] = useState<any>(null)
 
   const [qaModalVisible, setQaModalVisible] = useState(false)
   const [leaderModalVisible, setLeaderModalVisible] = useState(false)
-  const [editingQA, setEditingQA] = useState<SettingUser | null>(null)
-  const [editingLeader, setEditingLeader] = useState<SettingUser | null>(null)
-  const [editingRule, setEditingRule] = useState<SettingRule | null>(null)
+  const [editingQA, setEditingQA] = useState<any>(null)
+  const [editingLeader, setEditingLeader] = useState<any>(null)
+  const [editingRule, setEditingRule] = useState<any>(null)
   const [ruleModalVisible, setRuleModalVisible] = useState(false)
-  const [editingTrigger, setEditingTrigger] = useState<AutoTrigger | null>(null)
+  const [editingTrigger, setEditingTrigger] = useState<any>(null)
   const [triggerModalVisible, setTriggerModalVisible] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<MessageTemplate | null>(null)
+  const [editingTemplate, setEditingTemplate] = useState<any>(null)
   const [templateModalVisible, setTemplateModalVisible] = useState(false)
   const [botModalVisible, setBotModalVisible] = useState(false)
 
@@ -307,7 +286,7 @@ export default function DeviationSettingsPage() {
     }
   }
 
-  const handleSave = async (url: string, method: string, values: Record<string, unknown>, successMsg: string) => {
+  const handleSave = async (url: string, method: string, values: any, successMsg: string) => {
     try {
       const result = await saveDeviationSetting(url, method, values)
       if (result.code === 200) {
@@ -315,7 +294,7 @@ export default function DeviationSettingsPage() {
         loadData()
         return true
       } else {
-        message.error((result.message as string) || '操作失败')
+        message.error(result.message || '操作失败')
         return false
       }
     } catch {
@@ -331,7 +310,7 @@ export default function DeviationSettingsPage() {
         message.success(successMsg)
         loadData()
       } else {
-        message.error((result.message as string) || '删除失败')
+        message.error(result.message || '删除失败')
       }
     } catch {
       message.error('删除失败')
@@ -350,7 +329,7 @@ export default function DeviationSettingsPage() {
     }
   }
 
-  const queryFeishuUser = async (mobile: string, targetForm: { setFieldsValue: (v: Record<string, unknown>) => void }) => {
+  const queryFeishuUser = async (mobile: string, targetForm: any) => {
     if (!mobile) {
       message.warning('请输入手机号')
       return
@@ -429,15 +408,15 @@ export default function DeviationSettingsPage() {
         </div>
 
         <div className="setting-card-list">
-          {data.length === 0 ? renderEmpty() : data.map((item: SettingItem) => {
+          {data.length === 0 ? renderEmpty() : data.map((item: any) => {
             if (activeSection === 'qa') {
               return (
                 <UserCard
                   key={item.id}
-                  item={item as SettingUser}
-                  onEdit={() => { setEditingQA(item as SettingUser); form.setFieldsValue(item); setQaModalVisible(true) }}
+                  item={item}
+                  onEdit={() => { setEditingQA(item); form.setFieldsValue(item); setQaModalVisible(true) }}
                   onToggle={() => handleToggle(`${API_BASE}/quality/deviation-settings/qa-users/${item.id}/toggle`)}
-                  onDelete={() => confirmDelete(`删除 ${(item as SettingUser).name}？`, () => handleDelete(`${API_BASE}/quality/deviation-settings/qa-users/${item.id}`, '删除成功'))}
+                  onDelete={() => confirmDelete(`删除 ${item.name}？`, () => handleDelete(`${API_BASE}/quality/deviation-settings/qa-users/${item.id}`, '删除成功'))}
                 />
               )
             }
@@ -445,10 +424,10 @@ export default function DeviationSettingsPage() {
               return (
                 <UserCard
                   key={item.id}
-                  item={item as SettingUser}
-                  onEdit={() => { setEditingLeader(item as SettingUser); form.setFieldsValue(item); setLeaderModalVisible(true) }}
+                  item={item}
+                  onEdit={() => { setEditingLeader(item); form.setFieldsValue(item); setLeaderModalVisible(true) }}
                   onToggle={() => handleToggle(`${API_BASE}/quality/deviation-settings/leaders/${item.id}/toggle`)}
-                  onDelete={() => confirmDelete(`删除 ${(item as SettingUser).name}？`, () => handleDelete(`${API_BASE}/quality/deviation-settings/leaders/${item.id}`, '删除成功'))}
+                  onDelete={() => confirmDelete(`删除 ${item.name}？`, () => handleDelete(`${API_BASE}/quality/deviation-settings/leaders/${item.id}`, '删除成功'))}
                 />
               )
             }
@@ -456,8 +435,8 @@ export default function DeviationSettingsPage() {
               return (
                 <RuleCard
                   key={item.id}
-                  item={item as SettingRule}
-                  onEdit={() => { setEditingRule(item as SettingRule); form.setFieldsValue(item); setRuleModalVisible(true) }}
+                  item={item}
+                  onEdit={() => { setEditingRule(item); form.setFieldsValue(item); setRuleModalVisible(true) }}
                   onToggle={() => handleToggle(`${API_BASE}/quality/deviation-settings/rules/${item.id}/toggle`)}
                   onDelete={() => confirmDelete('删除该规则？', () => handleDelete(`${API_BASE}/quality/deviation-settings/rules/${item.id}`, '删除成功'))}
                 />
@@ -467,8 +446,8 @@ export default function DeviationSettingsPage() {
               return (
                 <TriggerCard
                   key={item.id}
-                  item={item as AutoTrigger}
-                  onEdit={() => { setEditingTrigger(item as AutoTrigger); form.setFieldsValue(item); setTriggerModalVisible(true) }}
+                  item={item}
+                  onEdit={() => { setEditingTrigger(item); form.setFieldsValue(item); setTriggerModalVisible(true) }}
                   onToggle={() => handleToggle(`${API_BASE}/quality/deviation-settings/auto-triggers/${item.id}/toggle`)}
                   onDelete={() => confirmDelete('删除该配置？', () => handleDelete(`${API_BASE}/quality/deviation-settings/auto-triggers/${item.id}`, '删除成功'))}
                 />
@@ -478,8 +457,8 @@ export default function DeviationSettingsPage() {
               return (
                 <TemplateCard
                   key={item.id}
-                  item={item as MessageTemplate}
-                  onEdit={() => { setEditingTemplate(item as MessageTemplate); templateForm.setFieldsValue(item); setTemplateModalVisible(true) }}
+                  item={item}
+                  onEdit={() => { setEditingTemplate(item); templateForm.setFieldsValue(item); setTemplateModalVisible(true) }}
                   onToggle={() => handleToggle(`${API_BASE}/quality/deviation-settings/message-templates/${item.id}/toggle`)}
                   onDelete={() => confirmDelete('删除该模板？', () => handleDelete(`${API_BASE}/quality/deviation-settings/message-templates/${item.id}`, '删除成功'))}
                   onSetDefault={async () => {

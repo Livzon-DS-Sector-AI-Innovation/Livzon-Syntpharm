@@ -1,13 +1,15 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { Drawer, Table, Spin, Empty, App, Button } from 'antd'
 import {
+  ClockCircleOutlined,
   InfoCircleOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
 import {
+  CollectLogDetail,
   CollectLogDeviceDetail,
   CollectStatus,
 } from '@/types/energy'
@@ -161,15 +163,23 @@ export function CollectLogDetailDrawer({
   open,
   onClose,
 }: CollectLogDetailDrawerProps) {
-  const { message: _message } = App.useApp()
-  const { isLoading: loading, data: detail = null } = useQuery({
-    queryKey: ['collect-log-detail', logId],
-    queryFn: async () => {
-      const data = await fetchCollectLogDetailClient(logId!)
-      return data
-    },
-    enabled: open && !!logId,
-  })
+  const { message } = App.useApp()
+  const [loading, setLoading] = useState(false)
+  const [detail, setDetail] = useState<CollectLogDetail | null>(null)
+
+  useEffect(() => {
+    if (!open || !logId) return
+
+    setLoading(true)
+    setDetail(null)
+    fetchCollectLogDetailClient(logId)
+      .then(setDetail)
+      .catch((err: any) => {
+        console.error('获取采集日志详情失败:', err)
+        message.error('获取采集日志详情失败')
+      })
+      .finally(() => setLoading(false))
+  }, [open, logId])
 
   const deviceColumns: TableColumnsType<CollectLogDeviceDetail> = [
     {

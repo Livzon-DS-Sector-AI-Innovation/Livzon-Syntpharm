@@ -1,9 +1,11 @@
 'use server'
-import type { EquipmentImportRow } from '@/lib/api/server/equipment'
 
 import { revalidatePath } from 'next/cache'
 import { getServerToken } from '@/lib/auth'
 import type { components } from '@/types/generated/schema'
+type CreateRoleInput = components['schemas']['RoleCreate']
+type UpdateRoleInput = components['schemas']['RoleUpdate']
+type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 type CreateCategoryInput = components['schemas']['EquipmentCategoryCreate']
 type UpdateCategoryInput = components['schemas']['EquipmentCategoryUpdate']
 type CreateEquipmentInput = components['schemas']['EquipmentCreate']
@@ -382,7 +384,7 @@ export async function deleteRole(id: string) {
   return result
 }
 
-export async function previewEquipmentImport(data: EquipmentImportRow[]) {
+export async function previewEquipmentImport(data: any) {
   console.log('[DEBUG] previewEquipmentImport called with:', {
     dataLength: data?.length,
     firstItem: data?.[0],
@@ -392,7 +394,7 @@ export async function previewEquipmentImport(data: EquipmentImportRow[]) {
   return result
 }
 
-export async function batchImportEquipment(data: EquipmentImportRow[]) {
+export async function batchImportEquipment(data: any) {
   const result = await batchImportEquipmentApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result

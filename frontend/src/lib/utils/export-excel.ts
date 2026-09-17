@@ -6,13 +6,13 @@ interface ExportColumn {
 }
 
 export function exportToExcel(
-  data: Record<string, unknown>[],
+  data: any[],
   columns: ExportColumn[],
   filename: string
 ) {
   // 转换数据为简单格式
   const exportData = data.map(row => {
-    const newRow: Record<string, unknown> = {}
+    const newRow: Record<string, any> = {}
     columns.forEach(col => {
       newRow[col.header] = row[col.key]
     })

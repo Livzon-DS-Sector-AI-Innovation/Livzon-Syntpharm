@@ -10,7 +10,6 @@ import {
   useEdgesState,
   type Node,
   type Edge,
-  type ReactFlowInstance,
   MarkerType,
   BackgroundVariant,
   Panel,
@@ -71,7 +70,7 @@ function layoutGraph(flowNodes: Node[], flowEdges: Edge[]): Node[] {
 
   // 1. 识别边的关系类型（从 data 或 label 判断）
   const getRelType = (e: Edge): string =>
-    (e.data as { relationType?: string } | null)?.relationType || (e as { relationType?: string }).relationType || ''
+    (e.data as any)?.relationType || (e as any).relationType || ''
 
   // 2. 找 belongs_to 边 → entity → category 映射
   const entityCat = new Map<string, string>()
@@ -274,12 +273,12 @@ export default function KnowledgeGraphPanel() {
   const edges = useKnowledgeGraphStore(s => s.edges)
   const selectedNodeId = useKnowledgeGraphStore(s => s.selectedNodeId)
   const selectedEdgeId = useKnowledgeGraphStore(s => s.selectedEdgeId)
-  const _nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
-  const _relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
+  const nodeTypeFilter = useKnowledgeGraphStore(s => s.nodeTypeFilter)
+  const relationTypeFilter = useKnowledgeGraphStore(s => s.relationTypeFilter)
 
   const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([])
   const [flowEdges, setFlowEdges, onEdgesChange] = useEdgesState<Edge>([])
-  const rfInstance = useRef<ReactFlowInstance<Node, Edge> | null>(null)
+  const rfInstance = useRef<any>(null)
   const loadingRef = useRef(false)  // 防重入
   const [loading, setLoading] = useState(false)  // 本地 loading，避免 useSyncExternalStore 在 commit 阶段触发 error #185
 
@@ -315,11 +314,7 @@ export default function KnowledgeGraphPanel() {
     }
   }, [])
 
-  /* eslint-disable react-hooks/set-state-in-effect -- loadGraph uses refs and setTimeout, not direct setState */
-  useEffect(() => {
-    loadGraph()
-  }, [loadGraph])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  useEffect(() => { loadGraph() }, [loadGraph])
 
   // 同步 store → React Flow（聚类布局），只保留 category + document 节点
   useEffect(() => {
@@ -338,7 +333,7 @@ export default function KnowledgeGraphPanel() {
     setTimeout(() => {
       rfInstance.current?.fitView?.({ padding: 0.05, duration: 200 })
     }, 100)
-  }, [nodes, edges, setFlowNodes, setFlowEdges])
+  }, [nodes, edges]) // setFlowNodes/setFlowEdges 是稳定引用，无需加入依赖
 
   // 节点点击 → 展开邻居
   const onNodeClick = useCallback(

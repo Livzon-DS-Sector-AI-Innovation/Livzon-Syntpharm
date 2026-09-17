@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import {Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload, UploadFile} from 'antd'
+import { useState, useCallback, useEffect } from 'react'
+import {Table, Input, Select, Button, Space, App, Card, Modal, Form, Upload} from 'antd'
 import { PlusOutlined, UploadOutlined, DownloadOutlined, DeleteOutlined } from '@ant-design/icons'
 import { AuthorizationLetterListItem, ProductInfo } from '@/types/registration'
 import { fetchAuthorizationLetters, fetchAuthorizationLetterDownloadUrl } from '@/lib/api/client/registration'
@@ -32,7 +32,7 @@ export default function AuthorizationLetterClient({
   const [generateModalOpen, setGenerateModalOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [form] = Form.useForm()
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [fileList, setFileList] = useState<any[]>([])
   const [replacements, setReplacements] = useState<Array<{old: string, new: string}>>([
     {old: '', new: ''},
   ])
@@ -48,12 +48,16 @@ export default function AuthorizationLetterClient({
       })
       setLetters(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : null) || '加载数据失败')
+    } catch (err: any) {
+      message.error(err.message || '加载数据失败')
     } finally {
       setLoading(false)
     }
-  }, [productName, preparationUnit, page, pageSize, message])
+  }, [productName, preparationUnit, page, pageSize])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handlePageChange = (newPage: number, newPageSize: number) => {
     setPage(newPage)
@@ -112,7 +116,7 @@ export default function AuthorizationLetterClient({
       setGenerating(true)
       
       const formData = new FormData()
-      formData.append('template', fileList[0].originFileObj as File)
+      formData.append('template', fileList[0].originFileObj)
       
       // 添加替换规则
       const validReplacements = replacements.filter(r => r.old && r.new)
@@ -138,8 +142,8 @@ export default function AuthorizationLetterClient({
       } else {
         message.error(result.message)
       }
-    } catch (err: unknown) {
-      message.error((err instanceof Error ? err.message : null) || '生成失败')
+    } catch (err: any) {
+      message.error(err.message || '生成失败')
     } finally {
       setGenerating(false)
     }
@@ -154,8 +158,8 @@ export default function AuthorizationLetterClient({
           await deleteAuthorizationLetter(id)
           message.success('删除成功')
           loadData()
-        } catch (err: unknown) {
-          message.error((err instanceof Error ? err.message : null) || '删除失败')
+        } catch (err: any) {
+          message.error(err.message || '删除失败')
         }
       },
     })
@@ -214,7 +218,7 @@ export default function AuthorizationLetterClient({
       key: 'action',
       width: 150,
       fixed: 'right' as const,
-      render: (_: unknown, record: AuthorizationLetterListItem) => (
+      render: (_: any, record: AuthorizationLetterListItem) => (
         <Space>
           <Button
             type="link"

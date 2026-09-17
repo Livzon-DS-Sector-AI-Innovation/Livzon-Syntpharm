@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Select, Card, Table, Button, Space, Upload, Modal, Form, Input, DatePicker, InputNumber, App } from 'antd'
 import { UploadOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
@@ -12,6 +12,8 @@ import {
   fetchCoppCertificates, exportCoppCertificates,
   fetchWcCertificates, exportWcCertificates,
   fetchReviewingDrugs,
+  type DomesticApproval, type OverseasApproval, type InternationalReview,
+  type CoppCertificate, type WcCertificate, type ReviewingDrug,
 } from '@/lib/api/client/registration-ledger'
 import {
   createDomesticApproval, importDomesticApprovals,
@@ -45,22 +47,21 @@ function LedgerContent() {
   const urlType = searchParams.get('type') as LedgerType | null
 
   const [type, setType] = useState<LedgerType>(urlType || 'domestic')
-  const [data, setData] = useState<Record<string, unknown>[]>([])
+  const [data, setData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [form] = Form.useForm()
 
-  // Sync type from URL param (adjusting state during render)
-  const [prevUrlType, setPrevUrlType] = useState<string | null>(null)
-  if (urlType !== prevUrlType && urlType && LEDGER_TYPES.some(t => t.value === urlType)) {
-    setPrevUrlType(urlType)
-    setType(urlType)
-  }
+  useEffect(() => {
+    if (urlType && LEDGER_TYPES.some(t => t.value === urlType)) {
+      setType(urlType)
+    }
+  }, [urlType])
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      let result: unknown[] = []
+      let result: any[] = []
       switch (type) {
         case 'domestic': result = await fetchDomesticApprovals(); break
         case 'overseas': result = await fetchOverseasApprovals(); break
@@ -69,18 +70,20 @@ function LedgerContent() {
         case 'wc': result = await fetchWcCertificates(); break
         case 'reviewing': result = await fetchReviewingDrugs(); break
       }
-      setData(result as Record<string, unknown>[])
+      setData(result)
     } catch {
       message.error('加载数据失败')
     } finally {
       setLoading(false)
     }
-  }, [type, message])
+  }, [type])
+
+  useEffect(() => { loadData() }, [loadData])
 
   const handleImport = async (file: File) => {
     console.log('🚀 Starting import, file:', file.name, 'type:', type)
     try {
-      let result: Record<string, unknown> = {}
+      let result: any
       switch (type) {
         case 'domestic': result = await importDomesticApprovals(file); break
         case 'overseas': result = await importOverseasApprovals(file); break
@@ -90,15 +93,18 @@ function LedgerContent() {
       }
       console.log('✅ Import result:', result)
       
-      const data = result?.data as ImportResultData | undefined
-      const successCount = data?.success_count ?? 0
-      if (successCount === 0) {
+      const data = result?.data
+      if (data?.success_count === 0) {
         // 解析成功但没有有效数据
         message.warning(data?.message || '文件已解析但未导入有效数据，请检查表头或数据行')
-      } else {
+      } else if (data?.success_count > 0) {
         // 成功导入
-        message.success(data?.message || `成功导入 ${successCount} 条记录`)
+        message.success(data?.message || `成功导入 ${data.success_count} 条记录`)
         loadData()  // 只在有数据时刷新
+      } else {
+        // 其他情况
+        message.success(data?.message || '导入成功')
+        loadData()
       }
       
       // 如果有错误，显示错误详情
@@ -106,9 +112,9 @@ function LedgerContent() {
         console.warn('⚠️ Import errors:', data.errors)
         message.error(`导入有 ${data.errors.length} 条错误，请查看控制台`)
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('❌ Import error:', err)
-      message.error(err instanceof Error ? err.message : '导入失败')
+      message.error(err?.message || '导入失败')
     }
     return false
   }
@@ -123,7 +129,7 @@ function LedgerContent() {
     }
   }
 
-  const handleAdd = async (values: { issue_date?: string | Date | null; valid_until?: string | Date | null; [key: string]: unknown }) => {
+  const handleAdd = async (values: any) => {
     try {
       const formatted = {
         ...values,
@@ -151,7 +157,7 @@ function LedgerContent() {
     router.push(`/registration/ledger?type=${val}`)
   }
 
-  const getColumns = (): ColumnsType<Record<string, unknown>> => {
+  const getColumns = (): ColumnsType<any> => {
     if (type === 'reviewing') {
       return [
         { title: '药品名称', dataIndex: 'product_name', key: 'product_name', width: 150 },
@@ -365,13 +371,6 @@ function LedgerContent() {
       )}
     </div>
   )
-}
-
-
-interface ImportResultData {
-  success_count?: number
-  message?: string
-  errors?: unknown[]
 }
 
 export default function LedgerPage() {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -45,6 +45,7 @@ import type {
   ConfirmCheckRequest,
 } from '@/types/safety'
 import {
+  CheckType as CheckTypeEnum,
   CHECK_TYPE_OPTIONS,
   CHECK_STATUS_OPTIONS,
   CHECK_RESULT_OPTIONS,
@@ -105,6 +106,10 @@ export function CheckPageClient() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [checkQueryParams.page, checkQueryParams.page_size, statusFilter, typeFilter])
 
   const handleSearch = () => {
     setCheckQueryParams({ page: 1 })

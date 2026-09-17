@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useCallback } from 'react'
 import { Tabs, Button } from 'antd'
 import {
   CheckSquareOutlined, EnvironmentOutlined, HistoryOutlined, FileTextOutlined, PlusOutlined,
@@ -41,16 +40,15 @@ export function InspectionPage({ initialTemplates, initialEquipments, initialCat
     setInspectionTemplateLoading, openInspectionTemplateDrawer,
   } = useEquipmentStore()
 
-  const _queryClient = useQueryClient()
   useEffect(() => {
     if (initialTemplates.length > 0 && templates.length === 0) {
       setTemplates(initialTemplates)
     }
   }, [initialTemplates, templates.length, setTemplates])
 
-  const { isLoading: templateLoading, refetch: fetchTemplateData } = useQuery({
-    queryKey: ['inspection-templates', { keyword: inspectionTemplateKeyword, page: inspectionTemplatePage, pageSize: inspectionTemplatePageSize }],
-    queryFn: async () => {
+  const fetchTemplateData = useCallback(async () => {
+    setInspectionTemplateLoading(true)
+    try {
       const res = await fetchInspectionTemplatesClient({
         keyword: inspectionTemplateKeyword || undefined,
         page: inspectionTemplatePage, page_size: inspectionTemplatePageSize,
@@ -60,14 +58,16 @@ export function InspectionPage({ initialTemplates, initialEquipments, initialCat
       // 同步活跃模板到巡检 store，确保任务/路线抽屉下拉即时更新
       const activeRes = await fetchInspectionTemplatesClient({ is_active: true, page: 1, page_size: 200 })
       setTemplates(activeRes.items)
-      return res
-    },
-    enabled: activeTab === 'templates',
-  })
+    } catch (e) {
+      console.error('获取巡检模板数据失败:', e)
+    } finally {
+      setInspectionTemplateLoading(false)
+    }
+  }, [inspectionTemplateKeyword, inspectionTemplatePage, inspectionTemplatePageSize, setInspectionTemplates, setInspectionTemplateTotal, setInspectionTemplateLoading, setTemplates])
 
   useEffect(() => {
-    setInspectionTemplateLoading(templateLoading)
-  }, [templateLoading, setInspectionTemplateLoading])
+    if (activeTab === 'templates') fetchTemplateData()
+  }, [activeTab, fetchTemplateData])
 
   if (executingTaskId) {
     return <InspectionExecuteView onClose={clearExecuting} />

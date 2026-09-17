@@ -1,5 +1,5 @@
 'use client'
-import {createDeviationTask, triggerAIProcess, uploadDeviationFileWithTask} from '@/actions/quality'
+import {createDeviationTask, generateDeviationReport, submitDeviationApproval, triggerAIProcess, uploadDeviationFileWithTask} from '@/actions/quality'
 
 import { useState } from 'react'
 import {
@@ -11,6 +11,7 @@ import {
   Space,
   Upload,
   message,
+  Spin,
   Modal,
   Table,
   Tag,
@@ -20,6 +21,7 @@ import {
   ReloadOutlined,
   RobotOutlined,
   DownloadOutlined,
+  FileWordOutlined,
 } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import type { ColumnsType } from 'antd/es/table'
@@ -56,8 +58,8 @@ export default function CreateDeviationReportPage() {
       if (!response.ok) throw new Error('获取模板列表失败')
       const result = await response.json()
       setTemplates(result.data?.items || [])
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '操作失败'))
+    } catch (error: any) {
+      message.error(error.message)
     } finally {
       setTemplatesLoading(false)
     }
@@ -80,18 +82,18 @@ export default function CreateDeviationReportPage() {
   }
 
   // 创建任务
-  const handleCreateTask = async (values: Record<string, unknown>) => {
+  const handleCreateTask = async (values: any) => {
     try {
       const response = await createDeviationTask({
         deviation_no: values.deviation_no,
         creator: values.creator,
         auditor: values.auditor,
-        report_date: (values.report_date as { format: (f: string) => string }).format('YYYY-MM-DD'),
+        report_date: values.report_date.format('YYYY-MM-DD'),
       })
 
-      return (response.data as { task_id: number }).task_id
-    } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : '操作失败')
+      return (response.data as any).task_id
+    } catch (error: any) {
+      throw new Error(error.message)
     }
   }
 
@@ -135,8 +137,8 @@ export default function CreateDeviationReportPage() {
 
       // 4. 跳转到预览页面
       router.push(`/quality/deviation-automation/preview/${newTaskId}`)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : '处理失败'))
+    } catch (error: any) {
+      message.error(error.message || '处理失败')
     } finally {
       setProcessing(false)
       setUploading(false)

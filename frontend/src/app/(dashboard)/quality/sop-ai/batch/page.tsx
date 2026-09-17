@@ -1,7 +1,6 @@
 'use client'
-import type { UploadFile } from 'antd'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Card,
   Form,
@@ -17,8 +16,12 @@ import {
   Progress,
   Spin,
   Result,
+  Empty,
 } from 'antd'
 import {
+  UploadOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
   FileTextOutlined,
   RobotOutlined,
   InboxOutlined,
@@ -38,15 +41,15 @@ export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<BatchResultType | null>(null)
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [fileList, setFileList] = useState<any[]>([])
 
   // 处理文件选择
-  const handleFileChange = (info: { fileList: UploadFile[] }) => {
+  const handleFileChange = (info: any) => {
     setFileList(info.fileList)
   }
 
   // 提交批量巡检
-  const handleSubmit = async (values: Record<string, unknown>) => {
+  const handleSubmit = async (values: any) => {
     if (!fileList.length) {
       message.error('请选择文件')
       return
@@ -57,18 +60,18 @@ export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
 
     try {
       const filePaths = fileList.map(
-        (f) => f.name
+        (f) => f.originFileObj?.path || f.response?.path || f.name
       )
 
       const response = await batchCheck({
         file_paths: filePaths,
         check_type: 'batch',
-        operator: values.operator as string,
+        operator: values.operator,
       })
 
       setResult(response)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '批量巡检失败')
+    } catch (error: any) {
+      message.error(error.message || '批量巡检失败')
     } finally {
       setLoading(false)
     }
@@ -100,11 +103,11 @@ export default function SopAiBatchPage(_props: SopAiBatchPageProps) {
     {
       title: '问题数',
       key: 'problems',
-      render: (_: unknown, record: Record<string, unknown>) => (
+      render: (_: any, record: any) => (
         <Space>
-          <Tag color="red">{record.risk_high as string}</Tag>
-          <Tag color="orange">{record.risk_medium as string}</Tag>
-          <Tag color="green">{record.risk_low as string}</Tag>
+          <Tag color="red">{record.risk_high}</Tag>
+          <Tag color="orange">{record.risk_medium}</Tag>
+          <Tag color="green">{record.risk_low}</Tag>
         </Space>
       ),
     },

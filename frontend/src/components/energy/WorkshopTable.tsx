@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { App, Table, Button, Space, Select } from 'antd'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import type { TableColumnsType } from 'antd'
@@ -93,7 +93,7 @@ export function WorkshopTable() {
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const result: { items: EnergyWorkshop[]; total: number } = await getWorkshops({
+      const result: any = await getWorkshops({
         category: categoryFilter,
         page,
         page_size: pageSize,
@@ -106,6 +106,10 @@ export function WorkshopTable() {
       setLoading(false)
     }
   }, [categoryFilter, page, pageSize, message])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleDelete = (record: EnergyWorkshop) => {
     modal.confirm({

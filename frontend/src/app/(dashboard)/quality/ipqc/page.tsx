@@ -38,7 +38,6 @@ import {
   IPQCInspection,
   IPQCInspectionListItem,
   IPQCInspectionCreate,
-  IPQCInspectionItem,
   IPQCInspectionItemCreate,
   IPQCInspectionFilter,
   IPQCInspectionStatus,
@@ -63,7 +62,7 @@ import {
 } from '@/actions/quality'
 
 const { RangePicker } = DatePicker
-const { Text: _Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 // 初始筛选条件
@@ -162,7 +161,7 @@ export default function IPQCPage() {
           production_date: response.data?.production_date ? dayjs(response.data.production_date) : null,
           inspection_date: response.data?.inspection_date ? dayjs(response.data.inspection_date) : null,
         })
-        setItems(response.data?.items?.map((item: IPQCInspectionItem, index: number) => ({
+        setItems(response.data?.items?.map((item: any, index: number) => ({
           item_no: index + 1,
           inspection_item: item.inspection_item,
           inspection_method: item.inspection_method,

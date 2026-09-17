@@ -9,6 +9,7 @@ import {
   fetchProductDossier,
   fetchChapterTree,
   fetchChapterDetail,
+  fetchAvailableAssets,
 } from '@/lib/api/client/dossier-writer'
 
 interface DossierWriterState {

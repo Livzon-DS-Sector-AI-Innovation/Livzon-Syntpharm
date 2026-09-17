@@ -5,7 +5,6 @@ import { Button, Card, Table, Tag, Space, Modal, Input, message } from 'antd'
 import {ReloadOutlined, ImportOutlined, CopyOutlined} from '@ant-design/icons'
 import { fetchTrainingSelectTasks, fetchTrainingSelectTaskResult } from '@/lib/api/client/hr'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 interface TaskItem {
   token: string
@@ -19,7 +18,6 @@ interface TaskItem {
   training_method: string
   has_result: boolean
   selected_count: number
-  employee_numbers?: string[]
   created_at: string
 }
 
@@ -28,7 +26,6 @@ interface TrainingSelectTasksClientProps {
 }
 
 export default function TrainingSelectTasksClient({ initialTasks }: TrainingSelectTasksClientProps) {
-  const router = useRouter()
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks)
   const [loading, setLoading] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
@@ -38,9 +35,9 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
     setLoading(true)
     try {
       const res = await fetchTrainingSelectTasks("default")
-      setTasks((res.data as TaskItem[]) || [])
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '加载失败')
+      setTasks(res.data || [])
+    } catch (err: any) {
+      message.error(err.message || '加载失败')
     } finally {
       setLoading(false)
     }
@@ -53,16 +50,16 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
     }
     try {
       const res = await fetchTrainingSelectTaskResult(tokenInput.trim())
-      const task = res.data as TaskItem | null
+      const task = res.data
       if (!task?.employee_numbers?.length) {
         message.warning('该任务尚未提交选择结果')
         return
       }
       // 跳转到培训通知页面，带 token 参数
       const url = `/hr/training/notification?token=${tokenInput.trim()}`
-      router.push(url)
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '导入失败')
+      window.location.href = url
+    } catch (err: any) {
+      message.error(err.message || '导入失败')
     }
   }
 
@@ -96,7 +93,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       title: '状态',
       key: 'status',
       width: 120,
-      render: (_: unknown, record: TaskItem) =>
+      render: (_: any, record: TaskItem) =>
         record.has_result ? (
           <Tag color="green">已选择 ({record.selected_count}人)</Tag>
         ) : (
@@ -107,7 +104,7 @@ export default function TrainingSelectTasksClient({ initialTasks }: TrainingSele
       title: '操作',
       key: 'action',
       width: 200,
-      render: (_: unknown, record: TaskItem) => (
+      render: (_: any, record: TaskItem) => (
         <Space>
           {record.has_result && (
             <Link href={`/hr/training/notification?token=${record.token}`}>

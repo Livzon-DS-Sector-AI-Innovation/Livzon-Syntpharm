@@ -2,6 +2,8 @@ import {
   ProcessOptimization,
   OptimizationFilters,
   OptimizationListResponse,
+  OptimizationCreate,
+  OptimizationUpdate,
 } from '@/types/research'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 

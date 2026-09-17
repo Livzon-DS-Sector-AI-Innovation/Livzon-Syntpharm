@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
+  Table,
   Button,
   Space,
   Select,
@@ -14,6 +15,7 @@ import {
   InputNumber,
   Alert,
   Switch,
+  Divider,
   App,
 } from 'antd'
 import {
@@ -21,66 +23,85 @@ import {
   ReloadOutlined,
   EditOutlined,
 } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useProductionStore } from '@/stores/production'
 import { getBatches, getMaterialBalance, calculateMaterialBalance } from '@/actions/production'
-import type { Batch } from '@/types/production'
+import type { Batch, MaterialBalance } from '@/types/production'
 
-const { Text } = Typography
+const { Text, Title } = Typography
 
 export function BalancePageClient() {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [loading, setLoading] = useState(false)
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>()
   const [minBalanceRate, setMinBalanceRate] = useState<number>(95)
+  const [batches, setBatches] = useState<Batch[]>([])
   const [editMode, setEditMode] = useState(false)
   const [manualInput, setManualInput] = useState({ input_qty: 0, output_qty: 0 })
-  const [calculating, setCalculating] = useState(false)
 
-  // Load batches for the dropdown
-  const { data: batches = [] } = useQuery({
-    queryKey: ['production-batches-balance'],
-    queryFn: async () => {
+  const {
+    materialBalance,
+    materialBalanceLoading,
+    setMaterialBalance,
+    setMaterialBalanceLoading,
+  } = useProductionStore()
+
+  const loadBatches = async () => {
+    try {
       const response = await getBatches({ page: 1, page_size: 100 })
       if (response.code === 200) {
-        return response.data
+        setBatches(response.data)
       }
-      return []
-    },
-  })
+    } catch {
+      message.error('加载批次列表失败')
+    }
+  }
 
-  // Load material balance for the selected batch
-  const { data: materialBalance = null, isLoading: materialBalanceLoading } = useQuery({
-    queryKey: ['material-balance', selectedBatchId],
-    queryFn: async () => {
-      if (!selectedBatchId) return null
+  const loadBalance = async () => {
+    if (!selectedBatchId) {
+      setMaterialBalance(null)
+      return
+    }
+    setMaterialBalanceLoading(true)
+    try {
       const response = await getMaterialBalance(selectedBatchId)
       if (response.code === 200) {
+        setMaterialBalance(response.data)
         if (response.data) {
           setManualInput({
             input_qty: response.data.input_qty || 0,
             output_qty: response.data.output_qty || 0,
           })
         }
-        return response.data
       } else if (response.code === 404) {
-        return null
+        setMaterialBalance(null)
+        setManualInput({ input_qty: 0, output_qty: 0 })
       }
-      return null
-    },
-    enabled: !!selectedBatchId,
-  })
+    } catch {
+      message.error('加载物料平衡数据失败')
+    } finally {
+      setMaterialBalanceLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadBatches()
+  }, [])
+
+  useEffect(() => {
+    loadBalance()
+  }, [selectedBatchId])
 
   const handleCalculate = async () => {
     if (!selectedBatchId) {
       message.warning('请先选择批次')
       return
     }
-    setCalculating(true)
+    setLoading(true)
     try {
       const response = await calculateMaterialBalance(selectedBatchId, minBalanceRate)
       if (response.code === 200) {
         message.success('计算成功')
-        queryClient.invalidateQueries({ queryKey: ['material-balance'] })
+        setMaterialBalance(response.data)
         if (response.data) {
           setManualInput({
             input_qty: response.data.input_qty || 0,
@@ -93,7 +114,7 @@ export function BalancePageClient() {
     } catch {
       message.error('计算失败')
     } finally {
-      setCalculating(false)
+      setLoading(false)
     }
   }
 
@@ -108,8 +129,7 @@ export function BalancePageClient() {
     const isBalanced = balanceRate >= minBalanceRate
     const deviationRate = Math.abs(balanceRate - 100)
 
-    // Update the cache with manually calculated values
-    queryClient.setQueryData(['material-balance', selectedBatchId], {
+    setMaterialBalance({
       ...materialBalance,
       input_qty: input,
       output_qty: output,
@@ -150,7 +170,7 @@ export function BalancePageClient() {
               style={{ width: '100%' }}
               showSearch
               optionFilterProp="children"
-              options={(batches as Batch[]).map((b) => ({
+              options={batches.map((b) => ({
                 value: b.id,
                 label: `${b.batch_no} - ${b.product_name || b.product_code}`,
               }))}
@@ -162,24 +182,27 @@ export function BalancePageClient() {
                 min={0}
                 max={100}
                 value={minBalanceRate}
-                onChange={(v) => setMinBalanceRate(v || 95)}
-                style={{ width: '70%' }}
-                addonAfter="%"
+                onChange={(value) => setMinBalanceRate(value || 95)}
+                style={{ flex: 1 }}
               />
-              <Button
-                icon={<CalculatorOutlined />}
-                onClick={handleCalculate}
-                loading={calculating}
-                disabled={!selectedBatchId}
-              >
-                自动计算
-              </Button>
+              <span style={{ padding: '0 12px', background: '#fafafa', border: '1px solid #d9d9d9', borderLeft: 0, display: 'flex', alignItems: 'center' }}>%</span>
             </Space.Compact>
           </Col>
           <Col span={4}>
             <Button
+              type="primary"
+              icon={<CalculatorOutlined />}
+              onClick={handleCalculate}
+              loading={loading}
+              disabled={!selectedBatchId}
+            >
+              自动计算
+            </Button>
+          </Col>
+          <Col span={4}>
+            <Button
               icon={<ReloadOutlined />}
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['material-balance'] })}
+              onClick={loadBalance}
               disabled={!selectedBatchId}
             >
               刷新
@@ -187,11 +210,7 @@ export function BalancePageClient() {
           </Col>
         </Row>
 
-        {materialBalanceLoading ? (
-          <div className="text-center py-12">
-            <Text type="secondary">加载中...</Text>
-          </div>
-        ) : materialBalance ? (
+        {materialBalance ? (
           <>
             <Alert
               type={materialBalance.is_balanced ? 'success' : 'warning'}
@@ -208,16 +227,40 @@ export function BalancePageClient() {
 
             {/* 投入产出编辑区域 */}
             {editMode && (
-              <Alert
-                type="info"
-                message="编辑模式"
-                description="您可以手动修改投入总量和产出总量，系统将自动计算平衡率"
-                style={{ marginBottom: 16 }}
-                showIcon
-              />
+              <Card className="mb-4" style={{ background: '#fafafa' }}>
+                <Row gutter={24} align="middle">
+                  <Col span={8}>
+                    <Text strong>投入总量 (kg)：</Text>
+                    <InputNumber
+                      min={0}
+                      value={manualInput.input_qty}
+                      onChange={(v) => setManualInput({ ...manualInput, input_qty: v || 0 })}
+                      style={{ width: '100%', marginTop: 8 }}
+                      size="large"
+                      precision={2}
+                    />
+                  </Col>
+                  <Col span={8}>
+                    <Text strong>产出总量 (kg)：</Text>
+                    <InputNumber
+                      min={0}
+                      value={manualInput.output_qty}
+                      onChange={(v) => setManualInput({ ...manualInput, output_qty: v || 0 })}
+                      style={{ width: '100%', marginTop: 8 }}
+                      size="large"
+                      precision={2}
+                    />
+                  </Col>
+                  <Col span={8}>
+                    <Button type="primary" onClick={calculateManualBalance} size="large">
+                      应用并计算
+                    </Button>
+                  </Col>
+                </Row>
+              </Card>
             )}
 
-            <Row gutter={16} className="mb-4">
+            <Row gutter={16} className="mb-6">
               <Col span={6}>
                 <Card>
                   {editMode ? (
@@ -326,12 +369,6 @@ export function BalancePageClient() {
                 </Row>
               )}
             </Card>
-
-            {editMode && (
-              <Button type="primary" onClick={calculateManualBalance}>
-                保存手动输入
-              </Button>
-            )}
           </>
         ) : (
           <div className="text-center py-12">

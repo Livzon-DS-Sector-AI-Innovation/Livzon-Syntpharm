@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import {App, Drawer, Table, Form, Input, InputNumber, Typography, Empty, Popconfirm} from 'antd'
-import {PlusOutlined, EditOutlined, DeleteOutlined, OrderedListOutlined} from '@ant-design/icons'
+import {PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, OrderedListOutlined} from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplateItem, updateInspectionTemplateItem, deleteInspectionTemplateItem } from '@/actions/equipment'
@@ -28,17 +27,17 @@ function ItemForm({ mode, templateId, itemsCount, initialValues, onSuccess, onCa
   }, [mode, itemsCount, initialValues, form])
 
   const submit = async () => {
-    let v: ItemFormValues
+    let v: any
     try {
       v = await form.validateFields()
     } catch { return }
     setS(true)
     try {
       const data = { item_name: v.item_name, item_description: v.item_description || undefined, expected_result: v.expected_result || undefined, check_method: v.check_method || undefined, sort_order: v.sort_order }
-      const result: { success?: boolean; error?: string; data?: unknown } = mode === 'create'
+      const result: any = mode === 'create'
         ? await createInspectionTemplateItem(templateId, data)
         : await updateInspectionTemplateItem(mode, data)
-      if (result.success === false) { message.error(result.error); return }
+      if (!result.success) { message.error(result.error); return }
       message.success(mode === 'create' ? '已添加' : '已更新')
       onSuccess()
     } finally { setS(false) }
@@ -69,42 +68,30 @@ function ItemForm({ mode, templateId, itemsCount, initialValues, onSuccess, onCa
 export function InspectionItemDrawer() {
   const { message } = App.useApp()
   const { inspectionItemDrawerOpen, inspectionItemTemplateId, editingInspectionItem, closeInspectionItemDrawer } = useEquipmentStore()
-  const queryClient = useQueryClient()
+  const [items, setItems] = useState<InspectionTemplateItem[]>([])
+  const [loading, setLoading] = useState(false)
   const [formMode, setFormMode] = useState<'create' | string | null>(null)
   const [editingData, setEditingData] = useState<InspectionTemplateItem | null>(null)
 
-  const { data: items = [], isLoading: loading } = useQuery({
-    queryKey: ['inspection-template-items', inspectionItemTemplateId],
-    queryFn: async () => {
-      if (!inspectionItemTemplateId) return []
-      const d = await fetchInspectionTemplateByIdClient(inspectionItemTemplateId)
-      return d.items || []
-    },
-    enabled: inspectionItemDrawerOpen && !!inspectionItemTemplateId,
-  })
+  const load = useCallback(async () => {
+    if (!inspectionItemTemplateId) return; setLoading(true)
+    try { const d = await fetchInspectionTemplateByIdClient(inspectionItemTemplateId); setItems(d.items || []) }
+    catch { message.error('加载失败') } finally { setLoading(false) }
+  }, [inspectionItemTemplateId, message])
 
-  // Sync editing state when drawer opens (adjusting state during render)
-  const [prevDrawerState, setPrevDrawerState] = useState<string>('')
-  const drawerState = inspectionItemDrawerOpen && inspectionItemTemplateId ? 'open' : 'closed'
-  const itemState = editingInspectionItem?.id || 'none'
-  const combinedState = `${drawerState}-${itemState}`
-  if (combinedState !== prevDrawerState) {
-    setPrevDrawerState(combinedState)
-    if (inspectionItemDrawerOpen && inspectionItemTemplateId) {
-      if (editingInspectionItem) { setEditingData(editingInspectionItem); setFormMode(editingInspectionItem.id) }
-      else { setFormMode(null); setEditingData(null) }
-    }
-  }
+  useEffect(() => {
+    if (inspectionItemDrawerOpen && inspectionItemTemplateId) { load(); if (editingInspectionItem) { setEditingData(editingInspectionItem); setFormMode(editingInspectionItem.id) } else { setFormMode(null); setEditingData(null) } }
+  }, [inspectionItemDrawerOpen, inspectionItemTemplateId, editingInspectionItem, load])
 
   const close = () => { setFormMode(null); closeInspectionItemDrawer() }
   const startEdit = (item: InspectionTemplateItem) => { setEditingData(item); setFormMode(item.id) }
   const cancelEdit = () => { setFormMode(null); setEditingData(null) }
-  const onFormSuccess = () => { setFormMode(null); setEditingData(null); queryClient.invalidateQueries({ queryKey: ['inspection-template-items'] }) }
+  const onFormSuccess = () => { setFormMode(null); setEditingData(null); load() }
   const handleDelete = async (item: InspectionTemplateItem) => {
-    const result: { success?: boolean; error?: string } = await deleteInspectionTemplateItem(item.id)
-    if (result.success === false) { message.error(result.error); return }
+    const result: any = await deleteInspectionTemplateItem(item.id)
+    if (!result.success) { message.error(result.error); return }
     message.success('已删除')
-    queryClient.invalidateQueries({ queryKey: ['inspection-template-items'] })
+    await load()
   }
 
   const editInit: ItemFormValues | undefined = editingData && formMode === editingData.id ? {

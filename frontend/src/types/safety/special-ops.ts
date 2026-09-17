@@ -5,7 +5,7 @@
  */
 
 // ============ SpecialOperationPersonnel Types ============
-import {SpecialOperationType, OperationLevel} from "./enums"
+import {SpecialOperationType, OperationLevel, PersonnelStatus, PermitStatus} from "./enums"
 
 export interface SpecialOperationPersonnel {
   id: string

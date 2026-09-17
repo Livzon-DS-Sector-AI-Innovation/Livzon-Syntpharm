@@ -112,7 +112,7 @@ export async function generateProcurementContract(
 
 export async function importSupplierTable(
   formData: FormData
-): Promise<unknown> {
+): Promise<any> {
   const headers = await getAuthHeaders()
   const result = await importSupplierTableServer(headers, formData)
   revalidatePath('/procurement/supplier')

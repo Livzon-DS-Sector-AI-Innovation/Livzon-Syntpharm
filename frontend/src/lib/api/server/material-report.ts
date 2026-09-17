@@ -3,6 +3,7 @@ import {
   ReportCreate,
   ReportUpdate,
   ReportItemsBatchSave,
+  TemplateCreate,
   TemplateUpdate,
 } from '@/types/material-report'
 
@@ -117,8 +118,8 @@ export async function uploadTemplate(
   file: File,
   templateName: string,
   templateDescription?: string,
-  fieldMapping?: Record<string, unknown>,
-  tableFields?: Record<string, unknown>
+  fieldMapping?: Record<string, any>,
+  tableFields?: Record<string, any>
 ) {
   const formData = new FormData()
   formData.append('file', file)

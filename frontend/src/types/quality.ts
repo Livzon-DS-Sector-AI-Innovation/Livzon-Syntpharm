@@ -1,3 +1,4 @@
+import type { components } from '@/types/generated/schema'
 
 // Quality management types (from shared/api.interface.ts)
 
@@ -41,12 +42,6 @@ export interface AiAnalysis {
   capa_suggestions: string;
 }
 
-export interface CapaProposal {
-  summary: string;
-  executor: string;
-  expectedCompletionDate: string;
-}
-
 export interface InvestigationRecord {
   content?: string;
   nonconformityDescription?: string;
@@ -59,7 +54,7 @@ export interface InvestigationRecord {
   attachments?: string[];
   isModified?: boolean;
   modifyTime?: string;
-  capaProposals?: CapaProposal[];
+  capaProposals?: any[];
 }
 
 export interface ReviewOpinion {
@@ -115,7 +110,7 @@ export interface DeviationDetail {
   returned_step: ApprovalStep | null;
   status_updated_at: string | null;
   report_content: string | null;
-  report_versions: unknown[] | null;
+  report_versions: any[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -150,7 +145,7 @@ export interface CapaItem {
   due_date: string;
   deadline?: string;
   status: string;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface DeptHeadConfirmation {
@@ -220,7 +215,7 @@ export interface CapaDetail {
   closure_date: string | null;
   closure_remark: string | null;
   report_content: string | null;
-  report_versions: unknown[] | null;
+  report_versions: any[] | null;
   returned_step: string | null;
   status_updated_at: string | null;
   reporter: string | null;
@@ -307,19 +302,19 @@ export interface CreateDeviationRequest {
   description: string;
   deviation_type: string;
   deviation_level: string;
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface UpdateDeviationRequest {
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface CreateCapaRequest {
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface UpdateCapaRequest {
-  [key: string]: unknown;
+  [key: string]: any;
 }
 
 export interface CreateDepartmentContactRequest {

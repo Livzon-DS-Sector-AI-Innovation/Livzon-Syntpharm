@@ -3,8 +3,10 @@
 import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import type {
+  ProductOutput,
   ProductOutputFormData,
   ProductOutputQueryParams,
+  SummaryData,
 } from '@/types/product-output'
 import {
   getProductOutputs as getProductOutputsApi,
@@ -152,22 +154,21 @@ import {
   fetchAnnualReview as fetchAnnualReviewApi,
   fetchExportAnnualReview as fetchExportAnnualReviewApi,
 } from '@/lib/api/server/product-output'
+import type { AnnualReviewData } from '@/types/product-output'
 
-export async function fetchAnnualReview(year: number): Promise<Record<string, unknown>> {
+export async function fetchAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()
-  const result = await fetchAnnualReviewApi(year, authHeaders)
-  return result as Record<string, unknown>
+  return fetchAnnualReviewApi(year, authHeaders)
 }
 
-export async function fetchExportAnnualReview(year: number): Promise<Response> {
+export async function fetchExportAnnualReview(year: number) {
   const authHeaders = await getAuthHeaders()
   return fetchExportAnnualReviewApi(year, authHeaders)
 }
 
-export async function fetchPreviewImport(formData: FormData): Promise<Record<string, unknown>> {
+export async function fetchPreviewImport(formData: FormData) {
   const authHeaders = await getAuthHeaders()
-  const result = await fetchPreviewImportApi(formData, authHeaders)
-  return result as Record<string, unknown>
+  return fetchPreviewImportApi(formData, authHeaders)
 }
 
 export async function fetchUndoImport(batchId: string) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import dayjs from 'dayjs'
 import {
   Table,
@@ -15,6 +15,7 @@ import {
   Card,
   Row,
   Col,
+  Typography,
   DatePicker,
   App,
 } from 'antd'
@@ -24,7 +25,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useProductionStore } from '@/stores/production'
 import {
   getBatches,
   getProductionRecords,
@@ -37,41 +38,61 @@ import type {
   Batch,
 } from '@/types/production'
 
+const { Text } = Typography
 
 export function RecordsPageClient() {
   const { message, modal } = App.useApp()
-  const queryClient = useQueryClient()
   const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<ProductionRecord | null>(null)
   const [selectedBatchId, setSelectedBatchId] = useState<string | undefined>()
+  const [batches, setBatches] = useState<Batch[]>([])
   const [operationType, setOperationType] = useState<string | undefined>()
 
-  // Load batches for the dropdown
-  const { data: batches = [] } = useQuery({
-    queryKey: ['production-batches-dropdown'],
-    queryFn: async () => {
+  const {
+    productionRecords,
+    setProductionRecords,
+  } = useProductionStore()
+
+  // 加载批次列表
+  const loadBatches = async () => {
+    try {
       const response = await getBatches({ page: 1, page_size: 100 })
       if (response.code === 200) {
-        return response.data
+        setBatches(response.data)
       }
-      return []
-    },
-  })
+    } catch {
+      message.error('加载批次列表失败')
+    }
+  }
 
-  // Load production records for the selected batch
-  const { data: productionRecords = [], isLoading: loading } = useQuery({
-    queryKey: ['production-records', selectedBatchId],
-    queryFn: async () => {
-      if (!selectedBatchId) return []
+  // 加载生产记录
+  const loadRecords = async () => {
+    if (!selectedBatchId) {
+      setProductionRecords([])
+      return
+    }
+    setLoading(true)
+    try {
       const response = await getProductionRecords(selectedBatchId)
       if (response.code === 200) {
-        return response.data
+        setProductionRecords(response.data)
       }
-      return []
-    },
-    enabled: !!selectedBatchId,
-  })
+    } catch {
+      message.error('加载生产记录列表失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadBatches()
+  }, [])
+
+  useEffect(() => {
+    loadRecords()
+  }, [selectedBatchId])
 
   const handleAdd = () => {
     if (!selectedBatchId) {
@@ -122,7 +143,7 @@ export function RecordsPageClient() {
           const response = await deleteProductionRecord(id)
           if (response.code === 200) {
             message.success('删除成功')
-            queryClient.invalidateQueries({ queryKey: ['production-records'] })
+            loadRecords()
           } else {
             message.error(response.message || '删除失败')
           }
@@ -163,17 +184,20 @@ export function RecordsPageClient() {
         if (response.code === 200) {
           message.success('更新成功')
           setModalVisible(false)
-          queryClient.invalidateQueries({ queryKey: ['production-records'] })
+          loadRecords()
         } else {
           message.error(response.message || '更新失败')
         }
       } else {
-        const response = await createProductionRecord({ ...submitData, batch_id: selectedBatchId })
+        const response = await createProductionRecord({
+          ...submitData,
+          batch_id: selectedBatchId,
+        })
         if (response.code === 200) {
           message.success('创建成功')
           setModalVisible(false)
           form.resetFields()
-          queryClient.invalidateQueries({ queryKey: ['production-records'] })
+          loadRecords()
         } else {
           message.error(response.message || '创建失败')
         }
@@ -188,43 +212,56 @@ export function RecordsPageClient() {
       title: '记录编号',
       dataIndex: 'record_no',
       key: 'record_no',
-      width: 150,
+      width: 130,
     },
     {
       title: '操作类型',
       dataIndex: 'operation_type',
       key: 'operation_type',
-      width: 120,
+      width: 100,
       render: (type: string) => {
-        const typeMap: Record<string, { color: string; label: string }> = {
-          material_add: { color: 'blue', label: '投料' },
-          transfer: { color: 'cyan', label: '转序' },
-          sampling: { color: 'purple', label: '取样' },
-          equipment_check: { color: 'orange', label: '设备检查' },
-          parameter_record: { color: 'geekblue', label: '参数记录' },
-          packaging: { color: 'green', label: '包装' },
+        const labels: Record<string, string> = {
+          'material_add': '投料',
+          'transfer': '转序',
+          'sampling': '取样',
+          'equipment_check': '设备检查',
+          'parameter_record': '参数记录',
+          'packaging': '包装',
         }
-        const config = typeMap[type] || { color: 'default', label: type }
-        return <Tag color={config.color}>{config.label}</Tag>
+        return <Tag color="blue">{labels[type] || type}</Tag>
       },
     },
     {
-      title: '步骤序号',
-      dataIndex: 'step_no',
-      key: 'step_no',
-      width: 100,
+      title: '步骤',
+      key: 'step',
+      width: 120,
+      render: (_, record) => (
+        <Text>
+          {record.step_no ? `${record.step_no} - ` : ''}{record.step_name || '-'}
+        </Text>
+      ),
     },
     {
-      title: '步骤名称',
-      dataIndex: 'step_name',
-      key: 'step_name',
-      width: 150,
+      title: '数量',
+      key: 'quantity',
+      width: 100,
+      render: (_, record) => {
+        try {
+          if (record.parameters) {
+            const params = JSON.parse(record.parameters)
+            if (params.quantity !== undefined) {
+              return <Text>{params.quantity}</Text>
+            }
+          }
+        } catch {}
+        return '-'
+      },
     },
     {
       title: '操作人',
       dataIndex: 'operator_name',
       key: 'operator_name',
-      width: 120,
+      width: 100,
     },
     {
       title: '操作时间',
@@ -270,7 +307,7 @@ export function RecordsPageClient() {
               style={{ width: '100%' }}
               showSearch
               optionFilterProp="children"
-              options={(batches as Batch[]).map((b) => ({
+              options={batches.map((b) => ({
                 value: b.id,
                 label: `${b.batch_no} - ${b.product_name || b.product_code}`,
               }))}

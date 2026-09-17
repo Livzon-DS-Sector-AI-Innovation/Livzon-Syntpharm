@@ -57,13 +57,9 @@ export async function deleteProductDossier(id: string): Promise<void> {
 }
 
 // ====== Template Upload & Parsing ======
-export async function uploadTemplates(dossierId: string, files: FileList | File[]): Promise<UploadResponse> {
+export async function uploadTemplates(dossierId: string, files: any): Promise<UploadResponse> {
   const formData = new FormData()
-  if (files instanceof FileList) {
-    Array.from(files).forEach((file: File) => formData.append('files', file))
-  } else {
-    files.forEach((file: File) => formData.append('files', file))
-  }
+  files.forEach((file: any) => formData.append('files', file))
 
   const result = await uploadTemplatesApi(dossierId, formData)
   revalidatePath('/registration/dossier-writer')
@@ -81,14 +77,10 @@ export async function parseTemplates(dossierId: string): Promise<ParseResult> {
 // ====== Chapter Asset ======
 export async function uploadChapterAsset(
   chapterId: string,
-  files: FileList | File[]
+  files: any
 ): Promise<{ assets: ChapterAsset[]; count: number }> {
   const formData = new FormData()
-  if (files instanceof FileList) {
-    Array.from(files).forEach((file: File) => formData.append('files', file))
-  } else {
-    files.forEach((file: File) => formData.append('files', file))
-  }
+  files.forEach((file: any) => formData.append('files', file))
 
   const result = await uploadChapterAssetApi(chapterId, formData)
   revalidatePath('/registration/dossier-writer')

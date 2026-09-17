@@ -921,8 +921,7 @@ export default function SopContentEditor({
 
   /* ── initialise ── */
 
-  // Parse initial content once
-  const initialParsed = useMemo(() => {
+  useEffect(() => {
     const { meta, rest } = parseHeaderMeta(initialContent)
     const parsed = parseChapters(rest)
     const preamble = parsed.preamble
@@ -934,23 +933,12 @@ export default function SopContentEditor({
       finalMeta = guessMetaFromContent(regulationName, preamble)
     }
 
-    return {
-      meta: finalMeta,
-      sig,
-      preamble: preambleWithoutSig,
-      chapters: parsed.chapters
-    }
+    setHeaderMeta(finalMeta)
+    setSigTable(sig)
+    setPreambleText(preambleWithoutSig)
+    setChapters(parsed.chapters)
+    setIsDirty(false)
   }, [initialContent, regulationName])
-
-  // Initialize state with parsed values (only once)
-  const [initialized, setInitialized] = useState(false)
-  if (!initialized) {
-    setHeaderMeta(initialParsed.meta)
-    setSigTable(initialParsed.sig)
-    setPreambleText(initialParsed.preamble)
-    setChapters(initialParsed.chapters)
-    setInitialized(true)
-  }
 
   /* ── clear saved indicator ── */
 
@@ -1060,7 +1048,7 @@ export default function SopContentEditor({
         message.success('已撤回所有修改')
       },
     })
-  }, [isDirty, initialContent, regulationName, message])
+  }, [isDirty, initialContent, regulationName])
 
   /* ── save / export ── */
 
@@ -1080,9 +1068,9 @@ export default function SopContentEditor({
         setJustSaved(true); setIsDirty(false); onSaved()
       }
     } catch (err: unknown) {
-      message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '保存失败')
+      message.error(err instanceof Error ? err.message : '保存失败')
     } finally { setSaving(false) }
-  }, [regulationId, fullContent, onSaved, sopName, regulationName, revisionMode, onReviseSave, revisionOpinion, message])
+  }, [regulationId, fullContent, onSaved, sopName, regulationName, revisionMode, onReviseSave, revisionOpinion])
 
   const handleExport = useCallback(async () => {
     setExporting(true)
@@ -1098,9 +1086,9 @@ export default function SopContentEditor({
       URL.revokeObjectURL(url)
       message.success('PDF 下载已开始')
     } catch (err: unknown) {
-      message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '导出失败')
+      message.error(err instanceof Error ? err.message : '导出失败')
     } finally { setExporting(false) }
-  }, [regulationId, regulationName, message])
+  }, [regulationId, regulationName])
 
   const handleSaveAndExport = useCallback(async () => {
     setSaving(true)
@@ -1114,10 +1102,10 @@ export default function SopContentEditor({
       setSaving(false)
       await handleExport()
     } catch (err: unknown) {
-      message.error(err instanceof Error ? (err instanceof Error ? err.message : null) : '保存失败')
+      message.error(err instanceof Error ? err.message : '保存失败')
       setSaving(false)
     }
-  }, [regulationId, fullContent, onSaved, handleExport, sopName, regulationName, message])
+  }, [regulationId, fullContent, onSaved, handleExport, sopName, regulationName])
 
   const handleBack = useCallback(() => {
     if (isDirty) {
@@ -1148,7 +1136,7 @@ export default function SopContentEditor({
      ═══════════════════════════════════════════════════════════════════════════ */
 
   /** Render a table-based chapter (Ch3,4,5,8) with editable HTML table. */
-  const renderTableChapter = useCallback((chapterId: number, content: string) => {
+  function renderTableChapter(chapterId: number, content: string) {
     const { before, table, after } = splitAroundTable(content)
     const handleTableChange = (t: MarkdownTable) => {
       const parts: string[] = []
@@ -1205,10 +1193,10 @@ export default function SopContentEditor({
         ) : null}
       </div>
     )
-  }, [handleChapterChange])
+  }
 
   /** Render Ch2: bullet list items as labeled fields. */
-  const renderCh2 = useCallback((content: string) => {
+  function renderCh2(content: string) {
     const blocks = parseBulletList(content)
     if (blocks.length === 0) {
       return (
@@ -1246,10 +1234,10 @@ export default function SopContentEditor({
         ))}
       </div>
     )
-  }, [handleChapterChange])
+  }
 
   /** Render Ch6: H2 sections with numbered items. */
-  const renderCh6 = useCallback((content: string) => {
+  function renderCh6(content: string) {
     const sections = parseNumberedSections(content)
     if (sections.length === 0) {
       return (
@@ -1379,10 +1367,10 @@ export default function SopContentEditor({
         </div>
       </div>
     )
-  }, [handleChapterChange, collapsedKeys, toggleCollapse])
+  }
 
   /** Render Ch7: H2 stages with H3 sub-sections and numbered items. */
-  const renderCh7 = useCallback((content: string) => {
+  function renderCh7(content: string) {
     // Extract preamble (everything before first ##)
     const lines = content.split('\n')
     let preambleEnd = 0
@@ -1567,10 +1555,10 @@ export default function SopContentEditor({
         </div>
       </div>
     )
-  }, [handleChapterChange, collapsedKeys, toggleCollapse])
+  }
 
   /** Render Ch9: H2 emergency categories with mixed content. */
-  const renderCh9 = useCallback((content: string) => {
+  function renderCh9(content: string) {
     const lines = content.split('\n')
     let preambleEnd = 0
     for (let i = 0; i < lines.length; i++) {
@@ -1681,7 +1669,7 @@ export default function SopContentEditor({
         </div>
       </div>
     )
-  }, [handleChapterChange, collapsedKeys, toggleCollapse])
+  }
 
   /** Dispatch to the correct chapter renderer. */
   const renderChapterContent = useCallback(
@@ -1714,7 +1702,7 @@ export default function SopContentEditor({
           )
       }
     },
-    [handleChapterChange, renderCh2, renderCh6, renderCh7, renderCh9, renderTableChapter],
+    [handleChapterChange, chapters, collapsedKeys, renderCh2, renderCh6, renderCh7, renderCh9, renderTableChapter],
   )
 
   /* ── key styles ── */

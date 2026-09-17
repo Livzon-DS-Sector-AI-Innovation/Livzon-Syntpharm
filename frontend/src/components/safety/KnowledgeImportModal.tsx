@@ -1,30 +1,12 @@
 'use client'
 
-import type { components } from '@/types/generated/schema'
-
 import { useState } from 'react'
-import { Modal, Upload, Button, Select, App, Tag, Space } from 'antd'
+import { Modal, Upload, Button, Select, App, Progress, Tag, Space } from 'antd'
 import { InboxOutlined, FileTextOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd/es/upload/interface'
 import { batchImportKnowledgeArticles } from '@/actions/safety'
 
 const { Dragger } = Upload
-
-interface BatchImportResult {
-  results: Array<{
-    filename: string
-    status: 'success' | 'error' | 'skipped'
-    message?: string
-    article_id?: string
-    title?: string
-    category?: string
-  }>
-  summary: {
-    success: number
-    error: number
-  }
-}
-
 
 interface ImportResult {
   filename: string
@@ -88,14 +70,13 @@ export default function KnowledgeImportModal({
       const response = await batchImportKnowledgeArticles(files, category || undefined)
 
 
-      const apiResponse = response as components['schemas']['ApiResponse']
-      if (apiResponse.code === 200) {
-        setResults((apiResponse.data as BatchImportResult).results)
-        const summary = (apiResponse.data as BatchImportResult).summary
+      if (response.code === 200) {
+        setResults(response.data.results)
+        const summary = response.data.summary
         message.success(`导入完成：成功 ${summary.success} 篇，失败 ${summary.error} 篇`)
         onSuccess()
       } else {
-        message.error(apiResponse.message || '导入失败')
+        message.error(response.message || '导入失败')
       }
     } catch (error) {
       console.error('Import error:', error)

@@ -122,7 +122,7 @@ export interface PaginatedResponse<T> {
   page_size: number
 }
 
-export interface ApiResponse<T = unknown> {
+export interface ApiResponse<T = any> {
   code: number
   message: string
   data: T

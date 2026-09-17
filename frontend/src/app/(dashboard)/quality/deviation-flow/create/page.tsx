@@ -1,16 +1,15 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import {
   Form, Input, Select, DatePicker, Button, Space,
   Typography, Divider, Upload, message, Steps, Modal, Tag,
 } from 'antd'
 import {
   SaveOutlined, UploadOutlined, PlusOutlined,
-  FileTextOutlined, CheckCircleOutlined,
+  FileTextOutlined, TeamOutlined, CheckCircleOutlined,
   UserOutlined, InfoCircleOutlined, AlertOutlined,
-  ToolOutlined, PaperClipOutlined,
+  ToolOutlined, SafetyOutlined, PaperClipOutlined,
   SettingOutlined, ArrowRightOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -18,7 +17,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createDeviationFlow, updateDeviationFlow, submitDeviationFlow } from '@/actions/deviation'
 import '../deviation-style.css'
 
-const { Title: _Title, Text } = Typography
+const { Title, Text } = Typography
 const { TextArea } = Input
 
 const API_BASE = '/api/v1'
@@ -76,23 +75,24 @@ function SectionCard({
   )
 }
 
-interface FeishuUser { open_id: string; name: string; is_active?: boolean; department?: string }
-interface Attachment { id: string; file_name: string; uploaded_at?: string; file_path?: string }
 export default function DeviationCreatePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const editId = searchParams.get('edit')
+  const [isEditMode, setIsEditMode] = useState(!!editId)
+  const [currentDeviationId, setCurrentDeviationId] = useState<string | null>(editId)
+  const [currentStatus, setCurrentStatus] = useState<string>('draft')
   const [form] = Form.useForm()
-  const queryClient = useQueryClient()
-  const formInitializedRef = useRef(false)
   const [loading, setLoading] = useState(false)
-  const [userReporterInfo, setUserReporterInfo] = useState<{
-    name: string
-    department: string
-    time: string
-  } | null>(null)
-  const [qaUsers, setQaUsers] = useState<FeishuUser[]>([])
-  const [deptLeaders, setDeptLeaders] = useState<FeishuUser[]>([])
+  const [reporterInfo, setReporterInfo] = useState({
+    name: '',
+    department: '',
+    time: '-'
+  })
+  const [qaUsers, setQaUsers] = useState<any[]>([])
+  const [deptLeaders, setDeptLeaders] = useState<any[]>([])
+  const [reporterOpenId, setReporterOpenId] = useState<string>('')
+  const [attachments, setAttachments] = useState<any[]>([])
   const [uploading, setUploading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
@@ -118,93 +118,77 @@ export default function DeviationCreatePage() {
       const leaderResult = await leaderRes.json()
 
       if (qaResult.code === 200) {
-        setQaUsers(qaResult.data.filter((u: FeishuUser) => u.is_active !== false))
+        setQaUsers(qaResult.data.filter((u: any) => u.is_active !== false))
       }
       if (leaderResult.code === 200) {
-        setDeptLeaders(leaderResult.data.filter((u: FeishuUser) => u.is_active !== false))
+        setDeptLeaders(leaderResult.data.filter((u: any) => u.is_active !== false))
       }
     } catch (error) {
       console.error('加载提醒配置失败', error)
     }
   }
 
-  const { data: deviationData } = useQuery({
-    queryKey: ['deviation-flow', editId],
-    queryFn: async () => {
-      if (!editId) return null
-      const response = await fetch(`${API_BASE}/quality/deviation-flow/${editId}`)
-      const result = await response.json()
-      if (result.code === 200) {
-        return result.data
-      }
-      return null
-    },
-    enabled: !!editId,
-  })
-
-  // Update state and form when data changes (only once)
   useEffect(() => {
-    if (deviationData && editId && !formInitializedRef.current) {
-      formInitializedRef.current = true
-
-      // Reporter info is initialized from deviationData using useMemo below
-
-      form.setFieldsValue({
-        theme: deviationData.theme,
-        occurred_date: deviationData.occurred_date ? dayjs(deviationData.occurred_date) : null,
-        discovered_date: deviationData.discovered_date ? dayjs(deviationData.discovered_date) : null,
-        responsible_department: deviationData.responsible_department,
-        occurred_area: deviationData.occurred_area,
-        deviation_type: deviationData.deviation_type,
-        urgency_level: deviationData.urgency_level,
-        product_name: deviationData.product_name,
-        batch_no: deviationData.batch_no,
-        equipment: deviationData.equipment,
-        standard_based_on: deviationData.standard_based_on,
-        deviation_description: deviationData.deviation_description,
-        risk_assessment: deviationData.risk_assessment,
-        temp_measures: deviationData.temp_measures,
-        related_deviation_no: deviationData.related_deviation_no,
-        related_capa: deviationData.related_capa,
-        remarks: deviationData.remarks,
-      })
+    if (editId) {
+      loadDeviationData(editId)
     }
-  }, [deviationData, editId, form])
+  }, [editId])
 
-  // Derive reporter info from deviationData or user input
-  const reporterInfo = useMemo(() => {
-    if (userReporterInfo) {
-      return userReporterInfo
-    }
-    return {
-      name: deviationData?.reporter || '当前用户',
-      department: deviationData?.reporter_department || '生产部',
-      time: deviationData?.report_time ? dayjs(deviationData.report_time).format('YYYY-MM-DD HH:mm:ss') : '-'
-    }
-  }, [deviationData, userReporterInfo])
-  const reporterOpenId = deviationData?.reporter_feishu_open_id || null
-
-  // Derive values from deviationData
-  const currentStatus = deviationData?.status || 'draft'
-  const currentDeviationId = editId || null
-  const isEditMode = !!editId
-
-
-
-
-  const { data: attachments = [] } = useQuery({
-    queryKey: ['deviation-attachments', editId],
-    queryFn: async () => {
-      if (!editId) return []
-      const response = await fetch(`${API_BASE}/quality/deviation-flow/${editId}/attachments`)
+  const loadDeviationData = async (id: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/quality/deviation-flow/${id}`)
       const result = await response.json()
       if (result.code === 200) {
-        return result.data || []
+        const data = result.data
+        setCurrentStatus(data.status || 'draft')
+        setCurrentDeviationId(id)
+        setIsEditMode(true)
+
+        form.setFieldsValue({
+          theme: data.theme,
+          occurred_date: data.occurred_date ? dayjs(data.occurred_date) : null,
+          discovered_date: data.discovered_date ? dayjs(data.discovered_date) : null,
+          responsible_department: data.responsible_department,
+          occurred_area: data.occurred_area,
+          deviation_type: data.deviation_type,
+          urgency_level: data.urgency_level,
+          product_name: data.product_name,
+          batch_no: data.batch_no,
+          equipment: data.equipment,
+          standard_based_on: data.standard_based_on,
+          deviation_description: data.deviation_description,
+          risk_assessment: data.risk_assessment,
+          temp_measures: data.temp_measures,
+          related_deviation_no: data.related_deviation_no,
+          related_capa: data.related_capa,
+          remarks: data.remarks,
+        })
+        setReporterInfo({
+          name: data.reporter || '当前用户',
+          department: data.reporter_department || '生产部',
+          time: data.report_time ? dayjs(data.report_time).format('YYYY-MM-DD HH:mm:ss') : '-'
+        })
+        if (data.reporter_feishu_open_id) {
+          setReporterOpenId(data.reporter_feishu_open_id)
+        }
+        loadAttachments(id)
       }
-      return []
-    },
-    enabled: !!editId,
-  })
+    } catch (error) {
+      message.error('加载数据失败')
+    }
+  }
+
+  const loadAttachments = async (deviationId: string) => {
+    try {
+      const response = await fetch(`${API_BASE}/quality/deviation-flow/${deviationId}/attachments`)
+      const result = await response.json()
+      if (result.code === 200) {
+        setAttachments(result.data || [])
+      }
+    } catch (error) {
+      console.error('加载附件失败:', error)
+    }
+  }
 
   const handleUpload = async (file: File) => {
     if (!currentDeviationId) {
@@ -216,6 +200,7 @@ export default function DeviationCreatePage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
+
       const response = await fetch(`${API_BASE}/quality/deviation-flow/${currentDeviationId}/attachments`, {
         method: 'POST',
         body: formData,
@@ -224,11 +209,11 @@ export default function DeviationCreatePage() {
 
       if (result.code === 200) {
         message.success('附件上传成功')
-        queryClient.invalidateQueries({ queryKey: ['deviation-attachments', currentDeviationId] })
+        loadAttachments(currentDeviationId)
       } else {
         message.error(result.message || '上传失败')
       }
-    } catch (_error) {
+    } catch (error) {
       message.error('上传失败，请重试')
     } finally {
       setUploading(false)
@@ -236,7 +221,7 @@ export default function DeviationCreatePage() {
     return false
   }
 
-  const handleDownload = (attachment: Attachment) => {
+  const handleDownload = (attachment: any) => {
     window.open(`${API_BASE}/quality/deviation-flow/attachments/${attachment.id}/download`, '_blank')
   }
 
@@ -302,12 +287,14 @@ export default function DeviationCreatePage() {
       if (isEditMode && currentDeviationId) {
         await saveData('', 'PUT')
       } else {
-        await saveData('', 'POST')
+        const result = await saveData('', 'POST')
+        setCurrentDeviationId(result.data.id)
+        setIsEditMode(true)
       }
 
       message.success('保存成功')
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : undefined) || '保存失败')
+    } catch (error: any) {
+      message.error(error.message || '保存失败')
     } finally {
       setLoading(false)
     }
@@ -359,8 +346,10 @@ export default function DeviationCreatePage() {
 
       let deviationId = currentDeviationId
       if (!deviationId) {
-        const saveResult = await saveData('', 'POST') as { data: { id: string } }
+        const saveResult = await saveData('', 'POST')
         deviationId = saveResult.data.id
+        setCurrentDeviationId(deviationId)
+        setIsEditMode(true)
       } else {
         await saveData('', 'PUT')
       }
@@ -368,23 +357,24 @@ export default function DeviationCreatePage() {
       const result = await submitDeviationFlow(deviationId!, targetStatus)
 
       if (result.code === 200) {
-        message.success(result.message as string)
+        message.success(result.message)
+        setCurrentStatus(targetStatus)
 
         if (targetStatus === 'completed') {
           Modal.success({
             title: '偏差已完成',
-            content: '偏差流程已完成！' as string,
+            content: '偏差流程已完成！',
             onOk: () => router.push('/quality/deviation-flow/query'),
           })
         }
       } else {
-        message.error((result.message as string) || '提交失败')
+        message.error(result.message || '提交失败')
       }
-    } catch (error: unknown) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
+    } catch (error: any) {
+      if (error.errorFields) {
         message.error('请填写必填项')
       } else {
-        message.error((error instanceof Error ? error.message : undefined) || '提交失败')
+        message.error(error.message || '提交失败')
       }
     } finally {
       setLoading(false)
@@ -455,11 +445,12 @@ export default function DeviationCreatePage() {
                         const response = await fetch(`${API_BASE}/quality/deviation-settings/feishu-user/by-mobile?mobile=${mobile}`)
                         const result = await response.json()
                         if (result.code === 200 && result.data) {
-                          setUserReporterInfo({
+                          setReporterInfo({
                             name: result.data.name,
                             department: '',
                             time: dayjs().format('YYYY-MM-DD HH:mm:ss')
                           })
+                          setReporterOpenId(result.data.open_id)
                           form.setFieldsValue({ reporter_department: '' })
                           message.success(`已获取填报人：${result.data.name}`)
                         } else {
@@ -629,7 +620,7 @@ export default function DeviationCreatePage() {
 
               {attachments.length > 0 && (
                 <div className="deviation-attachment-list">
-                  {attachments.map((item: Attachment) => (
+                  {attachments.map((item: any) => (
                     <div key={item.id} className="deviation-attachment-item">
                       <div className="deviation-attachment-info">
                         <div className="deviation-attachment-icon">
@@ -668,7 +659,7 @@ export default function DeviationCreatePage() {
             {attachments.length > 0 && (
               <SectionCard icon={<PaperClipOutlined />} title="附件列表">
                 <div className="deviation-attachment-list">
-                  {attachments.map((item: Attachment) => (
+                  {attachments.map((item: any) => (
                     <div key={item.id} className="deviation-attachment-item">
                       <div className="deviation-attachment-info">
                         <div className="deviation-attachment-icon">

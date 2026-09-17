@@ -1,9 +1,9 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { App, Button, Card, Row, Col, Popconfirm, Spin, } from 'antd'
 import { PlusOutlined, DeleteOutlined, EditOutlined, FileTextOutlined } from '@ant-design/icons'
 import Link from 'next/link'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { AnnualTrainingPlan } from '@/types/hr'
 import { fetchAnnualTrainingPlans } from '@/lib/api/client/hr'
 import { deleteAnnualTrainingPlan } from '@/actions/hr'
@@ -14,26 +14,36 @@ interface AnnualPlanDeptClientProps {
 
 export default function AnnualPlanDeptClient({ department }: AnnualPlanDeptClientProps) {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
 
-  const { data: plans = [], isLoading: loading } = useQuery<AnnualTrainingPlan[]>({
-    queryKey: ['hr-annual-plans', { department, page_size: 200 }],
-    queryFn: async () => {
+  const [plans, setPlans] = useState<AnnualTrainingPlan[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const loadPlans = async () => {
+    setLoading(true)
+    try {
       const res = await fetchAnnualTrainingPlans({
         department,
         page_size: 200
       })
-      return res.data || []
-    },
-  })
+      setPlans(res.data || [])
+    } catch (err: any) {
+      message.error('加载计划列表失败: ' + (err.message || '未知错误'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadPlans()
+  }, [department])
 
   const handleDelete = async (id: string) => {
     try {
       await deleteAnnualTrainingPlan(id)
-      queryClient.invalidateQueries({ queryKey: ['hr-annual-plans'] })
+      setPlans((prev) => prev.filter((p) => p.id !== id))
       message.success('删除成功')
-    } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : '删除失败')
+    } catch (err: any) {
+      message.error(err.message || '删除失败')
     }
   }
 

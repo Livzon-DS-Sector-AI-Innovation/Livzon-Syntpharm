@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { App,
   Table,
   Button,
@@ -16,7 +16,6 @@ import { App,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { PlusOutlined, ReloadOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getPointMappings,
   createPointMapping,
@@ -31,7 +30,9 @@ const { Title } = Typography
 
 export function PressurePointManagementPageClient() {
   const { message } = App.useApp()
-  const queryClient = useQueryClient()
+  const [loading, setLoading] = useState(false)
+  const [mappings, setMappings] = useState<PointMapping[]>([])
+  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [area, setArea] = useState<string>()
@@ -40,19 +41,24 @@ export function PressurePointManagementPageClient() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form] = Form.useForm()
 
-  const { data: mappingsData, isLoading: loading } = useQuery({
-    queryKey: ['pressure-point-mappings', { area, keyword, page, page_size: pageSize }],
-    queryFn: async () => {
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
       const res = await getPointMappings({ area, keyword, page, page_size: pageSize })
       if (res.code === 200) {
-        return { data: res.data || [], total: res.meta?.total || 0 }
+        setMappings(res.data || [])
+        setTotal(res.meta?.total || 0)
       }
-      return { data: [], total: 0 }
-    },
-  })
+    } catch {
+      message.error('加载位点列表失败')
+    } finally {
+      setLoading(false)
+    }
+  }, [page, pageSize, area, keyword])
 
-  const mappings = mappingsData?.data || []
-  const total = mappingsData?.total || 0
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleSubmit = async () => {
     try {
@@ -83,7 +89,7 @@ export function PressurePointManagementPageClient() {
       setModalOpen(false)
       form.resetFields()
       setEditingId(null)
-      queryClient.invalidateQueries({ queryKey: ['pressure-point-mappings'] })
+      loadData()
     } catch {
       // validation error
     }
@@ -103,7 +109,7 @@ export function PressurePointManagementPageClient() {
     const res = await deletePointMapping(id)
     if (res.code === 200) {
       message.success('删除成功')
-      queryClient.invalidateQueries({ queryKey: ['pressure-point-mappings'] })
+      loadData()
     }
   }
 
@@ -115,7 +121,7 @@ export function PressurePointManagementPageClient() {
       title: '操作',
       key: 'action',
       width: 120,
-      render: (_: unknown, record: PointMapping) => (
+      render: (_: any, record: PointMapping) => (
         <Space>
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
@@ -154,7 +160,7 @@ export function PressurePointManagementPageClient() {
             style={{ width: 200 }}
             onSearch={(v) => { setKeyword(v); setPage(1) }}
           />
-          <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['pressure-point-mappings'] })}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
         </Space>
 
         <Table

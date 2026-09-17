@@ -6,8 +6,7 @@ type ProductionItem = {
   unit: string;
 }
 
-import { useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNumber, Table, Input, Space } from 'antd'
 import { PlusOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons'
 import TargetModal from '@/components/energy/TargetModal'
@@ -19,7 +18,6 @@ import {
   type AIAnalysisResult, 
   type UnitConsumptionTarget 
 } from '@/lib/api/client/energy'
-import type { EnergyWorkshop } from '@/types/energy'
 
 const { Title, Paragraph, Text } = Typography
 const { MonthPicker } = DatePicker
@@ -33,34 +31,42 @@ export default function AIAnalysisPage() {
   const [productionItems, setProductionItems] = useState<ProductionItem[]>([])
   const [syncing, setSyncing] = useState(false)
 
+  const [workshops, setWorkshops] = useState<any[]>([])
+  const [currentTarget, setCurrentTarget] = useState<UnitConsumptionTarget | null>(null)
+  const [targetLoading, setTargetLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
-  const queryClient = useQueryClient()
 
   // 获取车间列表
-  const { data: workshopsData } = useQuery({
-    queryKey: ['workshops'],
-    queryFn: async () => {
-      const data = await fetchWorkshopsClient({ category: 'workshop' })
-      return data.map((w: EnergyWorkshop) => ({ value: w.id, label: w.name }))
-    },
-  })
-
-  const workshops = workshopsData || []
+  useEffect(() => {
+    fetchWorkshopsClient({ category: 'workshop' })
+      .then(data => {
+        const workshops = data.map((w: any) => ({ value: w.id, label: w.name }))
+        setWorkshops(workshops)
+      })
+      .catch(err => {
+        console.error('Failed to fetch workshops:', err)
+      })
+  }, [])
 
   // 当车间或月份变化时，查询目标
-  const { data: targetData, isLoading: targetLoading } = useQuery({
-    queryKey: ['target', workshopId, analysisMonth],
-    queryFn: async () => {
-      if (workshopId && analysisMonth) {
-        const target = await getTarget(workshopId, analysisMonth)
-        return target
-      }
-      return null
-    },
-    enabled: !!workshopId && !!analysisMonth,
-  })
-
-  const currentTarget = targetData || null
+  useEffect(() => {
+    if (workshopId && analysisMonth) {
+      setTargetLoading(true)
+      getTarget(workshopId, analysisMonth)
+        .then(target => {
+          setCurrentTarget(target)
+        })
+        .catch(err => {
+          console.error('查询目标失败:', err)
+          setCurrentTarget(null)
+        })
+        .finally(() => {
+          setTargetLoading(false)
+        })
+    } else {
+      setCurrentTarget(null)
+    }
+  }, [workshopId, analysisMonth])
 
   
   const handleAddItem = () => {
@@ -89,7 +95,7 @@ export default function AIAnalysisPage() {
       })
       setProductionItems(result.items)
       message.success('同步成功')
-    } catch (_error) {
+    } catch (error) {
       message.error('同步失败')
     } finally {
       setSyncing(false)
@@ -117,17 +123,15 @@ const handleAnalyze = async () => {
         include_ai_suggestion: true,
       })
       setResult(data)
-    } catch (error: unknown) {
-      message.error((error instanceof Error ? error.message : "操作失败") || '分析请求失败')
+    } catch (error: any) {
+      message.error(error.message || '分析请求失败')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleTargetSuccess = (_target: UnitConsumptionTarget) => {
-    // Invalidate the target query cache so it refetches the new value
-    queryClient.invalidateQueries({ queryKey: ['target', workshopId, analysisMonth] })
-    
+  const handleTargetSuccess = (target: UnitConsumptionTarget) => {
+    setCurrentTarget(target)
     if (result && productionItems.length > 0) {
       handleAnalyze()
     }
@@ -191,7 +195,7 @@ const handleAnalyze = async () => {
                   title: '产品名称', 
                   dataIndex: 'product_name', 
                   key: 'name', 
-                  render: (text: string, _: unknown, index: number) => (
+                  render: (text: string, _: any, index: number) => (
                     <Input value={text} onChange={e => handleItemChange(index, 'product_name', e.target.value)} placeholder="输入名称" size="small" />
                   )
                 },
@@ -200,7 +204,7 @@ const handleAnalyze = async () => {
                   dataIndex: 'quantity', 
                   key: 'qty', 
                   width: 100, 
-                  render: (val: number, _: unknown, index: number) => (
+                  render: (val: number, _: any, index: number) => (
                     <InputNumber value={val} onChange={v => handleItemChange(index, 'quantity', v || 0)} style={{ width: '100%' }} size="small" min={0} />
                   )
                 },
@@ -208,7 +212,7 @@ const handleAnalyze = async () => {
                   title: '操作', 
                   key: 'action', 
                   width: 60, 
-                  render: (_: unknown, __: unknown, index: number) => (
+                  render: (_: any, __: any, index: number) => (
                     <Button type="text" danger icon={<DeleteOutlined />} onClick={() => handleRemoveItem(index)} size="small" />
                   )
                 }

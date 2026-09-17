@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import {Tag, Button, Typography, Timeline} from 'antd'
+import {Card, Descriptions, Tag, Button, Space, Typography, Divider, Timeline, message} from 'antd'
 import {
-  ArrowLeftOutlined, EditOutlined,
+  ArrowLeftOutlined, EditOutlined, UploadOutlined, CheckCircleOutlined,
   FileTextOutlined, TeamOutlined, UserOutlined, FileProtectOutlined,
-  InfoCircleOutlined, ToolOutlined, SafetyOutlined,
+  InfoCircleOutlined, AlertOutlined, ToolOutlined, SafetyOutlined, SettingOutlined,
 } from '@ant-design/icons'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
@@ -55,7 +54,9 @@ export default function DeviationProgressPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const deviationId = searchParams.get('id')
-    const [isMobile, setIsMobile] = useState(false)
+  const [data, setData] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -65,20 +66,29 @@ export default function DeviationProgressPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['deviation-flow-progress', deviationId],
-    queryFn: async () => {
+  useEffect(() => {
+    if (deviationId) {
+      loadDetail()
+    }
+  }, [deviationId])
+
+  const loadDetail = async () => {
+    setLoading(true)
+    try {
       const response = await fetch(`${API_BASE}/quality/deviation-flow/${deviationId}`)
       const result = await response.json()
+
       if (result.code === 200) {
-        return result.data
+        setData(result.data)
+      } else {
+        message.error(result.message || '加载失败')
       }
-      throw new Error(result.message || '加载失败')
-    },
-    enabled: !!deviationId,
-  })
-
-
+    } catch (error) {
+      message.error('加载失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (loading) {
     return (

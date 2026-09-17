@@ -1,11 +1,3 @@
-import type {
-  StorageConditionCreate,
-  StorageConditionUpdate,
-  MediumCreate,
-  MediumUpdate,
-  StandardCreate,
-  StandardUpdate,
-} from '@/types/static-data'
 /**
  * 业务静态数据模块 — 客户端直连 API 客户端
  * 列表查询走客户端 fetch，避免 Server Action 在 Next.js 服务端的网络隔离问题
@@ -15,7 +7,6 @@ import type {
 const API_BASE = '/api/v1'
 const PREFIX = '/quality/static-data'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function api<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
@@ -44,7 +35,7 @@ export async function getStorageCondition(id: number) {
   return api(`${PREFIX}/storage-condition/${id}`)
 }
 
-export async function createStorageCondition(data: StorageConditionCreate) {
+export async function createStorageCondition(data: Record<string, any>) {
   const res = await fetch(`${API_BASE}${PREFIX}/storage-condition`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -55,7 +46,7 @@ export async function createStorageCondition(data: StorageConditionCreate) {
   return result
 }
 
-export async function updateStorageCondition(id: number, data: StorageConditionUpdate) {
+export async function updateStorageCondition(id: number, data: Record<string, any>) {
   const res = await fetch(`${API_BASE}${PREFIX}/storage-condition/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -232,7 +223,7 @@ export async function getMedium(id: number) {
   return api(`${PREFIX}/medium/${id}`)
 }
 
-export async function createMedium(data: MediumCreate) {
+export async function createMedium(data: Record<string, any>) {
   const res = await fetch(`${API_BASE}${PREFIX}/medium`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -243,7 +234,7 @@ export async function createMedium(data: MediumCreate) {
   return result
 }
 
-export async function updateMedium(id: number, data: MediumUpdate) {
+export async function updateMedium(id: number, data: Record<string, any>) {
   const res = await fetch(`${API_BASE}${PREFIX}/medium/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -295,7 +286,7 @@ export async function getStandard(id: number) {
   return api(`${PREFIX}/standard/${id}`)
 }
 
-export async function createStandard(data: StandardCreate) {
+export async function createStandard(data: Record<string, any>) {
   const res = await fetch(`${API_BASE}${PREFIX}/standard`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -306,7 +297,7 @@ export async function createStandard(data: StandardCreate) {
   return result
 }
 
-export async function updateStandard(id: number, data: StandardUpdate) {
+export async function updateStandard(id: number, data: Record<string, any>) {
   const res = await fetch(`${API_BASE}${PREFIX}/standard/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

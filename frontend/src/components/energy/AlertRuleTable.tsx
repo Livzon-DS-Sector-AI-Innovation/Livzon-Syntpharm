@@ -32,7 +32,7 @@ export function AlertRuleTable({
   page,
   pageSize,
   onPageChange,
-  onRefresh: _onRefresh,
+  onRefresh,
   onEdit,
   onDelete,
 }: AlertRuleTableProps) {

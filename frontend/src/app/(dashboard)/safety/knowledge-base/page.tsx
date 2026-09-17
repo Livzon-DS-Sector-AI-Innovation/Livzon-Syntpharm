@@ -1,8 +1,7 @@
 
 'use client'
 
-import { useState, useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { App, Button, Input, Select, Modal, Tooltip } from 'antd'
 import {
@@ -14,6 +13,9 @@ import {
 } from '@ant-design/icons'
 import {
   getKnowledgeArticles,
+  deleteKnowledgeArticle,
+  publishKnowledgeArticle,
+  archiveKnowledgeArticle,
   createNewArticleVersion,
   semanticSearchArticles,
   generateKnowledgeCard,
@@ -29,7 +31,7 @@ import KnowledgeFormModal from '@/components/safety/KnowledgeFormModal'
 import KnowledgeImportModal from '@/components/safety/KnowledgeImportModal'
 import { useKnowledgeStore } from '@/stores/safety'
 import type { SafetyKnowledgeArticle } from '@/types/safety'
-import { filterByMenuKey } from '@/components/safety'
+import { filterByMenuKey, computeMenuCounts } from '@/components/safety'
 
 export default function KnowledgeBasePage() {
   // ── Antd App hook ──────────────────────────────────
@@ -38,21 +40,29 @@ export default function KnowledgeBasePage() {
 
   // ── Store ──────────────────────────────────────────
   const {
+    items,
+    total,
     queryParams,
+    loading,
     selectedRowKeys,
+    setItems,
+    setTotal,
     setQueryParams,
+    setLoading,
+    updateItem,
+    removeItem,
     setSelectedRowKeys,
   } = useKnowledgeStore()
 
   // ── Local state ────────────────────────────────────
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
-  const [categoryFilter] = useState<string | undefined>()
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>()
   const [cardStatusFilter, setCardStatusFilter] = useState<string | undefined>()
   const [smartSearch, setSmartSearch] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [selectedMenuKey, setSelectedMenuKey] = useState<string | null>(null)
-  const [menuCounts, _setMenuCounts] = useState<Map<string, number>>(new Map())
+  const [menuCounts, setMenuCounts] = useState<Map<string, number>>(new Map())
   const [syncing, setSyncing] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
 
@@ -62,18 +72,11 @@ export default function KnowledgeBasePage() {
   const [detailId, setDetailId] = useState<string | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
-
-
-  const handleSearch = () => {
-    setQueryParams({ page: 1 })
-    refetch()
-  }
-
-  const _queryClient = useQueryClient()
-
-  const { data: knowledgeData, isLoading, refetch } = useQuery({
-    queryKey: ['safety-knowledge', { queryParams, statusFilter, categoryFilter, smartSearch, searchText }],
-    queryFn: async () => {
+  // ── Data loading ───────────────────────────────────
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      // 卡片模式使用较大的 page_size 以支持单页浏览
       const pageSize = queryParams.page_size || 200
       let response
       if (smartSearch && searchText) {
@@ -88,33 +91,53 @@ export default function KnowledgeBasePage() {
         })
       }
       if (response.code === 200) {
-        return { data: response.data as SafetyKnowledgeArticle[], total: response.meta?.total || 0 }
+        const data = response.data as SafetyKnowledgeArticle[]
+        const totalCount = response.meta?.total || 0
+
+        // 计算菜单计数（基于原始数据，不受筛选影响）
+        setMenuCounts(computeMenuCounts(data))
+
+        // Client-side filters
+        let filtered = data
+        // 菜单分类筛选
+        if (selectedMenuKey) {
+          filtered = filterByMenuKey(filtered, selectedMenuKey)
+        }
+        // 知识卡片状态筛选
+        if (cardStatusFilter === 'has_card') {
+          filtered = filtered.filter((a) => a.knowledge_card != null)
+        } else if (cardStatusFilter === 'no_card') {
+          filtered = filtered.filter((a) => !a.knowledge_card)
+        }
+
+        setItems(filtered)
+        setTotal(cardStatusFilter || selectedMenuKey ? filtered.length : totalCount)
+        setLoadError(null) // 清除之前的错误
+      } else {
+        // 诊断：显示后端返回的具体错误
+        const errMsg = response.message || `请求失败 (code=${response.code})`
+        console.error('[知识库] API 返回非 200:', response)
+        setLoadError(errMsg)
+        message.error(errMsg)
       }
-      return { data: [], total: 0 }
-    },
-  })
-
-  // Client-side filtering
-  const items = (() => {
-    const data = knowledgeData?.data || []
-    let filtered = data
-    if (selectedMenuKey) {
-      filtered = filterByMenuKey(filtered, selectedMenuKey)
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      console.error('[知识库] 请求异常:', err)
+      setLoadError(errMsg || '加载知识库列表失败')
+      message.error('加载知识库列表失败')
+    } finally {
+      setLoading(false)
     }
-    if (cardStatusFilter === 'has_card') {
-      filtered = filtered.filter((a) => a.knowledge_card != null)
-    } else if (cardStatusFilter === 'no_card') {
-      filtered = filtered.filter((a) => !a.knowledge_card)
-    }
-    return filtered
-  })()
+  }, [queryParams.page, queryParams.page_size, statusFilter, categoryFilter, cardStatusFilter, smartSearch, searchText, selectedMenuKey, setItems, setLoading, setTotal])
 
-  const _total = (() => {
-    const totalCount = knowledgeData?.total || 0
-    return cardStatusFilter || selectedMenuKey ? items.length : totalCount
-  })()
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
-  const loading = isLoading
+  const handleSearch = () => {
+    setQueryParams({ page: 1 })
+    loadData()
+  }
 
   // ── Card selection ─────────────────────────────────
   const handleSelectCard = (id: string) => {
@@ -140,7 +163,7 @@ export default function KnowledgeBasePage() {
         message.success(
           `同步完成：创建 ${res.data.created}，更新 ${res.data.updated}，删除 ${res.data.deleted}`
         )
-        refetch()
+        loadData()
       } else {
         message.error(res.message || '同步失败')
       }
@@ -162,13 +185,48 @@ export default function KnowledgeBasePage() {
     setDetailOpen(true)
   }
 
+  const handleDelete = (id: string) => {
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除该知识文档吗？',
+      onOk: async () => {
+        const response = await deleteKnowledgeArticle(id)
+        if (response.code === 200) {
+          message.success('删除成功')
+          removeItem(id)
+        } else {
+          message.error(response.message || '删除失败')
+        }
+      },
+    })
+  }
+
+  const handlePublish = async (id: string) => {
+    const response = await publishKnowledgeArticle(id)
+    if (response.code === 200) {
+      message.success('发布成功')
+      updateItem(id, response.data)
+    } else {
+      message.error(response.message || '发布失败')
+    }
+  }
+
+  const handleArchive = async (id: string) => {
+    const response = await archiveKnowledgeArticle(id)
+    if (response.code === 200) {
+      message.success('已归档')
+      updateItem(id, response.data)
+    } else {
+      message.error(response.message || '归档失败')
+    }
+  }
 
   const handleNewVersion = async (article: SafetyKnowledgeArticle) => {
     const response = await createNewArticleVersion(article.id)
     if (response.code === 200 && response.data) {
       message.success(`已创建新版本 v${response.data.new_article.version}`)
       setDetailId(response.data.new_article.id)
-      refetch()
+      loadData()
     } else {
       message.error(response.message || '创建新版本失败')
     }
@@ -177,14 +235,14 @@ export default function KnowledgeBasePage() {
   const handleFormSuccess = () => {
     setFormOpen(false)
     setEditingRecord(null)
-    refetch()
+    loadData()
   }
 
   const handleGenerateCard = async (articleId: string) => {
     const res = await generateKnowledgeCard(articleId)
     if (res.code === 200 && res.data) {
       message.success(res.data.message || '知识卡片生成成功')
-      refetch()
+      loadData()
     } else {
       message.error(res.message || '生成失败')
     }
@@ -204,7 +262,7 @@ export default function KnowledgeBasePage() {
           const d = res.data
           message.success(`成功 ${d.success_count} 份，失败 ${d.failed_count} 份`)
           setSelectedRowKeys([])
-          refetch()
+          loadData()
         } else {
           message.error(res.message || '批量生成失败')
         }
@@ -228,7 +286,7 @@ export default function KnowledgeBasePage() {
     const res = await generateSummary(articleId)
     if (res.code === 200 && res.data) {
       message.success(res.data.message || '摘要生成成功')
-      refetch()
+      loadData()
     } else {
       message.error(res.message || '摘要生成失败')
     }
@@ -295,7 +353,7 @@ export default function KnowledgeBasePage() {
           <br />
           <button
             type="button"
-            onClick={() => { setLoadError(null); refetch(); }}
+            onClick={() => { setLoadError(null); loadData(); }}
             style={{
               marginTop: 8,
               cursor: 'pointer',
@@ -491,7 +549,7 @@ export default function KnowledgeBasePage() {
       <KnowledgeImportModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
-        onSuccess={() => { refetch(); setImportOpen(false) }}
+        onSuccess={() => { loadData(); setImportOpen(false) }}
       />
       </div>
     </div>

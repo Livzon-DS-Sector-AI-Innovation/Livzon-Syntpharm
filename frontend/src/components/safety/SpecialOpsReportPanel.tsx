@@ -28,7 +28,8 @@ import {
 import type { SpecialOperationReport, SpecialOperationReportFormData } from '@/types/safety'
 
 import {
-  STATUS_CONFIG, STATUS_OPTIONS, T, OP_TYPE_CONFIG, OP_LEVEL_OPTIONS,
+  T, OP_TYPE_CONFIG, OP_LEVEL_LABELS, OP_LEVEL_OPTIONS,
+  STATUS_CONFIG, STATUS_OPTIONS,
 } from './SpecialOpsConstants'
 
 const { Text } = Typography
@@ -92,7 +93,9 @@ export default function SpecialOpsReportPanel() {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, statusFilter, opType, keyword, message])
+  }, [page, pageSize, statusFilter, opType, keyword])
+
+  useEffect(() => { fetchData() }, [fetchData])
 
   // ── Open report drawer ──
   const handleCreateReport = () => {

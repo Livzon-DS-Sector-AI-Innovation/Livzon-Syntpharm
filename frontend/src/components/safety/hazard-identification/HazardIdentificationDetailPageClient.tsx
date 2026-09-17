@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Card,
@@ -42,11 +41,12 @@ import type { HazardIdentification } from '@/types/safety'
 import {
   AI_NODE_PROGRESS_OPTIONS,
   OVERALL_STATUS_OPTIONS_HI,
+  REVIEW_STATUS_OPTIONS,
   RISK_LEVEL_OPTIONS,
   RECOMMENDATION_PRIORITY_OPTIONS,
 } from '@/types/safety'
 import dayjs from 'dayjs'
-import { getWorkflowStepList, WorkflowStep } from '@/lib/workflow-templates'
+import { getWorkflowStepList } from '@/lib/workflow-templates'
 
 const { Title, Text } = Typography
 
@@ -62,8 +62,8 @@ const STEP_ICONS: Record<number, React.ReactNode> = {
 }
 
 // ── 工作流步骤配置（从共享模板派生） ──
-const WORKFLOW_STEPS: Array<WorkflowStep & { icon: React.ReactNode; title: string }> = getWorkflowStepList('hazard-identification').map((s: WorkflowStep) => ({
-  ...s, title: s.name,
+const WORKFLOW_STEPS = getWorkflowStepList('hazard-identification').map((s: any) => ({
+  ...s,
   icon: STEP_ICONS[s.num] || <RobotOutlined />,
 }))
 
@@ -72,47 +72,44 @@ export function HazardIdentificationDetailPageClient() {
   const params = useParams()
   const id = params.id as string
 
+  const [record, setRecord] = useState<HazardIdentification | null>(null)
+  const [loading, setLoading] = useState(true)
   const [runningScript, setRunningScript] = useState<number | null>(null)
+  const [selectedStep, setSelectedStep] = useState(1)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [editingScript, setEditingScript] = useState<number>(0)
   const [editForm, setEditForm] = useState<Record<string, unknown>>({})
   const { message } = App.useApp()
 
-  const { data: record, isLoading: loading, error: recordError } = useQuery({
-    queryKey: ['hazard-identification-detail', id],
-    queryFn: async () => {
+  const loadRecord = async () => {
+    try {
       const response = await getHazardIdentification(id)
       if (response.code === 200) {
-        return response.data as HazardIdentification
+        setRecord(response.data)
+        // 自动选中当前步骤
+        const data = response.data as HazardIdentification
+        const cur = getCurrentStepNum(data.ai_node_progress)
+        setSelectedStep(cur)
+      } else {
+        message.error('加载失败')
+        router.push('/safety/hazard-identification')
       }
-      throw new Error('加载失败')
-    },
-    enabled: !!id,
-  })
-
-  // Handle errors
-  useEffect(() => {
-    if (recordError) {
+    } catch {
       message.error('加载失败')
-      router.push('/safety/hazard-identification')
+    } finally {
+      setLoading(false)
     }
-  }, [recordError, message, router])
+  }
+
+  useEffect(() => {
+    if (id) loadRecord()
+  }, [id])
 
   const getCurrentStepNum = (progress: string): number => {
     if (progress === 'completed') return 7
     const match = progress.match(/script(\d)/)
     return match ? parseInt(match[1]) : 1
   }
-
-  // User can override the derived step
-  const [userSelectedStep, setUserSelectedStep] = useState<number | null>(null)
-
-  // Derive selectedStep from record, with user override
-  const selectedStep = useMemo(() => {
-    if (userSelectedStep !== null) return userSelectedStep
-    if (!record) return 1
-    return getCurrentStepNum(record.ai_node_progress)
-  }, [record, userSelectedStep])
 
   const handleRunScript = async (scriptNum: number) => {
     setRunningScript(scriptNum)
@@ -125,10 +122,10 @@ export function HazardIdentificationDetailPageClient() {
         } else {
           message.success(`工作流${scriptNum}「${WORKFLOW_STEPS[scriptNum - 1].title}」执行完成`)
         }
-        
+        setRecord(data)
         // 自动跳到下一步
         const nextStep = getCurrentStepNum(data.ai_node_progress)
-        setUserSelectedStep(nextStep)
+        setSelectedStep(nextStep)
       } else {
         message.error(response.message || '工作流执行失败')
       }
@@ -144,7 +141,7 @@ export function HazardIdentificationDetailPageClient() {
       const response = await reviewHazardScript(id, scriptNum, action)
       if (response.code === 200) {
         message.success(action === 'approved' ? '审核通过' : '已驳回')
-        
+        setRecord(response.data as HazardIdentification)
       } else {
         message.error(response.message || '审核操作失败')
       }
@@ -158,7 +155,7 @@ export function HazardIdentificationDetailPageClient() {
       const response = await updateHazardIdentification(id, editForm as Record<string, unknown>)
       if (response.code === 200) {
         message.success('更新成功')
-        
+        setRecord(response.data as HazardIdentification)
         setEditModalVisible(false)
       } else {
         message.error(response.message || '更新失败')
@@ -263,8 +260,8 @@ export function HazardIdentificationDetailPageClient() {
           current={currentStepNum - 1}
           status={record.overall_status === 'completed' ? 'finish' : 'process'}
           size="small"
-          onChange={(step) => setUserSelectedStep(step + 1)}
-          items={WORKFLOW_STEPS.map((s: WorkflowStep & { icon: React.ReactNode; title: string }, i: number) => {
+          onChange={(step) => setSelectedStep(step + 1)}
+          items={WORKFLOW_STEPS.map((s: any, i: any) => {
             const rs = (record as unknown as Record<string, unknown>)[`script${s.num}_review_status`] as string
             let status: 'wait' | 'process' | 'finish' | 'error' = 'wait'
             if (rs === 'approved' || (i < currentStepNum - 1)) status = 'finish'
@@ -297,10 +294,10 @@ export function HazardIdentificationDetailPageClient() {
               {currentStep.desc}
             </Text>
 
-            {WORKFLOW_STEPS.map((step: WorkflowStep & { icon: React.ReactNode; title: string }) => (
+            {WORKFLOW_STEPS.map((step: any) => (
               <div
                 key={step.num}
-                onClick={() => setUserSelectedStep(step.num)}
+                onClick={() => setSelectedStep(step.num)}
                 style={{
                   cursor: 'pointer',
                   padding: '8px 12px',
@@ -535,7 +532,7 @@ function renderFieldValue(scriptNum: number, key: string, val: unknown) {
 }
 
 function getScriptOutputFields(scriptNum: number, record: HazardIdentification): Record<string, unknown> {
-  const step = WORKFLOW_STEPS.find((s: WorkflowStep & { icon: React.ReactNode; title: string }) => s.num === scriptNum)
+  const step = WORKFLOW_STEPS.find((s: any) => s.num === scriptNum)
   const fields = step?.expected_keys || []
   const result: Record<string, unknown> = {}
   for (const f of fields) {

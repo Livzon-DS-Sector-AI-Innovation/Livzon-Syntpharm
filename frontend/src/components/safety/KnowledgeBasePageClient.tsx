@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Table,
   Button,
@@ -26,6 +26,7 @@ import {
   DeleteOutlined,
   SendOutlined,
   InboxOutlined,
+  FileTextOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
 import { useSafetyStore } from '@/stores/safety'
@@ -47,7 +48,7 @@ import {
 } from '@/types/safety'
 import dayjs from 'dayjs'
 
-const { Text: _Text } = Typography
+const { Text } = Typography
 
 export function KnowledgeBasePageClient() {
   const { message, modal } = App.useApp()
@@ -93,6 +94,10 @@ export function KnowledgeBasePageClient() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    loadData()
+  }, [articleQueryParams.page, articleQueryParams.page_size, statusFilter, categoryFilter])
 
   const handleSearch = () => {
     setArticleQueryParams({ page: 1 })
