@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
@@ -429,3 +429,139 @@ class MonthlySummaryApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: dict[str, MonthlySummaryItem]
+
+
+# ─ API Response Wrappers ──
+
+
+class EnergyWorkshopApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyWorkshopResponse
+
+
+class EnergyWorkshopListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyWorkshopResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyDeviceConfigApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyDeviceConfigResponse
+
+
+class EnergyDeviceConfigListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyDeviceConfigResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyAlertRuleApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyAlertRuleResponse
+
+
+class EnergyAlertRuleListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyAlertRuleResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyAlertRecordApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyAlertRecordResponse
+
+
+class EnergyAlertRecordListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyAlertRecordResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyMonthlyRecordApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyMonthlyRecordResponse
+
+
+class EnergyMonthlyRecordListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyMonthlyRecordResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyMonthlyBatchCreateApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class EnergyDataListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyDataResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyStatisticsApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyStatisticsResponse
+
+
+class CollectLogListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[CollectLogResponse]
+    meta: dict[str, Any] | None = None
+
+
+class CollectLogDetailApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: CollectLogDetailResponse
+
+
+class CollectTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class EnergyOverviewApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class FeishuImportApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: FeishuEnergyImportResponse
+
+
+class SyncJobApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class UnitConsumptionTargetApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UnitConsumptionTargetResponse
+
+
+class AIAnalysisApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AIAnalysisResponse
