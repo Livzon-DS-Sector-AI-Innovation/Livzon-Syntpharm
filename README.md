@@ -125,9 +125,9 @@
 
 ## 开发
 
-### 本地开发（连接 UAT 基础设施）
+### 个人开发启动模式
 
-团队成员内网互通，本地只需启动前后端，数据库/Redis/MinIO 连接 UAT 服务器。
+本地只启动前后端，数据库/Redis/MinIO 连接 UAT 服务器（内网互通）。
 
 ```bash
 # 1. 从 main 拉分支
@@ -153,6 +153,33 @@ docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm mi
 # 前端: http://localhost:3000
 # 后端: http://localhost:8000/docs
 ```
+
+**配置文件**：`.env.local.example`（已预设 UAT 内网地址 172.17.62.101）
+
+### UAT 启动模式
+
+在 UAT 服务器上部署完整环境（包含所有基础设施）。
+
+```bash
+# 1. 配置 UAT 环境
+cp .env.uat.example .env.uat
+# 编辑 .env.uat，填写所有 <从团队获取> 的占位符
+
+# 2. 启动基础设施（数据库/Redis/MinIO）
+docker compose --env-file .env.uat -f docker-compose.uat-infra.yml up -d
+
+# 3. 启动应用服务
+docker compose --env-file .env.uat up -d --build
+
+# 4. 执行数据库迁移
+docker compose --env-file .env.uat run --rm migrate
+
+# 5. 访问
+# 前端: http://8.138.204.232
+# 后端: http://8.138.204.232/api/v1/
+```
+
+**配置文件**：`.env.uat.example`（UAT 服务器专用）
 
 ### 开发流程
 
