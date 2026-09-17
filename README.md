@@ -134,15 +134,14 @@
 git checkout main && git pull origin main
 git checkout -b feature/你的功能名
 
-# 2. 配置本地环境
-cp .env.uat.example .env.local
-# 编辑 .env.local，修改以下变量指向 UAT 内网 IP (172.17.62.101):
-#   - DATABASE_URL: uat-postgres → 172.17.62.101
-#   - REDIS_URL: uat-redis → 172.17.62.101
-#   - MINIO_ENDPOINT: uat-minio:9000 → 172.17.62.101:9000
-#   - APP_ENV=uat → development
-#   - DEBUG=false → true
-#   - FRONTEND_URL → http://localhost:3000
+# 2. 配置本地环境（已预设 UAT 地址，只需填写凭证）
+cp .env.local.example .env.local
+# 编辑 .env.local，填写 <从团队获取> 的占位符:
+#   - POSTGRES_PASSWORD / DATABASE_URL 中的密码
+#   - REDIS_PASSWORD / REDIS_URL 中的密码
+#   - MINIO_SECRET_KEY
+#   - 飞书应用凭证（FEISHU__*__APP_ID / APP_SECRET）
+#   - AI API Keys（如需要）
 
 # 3. 只启动前后端（不启动本地数据库/Redis/MinIO）
 docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
