@@ -150,7 +150,6 @@ async def list_device_configs(
         page=page,
         page_size=page_size,
     )
-    data = [EnergyDeviceConfigResponse.model_validate(i) for i in items]
     return EnergyDeviceConfigListApiResponse(
         data=[
             EnergyDeviceConfigResponse(
@@ -170,7 +169,7 @@ async def list_device_configs(
                 created_at=i.created_at,
                 updated_at=i.updated_at,
             )
-            for i in data
+            for i in items
         ],
         meta={"page": page, "page_size": page_size, "total": total},
     )
