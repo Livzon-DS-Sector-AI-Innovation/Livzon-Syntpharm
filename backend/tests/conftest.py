@@ -13,9 +13,9 @@ Fixtures override ``get_db`` and ``get_current_user`` only.
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncIterator
 
-import uuid
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import pool
