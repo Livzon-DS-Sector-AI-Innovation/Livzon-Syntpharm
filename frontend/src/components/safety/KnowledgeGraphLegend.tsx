@@ -6,7 +6,6 @@ import { QuestionCircleOutlined } from '@ant-design/icons'
 import {
   NODE_TYPE_STYLE,
   RELATION_TYPE_STYLE,
-  NODE_STATUS_LABEL,
 } from './GraphConstants'
 import type { GraphNodeType, GraphRelationType } from '@/types/safety'
 

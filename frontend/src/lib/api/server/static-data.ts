@@ -2,7 +2,7 @@ import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
 
 const PREFIX = '/quality/static-data'
 
-async function uploadFetch<T = any>(url: string, formData: FormData): Promise<T> {
+async function uploadFetch<T = unknown>(url: string, formData: FormData): Promise<T> {
   const fullUrl = url.startsWith('http') ? url : `${getApiBaseUrl()}${url}`
   const response = await fetch(fullUrl, {
     method: 'POST',
@@ -103,14 +103,14 @@ export async function getStorageCondition(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/storage-condition/${id}`)
 }
 
-export async function createStorageCondition(data: any) {
+export async function createStorageCondition(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/storage-condition`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateStorageCondition(id: number, data: any) {
+export async function updateStorageCondition(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/storage-condition/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -150,14 +150,14 @@ export async function getUnit(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/unit/${id}`)
 }
 
-export async function createUnit(data: any) {
+export async function createUnit(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/unit`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateUnit(id: number, data: any) {
+export async function updateUnit(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/unit/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -191,14 +191,14 @@ export async function getTestItem(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/test-item/${id}`)
 }
 
-export async function createTestItem(data: any) {
+export async function createTestItem(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/test-item`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateTestItem(id: number, data: any) {
+export async function updateTestItem(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/test-item/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -229,14 +229,14 @@ export async function getEquipment(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/equipment/${id}`)
 }
 
-export async function createEquipment(data: any) {
+export async function createEquipment(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/equipment`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateEquipment(id: number, data: any) {
+export async function updateEquipment(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/equipment/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -265,14 +265,14 @@ export async function getChromColumn(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/chrom-column/${id}`)
 }
 
-export async function createChromColumn(data: any) {
+export async function createChromColumn(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/chrom-column`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateChromColumn(id: number, data: any) {
+export async function updateChromColumn(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/chrom-column/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -308,14 +308,14 @@ export async function getMedium(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/medium/${id}`)
 }
 
-export async function createMedium(data: any) {
+export async function createMedium(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/medium`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateMedium(id: number, data: any) {
+export async function updateMedium(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/medium/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -345,14 +345,14 @@ export async function getReagent(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/reagent/${id}`)
 }
 
-export async function createReagent(data: any) {
+export async function createReagent(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/reagent`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateReagent(id: number, data: any) {
+export async function updateReagent(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/reagent/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -382,14 +382,14 @@ export async function getStandardMaterial(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard-material/${id}`)
 }
 
-export async function createStandardMaterial(data: any) {
+export async function createStandardMaterial(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard-material`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateStandardMaterial(id: number, data: any) {
+export async function updateStandardMaterial(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard-material/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -419,14 +419,14 @@ export async function getMaterialStandard(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/material-standard/${id}`)
 }
 
-export async function createMaterialStandard(data: any) {
+export async function createMaterialStandard(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/material-standard`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateMaterialStandard(id: number, data: any) {
+export async function updateMaterialStandard(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/material-standard/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -455,14 +455,14 @@ export async function getProductStandard(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/product-standard/${id}`)
 }
 
-export async function createProductStandard(data: any) {
+export async function createProductStandard(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/product-standard`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateProductStandard(id: number, data: any) {
+export async function updateProductStandard(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/product-standard/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -481,14 +481,14 @@ export async function getHplcReference(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference/${id}`)
 }
 
-export async function createHplcReference(data: any) {
+export async function createHplcReference(data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateHplcReference(id: number, data: any) {
+export async function updateHplcReference(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),

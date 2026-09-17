@@ -1039,11 +1039,42 @@ Full audit
 5. Are there any dynamic `ORDER BY`, `LIMIT`, or table/column name references built via string interpolation?
 
 
+
+## 16. React Hooks 与 React Compiler
+
+### Audit type
+Full audit
+
+### Rules (from AGENTS.md)
+
+**前端 / React Hooks 与 React Compiler:**
+1. **数据获取**: 使用 React Query，禁止 useEffect + setState
+2. **派生状态**: 使用 useMemo，禁止 useEffect + setState
+3. **useEffect 依赖**: 必须完整，禁止省略或抑制
+4. **不可变状态**: 禁止直接修改，使用展开运算符
+5. **依赖稳定化**: 使用 useCallback/useRef
+
+详细示例参见 [`examples/react-hooks-pattern.md`](examples/react-hooks-pattern.md)。
+
+### Directories to inspect
+- `frontend/src/app/`
+- `frontend/src/components/`
+- `frontend/src/actions/`
+
+### Questions
+
+1. Are there `useEffect` hooks that call `setState` to fetch data? (Should use React Query)
+2. Are there `useEffect` hooks that compute derived state? (Should use useMemo)
+3. Do all `useEffect` hooks have complete dependency arrays?
+4. Are there any `// eslint-disable-next-line react-hooks/exhaustive-deps` comments?
+5. Are there direct state mutations (array.push, object.property = value)?
+6. Are `useCallback` or `useRef` used appropriately to stabilize dependencies?
+
 ## Audit procedure
 
 ### Baseline audit (run once for the full repository)
 
-For each category 1–15 in sequence:
+For each category 1–16 in sequence:
 1. Read this category's section above
 2. Read the referenced AGENTS.md sections (including any exception clauses)
 3. Check the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table for this category
@@ -1052,7 +1083,7 @@ For each category 1–15 in sequence:
 6. Report counts: files inspected, not inspected, rules evaluated, not evaluated
 7. Record findings in `docs/ai-audit-findings.md`
 
-After all 15 categories:
+After all 16 categories:
 - Fix confirmed violations that should be corrected immediately
 - Mark accepted exceptions with reason, approver, and date
 - Commit `docs/ai-audit-findings.md`

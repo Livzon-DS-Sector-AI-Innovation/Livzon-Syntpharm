@@ -7,87 +7,52 @@ async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
   return unwrapResponse(json)
 }
 import type {
-  InspectionStandard,
-  InspectionStandardItem,
   InspectionStandardFormData,
-  InspectionStandardItemFormData,
   StandardCopyData,
   ObsoleteData,
-  ApprovalRecord,
   StandardQueryParams,
   CreateDeviationRequest,
   UpdateDeviationRequest,
   CreateCapaRequest,
   UpdateCapaRequest,
   CreateDepartmentContactRequest,
+  UploadLcResponse,
   UpdateDepartmentContactRequest,
 } from '@/types/quality'
 import type {
-  SamplingOrder,
   SamplingOrderCreate,
   SamplingOrderUpdate,
-  SamplingOrderListItem,
-  SamplingOrderListResponse,
   SamplingOrderFilter,
-  SamplingOrderItemCreate,
-  SamplingApprovalRecord,
   SamplingApprovalCreate,
-  SampleRetentionLedger,
-  RetentionLedgerListResponse,
   RetentionLedgerFilter,
 } from '@/types/sampling'
 import type {
-  IQCInspection,
   IQCInspectionCreate,
   IQCInspectionUpdate,
-  IQCInspectionListItem,
-  IQCInspectionListResponse,
   IQCInspectionFilter,
-  IQCInspectionItemCreate,
-  IQCApprovalRecord,
   IQCApprovalCreate,
 } from '@/types/iqc'
 import type {
-  IPQCInspection,
   IPQCInspectionCreate,
   IPQCInspectionUpdate,
-  IPQCInspectionListItem,
-  IPQCInspectionListResponse,
   IPQCInspectionFilter,
-  IPQCInspectionItemCreate,
-  IPQCApprovalRecord,
   IPQCApprovalCreate,
 } from '@/types/ipqc'
 import type {
-  FQCInspection,
   FQCInspectionCreate,
   FQCInspectionUpdate,
-  FQCInspectionListItem,
-  FQCInspectionListResponse,
   FQCInspectionFilter,
-  FQCInspectionItemCreate,
-  FQCApprovalRecord,
   FQCApprovalCreate,
 } from '@/types/fqc'
 import type {
-  StabilityStudy,
   StabilityStudyCreate,
   StabilityStudyUpdate,
-  StabilityStudyListItem,
-  StabilityStudyListResponse,
   StabilityStudyFilter,
-  StabilitySampleNode,
   StabilitySampleNodeUpdate,
-  StabilityInspection,
   StabilityInspectionCreate,
   StabilityInspectionUpdate,
-  StabilityInspectionListItem,
-  StabilityInspectionListResponse,
   StabilityInspectionFilter,
-  StabilityInspectionItemCreate,
-  StabilityApprovalRecord,
   StabilityApprovalCreate,
-  TrendData,
 } from '@/types/stability'
 
 
@@ -601,7 +566,17 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI 交互日志 Actions ============
 
-export async function getAiLogs(params: any = {}) {
+interface AiLogParams {
+  page?: number
+  page_size?: number
+  operate_type?: string
+  operator?: string
+  start_date?: string
+  end_date?: string
+  keyword?: string
+}
+
+export async function getAiLogs(params: AiLogParams = {}) {
   const searchParams = new URLSearchParams()
   if (params.page) searchParams.set('page', String(params.page))
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
@@ -937,7 +912,7 @@ export async function triggerAIProcess(taskId: number) {
   })
 }
 
-export async function updateAIResult(taskId: number, aiResult: any) {
+export async function updateAIResult(taskId: number, aiResult: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/update-ai-result`, {
     method: 'PUT',
     body: JSON.stringify({ ai_result: aiResult }),
@@ -1004,7 +979,7 @@ export async function uploadDeviationFileWithTask(formData: FormData) {
   })
 }
 
-export async function uploadLcExcel(formData: FormData) {
+export async function uploadLcExcel(formData: FormData): Promise<UploadLcResponse> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/lc-report/upload`, {
     method: 'POST',
     body: formData,

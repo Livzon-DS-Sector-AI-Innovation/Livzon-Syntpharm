@@ -6,7 +6,6 @@ import type {
   UpdateCpvProductInput,
   CreateCpvParameterInput,
   CpvProduct,
-  CpvProductWithStats,
   CpvParameter,
   CpvImportPreview,
   CpvImportTask,

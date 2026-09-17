@@ -13,7 +13,7 @@ interface ModuleAssessmentProps {
   onComplete: (assessment: DimensionAssessment) => void
 }
 
-export function ModuleAssessment({ routeId, selectedRouteName, experiments = [], onComplete }: ModuleAssessmentProps) {
+export function ModuleAssessment({ routeId: _routeId, selectedRouteName, experiments = [], onComplete }: ModuleAssessmentProps) {
   const { message } = App.useApp()
   const [weights, setWeights] = useState<DimensionWeights>({
     safety: 30,

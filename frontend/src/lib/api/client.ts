@@ -8,7 +8,7 @@ export class ApiError extends Error {
     public status: number,
     public statusText: string,
     public message: string,
-    public data?: any
+    public data?: unknown
   ) {
     super(message)
     this.name = 'ApiError'
@@ -79,7 +79,7 @@ export async function fetchApi<T>(
     const message = errorMessages[response.status] || `请求失败: ${response.status}`
     
     // 尝试解析错误响应（可能是 JSON 格式的错误信息）
-    let errorData: any = null
+    let errorData: unknown = null
     const contentType = response.headers.get('content-type')
     
     if (contentType?.includes('application/json')) {

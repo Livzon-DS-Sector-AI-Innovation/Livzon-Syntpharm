@@ -1,5 +1,6 @@
 import { PilotWorkflowDetail } from '@/components/research/pilot-workflow'
 import { fetchPilotWorkflow } from '@/actions/research'
+import type { PilotWorkflow } from '@/types/pilot-workflow'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,7 @@ export default async function PilotWorkflowDetailPage({
   let workflow = null
 
   try {
-    workflow = await fetchPilotWorkflow(id)
+    workflow = await fetchPilotWorkflow(id) as PilotWorkflow
   } catch (error) {
     console.warn('工作流详情加载失败:', error)
   }

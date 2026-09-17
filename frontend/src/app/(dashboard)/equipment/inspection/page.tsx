@@ -18,17 +18,15 @@ export default async function InspectionPageWrapper() {
       fetchLocationTree(),
     ])
     templates = templatesResult.items || []
-    equipments = (equipmentsResult.items || []).map((e: any) => ({
-      id: e.id,
-      name: e.name,
-      equipment_no: e.equipment_no,
-    }))
+    equipments = (equipmentsResult.items || []).map((e: unknown) => {
+      const eq = e as { id: string; name: string; equipment_no: string }
+      return { id: eq.id, name: eq.name, equipment_no: eq.equipment_no }
+    })
     categories = categoriesResult || []
-    locations = (locationsResult || []).map((l: any) => ({
-      id: l.id,
-      name: l.name,
-      code: l.code || l.location_code || '',
-    }))
+    locations = (locationsResult || []).map((l: unknown) => {
+      const loc = l as { id: string; name: string; code?: string; location_code?: string }
+      return { id: loc.id, name: loc.name, code: loc.code || loc.location_code || '' }
+    })
   } catch (error) {
     console.warn('巡检页面数据加载失败，使用空数据:', error)
   }

@@ -1,5 +1,7 @@
 'use client'
 
+import type { components } from '@/types/generated/schema'
+
 import React, { useState, useRef, useCallback } from 'react'
 import { App, Modal, Button, Typography } from 'antd'
 import {
@@ -323,14 +325,6 @@ export default function SopGeneratorModal({
     onClose()
   }, [uploading, onClose])
 
-  React.useEffect(() => {
-    if (open) {
-      setFile(null)
-      setErrorMsg(null)
-      setIsDragOver(false)
-    }
-  }, [open])
-
   /* ── file handling ── */
 
   const acceptFile = useCallback((f: File) => {
@@ -400,21 +394,22 @@ export default function SopGeneratorModal({
       const { generateSop } = await import('@/actions/safety')
       const response = await generateSop(file)
 
-      if (response.code && response.code !== 200) {
-        setErrorMsg(response.message || '生成失败，请重试')
+      const apiResponse = response as components['schemas']['ApiResponse']
+      if (apiResponse.code && apiResponse.code !== 200) {
+        setErrorMsg(apiResponse.message || '生成失败，请重试')
         return
       }
 
-      const result = response.data
+      const result = apiResponse.data as { regulation_id: string; meta?: Record<string, string> }
       message.success('标准化操规生成成功！')
       onGenerated({
         regulation_id: result.regulation_id,
         meta: result.meta || {},
-        content: result.content || ''
+        content: (result as { content?: string }).content || ''
       })
       setFile(null)
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : '生成失败，请重试'
+      const msg = err instanceof Error ? (err instanceof Error ? err.message : null) : '生成失败，请重试'
       setErrorMsg(msg)
     } finally {
       setUploading(false)

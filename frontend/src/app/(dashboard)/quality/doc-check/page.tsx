@@ -23,7 +23,6 @@ import {
   Popconfirm,
   Checkbox,
   InputNumber,
-  Spin,
   Result,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -37,7 +36,6 @@ import {
   ReloadOutlined,
   ExclamationCircleOutlined,
   FileTextOutlined,
-  WarningOutlined,
   SafetyOutlined,
   AuditOutlined,
   FileSearchOutlined,
@@ -50,25 +48,15 @@ import {
   CheckProblem,
   CheckMainDetail,
   CheckStatus,
-  FileType,
   RiskLevel,
-  HandleStatus,
   CheckItemType,
   // 选项
   FILE_TYPE_OPTIONS,
-  RISK_LEVEL_OPTIONS,
   HANDLE_STATUS_OPTIONS,
-  CHECK_ITEM_OPTIONS,
   // 常量
-  CHECK_STEPS,
 } from '@/types/doc-check'
 
 import {
-  startCheck,
-  getCheckProgress,
-  handleProblem,
-  exportCheckReport,
-  confirmCheck,
 } from '@/actions/doc-check'
 
 const { Dragger } = Upload
@@ -145,8 +133,8 @@ export default function DocCheckPage() {
   const [_records, setRecords] = useState<CheckMainDetail[]>([])
   const [_loading, setLoading] = useState(false)
   const [_total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
+  const [page, _setPage] = useState(1)
+  const [pageSize, _setPageSize] = useState(10)
 
   // 问题处理弹窗
   const [problemModalVisible, setProblemModalVisible] = useState(false)

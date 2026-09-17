@@ -23,36 +23,36 @@ import type {
 export async function getFullGraph(params?: GraphQueryParams): Promise<FullGraphData> {
   const authHeaders = await getAuthHeaders()
   const res = await getFullGraphApi((params || {}) as unknown as Record<string, unknown>, authHeaders)
-  return res.data
+  return res.data as FullGraphData
 }
 
 export async function getGraphNodes(params?: GraphQueryParams): Promise<GraphNode[]> {
   const authHeaders = await getAuthHeaders()
   const res = await getGraphNodesApi((params || {}) as unknown as Record<string, unknown>, authHeaders)
-  return res.data
+  return res.data as GraphNode[]
 }
 
 export async function getGraphEdges(params?: GraphQueryParams): Promise<GraphEdge[]> {
   const authHeaders = await getAuthHeaders()
   const res = await getGraphEdgesApi((params || {}) as Record<string, unknown>, authHeaders)
-  return res.data
+  return res.data as GraphEdge[]
 }
 
 export async function searchGraphNodes(query: string, nodeTypes?: string): Promise<GraphNode[]> {
   const authHeaders = await getAuthHeaders()
   const res = await searchGraphNodesApi(query, nodeTypes, authHeaders)
-  return res.data
+  return res.data as GraphNode[]
 }
 
 export async function expandGraphNode(params: GraphExpandParams): Promise<FullGraphData> {
   const authHeaders = await getAuthHeaders()
   const res = await expandGraphNodeApi(params as unknown as Record<string, unknown>, authHeaders)
-  return res.data
+  return res.data as FullGraphData
 }
 
 export async function triggerGraphGeneration(data?: GraphGenerateRequest): Promise<GraphGenerateResult> {
   const authHeaders = await getAuthHeaders()
   const res = await triggerGraphGenerationApi(data || {}, authHeaders)
   revalidatePath('/safety/knowledge-base/graph')
-  return res.data
+  return res.data as GraphGenerateResult
 }

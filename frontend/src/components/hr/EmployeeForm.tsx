@@ -35,7 +35,7 @@ export default function EmployeeForm({ open, employee, onClose, onSuccess }: Emp
           'contract_start_2', 'contract_end_2', 'contract_start_3', 'contract_end_3',
           'contract_start_4', 'contract_end_4',
         ]
-        const values: any = { ...employee }
+        const values: Record<string, unknown> = { ...employee }
         dateFields.forEach((f) => {
           const val = employee[f as keyof Employee]
           if (val && typeof val === 'string') {
@@ -59,7 +59,7 @@ export default function EmployeeForm({ open, employee, onClose, onSuccess }: Emp
         'contract_start_2', 'contract_end_2', 'contract_start_3', 'contract_end_3',
         'contract_start_4', 'contract_end_4',
       ]
-      const payload: any = { ...values }
+      const payload: Record<string, unknown> = { ...values }
       dateFields.forEach((f) => {
         if (values[f]) {
           payload[f] = values[f].format('YYYY-MM-DD')
@@ -77,14 +77,14 @@ export default function EmployeeForm({ open, employee, onClose, onSuccess }: Emp
       form.resetFields()
       onSuccess()
       onClose()
-    } catch (err: any) {
-      message.error(err.message || '操作失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '操作失败')
     }
   }
 
   const departmentOptions = departments.map((d) => ({ value: d.name, label: d.name }))
 
-  const commonInput = (name: string, label: string, required?: boolean, rest?: any) => (
+  const commonInput = (name: string, label: string, required?: boolean, rest?: Record<string, unknown>) => (
     <Form.Item name={name} label={label} rules={required ? [{ required: true, message: `请输入${label}` }] : undefined} {...rest}>
       <Input placeholder={`请输入${label}`} />
     </Form.Item>
