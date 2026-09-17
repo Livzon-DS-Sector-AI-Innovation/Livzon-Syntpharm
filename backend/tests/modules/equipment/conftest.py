@@ -1,9 +1,9 @@
 """Shared test fixtures for equipment module tests."""
 
+import uuid
 from typing import Any, Protocol, runtime_checkable
 from unittest.mock import MagicMock
 
-import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
