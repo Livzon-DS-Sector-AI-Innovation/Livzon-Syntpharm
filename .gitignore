@@ -40,3 +40,6 @@ fix-any.log
 lint-output.txt
 CONTEXT.md
 .env.local
+
+# ai files
+.codebuddy
