@@ -470,8 +470,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     try {
       let currentJob = job
 
-      // 已终止的任务无法续跑，必须新建
-      const needsNewJob = !currentJob || currentJob.status === 'cancelled'
+      // 已终止/已完成的任务无法续跑，必须新建
+      const needsNewJob = !currentJob || currentJob.status === 'cancelled' || currentJob.status === 'completed'
 
       if (needsNewJob) {
         const values = form.getFieldsValue()
@@ -644,10 +644,23 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const handleReExtract = async () => {
     if (!job) return
     try {
-      await cancelDocGenJob(job.id)
-    } catch { /* 取消旧任务失败不阻塞 */ }
+      // 直接调用后端原地重新提取，保留已上传的文件
+      const started = await extractDocGenJob(job.id)
+      setJob(started)
+      setExtractedSlots([]); setEditedSlots({})
+      setPhase('extracting')
+      msgApi.success('正在重新提取信息')
+    } catch (e) {
+      console.error('[CreateReportModal] 重新提取失败:', e)
+      msgApi.error(e instanceof Error ? e.message : '重新提取失败')
+    }
+  }
+
+  // ─── 返回修改（清空任务状态，回到表单重新开始） ───
+  const handleBackToForm = () => {
     setJob(null); jobIdRef.current = null
     setExtractedSlots([]); setEditedSlots({})
+    setServerFiles([]); setReportPreviewError(null)
     setPhase('form')
   }
 
@@ -895,7 +908,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         // job 创建失败（无 job 且不在提交中）→ 显示返回修改按钮
         if (!job && !submitting) {
           buttons.push(
-            <Button key="back" type="primary" icon={<UndoOutlined />} onClick={() => setPhase('form')}>
+            <Button key="back" type="primary" icon={<UndoOutlined />} onClick={handleBackToForm}>
               返回修改
             </Button>
           )
@@ -911,7 +924,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         // 取消时显示返回修改
         if (job?.status === 'cancelled') {
           buttons.push(
-            <Button key="back" icon={<UndoOutlined />} onClick={handleReExtract}>
+            <Button key="back" icon={<UndoOutlined />} onClick={handleBackToForm}>
               返回修改
             </Button>
           )
@@ -948,7 +961,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
       case 'completed':
         return [
           <Button key="close" onClick={handleClose}>关闭</Button>,
-          <Button key="back" icon={<UndoOutlined />} onClick={() => setPhase('form')}>返回修改</Button>,
+          <Button key="back" icon={<UndoOutlined />} onClick={handleBackToForm}>返回修改</Button>,
           <Button key="regen" icon={<ReloadOutlined />} onClick={handleRegenerate}>重新生成</Button>,
           <Button key="download" type="primary" icon={<DownloadOutlined />} onClick={handleDownload}>
             下载文档出版
@@ -1352,11 +1365,11 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                   终止流程
                 </Button>
               )}
-              {/* 失败/取消时显示返回按钮 */}
+              {/* 取消时显示返回按钮 */}
               {job?.status === 'cancelled' && (
                 <Button
                   icon={<UndoOutlined />}
-                  onClick={handleReExtract}
+                  onClick={handleBackToForm}
                   size="large"
                 >
                   返回修改
