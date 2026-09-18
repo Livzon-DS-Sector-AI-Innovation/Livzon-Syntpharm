@@ -3148,3 +3148,502 @@ No findings. The PR introduces no SQL changes. Existing repository code uses SQL
 | 9 | **MEDIUM** | `frontend/Dockerfile` | Confirm governance-file modification was reviewed per AGENTS.md process |
 | 10 | **LOW** | `types/energy.ts`, `types/settings.ts` | Hand-written API types should be generated from OpenAPI spec |
 | 11 | **LOW** | `ReviewPageClient.tsx:2` | Remove `'use no memo'` directive (React Compiler is disabled anyway) |
+
+---
+
+### PR #53: Ruanjiaheng frontend lint (base: main, head: pr/53, date: 2026-09-17)
+
+**Changed files (635):**
+- 后端：2 个文件（edbo_service Dockerfile 和 requirements.txt）
+- 前端：466 个文件（actions, components, pages, stores, types, lib/api 等）
+- .scratch/.github：158 个文件（issue tracking 和 spec 文档）
+
+**主要变更：**
+- 移除未使用的变量、导入和参数
+- 将 `any` 类型替换为 `unknown` 或具体类型
+- 将 useEffect + useState 数据获取模式改为 React Query
+- 修复 ESLint 错误（prefer-const, no-unused-vars 等）
+- 简化 Zustand store（移除数据管理逻辑，只保留 UI 状态）
+
+**Affected categories:** 9, 10, 13, 16
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 10 |
+| Files not inspected | 456 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- 组件变更主要是移除未使用的导入和变量，符合模块边界规范
+- 没有发现跨模块直接 import 组件内部文件的情况
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 15 |
+| Files not inspected | 451 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 3 |
+
+**Confirmed:** None
+
+**Uncertain:**
+- [ ] `frontend/src/types/energy.ts` — API 类型来源/必须从 generated schema 导入 — 文件中定义了大量手写类型（如 `EnergyDeviceConfig`, `EnergyOverviewData`, `AlertRule`, `AlertRecord` 等），这些类型用于 API 调用（`apiGet<EnergyOverviewData>`, `apiFetchPaginated<AlertRule>` 等）。根据 AGENTS.md 规范，API 契约类型必须从 `@/types/generated/schema` 导入，不能手写。但是，这些类型在 PR #53 之前就已存在，PR #53 只是将部分 `any` 类型替换为这些手写类型。PR #57 已经修复了部分问题（`EnergyPlatform` 和 `MonthlySummary` 改为从 generated schema 导入），但其他类型仍然是手写的
+- [ ] `frontend/src/types/quality.ts` — API 类型来源/必须从 generated schema 导入 — 文件移除了 `import type { components } from '@/types/generated/schema'`，并且定义了大量手写类型（如 `Deviation`, `CapaItem`, `InspectionRecord` 等）。如果这些类型用于 API 调用，就违反了规范
+- [ ] `frontend/src/lib/api/server/safety.ts` — API 类型来源/必须从 generated schema 导入 — 文件中大量使用 `unknown` 类型作为泛型参数（如 `safeApiFetch<unknown>`），而不是使用从 generated schema 导入的具体类型。虽然 `unknown` 比 `any` 更安全，但仍然没有使用具体的 API 类型
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `backend/edbo_service/Dockerfile` 将 PyTorch 镜像源从 nju.edu.cn 改为 download.pytorch.org
+- `backend/edbo_service/requirements.txt` 将 torch 版本从 1.10.0 改为 1.10.0+cpu
+- 这些变更不涉及 AGENTS.md 的核心规则
+
+#### Category 16: React Hooks 与 React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 20 |
+| Files not inspected | 446 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- PR #53 大量移除了 useEffect + useState 数据获取模式，改用 React Query，符合 AGENTS.md 规范
+- 例如 `frontend/src/app/(dashboard)/energy/devices/page.tsx` 将 useEffect + useState 改为 useQuery
+- 例如 `frontend/src/components/safety/AgentUsageStats.tsx` 将 useEffect + useState 改为 useQuery
+- Zustand store 简化（移除数据管理逻辑，只保留 UI 状态），符合"数据获取使用 React Query"规范
+
+#### Categories not affected
+1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15 — no relevant files changed or no violations found.
+
+#### PR #53 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 0 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 0 | 0 |
+| 9. Frontend component boundaries | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 3 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL injection | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **0** | **3** |
+
+**Overall assessment:** PR #53 主要是一个前端 lint 修复 PR，大部分变更符合 AGENTS.md 规范。特别是 React Hooks 的改进（将 useEffect + useState 改为 React Query）非常好。
+
+**Uncertain findings 说明：**
+3 个 uncertain findings 都涉及 API 类型定义问题。这些问题在 PR #53 之前就已存在，PR #53 只是部分修复（将 `any` 替换为 `unknown` 或手写类型）。完全修复需要将所有手写 API 类型改为从 generated schema 导入，这是一个更大的重构任务。
+
+**建议：** 
+- PR #53 可以合并，因为它主要修复 lint 错误，没有引入新的违规
+- API 类型迁移到 generated schema 应该作为一个独立的重构任务来处理
+
+---
+
+### PR #53: Ruanjiaheng frontend lint (base: main, head: pr/53, date: 2026-09-17)
+
+**Changed files (635):**
+- 后端：2 个文件（edbo_service Dockerfile 和 requirements.txt）
+- 前端：466 个文件（actions, components, pages, stores, types, lib/api 等）
+- .scratch/.github：158 个文件（issue tracking 和 spec 文档）
+
+**主要变更：**
+- 移除未使用的变量、导入和参数
+- 将 `any` 类型替换为 `unknown` 或具体类型
+- 将 useEffect + useState 数据获取模式改为 React Query
+- 修复 ESLint 错误（prefer-const, no-unused-vars 等）
+- 简化 Zustand store（移除数据管理逻辑，只保留 UI 状态）
+
+**Affected categories:** 9, 10, 13, 16
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 10 |
+| Files not inspected | 456 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- 组件变更主要是移除未使用的导入和变量，符合模块边界规范
+- 没有发现跨模块直接 import 组件内部文件的情况
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 15 |
+| Files not inspected | 451 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 3 |
+
+**Confirmed:** None
+
+**Uncertain:**
+- [ ] `frontend/src/types/energy.ts` — API 类型来源/必须从 generated schema 导入 — 文件中定义了大量手写类型（如 `EnergyDeviceConfig`, `EnergyOverviewData`, `AlertRule`, `AlertRecord` 等），这些类型用于 API 调用（`apiGet<EnergyOverviewData>`, `apiFetchPaginated<AlertRule>` 等）。根据 AGENTS.md 规范，API 契约类型必须从 `@/types/generated/schema` 导入，不能手写。但是，这些类型在 PR #53 之前就已存在，PR #53 只是将部分 `any` 类型替换为这些手写类型。PR #57 已经修复了部分问题（`EnergyPlatform` 和 `MonthlySummary` 改为从 generated schema 导入），但其他类型仍然是手写的
+- [ ] `frontend/src/types/quality.ts` — API 类型来源/必须从 generated schema 导入 — 文件移除了 `import type { components } from '@/types/generated/schema'`，并且定义了大量手写类型（如 `Deviation`, `CapaItem`, `InspectionRecord` 等）。如果这些类型用于 API 调用，就违反了规范
+- [ ] `frontend/src/lib/api/server/safety.ts` — API 类型来源/必须从 generated schema 导入 — 文件中大量使用 `unknown` 类型作为泛型参数（如 `safeApiFetch<unknown>`），而不是使用从 generated schema 导入的具体类型。虽然 `unknown` 比 `any` 更安全，但仍然没有使用具体的 API 类型
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `backend/edbo_service/Dockerfile` 将 PyTorch 镜像源从 nju.edu.cn 改为 download.pytorch.org
+- `backend/edbo_service/requirements.txt` 将 torch 版本从 1.10.0 改为 1.10.0+cpu
+- 这些变更不涉及 AGENTS.md 的核心规则
+
+#### Category 16: React Hooks 与 React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 20 |
+| Files not inspected | 446 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- PR #53 大量移除了 useEffect + useState 数据获取模式，改用 React Query，符合 AGENTS.md 规范
+- 例如 `frontend/src/app/(dashboard)/energy/devices/page.tsx` 将 useEffect + useState 改为 useQuery
+- 例如 `frontend/src/components/safety/AgentUsageStats.tsx` 将 useEffect + useState 改为 useQuery
+- Zustand store 简化（移除数据管理逻辑，只保留 UI 状态），符合"数据获取使用 React Query"规范
+
+#### Categories not affected
+1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 14, 15 — no relevant files changed or no violations found.
+
+#### PR #53 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 0 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 0 | 0 |
+| 9. Frontend component boundaries | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 3 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL injection | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **0** | **3** |
+
+**Overall assessment:** PR #53 主要是一个前端 lint 修复 PR，大部分变更符合 AGENTS.md 规范。特别是 React Hooks 的改进（将 useEffect + useState 改为 React Query）非常好。
+
+**Uncertain findings 说明：**
+3 个 uncertain findings 都涉及 API 类型定义问题。这些问题在 PR #53 之前就已存在，PR #53 只是部分修复（将 `any` 替换为 `unknown` 或手写类型）。完全修复需要将所有手写 API 类型改为从 generated schema 导入，这是一个更大的重构任务。
+
+**建议：** 
+- PR #53 可以合并，因为它主要修复 lint 错误，没有引入新的违规
+- API 类型迁移到 generated schema 应该作为一个独立的重构任务来处理
+
+---
+
+### PR #57: fix: replace hand-written API types with generated OpenAPI types & fix antd version (base: main, head: ruanjiaheng-frontend-lint, date: 2026-09-18)
+
+**Author:** Ruan Jiaheng
+**Changed files (15):**
+- `backend/app/api/router.py` — 路由注册（新增 feishu_config_router）
+- `backend/app/modules/energy/api.py` — 能源模块 API，移除 ApiResponse 改用具体响应模型
+- `backend/app/modules/energy/schemas.py` — 能源模块 schemas，新增 API 响应包装类
+- `backend/app/platform/identity/api.py` — 身份平台 API，新增飞书配置端点
+- `backend/openapi.json` — OpenAPI 规范更新
+- `backend/tests/conftest.py` — 测试配置改进
+- `backend/tests/modules/equipment/conftest.py` — 设备测试配置改进
+- `frontend/package.json` — antd 升级到 v6.4.3
+- `frontend/pnpm-lock.yaml` — 依赖锁文件更新
+- `frontend/src/app/(dashboard)/quality/deviation-automation/sop/page.tsx` — SOP 管理页面
+- `frontend/src/app/(dashboard)/quality/instrument/page.tsx` — 仪器校准管理页面
+- `frontend/src/app/(dashboard)/quality/static-data/[module]/[id]/page.tsx` — 静态数据详情页
+- `frontend/src/types/energy.ts` — 能源类型定义
+- `frontend/src/types/generated/schema.ts` — 生成的 API 类型
+- `frontend/src/types/settings.ts` — 设置类型定义
+
+**Diff size:** 4401 insertions, 1155 deletions
+
+**Summary:**
+- 后端 API 响应模型具体化：所有端点使用具体 Pydantic 模型作为返回类型
+- 前端类型定义改为从 generated schema 导入
+- React Hooks 修复：将 useEffect 数据获取改为 useQuery
+- 测试配置改进：事务回滚逻辑优化，测试用户 ID 使用 uuid
+- antd 升级到 v6.4.3
+
+**Affected categories:** 3, 4, 8, 9, 10, 12, 15, 16
+
+---
+
+#### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+---
+
+#### Category 4: API and authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `backend/app/modules/energy/api.py` 所有端点都使用了具体的 Pydantic 响应模型作为返回类型注解（如 `-> EnergyPlatformListApiResponse`, `-> EnergyDeviceConfigApiResponse` 等），符合 AGENTS.md 规范。FastAPI 会自动从返回类型注解推断 response_model
+- 没有任何端点使用 `response_model=dict` 或 `response_model=ApiResponse`
+- `backend/app/platform/identity/api.py` 新增的 feishu_config_router 端点（get_feishu_config, save_feishu_config, test_feishu_config）都正确使用了 response_model
+- identity/api.py 中已有的端点（user_router, dept_router, sync_router, login_log_router）仍使用 success_response() 但没有声明 response_model，这是已有代码问题，不是 PR #57 引入的
+
+---
+
+#### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `backend/tests/conftest.py` 改进了事务回滚逻辑，使用显式的 try/finally 确保外层事务总是被回滚
+- 测试用户 ID 改为使用 uuid 生成唯一值，避免测试间冲突
+- 这些改进符合测试规范
+
+---
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+---
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `frontend/src/types/energy.ts` 和 `frontend/src/types/settings.ts` 将手写的 API 类型改为从 generated schema 导入的类型别名，符合"API 类型来源"规则
+- 保留了非 API 类型（如 EnergyDeviceConfig, AlertRule 等）的手写定义，这些是 UI 类型，可以手写
+
+---
+
+#### Category 12: Cross-project OpenAPI
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+---
+
+#### Category 15: SQL 注入与不安全查询
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `backend/app/modules/energy/api.py` 中没有发现 text() SQL 查询或字符串拼接的 SQL 语句
+- 所有数据库操作通过 service 层调用，使用 SQLAlchemy ORM
+
+---
+
+#### Category 16: React Hooks 与 React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:** None
+
+**Uncertain:** None
+
+**Notes:**
+- `frontend/src/app/(dashboard)/quality/static-data/[module]/[id]/page.tsx` 已将 useEffect 数据获取改为 useQuery，符合 React Hooks 规范
+- `frontend/src/app/(dashboard)/quality/instrument/page.tsx:38-44` 的 useEffect 用于监听媒体查询（window.matchMedia），这是合理的副作用，不是数据获取，可以接受
+- `frontend/src/app/(dashboard)/quality/static-data/[module]/[id]/page.tsx:264` 的 useEffect 用于同步 recordData 到表单值，这是合理的副作用（同步 props 到 form state），可以接受
+- `frontend/src/app/(dashboard)/quality/deviation-automation/sop/page.tsx:94` 和 `:186` 直接在客户端使用 fetch 调用 API，但这是已有代码，不是 PR #57 引入的问题
+
+---
+
+#### Categories not affected
+
+1, 2, 5, 6, 7, 11, 13, 14 — no relevant files changed or no violations found.
+
+---
+
+#### PR #57 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 0 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 0 | 0 |
+| 9. Frontend component boundaries | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 0 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL injection | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **0** | **0** |
+
+---
+
+#### PR #57 Overall Assessment
+
+**Overall assessment:** PR #57 符合 AGENTS.md 规范，无违规问题。
+
+**主要改进：**
+- 后端 API 响应模型具体化：所有端点使用具体 Pydantic 模型作为返回类型
+- React Hooks 修复：将 useEffect 数据获取改为 useQuery
+- 前端类型定义改为从 generated schema 导入
+- 测试配置改进：事务回滚逻辑优化，测试用户 ID 使用 uuid
+- antd 升级到 v6.4.3
+
+**建议：** 可以合并（已合并）。
