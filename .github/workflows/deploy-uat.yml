@@ -103,7 +103,7 @@ jobs:
                 },
                 \"elements\": [
                   { \"tag\": \"div\", \"text\": { \"tag\": \"lark_md\", \"content\": \"**分支:** uat\n**提交:** ${{ github.sha }}\n**操作人:** ${{ github.actor }}\n**时间:** $(date '+%Y-%m-%d %H:%M:%S')\" } },
-                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"访问 UAT 环境\" }, \"url\": \"http://47.115.227.105\", \"type\": \"primary\" }] }
+                  { \"tag\": \"action\", \"actions\": [{ \"tag\": \"button\", \"text\": { \"tag\": \"plain_text\", \"content\": \"访问 UAT 环境\" }, \"url\": \"http://8.138.204.232\", \"type\": \"primary\" }] }
                 ]
               }
             }" || true
