@@ -17157,20 +17157,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AIAnalysisApiResponse */
-        AIAnalysisApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["AIAnalysisResponse"];
-        };
         /**
          * AIAnalysisRequest
          * @description AI 能耗分析请求（V2 - 支持单耗分析）
@@ -19694,6 +19680,23 @@ export interface components {
             restored_date?: string | null;
         };
         /**
+         * ClosingApiResponse
+         * @description Closing response wrapper
+         */
+        ClosingApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ClosingResponse"];
+        };
+        /**
          * ClosingCreate
          * @description 关闭创建
          */
@@ -19716,6 +19719,62 @@ export interface components {
              * @default []
              */
             attachments: unknown[] | null;
+        };
+        /**
+         * ClosingResponse
+         * @description 关闭响应
+         */
+        ClosingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Deviation Id
+             * Format: uuid
+             */
+            deviation_id: string;
+            /** Verification Plan */
+            verification_plan?: string | null;
+            /** Verification Data */
+            verification_data?: string | null;
+            /** Verification Result */
+            verification_result?: string | null;
+            /**
+             * Is Resolved
+             * @default false
+             */
+            is_resolved: boolean;
+            /** Conclusion */
+            conclusion?: string | null;
+            /**
+             * Attachments
+             * @default []
+             */
+            attachments: unknown[] | null;
+            /**
+             * Batch Unlocked
+             * @default false
+             */
+            batch_unlocked: boolean;
+            /**
+             * Archived
+             * @default false
+             */
+            archived: boolean;
+            /** Archived At */
+            archived_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * ClosingUpdate
@@ -20779,6 +20838,23 @@ export interface components {
             updated_at: string;
         };
         /**
+         * CorrectionApiResponse
+         * @description Correction response wrapper
+         */
+        CorrectionApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["CorrectionResponse"];
+        };
+        /**
          * CorrectionCreate
          * @description 整改创建
          */
@@ -20799,6 +20875,59 @@ export interface components {
              * @default []
              */
             long_term_corrective_actions: unknown[] | null;
+        };
+        /**
+         * CorrectionResponse
+         * @description 整改响应
+         */
+        CorrectionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Deviation Id
+             * Format: uuid
+             */
+            deviation_id: string;
+            /** Responsible Department */
+            responsible_department?: string | null;
+            /** Responsible Person */
+            responsible_person?: string | null;
+            /** Plan Completion Date */
+            plan_completion_date?: string | null;
+            /**
+             * Temporary Corrective Actions
+             * @default []
+             */
+            temporary_corrective_actions: unknown[] | null;
+            /**
+             * Long Term Corrective Actions
+             * @default []
+             */
+            long_term_corrective_actions: unknown[] | null;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            status: components["schemas"]["CorrectionStatus"];
+            /**
+             * Evidence Attachments
+             * @default []
+             */
+            evidence_attachments: unknown[] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * CorrectionStatus
@@ -21805,6 +21934,23 @@ export interface components {
             [key: string]: unknown;
         };
         /**
+         * DeviationApiResponse
+         * @description Single deviation response wrapper
+         */
+        DeviationApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DeviationResponse"];
+        };
+        /**
          * DeviationCreate
          * @description 偏差创建
          */
@@ -21854,6 +22000,152 @@ export interface components {
          * @enum {string}
          */
         DeviationLevel: "critical" | "major" | "minor";
+        /**
+         * DeviationListApiResponse
+         * @description Deviation list response wrapper
+         */
+        DeviationListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["DeviationResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * DeviationResponse
+         * @description 偏差响应
+         */
+        DeviationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Deviation No */
+            deviation_no: string;
+            /** Occurrence Date */
+            occurrence_date?: string | null;
+            /** Discovering Department */
+            discovering_department?: string | null;
+            /** Discoverer */
+            discoverer?: string | null;
+            /** Product Code */
+            product_code?: string | null;
+            /** Product Name */
+            product_name?: string | null;
+            /** Production Batch */
+            production_batch?: string | null;
+            /** Material Code */
+            material_code?: string | null;
+            /** Batch Size */
+            batch_size?: string | null;
+            deviation_type: components["schemas"]["DeviationType"];
+            deviation_level: components["schemas"]["DeviationLevel"];
+            /** Description */
+            description?: string | null;
+            /** Abnormal Description */
+            abnormal_description?: string | null;
+            /** Impact Scope */
+            impact_scope?: string | null;
+            /** Emergency Measures */
+            emergency_measures?: string | null;
+            /**
+             * Attachments
+             * @default []
+             */
+            attachments: unknown[] | null;
+            /**
+             * Batch Locked
+             * @default false
+             */
+            batch_locked: boolean;
+            /** Batch Lock Reason */
+            batch_lock_reason?: string | null;
+            /** Batch Locked At */
+            batch_locked_at?: string | null;
+            status: components["schemas"]["DeviationStatus"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * DeviationStatistics
+         * @description 偏差统计
+         */
+        DeviationStatistics: {
+            /**
+             * Total Count
+             * @default 0
+             */
+            total_count: number;
+            /**
+             * By Type
+             * @default {}
+             */
+            by_type: {
+                [key: string]: unknown;
+            };
+            /**
+             * By Level
+             * @default {}
+             */
+            by_level: {
+                [key: string]: unknown;
+            };
+            /**
+             * By Status
+             * @default {}
+             */
+            by_status: {
+                [key: string]: unknown;
+            };
+            /**
+             * Monthly Trend
+             * @default []
+             */
+            monthly_trend: unknown[];
+        };
+        /**
+         * DeviationStatisticsApiResponse
+         * @description Deviation statistics response wrapper
+         */
+        DeviationStatisticsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DeviationStatistics"];
+        };
+        /**
+         * DeviationStatus
+         * @description 偏差状态
+         * @enum {string}
+         */
+        DeviationStatus: "draft" | "submitted" | "admin_approved" | "qa_approved" | "quality_approved" | "active" | "investigating" | "investigation_completed" | "correction_pending" | "correction_in_progress" | "correction_completed" | "closing_pending" | "closed" | "rejected";
         /**
          * DeviationType
          * @description 偏差类型
@@ -26837,6 +27129,23 @@ export interface components {
             updated_at: string;
         };
         /**
+         * InvestigationApiResponse
+         * @description Investigation response wrapper
+         */
+        InvestigationApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["InvestigationResponse"];
+        };
+        /**
          * InvestigationCreate
          * @description 调查创建
          */
@@ -26870,6 +27179,80 @@ export interface components {
              * @default []
              */
             attachments: unknown[] | null;
+        };
+        /**
+         * InvestigationListApiResponse
+         * @description Investigation list response wrapper
+         */
+        InvestigationListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["InvestigationResponse"][];
+        };
+        /**
+         * InvestigationResponse
+         * @description 调查响应
+         */
+        InvestigationResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Deviation Id
+             * Format: uuid
+             */
+            deviation_id: string;
+            /** Investigation Team */
+            investigation_team?: string | null;
+            /** Investigation Start Date */
+            investigation_start_date?: string | null;
+            /** Investigation End Date */
+            investigation_end_date?: string | null;
+            /** Investigation Method */
+            investigation_method?: string | null;
+            /** Direct Cause */
+            direct_cause?: string | null;
+            /** Indirect Cause */
+            indirect_cause?: string | null;
+            /** Root Cause */
+            root_cause?: string | null;
+            /** Why Analysis */
+            why_analysis?: string | null;
+            /** Impact Assessment */
+            impact_assessment?: string | null;
+            /** Investigation Conclusion */
+            investigation_conclusion?: string | null;
+            /** Affected Batches */
+            affected_batches?: string | null;
+            /** Temporary Measures */
+            temporary_measures?: string | null;
+            /**
+             * Attachments
+             * @default []
+             */
+            attachments: unknown[] | null;
+            status: components["schemas"]["InvestigationStatus"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * InvestigationStatus
@@ -36903,6 +37286,20 @@ export interface components {
              */
             batch_count: number;
         };
+        /** AIAnalysisApiResponse */
+        app__modules__energy__schemas__AIAnalysisApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AIAnalysisResponse"];
+        };
         /**
          * CalibrationRecordCreate
          * @description 创建校准记录请求
@@ -37009,6 +37406,26 @@ export interface components {
          * @enum {string}
          */
         app__modules__production__schemas__OperationType: "material_add" | "transfer" | "sampling" | "equipment_check" | "parameter_record" | "packaging";
+        /**
+         * AIAnalysisApiResponse
+         * @description AI analysis response wrapper
+         */
+        app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
         /**
          * CalibrationRecordCreate
          * @description 创建校准记录
@@ -54172,7 +54589,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIAnalysisApiResponse"];
+                    "application/json": components["schemas"]["app__modules__energy__schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68424,7 +68841,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68459,7 +68876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68488,7 +68905,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationStatisticsApiResponse"];
                 };
             };
         };
@@ -68525,7 +68942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68571,7 +68988,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68609,7 +69026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68649,7 +69066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68689,7 +69106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68729,7 +69146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68769,7 +69186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68800,7 +69217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68837,7 +69254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68901,7 +69318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68941,7 +69358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68976,7 +69393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69007,7 +69424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69039,7 +69456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InvestigationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69074,7 +69491,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InvestigationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69109,7 +69526,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InvestigationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69140,7 +69557,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InvestigationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69207,7 +69624,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CorrectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69242,7 +69659,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CorrectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69342,7 +69759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ClosingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69377,7 +69794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ClosingApiResponse"];
                 };
             };
             /** @description Validation Error */

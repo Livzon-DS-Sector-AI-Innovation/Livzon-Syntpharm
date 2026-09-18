@@ -9,6 +9,15 @@ from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.deviation_schemas import (
+    DeviationResponse,
+    DeviationApiResponse,
+    DeviationListApiResponse,
+    DeviationStatisticsApiResponse,
+    InvestigationApiResponse,
+    InvestigationListApiResponse,
+    CorrectionApiResponse,
+    ClosingApiResponse,
+    AIAnalysisApiResponse,
     BatchLockRequest,
     ClosingCreate,
     ClosingUpdate,
@@ -48,7 +57,7 @@ def get_closing_service(session=Depends(get_db)) -> Any:  # type: ignore[no-unty
 # ========== 偏差主数据 API ==========
 
 
-@router.get("", response_model=ApiResponse)
+@router.get("", response_model=DeviationListApiResponse)
 async def get(
     deviation_no: str | None = Query(None, description="偏差编号"),
     deviation_type: str | None = Query(None, description="偏差类型"),
@@ -103,32 +112,54 @@ async def get(
             }
         )
 
-    return ApiResponse(
-        data={
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
+    return DeviationListApiResponse(
+        data=[
+            DeviationResponse(
+                id=dev.id,
+                deviation_no=dev.deviation_no,
+                occurrence_date=dev.occurrence_date,
+                discovering_department=dev.discovering_department,
+                discoverer=dev.discoverer,
+                product_code=dev.product_code,
+                product_name=dev.product_name,
+                production_batch=dev.production_batch,
+                material_code=dev.material_code,
+                batch_size=dev.batch_size,
+                deviation_type=dev.deviation_type,
+                deviation_level=dev.deviation_level,
+                description=dev.abnormal_description,
+                abnormal_description=dev.abnormal_description,
+                impact_scope=dev.impact_scope,
+                emergency_measures=dev.emergency_measures,
+                attachments=dev.attachments or [],
+                batch_locked=dev.batch_locked,
+                batch_lock_reason=dev.batch_lock_reason,
+                batch_locked_at=dev.batch_locked_at,
+                status=dev.status,
+                created_at=dev.created_at,
+            )
+            for dev in deviations
+        ],
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 # ========== 统计分析 API ==========
 
 
-@router.get("/statistics", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/statistics", response_model=DeviationStatisticsApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """获取统计数据"""
     stats = await service.get_statistics()
-    return ApiResponse(data=stats.model_dump())
+    return DeviationStatisticsApiResponse(data=stats)
 
 
 # ========== AI辅助功能 API ==========
 
 
-@router.post("/ai/generate-description", response_model=ApiResponse)
+@router.post("/ai/generate-description", response_model=AIAnalysisApiResponse)
 async def post(
     current_user: RequiredUser,
     deviation_type: str | None = Query(None, description="偏差类型"),
@@ -208,7 +239,7 @@ async def post(
         raise HTTPException(status_code=500, detail=f"AI处理失败: {str(e)}")
 
 
-@router.post("/ai/analyze-impact", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/ai/analyze-impact", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     deviation_type: str | None = Query(None, description="偏差类型"),
@@ -274,7 +305,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/ai/generate-emergency-measures", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/ai/generate-emergency-measures", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
@@ -330,7 +361,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/ai/analyze-root-cause", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/ai/analyze-root-cause", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
@@ -389,7 +420,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/ai/analyze-direct-cause", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/ai/analyze-direct-cause", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
@@ -439,7 +470,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/ai/generate-capa", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/ai/generate-capa", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
@@ -504,7 +535,7 @@ CAPA结构：
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/ai/generate-prevention", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/ai/generate-prevention", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     deviation_type: str = Query(..., description="偏差类型"),
@@ -562,7 +593,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/{deviation_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/{deviation_id}", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     deviation_id: UUID,
     service: DeviationService = Depends(get_deviation_service),
@@ -666,7 +697,7 @@ async def get(  # noqa: F811
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: DeviationCreate,
     current_user: RequiredUser,
@@ -687,7 +718,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{deviation_id}", response_model=ApiResponse)
+@router.put("/{deviation_id}", response_model=DeviationApiResponse)
 async def put(
     deviation_id: UUID,
     data: DeviationUpdate,
@@ -724,7 +755,7 @@ async def delete(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/submit", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
@@ -739,7 +770,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/approve", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
@@ -758,7 +789,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/lock-batch", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/lock-batch", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: BatchLockRequest,
@@ -772,7 +803,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/unlock-batch", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/unlock-batch", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     service: DeviationService = Depends(get_deviation_service),
@@ -788,7 +819,7 @@ async def post(  # noqa: F811
 # ========== 偏差调查 API ==========
 
 
-@router.get("/investigations/list", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/investigations/list", response_model=InvestigationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -816,17 +847,39 @@ async def get(  # noqa: F811
             }
         )
 
-    return ApiResponse(
-        data={
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
+    return DeviationListApiResponse(
+        data=[
+            DeviationResponse(
+                id=dev.id,
+                deviation_no=dev.deviation_no,
+                occurrence_date=dev.occurrence_date,
+                discovering_department=dev.discovering_department,
+                discoverer=dev.discoverer,
+                product_code=dev.product_code,
+                product_name=dev.product_name,
+                production_batch=dev.production_batch,
+                material_code=dev.material_code,
+                batch_size=dev.batch_size,
+                deviation_type=dev.deviation_type,
+                deviation_level=dev.deviation_level,
+                description=dev.abnormal_description,
+                abnormal_description=dev.abnormal_description,
+                impact_scope=dev.impact_scope,
+                emergency_measures=dev.emergency_measures,
+                attachments=dev.attachments or [],
+                batch_locked=dev.batch_locked,
+                batch_lock_reason=dev.batch_lock_reason,
+                batch_locked_at=dev.batch_locked_at,
+                status=dev.status,
+                created_at=dev.created_at,
+            )
+            for dev in deviations
+        ],
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@router.post("/{deviation_id}/investigation", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/investigation", response_model=InvestigationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: InvestigationCreate,
@@ -840,7 +893,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{deviation_id}/investigation", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/{deviation_id}/investigation", response_model=InvestigationApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811
     deviation_id: UUID,
     data: InvestigationUpdate,
@@ -856,7 +909,7 @@ async def put(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/investigation/complete", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/investigation/complete", response_model=InvestigationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     service: InvestigationService = Depends(get_investigation_service),
@@ -897,17 +950,39 @@ async def get(  # noqa: F811
             }
         )
 
-    return ApiResponse(
-        data={
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
+    return DeviationListApiResponse(
+        data=[
+            DeviationResponse(
+                id=dev.id,
+                deviation_no=dev.deviation_no,
+                occurrence_date=dev.occurrence_date,
+                discovering_department=dev.discovering_department,
+                discoverer=dev.discoverer,
+                product_code=dev.product_code,
+                product_name=dev.product_name,
+                production_batch=dev.production_batch,
+                material_code=dev.material_code,
+                batch_size=dev.batch_size,
+                deviation_type=dev.deviation_type,
+                deviation_level=dev.deviation_level,
+                description=dev.abnormal_description,
+                abnormal_description=dev.abnormal_description,
+                impact_scope=dev.impact_scope,
+                emergency_measures=dev.emergency_measures,
+                attachments=dev.attachments or [],
+                batch_locked=dev.batch_locked,
+                batch_lock_reason=dev.batch_lock_reason,
+                batch_locked_at=dev.batch_locked_at,
+                status=dev.status,
+                created_at=dev.created_at,
+            )
+            for dev in deviations
+        ],
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@router.post("/{deviation_id}/correction", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/correction", response_model=CorrectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: CorrectionCreate,
@@ -921,7 +996,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{deviation_id}/correction", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/{deviation_id}/correction", response_model=CorrectionApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811
     deviation_id: UUID,
     data: CorrectionUpdate,
@@ -977,17 +1052,39 @@ async def get(  # noqa: F811
             }
         )
 
-    return ApiResponse(
-        data={
-            "items": items,
-            "total": total,
-            "page": page,
-            "page_size": page_size,
-        }
+    return DeviationListApiResponse(
+        data=[
+            DeviationResponse(
+                id=dev.id,
+                deviation_no=dev.deviation_no,
+                occurrence_date=dev.occurrence_date,
+                discovering_department=dev.discovering_department,
+                discoverer=dev.discoverer,
+                product_code=dev.product_code,
+                product_name=dev.product_name,
+                production_batch=dev.production_batch,
+                material_code=dev.material_code,
+                batch_size=dev.batch_size,
+                deviation_type=dev.deviation_type,
+                deviation_level=dev.deviation_level,
+                description=dev.abnormal_description,
+                abnormal_description=dev.abnormal_description,
+                impact_scope=dev.impact_scope,
+                emergency_measures=dev.emergency_measures,
+                attachments=dev.attachments or [],
+                batch_locked=dev.batch_locked,
+                batch_lock_reason=dev.batch_lock_reason,
+                batch_locked_at=dev.batch_locked_at,
+                status=dev.status,
+                created_at=dev.created_at,
+            )
+            for dev in deviations
+        ],
+        meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@router.post("/{deviation_id}/closing", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/closing", response_model=ClosingApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: ClosingCreate,
@@ -1001,7 +1098,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/{deviation_id}/closing", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/{deviation_id}/closing", response_model=ClosingApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811
     deviation_id: UUID,
     data: ClosingUpdate,

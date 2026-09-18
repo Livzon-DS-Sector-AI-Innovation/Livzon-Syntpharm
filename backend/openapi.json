@@ -31198,7 +31198,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyOverviewApiResponse"
                 }
               }
             }
@@ -31604,7 +31604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -32021,7 +32021,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CollectLogListApiResponse"
                 }
               }
             }
@@ -32450,7 +32450,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -33042,7 +33042,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -33102,7 +33102,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyRecordApiResponse"
                 }
               }
             }
@@ -33250,7 +33250,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyRecordListApiResponse"
                 }
               }
             }
@@ -33310,7 +33310,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyBatchCreateApiResponse"
                 }
               }
             }
@@ -33551,7 +33551,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -33611,7 +33611,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/FeishuImportApiResponse"
                 }
               }
             }
@@ -33660,7 +33660,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -33709,7 +33709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -33758,7 +33758,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -33817,7 +33817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -33866,7 +33866,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -33924,7 +33924,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -33983,7 +33983,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/UnitConsumptionTargetApiResponse"
                 }
               }
             }
@@ -34051,7 +34051,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/UnitConsumptionTargetApiResponse"
                 }
               }
             }
@@ -34120,7 +34120,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/UnitConsumptionTargetApiResponse"
                 }
               }
             }
@@ -34180,7 +34180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__energy__schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -62213,7 +62213,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationListApiResponse"
                 }
               }
             }
@@ -62272,7 +62272,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -62305,7 +62305,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationStatisticsApiResponse"
                 }
               }
             }
@@ -62465,7 +62465,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -62642,7 +62642,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -62740,7 +62740,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -62856,7 +62856,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -62972,7 +62972,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -63088,7 +63088,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -63204,7 +63204,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"
                 }
               }
             }
@@ -63249,7 +63249,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -63318,7 +63318,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -63422,7 +63422,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -63524,7 +63524,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -63579,7 +63579,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -63624,7 +63624,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DeviationApiResponse"
                 }
               }
             }
@@ -63682,7 +63682,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InvestigationListApiResponse"
                 }
               }
             }
@@ -63737,7 +63737,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InvestigationApiResponse"
                 }
               }
             }
@@ -63790,7 +63790,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InvestigationApiResponse"
                 }
               }
             }
@@ -63835,7 +63835,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InvestigationApiResponse"
                 }
               }
             }
@@ -63948,7 +63948,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CorrectionApiResponse"
                 }
               }
             }
@@ -64001,7 +64001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CorrectionApiResponse"
                 }
               }
             }
@@ -64170,7 +64170,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ClosingApiResponse"
                 }
               }
             }
@@ -64223,7 +64223,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ClosingApiResponse"
                 }
               }
             }
@@ -83107,6 +83107,96 @@
         "title": "AIAnalysisRequest",
         "description": "AI \u80fd\u8017\u5206\u6790\u8bf7\u6c42\uff08V2 - \u652f\u6301\u5355\u8017\u5206\u6790\uff09"
       },
+      "AIAnalysisResponse": {
+        "properties": {
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id"
+          },
+          "workshop_name": {
+            "type": "string",
+            "title": "Workshop Name"
+          },
+          "analysis_month": {
+            "type": "string",
+            "title": "Analysis Month"
+          },
+          "total_energy_kwh": {
+            "type": "number",
+            "title": "Total Energy Kwh"
+          },
+          "production_items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionItemDetail"
+            },
+            "type": "array",
+            "title": "Production Items"
+          },
+          "converted_production": {
+            "type": "number",
+            "title": "Converted Production"
+          },
+          "actual_unit_consumption": {
+            "type": "number",
+            "title": "Actual Unit Consumption"
+          },
+          "target_unit_consumption": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Unit Consumption"
+          },
+          "deviation_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Rate"
+          },
+          "deviation_status": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "warning",
+              "critical",
+              "unknown"
+            ],
+            "title": "Deviation Status"
+          },
+          "ai_suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AISuggestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "workshop_id",
+          "workshop_name",
+          "analysis_month",
+          "total_energy_kwh",
+          "production_items",
+          "converted_production",
+          "actual_unit_consumption",
+          "deviation_status"
+        ],
+        "title": "AIAnalysisResponse",
+        "description": "AI \u80fd\u8017\u5206\u6790\u54cd\u5e94\uff08\u652f\u6301\u591a\u4ea7\u54c1\uff09"
+      },
       "AIConfirmData": {
         "properties": {
           "success": {
@@ -83198,6 +83288,53 @@
         ],
         "title": "AIFillResultItem",
         "description": "AI \u586b\u5145\u5b57\u6bb5\u7ed3\u679c"
+      },
+      "AISuggestion": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u72b6\u6001\uff1anormal/warning/critical/info/unknown"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "\u4e00\u53e5\u8bdd\u603b\u7ed3"
+          },
+          "detailed_analysis": {
+            "type": "string",
+            "title": "Detailed Analysis",
+            "description": "\u8be6\u7ec6\u5206\u6790"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations",
+            "description": "\u5efa\u8bae\u5217\u8868"
+          },
+          "confidence_level": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Confidence Level",
+            "description": "\u7f6e\u4fe1\u5ea6"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "summary",
+          "detailed_analysis",
+          "recommendations",
+          "confidence_level"
+        ],
+        "title": "AISuggestion",
+        "description": "AI \u5efa\u8bae\u5bf9\u8c61"
       },
       "AIWorkflowConfigCreate": {
         "properties": {
@@ -88674,6 +88811,29 @@
         "title": "CloseEhsChangeRequest",
         "description": "\u5173\u95edEHS\u53d8\u66f4\u8bf7\u6c42"
       },
+      "ClosingApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ClosingResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ClosingApiResponse",
+        "description": "Closing response wrapper"
+      },
       "ClosingCreate": {
         "properties": {
           "verification_plan": {
@@ -88742,6 +88902,123 @@
         "type": "object",
         "title": "ClosingCreate",
         "description": "\u5173\u95ed\u521b\u5efa"
+      },
+      "ClosingResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "deviation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deviation Id"
+          },
+          "verification_plan": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Plan"
+          },
+          "verification_data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Data"
+          },
+          "verification_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verification Result"
+          },
+          "is_resolved": {
+            "type": "boolean",
+            "title": "Is Resolved",
+            "default": false
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion"
+          },
+          "attachments": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachments",
+            "default": []
+          },
+          "batch_unlocked": {
+            "type": "boolean",
+            "title": "Batch Unlocked",
+            "default": false
+          },
+          "archived": {
+            "type": "boolean",
+            "title": "Archived",
+            "default": false
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "deviation_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ClosingResponse",
+        "description": "\u5173\u95ed\u54cd\u5e94"
       },
       "ClosingUpdate": {
         "properties": {
@@ -88976,6 +89253,101 @@
         ],
         "title": "CollectLogDeviceDetail",
         "description": "\u91c7\u96c6\u65e5\u5fd7\u4e2d\u5355\u4e2a\u8bbe\u5907\u7684\u6570\u636e\u8be6\u60c5"
+      },
+      "CollectLogListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CollectLogResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CollectLogListApiResponse"
+      },
+      "CollectLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "platform_code": {
+            "type": "string",
+            "title": "Platform Code"
+          },
+          "collect_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collect Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "device_count": {
+            "type": "integer",
+            "title": "Device Count"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_code",
+          "collect_time",
+          "status",
+          "device_count",
+          "success_count",
+          "error_message",
+          "created_at"
+        ],
+        "title": "CollectLogResponse"
       },
       "CollectTriggerApiResponse": {
         "properties": {
@@ -90803,6 +91175,29 @@
         ],
         "title": "CoppCertificateResponse"
       },
+      "CorrectionApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CorrectionResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CorrectionApiResponse",
+        "description": "Correction response wrapper"
+      },
       "CorrectionCreate": {
         "properties": {
           "responsible_department": {
@@ -90869,6 +91264,121 @@
         "type": "object",
         "title": "CorrectionCreate",
         "description": "\u6574\u6539\u521b\u5efa"
+      },
+      "CorrectionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "deviation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deviation Id"
+          },
+          "responsible_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Department"
+          },
+          "responsible_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person"
+          },
+          "plan_completion_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Completion Date"
+          },
+          "temporary_corrective_actions": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Corrective Actions",
+            "default": []
+          },
+          "long_term_corrective_actions": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Long Term Corrective Actions",
+            "default": []
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress",
+            "default": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/CorrectionStatus"
+          },
+          "evidence_attachments": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Attachments",
+            "default": []
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "deviation_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CorrectionResponse",
+        "description": "\u6574\u6539\u54cd\u5e94"
       },
       "CorrectionStatus": {
         "type": "string",
@@ -93417,6 +93927,29 @@
         "type": "object",
         "title": "DepartureRecordUpdate"
       },
+      "DeviationApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DeviationResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DeviationApiResponse",
+        "description": "Single deviation response wrapper"
+      },
       "DeviationCreate": {
         "properties": {
           "occurrence_date": {
@@ -93605,6 +94138,343 @@
         ],
         "title": "DeviationLevel",
         "description": "\u504f\u5dee\u7b49\u7ea7"
+      },
+      "DeviationListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DeviationResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DeviationListApiResponse",
+        "description": "Deviation list response wrapper"
+      },
+      "DeviationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "deviation_no": {
+            "type": "string",
+            "title": "Deviation No"
+          },
+          "occurrence_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Occurrence Date"
+          },
+          "discovering_department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovering Department"
+          },
+          "discoverer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discoverer"
+          },
+          "product_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "production_batch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Batch"
+          },
+          "material_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Code"
+          },
+          "batch_size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Size"
+          },
+          "deviation_type": {
+            "$ref": "#/components/schemas/DeviationType"
+          },
+          "deviation_level": {
+            "$ref": "#/components/schemas/DeviationLevel"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "abnormal_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abnormal Description"
+          },
+          "impact_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Scope"
+          },
+          "emergency_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Measures"
+          },
+          "attachments": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachments",
+            "default": []
+          },
+          "batch_locked": {
+            "type": "boolean",
+            "title": "Batch Locked",
+            "default": false
+          },
+          "batch_lock_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Lock Reason"
+          },
+          "batch_locked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Locked At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/DeviationStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "deviation_no",
+          "deviation_type",
+          "deviation_level",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DeviationResponse",
+        "description": "\u504f\u5dee\u54cd\u5e94"
+      },
+      "DeviationStatistics": {
+        "properties": {
+          "total_count": {
+            "type": "integer",
+            "title": "Total Count",
+            "default": 0
+          },
+          "by_type": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Type",
+            "default": {}
+          },
+          "by_level": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Level",
+            "default": {}
+          },
+          "by_status": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "By Status",
+            "default": {}
+          },
+          "monthly_trend": {
+            "items": {},
+            "type": "array",
+            "title": "Monthly Trend",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "DeviationStatistics",
+        "description": "\u504f\u5dee\u7edf\u8ba1"
+      },
+      "DeviationStatisticsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DeviationStatistics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DeviationStatisticsApiResponse",
+        "description": "Deviation statistics response wrapper"
+      },
+      "DeviationStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "submitted",
+          "admin_approved",
+          "qa_approved",
+          "quality_approved",
+          "active",
+          "investigating",
+          "investigation_completed",
+          "correction_pending",
+          "correction_in_progress",
+          "correction_completed",
+          "closing_pending",
+          "closed",
+          "rejected"
+        ],
+        "title": "DeviationStatus",
+        "description": "\u504f\u5dee\u72b6\u6001"
       },
       "DeviationType": {
         "type": "string",
@@ -97305,6 +98175,27 @@
         ],
         "title": "EnergyDataResponse"
       },
+      "EnergyDeleteResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "\u5220\u9664\u6210\u529f"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "EnergyDeleteResponse",
+        "description": "\u901a\u7528\u5220\u9664\u54cd\u5e94"
+      },
       "EnergyDeviceConfigApiResponse": {
         "properties": {
           "code": {
@@ -97738,6 +98629,30 @@
         "type": "object",
         "title": "EnergyDeviceConfigUpdate"
       },
+      "EnergyMonthlyBatchCreateApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyMonthlyBatchCreateApiResponse"
+      },
       "EnergyMonthlyRecordApiResponse": {
         "properties": {
           "code": {
@@ -97859,6 +98774,44 @@
         ],
         "title": "EnergyMonthlyRecordCreate"
       },
+      "EnergyMonthlyRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyMonthlyRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyMonthlyRecordListApiResponse"
+      },
       "EnergyMonthlyRecordResponse": {
         "properties": {
           "id": {
@@ -97939,6 +98892,30 @@
           "updated_at"
         ],
         "title": "EnergyMonthlyRecordResponse"
+      },
+      "EnergyOverviewApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyOverviewApiResponse"
       },
       "EnergyPlatformListApiResponse": {
         "properties": {
@@ -101027,6 +102004,62 @@
         ],
         "title": "FeishuEnergyImportRequest",
         "description": "\u98de\u4e66\u8868\u683c\u5bfc\u5165\u8bf7\u6c42"
+      },
+      "FeishuEnergyImportResponse": {
+        "properties": {
+          "workshops_created": {
+            "type": "integer",
+            "title": "Workshops Created",
+            "default": 0
+          },
+          "workshops_existing": {
+            "type": "integer",
+            "title": "Workshops Existing",
+            "default": 0
+          },
+          "records_created": {
+            "type": "integer",
+            "title": "Records Created",
+            "default": 0
+          },
+          "records_skipped": {
+            "type": "integer",
+            "title": "Records Skipped",
+            "default": 0
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "title": "FeishuEnergyImportResponse",
+        "description": "\u98de\u4e66\u8868\u683c\u5bfc\u5165\u7ed3\u679c"
+      },
+      "FeishuImportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuEnergyImportResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuImportApiResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -106647,6 +107680,29 @@
         ],
         "title": "InternationalReviewResponse"
       },
+      "InvestigationApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/InvestigationResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "InvestigationApiResponse",
+        "description": "Investigation response wrapper"
+      },
       "InvestigationCreate": {
         "properties": {
           "investigation_team": {
@@ -106800,6 +107856,217 @@
         "type": "object",
         "title": "InvestigationCreate",
         "description": "\u8c03\u67e5\u521b\u5efa"
+      },
+      "InvestigationListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/InvestigationResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "InvestigationListApiResponse",
+        "description": "Investigation list response wrapper"
+      },
+      "InvestigationResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "deviation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Deviation Id"
+          },
+          "investigation_team": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Team"
+          },
+          "investigation_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Start Date"
+          },
+          "investigation_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation End Date"
+          },
+          "investigation_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Method"
+          },
+          "direct_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Cause"
+          },
+          "indirect_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Indirect Cause"
+          },
+          "root_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Root Cause"
+          },
+          "why_analysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Why Analysis"
+          },
+          "impact_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Assessment"
+          },
+          "investigation_conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Conclusion"
+          },
+          "affected_batches": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affected Batches"
+          },
+          "temporary_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporary Measures"
+          },
+          "attachments": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachments",
+            "default": []
+          },
+          "status": {
+            "$ref": "#/components/schemas/InvestigationStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "deviation_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InvestigationResponse",
+        "description": "\u8c03\u67e5\u54cd\u5e94"
       },
       "InvestigationStatus": {
         "type": "string",
@@ -113047,6 +114314,35 @@
         },
         "type": "object",
         "title": "ProductUpdate"
+      },
+      "ProductionItemDetail": {
+        "properties": {
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "conversion_factor": {
+            "type": "number",
+            "title": "Conversion Factor"
+          },
+          "converted_quantity": {
+            "type": "number",
+            "title": "Converted Quantity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "quantity",
+          "conversion_factor",
+          "converted_quantity"
+        ],
+        "title": "ProductionItemDetail",
+        "description": "\u4ea7\u54c1\u4ea7\u91cf\u660e\u7ec6"
       },
       "ProductionPlanCreate": {
         "properties": {
@@ -126641,6 +127937,30 @@
         ],
         "title": "SupplierResponse"
       },
+      "SyncJobApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SyncJobApiResponse"
+      },
       "SyncTriggerRequest": {
         "properties": {
           "sourceCode": {
@@ -129184,6 +130504,28 @@
         ],
         "title": "TrueFalseQuestion"
       },
+      "UnitConsumptionTargetApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UnitConsumptionTargetResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "UnitConsumptionTargetApiResponse"
+      },
       "UnitConsumptionTargetCreate": {
         "properties": {
           "workshop_id": {
@@ -129213,6 +130555,52 @@
         ],
         "title": "UnitConsumptionTargetCreate",
         "description": "\u521b\u5efa\u5355\u8017\u76ee\u6807\u8bf7\u6c42"
+      },
+      "UnitConsumptionTargetResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id"
+          },
+          "workshop_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workshop Name"
+          },
+          "target_month": {
+            "type": "string",
+            "title": "Target Month"
+          },
+          "target_unit_consumption": {
+            "type": "number",
+            "title": "Target Unit Consumption"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workshop_id",
+          "target_month",
+          "target_unit_consumption",
+          "created_at"
+        ],
+        "title": "UnitConsumptionTargetResponse",
+        "description": "\u5355\u8017\u76ee\u6807\u54cd\u5e94"
       },
       "UnitConsumptionTargetUpdate": {
         "properties": {
@@ -131194,6 +132582,28 @@
         "title": "WorkshopRanking",
         "description": "\u8f66\u95f4\u6392\u540d"
       },
+      "app__modules__energy__schemas__AIAnalysisApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AIAnalysisResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "AIAnalysisApiResponse"
+      },
       "app__modules__equipment__schemas__calibration__CalibrationRecordCreate": {
         "properties": {
           "calibration_plan_id": {
@@ -131384,6 +132794,31 @@
         ],
         "title": "OperationType",
         "description": "\u64cd\u4f5c\u7c7b\u578b\u679a\u4e3e"
+      },
+      "app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "AIAnalysisApiResponse",
+        "description": "AI analysis response wrapper"
       },
       "app__modules__quality__qms__instrument_schemas__CalibrationRecordCreate": {
         "properties": {
