@@ -425,7 +425,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           options={testItemOptions} showSearch allowClear
           placeholder="选择检验项目"
           onChange={val => updateItem(record.key, 'item_code', val)}
-          filterOption={(input, opt) => (opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+          filterOption={(input, opt) => String(opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
         />
       ),
     },
@@ -485,7 +485,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           options={testItemOptions} showSearch allowClear
           placeholder="选择检验项目"
           onChange={val => updateItem(record.key, 'item_code', val)}
-          filterOption={(input, opt) => (opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+          filterOption={(input, opt) => String(opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
         />
       ),
     },
