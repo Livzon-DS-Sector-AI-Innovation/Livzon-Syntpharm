@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'next/navigation'
 import {
@@ -122,6 +122,54 @@ interface DetailPageProps {
   id: string | null
 }
 
+
+// Helper function to fetch and transform dictionary data
+async function fetchDictData() {
+  const API_BASE = '/api/v1'
+  const PREFIX = '/quality/static-data'
+  const API = `${API_BASE}${PREFIX}`
+
+  const [sc, ec, vs, lab, eqs, mt, rp, dt, stt, utt, tic, ccs, uo] = await Promise.all([
+    fetch(`${API}/storage-condition/options`).then(r => r.json()),
+    fetch(`${API}/dict/equipment-category`).then(r => r.json()),
+    fetch(`${API}/dict/verify-status`).then(r => r.json()),
+    fetch(`${API}/dict/lab`).then(r => r.json()),
+    fetch(`${API}/dict/equipment-status`).then(r => r.json()),
+    fetch(`${API}/dict/medium-type`).then(r => r.json()),
+    fetch(`${API}/dict/reagent-purity`).then(r => r.json()),
+    fetch(`${API}/dict/danger-type`).then(r => r.json()),
+    fetch(`${API}/dict/std-type`).then(r => r.json()),
+    fetch(`${API}/dict/unit-type`).then(r => r.json()),
+    fetch(`${API}/dict/test-item-category`).then(r => r.json()),
+    fetch(`${API}/dict/chrom-column-status`).then(r => r.json()),
+    fetch(`${API}/unit/options`).then(r => r.json()),
+  ])
+
+  return {
+    storageCondOptions: (sc.code === 200 || sc.code === 0) ? sc.data.map((x: Record<string, unknown>) => ({ label: (x.label || x.cond_name) as string, value: (x.value || x.cond_code) as string })) : [],
+    equipmentCategoryOptions: (ec.code === 200 || ec.code === 0) ? ec.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    verifyStatusOptions: (vs.code === 200 || vs.code === 0) ? vs.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    labOptions: (lab.code === 200 || lab.code === 0) ? lab.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: String(x.value) })) : [],
+    eqStatusOptions: (eqs.code === 200 || eqs.code === 0) ? eqs.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    mediumTypeOptions: (mt.code === 200 || mt.code === 0) ? mt.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    reagentPurityOptions: (rp.code === 200 || rp.code === 0) ? rp.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    dangerTypeOptions: (dt.code === 200 || dt.code === 0) ? dt.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    stdTypeOptions: (stt.code === 200 || stt.code === 0) ? stt.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    unitTypeOptions: (utt.code === 200 || utt.code === 0) ? utt.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    testItemCategoryOptions: (tic.code === 200 || tic.code === 0) ? tic.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    chromColumnStatusOptions: (ccs.code === 200 || ccs.code === 0) ? ccs.data.map((x: Record<string, unknown>) => ({ label: x.label as string, value: x.value as string })) : [],
+    unitOptions: (uo.code === 200 || uo.code === 0) ? uo.data.map((x: Record<string, unknown>) => ({ label: (x.label || x.unit_name) as string, value: (x.value || x.unit_code) as string })) : [],
+  }
+}
+
+async function fetchTestItemOptions() {
+  const res = await listTestItem({ page: 1, page_size: 200 } as Record<string, unknown>)
+  return (res.data ?? []).map((t: DictItem) => ({
+    label: `${t.item_code || ''} - ${t.item_name || ''}`,
+    value: t.item_code || '',
+  }))
+}
+
 function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [form] = Form.useForm()
   const [attachFiles, setAttachFiles] = useState<UploadFile[]>(() => {
@@ -139,87 +187,53 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
   const [items, setItems] = useState<Record<string, unknown>[]>([])
   const formInitializedRef = useRef(false)
   const [saving, setSaving] = useState(false)
-  const [testItemOptions, setTestItemOptions] = useState<{ label: string; value: string }[]>([])
   const [uploadLoading, setUploadLoading] = useState(false)
   const router = useRouter()
   const isNew = !id || id === 'new'
   const isStdWithItems = moduleType === 'material-standard' || moduleType === 'product-standard'
   const supportsUpload = UPLOAD_MODULES.includes(moduleType)
 
-  // 字典选项 state
-  const [storageCondOptions, setStorageCondOptions] = useState<{ label: string; value: string }[]>([])
-  const [equipmentCategoryOptions, setEquipmentCategoryOptions] = useState<{ label: string; value: string }[]>([])
-  const [verifyStatusOptions, setVerifyStatusOptions] = useState<{ label: string; value: string }[]>([])
-  const [labOptions, setLabOptions] = useState<{ label: string; value: string }[]>([])
-  const [eqStatusOptions, setEqStatusOptions] = useState<{ label: string; value: string }[]>([])
-  const [mediumTypeOptions, setMediumTypeOptions] = useState<{ label: string; value: string }[]>([])
-  const [reagentPurityOptions, setReagentPurityOptions] = useState<{ label: string; value: string }[]>([])
-  const [dangerTypeOptions, setDangerTypeOptions] = useState<{ label: string; value: string }[]>([])
-  const [stdTypeOptions, setStdTypeOptions] = useState<{ label: string; value: string }[]>([])
-  const [unitTypeOptions, setUnitTypeOptions] = useState<{ label: string; value: string }[]>([])
-  const [testItemCategoryOptions, setTestItemCategoryOptions] = useState<{ label: string; value: string }[]>([])
-  const [chromColumnStatusOptions, setChromColumnStatusOptions] = useState<{ label: string; value: string }[]>([])
-  const [unitOptions, setUnitOptions] = useState<{ label: string; value: string }[]>([])
-  // 设备管理员选项（待接入人员模块后替换为真实API）
+
+  // Fetch dictionary data using React Query
+  const { data: dictData } = useQuery({
+    queryKey: ['static-data-dict', moduleType, isStdWithItems],
+    queryFn: fetchDictData,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Fetch test item options using React Query (only for standards with items)
+  const { data: testItemOptionsData } = useQuery({
+    queryKey: ['test-item-options', moduleType, isStdWithItems],
+    queryFn: fetchTestItemOptions,
+    enabled: isStdWithItems,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  })
+
+  // Derive option arrays from query data
+  const storageCondOptions = dictData?.storageCondOptions ?? []
+  const equipmentCategoryOptions = dictData?.equipmentCategoryOptions ?? []
+  const verifyStatusOptions = dictData?.verifyStatusOptions ?? []
+  const labOptions = dictData?.labOptions ?? []
+  const eqStatusOptions = dictData?.eqStatusOptions ?? []
+  const mediumTypeOptions = dictData?.mediumTypeOptions ?? []
+  const reagentPurityOptions = dictData?.reagentPurityOptions ?? []
+  const dangerTypeOptions = dictData?.dangerTypeOptions ?? []
+  const stdTypeOptions = dictData?.stdTypeOptions ?? []
+  const unitTypeOptions = dictData?.unitTypeOptions ?? []
+  const testItemCategoryOptions = dictData?.testItemCategoryOptions ?? []
+  const chromColumnStatusOptions = dictData?.chromColumnStatusOptions ?? []
+  const unitOptions = dictData?.unitOptions ?? []
+  const testItemOptions = testItemOptionsData ?? []
+
+
+                            // 设备管理员选项（待接入人员模块后替换为真实API）
   const [managerOptions, _setManagerOptions] = useState<{ label: string; value: string }[]>([
     { label: '张三', value: '1' },
     { label: '李四', value: '2' },
     { label: '王五', value: '3' },
   ])
 
-  // 加载字典数据
-  useEffect(() => {
-    const loadDictData = async () => {
-      try {
-        const [sc, ec, vs, lab, eqs, mt, rp, dt, stt, utt, tic, ccs, uo] = await Promise.all([
-          fetch(`${API}/storage-condition/options`).then(r => r.json()),
-          fetch(`${API}/dict/equipment-category`).then(r => r.json()),
-          fetch(`${API}/dict/verify-status`).then(r => r.json()),
-          fetch(`${API}/dict/lab`).then(r => r.json()),
-          fetch(`${API}/dict/equipment-status`).then(r => r.json()),
-          fetch(`${API}/dict/medium-type`).then(r => r.json()),
-          fetch(`${API}/dict/reagent-purity`).then(r => r.json()),
-          fetch(`${API}/dict/danger-type`).then(r => r.json()),
-          fetch(`${API}/dict/std-type`).then(r => r.json()),
-          fetch(`${API}/dict/unit-type`).then(r => r.json()),
-          fetch(`${API}/dict/test-item-category`).then(r => r.json()),
-          fetch(`${API}/dict/chrom-column-status`).then(r => r.json()),
-          fetch(`${API}/unit/options`).then(r => r.json()),
-        ])
-        if (sc.code === 200 || sc.code === 0) setStorageCondOptions(sc.data.map((x: Record<string, unknown>) => ({ label: x.label || x.cond_name, value: x.value || x.cond_code })))
-        if (ec.code === 200 || ec.code === 0) setEquipmentCategoryOptions(ec.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (vs.code === 200 || vs.code === 0) setVerifyStatusOptions(vs.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (lab.code === 200 || lab.code === 0) setLabOptions(lab.data.map((x: Record<string, unknown>) => ({ label: x.label, value: String(x.value) })))
-        if (eqs.code === 200 || eqs.code === 0) setEqStatusOptions(eqs.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (mt.code === 200 || mt.code === 0) setMediumTypeOptions(mt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (rp.code === 200 || rp.code === 0) setReagentPurityOptions(rp.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (dt.code === 200 || dt.code === 0) setDangerTypeOptions(dt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (stt.code === 200 || stt.code === 0) setStdTypeOptions(stt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (utt.code === 200 || utt.code === 0) setUnitTypeOptions(utt.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (tic.code === 200 || tic.code === 0) setTestItemCategoryOptions(tic.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (ccs.code === 200 || ccs.code === 0) setChromColumnStatusOptions(ccs.data.map((x: Record<string, unknown>) => ({ label: x.label, value: x.value })))
-        if (uo.code === 200 || uo.code === 0) setUnitOptions(uo.data.map((x: Record<string, unknown>) => ({ label: x.label || x.unit_name, value: x.value || x.unit_code })))
-      } catch (_e) {
-        // ignore errors
-      }
-    }
-    loadDictData()
-  }, [moduleType, isStdWithItems])
 
-  // 加载检验项目下拉选项（用于 items 子表）
-  useEffect(() => {
-    if (isStdWithItems) {
-      listTestItem({ page: 1, page_size: 200 } as Record<string, unknown>)
-        .then((res: { data?: DictItem[] }) => {
-          const opts = (res.data ?? []).map((t: DictItem) => ({
-            label: `${t.item_code || ''} - ${t.item_name || ''}`,
-            value: t.item_code || '',
-          }))
-          setTestItemOptions(opts)
-        })
-        .catch(() => {})
-    }
-  }, [moduleType, isStdWithItems])
 
   const { data: recordData, isLoading: loading } = useQuery({
     queryKey: ['static-data-record', moduleType, id],
@@ -411,7 +425,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           options={testItemOptions} showSearch allowClear
           placeholder="选择检验项目"
           onChange={val => updateItem(record.key, 'item_code', val)}
-          filterOption={(input, opt) => (opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+          filterOption={(input, opt) => String(opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
         />
       ),
     },
@@ -471,7 +485,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           options={testItemOptions} showSearch allowClear
           placeholder="选择检验项目"
           onChange={val => updateItem(record.key, 'item_code', val)}
-          filterOption={(input, opt) => (opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+          filterOption={(input, opt) => String(opt?.label ?? '').toLowerCase().includes(input.toLowerCase())}
         />
       ),
     },
@@ -589,7 +603,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
             <Col span={24}><Form.Item name="remark" label="备注"><TextArea rows={2} /></Form.Item></Col>
             {/* 设备管理员附件：SOP文件 / 校准证书 / 验证资料 */}
             <Col span={24}>
-              <Divider orientation="left" style={{ marginTop: 8 }}>设备文件</Divider>
+              <Divider titlePlacement="left" style={{ marginTop: 8 }}>设备文件</Divider>
             </Col>
             <Col span={8}><Form.Item name="sop_file" label="SOP文件" help="操作规程PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
             <Col span={8}><Form.Item name="cal_cert" label="校准证书" help="最近一次校准证书PDF"><Input placeholder="附件上传区（待实现）" /></Form.Item></Col>
@@ -797,7 +811,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 附件上传区域（仅支持的模块显示） */}
           {supportsUpload && (
             <>
-              <Divider orientation="left">
+              <Divider titlePlacement="left">
                 <PaperClipOutlined /> 附件上传
               </Divider>
               <div style={{ marginBottom: 16 }}>
@@ -838,7 +852,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           {/* 质量标准检验项目明细子表 */}
           {isStdWithItems && (
             <>
-              <Divider orientation="left">
+              <Divider titlePlacement="left">
                 检验项目明细
                 <Button type="link" size="small" icon={<PlusOutlined />} onClick={addItem} style={{ marginLeft: 8 }}>
                   新增项目

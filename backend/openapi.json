@@ -527,6 +527,184 @@
         }
       }
     },
+    "/api/v1/identity/feishu-config": {
+      "get": {
+        "tags": [
+          "Livzon \u98de\u4e66\u914d\u7f6e",
+          "Livzon \u98de\u4e66\u914d\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6 Livzon \u98de\u4e66\u914d\u7f6e",
+        "description": "\u83b7\u53d6\u5f53\u524d Livzon \u98de\u4e66\u914d\u7f6e",
+        "operationId": "get_feishu_config_api_v1_identity_feishu_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuConfigApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Livzon \u98de\u4e66\u914d\u7f6e",
+          "Livzon \u98de\u4e66\u914d\u7f6e"
+        ],
+        "summary": "\u4fdd\u5b58 Livzon \u98de\u4e66\u914d\u7f6e",
+        "description": "\u4fdd\u5b58 Livzon \u98de\u4e66\u914d\u7f6e",
+        "operationId": "save_feishu_config_api_v1_identity_feishu_config_put",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeishuConfigUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuConfigApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu-config/test": {
+      "post": {
+        "tags": [
+          "Livzon \u98de\u4e66\u914d\u7f6e",
+          "Livzon \u98de\u4e66\u914d\u7f6e"
+        ],
+        "summary": "\u6d4b\u8bd5 Livzon \u98de\u4e66\u914d\u7f6e",
+        "description": "\u6d4b\u8bd5 Livzon \u98de\u4e66\u914d\u7f6e\u8fde\u63a5",
+        "operationId": "test_feishu_config_api_v1_identity_feishu_config_test_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/FeishuConfigUpsert"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuDiagnosticApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/identity/login-logs": {
       "get": {
         "tags": [
@@ -6729,8 +6907,85 @@
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u8bbe\u5907\u7edf\u8ba1",
-        "description": "\u83b7\u53d6\u8bbe\u5907\u7edf\u8ba1",
+        "description": "\u83b7\u53d6\u8bbe\u5907\u7edf\u8ba1\uff08\u652f\u6301\u7b5b\u9009\uff09",
         "operationId": "get_equipment_statistics_api_v1_equipment_equipments_statistics_get",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bbe\u5907\u5206\u7c7bID",
+              "title": "Category Id"
+            },
+            "description": "\u8bbe\u5907\u5206\u7c7bID"
+          },
+          {
+            "name": "location_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bbe\u5907\u4f4d\u7f6eID",
+              "title": "Location Id"
+            },
+            "description": "\u8bbe\u5907\u4f4d\u7f6eID"
+          },
+          {
+            "name": "department_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u5f52\u5c5e\u90e8\u95e8ID",
+              "title": "Department Id"
+            },
+            "description": "\u5f52\u5c5e\u90e8\u95e8ID"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u8bbe\u5907\u72b6\u6001",
+              "title": "Status"
+            },
+            "description": "\u8bbe\u5907\u72b6\u6001"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -6738,6 +6993,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6891,6 +7156,66 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/batch-delete": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u5220\u9664\u8bbe\u5907",
+        "description": "\u6279\u91cf\u5220\u9664\u8bbe\u5907",
+        "operationId": "batch_delete_equipments_api_v1_equipment_equipments_batch_delete_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchDeleteRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -14319,14 +14644,34 @@
         }
       }
     },
-    "/api/v1/equipment/import/preview": {
+    "/api/v1/equipment/equipments/import/template": {
+      "get": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u4e0b\u8f7d\u5bfc\u5165\u6a21\u677f",
+        "operationId": "download_template_api_v1_equipment_equipments_import_template_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import/preview": {
       "post": {
         "tags": [
           "\u8bbe\u5907\u7ba1\u7406"
         ],
         "summary": "\u9884\u89c8\u5bfc\u5165\u6570\u636e",
-        "description": "\u9884\u89c8\u5bfc\u5165\u6570\u636e\uff0c\u8fd4\u56de\u8f6c\u6362\u540e\u7684\u7ed3\u679c\uff08\u4e0d\u5165\u5e93\uff09\n\n\u6570\u636e\u683c\u5f0f\uff08\u6765\u81ea Excel\uff09\uff1a\n[\n    {\n        \"\u8d44\u4ea7\u7f16\u53f7\": \"59070\",\n        \"\u6807\u7b7e\u53f7\": \"107001252\",\n        \"\u8d44\u4ea7\u8bf4\u660e\": \"\u751f\u5316\u57f9\u517b\u7bb1\",\n        \"\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e\": \"\u56fa\u5b9a\u8d44\u4ea7.\u7535\u5b50\u8bbe\u5907\",\n        \"\u5236\u9020\u5546\": \"\u91cd\u5e86\u6c38\u751f\",\n        \"\u578b\u53f7\": \"SHH-L\",\n        \"\u5f53\u524d\u6210\u672c\": 22123.89,\n        \"\u542f\u7528\u65e5\u671f\": 46196.0,\n        \"\u5b9e\u7269\u6240\u5728\u90e8\u95e8\": \"\u68c0\u9a8c\u5ba4\",\n        \"\u5b9e\u7269\u6240\u5728\u5730\u70b9\": \"\u5fae\u751f\u7269\u5ba4\",\n        \"\u62a5\u5e9f\u72b6\u6001\": \"\u672a\u62a5\u5e9f\",\n        \"\u62a5\u5e9f\u65f6\u95f4\": \"\"\n    }\n]",
-        "operationId": "preview_import_api_v1_equipment_import_preview_post",
+        "operationId": "preview_import_api_v1_equipment_equipments_import_preview_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -14352,8 +14697,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14366,9 +14710,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Preview Import Api V1 Equipment Import Preview Post"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -14386,14 +14728,13 @@
         }
       }
     },
-    "/api/v1/equipment/import/batch": {
+    "/api/v1/equipment/equipments/import/batch": {
       "post": {
         "tags": [
           "\u8bbe\u5907\u7ba1\u7406"
         ],
-        "summary": "\u6279\u91cf\u5bfc\u5165\u8bbe\u5907",
-        "description": "\u6279\u91cf\u5bfc\u5165\u8bbe\u5907\uff08\u5148\u9884\u89c8\uff0c\u518d\u5bfc\u5165\uff09\n\n\u6570\u636e\u683c\u5f0f\u540c preview \u63a5\u53e3",
-        "operationId": "batch_import_api_v1_equipment_import_batch_post",
+        "summary": "\u6267\u884c\u6279\u91cf\u5bfc\u5165",
+        "operationId": "batch_import_api_v1_equipment_equipments_import_batch_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -14419,8 +14760,7 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/EquipmentImportRow"
                 },
                 "title": "Data"
               }
@@ -14433,9 +14773,114 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import/": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u4e0a\u4f20Excel\u6587\u4ef6\u5e76\u89e3\u6790",
+        "operationId": "import_excel_api_v1_equipment_equipments_import__post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_excel_api_v1_equipment_equipments_import__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import/test-validation": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6d4b\u8bd5\u9a8c\u8bc1\u9519\u8bef",
+        "description": "Test endpoint to debug validation errors without authentication.",
+        "operationId": "test_validation_api_v1_equipment_equipments_import_test_validation_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "items": {
+                  "$ref": "#/components/schemas/EquipmentImportRow"
+                },
+                "type": "array",
+                "title": "Data"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
                   "additionalProperties": true,
-                  "title": "Response Batch Import Api V1 Equipment Import Batch Post"
+                  "type": "object",
+                  "title": "Response Test Validation Api V1 Equipment Equipments Import Test Validation Post"
                 }
               }
             }
@@ -20547,7 +20992,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u5bfc\u51fa\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26 PDF",
-        "description": "\u5bfc\u51fa\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26\u4e3a PDF \u6587\u4ef6\u3002\n\n\u6d41\u7a0b\uff1a\n1. AI \u89e3\u6790\u81ea\u7136\u8bed\u8a00 \u2192 \u7b5b\u9009\u6761\u4ef6\uff08\u5982\u300c\u5bfc\u51fa\u6240\u6709\u91cd\u5927\u5371\u9669\u6e90\u300d\u300c\u63d0\u70bc\u4e00\u90e8\u4e0a\u6708\u8bb0\u5f55\u300d\uff09\n2. \u6309\u6761\u4ef6\u67e5\u8be2\u6570\u636e\u5e93\n3. Excel \u6807\u51c6\u5316\u8f93\u51fa\u63d2\u4ef6\u586b\u8868 \u2192 LibreOffice \u8f6c PDF\n\n\u4e0d\u63d0\u4f9b natural_query \u65f6\u5bfc\u51fa\u5168\u90e8\u5df2\u5b8c\u6210\u8bb0\u5f55\u3002",
+        "description": "\u5bfc\u51fa\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26\u4e3a PDF \u6587\u4ef6\u3002\n\n\u6d41\u7a0b\uff1a\n1. AI \u89e3\u6790\u81ea\u7136\u8bed\u8a00 \u2192 \u7b5b\u9009\u6761\u4ef6\uff08\u5982\u300c\u5bfc\u51fa\u6240\u6709\u91cd\u5927\u5371\u9669\u6e90\u300d\u300c\u63d0\u70bc\u4e00\u90e8\u4e0a\u6708\u8bb0\u5f55\u300d\uff09\n2. \u6309\u6761\u4ef6\u67e5\u8be2\u6570\u636e\u5e93\n3. Excel \u6807\u51c6\u5316\u8f93\u51fa\u63d2\u4ef6\u586b\u8868 \u2192 LibreOffice \u8f6c PDF\n\n\u4e0d\u63d0\u4f9b natural_query \u65f6\u5bfc\u51fa\u5168\u90e8\u5df2\u5b8c\u6210\u8bb0\u5f55\u3002\n\nTODO(H7): PDF export can take >5s for large datasets. Consider async task + polling pattern.",
         "operationId": "handler_api_v1_safety_hazard_identifications_export_pdf_post",
         "parameters": [
           {
@@ -23092,7 +23537,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u751f\u6210\u77e5\u8bc6\u5361\u7247",
-        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210\u7ed3\u6784\u5316\u77e5\u8bc6\u5361\u7247\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09",
+        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210\u7ed3\u6784\u5316\u77e5\u8bc6\u5361\u7247\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09\n\nTODO(H7): Consider async task pattern for large documents.",
         "operationId": "generate_card_api_v1_safety_knowledge_articles__article_id__generate_card_post",
         "parameters": [
           {
@@ -23152,7 +23597,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u751f\u6210 PPT",
-        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210 PPT\uff08.pptx \u6587\u4ef6\uff09",
+        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210 PPT\uff08.pptx \u6587\u4ef6\uff09\n\nTODO(H7): This operation can take >5s. Consider converting to async task + polling:\n1. Accept request \u2192 create task record \u2192 return task_id immediately\n2. Background worker generates PPT\n3. Client polls /tasks/{task_id}/status for completion",
         "operationId": "generate_ppt_api_v1_safety_knowledge_articles__article_id__generate_ppt_post",
         "parameters": [
           {
@@ -23306,7 +23751,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u751f\u6210\u6458\u8981",
-        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210\u6458\u8981\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09",
+        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210\u6458\u8981\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09\n\nTODO(H7): Consider async task pattern for large documents.",
         "operationId": "generate_summary_api_v1_safety_knowledge_articles__article_id__generate_summary_post",
         "parameters": [
           {
@@ -28496,7 +28941,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u5bfc\u51fa\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26 Excel",
-        "description": "\u5bfc\u51fa\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26\u4e3a Excel \u6587\u4ef6\uff0c\u652f\u6301 AI \u81ea\u7136\u8bed\u8a00\u7b5b\u9009",
+        "description": "\u5bfc\u51fa\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26\u4e3a Excel \u6587\u4ef6\uff0c\u652f\u6301 AI \u81ea\u7136\u8bed\u8a00\u7b5b\u9009\n\nTODO(H7): Excel export can take >5s for large datasets. Consider async task + polling pattern.",
         "operationId": "handler_api_v1_safety_special_operation_ledger_export_post",
         "parameters": [
           {
@@ -30664,7 +31109,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyPlatformListApiResponse"
                 }
               }
             }
@@ -30812,7 +31257,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigApiResponse"
                 }
               }
             }
@@ -30976,7 +31421,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigListApiResponse"
                 }
               }
             }
@@ -31035,7 +31480,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigApiResponse"
                 }
               }
             }
@@ -31102,7 +31547,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigApiResponse"
                 }
               }
             }
@@ -31308,7 +31753,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDataListApiResponse"
                 }
               }
             }
@@ -31409,7 +31854,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyStatisticsApiResponse"
                 }
               }
             }
@@ -31468,7 +31913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CollectTriggerApiResponse"
                 }
               }
             }
@@ -31635,7 +32080,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CollectLogDetailApiResponse"
                 }
               }
             }
@@ -31694,7 +32139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleApiResponse"
                 }
               }
             }
@@ -31822,7 +32267,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleListApiResponse"
                 }
               }
             }
@@ -31881,7 +32326,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleApiResponse"
                 }
               }
             }
@@ -31948,7 +32393,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleApiResponse"
                 }
               }
             }
@@ -32171,7 +32616,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRecordListApiResponse"
                 }
               }
             }
@@ -32240,7 +32685,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRecordApiResponse"
                 }
               }
             }
@@ -32300,7 +32745,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopApiResponse"
                 }
               }
             }
@@ -32411,7 +32856,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopListApiResponse"
                 }
               }
             }
@@ -32471,7 +32916,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopApiResponse"
                 }
               }
             }
@@ -32539,7 +32984,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopApiResponse"
                 }
               }
             }
@@ -32988,7 +33433,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/MonthlySummaryApiResponse"
                 }
               }
             }
@@ -33048,7 +33493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyRecordApiResponse"
                 }
               }
             }
@@ -84651,6 +85096,26 @@
         "type": "object",
         "title": "BatchDeleteMergedRowsRequest"
       },
+      "BatchDeleteRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Ids",
+            "description": "\u8bbe\u5907ID\u5217\u8868"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "BatchDeleteRequest",
+        "description": "\u6279\u91cf\u5220\u9664\u8bf7\u6c42"
+      },
       "BatchLockRequest": {
         "properties": {
           "deviation_id": {
@@ -85655,6 +86120,20 @@
           "file"
         ],
         "title": "Body_handler_api_v1_safety_revisions__revision_id__manual_complete_post"
+      },
+      "Body_import_excel_api_v1_equipment_equipments_import__post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_excel_api_v1_equipment_equipments_import__post"
       },
       "Body_import_product_outputs_api_v1_production_product_output_import_post": {
         "properties": {
@@ -88337,6 +88816,190 @@
         "type": "object",
         "title": "ClosingUpdate",
         "description": "\u5173\u95ed\u66f4\u65b0"
+      },
+      "CollectLogDetailApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CollectLogDetailResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CollectLogDetailApiResponse"
+      },
+      "CollectLogDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "platform_code": {
+            "type": "string",
+            "title": "Platform Code"
+          },
+          "collect_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collect Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "device_count": {
+            "type": "integer",
+            "title": "Device Count"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "devices": {
+            "items": {
+              "$ref": "#/components/schemas/CollectLogDeviceDetail"
+            },
+            "type": "array",
+            "title": "Devices",
+            "description": "\u8bbe\u5907\u6570\u636e\u8be6\u60c5\u5217\u8868"
+          },
+          "time_range_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Range Start",
+            "description": "\u6570\u636e\u8986\u76d6\u8d77\u59cb\u65f6\u95f4"
+          },
+          "time_range_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Range End",
+            "description": "\u6570\u636e\u8986\u76d6\u7ed3\u675f\u65f6\u95f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_code",
+          "collect_time",
+          "status",
+          "device_count",
+          "success_count",
+          "error_message",
+          "created_at"
+        ],
+        "title": "CollectLogDetailResponse",
+        "description": "\u91c7\u96c6\u65e5\u5fd7\u8be6\u60c5\u54cd\u5e94"
+      },
+      "CollectLogDeviceDetail": {
+        "properties": {
+          "device_name": {
+            "type": "string",
+            "title": "Device Name",
+            "description": "\u8bbe\u5907\u540d\u79f0"
+          },
+          "platform_device_code": {
+            "type": "string",
+            "title": "Platform Device Code",
+            "description": "\u5e73\u53f0\u8bbe\u5907\u7f16\u7801"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type",
+            "description": "\u80fd\u6e90\u7c7b\u578b"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "description": "\u91c7\u96c6\u503c"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "description": "\u8ba1\u91cf\u5355\u4f4d"
+          },
+          "data_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data Timestamp",
+            "description": "\u6570\u636e\u65f6\u95f4\u70b9"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_name",
+          "platform_device_code",
+          "energy_type",
+          "value",
+          "unit",
+          "data_timestamp"
+        ],
+        "title": "CollectLogDeviceDetail",
+        "description": "\u91c7\u96c6\u65e5\u5fd7\u4e2d\u5355\u4e2a\u8bbe\u5907\u7684\u6570\u636e\u8be6\u60c5"
+      },
+      "CollectTriggerApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CollectTriggerApiResponse"
       },
       "CollectTriggerRequest": {
         "properties": {
@@ -95831,6 +96494,197 @@
         "type": "object",
         "title": "EmployeeUpdate"
       },
+      "EnergyAlertRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyAlertRecordResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRecordApiResponse"
+      },
+      "EnergyAlertRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyAlertRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRecordListApiResponse"
+      },
+      "EnergyAlertRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "device_config_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Config Id"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "alert_level": {
+            "type": "string",
+            "title": "Alert Level"
+          },
+          "trigger_value": {
+            "type": "number",
+            "title": "Trigger Value"
+          },
+          "threshold_value": {
+            "type": "number",
+            "title": "Threshold Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "alert_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Alert Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "processed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed By"
+          },
+          "processed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed At"
+          },
+          "process_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rule_id",
+          "device_config_id",
+          "energy_type",
+          "alert_level",
+          "trigger_value",
+          "threshold_value",
+          "unit",
+          "alert_time",
+          "status",
+          "processed_by",
+          "processed_at",
+          "process_note",
+          "created_at"
+        ],
+        "title": "EnergyAlertRecordResponse"
+      },
+      "EnergyAlertRuleApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyAlertRuleResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRuleApiResponse"
+      },
       "EnergyAlertRuleCreate": {
         "properties": {
           "rule_name": {
@@ -95991,6 +96845,171 @@
           "notify_users"
         ],
         "title": "EnergyAlertRuleCreate"
+      },
+      "EnergyAlertRuleListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyAlertRuleResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRuleListApiResponse"
+      },
+      "EnergyAlertRuleResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "rule_name": {
+            "type": "string",
+            "title": "Rule Name"
+          },
+          "rule_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Description"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "monitor_metric": {
+            "type": "string",
+            "title": "Monitor Metric"
+          },
+          "threshold_type": {
+            "type": "string",
+            "title": "Threshold Type"
+          },
+          "threshold_value": {
+            "type": "number",
+            "title": "Threshold Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "alert_level": {
+            "type": "string",
+            "title": "Alert Level"
+          },
+          "notify_method": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notify Method"
+          },
+          "notify_users": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notify Users"
+          },
+          "notify_frequency": {
+            "type": "string",
+            "title": "Notify Frequency"
+          },
+          "effective_time": {
+            "type": "string",
+            "title": "Effective Time"
+          },
+          "custom_time_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Time Start"
+          },
+          "custom_time_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Time End"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rule_name",
+          "rule_description",
+          "energy_type",
+          "monitor_metric",
+          "threshold_type",
+          "threshold_value",
+          "unit",
+          "alert_level",
+          "notify_method",
+          "notify_users",
+          "notify_frequency",
+          "effective_time",
+          "custom_time_start",
+          "custom_time_end",
+          "is_enabled",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyAlertRuleResponse"
       },
       "EnergyAlertRuleUpdate": {
         "properties": {
@@ -96208,6 +97227,106 @@
         "type": "object",
         "title": "EnergyAlertRuleUpdate"
       },
+      "EnergyDataListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyDataResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyDataListApiResponse"
+      },
+      "EnergyDataResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "device_config_id": {
+            "type": "string",
+            "title": "Device Config Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "device_config_id",
+          "timestamp",
+          "value",
+          "unit",
+          "collected_at"
+        ],
+        "title": "EnergyDataResponse"
+      },
+      "EnergyDeviceConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyDeviceConfigResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyDeviceConfigApiResponse"
+      },
       "EnergyDeviceConfigCreate": {
         "properties": {
           "platform_code": {
@@ -96324,6 +97443,143 @@
           "unit"
         ],
         "title": "EnergyDeviceConfigCreate"
+      },
+      "EnergyDeviceConfigListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyDeviceConfigResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyDeviceConfigListApiResponse"
+      },
+      "EnergyDeviceConfigResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "platform_code": {
+            "type": "string",
+            "title": "Platform Code"
+          },
+          "platform_device_code": {
+            "type": "string",
+            "title": "Platform Device Code"
+          },
+          "device_name": {
+            "type": "string",
+            "title": "Device Name"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "api_endpoint": {
+            "type": "string",
+            "title": "Api Endpoint"
+          },
+          "workshop": {
+            "type": "string",
+            "title": "Workshop"
+          },
+          "production_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Line"
+          },
+          "monitor_level": {
+            "type": "string",
+            "title": "Monitor Level"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "collection_interval": {
+            "type": "integer",
+            "title": "Collection Interval"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_code",
+          "platform_device_code",
+          "device_name",
+          "energy_type",
+          "api_endpoint",
+          "workshop",
+          "production_line",
+          "monitor_level",
+          "unit",
+          "collection_interval",
+          "is_enabled",
+          "remark",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyDeviceConfigResponse"
       },
       "EnergyDeviceConfigUpdate": {
         "properties": {
@@ -96482,6 +97738,28 @@
         "type": "object",
         "title": "EnergyDeviceConfigUpdate"
       },
+      "EnergyMonthlyRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyMonthlyRecordResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyMonthlyRecordApiResponse"
+      },
       "EnergyMonthlyRecordBatchCreate": {
         "properties": {
           "records": {
@@ -96581,6 +97859,207 @@
         ],
         "title": "EnergyMonthlyRecordCreate"
       },
+      "EnergyMonthlyRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "record_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Record Date"
+          },
+          "date_range_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range End"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workshop_id",
+          "energy_type",
+          "record_date",
+          "date_range_end",
+          "value",
+          "unit",
+          "source",
+          "remark",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyMonthlyRecordResponse"
+      },
+      "EnergyPlatformListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyPlatformResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyPlatformListApiResponse"
+      },
+      "EnergyPlatformResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "EnergyPlatformResponse"
+      },
+      "EnergyStatisticsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyStatisticsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyStatisticsApiResponse"
+      },
+      "EnergyStatisticsResponse": {
+        "properties": {
+          "group_key": {
+            "type": "string",
+            "title": "Group Key",
+            "description": "\u5206\u7ec4\u952e(\u8f66\u95f4/\u4ea7\u7ebf/\u8bbe\u5907\u540d)"
+          },
+          "total_value": {
+            "type": "number",
+            "title": "Total Value",
+            "description": "\u80fd\u8017\u5408\u8ba1"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "description": "\u8ba1\u91cf\u5355\u4f4d"
+          },
+          "data_count": {
+            "type": "integer",
+            "title": "Data Count",
+            "description": "\u6570\u636e\u6761\u6570"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_key",
+          "total_value",
+          "unit",
+          "data_count"
+        ],
+        "title": "EnergyStatisticsResponse"
+      },
+      "EnergyWorkshopApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyWorkshopResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyWorkshopApiResponse"
+      },
       "EnergyWorkshopCreate": {
         "properties": {
           "code": {
@@ -96640,6 +98119,106 @@
           "category"
         ],
         "title": "EnergyWorkshopCreate"
+      },
+      "EnergyWorkshopListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyWorkshopResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyWorkshopListApiResponse"
+      },
+      "EnergyWorkshopResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "category",
+          "parent_id",
+          "sort_order",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyWorkshopResponse"
       },
       "EnergyWorkshopUpdate": {
         "properties": {
@@ -97212,6 +98791,119 @@
         ],
         "title": "EquipmentCreate",
         "description": "\u521b\u5efa\u8bbe\u5907\u8bf7\u6c42"
+      },
+      "EquipmentImportRow": {
+        "properties": {
+          "\u8d44\u4ea7\u7f16\u53f7": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7f16\u53f7",
+            "description": "\u8d44\u4ea7\u7f16\u53f7"
+          },
+          "\u8d44\u4ea7\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u8bf4\u660e"
+          },
+          "\u8bbe\u5907\u540d\u79f0": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8bbe\u5907\u540d\u79f0",
+            "description": "\u8bbe\u5907\u540d\u79f0\uff08\u522b\u540d\uff09"
+          },
+          "\u5b9e\u7269\u6240\u5728\u90e8\u95e8": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8",
+            "description": "\u5b9e\u7269\u6240\u5728\u90e8\u95e8"
+          },
+          "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e",
+            "description": "\u8d44\u4ea7\u7c7b\u522b\u8bf4\u660e"
+          },
+          "\u5f53\u524d\u6210\u672c": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u5f53\u524d\u6210\u672c",
+            "description": "\u5f53\u524d\u6210\u672c"
+          },
+          "\u62a5\u5e9f\u72b6\u6001": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u62a5\u5e9f\u72b6\u6001",
+            "description": "\u62a5\u5e9f\u72b6\u6001"
+          },
+          "\u6570\u91cf": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "\u6570\u91cf",
+            "description": "\u6570\u91cf"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "EquipmentImportRow",
+        "description": "\u8bbe\u5907\u5bfc\u5165\u884c\u6570\u636e"
       },
       "EquipmentUpdate": {
         "properties": {
@@ -98905,6 +100597,396 @@
         ],
         "title": "FeishuBotConfigRequest",
         "description": "\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e\u8bf7\u6c42"
+      },
+      "FeishuConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuConfigResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuConfigApiResponse"
+      },
+      "FeishuConfigResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "config_name": {
+            "type": "string",
+            "title": "Config Name",
+            "default": "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+          },
+          "app_id": {
+            "type": "string",
+            "title": "App Id",
+            "default": ""
+          },
+          "app_secret_configured": {
+            "type": "boolean",
+            "title": "App Secret Configured",
+            "default": false
+          },
+          "app_secret_masked": {
+            "type": "string",
+            "title": "App Secret Masked",
+            "default": ""
+          },
+          "card_callback_verification_token_configured": {
+            "type": "boolean",
+            "title": "Card Callback Verification Token Configured",
+            "default": false
+          },
+          "card_callback_verification_token_masked": {
+            "type": "string",
+            "title": "Card Callback Verification Token Masked",
+            "default": ""
+          },
+          "card_callback_encrypt_key_configured": {
+            "type": "boolean",
+            "title": "Card Callback Encrypt Key Configured",
+            "default": false
+          },
+          "card_callback_encrypt_key_masked": {
+            "type": "string",
+            "title": "Card Callback Encrypt Key Masked",
+            "default": ""
+          },
+          "card_callback_url": {
+            "type": "string",
+            "title": "Card Callback Url",
+            "default": "/api/v1/identity/feishu/card-callback"
+          },
+          "sync_root_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Root Department Id"
+          },
+          "sync_member_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Member Department Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "last_sync_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Status"
+          },
+          "last_sync_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Message"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "last_diagnostic_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Status"
+          },
+          "last_diagnostic_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Message"
+          },
+          "last_diagnostic_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Result"
+          },
+          "last_diagnosed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnosed At"
+          }
+        },
+        "type": "object",
+        "title": "FeishuConfigResponse"
+      },
+      "FeishuConfigUpsert": {
+        "properties": {
+          "config_name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Config Name",
+            "description": "\u914d\u7f6e\u540d\u79f0\uff0c\u4ec5\u7528\u4e8e Livzon \u52a9\u624b",
+            "default": "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+          },
+          "app_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "App Id"
+          },
+          "app_secret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Secret"
+          },
+          "card_callback_verification_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Callback Verification Token"
+          },
+          "card_callback_encrypt_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Callback Encrypt Key"
+          },
+          "sync_root_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Root Department Id"
+          },
+          "sync_member_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Member Department Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_id"
+        ],
+        "title": "FeishuConfigUpsert"
+      },
+      "FeishuDiagnosticApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuDiagnosticResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuDiagnosticApiResponse"
+      },
+      "FeishuDiagnosticResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/FeishuDiagnosticStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "department_count": {
+            "type": "integer",
+            "title": "Department Count",
+            "default": 0
+          },
+          "sample_user_count": {
+            "type": "integer",
+            "title": "Sample User Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "steps"
+        ],
+        "title": "FeishuDiagnosticResult"
+      },
+      "FeishuDiagnosticStep": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "message"
+        ],
+        "title": "FeishuDiagnosticStep"
       },
       "FeishuEnergyImportRequest": {
         "properties": {
@@ -107063,6 +109145,50 @@
         ],
         "title": "ModuleSettingUpdate",
         "description": "Request schema for updating a setting value."
+      },
+      "MonthlySummaryApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MonthlySummaryItem"
+            },
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MonthlySummaryApiResponse"
+      },
+      "MonthlySummaryItem": {
+        "properties": {
+          "total_value": {
+            "type": "number",
+            "title": "Total Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_value",
+          "unit"
+        ],
+        "title": "MonthlySummaryItem"
       },
       "MonthlyTrend": {
         "properties": {
