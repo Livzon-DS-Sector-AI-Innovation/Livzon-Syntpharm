@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -69,3 +70,21 @@ class SafetyCheckResponse(SafetyCheckBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class SafetyCheckApiResponse(BaseModel):
+    """Single safety check response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: SafetyCheckResponse
+
+
+class SafetyCheckListApiResponse(BaseModel):
+    """Safety check list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[SafetyCheckResponse]
+    meta: dict[str, Any] | None = None

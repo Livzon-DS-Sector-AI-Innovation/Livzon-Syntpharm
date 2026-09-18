@@ -16440,7 +16440,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckListApiResponse"
                 }
               }
             }
@@ -16498,7 +16498,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -16558,7 +16558,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -16626,7 +16626,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -16684,7 +16684,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -16744,7 +16744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -16815,7 +16815,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -16885,7 +16885,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyCheckApiResponse"
                 }
               }
             }
@@ -122186,6 +122186,29 @@
         "title": "RouteLocationsBatch",
         "description": "\u6279\u91cf\u8bbe\u7f6e\u7ebf\u8def\u5730\u70b9-\u8bbe\u5907-\u6a21\u677f\u8bf7\u6c42"
       },
+      "SafetyCheckApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SafetyCheckResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SafetyCheckApiResponse",
+        "description": "Single safety check response wrapper"
+      },
       "SafetyCheckCreate": {
         "properties": {
           "check_no": {
@@ -122333,6 +122356,225 @@
         ],
         "title": "SafetyCheckCreate",
         "description": "\u521b\u5efa\u5b89\u5168\u68c0\u67e5"
+      },
+      "SafetyCheckListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SafetyCheckResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SafetyCheckListApiResponse",
+        "description": "Safety check list response wrapper"
+      },
+      "SafetyCheckResponse": {
+        "properties": {
+          "check_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Check No",
+            "description": "\u68c0\u67e5\u7f16\u53f7"
+          },
+          "check_type": {
+            "$ref": "#/components/schemas/CheckType",
+            "description": "\u68c0\u67e5\u7c7b\u578b",
+            "default": "daily"
+          },
+          "check_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Check Date",
+            "description": "\u68c0\u67e5\u65e5\u671f"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u68c0\u67e5\u90e8\u95e8"
+          },
+          "inspector": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector",
+            "description": "\u68c0\u67e5\u4eba"
+          },
+          "inspector_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector Name",
+            "description": "\u68c0\u67e5\u4eba\u59d3\u540d"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u68c0\u67e5\u5730\u70b9"
+          },
+          "findings": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Findings",
+            "description": "\u68c0\u67e5\u53d1\u73b0"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result",
+            "description": "\u68c0\u67e5\u7ed3\u679c"
+          },
+          "rectification_required": {
+            "type": "boolean",
+            "title": "Rectification Required",
+            "description": "\u662f\u5426\u9700\u8981\u6574\u6539",
+            "default": false
+          },
+          "rectification_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Deadline",
+            "description": "\u6574\u6539\u671f\u9650"
+          },
+          "inspector_confirmed": {
+            "type": "boolean",
+            "title": "Inspector Confirmed",
+            "default": false
+          },
+          "safety_officer_confirmed": {
+            "type": "boolean",
+            "title": "Safety Officer Confirmed",
+            "default": false
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "rectification_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Status"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_no",
+          "check_date",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SafetyCheckResponse",
+        "description": "\u5b89\u5168\u68c0\u67e5\u54cd\u5e94"
       },
       "SafetyCheckUpdate": {
         "properties": {

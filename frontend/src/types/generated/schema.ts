@@ -33018,6 +33018,23 @@ export interface components {
             locations?: components["schemas"]["RouteLocationItem"][];
         };
         /**
+         * SafetyCheckApiResponse
+         * @description Single safety check response wrapper
+         */
+        SafetyCheckApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SafetyCheckResponse"];
+        };
+        /**
          * SafetyCheckCreate
          * @description 创建安全检查
          */
@@ -33096,6 +33113,125 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * SafetyCheckListApiResponse
+         * @description Safety check list response wrapper
+         */
+        SafetyCheckListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SafetyCheckResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * SafetyCheckResponse
+         * @description 安全检查响应
+         */
+        SafetyCheckResponse: {
+            /**
+             * Check No
+             * @description 检查编号
+             */
+            check_no: string;
+            /**
+             * @description 检查类型
+             * @default daily
+             */
+            check_type: components["schemas"]["CheckType"];
+            /**
+             * Check Date
+             * Format: date-time
+             * @description 检查日期
+             */
+            check_date: string;
+            /**
+             * Department
+             * @description 检查部门
+             */
+            department?: string | null;
+            /**
+             * Inspector
+             * @description 检查人
+             */
+            inspector?: string | null;
+            /**
+             * Inspector Name
+             * @description 检查人姓名
+             */
+            inspector_name?: string | null;
+            /**
+             * Location
+             * @description 检查地点
+             */
+            location?: string | null;
+            /**
+             * Findings
+             * @description 检查发现
+             */
+            findings?: string | null;
+            /**
+             * Result
+             * @description 检查结果
+             */
+            result?: string | null;
+            /**
+             * Rectification Required
+             * @description 是否需要整改
+             * @default false
+             */
+            rectification_required: boolean;
+            /**
+             * Rectification Deadline
+             * @description 整改期限
+             */
+            rectification_deadline?: string | null;
+            /**
+             * Inspector Confirmed
+             * @default false
+             */
+            inspector_confirmed: boolean;
+            /**
+             * Safety Officer Confirmed
+             * @default false
+             */
+            safety_officer_confirmed: boolean;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rectification Status */
+            rectification_status?: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * SafetyCheckUpdate
@@ -46275,7 +46411,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46310,7 +46446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46343,7 +46479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46380,7 +46516,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46413,7 +46549,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46446,7 +46582,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46482,7 +46618,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46519,7 +46655,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */

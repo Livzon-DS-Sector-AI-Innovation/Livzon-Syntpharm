@@ -1,4 +1,9 @@
 import {safeApiFetch, buildQueryString, getApiBaseUrl} from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+
+type SafetyCheckResponse = components['schemas']['SafetyCheckResponse']
+type SafetyCheckListApiResponse = components['schemas']['SafetyCheckListApiResponse']
+type SafetyCheckApiResponse = components['schemas']['SafetyCheckApiResponse']
 
 async function uploadFetch(
   endpoint: string,
@@ -29,15 +34,15 @@ export async function getChecks(
   params: Record<string, unknown> = {},
   authHeaders?: Record<string, string>
 ) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/checks${buildQueryString(params)}`, { headers: authHeaders })
+  return safeApiFetch<SafetyCheckListApiResponse>(`/api/v1/safety/checks${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getCheck(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/checks/${id}`, { headers: authHeaders })
+  return safeApiFetch<SafetyCheckApiResponse>(`/api/v1/safety/checks/${id}`, { headers: authHeaders })
 }
 
 export async function createCheck(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/checks', {
+  return safeApiFetch<SafetyCheckApiResponse>('/api/v1/safety/checks', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -45,7 +50,7 @@ export async function createCheck(data: unknown, authHeaders?: Record<string, st
 }
 
 export async function updateCheck(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/checks/${id}`, {
+  return safeApiFetch<SafetyCheckApiResponse>(`/api/v1/safety/checks/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -53,14 +58,14 @@ export async function updateCheck(id: string, data: unknown, authHeaders?: Recor
 }
 
 export async function submitCheck(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/checks/${id}/submit`, {
+  return safeApiFetch<SafetyCheckApiResponse>(`/api/v1/safety/checks/${id}/submit`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function reviewCheck(id: string, result: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/checks/${id}/review?result=${result}`, {
+  return safeApiFetch<SafetyCheckApiResponse>(`/api/v1/safety/checks/${id}/review?result=${result}`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -74,7 +79,7 @@ export async function deleteCheck(id: string, authHeaders?: Record<string, strin
 }
 
 export async function confirmCheckApi(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/checks/${id}/confirm`, {
+  return safeApiFetch<SafetyCheckApiResponse>(`/api/v1/safety/checks/${id}/confirm`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
