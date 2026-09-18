@@ -17157,6 +17157,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AIAnalysisApiResponse */
+        AIAnalysisApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AIAnalysisResponse"];
+        };
         /**
          * AIAnalysisRequest
          * @description AI 能耗分析请求（V2 - 支持单耗分析）
@@ -17185,6 +17199,36 @@ export interface components {
              * @default true
              */
             include_ai_suggestion: boolean;
+        };
+        /**
+         * AIAnalysisResponse
+         * @description AI 能耗分析响应（支持多产品）
+         */
+        AIAnalysisResponse: {
+            /** Workshop Id */
+            workshop_id: string;
+            /** Workshop Name */
+            workshop_name: string;
+            /** Analysis Month */
+            analysis_month: string;
+            /** Total Energy Kwh */
+            total_energy_kwh: number;
+            /** Production Items */
+            production_items: components["schemas"]["ProductionItemDetail"][];
+            /** Converted Production */
+            converted_production: number;
+            /** Actual Unit Consumption */
+            actual_unit_consumption: number;
+            /** Target Unit Consumption */
+            target_unit_consumption?: number | null;
+            /** Deviation Rate */
+            deviation_rate?: number | null;
+            /**
+             * Deviation Status
+             * @enum {string}
+             */
+            deviation_status: "normal" | "warning" | "critical" | "unknown";
+            ai_suggestion?: components["schemas"]["AISuggestion"] | null;
         };
         /**
          * AIConfirmData
@@ -17230,6 +17274,38 @@ export interface components {
             status: string;
             /** Message */
             message: string;
+        };
+        /**
+         * AISuggestion
+         * @description AI 建议对象
+         */
+        AISuggestion: {
+            /**
+             * Status
+             * @description 状态：normal/warning/critical/info/unknown
+             */
+            status: string;
+            /**
+             * Summary
+             * @description 一句话总结
+             */
+            summary: string;
+            /**
+             * Detailed Analysis
+             * @description 详细分析
+             */
+            detailed_analysis: string;
+            /**
+             * Recommendations
+             * @description 建议列表
+             */
+            recommendations: string[];
+            /**
+             * Confidence Level
+             * @description 置信度
+             * @enum {string}
+             */
+            confidence_level: "high" | "medium" | "low";
         };
         /**
          * AIWorkflowConfigCreate
@@ -19658,6 +19734,161 @@ export interface components {
             conclusion?: string | null;
             /** Attachments */
             attachments?: unknown[] | null;
+        };
+        /** CollectLogDetailApiResponse */
+        CollectLogDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["CollectLogDetailResponse"];
+        };
+        /**
+         * CollectLogDetailResponse
+         * @description 采集日志详情响应
+         */
+        CollectLogDetailResponse: {
+            /** Id */
+            id: string;
+            /** Platform Code */
+            platform_code: string;
+            /**
+             * Collect Time
+             * Format: date-time
+             */
+            collect_time: string;
+            /** Status */
+            status: string;
+            /** Device Count */
+            device_count: number;
+            /** Success Count */
+            success_count: number;
+            /** Error Message */
+            error_message: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Devices
+             * @description 设备数据详情列表
+             */
+            devices?: components["schemas"]["CollectLogDeviceDetail"][];
+            /**
+             * Time Range Start
+             * @description 数据覆盖起始时间
+             */
+            time_range_start?: string | null;
+            /**
+             * Time Range End
+             * @description 数据覆盖结束时间
+             */
+            time_range_end?: string | null;
+        };
+        /**
+         * CollectLogDeviceDetail
+         * @description 采集日志中单个设备的数据详情
+         */
+        CollectLogDeviceDetail: {
+            /**
+             * Device Name
+             * @description 设备名称
+             */
+            device_name: string;
+            /**
+             * Platform Device Code
+             * @description 平台设备编码
+             */
+            platform_device_code: string;
+            /**
+             * Energy Type
+             * @description 能源类型
+             */
+            energy_type: string;
+            /**
+             * Value
+             * @description 采集值
+             */
+            value: number;
+            /**
+             * Unit
+             * @description 计量单位
+             */
+            unit: string;
+            /**
+             * Data Timestamp
+             * Format: date-time
+             * @description 数据时间点
+             */
+            data_timestamp: string;
+        };
+        /** CollectLogListApiResponse */
+        CollectLogListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["CollectLogResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** CollectLogResponse */
+        CollectLogResponse: {
+            /** Id */
+            id: string;
+            /** Platform Code */
+            platform_code: string;
+            /**
+             * Collect Time
+             * Format: date-time
+             */
+            collect_time: string;
+            /** Status */
+            status: string;
+            /** Device Count */
+            device_count: number;
+            /** Success Count */
+            success_count: number;
+            /** Error Message */
+            error_message: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CollectTriggerApiResponse */
+        CollectTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
         };
         /** CollectTriggerRequest */
         CollectTriggerRequest: {
@@ -22564,6 +22795,90 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** EnergyAlertRecordApiResponse */
+        EnergyAlertRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyAlertRecordResponse"];
+        };
+        /** EnergyAlertRecordListApiResponse */
+        EnergyAlertRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyAlertRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyAlertRecordResponse */
+        EnergyAlertRecordResponse: {
+            /** Id */
+            id: string;
+            /** Rule Id */
+            rule_id: string;
+            /** Device Config Id */
+            device_config_id: string | null;
+            /** Energy Type */
+            energy_type: string;
+            /** Alert Level */
+            alert_level: string;
+            /** Trigger Value */
+            trigger_value: number;
+            /** Threshold Value */
+            threshold_value: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Alert Time
+             * Format: date-time
+             */
+            alert_time: string;
+            /** Status */
+            status: string;
+            /** Processed By */
+            processed_by: string | null;
+            /** Processed At */
+            processed_at: string | null;
+            /** Process Note */
+            process_note: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** EnergyAlertRuleApiResponse */
+        EnergyAlertRuleApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyAlertRuleResponse"];
+        };
         /** EnergyAlertRuleCreate */
         EnergyAlertRuleCreate: {
             /**
@@ -22651,6 +22966,70 @@ export interface components {
              */
             is_enabled: boolean;
         };
+        /** EnergyAlertRuleListApiResponse */
+        EnergyAlertRuleListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyAlertRuleResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyAlertRuleResponse */
+        EnergyAlertRuleResponse: {
+            /** Id */
+            id: string;
+            /** Rule Name */
+            rule_name: string;
+            /** Rule Description */
+            rule_description: string | null;
+            /** Energy Type */
+            energy_type: string;
+            /** Monitor Metric */
+            monitor_metric: string;
+            /** Threshold Type */
+            threshold_type: string;
+            /** Threshold Value */
+            threshold_value: number;
+            /** Unit */
+            unit: string;
+            /** Alert Level */
+            alert_level: string;
+            /** Notify Method */
+            notify_method: string[];
+            /** Notify Users */
+            notify_users: string[];
+            /** Notify Frequency */
+            notify_frequency: string;
+            /** Effective Time */
+            effective_time: string;
+            /** Custom Time Start */
+            custom_time_start: string | null;
+            /** Custom Time End */
+            custom_time_end: string | null;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** EnergyAlertRuleUpdate */
         EnergyAlertRuleUpdate: {
             /** Rule Name */
@@ -22683,6 +23062,78 @@ export interface components {
             custom_time_end?: string | null;
             /** Is Enabled */
             is_enabled?: boolean | null;
+        };
+        /** EnergyDataListApiResponse */
+        EnergyDataListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyDataResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyDataResponse */
+        EnergyDataResponse: {
+            /** Id */
+            id: string;
+            /** Device Config Id */
+            device_config_id: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Collected At
+             * Format: date-time
+             */
+            collected_at: string;
+        };
+        /**
+         * EnergyDeleteResponse
+         * @description 通用删除响应
+         */
+        EnergyDeleteResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default 删除成功
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /** EnergyDeviceConfigApiResponse */
+        EnergyDeviceConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyDeviceConfigResponse"];
         };
         /** EnergyDeviceConfigCreate */
         EnergyDeviceConfigCreate: {
@@ -22753,6 +23204,64 @@ export interface components {
              */
             remark?: string | null;
         };
+        /** EnergyDeviceConfigListApiResponse */
+        EnergyDeviceConfigListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyDeviceConfigResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyDeviceConfigResponse */
+        EnergyDeviceConfigResponse: {
+            /** Id */
+            id: string;
+            /** Platform Code */
+            platform_code: string;
+            /** Platform Device Code */
+            platform_device_code: string;
+            /** Device Name */
+            device_name: string;
+            /** Energy Type */
+            energy_type: string;
+            /** Api Endpoint */
+            api_endpoint: string;
+            /** Workshop */
+            workshop: string;
+            /** Production Line */
+            production_line: string | null;
+            /** Monitor Level */
+            monitor_level: string;
+            /** Unit */
+            unit: string;
+            /** Collection Interval */
+            collection_interval: number;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** EnergyDeviceConfigUpdate */
         EnergyDeviceConfigUpdate: {
             /** Platform Code */
@@ -22782,6 +23291,37 @@ export interface components {
             is_enabled?: boolean | null;
             /** Remark */
             remark?: string | null;
+        };
+        /** EnergyMonthlyBatchCreateApiResponse */
+        EnergyMonthlyBatchCreateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** EnergyMonthlyRecordApiResponse */
+        EnergyMonthlyRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyMonthlyRecordResponse"];
         };
         /**
          * EnergyMonthlyRecordBatchCreate
@@ -22840,6 +23380,76 @@ export interface components {
              */
             remark?: string | null;
         };
+        /** EnergyMonthlyRecordListApiResponse */
+        EnergyMonthlyRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyMonthlyRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyMonthlyRecordResponse */
+        EnergyMonthlyRecordResponse: {
+            /** Id */
+            id: string;
+            /** Workshop Id */
+            workshop_id: string;
+            /** Energy Type */
+            energy_type: string;
+            /**
+             * Record Date
+             * Format: date
+             */
+            record_date: string;
+            /** Date Range End */
+            date_range_end: string | null;
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /** Source */
+            source: string;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** EnergyOverviewApiResponse */
+        EnergyOverviewApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
         /** EnergyPlatformListApiResponse */
         EnergyPlatformListApiResponse: {
             /**
@@ -22861,6 +23471,57 @@ export interface components {
             code: string;
             /** Name */
             name: string;
+        };
+        /** EnergyStatisticsApiResponse */
+        EnergyStatisticsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyStatisticsResponse"];
+        };
+        /** EnergyStatisticsResponse */
+        EnergyStatisticsResponse: {
+            /**
+             * Group Key
+             * @description 分组键(车间/产线/设备名)
+             */
+            group_key: string;
+            /**
+             * Total Value
+             * @description 能耗合计
+             */
+            total_value: number;
+            /**
+             * Unit
+             * @description 计量单位
+             */
+            unit: string;
+            /**
+             * Data Count
+             * @description 数据条数
+             */
+            data_count: number;
+        };
+        /** EnergyWorkshopApiResponse */
+        EnergyWorkshopApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyWorkshopResponse"];
         };
         /** EnergyWorkshopCreate */
         EnergyWorkshopCreate: {
@@ -22897,6 +23558,52 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+        };
+        /** EnergyWorkshopListApiResponse */
+        EnergyWorkshopListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyWorkshopResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyWorkshopResponse */
+        EnergyWorkshopResponse: {
+            /** Id */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** EnergyWorkshopUpdate */
         EnergyWorkshopUpdate: {
@@ -24053,6 +24760,48 @@ export interface components {
              * @default false
              */
             dry_run: boolean;
+        };
+        /**
+         * FeishuEnergyImportResponse
+         * @description 飞书表格导入结果
+         */
+        FeishuEnergyImportResponse: {
+            /**
+             * Workshops Created
+             * @default 0
+             */
+            workshops_created: number;
+            /**
+             * Workshops Existing
+             * @default 0
+             */
+            workshops_existing: number;
+            /**
+             * Records Created
+             * @default 0
+             */
+            records_created: number;
+            /**
+             * Records Skipped
+             * @default 0
+             */
+            records_skipped: number;
+            /** Errors */
+            errors?: string[];
+        };
+        /** FeishuImportApiResponse */
+        FeishuImportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["FeishuEnergyImportResponse"];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -28834,6 +29583,20 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ProductionItemDetail
+         * @description 产品产量明细
+         */
+        ProductionItemDetail: {
+            /** Product Name */
+            product_name: string;
+            /** Quantity */
+            quantity: number;
+            /** Conversion Factor */
+            conversion_factor: number;
+            /** Converted Quantity */
+            converted_quantity: number;
         };
         /**
          * ProductionPlanCreate
@@ -34211,6 +34974,23 @@ export interface components {
              */
             updated_at?: string | null;
         };
+        /** SyncJobApiResponse */
+        SyncJobApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
         /** SyncTriggerRequest */
         SyncTriggerRequest: {
             /**
@@ -35268,6 +36048,20 @@ export interface components {
              */
             answer: string;
         };
+        /** UnitConsumptionTargetApiResponse */
+        UnitConsumptionTargetApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UnitConsumptionTargetResponse"];
+        };
         /**
          * UnitConsumptionTargetCreate
          * @description 创建单耗目标请求
@@ -35288,6 +36082,27 @@ export interface components {
              * @description 目标单耗（kWh/kg）
              */
             target_unit_consumption: number;
+        };
+        /**
+         * UnitConsumptionTargetResponse
+         * @description 单耗目标响应
+         */
+        UnitConsumptionTargetResponse: {
+            /** Id */
+            id: string;
+            /** Workshop Id */
+            workshop_id: string;
+            /** Workshop Name */
+            workshop_name?: string | null;
+            /** Target Month */
+            target_month: string;
+            /** Target Unit Consumption */
+            target_unit_consumption: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * UnitConsumptionTargetUpdate
@@ -36627,7 +37442,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -36640,6 +37457,15 @@ export interface operations {
                     "application/json": components["schemas"]["FeishuConfigApiResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     save_feishu_config_api_v1_identity_feishu_config_put: {
@@ -36647,7 +37473,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -36680,7 +37508,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: {
             content: {
@@ -51939,7 +52769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyOverviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51985,7 +52815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52020,7 +52850,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52053,7 +52883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52090,7 +52920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52123,7 +52953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52167,7 +52997,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDataListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52207,7 +53037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyStatisticsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52242,7 +53072,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CollectTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52280,7 +53110,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CollectLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52313,7 +53143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CollectLogDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52355,7 +53185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52390,7 +53220,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52423,7 +53253,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52460,7 +53290,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52493,7 +53323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52539,7 +53369,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52576,7 +53406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52616,7 +53446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52651,7 +53481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52684,7 +53514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52721,7 +53551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52754,7 +53584,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52798,7 +53628,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52833,7 +53663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52868,7 +53698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyBatchCreateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52941,7 +53771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52974,7 +53804,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53009,7 +53839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FeishuImportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53040,7 +53870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53071,7 +53901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53102,7 +53932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53137,7 +53967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53168,7 +53998,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53201,7 +54031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53236,7 +54066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53270,7 +54100,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53307,7 +54137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53342,7 +54172,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
