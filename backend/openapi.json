@@ -20001,7 +20001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardIdentificationListApiResponse"
                 }
               }
             }
@@ -20059,7 +20059,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardIdentificationListApiResponse"
                 }
               }
             }
@@ -20109,7 +20109,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardIdentificationApiResponse"
                 }
               }
             }
@@ -20578,7 +20578,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/RegulationStagesApiResponse"
                 }
               }
             }
@@ -20638,7 +20638,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardIdentificationBatchApiResponse"
                 }
               }
             }
@@ -21222,7 +21222,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardListApiResponse"
                 }
               }
             }
@@ -21280,7 +21280,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardApiResponse"
                 }
               }
             }
@@ -21312,7 +21312,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardStatsApiResponse"
                 }
               }
             }
@@ -21348,7 +21348,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DepartmentLeaderApiResponse"
                 }
               }
             }
@@ -21394,7 +21394,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/DepartmentSafetyOfficerApiResponse"
                 }
               }
             }
@@ -21454,7 +21454,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardApiResponse"
                 }
               }
             }
@@ -21522,7 +21522,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardApiResponse"
                 }
               }
             }
@@ -21580,7 +21580,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/HazardApiResponse"
                 }
               }
             }
@@ -23924,7 +23924,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorListApiResponse"
                 }
               }
             }
@@ -23982,7 +23982,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24042,7 +24042,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24110,7 +24110,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24168,7 +24168,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -93178,6 +93178,130 @@
         ],
         "title": "DepartmentCreate"
       },
+      "DepartmentLeaderApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DepartmentLeaderResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DepartmentLeaderApiResponse",
+        "description": "Department leader response wrapper"
+      },
+      "DepartmentLeaderResponse": {
+        "properties": {
+          "department": {
+            "type": "string",
+            "title": "Department",
+            "description": "\u90e8\u95e8\u540d\u79f0"
+          },
+          "leader_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader Name",
+            "description": "\u8d1f\u8d23\u4eba\u59d3\u540d"
+          },
+          "leader_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leader Id",
+            "description": "\u8d1f\u8d23\u4eba UUID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department"
+        ],
+        "title": "DepartmentLeaderResponse",
+        "description": "\u90e8\u95e8\u8d1f\u8d23\u4eba\u67e5\u8be2\u54cd\u5e94"
+      },
+      "DepartmentSafetyOfficerApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DepartmentSafetyOfficerResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DepartmentSafetyOfficerApiResponse",
+        "description": "Department safety officer response wrapper"
+      },
+      "DepartmentSafetyOfficerResponse": {
+        "properties": {
+          "department": {
+            "type": "string",
+            "title": "Department",
+            "description": "\u90e8\u95e8\u540d\u79f0"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5b89\u5168\u5458\u59d3\u540d"
+          },
+          "safety_officer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Id",
+            "description": "\u5b89\u5168\u5458 UUID"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department"
+        ],
+        "title": "DepartmentSafetyOfficerResponse",
+        "description": "\u90e8\u95e8\u5206\u7ba1\u5b89\u5168\u5458\u67e5\u8be2\u54cd\u5e94"
+      },
       "DepartmentUpdate": {
         "properties": {
           "name": {
@@ -102205,6 +102329,29 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HazardApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HazardReportResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardApiResponse",
+        "description": "Single hazard response wrapper"
+      },
       "HazardCategory": {
         "type": "string",
         "enum": [
@@ -102224,6 +102371,52 @@
         ],
         "title": "HazardCategory",
         "description": "\u9690\u60a3\u7c7b\u522b\u679a\u4e3e\uff0813\u79cd\uff09"
+      },
+      "HazardIdentificationApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HazardIdentificationResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardIdentificationApiResponse",
+        "description": "Single hazard identification response wrapper"
+      },
+      "HazardIdentificationBatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HazardIdentificationBatchResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardIdentificationBatchApiResponse",
+        "description": "Hazard identification batch response wrapper"
       },
       "HazardIdentificationBatchCreate": {
         "properties": {
@@ -102283,6 +102476,55 @@
         ],
         "title": "HazardIdentificationBatchCreate",
         "description": "\u6279\u91cf\u521b\u5efa\u5371\u9669\u6e90\u8fa8\u8bc6\u8bb0\u5f55\uff08\u4e00\u4e2a\u64cd\u89c4 \u2192 \u591a\u5de5\u6bb5\uff09"
+      },
+      "HazardIdentificationBatchResponse": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "regulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Regulation Id"
+          },
+          "regulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation Name"
+          },
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/HazardIdentificationResponse"
+            },
+            "type": "array",
+            "title": "Records"
+          },
+          "total_stages": {
+            "type": "integer",
+            "title": "Total Stages",
+            "default": 0
+          },
+          "created_count": {
+            "type": "integer",
+            "title": "Created Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id",
+          "regulation_id"
+        ],
+        "title": "HazardIdentificationBatchResponse",
+        "description": "\u6279\u91cf\u521b\u5efa\u7ed3\u679c"
       },
       "HazardIdentificationCreate": {
         "properties": {
@@ -102356,6 +102598,668 @@
         ],
         "title": "HazardIdentificationCreate",
         "description": "\u521b\u5efa\u5371\u9669\u6e90\u8fa8\u8bc6\u8bb0\u5f55"
+      },
+      "HazardIdentificationListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HazardIdentificationResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardIdentificationListApiResponse",
+        "description": "Hazard identification list response wrapper"
+      },
+      "HazardIdentificationResponse": {
+        "properties": {
+          "hazard_id_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hazard Id No",
+            "description": "\u5371\u9669\u6e90\u7f16\u53f7\uff08\u7559\u7a7a\u81ea\u52a8\u751f\u6210\uff09"
+          },
+          "department": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Department",
+            "description": "\u90e8\u95e8"
+          },
+          "position": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Position",
+            "description": "\u5c97\u4f4d"
+          },
+          "production_step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Step",
+            "description": "\u751f\u4ea7\u6b65\u9aa4\uff08\u53ef\u9009\uff09"
+          },
+          "regulation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation Id",
+            "description": "\u5f15\u7528\u7684\u5b89\u5168\u64cd\u4f5c\u89c4\u7a0b ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "attachment_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachment Path"
+          },
+          "attachment_original_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachment Original Name"
+          },
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "stage_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Name"
+          },
+          "regulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation Name"
+          },
+          "specific_activity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specific Activity"
+          },
+          "equipment_facilities": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Facilities"
+          },
+          "raw_auxiliary_materials": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Auxiliary Materials"
+          },
+          "operation_frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operation Frequency"
+          },
+          "operator_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Count"
+          },
+          "hazard_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hazard Type"
+          },
+          "possible_accident": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Possible Accident"
+          },
+          "unsafe_behavior": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unsafe Behavior"
+          },
+          "l_inherent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "L Inherent"
+          },
+          "e_inherent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E Inherent"
+          },
+          "c_inherent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "C Inherent"
+          },
+          "d_inherent": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Inherent"
+          },
+          "inherent_risk_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inherent Risk Level"
+          },
+          "inherent_risk_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inherent Risk Label"
+          },
+          "existing_engineering_controls": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Engineering Controls"
+          },
+          "existing_management_controls": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Management Controls"
+          },
+          "existing_ppe": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Ppe"
+          },
+          "existing_emergency_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Existing Emergency Measures"
+          },
+          "l_residual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "L Residual"
+          },
+          "e_residual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E Residual"
+          },
+          "c_residual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "C Residual"
+          },
+          "d_residual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Residual"
+          },
+          "residual_risk_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Risk Level"
+          },
+          "residual_risk_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Residual Risk Label"
+          },
+          "needs_recommendation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Needs Recommendation"
+          },
+          "recommendation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Type"
+          },
+          "recommendation_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Content"
+          },
+          "recommendation_priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Priority"
+          },
+          "l_post": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "L Post"
+          },
+          "e_post": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "E Post"
+          },
+          "c_post": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "C Post"
+          },
+          "d_post": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "D Post"
+          },
+          "post_risk_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Risk Level"
+          },
+          "post_risk_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Post Risk Label"
+          },
+          "control_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Control Level"
+          },
+          "responsible_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsible Person"
+          },
+          "ai_node_progress": {
+            "type": "string",
+            "title": "Ai Node Progress"
+          },
+          "ai_error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Error Message"
+          },
+          "overall_status": {
+            "type": "string",
+            "title": "Overall Status"
+          },
+          "script1_review_status": {
+            "type": "string",
+            "title": "Script1 Review Status"
+          },
+          "script2_review_status": {
+            "type": "string",
+            "title": "Script2 Review Status"
+          },
+          "script3_review_status": {
+            "type": "string",
+            "title": "Script3 Review Status"
+          },
+          "script4_review_status": {
+            "type": "string",
+            "title": "Script4 Review Status"
+          },
+          "script5_review_status": {
+            "type": "string",
+            "title": "Script5 Review Status"
+          },
+          "script6_review_status": {
+            "type": "string",
+            "title": "Script6 Review Status"
+          },
+          "script7_review_status": {
+            "type": "string",
+            "title": "Script7 Review Status"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department",
+          "position",
+          "id",
+          "ai_node_progress",
+          "overall_status",
+          "script1_review_status",
+          "script2_review_status",
+          "script3_review_status",
+          "script4_review_status",
+          "script5_review_status",
+          "script6_review_status",
+          "script7_review_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "HazardIdentificationResponse",
+        "description": "\u5371\u9669\u6e90\u8fa8\u8bc6\u5b8c\u6574\u54cd\u5e94"
       },
       "HazardIdentificationReview": {
         "properties": {
@@ -102985,6 +103889,45 @@
         "title": "HazardLevel",
         "description": "\u9690\u60a3\u7b49\u7ea7\u679a\u4e3e\uff08\u4e09\u7ea7\uff09"
       },
+      "HazardListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HazardReportResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardListApiResponse",
+        "description": "Hazard list response wrapper"
+      },
       "HazardReportCreate": {
         "properties": {
           "hazard_no": {
@@ -103276,6 +104219,457 @@
         "type": "object",
         "title": "HazardReportCreate",
         "description": "\u521b\u5efa\u9690\u60a3\u62a5\u544a"
+      },
+      "HazardReportResponse": {
+        "properties": {
+          "hazard_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Hazard No",
+            "description": "\u9690\u60a3\u7f16\u53f7"
+          },
+          "inspection_category": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Category",
+            "description": "\u68c0\u67e5\u7c7b\u522b\uff08\u65e5\u5e38\u68c0\u67e5/\u4e13\u9879\u68c0\u67e5\u2026\uff09"
+          },
+          "hazard_type": {
+            "$ref": "#/components/schemas/HazardType",
+            "description": "\u9690\u60a3\u5206\u7c7b\uff08\u4eba/\u7269/\u73af/\u7ba1\uff09"
+          },
+          "hazard_level": {
+            "$ref": "#/components/schemas/HazardLevel",
+            "description": "\u9690\u60a3\u7b49\u7ea7",
+            "default": "general"
+          },
+          "hazard_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u9690\u60a3\u7c7b\u522b\uff08\u8bbe\u5907\u8bbe\u65bd/\u5371\u5316\u50a8\u5b58\u2026\uff09"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "\u9690\u60a3\u63cf\u8ff0"
+          },
+          "discovered_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered By",
+            "description": "\u53d1\u73b0\u4eba"
+          },
+          "discovered_by_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovered By Name",
+            "description": "\u68c0\u67e5\u4eba\u5458\u59d3\u540d"
+          },
+          "inspector_department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector Department",
+            "description": "\u68c0\u67e5\u4eba\u5458\u90e8\u95e8\uff08Bitable \u591a\u9009\uff0c\u9017\u53f7\u5206\u9694\uff09"
+          },
+          "discovered_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Discovered At",
+            "description": "\u68c0\u67e5\u65e5\u671f"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u8d23\u4efb\u90e8\u95e8"
+          },
+          "major_hazard_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Major Hazard Basis",
+            "description": "\u9690\u60a3\u5224\u5b9a\u4f9d\u636e\uff08AI\uff09"
+          },
+          "key_defect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Defect",
+            "description": "\u9690\u60a3\u63cf\u8ff0\uff08AI\uff09"
+          },
+          "defect_photos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defect Photos",
+            "description": "\u7f3a\u9677\u56fe\u7247JSON\u6570\u7ec4"
+          },
+          "rectification_responsible_person": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person",
+            "description": "\u6574\u6539\u8d23\u4efb\u4eba\uff08FK \u2192 identity.users\uff09"
+          },
+          "rectification_responsible_person_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Responsible Person Name",
+            "description": "\u6574\u6539\u8d23\u4efb\u4eba\u59d3\u540d"
+          },
+          "corrective_preventive_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrective Preventive Measures",
+            "description": "AI\u6574\u6539\u5efa\u8bae"
+          },
+          "rectification_reply": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Reply",
+            "description": "\u6574\u6539\u56de\u590d\u5185\u5bb9"
+          },
+          "deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deadline",
+            "description": "\u6574\u6539\u671f\u9650"
+          },
+          "actual_completion_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Completion Date",
+            "description": "\u6574\u6539\u5b8c\u6210\u65f6\u95f4"
+          },
+          "rectification_photos": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Photos",
+            "description": "\u6574\u6539\u540e\u56fe\u7247JSON\u6570\u7ec4"
+          },
+          "check_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Id",
+            "description": "\u5173\u8054\u68c0\u67e5ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "rectification_status": {
+            "type": "string",
+            "title": "Rectification Status"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "verify_level_1_status": {
+            "type": "string",
+            "title": "Verify Level 1 Status",
+            "default": "pending"
+          },
+          "verify_level_2_status": {
+            "type": "string",
+            "title": "Verify Level 2 Status",
+            "default": "pending"
+          },
+          "verify_level_3_status": {
+            "type": "string",
+            "title": "Verify Level 3 Status",
+            "default": "pending"
+          },
+          "ai_node_progress": {
+            "type": "string",
+            "title": "Ai Node Progress",
+            "default": "pending_input"
+          },
+          "overall_status": {
+            "type": "string",
+            "title": "Overall Status",
+            "default": "draft"
+          },
+          "ai_error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Error Message"
+          },
+          "script1_review_status": {
+            "type": "string",
+            "title": "Script1 Review Status",
+            "default": "pending"
+          },
+          "script2_review_status": {
+            "type": "string",
+            "title": "Script2 Review Status",
+            "default": "pending"
+          },
+          "ai_review_result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Review Result"
+          },
+          "ai_review_status": {
+            "type": "string",
+            "title": "Ai Review Status",
+            "default": "pending"
+          },
+          "ai_review_completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Review Completed At"
+          },
+          "ai_generated": {
+            "type": "boolean",
+            "title": "Ai Generated",
+            "default": false
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "rectification_notified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Notified At"
+          },
+          "rectification_notify_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Notify Status"
+          },
+          "rectification_notify_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rectification Notify Error"
+          },
+          "review_notified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Notified At"
+          },
+          "review_notified_level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Notified Level"
+          },
+          "review_notify_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Notify Status"
+          },
+          "review_notify_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Notify Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hazard_no",
+          "hazard_type",
+          "description",
+          "discovered_at",
+          "id",
+          "rectification_status",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "HazardReportResponse",
+        "description": "\u9690\u60a3\u62a5\u544a\u54cd\u5e94"
       },
       "HazardReportUpdate": {
         "properties": {
@@ -103645,6 +105039,81 @@
         "type": "object",
         "title": "HazardReportUpdate",
         "description": "\u66f4\u65b0\u9690\u60a3\u62a5\u544a"
+      },
+      "HazardStatsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/HazardStatsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "HazardStatsApiResponse",
+        "description": "Hazard statistics response wrapper"
+      },
+      "HazardStatsResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "pending_review": {
+            "type": "integer",
+            "title": "Pending Review",
+            "default": 0
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending",
+            "default": 0
+          },
+          "in_progress": {
+            "type": "integer",
+            "title": "In Progress",
+            "default": 0
+          },
+          "replied": {
+            "type": "integer",
+            "title": "Replied",
+            "default": 0
+          },
+          "verifying": {
+            "type": "integer",
+            "title": "Verifying",
+            "default": 0
+          },
+          "rejected": {
+            "type": "integer",
+            "title": "Rejected",
+            "default": 0
+          },
+          "closed": {
+            "type": "integer",
+            "title": "Closed",
+            "default": 0
+          },
+          "overdue": {
+            "type": "integer",
+            "title": "Overdue",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "HazardStatsResponse",
+        "description": "\u9690\u60a3\u7edf\u8ba1\uff08\u5168\u5c40\uff0c\u4e0d\u53d7\u5206\u9875/\u7b5b\u9009\u5f71\u54cd\uff09"
       },
       "HazardType": {
         "type": "string",
@@ -111201,6 +112670,29 @@
         "type": "object",
         "title": "OffboardingRecordUpdate"
       },
+      "OhHazardMonitorApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OhHazardMonitorResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OhHazardMonitorApiResponse",
+        "description": "Single OH hazard monitor response wrapper"
+      },
       "OhHazardMonitorCreate": {
         "properties": {
           "monitor_no": {
@@ -111358,6 +112850,226 @@
         ],
         "title": "OhHazardMonitorCreate",
         "description": "\u521b\u5efa\u5371\u5bb3\u56e0\u7d20\u76d1\u6d4b"
+      },
+      "OhHazardMonitorListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OhHazardMonitorResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "OhHazardMonitorListApiResponse",
+        "description": "OH hazard monitor list response wrapper"
+      },
+      "OhHazardMonitorResponse": {
+        "properties": {
+          "monitor_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Monitor No",
+            "description": "\u76d1\u6d4b\u7f16\u53f7"
+          },
+          "workplace": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Workplace",
+            "description": "\u76d1\u6d4b\u573a\u6240/\u8f66\u95f4"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u5177\u4f53\u76d1\u6d4b\u70b9\u4f4d"
+          },
+          "equipment_info": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Info",
+            "description": "\u5173\u8054\u8bbe\u5907/\u5c97\u4f4d"
+          },
+          "detection_type": {
+            "type": "string",
+            "title": "Detection Type",
+            "description": "\u68c0\u6d4b\u7c7b\u578b"
+          },
+          "detection_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detection Date",
+            "description": "\u68c0\u6d4b\u65e5\u671f"
+          },
+          "detection_agency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detection Agency",
+            "description": "\u68c0\u6d4b\u673a\u6784"
+          },
+          "inspector_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector Name",
+            "description": "\u68c0\u6d4b\u4eba\u5458"
+          },
+          "verifier_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verifier Name",
+            "description": "\u9a8c\u8bc1\u4eba\u5458"
+          },
+          "detection_results": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detection Results",
+            "description": "\u68c0\u6d4b\u7ed3\u679c\u6570\u7ec4"
+          },
+          "abnormality_records": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Abnormality Records",
+            "description": "\u5f02\u5e38\u5904\u7f6e\u8bb0\u5f55"
+          },
+          "attachments": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachments",
+            "description": "\u9644\u4ef6\u5217\u8868"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "monitor_no",
+          "workplace",
+          "detection_type",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "OhHazardMonitorResponse",
+        "description": "\u5371\u5bb3\u56e0\u7d20\u76d1\u6d4b\u54cd\u5e94"
       },
       "OhHazardMonitorUpdate": {
         "properties": {
@@ -121240,6 +122952,89 @@
         "type": "object",
         "title": "RegulationRevisionUpdate",
         "description": "\u66f4\u65b0\u4fee\u8ba2\u8bb0\u5f55"
+      },
+      "RegulationStageInfo": {
+        "properties": {
+          "stage_name": {
+            "type": "string",
+            "title": "Stage Name",
+            "description": "\u5de5\u827a\u9636\u6bb5\u540d\u79f0"
+          },
+          "safety_count": {
+            "type": "integer",
+            "title": "Safety Count",
+            "description": "\u5b89\u5168\u8981\u6c42\u6761\u6570",
+            "default": 0
+          },
+          "operation_count": {
+            "type": "integer",
+            "title": "Operation Count",
+            "description": "\u64cd\u4f5c\u6b65\u9aa4\u6761\u6570",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage_name"
+        ],
+        "title": "RegulationStageInfo",
+        "description": "Chapter 7 \u5355\u4e2a\u5de5\u827a\u9636\u6bb5\u7684\u6458\u8981\u4fe1\u606f"
+      },
+      "RegulationStagesApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/RegulationStagesResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "RegulationStagesApiResponse",
+        "description": "Regulation stages response wrapper"
+      },
+      "RegulationStagesResponse": {
+        "properties": {
+          "regulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Regulation Id"
+          },
+          "regulation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Regulation Name"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/RegulationStageInfo"
+            },
+            "type": "array",
+            "title": "Stages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "regulation_id"
+        ],
+        "title": "RegulationStagesResponse",
+        "description": "\u64cd\u89c4 Chapter 7 \u5de5\u827a\u9636\u6bb5\u5217\u8868\uff08\u4f9b\u524d\u7aef\u9009\u62e9\uff09"
       },
       "ReminderConfigCreate": {
         "properties": {

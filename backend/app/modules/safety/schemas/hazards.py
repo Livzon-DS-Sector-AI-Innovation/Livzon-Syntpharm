@@ -183,3 +183,42 @@ class DepartmentSafetyOfficerResponse(BaseModel):
     department: str = Field(..., description="部门名称")
     safety_officer_name: str | None = Field(None, description="安全员姓名")
     safety_officer_id: str | None = Field(None, description="安全员 UUID")
+
+
+# ============ API Response Wrappers ============
+
+
+class HazardApiResponse(BaseModel):
+    """Single hazard response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: HazardReportResponse
+
+
+class HazardListApiResponse(BaseModel):
+    """Hazard list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[HazardReportResponse]
+    meta: dict[str, Any] | None = None
+
+
+class HazardStatsApiResponse(BaseModel):
+    """Hazard statistics response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: HazardStatsResponse
+
+
+class DepartmentLeaderApiResponse(BaseModel):
+    """Department leader response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: DepartmentLeaderResponse
+
+
+class DepartmentSafetyOfficerApiResponse(BaseModel):
+    """Department safety officer response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: DepartmentSafetyOfficerResponse

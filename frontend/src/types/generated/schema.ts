@@ -21748,6 +21748,82 @@ export interface components {
              */
             production_end_time?: string | null;
         };
+        /**
+         * DepartmentLeaderApiResponse
+         * @description Department leader response wrapper
+         */
+        DepartmentLeaderApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DepartmentLeaderResponse"];
+        };
+        /**
+         * DepartmentLeaderResponse
+         * @description 部门负责人查询响应
+         */
+        DepartmentLeaderResponse: {
+            /**
+             * Department
+             * @description 部门名称
+             */
+            department: string;
+            /**
+             * Leader Name
+             * @description 负责人姓名
+             */
+            leader_name?: string | null;
+            /**
+             * Leader Id
+             * @description 负责人 UUID
+             */
+            leader_id?: string | null;
+        };
+        /**
+         * DepartmentSafetyOfficerApiResponse
+         * @description Department safety officer response wrapper
+         */
+        DepartmentSafetyOfficerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DepartmentSafetyOfficerResponse"];
+        };
+        /**
+         * DepartmentSafetyOfficerResponse
+         * @description 部门分管安全员查询响应
+         */
+        DepartmentSafetyOfficerResponse: {
+            /**
+             * Department
+             * @description 部门名称
+             */
+            department: string;
+            /**
+             * Safety Officer Name
+             * @description 安全员姓名
+             */
+            safety_officer_name?: string | null;
+            /**
+             * Safety Officer Id
+             * @description 安全员 UUID
+             */
+            safety_officer_id?: string | null;
+        };
         /** DepartmentUpdate */
         DepartmentUpdate: {
             /** Name */
@@ -25167,11 +25243,62 @@ export interface components {
             detail?: components["schemas"]["ValidationError"][];
         };
         /**
+         * HazardApiResponse
+         * @description Single hazard response wrapper
+         */
+        HazardApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardReportResponse"];
+        };
+        /**
          * HazardCategory
          * @description 隐患类别枚举（13种）
          * @enum {string}
          */
         HazardCategory: "equipment" | "hazardous_storage" | "emergency_mgmt" | "instrument_electrical" | "lightning_antistatic" | "occupational_health" | "violation_operation" | "six_s" | "label_signage" | "process_mgmt" | "contractor_defect" | "documentation" | "special_operation";
+        /**
+         * HazardIdentificationApiResponse
+         * @description Single hazard identification response wrapper
+         */
+        HazardIdentificationApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardIdentificationResponse"];
+        };
+        /**
+         * HazardIdentificationBatchApiResponse
+         * @description Hazard identification batch response wrapper
+         */
+        HazardIdentificationBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardIdentificationBatchResponse"];
+        };
         /**
          * HazardIdentificationBatchCreate
          * @description 批量创建危险源辨识记录（一个操规 → 多工段）
@@ -25211,6 +25338,36 @@ export interface components {
             auto_submit: boolean;
         };
         /**
+         * HazardIdentificationBatchResponse
+         * @description 批量创建结果
+         */
+        HazardIdentificationBatchResponse: {
+            /**
+             * Batch Id
+             * Format: uuid
+             */
+            batch_id: string;
+            /**
+             * Regulation Id
+             * Format: uuid
+             */
+            regulation_id: string;
+            /** Regulation Name */
+            regulation_name?: string | null;
+            /** Records */
+            records?: components["schemas"]["HazardIdentificationResponse"][];
+            /**
+             * Total Stages
+             * @default 0
+             */
+            total_stages: number;
+            /**
+             * Created Count
+             * @default 0
+             */
+            created_count: number;
+        };
+        /**
          * HazardIdentificationCreate
          * @description 创建危险源辨识记录
          */
@@ -25245,6 +25402,185 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * HazardIdentificationListApiResponse
+         * @description Hazard identification list response wrapper
+         */
+        HazardIdentificationListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["HazardIdentificationResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * HazardIdentificationResponse
+         * @description 危险源辨识完整响应
+         */
+        HazardIdentificationResponse: {
+            /**
+             * Hazard Id No
+             * @description 危险源编号（留空自动生成）
+             */
+            hazard_id_no?: string | null;
+            /**
+             * Department
+             * @description 部门
+             */
+            department: string;
+            /**
+             * Position
+             * @description 岗位
+             */
+            position: string;
+            /**
+             * Production Step
+             * @description 生产步骤（可选）
+             */
+            production_step?: string | null;
+            /**
+             * Regulation Id
+             * @description 引用的安全操作规程 ID
+             */
+            regulation_id?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Attachment Path */
+            attachment_path?: string | null;
+            /** Attachment Original Name */
+            attachment_original_name?: string | null;
+            /** Batch Id */
+            batch_id?: string | null;
+            /** Stage Name */
+            stage_name?: string | null;
+            /** Regulation Name */
+            regulation_name?: string | null;
+            /** Specific Activity */
+            specific_activity?: string | null;
+            /** Equipment Facilities */
+            equipment_facilities?: string | null;
+            /** Raw Auxiliary Materials */
+            raw_auxiliary_materials?: string | null;
+            /** Operation Frequency */
+            operation_frequency?: string | null;
+            /** Operator Count */
+            operator_count?: number | null;
+            /** Hazard Type */
+            hazard_type?: string | null;
+            /** Possible Accident */
+            possible_accident?: string | null;
+            /** Unsafe Behavior */
+            unsafe_behavior?: string | null;
+            /** L Inherent */
+            l_inherent?: number | null;
+            /** E Inherent */
+            e_inherent?: number | null;
+            /** C Inherent */
+            c_inherent?: number | null;
+            /** D Inherent */
+            d_inherent?: number | null;
+            /** Inherent Risk Level */
+            inherent_risk_level?: string | null;
+            /** Inherent Risk Label */
+            inherent_risk_label?: string | null;
+            /** Existing Engineering Controls */
+            existing_engineering_controls?: string | null;
+            /** Existing Management Controls */
+            existing_management_controls?: string | null;
+            /** Existing Ppe */
+            existing_ppe?: string | null;
+            /** Existing Emergency Measures */
+            existing_emergency_measures?: string | null;
+            /** L Residual */
+            l_residual?: number | null;
+            /** E Residual */
+            e_residual?: number | null;
+            /** C Residual */
+            c_residual?: number | null;
+            /** D Residual */
+            d_residual?: number | null;
+            /** Residual Risk Level */
+            residual_risk_level?: string | null;
+            /** Residual Risk Label */
+            residual_risk_label?: string | null;
+            /** Needs Recommendation */
+            needs_recommendation?: string | null;
+            /** Recommendation Type */
+            recommendation_type?: string | null;
+            /** Recommendation Content */
+            recommendation_content?: string | null;
+            /** Recommendation Priority */
+            recommendation_priority?: string | null;
+            /** L Post */
+            l_post?: number | null;
+            /** E Post */
+            e_post?: number | null;
+            /** C Post */
+            c_post?: number | null;
+            /** D Post */
+            d_post?: number | null;
+            /** Post Risk Level */
+            post_risk_level?: string | null;
+            /** Post Risk Label */
+            post_risk_label?: string | null;
+            /** Control Level */
+            control_level?: string | null;
+            /** Responsible Person */
+            responsible_person?: string | null;
+            /** Ai Node Progress */
+            ai_node_progress: string;
+            /** Ai Error Message */
+            ai_error_message?: string | null;
+            /** Overall Status */
+            overall_status: string;
+            /** Script1 Review Status */
+            script1_review_status: string;
+            /** Script2 Review Status */
+            script2_review_status: string;
+            /** Script3 Review Status */
+            script3_review_status: string;
+            /** Script4 Review Status */
+            script4_review_status: string;
+            /** Script5 Review Status */
+            script5_review_status: string;
+            /** Script6 Review Status */
+            script6_review_status: string;
+            /** Script7 Review Status */
+            script7_review_status: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * HazardIdentificationReview
@@ -25418,6 +25754,28 @@ export interface components {
          */
         HazardLevel: "general" | "serious" | "major";
         /**
+         * HazardListApiResponse
+         * @description Hazard list response wrapper
+         */
+        HazardListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["HazardReportResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
          * HazardReportCreate
          * @description 创建隐患报告
          */
@@ -25528,6 +25886,208 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * HazardReportResponse
+         * @description 隐患报告响应
+         */
+        HazardReportResponse: {
+            /**
+             * Hazard No
+             * @description 隐患编号
+             */
+            hazard_no: string;
+            /**
+             * Inspection Category
+             * @description 检查类别（日常检查/专项检查…）
+             */
+            inspection_category?: string | null;
+            /** @description 隐患分类（人/物/环/管） */
+            hazard_type: components["schemas"]["HazardType"];
+            /**
+             * @description 隐患等级
+             * @default general
+             */
+            hazard_level: components["schemas"]["HazardLevel"];
+            /** @description 隐患类别（设备设施/危化储存…） */
+            hazard_category?: components["schemas"]["HazardCategory"] | null;
+            /**
+             * Description
+             * @description 隐患描述
+             */
+            description: string;
+            /**
+             * Discovered By
+             * @description 发现人
+             */
+            discovered_by?: string | null;
+            /**
+             * Discovered By Name
+             * @description 检查人员姓名
+             */
+            discovered_by_name?: string | null;
+            /**
+             * Inspector Department
+             * @description 检查人员部门（Bitable 多选，逗号分隔）
+             */
+            inspector_department?: string | null;
+            /**
+             * Discovered At
+             * Format: date-time
+             * @description 检查日期
+             */
+            discovered_at: string;
+            /**
+             * Department
+             * @description 责任部门
+             */
+            department?: string | null;
+            /**
+             * Major Hazard Basis
+             * @description 隐患判定依据（AI）
+             */
+            major_hazard_basis?: string | null;
+            /**
+             * Key Defect
+             * @description 隐患描述（AI）
+             */
+            key_defect?: string | null;
+            /**
+             * Defect Photos
+             * @description 缺陷图片JSON数组
+             */
+            defect_photos?: string | null;
+            /**
+             * Rectification Responsible Person
+             * @description 整改责任人（FK → identity.users）
+             */
+            rectification_responsible_person?: string | null;
+            /**
+             * Rectification Responsible Person Name
+             * @description 整改责任人姓名
+             */
+            rectification_responsible_person_name?: string | null;
+            /**
+             * Corrective Preventive Measures
+             * @description AI整改建议
+             */
+            corrective_preventive_measures?: string | null;
+            /**
+             * Rectification Reply
+             * @description 整改回复内容
+             */
+            rectification_reply?: string | null;
+            /**
+             * Deadline
+             * @description 整改期限
+             */
+            deadline?: string | null;
+            /**
+             * Actual Completion Date
+             * @description 整改完成时间
+             */
+            actual_completion_date?: string | null;
+            /**
+             * Rectification Photos
+             * @description 整改后图片JSON数组
+             */
+            rectification_photos?: string | null;
+            /**
+             * Check Id
+             * @description 关联检查ID
+             */
+            check_id?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Rectification Status */
+            rectification_status: string;
+            /** Status */
+            status: string;
+            /**
+             * Verify Level 1 Status
+             * @default pending
+             */
+            verify_level_1_status: string;
+            /**
+             * Verify Level 2 Status
+             * @default pending
+             */
+            verify_level_2_status: string;
+            /**
+             * Verify Level 3 Status
+             * @default pending
+             */
+            verify_level_3_status: string;
+            /**
+             * Ai Node Progress
+             * @default pending_input
+             */
+            ai_node_progress: string;
+            /**
+             * Overall Status
+             * @default draft
+             */
+            overall_status: string;
+            /** Ai Error Message */
+            ai_error_message?: string | null;
+            /**
+             * Script1 Review Status
+             * @default pending
+             */
+            script1_review_status: string;
+            /**
+             * Script2 Review Status
+             * @default pending
+             */
+            script2_review_status: string;
+            /** Ai Review Result */
+            ai_review_result?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Ai Review Status
+             * @default pending
+             */
+            ai_review_status: string;
+            /** Ai Review Completed At */
+            ai_review_completed_at?: string | null;
+            /**
+             * Ai Generated
+             * @default false
+             */
+            ai_generated: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Rectification Notified At */
+            rectification_notified_at?: string | null;
+            /** Rectification Notify Status */
+            rectification_notify_status?: string | null;
+            /** Rectification Notify Error */
+            rectification_notify_error?: string | null;
+            /** Review Notified At */
+            review_notified_at?: string | null;
+            /** Review Notified Level */
+            review_notified_level?: number | null;
+            /** Review Notify Status */
+            review_notify_status?: string | null;
+            /** Review Notify Error */
+            review_notify_error?: string | null;
         };
         /**
          * HazardReportUpdate
@@ -25670,6 +26230,74 @@ export interface components {
              * @description AI整改建议审核状态
              */
             script2_review_status?: string | null;
+        };
+        /**
+         * HazardStatsApiResponse
+         * @description Hazard statistics response wrapper
+         */
+        HazardStatsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["HazardStatsResponse"];
+        };
+        /**
+         * HazardStatsResponse
+         * @description 隐患统计（全局，不受分页/筛选影响）
+         */
+        HazardStatsResponse: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Pending Review
+             * @default 0
+             */
+            pending_review: number;
+            /**
+             * Pending
+             * @default 0
+             */
+            pending: number;
+            /**
+             * In Progress
+             * @default 0
+             */
+            in_progress: number;
+            /**
+             * Replied
+             * @default 0
+             */
+            replied: number;
+            /**
+             * Verifying
+             * @default 0
+             */
+            verifying: number;
+            /**
+             * Rejected
+             * @default 0
+             */
+            rejected: number;
+            /**
+             * Closed
+             * @default 0
+             */
+            closed: number;
+            /**
+             * Overdue
+             * @default 0
+             */
+            overdue: number;
         };
         /**
          * HazardType
@@ -28687,6 +29315,23 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * OhHazardMonitorApiResponse
+         * @description Single OH hazard monitor response wrapper
+         */
+        OhHazardMonitorApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["OhHazardMonitorResponse"];
+        };
+        /**
          * OhHazardMonitorCreate
          * @description 创建危害因素监测
          */
@@ -28756,6 +29401,116 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * OhHazardMonitorListApiResponse
+         * @description OH hazard monitor list response wrapper
+         */
+        OhHazardMonitorListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["OhHazardMonitorResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * OhHazardMonitorResponse
+         * @description 危害因素监测响应
+         */
+        OhHazardMonitorResponse: {
+            /**
+             * Monitor No
+             * @description 监测编号
+             */
+            monitor_no: string;
+            /**
+             * Workplace
+             * @description 监测场所/车间
+             */
+            workplace: string;
+            /**
+             * Location
+             * @description 具体监测点位
+             */
+            location?: string | null;
+            /**
+             * Equipment Info
+             * @description 关联设备/岗位
+             */
+            equipment_info?: string | null;
+            /**
+             * Detection Type
+             * @description 检测类型
+             */
+            detection_type: string;
+            /**
+             * Detection Date
+             * @description 检测日期
+             */
+            detection_date?: string | null;
+            /**
+             * Detection Agency
+             * @description 检测机构
+             */
+            detection_agency?: string | null;
+            /**
+             * Inspector Name
+             * @description 检测人员
+             */
+            inspector_name?: string | null;
+            /**
+             * Verifier Name
+             * @description 验证人员
+             */
+            verifier_name?: string | null;
+            /**
+             * Detection Results
+             * @description 检测结果数组
+             */
+            detection_results?: unknown[] | null;
+            /**
+             * Abnormality Records
+             * @description 异常处置记录
+             */
+            abnormality_records?: unknown[] | null;
+            /**
+             * Attachments
+             * @description 附件列表
+             */
+            attachments?: unknown[] | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * OhHazardMonitorUpdate
@@ -32575,6 +33330,61 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * RegulationStageInfo
+         * @description Chapter 7 单个工艺阶段的摘要信息
+         */
+        RegulationStageInfo: {
+            /**
+             * Stage Name
+             * @description 工艺阶段名称
+             */
+            stage_name: string;
+            /**
+             * Safety Count
+             * @description 安全要求条数
+             * @default 0
+             */
+            safety_count: number;
+            /**
+             * Operation Count
+             * @description 操作步骤条数
+             * @default 0
+             */
+            operation_count: number;
+        };
+        /**
+         * RegulationStagesApiResponse
+         * @description Regulation stages response wrapper
+         */
+        RegulationStagesApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["RegulationStagesResponse"];
+        };
+        /**
+         * RegulationStagesResponse
+         * @description 操规 Chapter 7 工艺阶段列表（供前端选择）
+         */
+        RegulationStagesResponse: {
+            /**
+             * Regulation Id
+             * Format: uuid
+             */
+            regulation_id: string;
+            /** Regulation Name */
+            regulation_name?: string | null;
+            /** Stages */
+            stages?: components["schemas"]["RegulationStageInfo"][];
         };
         /**
          * ReminderConfigCreate
@@ -48137,7 +48947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardIdentificationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48172,7 +48982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardIdentificationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48203,7 +49013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48412,7 +49222,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["RegulationStagesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48447,7 +49257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardIdentificationBatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48701,7 +49511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48736,7 +49546,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48765,7 +49575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardStatsApiResponse"];
                 };
             };
         };
@@ -48788,7 +49598,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DepartmentLeaderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48820,7 +49630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DepartmentSafetyOfficerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48853,7 +49663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48890,7 +49700,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48923,7 +49733,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50015,7 +50825,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50050,7 +50860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50083,7 +50893,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50120,7 +50930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50153,7 +50963,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */

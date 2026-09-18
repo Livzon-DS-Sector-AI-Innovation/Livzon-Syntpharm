@@ -1,6 +1,16 @@
 import {safeApiFetch, buildQueryString, getApiBaseUrl} from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
+type HazardReportResponse = components['schemas']['HazardReportResponse']
+type HazardStatsResponse = components['schemas']['HazardStatsResponse']
+type DepartmentLeaderResponse = components['schemas']['DepartmentLeaderResponse']
+type DepartmentSafetyOfficerResponse = components['schemas']['DepartmentSafetyOfficerResponse']
+type HazardApiResponse = components['schemas']['HazardApiResponse']
+type HazardListApiResponse = components['schemas']['HazardListApiResponse']
+type HazardStatsApiResponse = components['schemas']['HazardStatsApiResponse']
+type DepartmentLeaderApiResponse = components['schemas']['DepartmentLeaderApiResponse']
+type DepartmentSafetyOfficerApiResponse = components['schemas']['DepartmentSafetyOfficerApiResponse']
+
 type SafetyCheckResponse = components['schemas']['SafetyCheckResponse']
 type SafetyCheckListApiResponse = components['schemas']['SafetyCheckListApiResponse']
 type SafetyCheckApiResponse = components['schemas']['SafetyCheckApiResponse']
@@ -89,23 +99,23 @@ export async function confirmCheckApi(id: string, data: unknown, authHeaders?: R
 // ============ HazardReport ============
 
 export async function fetchHazardStats(authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazards/stats', { headers: authHeaders })
+  return safeApiFetch<HazardStatsApiResponse>('/api/v1/safety/hazards/stats', { headers: authHeaders })
 }
 
 export async function getHazards(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/hazards${buildQueryString(params)}`, { headers: authHeaders })
+  return safeApiFetch<HazardListApiResponse>(`/api/v1/safety/hazards${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getHazard(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}`, { headers: authHeaders })
+  return safeApiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}`, { headers: authHeaders })
 }
 
 export async function getDepartmentLeader(departmentName: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/department-leader?department_name=${encodeURIComponent(departmentName)}`, { headers: authHeaders })
+  return safeApiFetch<DepartmentLeaderApiResponse>(`/api/v1/safety/hazards/department-leader?department_name=${encodeURIComponent(departmentName)}`, { headers: authHeaders })
 }
 
 export async function getDepartmentSafetyOfficer(departmentName: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/department-safety-officer?department_name=${encodeURIComponent(departmentName)}`, { headers: authHeaders })
+  return safeApiFetch<DepartmentSafetyOfficerApiResponse>(`/api/v1/safety/hazards/department-safety-officer?department_name=${encodeURIComponent(departmentName)}`, { headers: authHeaders })
 }
 
 export async function createHazard(data: unknown, authHeaders?: Record<string, string>) {

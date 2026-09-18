@@ -269,3 +269,35 @@ class HazardIdentificationBatchResponse(BaseModel):
     records: list[HazardIdentificationResponse] = Field(default_factory=list)
     total_stages: int = 0
     created_count: int = 0
+
+
+# ============ API Response Wrappers ============
+
+
+class HazardIdentificationApiResponse(BaseModel):
+    """Single hazard identification response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: HazardIdentificationResponse
+
+
+class HazardIdentificationListApiResponse(BaseModel):
+    """Hazard identification list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[HazardIdentificationResponse]
+    meta: dict[str, Any] | None = None
+
+
+class HazardIdentificationBatchApiResponse(BaseModel):
+    """Hazard identification batch response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: HazardIdentificationBatchResponse
+
+
+class RegulationStagesApiResponse(BaseModel):
+    """Regulation stages response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: RegulationStagesResponse

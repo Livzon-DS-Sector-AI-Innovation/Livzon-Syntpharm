@@ -10,6 +10,8 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse, build_response
 from app.modules.safety.schemas import (
+    OhHazardMonitorApiResponse,
+    OhHazardMonitorListApiResponse,
     OhHazardMonitorCreate,
     OhHazardMonitorResponse,
     OhHazardMonitorUpdate,
@@ -24,7 +26,7 @@ oh_hazard_monitors_router = APIRouter()
 
 @oh_hazard_monitors_router.get(
     "/oh-hazard-monitors",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorListApiResponse,
     summary="获取职业危害因素监测列表",
 )
 async def handler(
@@ -41,14 +43,14 @@ async def handler(
     service = OhHazardMonitorService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_monitors(skip, page_size, status, detection_type, workplace, keyword)
-    return build_response(
+    return OhHazardMonitorListApiResponse(
         data=[OhHazardMonitorResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
-    "/oh-hazard-monitors", response_model=ApiResponse, summary="创建职业危害因素监测"
+    "/oh-hazard-monitors", response_model=OhHazardMonitorApiResponse, summary="创建职业危害因素监测"
 )
 async def handler(  # noqa: F811
     data: OhHazardMonitorCreate,
@@ -59,12 +61,12 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.create_monitor(data)
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.get(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="获取职业危害因素监测详情",
 )
 async def handler(  # noqa: F811
@@ -77,12 +79,12 @@ async def handler(  # noqa: F811
     item = await service.get_monitor(monitor_id)
     if not item:
         return build_response(code=404, message="监测记录不存在")
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.put(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="更新职业危害因素监测",
 )
 async def handler(  # noqa: F811
@@ -97,12 +99,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=404, message="监测记录不存在")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.delete(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="删除职业危害因素监测",
 )
 async def handler(  # noqa: F811
@@ -138,7 +140,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法开始监测，当前状态不允许")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
@@ -157,7 +159,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法完成监测，当前状态不允许")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
@@ -177,7 +179,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法验证，当前状态不允许")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 # ── Monitor JSON Sub-records ──
@@ -200,7 +202,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=404, message="监测记录不存在")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.put(  # type: ignore[no-redef]
@@ -221,7 +223,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法更新，监测记录不存在或索引无效")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.delete(  # type: ignore[no-redef]
@@ -241,7 +243,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法删除，监测记录不存在或索引无效")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
@@ -261,7 +263,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=404, message="监测记录不存在")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
 @oh_hazard_monitors_router.put(  # type: ignore[no-redef]
@@ -282,4 +284,4 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法更新，监测记录不存在或索引无效")
     await db.commit()
-    return build_response(data=OhHazardMonitorResponse.model_validate(item))
+    return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))

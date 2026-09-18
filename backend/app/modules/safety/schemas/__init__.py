@@ -382,6 +382,10 @@ from app.modules.safety.schemas.hazard_identifications import (
     HazardIdentificationUpdate,
     RegulationStageInfo,
     RegulationStagesResponse,
+    HazardIdentificationApiResponse,
+    HazardIdentificationListApiResponse,
+    HazardIdentificationBatchApiResponse,
+    RegulationStagesApiResponse,
 )
 from app.modules.safety.schemas.hazards import (
     ConfirmCheckRequest,
@@ -395,6 +399,11 @@ from app.modules.safety.schemas.hazards import (
     HazardStatsResponse,
     RectificationReplyRequest,
     VerifyLevelRequest,
+    HazardApiResponse,
+    HazardListApiResponse,
+    HazardStatsApiResponse,
+    DepartmentLeaderApiResponse,
+    DepartmentSafetyOfficerApiResponse,
 )
 from app.modules.safety.schemas.knowledge import (
     SafetyKnowledgeArticleBase,
@@ -408,6 +417,8 @@ from app.modules.safety.schemas.oh_hazard_monitors import (
     OhHazardMonitorResponse,
     OhHazardMonitorUpdate,
     VerifyMonitorRequest,
+    OhHazardMonitorApiResponse,
+    OhHazardMonitorListApiResponse,
 )
 from app.modules.safety.schemas.oh_health_exams import (
     OhHealthExamBase,
