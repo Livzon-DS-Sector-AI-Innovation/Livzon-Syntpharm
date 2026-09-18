@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -224,3 +225,49 @@ class ObsoleteSubmit(BaseModel):
     """提交作废"""
 
     obsolete_reason: str = Field(..., description="作废原因")
+
+
+# ============ API Response Wrappers ============
+
+
+class InspectionStandardApiResponse(BaseModel):
+    """Single inspection standard response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: InspectionStandardResponse
+
+
+class InspectionStandardListApiResponse(BaseModel):
+    """Inspection standard list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[InspectionStandardResponse]
+    meta: dict[str, Any] | None = None
+
+
+class InspectionStandardItemApiResponse(BaseModel):
+    """Single inspection standard item response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: InspectionStandardItemResponse
+
+
+class InspectionStandardItemListApiResponse(BaseModel):
+    """Inspection standard item list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[InspectionStandardItemResponse]
+
+
+class ApprovalRecordApiResponse(BaseModel):
+    """Single approval record response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: ApprovalRecordResponse
+
+
+class ApprovalRecordListApiResponse(BaseModel):
+    """Approval record list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[ApprovalRecordResponse]

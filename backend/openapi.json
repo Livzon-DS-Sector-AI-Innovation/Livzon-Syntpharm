@@ -56546,7 +56546,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardListApiResponse"
                 }
               }
             }
@@ -56604,7 +56604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -56686,7 +56686,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardListApiResponse"
                 }
               }
             }
@@ -56746,7 +56746,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -56814,7 +56814,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -56872,7 +56872,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -56932,7 +56932,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -56992,7 +56992,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -57063,7 +57063,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -57133,7 +57133,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -57193,7 +57193,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
                 }
               }
             }
@@ -57253,7 +57253,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardItemListApiResponse"
                 }
               }
             }
@@ -57313,7 +57313,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ApprovalRecordListApiResponse"
                 }
               }
             }
@@ -84650,6 +84650,137 @@
         "type": "object",
         "title": "ApiResponse"
       },
+      "ApprovalRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ApprovalRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ApprovalRecordListApiResponse",
+        "description": "Approval record list response wrapper"
+      },
+      "ApprovalRecordResponse": {
+        "properties": {
+          "approval_level": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Approval Level",
+            "description": "\u5ba1\u6279\u5c42\u7ea7"
+          },
+          "approval_status": {
+            "$ref": "#/components/schemas/ApprovalStatus"
+          },
+          "approver_role": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Role",
+            "description": "\u5ba1\u6279\u4eba\u89d2\u8272"
+          },
+          "comments": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comments",
+            "description": "\u5ba1\u6279\u610f\u89c1"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "standard_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Standard Id"
+          },
+          "approver_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Id"
+          },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Name"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "approval_level",
+          "approval_status",
+          "id",
+          "standard_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ApprovalRecordResponse",
+        "description": "\u5ba1\u6279\u8bb0\u5f55\u54cd\u5e94"
+      },
       "ApprovalStatus": {
         "type": "string",
         "enum": [
@@ -106219,6 +106350,29 @@
         "title": "InspectionScheduleUpdate",
         "description": "\u66f4\u65b0\u5b9a\u65f6\u4efb\u52a1\u8bf7\u6c42"
       },
+      "InspectionStandardApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/InspectionStandardResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "InspectionStandardApiResponse",
+        "description": "Single inspection standard response wrapper"
+      },
       "InspectionStandardCopy": {
         "properties": {
           "source_id": {
@@ -106483,6 +106637,392 @@
         ],
         "title": "InspectionStandardItemCreate",
         "description": "\u521b\u5efa\u68c0\u9a8c\u9879\u76ee"
+      },
+      "InspectionStandardItemListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionStandardItemResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "InspectionStandardItemListApiResponse",
+        "description": "Inspection standard item list response wrapper"
+      },
+      "InspectionStandardItemResponse": {
+        "properties": {
+          "item_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Item No",
+            "description": "\u9879\u76ee\u5e8f\u53f7"
+          },
+          "item_name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Item Name",
+            "description": "\u9879\u76ee\u540d\u79f0"
+          },
+          "test_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Method",
+            "description": "\u68c0\u6d4b\u65b9\u6cd5"
+          },
+          "instrument_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Code",
+            "description": "\u5173\u8054\u4eea\u5668\u7f16\u53f7"
+          },
+          "reference_materials": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Materials",
+            "description": "\u6240\u9700\u5bf9\u7167\u54c1/\u8bd5\u6db2"
+          },
+          "limit_type": {
+            "$ref": "#/components/schemas/LimitType"
+          },
+          "limit_value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Value",
+            "description": "\u5408\u683c\u9650\u503c"
+          },
+          "item_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemCategory"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u9879\u76ee\u5206\u7c7b"
+          },
+          "is_critical": {
+            "type": "boolean",
+            "title": "Is Critical",
+            "description": "\u662f\u5426\u5173\u952e\u9879\u76ee",
+            "default": false
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "standard_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Standard Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "item_no",
+          "item_name",
+          "limit_type",
+          "id",
+          "standard_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InspectionStandardItemResponse",
+        "description": "\u68c0\u9a8c\u9879\u76ee\u54cd\u5e94"
+      },
+      "InspectionStandardListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionStandardResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "InspectionStandardListApiResponse",
+        "description": "Inspection standard list response wrapper"
+      },
+      "InspectionStandardResponse": {
+        "properties": {
+          "material_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Material Code",
+            "description": "\u7269\u6599\u7f16\u7801"
+          },
+          "material_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Name",
+            "description": "\u7269\u6599\u540d\u79f0"
+          },
+          "cas_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cas No",
+            "description": "CAS\u53f7"
+          },
+          "material_category": {
+            "$ref": "#/components/schemas/MaterialCategory-Output"
+          },
+          "pharmacopeia": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Pharmacopeia"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u6267\u884c\u836f\u5178"
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Version",
+            "description": "\u7248\u672c\u53f7",
+            "default": "1.0"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date",
+            "description": "\u751f\u6548\u65e5\u671f"
+          },
+          "obsolete_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obsolete Date",
+            "description": "\u4f5c\u5e9f\u65e5\u671f"
+          },
+          "sop_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sop No",
+            "description": "SOP\u7f16\u53f7"
+          },
+          "attachment_urls": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attachment Urls",
+            "description": "\u9644\u4ef6URLs(JSON)"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "standard_no": {
+            "type": "string",
+            "title": "Standard No"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StandardStatus"
+          },
+          "is_obsolete": {
+            "type": "boolean",
+            "title": "Is Obsolete"
+          },
+          "obsolete_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Obsolete Reason"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InspectionStandardItemResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "material_code",
+          "material_category",
+          "id",
+          "standard_no",
+          "status",
+          "is_obsolete",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InspectionStandardResponse",
+        "description": "\u68c0\u9a8c\u6807\u51c6\u54cd\u5e94"
       },
       "InspectionStandardUpdate": {
         "properties": {
@@ -109952,6 +110492,18 @@
         "type": "object",
         "title": "MaterialBalanceUpdate",
         "description": "\u66f4\u65b0\u7269\u6599\u5e73\u8861"
+      },
+      "MaterialCategory-Output": {
+        "type": "string",
+        "enum": [
+          "raw_material",
+          "excipient",
+          "packaging_material",
+          "intermediate",
+          "finished_product"
+        ],
+        "title": "MaterialCategory",
+        "description": "\u7269\u6599\u5206\u7c7b"
       },
       "MaterialConsumeItem": {
         "properties": {
@@ -127222,6 +127774,20 @@
         ],
         "title": "StandardCreate",
         "description": "Create Standard"
+      },
+      "StandardStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "tech_review",
+          "qa_review",
+          "approved",
+          "effective",
+          "obsolete",
+          "rejected"
+        ],
+        "title": "StandardStatus",
+        "description": "\u6807\u51c6\u72b6\u6001"
       },
       "StandardUpdate": {
         "properties": {

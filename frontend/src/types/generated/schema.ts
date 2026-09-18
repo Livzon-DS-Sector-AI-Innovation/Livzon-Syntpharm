@@ -17907,6 +17907,72 @@ export interface components {
             } | null;
         };
         /**
+         * ApprovalRecordListApiResponse
+         * @description Approval record list response wrapper
+         */
+        ApprovalRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ApprovalRecordResponse"][];
+        };
+        /**
+         * ApprovalRecordResponse
+         * @description 审批记录响应
+         */
+        ApprovalRecordResponse: {
+            /**
+             * Approval Level
+             * @description 审批层级
+             */
+            approval_level: number;
+            approval_status: components["schemas"]["ApprovalStatus"];
+            /**
+             * Approver Role
+             * @description 审批人角色
+             */
+            approver_role?: string | null;
+            /**
+             * Comments
+             * @description 审批意见
+             */
+            comments?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+            /** Approver Id */
+            approver_id?: string | null;
+            /** Approver Name */
+            approver_name?: string | null;
+            /** Approved At */
+            approved_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
          * ApprovalStatus
          * @description 审批状态
          * @enum {string}
@@ -26567,6 +26633,23 @@ export interface components {
             is_active?: boolean | null;
         };
         /**
+         * InspectionStandardApiResponse
+         * @description Single inspection standard response wrapper
+         */
+        InspectionStandardApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["InspectionStandardResponse"];
+        };
+        /**
          * InspectionStandardCopy
          * @description 复制检验标准
          */
@@ -26692,6 +26775,200 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * InspectionStandardItemListApiResponse
+         * @description Inspection standard item list response wrapper
+         */
+        InspectionStandardItemListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["InspectionStandardItemResponse"][];
+        };
+        /**
+         * InspectionStandardItemResponse
+         * @description 检验项目响应
+         */
+        InspectionStandardItemResponse: {
+            /**
+             * Item No
+             * @description 项目序号
+             */
+            item_no: number;
+            /**
+             * Item Name
+             * @description 项目名称
+             */
+            item_name: string;
+            /**
+             * Test Method
+             * @description 检测方法
+             */
+            test_method?: string | null;
+            /**
+             * Instrument Code
+             * @description 关联仪器编号
+             */
+            instrument_code?: string | null;
+            /**
+             * Reference Materials
+             * @description 所需对照品/试液
+             */
+            reference_materials?: string | null;
+            limit_type: components["schemas"]["LimitType"];
+            /**
+             * Limit Value
+             * @description 合格限值
+             */
+            limit_value?: string | null;
+            /** @description 项目分类 */
+            item_category?: components["schemas"]["ItemCategory"] | null;
+            /**
+             * Is Critical
+             * @description 是否关键项目
+             * @default false
+             */
+            is_critical: boolean;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Standard Id
+             * Format: uuid
+             */
+            standard_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * InspectionStandardListApiResponse
+         * @description Inspection standard list response wrapper
+         */
+        InspectionStandardListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["InspectionStandardResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InspectionStandardResponse
+         * @description 检验标准响应
+         */
+        InspectionStandardResponse: {
+            /**
+             * Material Code
+             * @description 物料编码
+             */
+            material_code: string;
+            /**
+             * Material Name
+             * @description 物料名称
+             */
+            material_name?: string | null;
+            /**
+             * Cas No
+             * @description CAS号
+             */
+            cas_no?: string | null;
+            material_category: components["schemas"]["MaterialCategory-Output"];
+            /** @description 执行药典 */
+            pharmacopeia?: components["schemas"]["Pharmacopeia"] | null;
+            /**
+             * Version
+             * @description 版本号
+             * @default 1.0
+             */
+            version: string;
+            /**
+             * Effective Date
+             * @description 生效日期
+             */
+            effective_date?: string | null;
+            /**
+             * Obsolete Date
+             * @description 作废日期
+             */
+            obsolete_date?: string | null;
+            /**
+             * Sop No
+             * @description SOP编号
+             */
+            sop_no?: string | null;
+            /**
+             * Attachment Urls
+             * @description 附件URLs(JSON)
+             */
+            attachment_urls?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Standard No */
+            standard_no: string;
+            status: components["schemas"]["StandardStatus"];
+            /** Is Obsolete */
+            is_obsolete: boolean;
+            /** Obsolete Reason */
+            obsolete_reason?: string | null;
+            /** Source Version */
+            source_version?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["InspectionStandardItemResponse"][];
         };
         /**
          * InspectionStandardUpdate
@@ -28062,6 +28339,12 @@ export interface components {
              */
             notes?: string | null;
         };
+        /**
+         * MaterialCategory
+         * @description 物料分类
+         * @enum {string}
+         */
+        "MaterialCategory-Output": "raw_material" | "excipient" | "packaging_material" | "intermediate" | "finished_product";
         /**
          * MaterialConsumeItem
          * @description 单条领料项
@@ -35036,6 +35319,12 @@ export interface components {
              */
             remark?: string | null;
         };
+        /**
+         * StandardStatus
+         * @description 标准状态
+         * @enum {string}
+         */
+        StandardStatus: "draft" | "tech_review" | "qa_review" | "approved" | "effective" | "obsolete" | "rejected";
         /**
          * StandardUpdate
          * @description Update Standard
@@ -66341,7 +66630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66376,7 +66665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66410,7 +66699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66443,7 +66732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66480,7 +66769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66513,7 +66802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66546,7 +66835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66579,7 +66868,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66615,7 +66904,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66652,7 +66941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66687,7 +66976,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66720,7 +67009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InspectionStandardItemListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -66753,7 +67042,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ApprovalRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
