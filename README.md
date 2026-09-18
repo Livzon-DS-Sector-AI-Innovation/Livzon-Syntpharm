@@ -186,7 +186,7 @@ docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-com
 ### 开发流程
 
 ```
-main → feature/xxx → uat (测试) → PR → main
+main 拉 feature → 修改 → PR → 合并 uat → 测试 →feature →  发布 PR → 合并 main → 新版本生成
 ```
 
 1. 从 `main` 拉分支开发
