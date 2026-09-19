@@ -172,8 +172,8 @@ docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-com
 docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-compose.uat.yml run --rm migrate
 
 # 4. 访问
-# 前端: http://8.138.204.232
-# 后端: http://8.138.204.232/api/v1/
+# 前端: http://<服务器IP或域名>
+# 后端: http://<服务器IP或域名>/api/v1/
 ```
 
 **配置文件**：`.env.uat.example`（UAT 服务器专用）
