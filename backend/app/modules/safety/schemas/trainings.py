@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -121,3 +122,36 @@ class TrainingRecordResponse(TrainingRecordBase):
 
     class Config:
         from_attributes = True
+
+
+# ==================== API Response Wrappers ====================
+
+
+class SafetyTrainingApiResponse(BaseModel):
+    """Single safety training response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: SafetyTrainingResponse | None = None
+
+
+class SafetyTrainingListApiResponse(BaseModel):
+    """Safety training list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[SafetyTrainingResponse]
+    meta: dict[str, Any] | None = None
+
+
+class TrainingRecordApiResponse(BaseModel):
+    """Single training record response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: TrainingRecordResponse | None = None
+
+
+class TrainingRecordListApiResponse(BaseModel):
+    """Training record list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[TrainingRecordResponse]
+    meta: dict[str, Any] | None = None

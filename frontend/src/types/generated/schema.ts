@@ -35305,6 +35305,23 @@ export interface components {
             status?: string | null;
         };
         /**
+         * SafetyTrainingApiResponse
+         * @description Single safety training response wrapper
+         */
+        SafetyTrainingApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SafetyTrainingResponse"] | null;
+        };
+        /**
          * SafetyTrainingCreate
          * @description 创建安全培训
          */
@@ -35386,6 +35403,128 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * SafetyTrainingListApiResponse
+         * @description Safety training list response wrapper
+         */
+        SafetyTrainingListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SafetyTrainingResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * SafetyTrainingResponse
+         * @description 安全培训响应
+         */
+        SafetyTrainingResponse: {
+            /**
+             * Training No
+             * @description 培训编号
+             */
+            training_no: string;
+            /**
+             * Training Name
+             * @description 培训名称
+             */
+            training_name: string;
+            /**
+             * @description 培训类型
+             * @default annual
+             */
+            training_type: components["schemas"]["TrainingType"];
+            /**
+             * @description 培训方式
+             * @default offline
+             */
+            training_mode: components["schemas"]["TrainingMode"];
+            /**
+             * @description 培训级别
+             * @default dept
+             */
+            training_level: components["schemas"]["TrainingLevel"];
+            /**
+             * Trainer
+             * @description 培训讲师
+             */
+            trainer?: string | null;
+            /**
+             * Trainer Name
+             * @description 讲师姓名
+             */
+            trainer_name?: string | null;
+            /**
+             * Training Date
+             * Format: date-time
+             * @description 培训日期
+             */
+            training_date: string;
+            /**
+             * Duration Hours
+             * @description 培训时长(小时)
+             */
+            duration_hours?: number | null;
+            /**
+             * Location
+             * @description 培训地点
+             */
+            location?: string | null;
+            /**
+             * Content
+             * @description 培训内容
+             */
+            content?: string | null;
+            /**
+             * Department
+             * @description 培训部门
+             */
+            department?: string | null;
+            /**
+             * Exam Passing Score
+             * @description 及格分数线
+             * @default 60
+             */
+            exam_passing_score: number | null;
+            /**
+             * Course Material Path
+             * @description 课程资料路径
+             */
+            course_material_path?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * SafetyTrainingUpdate
@@ -38251,6 +38390,23 @@ export interface components {
             factory?: string | null;
         };
         /**
+         * TrainingRecordApiResponse
+         * @description Single training record response wrapper
+         */
+        TrainingRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TrainingRecordResponse"] | null;
+        };
+        /**
          * TrainingRecordCreate
          * @description 创建培训记录
          */
@@ -38321,6 +38477,115 @@ export interface components {
              * Format: uuid
              */
             training_id: string;
+        };
+        /**
+         * TrainingRecordListApiResponse
+         * @description Training record list response wrapper
+         */
+        TrainingRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["TrainingRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * TrainingRecordResponse
+         * @description 培训记录响应
+         */
+        TrainingRecordResponse: {
+            /**
+             * Employee Id
+             * @description 员工ID
+             */
+            employee_id?: string | null;
+            /**
+             * Employee Name
+             * @description 员工姓名
+             */
+            employee_name?: string | null;
+            /**
+             * Department
+             * @description 部门
+             */
+            department?: string | null;
+            /**
+             * Position
+             * @description 岗位
+             */
+            position?: string | null;
+            /**
+             * Attendance
+             * @description 是否出席
+             * @default true
+             */
+            attendance: boolean;
+            /**
+             * Score
+             * @description 考核成绩
+             */
+            score?: number | null;
+            /**
+             * Passed
+             * @description 是否合格
+             */
+            passed?: boolean | null;
+            /**
+             * Certificate No
+             * @description 证书编号
+             */
+            certificate_no?: string | null;
+            /**
+             * Certificate Expiry
+             * @description 证书有效期至
+             */
+            certificate_expiry?: string | null;
+            /**
+             * Certificate Status
+             * @description 证书状态
+             */
+            certificate_status?: string | null;
+            /**
+             * Certificate File Path
+             * @description 证书文件路径
+             */
+            certificate_file_path?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Training Id
+             * Format: uuid
+             */
+            training_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * TrainingRecordUpdate
@@ -55011,7 +55276,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55046,7 +55311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55079,7 +55344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55116,7 +55381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55149,7 +55414,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55182,7 +55447,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55215,7 +55480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55248,7 +55513,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["TrainingRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55285,7 +55550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["TrainingRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55322,7 +55587,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["TrainingRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55355,7 +55620,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["TrainingRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55391,7 +55656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["TrainingRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55422,7 +55687,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["TrainingRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */

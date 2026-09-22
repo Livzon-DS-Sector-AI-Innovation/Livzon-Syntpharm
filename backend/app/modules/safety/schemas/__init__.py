@@ -197,6 +197,8 @@ __all__ = [
     "SafetyTrainingBase",
     "SafetyTrainingCreate",
     "SafetyTrainingResponse",
+    "SafetyTrainingApiResponse",
+    "SafetyTrainingListApiResponse",
     "SafetyTrainingUpdate",
     "SetCriticalRequest",
     "SetExamConclusionRequest",
@@ -223,6 +225,8 @@ __all__ = [
     "TrainingRecordBase",
     "TrainingRecordCreate",
     "TrainingRecordResponse",
+    "TrainingRecordApiResponse",
+    "TrainingRecordListApiResponse",
     "TrainingRecordUpdate",
     "TrainingType",
     "UpdateActionItemRequest",
@@ -502,6 +506,10 @@ from app.modules.safety.schemas.special_ops_personnel import (
     SpecialOperationPersonnelUpdate,
 )
 from app.modules.safety.schemas.trainings import (
+    SafetyTrainingApiResponse,
+    SafetyTrainingListApiResponse,
+    TrainingRecordApiResponse,
+    TrainingRecordListApiResponse,
     SafetyTrainingBase,
     SafetyTrainingCreate,
     SafetyTrainingResponse,

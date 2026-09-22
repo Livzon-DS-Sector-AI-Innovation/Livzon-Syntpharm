@@ -30235,7 +30235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingListApiResponse"
                 }
               }
             }
@@ -30293,7 +30293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingApiResponse"
                 }
               }
             }
@@ -30353,7 +30353,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingApiResponse"
                 }
               }
             }
@@ -30421,7 +30421,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingApiResponse"
                 }
               }
             }
@@ -30479,7 +30479,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingApiResponse"
                 }
               }
             }
@@ -30539,7 +30539,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingApiResponse"
                 }
               }
             }
@@ -30599,7 +30599,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SafetyTrainingApiResponse"
                 }
               }
             }
@@ -30659,7 +30659,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/TrainingRecordListApiResponse"
                 }
               }
             }
@@ -30727,7 +30727,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/TrainingRecordApiResponse"
                 }
               }
             }
@@ -30797,7 +30797,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/TrainingRecordApiResponse"
                 }
               }
             }
@@ -30855,7 +30855,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/TrainingRecordApiResponse"
                 }
               }
             }
@@ -30960,7 +30960,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/TrainingRecordListApiResponse"
                 }
               }
             }
@@ -31010,7 +31010,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/TrainingRecordListApiResponse"
                 }
               }
             }
@@ -127899,6 +127899,33 @@
         "title": "SafetyKnowledgeArticleUpdate",
         "description": "\u66f4\u65b0\u77e5\u8bc6\u5e93\u6587\u7ae0"
       },
+      "SafetyTrainingApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyTrainingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SafetyTrainingApiResponse",
+        "description": "Single safety training response wrapper"
+      },
       "SafetyTrainingCreate": {
         "properties": {
           "training_no": {
@@ -128059,6 +128086,229 @@
         ],
         "title": "SafetyTrainingCreate",
         "description": "\u521b\u5efa\u5b89\u5168\u57f9\u8bad"
+      },
+      "SafetyTrainingListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SafetyTrainingResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SafetyTrainingListApiResponse",
+        "description": "Safety training list response wrapper"
+      },
+      "SafetyTrainingResponse": {
+        "properties": {
+          "training_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Training No",
+            "description": "\u57f9\u8bad\u7f16\u53f7"
+          },
+          "training_name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Training Name",
+            "description": "\u57f9\u8bad\u540d\u79f0"
+          },
+          "training_type": {
+            "$ref": "#/components/schemas/TrainingType",
+            "description": "\u57f9\u8bad\u7c7b\u578b",
+            "default": "annual"
+          },
+          "training_mode": {
+            "$ref": "#/components/schemas/TrainingMode",
+            "description": "\u57f9\u8bad\u65b9\u5f0f",
+            "default": "offline"
+          },
+          "training_level": {
+            "$ref": "#/components/schemas/TrainingLevel",
+            "description": "\u57f9\u8bad\u7ea7\u522b",
+            "default": "dept"
+          },
+          "trainer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer",
+            "description": "\u57f9\u8bad\u8bb2\u5e08"
+          },
+          "trainer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trainer Name",
+            "description": "\u8bb2\u5e08\u59d3\u540d"
+          },
+          "training_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Training Date",
+            "description": "\u57f9\u8bad\u65e5\u671f"
+          },
+          "duration_hours": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Hours",
+            "description": "\u57f9\u8bad\u65f6\u957f(\u5c0f\u65f6)"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u57f9\u8bad\u5730\u70b9"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content",
+            "description": "\u57f9\u8bad\u5185\u5bb9"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u57f9\u8bad\u90e8\u95e8"
+          },
+          "exam_passing_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exam Passing Score",
+            "description": "\u53ca\u683c\u5206\u6570\u7ebf",
+            "default": 60
+          },
+          "course_material_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Course Material Path",
+            "description": "\u8bfe\u7a0b\u8d44\u6599\u8def\u5f84"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "training_no",
+          "training_name",
+          "training_date",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SafetyTrainingResponse",
+        "description": "\u5b89\u5168\u57f9\u8bad\u54cd\u5e94"
       },
       "SafetyTrainingUpdate": {
         "properties": {
@@ -134958,6 +135208,33 @@
         "title": "TrainingNotifyInput",
         "description": "Send training notification via Feishu IM."
       },
+      "TrainingRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrainingRecordResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "TrainingRecordApiResponse",
+        "description": "Single training record response wrapper"
+      },
       "TrainingRecordCreate": {
         "properties": {
           "employee_id": {
@@ -135120,6 +135397,226 @@
         ],
         "title": "TrainingRecordCreate",
         "description": "\u521b\u5efa\u57f9\u8bad\u8bb0\u5f55"
+      },
+      "TrainingRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/TrainingRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TrainingRecordListApiResponse",
+        "description": "Training record list response wrapper"
+      },
+      "TrainingRecordResponse": {
+        "properties": {
+          "employee_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Id",
+            "description": "\u5458\u5de5ID"
+          },
+          "employee_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee Name",
+            "description": "\u5458\u5de5\u59d3\u540d"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u90e8\u95e8"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position",
+            "description": "\u5c97\u4f4d"
+          },
+          "attendance": {
+            "type": "boolean",
+            "title": "Attendance",
+            "description": "\u662f\u5426\u51fa\u5e2d",
+            "default": true
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score",
+            "description": "\u8003\u6838\u6210\u7ee9"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed",
+            "description": "\u662f\u5426\u5408\u683c"
+          },
+          "certificate_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate No",
+            "description": "\u8bc1\u4e66\u7f16\u53f7"
+          },
+          "certificate_expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate Expiry",
+            "description": "\u8bc1\u4e66\u6709\u6548\u671f\u81f3"
+          },
+          "certificate_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate Status",
+            "description": "\u8bc1\u4e66\u72b6\u6001"
+          },
+          "certificate_file_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate File Path",
+            "description": "\u8bc1\u4e66\u6587\u4ef6\u8def\u5f84"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "training_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Training Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "training_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TrainingRecordResponse",
+        "description": "\u57f9\u8bad\u8bb0\u5f55\u54cd\u5e94"
       },
       "TrainingRecordUpdate": {
         "properties": {

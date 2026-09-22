@@ -24,6 +24,13 @@ type ContractorListApiResponse = components['schemas']['ContractorListApiRespons
 type ContractorWorkRecordResponse = components['schemas']['ContractorWorkRecordResponse']
 type ContractorWorkRecordApiResponse = components['schemas']['ContractorWorkRecordApiResponse']
 type ContractorWorkRecordListApiResponse = components['schemas']['ContractorWorkRecordListApiResponse']
+
+type SafetyTrainingResponse = components['schemas']['SafetyTrainingResponse']
+type SafetyTrainingApiResponse = components['schemas']['SafetyTrainingApiResponse']
+type SafetyTrainingListApiResponse = components['schemas']['SafetyTrainingListApiResponse']
+type TrainingRecordResponse = components['schemas']['TrainingRecordResponse']
+type TrainingRecordApiResponse = components['schemas']['TrainingRecordApiResponse']
+type TrainingRecordListApiResponse = components['schemas']['TrainingRecordListApiResponse']
 type AccidentListApiResponse = components['schemas']['AccidentListApiResponse']
 
 async function uploadFetch(
@@ -378,15 +385,15 @@ export async function evaluateWorkRecord(contractorId: string, recordId: string,
 // ============ SafetyTraining ============
 
 export async function getTrainings(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/trainings${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<SafetyTrainingListApiResponse>(`/api/v1/safety/trainings${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getTraining(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/trainings/${id}`, { headers: authHeaders })
+  return apiFetch<SafetyTrainingApiResponse>(`/api/v1/safety/trainings/${id}`, { headers: authHeaders })
 }
 
 export async function createTraining(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/trainings', {
+  return apiFetch<SafetyTrainingApiResponse>('/api/v1/safety/trainings', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -394,7 +401,7 @@ export async function createTraining(data: unknown, authHeaders?: Record<string,
 }
 
 export async function updateTraining(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/trainings/${id}`, {
+  return apiFetch<SafetyTrainingApiResponse>(`/api/v1/safety/trainings/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -402,21 +409,21 @@ export async function updateTraining(id: string, data: unknown, authHeaders?: Re
 }
 
 export async function startTraining(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/trainings/${id}/start`, {
+  return apiFetch<SafetyTrainingApiResponse>(`/api/v1/safety/trainings/${id}/start`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function completeTraining(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/trainings/${id}/complete`, {
+  return apiFetch<SafetyTrainingApiResponse>(`/api/v1/safety/trainings/${id}/complete`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function deleteTraining(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/trainings/${id}`, {
+  return apiFetch<SafetyTrainingApiResponse>(`/api/v1/safety/trainings/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
@@ -425,11 +432,11 @@ export async function deleteTraining(id: string, authHeaders?: Record<string, st
 // ============ TrainingRecord ============
 
 export async function getTrainingRecords(trainingId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/trainings/${trainingId}/records`, { headers: authHeaders })
+  return apiFetch<TrainingRecordListApiResponse>(`/api/v1/safety/trainings/${trainingId}/records`, { headers: authHeaders })
 }
 
 export async function createTrainingRecord(trainingId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/trainings/${trainingId}/records`, {
+  return apiFetch<TrainingRecordApiResponse>(`/api/v1/safety/trainings/${trainingId}/records`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -437,7 +444,7 @@ export async function createTrainingRecord(trainingId: string, data: unknown, au
 }
 
 export async function updateTrainingRecord(recordId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/training-records/${recordId}`, {
+  return apiFetch<TrainingRecordApiResponse>(`/api/v1/safety/training-records/${recordId}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -445,7 +452,7 @@ export async function updateTrainingRecord(recordId: string, data: unknown, auth
 }
 
 export async function deleteTrainingRecord(recordId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/training-records/${recordId}`, {
+  return apiFetch<TrainingRecordApiResponse>(`/api/v1/safety/training-records/${recordId}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
@@ -454,11 +461,11 @@ export async function deleteTrainingRecord(recordId: string, authHeaders?: Recor
 // ============ TrainingCertificate ============
 
 export async function getTrainingCertificates(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/training-certificates${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<TrainingRecordListApiResponse>(`/api/v1/safety/training-certificates${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getExpiringCertificates(authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>('/api/v1/safety/training-certificates/expiring', { headers: authHeaders })
+  return apiFetch<TrainingRecordListApiResponse>('/api/v1/safety/training-certificates/expiring', { headers: authHeaders })
 }
 
 // ============ HazardIdentification ============
