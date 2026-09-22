@@ -190,11 +190,11 @@ export async function startRectification(id: string): Promise<ApiResponse<Hazard
   return response as ApiResponse<HazardReport>
 }
 
-export async function confirmCheck(id: string, data: ConfirmCheckRequest): Promise<ApiResponse<HazardReport>> {
+export async function confirmCheck(id: string, data: ConfirmCheckRequest): Promise<ApiResponse<SafetyCheck>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.confirmCheckApi(id, data, authHeaders)
   revalidatePath('/safety')
-  return response as ApiResponse<HazardReport>
+  return response as ApiResponse<SafetyCheck>
 }
 
 export async function replyRectification(id: string, data: RectificationReplyRequest): Promise<ApiResponse<HazardReport>> {
