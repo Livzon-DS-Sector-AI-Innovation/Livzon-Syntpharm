@@ -31059,6 +31059,12 @@ export interface components {
              */
             status?: string | null;
         };
+        /**
+         * OperationType
+         * @description 特殊作业类型枚举（GB 30871-2022）
+         * @enum {string}
+         */
+        "OperationType-Output": "hot_work" | "confined_space" | "blind_plate" | "height_work" | "lifting" | "temporary_electricity" | "excavation" | "road_breaking";
         /** OverseasApprovalCreate */
         OverseasApprovalCreate: {
             /** Product Name */
@@ -36230,6 +36236,63 @@ export interface components {
             is_active?: boolean | null;
         };
         /**
+         * SpecialOperationLedgerStats
+         * @description 特殊作业台账统计
+         */
+        SpecialOperationLedgerStats: {
+            /**
+             * Operation Type
+             * @description 作业类型
+             */
+            operation_type: string;
+            /**
+             * Count
+             * @description 总数
+             */
+            count: number;
+            /**
+             * Critical Count
+             * @description 关键作业数
+             * @default 0
+             */
+            critical_count: number;
+        };
+        /**
+         * SpecialOperationLedgerStatsApiResponse
+         * @description Special operation ledger stats response wrapper
+         */
+        SpecialOperationLedgerStatsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SpecialOperationLedgerStats"][];
+        };
+        /**
+         * SpecialOperationPermitApiResponse
+         * @description Single special operation permit response wrapper
+         */
+        SpecialOperationPermitApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SpecialOperationPermitResponse"] | null;
+        };
+        /**
          * SpecialOperationPermitCreate
          * @description 创建作业票
          */
@@ -36336,6 +36399,164 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * SpecialOperationPermitListApiResponse
+         * @description Special operation permit list response wrapper
+         */
+        SpecialOperationPermitListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SpecialOperationPermitResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * SpecialOperationPermitResponse
+         * @description 作业票响应
+         */
+        SpecialOperationPermitResponse: {
+            /**
+             * Permit No
+             * @description 作业票编号
+             */
+            permit_no: string;
+            /** @description 作业类型 */
+            operation_type: components["schemas"]["OperationType-Output"];
+            /**
+             * @description 作业级别
+             * @default grade2
+             */
+            operation_level: components["schemas"]["OperationLevel"];
+            /**
+             * Location
+             * @description 作业地点
+             */
+            location?: string | null;
+            /**
+             * Equipment Tag
+             * @description 设备位号
+             */
+            equipment_tag?: string | null;
+            /**
+             * Work Description
+             * @description 作业内容描述
+             */
+            work_description?: string | null;
+            /**
+             * Planned Start Time
+             * @description 计划开始时间
+             */
+            planned_start_time?: string | null;
+            /**
+             * Planned End Time
+             * @description 计划结束时间
+             */
+            planned_end_time?: string | null;
+            /**
+             * Actual Start Time
+             * @description 实际开始时间
+             */
+            actual_start_time?: string | null;
+            /**
+             * Actual End Time
+             * @description 实际结束时间
+             */
+            actual_end_time?: string | null;
+            /**
+             * Applicant Name
+             * @description 申请人姓名
+             */
+            applicant_name?: string | null;
+            /**
+             * Work Leader Name
+             * @description 作业负责人姓名
+             */
+            work_leader_name?: string | null;
+            /**
+             * Operator Names
+             * @description 作业人员姓名
+             */
+            operator_names?: string | null;
+            /**
+             * Guardian Name
+             * @description 监护人姓名
+             */
+            guardian_name?: string | null;
+            /**
+             * Approver Name
+             * @description 审批人姓名
+             */
+            approver_name?: string | null;
+            /**
+             * Safety Measures
+             * @description 安全措施
+             */
+            safety_measures?: string | null;
+            /**
+             * Emergency Equipment
+             * @description 应急消防器材
+             */
+            emergency_equipment?: string | null;
+            /**
+             * Gas Analysis
+             * @description 气体分析结果
+             */
+            gas_analysis?: string | null;
+            /**
+             * Risk Assessment
+             * @description 风险评估
+             */
+            risk_assessment?: string | null;
+            /**
+             * Check Id
+             * @description 关联安全检查ID
+             */
+            check_id?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Safety Briefing Confirmed
+             * @default false
+             */
+            safety_briefing_confirmed: boolean;
+            /** Safety Briefing Time */
+            safety_briefing_time?: string | null;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /** Completion Method */
+            completion_method?: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * SpecialOperationPermitUpdate
@@ -36462,6 +36683,23 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * SpecialOperationPersonnelApiResponse
+         * @description Single special operation personnel response wrapper
+         */
+        SpecialOperationPersonnelApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SpecialOperationPersonnelResponse"] | null;
+        };
+        /**
          * SpecialOperationPersonnelCreate
          * @description 创建人员资质
          */
@@ -36518,6 +36756,103 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * SpecialOperationPersonnelListApiResponse
+         * @description Special operation personnel list response wrapper
+         */
+        SpecialOperationPersonnelListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SpecialOperationPersonnelResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * SpecialOperationPersonnelResponse
+         * @description 人员资质响应
+         */
+        SpecialOperationPersonnelResponse: {
+            /**
+             * Personnel No
+             * @description 人员编号
+             */
+            personnel_no: string;
+            /**
+             * Name
+             * @description 姓名
+             */
+            name: string;
+            /**
+             * Department
+             * @description 所属部门
+             */
+            department?: string | null;
+            /** @description 证书类型 */
+            certificate_type: components["schemas"]["OperationType-Output"];
+            /**
+             * Certificate Number
+             * @description 证书编号
+             */
+            certificate_number?: string | null;
+            /**
+             * Issuing Authority
+             * @description 发证机关
+             */
+            issuing_authority?: string | null;
+            /**
+             * Issue Date
+             * @description 发证日期
+             */
+            issue_date?: string | null;
+            /**
+             * Expiry Date
+             * @description 有效期至
+             */
+            expiry_date?: string | null;
+            /**
+             * Certificate File Path
+             * @description 证书文件路径
+             */
+            certificate_file_path?: string | null;
+            /**
+             * Qualification Scope
+             * @description 资质范围
+             */
+            qualification_scope?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * SpecialOperationPersonnelUpdate
@@ -36578,6 +36913,23 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * SpecialOperationReportApiResponse
+         * @description Single special operation report response wrapper
+         */
+        SpecialOperationReportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SpecialOperationReportResponse"] | null;
         };
         /**
          * SpecialOperationReportCreate
@@ -36697,6 +37049,166 @@ export interface components {
              * @description 关键作业判定理由
              */
             is_critical_reason?: string | null;
+        };
+        /**
+         * SpecialOperationReportListApiResponse
+         * @description Special operation report list response wrapper
+         */
+        SpecialOperationReportListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SpecialOperationReportResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * SpecialOperationReportResponse
+         * @description 特殊作业报备响应
+         */
+        SpecialOperationReportResponse: {
+            /**
+             * Report No
+             * @description 报备编号
+             */
+            report_no: string;
+            /**
+             * Permit Id
+             * @description 关联作业票ID
+             */
+            permit_id?: string | null;
+            /** @description 作业类型 */
+            operation_type: components["schemas"]["OperationType-Output"];
+            /**
+             * @description 作业级别
+             * @default grade2
+             */
+            operation_level: components["schemas"]["OperationLevel"];
+            /**
+             * Department
+             * @description 报备部门
+             */
+            department?: string | null;
+            /**
+             * Location
+             * @description 作业地点
+             */
+            location?: string | null;
+            /**
+             * Equipment Tag
+             * @description 设备位号
+             */
+            equipment_tag?: string | null;
+            /**
+             * Work Description
+             * @description 作业内容描述
+             */
+            work_description?: string | null;
+            /**
+             * Planned Start Time
+             * @description 计划开始时间
+             */
+            planned_start_time?: string | null;
+            /**
+             * Planned End Time
+             * @description 计划结束时间
+             */
+            planned_end_time?: string | null;
+            /**
+             * Work Leader Name
+             * @description 作业负责人姓名
+             */
+            work_leader_name?: string | null;
+            /**
+             * Operator Names
+             * @description 作业人员姓名（逗号分隔）
+             */
+            operator_names?: string | null;
+            /**
+             * Guardian Name
+             * @description 监护人姓名
+             */
+            guardian_name?: string | null;
+            /**
+             * Risk Level
+             * @description 风险等级
+             */
+            risk_level?: string | null;
+            /**
+             * Safety Measures
+             * @description 安全措施
+             */
+            safety_measures?: string | null;
+            /**
+             * Emergency Equipment
+             * @description 应急消防器材
+             */
+            emergency_equipment?: string | null;
+            /**
+             * Gas Analysis
+             * @description 气体分析结果
+             */
+            gas_analysis?: string | null;
+            /**
+             * Risk Assessment
+             * @description 风险评估描述
+             */
+            risk_assessment?: string | null;
+            /**
+             * Applicant Name
+             * @description 报备申请人姓名
+             */
+            applicant_name?: string | null;
+            /**
+             * Approver Name
+             * @description 审批人姓名
+             */
+            approver_name?: string | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Is Critical
+             * @default false
+             */
+            is_critical: boolean;
+            /** Is Critical Reason */
+            is_critical_reason?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Approved At */
+            approved_at?: string | null;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
+            /** Status */
+            status: string;
+            /** Is Critical Updated By */
+            is_critical_updated_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * SpecialOperationReportUpdate
@@ -54262,7 +54774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54297,7 +54809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54330,7 +54842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54367,7 +54879,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54400,7 +54912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54433,7 +54945,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54466,7 +54978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54502,7 +55014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54539,7 +55051,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54584,7 +55096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54615,7 +55127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationLedgerStatsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54650,7 +55162,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54721,7 +55233,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54756,7 +55268,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54789,7 +55301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54826,7 +55338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54859,7 +55371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54892,7 +55404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54925,7 +55437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54961,7 +55473,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54994,7 +55506,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55030,7 +55542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55063,7 +55575,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55101,7 +55613,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPersonnelListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55136,7 +55648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55169,7 +55681,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55206,7 +55718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55239,7 +55751,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */

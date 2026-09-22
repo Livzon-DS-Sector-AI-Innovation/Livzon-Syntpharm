@@ -1194,7 +1194,7 @@ export async function getSpecialOperationLedger(params?: SpecialOperationLedgerQ
 
 export async function getSpecialOperationLedgerStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getSpecialOperationLedgerStats(authHeaders) as Promise<ApiResponse<SpecialOperationLedgerStats[]>>
+  return safetyApi.getSpecialOperationLedgerStats(authHeaders) 
 }
 
 // ==================== 每日风险作业报备 Actions ====================

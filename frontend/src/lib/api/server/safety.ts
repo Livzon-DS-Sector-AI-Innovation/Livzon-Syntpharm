@@ -31,6 +31,17 @@ type SafetyTrainingListApiResponse = components['schemas']['SafetyTrainingListAp
 type TrainingRecordResponse = components['schemas']['TrainingRecordResponse']
 type TrainingRecordApiResponse = components['schemas']['TrainingRecordApiResponse']
 type TrainingRecordListApiResponse = components['schemas']['TrainingRecordListApiResponse']
+
+type SpecialOperationPermitResponse = components['schemas']['SpecialOperationPermitResponse']
+type SpecialOperationPermitApiResponse = components['schemas']['SpecialOperationPermitApiResponse']
+type SpecialOperationPermitListApiResponse = components['schemas']['SpecialOperationPermitListApiResponse']
+type SpecialOperationPersonnelResponse = components['schemas']['SpecialOperationPersonnelResponse']
+type SpecialOperationPersonnelApiResponse = components['schemas']['SpecialOperationPersonnelApiResponse']
+type SpecialOperationPersonnelListApiResponse = components['schemas']['SpecialOperationPersonnelListApiResponse']
+type SpecialOperationReportResponse = components['schemas']['SpecialOperationReportResponse']
+type SpecialOperationReportApiResponse = components['schemas']['SpecialOperationReportApiResponse']
+type SpecialOperationReportListApiResponse = components['schemas']['SpecialOperationReportListApiResponse']
+type SpecialOperationLedgerStatsApiResponse = components['schemas']['SpecialOperationLedgerStatsApiResponse']
 type AccidentListApiResponse = components['schemas']['AccidentListApiResponse']
 
 async function uploadFetch(
@@ -725,15 +736,15 @@ export async function identifyRevisionScope(revisionId: string, authHeaders?: Re
 // ============ SpecialOperationPersonnel ============
 
 export async function getPersonnelList(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/special-operation-personnel${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationPersonnelListApiResponse>(`/api/v1/safety/special-operation-personnel${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getPersonnel(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-personnel/${id}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationPersonnelApiResponse>(`/api/v1/safety/special-operation-personnel/${id}`, { headers: authHeaders })
 }
 
 export async function createPersonnel(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/special-operation-personnel', {
+  return apiFetch<SpecialOperationPersonnelApiResponse>('/api/v1/safety/special-operation-personnel', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -741,7 +752,7 @@ export async function createPersonnel(data: unknown, authHeaders?: Record<string
 }
 
 export async function updatePersonnel(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-personnel/${id}`, {
+  return apiFetch<SpecialOperationPersonnelApiResponse>(`/api/v1/safety/special-operation-personnel/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -749,7 +760,7 @@ export async function updatePersonnel(id: string, data: unknown, authHeaders?: R
 }
 
 export async function deletePersonnel(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/special-operation-personnel/${id}`, {
+  return apiFetch<SpecialOperationPersonnelApiResponse>(`/api/v1/safety/special-operation-personnel/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
@@ -758,15 +769,15 @@ export async function deletePersonnel(id: string, authHeaders?: Record<string, s
 // ============ SpecialOperationPermit ============
 
 export async function getPermitList(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/special-operation-permits${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationPermitListApiResponse>(`/api/v1/safety/special-operation-permits${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getPermit(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}`, { headers: authHeaders })
 }
 
 export async function createPermit(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/special-operation-permits', {
+  return apiFetch<SpecialOperationPermitApiResponse>('/api/v1/safety/special-operation-permits', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -774,7 +785,7 @@ export async function createPermit(data: unknown, authHeaders?: Record<string, s
 }
 
 export async function updatePermit(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -782,49 +793,49 @@ export async function updatePermit(id: string, data: unknown, authHeaders?: Reco
 }
 
 export async function deletePermit(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/special-operation-permits/${id}`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
 }
 
 export async function submitPermit(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}/submit`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}/submit`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function approvePermit(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}/approve`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}/approve`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function rejectPermit(id: string, reason: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}/reject?reason=${encodeURIComponent(reason)}`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}/reject?reason=${encodeURIComponent(reason)}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function startPermit(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}/start`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}/start`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function completePermit(id: string, method: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}/complete?method=${encodeURIComponent(method)}`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}/complete?method=${encodeURIComponent(method)}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function archivePermit(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-permits/${id}/archive`, {
+  return apiFetch<SpecialOperationPermitApiResponse>(`/api/v1/safety/special-operation-permits/${id}/archive`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -966,15 +977,15 @@ export async function batchImportKnowledgeArticles(formData: FormData, authHeade
 // ============ SpecialOperationReport ============
 
 export async function getSpecialOperationReports(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/special-operation-reports${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationReportListApiResponse>(`/api/v1/safety/special-operation-reports${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getSpecialOperationReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-reports/${id}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}`, { headers: authHeaders })
 }
 
 export async function createSpecialOperationReport(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/special-operation-reports', {
+  return apiFetch<SpecialOperationReportApiResponse>('/api/v1/safety/special-operation-reports', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -982,7 +993,7 @@ export async function createSpecialOperationReport(data: unknown, authHeaders?: 
 }
 
 export async function updateSpecialOperationReport(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-reports/${id}`, {
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -990,35 +1001,35 @@ export async function updateSpecialOperationReport(id: string, data: unknown, au
 }
 
 export async function deleteSpecialOperationReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/special-operation-reports/${id}`, {
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
 }
 
 export async function submitSpecialOperationReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-reports/${id}/submit`, {
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}/submit`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function approveSpecialOperationReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-reports/${id}/approve`, {
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}/approve`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function rejectSpecialOperationReport(id: string, reason: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-reports/${id}/reject?reason=${encodeURIComponent(reason)}`, {
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}/reject?reason=${encodeURIComponent(reason)}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function setSpecialOperationReportCritical(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/special-operation-reports/${id}/critical`, {
+  return apiFetch<SpecialOperationReportApiResponse>(`/api/v1/safety/special-operation-reports/${id}/critical`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1028,11 +1039,11 @@ export async function setSpecialOperationReportCritical(id: string, data: unknow
 // ============ SpecialOperationLedger ============
 
 export async function getSpecialOperationLedger(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/special-operation-ledger${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<SpecialOperationReportListApiResponse>(`/api/v1/safety/special-operation-ledger${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getSpecialOperationLedgerStats(authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>('/api/v1/safety/special-operation-ledger/stats', { headers: authHeaders })
+  return apiFetch<SpecialOperationLedgerStatsApiResponse>('/api/v1/safety/special-operation-ledger/stats', { headers: authHeaders })
 }
 
 // ============ DailyRiskReport ============

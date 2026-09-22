@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -279,3 +280,28 @@ class DailyRiskReportResponse(DailyRiskReportBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class SpecialOperationReportApiResponse(BaseModel):
+    """Single special operation report response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: SpecialOperationReportResponse | None = None
+
+
+class SpecialOperationReportListApiResponse(BaseModel):
+    """Special operation report list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[SpecialOperationReportResponse]
+    meta: dict[str, Any] | None = None
+
+
+class SpecialOperationLedgerStatsApiResponse(BaseModel):
+    """Special operation ledger stats response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[SpecialOperationLedgerStats]

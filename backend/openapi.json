@@ -28095,7 +28095,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportListApiResponse"
                 }
               }
             }
@@ -28153,7 +28153,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28213,7 +28213,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28281,7 +28281,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28339,7 +28339,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28399,7 +28399,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28459,7 +28459,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28530,7 +28530,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28600,7 +28600,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -28807,7 +28807,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportListApiResponse"
                 }
               }
             }
@@ -28857,7 +28857,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationLedgerStatsApiResponse"
                 }
               }
             }
@@ -28917,7 +28917,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationReportApiResponse"
                 }
               }
             }
@@ -29107,7 +29107,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitListApiResponse"
                 }
               }
             }
@@ -29165,7 +29165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29225,7 +29225,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29293,7 +29293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29351,7 +29351,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29411,7 +29411,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29471,7 +29471,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29542,7 +29542,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29602,7 +29602,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29673,7 +29673,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29733,7 +29733,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPermitApiResponse"
                 }
               }
             }
@@ -29870,7 +29870,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPersonnelListApiResponse"
                 }
               }
             }
@@ -29928,7 +29928,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPersonnelApiResponse"
                 }
               }
             }
@@ -29988,7 +29988,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPersonnelApiResponse"
                 }
               }
             }
@@ -30056,7 +30056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPersonnelApiResponse"
                 }
               }
             }
@@ -30114,7 +30114,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SpecialOperationPersonnelApiResponse"
                 }
               }
             }
@@ -117288,6 +117288,21 @@
         "title": "OperationRegulationUpdate",
         "description": "\u66f4\u65b0\u5b89\u5168\u64cd\u4f5c\u89c4\u7a0b"
       },
+      "OperationType-Output": {
+        "type": "string",
+        "enum": [
+          "hot_work",
+          "confined_space",
+          "blind_plate",
+          "height_work",
+          "lifting",
+          "temporary_electricity",
+          "excavation",
+          "road_breaking"
+        ],
+        "title": "OperationType",
+        "description": "\u7279\u6b8a\u4f5c\u4e1a\u7c7b\u578b\u679a\u4e3e\uff08GB 30871-2022\uff09"
+      },
       "OverseasApprovalCreate": {
         "properties": {
           "product_name": {
@@ -130016,6 +130031,87 @@
         "title": "SparePartUpdate",
         "description": "\u66f4\u65b0\u5907\u4ef6\u8bf7\u6c42"
       },
+      "SpecialOperationLedgerStats": {
+        "properties": {
+          "operation_type": {
+            "type": "string",
+            "title": "Operation Type",
+            "description": "\u4f5c\u4e1a\u7c7b\u578b"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "\u603b\u6570"
+          },
+          "critical_count": {
+            "type": "integer",
+            "title": "Critical Count",
+            "description": "\u5173\u952e\u4f5c\u4e1a\u6570",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "operation_type",
+          "count"
+        ],
+        "title": "SpecialOperationLedgerStats",
+        "description": "\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26\u7edf\u8ba1"
+      },
+      "SpecialOperationLedgerStatsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialOperationLedgerStats"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SpecialOperationLedgerStatsApiResponse",
+        "description": "Special operation ledger stats response wrapper"
+      },
+      "SpecialOperationPermitApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpecialOperationPermitResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SpecialOperationPermitApiResponse",
+        "description": "Single special operation permit response wrapper"
+      },
       "SpecialOperationPermitCreate": {
         "properties": {
           "permit_no": {
@@ -130268,6 +130364,360 @@
         ],
         "title": "SpecialOperationPermitCreate",
         "description": "\u521b\u5efa\u4f5c\u4e1a\u7968"
+      },
+      "SpecialOperationPermitListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialOperationPermitResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SpecialOperationPermitListApiResponse",
+        "description": "Special operation permit list response wrapper"
+      },
+      "SpecialOperationPermitResponse": {
+        "properties": {
+          "permit_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Permit No",
+            "description": "\u4f5c\u4e1a\u7968\u7f16\u53f7"
+          },
+          "operation_type": {
+            "$ref": "#/components/schemas/OperationType-Output",
+            "description": "\u4f5c\u4e1a\u7c7b\u578b"
+          },
+          "operation_level": {
+            "$ref": "#/components/schemas/OperationLevel",
+            "description": "\u4f5c\u4e1a\u7ea7\u522b",
+            "default": "grade2"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u4f5c\u4e1a\u5730\u70b9"
+          },
+          "equipment_tag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Tag",
+            "description": "\u8bbe\u5907\u4f4d\u53f7"
+          },
+          "work_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Description",
+            "description": "\u4f5c\u4e1a\u5185\u5bb9\u63cf\u8ff0"
+          },
+          "planned_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start Time",
+            "description": "\u8ba1\u5212\u5f00\u59cb\u65f6\u95f4"
+          },
+          "planned_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End Time",
+            "description": "\u8ba1\u5212\u7ed3\u675f\u65f6\u95f4"
+          },
+          "actual_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Time",
+            "description": "\u5b9e\u9645\u5f00\u59cb\u65f6\u95f4"
+          },
+          "actual_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Time",
+            "description": "\u5b9e\u9645\u7ed3\u675f\u65f6\u95f4"
+          },
+          "applicant_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicant Name",
+            "description": "\u7533\u8bf7\u4eba\u59d3\u540d"
+          },
+          "work_leader_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Leader Name",
+            "description": "\u4f5c\u4e1a\u8d1f\u8d23\u4eba\u59d3\u540d"
+          },
+          "operator_names": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Names",
+            "description": "\u4f5c\u4e1a\u4eba\u5458\u59d3\u540d"
+          },
+          "guardian_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Name",
+            "description": "\u76d1\u62a4\u4eba\u59d3\u540d"
+          },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Name",
+            "description": "\u5ba1\u6279\u4eba\u59d3\u540d"
+          },
+          "safety_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Measures",
+            "description": "\u5b89\u5168\u63aa\u65bd"
+          },
+          "emergency_equipment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Equipment",
+            "description": "\u5e94\u6025\u6d88\u9632\u5668\u6750"
+          },
+          "gas_analysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gas Analysis",
+            "description": "\u6c14\u4f53\u5206\u6790\u7ed3\u679c"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment",
+            "description": "\u98ce\u9669\u8bc4\u4f30"
+          },
+          "check_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Id",
+            "description": "\u5173\u8054\u5b89\u5168\u68c0\u67e5ID"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "safety_briefing_confirmed": {
+            "type": "boolean",
+            "title": "Safety Briefing Confirmed",
+            "default": false
+          },
+          "safety_briefing_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Briefing Time"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "completion_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Method"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "permit_no",
+          "operation_type",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SpecialOperationPermitResponse",
+        "description": "\u4f5c\u4e1a\u7968\u54cd\u5e94"
       },
       "SpecialOperationPermitUpdate": {
         "properties": {
@@ -130597,6 +131047,33 @@
         "title": "SpecialOperationPermitUpdate",
         "description": "\u66f4\u65b0\u4f5c\u4e1a\u7968"
       },
+      "SpecialOperationPersonnelApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpecialOperationPersonnelResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SpecialOperationPersonnelApiResponse",
+        "description": "Single special operation personnel response wrapper"
+      },
       "SpecialOperationPersonnelCreate": {
         "properties": {
           "personnel_no": {
@@ -130726,6 +131203,198 @@
         ],
         "title": "SpecialOperationPersonnelCreate",
         "description": "\u521b\u5efa\u4eba\u5458\u8d44\u8d28"
+      },
+      "SpecialOperationPersonnelListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialOperationPersonnelResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SpecialOperationPersonnelListApiResponse",
+        "description": "Special operation personnel list response wrapper"
+      },
+      "SpecialOperationPersonnelResponse": {
+        "properties": {
+          "personnel_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Personnel No",
+            "description": "\u4eba\u5458\u7f16\u53f7"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Name",
+            "description": "\u59d3\u540d"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u6240\u5c5e\u90e8\u95e8"
+          },
+          "certificate_type": {
+            "$ref": "#/components/schemas/OperationType-Output",
+            "description": "\u8bc1\u4e66\u7c7b\u578b"
+          },
+          "certificate_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate Number",
+            "description": "\u8bc1\u4e66\u7f16\u53f7"
+          },
+          "issuing_authority": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issuing Authority",
+            "description": "\u53d1\u8bc1\u673a\u5173"
+          },
+          "issue_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Issue Date",
+            "description": "\u53d1\u8bc1\u65e5\u671f"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date",
+            "description": "\u6709\u6548\u671f\u81f3"
+          },
+          "certificate_file_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate File Path",
+            "description": "\u8bc1\u4e66\u6587\u4ef6\u8def\u5f84"
+          },
+          "qualification_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Scope",
+            "description": "\u8d44\u8d28\u8303\u56f4"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "personnel_no",
+          "name",
+          "certificate_type",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SpecialOperationPersonnelResponse",
+        "description": "\u4eba\u5458\u8d44\u8d28\u54cd\u5e94"
       },
       "SpecialOperationPersonnelUpdate": {
         "properties": {
@@ -130883,6 +131552,33 @@
         "type": "object",
         "title": "SpecialOperationPersonnelUpdate",
         "description": "\u66f4\u65b0\u4eba\u5458\u8d44\u8d28"
+      },
+      "SpecialOperationReportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SpecialOperationReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SpecialOperationReportApiResponse",
+        "description": "Single special operation report response wrapper"
       },
       "SpecialOperationReportCreate": {
         "properties": {
@@ -131154,6 +131850,371 @@
         ],
         "title": "SpecialOperationReportCreate",
         "description": "\u521b\u5efa\u7279\u6b8a\u4f5c\u4e1a\u62a5\u5907"
+      },
+      "SpecialOperationReportListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/SpecialOperationReportResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SpecialOperationReportListApiResponse",
+        "description": "Special operation report list response wrapper"
+      },
+      "SpecialOperationReportResponse": {
+        "properties": {
+          "report_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Report No",
+            "description": "\u62a5\u5907\u7f16\u53f7"
+          },
+          "permit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Id",
+            "description": "\u5173\u8054\u4f5c\u4e1a\u7968ID"
+          },
+          "operation_type": {
+            "$ref": "#/components/schemas/OperationType-Output",
+            "description": "\u4f5c\u4e1a\u7c7b\u578b"
+          },
+          "operation_level": {
+            "$ref": "#/components/schemas/OperationLevel",
+            "description": "\u4f5c\u4e1a\u7ea7\u522b",
+            "default": "grade2"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u62a5\u5907\u90e8\u95e8"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u4f5c\u4e1a\u5730\u70b9"
+          },
+          "equipment_tag": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Tag",
+            "description": "\u8bbe\u5907\u4f4d\u53f7"
+          },
+          "work_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Description",
+            "description": "\u4f5c\u4e1a\u5185\u5bb9\u63cf\u8ff0"
+          },
+          "planned_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Start Time",
+            "description": "\u8ba1\u5212\u5f00\u59cb\u65f6\u95f4"
+          },
+          "planned_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned End Time",
+            "description": "\u8ba1\u5212\u7ed3\u675f\u65f6\u95f4"
+          },
+          "work_leader_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Leader Name",
+            "description": "\u4f5c\u4e1a\u8d1f\u8d23\u4eba\u59d3\u540d"
+          },
+          "operator_names": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Names",
+            "description": "\u4f5c\u4e1a\u4eba\u5458\u59d3\u540d\uff08\u9017\u53f7\u5206\u9694\uff09"
+          },
+          "guardian_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Name",
+            "description": "\u76d1\u62a4\u4eba\u59d3\u540d"
+          },
+          "risk_level": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Level",
+            "description": "\u98ce\u9669\u7b49\u7ea7"
+          },
+          "safety_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Measures",
+            "description": "\u5b89\u5168\u63aa\u65bd"
+          },
+          "emergency_equipment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emergency Equipment",
+            "description": "\u5e94\u6025\u6d88\u9632\u5668\u6750"
+          },
+          "gas_analysis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gas Analysis",
+            "description": "\u6c14\u4f53\u5206\u6790\u7ed3\u679c"
+          },
+          "risk_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Assessment",
+            "description": "\u98ce\u9669\u8bc4\u4f30\u63cf\u8ff0"
+          },
+          "applicant_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applicant Name",
+            "description": "\u62a5\u5907\u7533\u8bf7\u4eba\u59d3\u540d"
+          },
+          "approver_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Name",
+            "description": "\u5ba1\u6279\u4eba\u59d3\u540d"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "is_critical": {
+            "type": "boolean",
+            "title": "Is Critical",
+            "default": false
+          },
+          "is_critical_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Critical Reason"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "is_critical_updated_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Critical Updated By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_no",
+          "operation_type",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SpecialOperationReportResponse",
+        "description": "\u7279\u6b8a\u4f5c\u4e1a\u62a5\u5907\u54cd\u5e94"
       },
       "SpecialOperationReportUpdate": {
         "properties": {

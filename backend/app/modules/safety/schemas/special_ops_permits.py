@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -90,3 +91,21 @@ class SpecialOperationPermitResponse(SpecialOperationPermitBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class SpecialOperationPermitApiResponse(BaseModel):
+    """Single special operation permit response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: SpecialOperationPermitResponse | None = None
+
+
+class SpecialOperationPermitListApiResponse(BaseModel):
+    """Special operation permit list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[SpecialOperationPermitResponse]
+    meta: dict[str, Any] | None = None

@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -60,3 +61,21 @@ class SpecialOperationPersonnelResponse(SpecialOperationPersonnelBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class SpecialOperationPersonnelApiResponse(BaseModel):
+    """Single special operation personnel response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: SpecialOperationPersonnelResponse | None = None
+
+
+class SpecialOperationPersonnelListApiResponse(BaseModel):
+    """Special operation personnel list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[SpecialOperationPersonnelResponse]
+    meta: dict[str, Any] | None = None
