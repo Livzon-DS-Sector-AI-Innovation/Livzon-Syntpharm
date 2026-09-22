@@ -21230,6 +21230,23 @@ export interface components {
             fields: components["schemas"]["ContractTemplateField"][];
         };
         /**
+         * ContractorApiResponse
+         * @description Single contractor response wrapper
+         */
+        ContractorApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ContractorResponse"] | null;
+        };
+        /**
          * ContractorCreate
          * @description 创建承包商
          */
@@ -21321,6 +21338,149 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * ContractorListApiResponse
+         * @description Contractor list response wrapper
+         */
+        ContractorListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ContractorResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ContractorResponse
+         * @description 承包商响应
+         */
+        ContractorResponse: {
+            /**
+             * Contractor No
+             * @description 承包商编号
+             */
+            contractor_no: string;
+            /**
+             * Company Name
+             * @description 公司名称
+             */
+            company_name: string;
+            /**
+             * Legal Representative
+             * @description 法定代表人
+             */
+            legal_representative?: string | null;
+            /**
+             * Contact Person
+             * @description 联系人
+             */
+            contact_person: string;
+            /**
+             * Contact Phone
+             * @description 联系电话
+             */
+            contact_phone?: string | null;
+            /**
+             * Business Scope
+             * @description 经营范围
+             */
+            business_scope?: string | null;
+            /**
+             * @description 资质类型
+             * @default other
+             */
+            qualification_type: components["schemas"]["QualificationTypeEnum"];
+            /** @description 资质等级 */
+            qualification_level?: components["schemas"]["QualificationLevelEnum"] | null;
+            /**
+             * Qualification Cert No
+             * @description 资质证书编号
+             */
+            qualification_cert_no?: string | null;
+            /**
+             * Qualification Expiry
+             * @description 资质有效期至
+             */
+            qualification_expiry?: string | null;
+            /**
+             * Safety License No
+             * @description 安全生产许可证编号
+             */
+            safety_license_no?: string | null;
+            /**
+             * Safety License Expiry
+             * @description 安全生产许可证有效期
+             */
+            safety_license_expiry?: string | null;
+            /**
+             * Insurance Info
+             * @description 保险信息
+             */
+            insurance_info?: string | null;
+            /**
+             * Insurance Expiry
+             * @description 保险有效期至
+             */
+            insurance_expiry?: string | null;
+            /**
+             * Safety Officer Name
+             * @description 安全负责人
+             */
+            safety_officer_name?: string | null;
+            /**
+             * Safety Officer Phone
+             * @description 安全负责人电话
+             */
+            safety_officer_phone?: string | null;
+            /**
+             * Special Op Personnel
+             * @description 特种作业人员列表
+             */
+            special_op_personnel?: unknown[] | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Training Status */
+            training_status: string;
+            /** Training Date */
+            training_date?: string | null;
+            /** Safety Performance Score */
+            safety_performance_score?: number | null;
+            /**
+             * Blacklisted
+             * @default false
+             */
+            blacklisted: boolean;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * ContractorStatus
@@ -21439,6 +21599,23 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * ContractorWorkRecordApiResponse
+         * @description Single contractor work record response wrapper
+         */
+        ContractorWorkRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ContractorWorkRecordResponse"] | null;
+        };
+        /**
          * ContractorWorkRecordCreate
          * @description 创建施工记录
          */
@@ -21513,6 +21690,126 @@ export interface components {
              * @description 备注
              */
             notes?: string | null;
+        };
+        /**
+         * ContractorWorkRecordListApiResponse
+         * @description Contractor work record list response wrapper
+         */
+        ContractorWorkRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ContractorWorkRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * ContractorWorkRecordResponse
+         * @description 施工记录响应
+         */
+        ContractorWorkRecordResponse: {
+            /**
+             * Work Content
+             * @description 施工内容
+             */
+            work_content: string;
+            /**
+             * Work Location
+             * @description 施工地点
+             */
+            work_location?: string | null;
+            /**
+             * Planned Start
+             * Format: date-time
+             * @description 计划开始时间
+             */
+            planned_start: string;
+            /**
+             * Planned End
+             * Format: date-time
+             * @description 计划结束时间
+             */
+            planned_end: string;
+            /**
+             * Actual Start
+             * @description 实际开始时间
+             */
+            actual_start?: string | null;
+            /**
+             * Actual End
+             * @description 实际结束时间
+             */
+            actual_end?: string | null;
+            /**
+             * Permit Id
+             * @description 关联特殊作业票ID
+             */
+            permit_id?: string | null;
+            /**
+             * Leading Person
+             * @description 带班负责人
+             */
+            leading_person?: string | null;
+            /**
+             * Worker Count
+             * @description 施工人数
+             */
+            worker_count?: number | null;
+            /**
+             * Safety Briefing Done
+             * @description 安全交底确认
+             * @default false
+             */
+            safety_briefing_done: boolean;
+            /**
+             * Violations
+             * @description 违章记录
+             */
+            violations?: unknown[] | null;
+            /**
+             * Evaluation
+             * @description 评价
+             */
+            evaluation?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Contractor Id
+             * Format: uuid
+             */
+            contractor_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * ContractorWorkRecordUpdate
@@ -48320,7 +48617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48355,7 +48652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48388,7 +48685,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48425,7 +48722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48458,7 +48755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48491,7 +48788,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48524,7 +48821,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48560,7 +48857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48593,7 +48890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorWorkRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48630,7 +48927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48668,7 +48965,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48702,7 +48999,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48740,7 +49037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -46,6 +46,10 @@ __all__ = [
     "ContractorBase",
     "ContractorCreate",
     "ContractorResponse",
+    "ContractorApiResponse",
+    "ContractorListApiResponse",
+    "ContractorWorkRecordApiResponse",
+    "ContractorWorkRecordListApiResponse",
     "ContractorStatus",
     "ContractorTrainingStatusEnum",
     "ContractorUpdate",
@@ -253,6 +257,10 @@ from app.modules.safety.schemas.checks import (
     SafetyCheckUpdate,
 )
 from app.modules.safety.schemas.contractors import (
+    ContractorApiResponse,
+    ContractorListApiResponse,
+    ContractorWorkRecordApiResponse,
+    ContractorWorkRecordListApiResponse,
     CONTRACTOR_STATUS_OPTIONS,
     CONTRACTOR_TRAINING_STATUS_OPTIONS,
     QUALIFICATION_LEVEL_OPTIONS,

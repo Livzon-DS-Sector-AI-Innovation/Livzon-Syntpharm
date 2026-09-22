@@ -9,12 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.exceptions import NotFoundException
+from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
+    ContractorApiResponse,
     ContractorCreate,
+    ContractorListApiResponse,
     ContractorResponse,
     ContractorUpdate,
+    ContractorWorkRecordApiResponse,
     ContractorWorkRecordCreate,
+    ContractorWorkRecordListApiResponse,
     ContractorWorkRecordResponse,
     ContractorWorkRecordUpdate,
     EvaluateWorkRecordRequest,
@@ -26,7 +31,7 @@ from app.modules.safety.service import (
 contractors_router = APIRouter()
 
 
-@contractors_router.get("/contractors", response_model=ApiResponse, summary="获取承包商列表")
+@contractors_router.get("/contractors", response_model=ContractorListApiResponse, summary="获取承包商列表")
 async def handler(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -48,14 +53,14 @@ async def handler(
         training_status,
         keyword,
     )
-    return build_response(
+    return ContractorListApiResponse(
         data=[ContractorResponse.model_validate(c) for c in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @contractors_router.get(  # type: ignore[no-redef]
-    "/contractors/{contractor_id}", response_model=ApiResponse, summary="获取承包商详情"
+    "/contractors/{contractor_id}", response_model=ContractorApiResponse, summary="获取承包商详情"
 )
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
@@ -66,12 +71,12 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.get_contractor(contractor_id)
     if not item:
-        return build_response(code=404, message="承包商不存在")
-    return build_response(data=ContractorResponse.model_validate(item))
+        raise NotFoundException(resource="承包商")
+    return ContractorApiResponse(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.post(  # type: ignore[no-redef]
-    "/contractors", response_model=ApiResponse, summary="创建承包商"
+    "/contractors", response_model=ContractorApiResponse, summary="创建承包商"
 )
 async def handler(  # noqa: F811
     data: ContractorCreate,
@@ -82,11 +87,11 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.create_contractor(data)
     await db.commit()
-    return build_response(data=ContractorResponse.model_validate(item))
+    return ContractorApiResponse(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.put(  # type: ignore[no-redef]
-    "/contractors/{contractor_id}", response_model=ApiResponse, summary="更新承包商"
+    "/contractors/{contractor_id}", response_model=ContractorApiResponse, summary="更新承包商"
 )
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
@@ -98,13 +103,13 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_contractor(contractor_id, data)
     if not item:
-        return build_response(code=404, message="承包商不存在")
+        raise NotFoundException(resource="承包商")
     await db.commit()
-    return build_response(data=ContractorResponse.model_validate(item))
+    return ContractorApiResponse(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.delete(  # type: ignore[no-redef]
-    "/contractors/{contractor_id}", response_model=ApiResponse, summary="删除承包商"
+    "/contractors/{contractor_id}", response_model=ContractorApiResponse, summary="删除承包商"
 )
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
@@ -115,14 +120,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_contractor(contractor_id)
     if not result:
-        return build_response(code=404, message="承包商不存在")
+        raise NotFoundException(resource="承包商")
     await db.commit()
-    return build_response(message="删除成功")
+    return ContractorApiResponse(code=200, message="删除成功", data=None)
 
 
 @contractors_router.post(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/blacklist",
-    response_model=ApiResponse,
+    response_model=ContractorApiResponse,
     summary="加入黑名单",
 )
 async def handler(  # noqa: F811
@@ -134,14 +139,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.blacklist_contractor(contractor_id)
     if not item:
-        return build_response(code=404, message="承包商不存在")
+        raise NotFoundException(resource="承包商")
     await db.commit()
-    return build_response(data=ContractorResponse.model_validate(item))
+    return ContractorApiResponse(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.post(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/activate",
-    response_model=ApiResponse,
+    response_model=ContractorApiResponse,
     summary="激活承包商",
 )
 async def handler(  # noqa: F811
@@ -153,14 +158,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.activate_contractor(contractor_id)
     if not item:
-        return build_response(code=404, message="承包商不存在")
+        raise NotFoundException(resource="承包商")
     await db.commit()
-    return build_response(data=ContractorResponse.model_validate(item))
+    return ContractorApiResponse(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.post(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/update-training",
-    response_model=ApiResponse,
+    response_model=ContractorApiResponse,
     summary="更新培训状态",
 )
 async def handler(  # noqa: F811
@@ -173,9 +178,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_contractor_training(contractor_id, training_status)
     if not item:
-        return build_response(code=404, message="承包商不存在")
+        raise NotFoundException(resource="承包商")
     await db.commit()
-    return build_response(data=ContractorResponse.model_validate(item))
+    return ContractorApiResponse(data=ContractorResponse.model_validate(item))
 
 
 # ── 施工记录子表 ──
@@ -183,7 +188,7 @@ async def handler(  # noqa: F811
 
 @contractors_router.get(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/work-records",
-    response_model=ApiResponse,
+    response_model=ContractorWorkRecordListApiResponse,
     summary="获取承包商施工记录",
 )
 async def handler(  # noqa: F811
@@ -194,12 +199,14 @@ async def handler(  # noqa: F811
     """获取承包商的施工记录列表"""
     service = SafetyService(db)
     items = await service.get_work_records(contractor_id)
-    return build_response(data=[ContractorWorkRecordResponse.model_validate(r) for r in items])
+    return ContractorWorkRecordListApiResponse(
+        data=[ContractorWorkRecordResponse.model_validate(r) for r in items],
+    )
 
 
 @contractors_router.post(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/work-records",
-    response_model=ApiResponse,
+    response_model=ContractorWorkRecordApiResponse,
     summary="创建施工记录",
 )
 async def handler(  # noqa: F811
@@ -212,12 +219,12 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.create_work_record(contractor_id, data)
     await db.commit()
-    return build_response(data=ContractorWorkRecordResponse.model_validate(item))
+    return ContractorWorkRecordApiResponse(data=ContractorWorkRecordResponse.model_validate(item))
 
 
 @contractors_router.put(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/work-records/{record_id}",
-    response_model=ApiResponse,
+    response_model=ContractorWorkRecordApiResponse,
     summary="更新施工记录",
 )
 async def handler(  # noqa: F811
@@ -231,14 +238,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_work_record(record_id, data)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="施工记录")
     await db.commit()
-    return build_response(data=ContractorWorkRecordResponse.model_validate(item))
+    return ContractorWorkRecordApiResponse(data=ContractorWorkRecordResponse.model_validate(item))
 
 
 @contractors_router.delete(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/work-records/{record_id}",
-    response_model=ApiResponse,
+    response_model=ContractorWorkRecordApiResponse,
     summary="删除施工记录",
 )
 async def handler(  # noqa: F811
@@ -251,14 +258,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_work_record(record_id)
     if not result:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="施工记录")
     await db.commit()
-    return build_response(message="删除成功")
+    return ContractorApiResponse(code=200, message="删除成功", data=None)
 
 
 @contractors_router.post(  # type: ignore[no-redef]
     "/contractors/{contractor_id}/work-records/{record_id}/evaluate",
-    response_model=ApiResponse,
+    response_model=ContractorWorkRecordApiResponse,
     summary="评价施工记录",
 )
 async def handler(  # noqa: F811
@@ -277,6 +284,6 @@ async def handler(  # noqa: F811
         data.evaluator,
     )
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="施工记录")
     await db.commit()
-    return build_response(data=ContractorWorkRecordResponse.model_validate(item))
+    return ContractorWorkRecordApiResponse(data=ContractorWorkRecordResponse.model_validate(item))

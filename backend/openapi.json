@@ -17022,7 +17022,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorListApiResponse"
                 }
               }
             }
@@ -17080,7 +17080,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17140,7 +17140,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17208,7 +17208,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17266,7 +17266,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17326,7 +17326,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17386,7 +17386,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17457,7 +17457,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorApiResponse"
                 }
               }
             }
@@ -17517,7 +17517,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorWorkRecordListApiResponse"
                 }
               }
             }
@@ -17585,7 +17585,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorWorkRecordApiResponse"
                 }
               }
             }
@@ -17665,7 +17665,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorWorkRecordApiResponse"
                 }
               }
             }
@@ -17733,7 +17733,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorWorkRecordApiResponse"
                 }
               }
             }
@@ -17813,7 +17813,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ContractorWorkRecordApiResponse"
                 }
               }
             }
@@ -92740,6 +92740,33 @@
         ],
         "title": "ContractTemplateMetadata"
       },
+      "ContractorApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContractorResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ContractorApiResponse",
+        "description": "Single contractor response wrapper"
+      },
       "ContractorCreate": {
         "properties": {
           "contractor_no": {
@@ -92951,6 +92978,313 @@
         ],
         "title": "ContractorCreate",
         "description": "\u521b\u5efa\u627f\u5305\u5546"
+      },
+      "ContractorListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContractorResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ContractorListApiResponse",
+        "description": "Contractor list response wrapper"
+      },
+      "ContractorResponse": {
+        "properties": {
+          "contractor_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Contractor No",
+            "description": "\u627f\u5305\u5546\u7f16\u53f7"
+          },
+          "company_name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Company Name",
+            "description": "\u516c\u53f8\u540d\u79f0"
+          },
+          "legal_representative": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Legal Representative",
+            "description": "\u6cd5\u5b9a\u4ee3\u8868\u4eba"
+          },
+          "contact_person": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Contact Person",
+            "description": "\u8054\u7cfb\u4eba"
+          },
+          "contact_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Contact Phone",
+            "description": "\u8054\u7cfb\u7535\u8bdd"
+          },
+          "business_scope": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Business Scope",
+            "description": "\u7ecf\u8425\u8303\u56f4"
+          },
+          "qualification_type": {
+            "$ref": "#/components/schemas/QualificationTypeEnum",
+            "description": "\u8d44\u8d28\u7c7b\u578b",
+            "default": "other"
+          },
+          "qualification_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QualificationLevelEnum"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "\u8d44\u8d28\u7b49\u7ea7"
+          },
+          "qualification_cert_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Cert No",
+            "description": "\u8d44\u8d28\u8bc1\u4e66\u7f16\u53f7"
+          },
+          "qualification_expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification Expiry",
+            "description": "\u8d44\u8d28\u6709\u6548\u671f\u81f3"
+          },
+          "safety_license_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety License No",
+            "description": "\u5b89\u5168\u751f\u4ea7\u8bb8\u53ef\u8bc1\u7f16\u53f7"
+          },
+          "safety_license_expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety License Expiry",
+            "description": "\u5b89\u5168\u751f\u4ea7\u8bb8\u53ef\u8bc1\u6709\u6548\u671f"
+          },
+          "insurance_info": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance Info",
+            "description": "\u4fdd\u9669\u4fe1\u606f"
+          },
+          "insurance_expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance Expiry",
+            "description": "\u4fdd\u9669\u6709\u6548\u671f\u81f3"
+          },
+          "safety_officer_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Name",
+            "description": "\u5b89\u5168\u8d1f\u8d23\u4eba"
+          },
+          "safety_officer_phone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Officer Phone",
+            "description": "\u5b89\u5168\u8d1f\u8d23\u4eba\u7535\u8bdd"
+          },
+          "special_op_personnel": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Special Op Personnel",
+            "description": "\u7279\u79cd\u4f5c\u4e1a\u4eba\u5458\u5217\u8868"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "training_status": {
+            "type": "string",
+            "title": "Training Status"
+          },
+          "training_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Training Date"
+          },
+          "safety_performance_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Performance Score"
+          },
+          "blacklisted": {
+            "type": "boolean",
+            "title": "Blacklisted",
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "contractor_no",
+          "company_name",
+          "contact_person",
+          "id",
+          "training_status",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ContractorResponse",
+        "description": "\u627f\u5305\u5546\u54cd\u5e94"
       },
       "ContractorStatus": {
         "type": "string",
@@ -93256,6 +93590,33 @@
         "title": "ContractorUpdate",
         "description": "\u66f4\u65b0\u627f\u5305\u5546"
       },
+      "ContractorWorkRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContractorWorkRecordResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ContractorWorkRecordApiResponse",
+        "description": "Single contractor work record response wrapper"
+      },
       "ContractorWorkRecordCreate": {
         "properties": {
           "work_content": {
@@ -93406,6 +93767,225 @@
         ],
         "title": "ContractorWorkRecordCreate",
         "description": "\u521b\u5efa\u65bd\u5de5\u8bb0\u5f55"
+      },
+      "ContractorWorkRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ContractorWorkRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ContractorWorkRecordListApiResponse",
+        "description": "Contractor work record list response wrapper"
+      },
+      "ContractorWorkRecordResponse": {
+        "properties": {
+          "work_content": {
+            "type": "string",
+            "title": "Work Content",
+            "description": "\u65bd\u5de5\u5185\u5bb9"
+          },
+          "work_location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Location",
+            "description": "\u65bd\u5de5\u5730\u70b9"
+          },
+          "planned_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Planned Start",
+            "description": "\u8ba1\u5212\u5f00\u59cb\u65f6\u95f4"
+          },
+          "planned_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Planned End",
+            "description": "\u8ba1\u5212\u7ed3\u675f\u65f6\u95f4"
+          },
+          "actual_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start",
+            "description": "\u5b9e\u9645\u5f00\u59cb\u65f6\u95f4"
+          },
+          "actual_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End",
+            "description": "\u5b9e\u9645\u7ed3\u675f\u65f6\u95f4"
+          },
+          "permit_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permit Id",
+            "description": "\u5173\u8054\u7279\u6b8a\u4f5c\u4e1a\u7968ID"
+          },
+          "leading_person": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leading Person",
+            "description": "\u5e26\u73ed\u8d1f\u8d23\u4eba"
+          },
+          "worker_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worker Count",
+            "description": "\u65bd\u5de5\u4eba\u6570"
+          },
+          "safety_briefing_done": {
+            "type": "boolean",
+            "title": "Safety Briefing Done",
+            "description": "\u5b89\u5168\u4ea4\u5e95\u786e\u8ba4",
+            "default": false
+          },
+          "violations": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Violations",
+            "description": "\u8fdd\u7ae0\u8bb0\u5f55"
+          },
+          "evaluation": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluation",
+            "description": "\u8bc4\u4ef7"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "contractor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Contractor Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "work_content",
+          "planned_start",
+          "planned_end",
+          "id",
+          "contractor_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ContractorWorkRecordResponse",
+        "description": "\u65bd\u5de5\u8bb0\u5f55\u54cd\u5e94"
       },
       "ContractorWorkRecordUpdate": {
         "properties": {

@@ -17,6 +17,13 @@ type SafetyCheckApiResponse = components['schemas']['SafetyCheckApiResponse']
 
 type AccidentResponse = components['schemas']['AccidentResponse']
 type AccidentApiResponse = components['schemas']['AccidentApiResponse']
+
+type ContractorResponse = components['schemas']['ContractorResponse']
+type ContractorApiResponse = components['schemas']['ContractorApiResponse']
+type ContractorListApiResponse = components['schemas']['ContractorListApiResponse']
+type ContractorWorkRecordResponse = components['schemas']['ContractorWorkRecordResponse']
+type ContractorWorkRecordApiResponse = components['schemas']['ContractorWorkRecordApiResponse']
+type ContractorWorkRecordListApiResponse = components['schemas']['ContractorWorkRecordListApiResponse']
 type AccidentListApiResponse = components['schemas']['AccidentListApiResponse']
 
 async function uploadFetch(
@@ -282,15 +289,15 @@ export async function deleteAccident(id: string, authHeaders?: Record<string, st
 // ============ Contractor ============
 
 export async function getContractors(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/contractors${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<ContractorListApiResponse>(`/api/v1/safety/contractors${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getContractor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${id}`, { headers: authHeaders })
+  return apiFetch<ContractorApiResponse>(`/api/v1/safety/contractors/${id}`, { headers: authHeaders })
 }
 
 export async function createContractor(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/contractors', {
+  return apiFetch<ContractorApiResponse>('/api/v1/safety/contractors', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -298,7 +305,7 @@ export async function createContractor(data: unknown, authHeaders?: Record<strin
 }
 
 export async function updateContractor(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${id}`, {
+  return apiFetch<ContractorApiResponse>(`/api/v1/safety/contractors/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -306,39 +313,39 @@ export async function updateContractor(id: string, data: unknown, authHeaders?: 
 }
 
 export async function deleteContractor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/contractors/${id}`, {
+  return apiFetch<ContractorApiResponse>(`/api/v1/safety/contractors/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
 }
 
 export async function blacklistContractor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${id}/blacklist`, {
+  return apiFetch<ContractorApiResponse>(`/api/v1/safety/contractors/${id}/blacklist`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function activateContractor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${id}/activate`, {
+  return apiFetch<ContractorApiResponse>(`/api/v1/safety/contractors/${id}/activate`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function updateContractorTraining(id: string, params: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${id}/update-training?${params}`, {
+  return apiFetch<ContractorApiResponse>(`/api/v1/safety/contractors/${id}/update-training?${params}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function getWorkRecords(contractorId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/contractors/${contractorId}/work-records`, { headers: authHeaders })
+  return apiFetch<ContractorWorkRecordListApiResponse>(`/api/v1/safety/contractors/${contractorId}/work-records`, { headers: authHeaders })
 }
 
 export async function createWorkRecord(contractorId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${contractorId}/work-records`, {
+  return apiFetch<ContractorWorkRecordApiResponse>(`/api/v1/safety/contractors/${contractorId}/work-records`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -346,7 +353,7 @@ export async function createWorkRecord(contractorId: string, data: unknown, auth
 }
 
 export async function updateWorkRecord(contractorId: string, recordId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${contractorId}/work-records/${recordId}`, {
+  return apiFetch<ContractorWorkRecordApiResponse>(`/api/v1/safety/contractors/${contractorId}/work-records/${recordId}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -354,14 +361,14 @@ export async function updateWorkRecord(contractorId: string, recordId: string, d
 }
 
 export async function deleteWorkRecord(contractorId: string, recordId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/contractors/${contractorId}/work-records/${recordId}`, {
+  return apiFetch<ContractorWorkRecordApiResponse>(`/api/v1/safety/contractors/${contractorId}/work-records/${recordId}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
 }
 
 export async function evaluateWorkRecord(contractorId: string, recordId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/contractors/${contractorId}/work-records/${recordId}/evaluate`, {
+  return apiFetch<ContractorWorkRecordApiResponse>(`/api/v1/safety/contractors/${contractorId}/work-records/${recordId}/evaluate`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
