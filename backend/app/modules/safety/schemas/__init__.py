@@ -14,6 +14,8 @@ __all__ = [
     "AccidentCreate",
     "AccidentLevel",
     "AccidentResponse",
+    "AccidentApiResponse",
+    "AccidentListApiResponse",
     "AccidentStatus",
     "AccidentType",
     "AccidentUpdate",
@@ -228,6 +230,8 @@ __all__ = [
 ]
 
 from app.modules.safety.schemas.accidents import (
+    AccidentApiResponse,
+    AccidentListApiResponse,
     AccidentBase,
     AccidentCreate,
     AccidentResponse,

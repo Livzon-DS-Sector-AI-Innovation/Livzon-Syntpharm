@@ -192,7 +192,7 @@ class HazardApiResponse(BaseModel):
     """Single hazard response wrapper"""
     code: int = 200
     message: str = "success"
-    data: HazardReportResponse
+    data: HazardReportResponse | None = None
 
 
 class HazardListApiResponse(BaseModel):

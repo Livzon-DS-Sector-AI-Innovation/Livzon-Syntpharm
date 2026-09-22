@@ -15,6 +15,10 @@ type SafetyCheckResponse = components['schemas']['SafetyCheckResponse']
 type SafetyCheckListApiResponse = components['schemas']['SafetyCheckListApiResponse']
 type SafetyCheckApiResponse = components['schemas']['SafetyCheckApiResponse']
 
+type AccidentResponse = components['schemas']['AccidentResponse']
+type AccidentApiResponse = components['schemas']['AccidentApiResponse']
+type AccidentListApiResponse = components['schemas']['AccidentListApiResponse']
+
 async function uploadFetch(
   endpoint: string,
   formData: FormData,
@@ -210,15 +214,15 @@ export async function runHazardAI(hazardId: string, scriptNumber: number, authHe
 // ============ Accident ============
 
 export async function getAccidents(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/accidents${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<AccidentListApiResponse>(`/api/v1/safety/accidents${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getAccident(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}`, { headers: authHeaders })
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}`, { headers: authHeaders })
 }
 
 export async function createAccident(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/accidents', {
+  return apiFetch<AccidentApiResponse>('/api/v1/safety/accidents', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -226,7 +230,7 @@ export async function createAccident(data: unknown, authHeaders?: Record<string,
 }
 
 export async function updateAccident(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -234,42 +238,42 @@ export async function updateAccident(id: string, data: unknown, authHeaders?: Re
 }
 
 export async function investigateAccident(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}/investigate`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}/investigate`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function resolveAccident(id: string, params: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}/resolve?${params}`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}/resolve?${params}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function startCapa(id: string, params: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}/start-capa?${params}`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}/start-capa?${params}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function verifyCapa(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}/verify-capa`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}/verify-capa`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function closeAccident(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/accidents/${id}/close`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}/close`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function deleteAccident(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<null>(`/api/v1/safety/accidents/${id}`, {
+  return apiFetch<AccidentApiResponse>(`/api/v1/safety/accidents/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })

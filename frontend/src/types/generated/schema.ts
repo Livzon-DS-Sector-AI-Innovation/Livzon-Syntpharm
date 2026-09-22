@@ -17628,6 +17628,23 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * AccidentApiResponse
+         * @description Single accident response wrapper
+         */
+        AccidentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AccidentResponse"] | null;
+        };
+        /**
          * AccidentCreate
          * @description 创建事故
          */
@@ -17768,6 +17785,190 @@ export interface components {
          * @enum {string}
          */
         AccidentLevel: "general" | "serious" | "major" | "catastrophic";
+        /**
+         * AccidentListApiResponse
+         * @description Accident list response wrapper
+         */
+        AccidentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["AccidentResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * AccidentResponse
+         * @description 事故响应
+         */
+        AccidentResponse: {
+            /**
+             * Accident No
+             * @description 事故编号
+             */
+            accident_no: string;
+            /** @description 事故类型 */
+            accident_type: components["schemas"]["AccidentType"];
+            /**
+             * @description 事故等级
+             * @default general
+             */
+            accident_level: components["schemas"]["AccidentLevel"];
+            /**
+             * Happened At
+             * Format: date-time
+             * @description 发生时间
+             */
+            happened_at: string;
+            /**
+             * Location
+             * @description 发生地点
+             */
+            location?: string | null;
+            /**
+             * Department
+             * @description 发生部门
+             */
+            department?: string | null;
+            /**
+             * Description
+             * @description 事故描述
+             */
+            description: string;
+            /**
+             * Casualties
+             * @description 伤亡情况汇总
+             */
+            casualties?: string | null;
+            /**
+             * Property Damage
+             * @description 财产损失(元)
+             */
+            property_damage?: number | null;
+            /**
+             * Loss Work Days
+             * @description 损失工作日
+             */
+            loss_work_days?: number | null;
+            /**
+             * Injury Details
+             * @description 伤员详情
+             */
+            injury_details?: unknown[] | null;
+            /**
+             * Investigation Team
+             * @description 调查组
+             */
+            investigation_team?: unknown[] | null;
+            /**
+             * Investigation Method
+             * @description 调查方法
+             */
+            investigation_method?: string | null;
+            /**
+             * Investigation Findings
+             * @description 调查发现
+             */
+            investigation_findings?: string | null;
+            /**
+             * Investigation Report Path
+             * @description 调查报告文件路径
+             */
+            investigation_report_path?: string | null;
+            /**
+             * Direct Cause
+             * @description 直接原因
+             */
+            direct_cause?: string | null;
+            /**
+             * Root Cause
+             * @description 根本原因
+             */
+            root_cause?: string | null;
+            /**
+             * Handling Measures
+             * @description 处理措施
+             */
+            handling_measures?: string | null;
+            /**
+             * Corrective Actions
+             * @description 纠正预防措施
+             */
+            corrective_actions?: string | null;
+            /**
+             * Corrective Action Deadline
+             * @description CAPA截止日期
+             */
+            corrective_action_deadline?: string | null;
+            /**
+             * Corrective Action Responsible
+             * @description CAPA责任人
+             */
+            corrective_action_responsible?: string | null;
+            /**
+             * Corrective Action Status
+             * @description CAPA状态
+             */
+            corrective_action_status?: string | null;
+            /**
+             * Reported By
+             * @description 报告人
+             */
+            reported_by?: string | null;
+            /**
+             * Reported By Name
+             * @description 报告人姓名
+             */
+            reported_by_name?: string | null;
+            /**
+             * Reported At
+             * Format: date-time
+             * @description 报告时间
+             */
+            reported_at: string;
+            /**
+             * Notes
+             * @description 备注
+             */
+            notes?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /** Investigator */
+            investigator?: string | null;
+            /** Investigator Name */
+            investigator_name?: string | null;
+            /** Verified By */
+            verified_by?: string | null;
+            /** Verified By Name */
+            verified_by_name?: string | null;
+            /** Verified At */
+            verified_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /**
          * AccidentType
          * @description 事故类型枚举
@@ -25862,7 +26063,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["HazardReportResponse"];
+            data?: components["schemas"]["HazardReportResponse"] | null;
         };
         /**
          * HazardCategory
@@ -34458,7 +34659,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["SafetyCheckResponse"];
+            data?: components["schemas"]["SafetyCheckResponse"] | null;
         };
         /**
          * SafetyCheckCreate
@@ -47165,7 +47366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AccidentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47200,7 +47401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47233,7 +47434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47270,7 +47471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47303,7 +47504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */

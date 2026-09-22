@@ -157,4 +157,4 @@ async def handler(  # noqa: F811
     if not result:
         raise NotFoundException(resource="检查记录")
     await db.commit()
-    return SafetyCheckApiResponse(code=200, message="删除成功", data=SafetyCheckResponse.model_validate(item))
+    return SafetyCheckApiResponse(code=200, message="删除成功", data=None)

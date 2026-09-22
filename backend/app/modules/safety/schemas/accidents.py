@@ -98,3 +98,21 @@ class AccidentResponse(AccidentBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class AccidentApiResponse(BaseModel):
+    """Single accident response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: AccidentResponse | None = None
+
+
+class AccidentListApiResponse(BaseModel):
+    """Accident list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[AccidentResponse]
+    meta: dict[str, Any] | None = None

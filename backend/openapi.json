@@ -15071,7 +15071,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AccidentListApiResponse"
                 }
               }
             }
@@ -15129,7 +15129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AccidentApiResponse"
                 }
               }
             }
@@ -15189,7 +15189,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AccidentApiResponse"
                 }
               }
             }
@@ -15257,7 +15257,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AccidentApiResponse"
                 }
               }
             }
@@ -15315,7 +15315,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AccidentApiResponse"
                 }
               }
             }
@@ -84627,6 +84627,33 @@
         "title": "AIWorkflowConfigUpdate",
         "description": "\u66f4\u65b0 AI \u5de5\u4f5c\u6d41\u914d\u7f6e"
       },
+      "AccidentApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccidentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AccidentApiResponse",
+        "description": "Single accident response wrapper"
+      },
       "AccidentCreate": {
         "properties": {
           "accident_no": {
@@ -84937,6 +84964,426 @@
         ],
         "title": "AccidentLevel",
         "description": "\u4e8b\u6545\u7b49\u7ea7\u679a\u4e3e"
+      },
+      "AccidentListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/AccidentResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "AccidentListApiResponse",
+        "description": "Accident list response wrapper"
+      },
+      "AccidentResponse": {
+        "properties": {
+          "accident_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Accident No",
+            "description": "\u4e8b\u6545\u7f16\u53f7"
+          },
+          "accident_type": {
+            "$ref": "#/components/schemas/AccidentType",
+            "description": "\u4e8b\u6545\u7c7b\u578b"
+          },
+          "accident_level": {
+            "$ref": "#/components/schemas/AccidentLevel",
+            "description": "\u4e8b\u6545\u7b49\u7ea7",
+            "default": "general"
+          },
+          "happened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Happened At",
+            "description": "\u53d1\u751f\u65f6\u95f4"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location",
+            "description": "\u53d1\u751f\u5730\u70b9"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department",
+            "description": "\u53d1\u751f\u90e8\u95e8"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "\u4e8b\u6545\u63cf\u8ff0"
+          },
+          "casualties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Casualties",
+            "description": "\u4f24\u4ea1\u60c5\u51b5\u6c47\u603b"
+          },
+          "property_damage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Property Damage",
+            "description": "\u8d22\u4ea7\u635f\u5931(\u5143)"
+          },
+          "loss_work_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loss Work Days",
+            "description": "\u635f\u5931\u5de5\u4f5c\u65e5"
+          },
+          "injury_details": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Injury Details",
+            "description": "\u4f24\u5458\u8be6\u60c5"
+          },
+          "investigation_team": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Team",
+            "description": "\u8c03\u67e5\u7ec4"
+          },
+          "investigation_method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Method",
+            "description": "\u8c03\u67e5\u65b9\u6cd5"
+          },
+          "investigation_findings": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Findings",
+            "description": "\u8c03\u67e5\u53d1\u73b0"
+          },
+          "investigation_report_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigation Report Path",
+            "description": "\u8c03\u67e5\u62a5\u544a\u6587\u4ef6\u8def\u5f84"
+          },
+          "direct_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Direct Cause",
+            "description": "\u76f4\u63a5\u539f\u56e0"
+          },
+          "root_cause": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Root Cause",
+            "description": "\u6839\u672c\u539f\u56e0"
+          },
+          "handling_measures": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Handling Measures",
+            "description": "\u5904\u7406\u63aa\u65bd"
+          },
+          "corrective_actions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrective Actions",
+            "description": "\u7ea0\u6b63\u9884\u9632\u63aa\u65bd"
+          },
+          "corrective_action_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrective Action Deadline",
+            "description": "CAPA\u622a\u6b62\u65e5\u671f"
+          },
+          "corrective_action_responsible": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrective Action Responsible",
+            "description": "CAPA\u8d23\u4efb\u4eba"
+          },
+          "corrective_action_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrective Action Status",
+            "description": "CAPA\u72b6\u6001"
+          },
+          "reported_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported By",
+            "description": "\u62a5\u544a\u4eba"
+          },
+          "reported_by_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported By Name",
+            "description": "\u62a5\u544a\u4eba\u59d3\u540d"
+          },
+          "reported_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Reported At",
+            "description": "\u62a5\u544a\u65f6\u95f4"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "investigator": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigator"
+          },
+          "investigator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Investigator Name"
+          },
+          "verified_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified By"
+          },
+          "verified_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified By Name"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "accident_no",
+          "accident_type",
+          "happened_at",
+          "description",
+          "reported_at",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AccidentResponse",
+        "description": "\u4e8b\u6545\u54cd\u5e94"
       },
       "AccidentType": {
         "type": "string",
@@ -104473,13 +104920,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/HazardReportResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "HazardApiResponse",
         "description": "Single hazard response wrapper"
       },
@@ -126140,13 +126591,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/SafetyCheckResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyCheckResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "SafetyCheckApiResponse",
         "description": "Single safety check response wrapper"
       },

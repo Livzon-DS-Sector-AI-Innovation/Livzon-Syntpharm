@@ -79,7 +79,7 @@ class SafetyCheckApiResponse(BaseModel):
     """Single safety check response wrapper"""
     code: int = 200
     message: str = "success"
-    data: SafetyCheckResponse
+    data: SafetyCheckResponse | None = None
 
 
 class SafetyCheckListApiResponse(BaseModel):
