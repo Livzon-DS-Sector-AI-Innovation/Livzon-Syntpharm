@@ -1,4 +1,9 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+
+type CapaResponse = components['schemas']['CapaResponse']
+type CapaApiResponse = components['schemas']['CapaApiResponse']
+type CapaListApiResponse = components['schemas']['CapaListApiResponse']
 
 async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
   const res = await apiFetchRaw(endpoint, { method: 'DELETE' })
@@ -616,15 +621,15 @@ export async function deleteDeviation(deviationId: string) {
 
 // ============ CAPA Actions ============
 
-export async function createCapa(data: CreateCapaRequest) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas`, {
+export async function createCapa(data: CreateCapaRequest): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
+export async function updateCapa(capaId: string, data: UpdateCapaRequest): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -686,27 +691,27 @@ export async function deleteAttachmentReview(reviewId: string) {
 
 // ============ Additional CAPA Actions ============
 
-export async function submitCapa(capaId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/submit`, {
+export async function submitCapa(capaId: string): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/submit`, {
     method: 'POST',
   })
 }
 
-export async function approveCapa(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/approve`, {
+export async function approveCapa(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function resubmitCapa(capaId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/resubmit`, {
+export async function resubmitCapa(capaId: string): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/resubmit`, {
     method: 'POST',
   })
 }
 
-export async function addExecutionTrack(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks`, {
+export async function addExecutionTrack(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -716,29 +721,29 @@ export async function deleteExecutionTrack(capaId: string, trackId: string) {
   return fetchDeleteOrNull(`/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`)
 }
 
-export async function confirmExecution(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-execution`, {
+export async function confirmExecution(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-execution`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function submitEvaluation(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/evaluate`, {
+export async function submitEvaluation(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/evaluate`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function completeCapaPart(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/complete-part`, {
+export async function completeCapaPart(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/complete-part`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function confirmDeptHead(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-dept-head`, {
+export async function confirmDeptHead(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-dept-head`, {
     method: 'POST',
     body: JSON.stringify(data),
   })

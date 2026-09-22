@@ -14829,6 +14829,238 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/capas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 CAPA 列表
+         * @description 获取 CAPA 列表
+         */
+        get: operations["list_capas_api_v1_quality_capas_get"];
+        put?: never;
+        /**
+         * 创建 CAPA
+         * @description 创建 CAPA
+         */
+        post: operations["create_capa_api_v1_quality_capas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 CAPA 详情
+         * @description 获取 CAPA 详情
+         */
+        get: operations["get_capa_api_v1_quality_capas__capa_id__get"];
+        /**
+         * 更新 CAPA
+         * @description 更新 CAPA
+         */
+        put: operations["update_capa_api_v1_quality_capas__capa_id__put"];
+        post?: never;
+        /**
+         * 删除 CAPA
+         * @description 删除 CAPA
+         */
+        delete: operations["delete_capa_api_v1_quality_capas__capa_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 提交 CAPA
+         * @description 提交 CAPA
+         */
+        post: operations["submit_capa_api_v1_quality_capas__capa_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 审核 CAPA
+         * @description 审核 CAPA
+         */
+        post: operations["approve_capa_api_v1_quality_capas__capa_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重新提交 CAPA
+         * @description 重新提交 CAPA
+         */
+        post: operations["resubmit_capa_api_v1_quality_capas__capa_id__resubmit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/execution-tracks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 添加执行跟踪
+         * @description 添加执行跟踪
+         */
+        post: operations["add_execution_track_api_v1_quality_capas__capa_id__execution_tracks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/execution-tracks/{track_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除执行跟踪
+         * @description 删除执行跟踪
+         */
+        delete: operations["delete_execution_track_api_v1_quality_capas__capa_id__execution_tracks__track_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/confirm-execution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 确认执行
+         * @description 确认执行
+         */
+        post: operations["confirm_execution_api_v1_quality_capas__capa_id__confirm_execution_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 评估 CAPA
+         * @description 评估 CAPA
+         */
+        post: operations["evaluate_capa_api_v1_quality_capas__capa_id__evaluate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/complete-part": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 完成部分
+         * @description 完成部分
+         */
+        post: operations["complete_part_api_v1_quality_capas__capa_id__complete_part_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/capas/{capa_id}/confirm-dept-head": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 部门负责人确认
+         * @description 部门负责人确认
+         */
+        post: operations["confirm_dept_head_api_v1_quality_capas__capa_id__confirm_dept_head_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/cpv/products": {
         parameters: {
             query?: never;
@@ -19485,6 +19717,294 @@ export interface components {
             recommendation_level: string;
         };
         /**
+         * CapaApiResponse
+         * @description Single CAPA response wrapper
+         */
+        CapaApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["CapaResponse"];
+        };
+        /**
+         * CapaCategory
+         * @description CAPA 类别
+         * @enum {string}
+         */
+        CapaCategory: "A" | "B" | "C";
+        /**
+         * CapaCreate
+         * @description 创建 CAPA
+         */
+        CapaCreate: {
+            /**
+             * Title
+             * @description 标题
+             */
+            title?: string | null;
+            /** @description 来源 */
+            source?: components["schemas"]["CapaSource"] | null;
+            /**
+             * Source Code
+             * @description 来源编号
+             */
+            source_code?: string | null;
+            /** @description 类别 */
+            category?: components["schemas"]["CapaCategory"] | null;
+            /**
+             * Root Cause Category
+             * @description 根本原因类别
+             */
+            root_cause_category?: string | null;
+            /**
+             * Non Conformity Description
+             * @description 不符合描述
+             */
+            non_conformity_description?: string | null;
+            /**
+             * Root Cause Analysis
+             * @description 根本原因分析
+             */
+            root_cause_analysis?: string | null;
+            /**
+             * Capa Content
+             * @description CAPA内容
+             */
+            capa_content?: string | null;
+            /**
+             * Capa Items
+             * @description CAPA项目列表
+             */
+            capa_items?: components["schemas"]["CapaItemCreate"][] | null;
+            /**
+             * Executors
+             * @description 执行人列表
+             */
+            executors?: string[] | null;
+            /**
+             * Expected Completion Date
+             * @description 预期完成日期
+             */
+            expected_completion_date?: string | null;
+            /**
+             * Deviation Id
+             * @description 关联偏差ID
+             */
+            deviation_id?: string | null;
+        };
+        /**
+         * CapaItemCreate
+         * @description 创建 CAPA 项目
+         */
+        CapaItemCreate: {
+            /**
+             * Description
+             * @description 项目描述
+             */
+            description: string;
+            /**
+             * Content
+             * @description 项目内容
+             */
+            content?: string | null;
+            /**
+             * Responsible User Id
+             * @description 责任人ID
+             */
+            responsible_user_id: string;
+            /**
+             * Responsible Person
+             * @description 责任人姓名
+             */
+            responsible_person?: string | null;
+            /**
+             * Due Date
+             * @description 截止日期
+             */
+            due_date: string;
+            /**
+             * Deadline
+             * @description 截止日期（备选）
+             */
+            deadline?: string | null;
+            /**
+             * Status
+             * @description 状态
+             * @default pending
+             */
+            status: string;
+        };
+        /**
+         * CapaListApiResponse
+         * @description CAPA list response wrapper
+         */
+        CapaListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["CapaResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * CapaResponse
+         * @description CAPA 响应
+         */
+        CapaResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Capa Code */
+            capa_code: string;
+            /** Final Code */
+            final_code?: string | null;
+            /** Title */
+            title?: string | null;
+            status: components["schemas"]["CapaWorkflowStatus"];
+            /** Deviation Id */
+            deviation_id?: string | null;
+            /** Source */
+            source?: string | null;
+            /** Source Code */
+            source_code?: string | null;
+            /** Category */
+            category?: string | null;
+            /** Root Cause Category */
+            root_cause_category?: string | null;
+            /** Non Conformity Description */
+            non_conformity_description?: string | null;
+            /** Root Cause Analysis */
+            root_cause_analysis?: string | null;
+            /** Capa Content */
+            capa_content?: string | null;
+            /** Capa Items */
+            capa_items?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Executors */
+            executors?: string[] | null;
+            /** Expected Completion Date */
+            expected_completion_date?: string | null;
+            /** Qa Reviewer Id */
+            qa_reviewer_id?: string | null;
+            /** Qa Review Opinion */
+            qa_review_opinion?: string | null;
+            /** Qa Review Time */
+            qa_review_time?: string | null;
+            /** Q Head Approver Id */
+            q_head_approver_id?: string | null;
+            /** Q Head Approval Opinion */
+            q_head_approval_opinion?: string | null;
+            /** Q Head Approval Time */
+            q_head_approval_time?: string | null;
+            /** Execution Status */
+            execution_status?: string | null;
+            /** Execution Tracks */
+            execution_tracks?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Dept Head Confirmations */
+            dept_head_confirmations?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Evaluation Result */
+            evaluation_result?: string | null;
+            /** Evaluation Target */
+            evaluation_target?: string | null;
+            /** Evaluation Deadline */
+            evaluation_deadline?: string | null;
+            /** Evaluation Confirmer Id */
+            evaluation_confirmer_id?: string | null;
+            /** Evaluation Confirm Date */
+            evaluation_confirm_date?: string | null;
+            /** Closure Date */
+            closure_date?: string | null;
+            /** Closure Remark */
+            closure_remark?: string | null;
+            /** Report Content */
+            report_content?: string | null;
+            /** Report Versions */
+            report_versions?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Returned Step */
+            returned_step?: string | null;
+            /** Status Updated At */
+            status_updated_at?: string | null;
+            /** Reporter */
+            reporter?: string | null;
+            /** Reason Category */
+            reason_category?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * CapaSource
+         * @description CAPA 来源
+         * @enum {string}
+         */
+        CapaSource: "deviation" | "audit" | "customer_complaint" | "internal_inspection";
+        /**
+         * CapaUpdate
+         * @description 更新 CAPA
+         */
+        CapaUpdate: {
+            /** Title */
+            title?: string | null;
+            source?: components["schemas"]["CapaSource"] | null;
+            /** Source Code */
+            source_code?: string | null;
+            category?: components["schemas"]["CapaCategory"] | null;
+            /** Root Cause Category */
+            root_cause_category?: string | null;
+            /** Non Conformity Description */
+            non_conformity_description?: string | null;
+            /** Root Cause Analysis */
+            root_cause_analysis?: string | null;
+            /** Capa Content */
+            capa_content?: string | null;
+            /** Capa Items */
+            capa_items?: components["schemas"]["CapaItemCreate"][] | null;
+            /** Executors */
+            executors?: string[] | null;
+            /** Expected Completion Date */
+            expected_completion_date?: string | null;
+            status?: components["schemas"]["CapaWorkflowStatus"] | null;
+        };
+        /**
+         * CapaWorkflowStatus
+         * @description CAPA 工作流状态
+         * @enum {string}
+         */
+        CapaWorkflowStatus: "draft" | "part_a" | "part_b" | "part_c" | "pending_dept_head_confirm" | "pending_qa_review" | "pending_q_head_approval" | "executing" | "pending_evaluation" | "submitted" | "under_execution" | "evaluation" | "closed" | "returned" | "cancelled";
+        /**
          * CardPreviewRequest
          * @description 卡片预览请求
          */
@@ -22076,6 +22596,32 @@ export interface components {
             [key: string]: unknown;
         };
         /**
+         * DeptHeadConfirm
+         * @description 部门负责人确认
+         */
+        DeptHeadConfirm: {
+            /**
+             * Department
+             * @description 部门
+             */
+            department: string;
+            /**
+             * Deptheaduserid
+             * @description 部门负责人用户ID
+             */
+            deptHeadUserId: string;
+            /**
+             * Result
+             * @description 确认结果
+             */
+            result: string;
+            /**
+             * Opinion
+             * @description 确认意见
+             */
+            opinion: string;
+        };
+        /**
          * DeviationApiResponse
          * @description Single deviation response wrapper
          */
@@ -24488,6 +25034,28 @@ export interface components {
              */
             evaluator?: string | null;
         };
+        /**
+         * EvaluationSubmit
+         * @description 提交评估
+         */
+        EvaluationSubmit: {
+            /**
+             * Evaluation Result
+             * @description 评估结果
+             */
+            evaluation_result: string;
+            /**
+             * Evaluation Target
+             * @description 评估目标
+             */
+            evaluation_target: string;
+            /**
+             * Evaluation Deadline
+             * Format: date-time
+             * @description 评估截止日期
+             */
+            evaluation_deadline: string;
+        };
         /** ExamExportRequest */
         ExamExportRequest: {
             /**
@@ -24530,6 +25098,43 @@ export interface components {
              * @default []
              */
             fill_blank_questions: components["schemas"]["TrueFalseQuestion"][];
+        };
+        /**
+         * ExecutionConfirm
+         * @description 确认执行
+         */
+        ExecutionConfirm: {
+            /**
+             * Qaconfirmer
+             * @description QA确认人
+             */
+            qaConfirmer: string;
+            /**
+             * Qaconfirmdate
+             * @description QA确认日期
+             */
+            qaConfirmDate: string;
+        };
+        /**
+         * ExecutionTrackSubmit
+         * @description 提交执行跟踪
+         */
+        ExecutionTrackSubmit: {
+            /**
+             * Executionstatus
+             * @description 执行状态
+             */
+            executionStatus: string;
+            /**
+             * Execution Date
+             * @description 执行日期
+             */
+            execution_date?: string | null;
+            /**
+             * Execution Notes
+             * @description 执行备注
+             */
+            execution_notes?: string | null;
         };
         /**
          * ExportRequest
@@ -30109,6 +30714,17 @@ export interface components {
             content_summary: string;
             /** Appendix Slot */
             appendix_slot?: string | null;
+        };
+        /**
+         * PartComplete
+         * @description 完成部分
+         */
+        PartComplete: {
+            /**
+             * Part
+             * @description 部分名称
+             */
+            part: string;
         };
         /**
          * PermitStatus
@@ -75712,6 +76328,517 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+        };
+    };
+    list_capas_api_v1_quality_capas_get: {
+        parameters: {
+            query?: {
+                /** @description CAPA编号 */
+                capa_code?: string | null;
+                /** @description 来源 */
+                source?: string | null;
+                /** @description 类别 */
+                category?: string | null;
+                /** @description 状态 */
+                status?: string | null;
+                /** @description 关联偏差ID */
+                deviation_id?: string | null;
+                /** @description 开始日期 */
+                start_date?: string | null;
+                /** @description 结束日期 */
+                end_date?: string | null;
+                /** @description 页码 */
+                page?: number;
+                /** @description 每页数量 */
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_capa_api_v1_quality_capas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapaCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_capa_api_v1_quality_capas__capa_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_capa_api_v1_quality_capas__capa_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CapaUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_capa_api_v1_quality_capas__capa_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_capa_api_v1_quality_capas__capa_id__submit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_capa_api_v1_quality_capas__capa_id__approve_post: {
+        parameters: {
+            query: {
+                /** @description 是否批准 */
+                approved: boolean;
+                /** @description 审核意见 */
+                opinion: string;
+            };
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resubmit_capa_api_v1_quality_capas__capa_id__resubmit_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_execution_track_api_v1_quality_capas__capa_id__execution_tracks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecutionTrackSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_execution_track_api_v1_quality_capas__capa_id__execution_tracks__track_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+                track_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_execution_api_v1_quality_capas__capa_id__confirm_execution_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExecutionConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_capa_api_v1_quality_capas__capa_id__evaluate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvaluationSubmit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    complete_part_api_v1_quality_capas__capa_id__complete_part_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PartComplete"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_dept_head_api_v1_quality_capas__capa_id__confirm_dept_head_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                capa_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeptHeadConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CapaApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

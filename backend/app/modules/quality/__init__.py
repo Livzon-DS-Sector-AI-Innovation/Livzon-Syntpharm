@@ -2,6 +2,7 @@
 
 from app.modules.quality.cpv import router as cpv_router
 from app.modules.quality.qms import (
+    capa_router,
     deviation_router,
     deviation_settings_router,
     doc_check_router,
@@ -32,4 +33,5 @@ __all__ = [
     "static_data_router",
     "reagent_reminder_router",
     "instrument_router",
+    "capa_router",
 ]
