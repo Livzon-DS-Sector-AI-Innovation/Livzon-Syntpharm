@@ -11,7 +11,7 @@
 - [x] Backend OpenAPI spec exported and includes check response schemas
 - [x] Frontend types regenerated from updated spec
 - [x] Frontend safety check API calls updated to use generated types (in `lib/api/server/safety.ts`)
-- [ ] TypeScript compilation passes (7 errors remain in actions file)
+- [ ] TypeScript compilation passes (12 errors remain in actions file)
 - [ ] Runtime API responses match generated types (spot-check 2-3 check endpoints)
 
 ## Summary
@@ -29,6 +29,8 @@ Completed backend and API layer changes for ticket 05:
 
 ## Remaining Work
 
-The actions file (`src/actions/safety/index.ts`) still uses the generic `ApiResponse<T>` type (391 references). This needs to be updated to use the specific response types from the generated schema. This is a larger refactor that should be done in a separate ticket.
+The actions file (`src/actions/safety/index.ts`) still uses the generic `ApiResponse<T>` type (391 references). This needs to be updated to use the specific response types from the generated schema. This is a larger refactor that should be done in ticket 14 (actions file refactor).
 
-**TypeScript errors**: 7 errors remain in the actions file due to type mismatches between `ApiResponse<T>` and the new response types.
+**TypeScript errors**: 12 errors remain in the actions file due to type mismatches between `ApiResponse<T>` and the new response types. These errors are caused by the double-wrapped response structure (safeApiFetch wraps the response, and the backend response models also wrap it).
+
+**Resolution**: This will be addressed in ticket 14 (actions file refactor), which will update all safety actions to use the correct response types and handle the response unwrapping properly.
