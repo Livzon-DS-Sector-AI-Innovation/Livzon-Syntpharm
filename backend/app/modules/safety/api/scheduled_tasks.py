@@ -9,14 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.response import ApiResponse, paginated_response, success_response
+from app.core.response import paginated_response, success_response
 from app.modules.safety.schemas import (
-    ScheduledTaskApiResponse,
-    ScheduledTaskListApiResponse,
-    ScheduledTaskLogApiResponse,
-    ScheduledTaskLogListApiResponse,
     CardPreviewRequest,
+    ScheduledTaskApiResponse,
     ScheduledTaskCreate,
+    ScheduledTaskListApiResponse,
+    ScheduledTaskLogListApiResponse,
     ScheduledTaskLogResponse,
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
@@ -37,7 +36,9 @@ async def get_data_source_options(current_user: RequiredUser) -> Any:
     return success_response(data=options)
 
 
-@scheduled_tasks_router.post("/scheduled-tasks/preview-card", response_model=ScheduledTaskApiResponse, summary="预览消息卡片")
+@scheduled_tasks_router.post(
+    "/scheduled-tasks/preview-card", response_model=ScheduledTaskApiResponse, summary="预览消息卡片"
+)
 async def preview_card(
     data: CardPreviewRequest,
     current_user: RequiredUser,
@@ -49,7 +50,9 @@ async def preview_card(
     return success_response(data=result)
 
 
-@scheduled_tasks_router.get("/scheduled-tasks/feishu-chats", response_model=ScheduledTaskApiResponse, summary="获取飞书群聊列表")
+@scheduled_tasks_router.get(
+    "/scheduled-tasks/feishu-chats", response_model=ScheduledTaskApiResponse, summary="获取飞书群聊列表"
+)
 async def get_feishu_chats(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
@@ -111,7 +114,9 @@ async def create_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.get("/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="获取定时任务详情")
+@scheduled_tasks_router.get(
+    "/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="获取定时任务详情"
+)
 async def get_scheduled_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -125,7 +130,9 @@ async def get_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.put("/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="更新定时任务")
+@scheduled_tasks_router.put(
+    "/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="更新定时任务"
+)
 async def update_scheduled_task(
     task_id: uuid.UUID,
     data: ScheduledTaskUpdate,
@@ -141,7 +148,9 @@ async def update_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.delete("/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="删除定时任务")
+@scheduled_tasks_router.delete(
+    "/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="删除定时任务"
+)
 async def delete_scheduled_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -174,7 +183,9 @@ async def toggle_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.post("/scheduled-tasks/{task_id}/run", response_model=ScheduledTaskApiResponse, summary="手动执行定时任务")
+@scheduled_tasks_router.post(
+    "/scheduled-tasks/{task_id}/run", response_model=ScheduledTaskApiResponse, summary="手动执行定时任务"
+)
 async def run_scheduled_task_now(
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -214,7 +225,9 @@ async def get_scheduled_task_logs(
 # ── 安全模块飞书 WebSocket 管理 ──
 
 
-@scheduled_tasks_router.post("/feishu/ws/restart", response_model=ScheduledTaskApiResponse, summary="手动恢复飞书 WebSocket 连接")
+@scheduled_tasks_router.post(
+    "/feishu/ws/restart", response_model=ScheduledTaskApiResponse, summary="手动恢复飞书 WebSocket 连接"
+)
 async def restart_feishu_ws(
     current_user: RequiredUser,
 ) -> Any:
@@ -229,7 +242,9 @@ async def restart_feishu_ws(
     return success_response(data=result)
 
 
-@scheduled_tasks_router.get("/feishu/ws/status", response_model=ScheduledTaskApiResponse, summary="查询飞书 WebSocket 连接状态")
+@scheduled_tasks_router.get(
+    "/feishu/ws/status", response_model=ScheduledTaskApiResponse, summary="查询飞书 WebSocket 连接状态"
+)
 async def get_feishu_ws_status(current_user: RequiredUser) -> Any:
     """查询安全模块飞书 WebSocket 当前状态。
 

@@ -98,6 +98,7 @@ class SpecialOperationPermitResponse(SpecialOperationPermitBase):
 
 class SpecialOperationPermitApiResponse(BaseModel):
     """Single special operation permit response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: SpecialOperationPermitResponse | None = None
@@ -105,6 +106,7 @@ class SpecialOperationPermitApiResponse(BaseModel):
 
 class SpecialOperationPermitListApiResponse(BaseModel):
     """Special operation permit list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[SpecialOperationPermitResponse]

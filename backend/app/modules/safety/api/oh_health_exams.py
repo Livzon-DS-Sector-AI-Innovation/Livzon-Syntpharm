@@ -9,11 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.exceptions import NotFoundException
-from app.core.response import ApiResponse, build_response
+from app.core.response import build_response
 from app.modules.safety.schemas import (
     OhHealthExamApiResponse,
-    OhHealthExamListApiResponse,
     OhHealthExamCreate,
+    OhHealthExamListApiResponse,
     OhHealthExamResponse,
     OhHealthExamUpdate,
     SetExamConclusionRequest,
@@ -25,7 +25,9 @@ from app.modules.safety.service import (
 oh_health_exams_router = APIRouter()
 
 
-@oh_health_exams_router.get("/oh-health-exams", response_model=OhHealthExamListApiResponse, summary="获取职业健康体检列表")
+@oh_health_exams_router.get(
+    "/oh-health-exams", response_model=OhHealthExamListApiResponse, summary="获取职业健康体检列表"
+)
 async def handler(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),

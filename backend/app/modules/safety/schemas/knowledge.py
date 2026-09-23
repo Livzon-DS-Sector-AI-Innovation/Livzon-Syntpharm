@@ -60,6 +60,7 @@ class SafetyKnowledgeArticleResponse(SafetyKnowledgeArticleBase):
 
 class SafetyKnowledgeArticleApiResponse(BaseModel):
     """Single safety knowledge article response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: SafetyKnowledgeArticleResponse | None = None
@@ -67,6 +68,7 @@ class SafetyKnowledgeArticleApiResponse(BaseModel):
 
 class SafetyKnowledgeArticleListApiResponse(BaseModel):
     """Safety knowledge article list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[SafetyKnowledgeArticleResponse]

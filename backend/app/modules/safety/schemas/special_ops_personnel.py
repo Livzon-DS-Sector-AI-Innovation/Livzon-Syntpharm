@@ -68,6 +68,7 @@ class SpecialOperationPersonnelResponse(SpecialOperationPersonnelBase):
 
 class SpecialOperationPersonnelApiResponse(BaseModel):
     """Single special operation personnel response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: SpecialOperationPersonnelResponse | None = None
@@ -75,6 +76,7 @@ class SpecialOperationPersonnelApiResponse(BaseModel):
 
 class SpecialOperationPersonnelListApiResponse(BaseModel):
     """Special operation personnel list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[SpecialOperationPersonnelResponse]

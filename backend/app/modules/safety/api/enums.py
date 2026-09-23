@@ -5,9 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response
 from app.modules.safety.schemas import (
-    SafetyEnumsApiResponse,
     ABNORMALITY_STATUS_OPTIONS,
     ACCIDENT_LEVEL_OPTIONS,
     ACCIDENT_STATUS_OPTIONS,
@@ -50,6 +48,7 @@ from app.modules.safety.schemas import (
     TRAINING_MODE_OPTIONS,
     TRAINING_TYPE_OPTIONS,
     WORK_RECORD_STATUS_OPTIONS,
+    SafetyEnumsApiResponse,
 )
 
 enums_router = APIRouter()
@@ -61,7 +60,8 @@ async def get(
 ) -> Any:
     """获取安全模块的所有枚举值选项"""
 
-    return SafetyEnumsApiResponse(data={
+    return SafetyEnumsApiResponse(
+        data={
             "check_types": CHECK_TYPE_OPTIONS,
             "hazard_types": HAZARD_TYPE_OPTIONS,
             "hazard_levels": HAZARD_LEVEL_OPTIONS,

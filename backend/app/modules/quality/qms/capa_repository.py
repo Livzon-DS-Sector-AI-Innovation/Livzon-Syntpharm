@@ -113,21 +113,18 @@ class CapaRepository:
         """生成下一个 CAPA 编号"""
         # 获取当前年份
         year = datetime.now().year
-        
+
         # 查询当前年份的最大编号
         result = await self.session.execute(
-            select(Capa.capa_code)
-            .where(Capa.capa_code.like(f"CAPA-{year}-%"))
-            .order_by(Capa.capa_code.desc())
-            .limit(1)
+            select(Capa.capa_code).where(Capa.capa_code.like(f"CAPA-{year}-%")).order_by(Capa.capa_code.desc()).limit(1)
         )
         last_code = result.scalar_one_or_none()
-        
+
         if last_code:
             # 提取序号并加1
             last_num = int(last_code.split("-")[-1])
             next_num = last_num + 1
         else:
             next_num = 1
-        
+
         return f"CAPA-{year}-{next_num:04d}"

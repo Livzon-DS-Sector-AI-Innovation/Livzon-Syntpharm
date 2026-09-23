@@ -86,6 +86,7 @@ class KnowledgeAttachmentRequest(BaseModel):
 
 class AIWorkflowConfigApiResponse(BaseModel):
     """Single AI workflow config response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: AIWorkflowConfigResponse | None = None
@@ -93,6 +94,7 @@ class AIWorkflowConfigApiResponse(BaseModel):
 
 class AIWorkflowConfigListApiResponse(BaseModel):
     """AI workflow config list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[AIWorkflowConfigResponse]

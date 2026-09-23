@@ -425,6 +425,7 @@ class BatchUnlockRequest(BaseModel):
 
 class DeviationApiResponse(BaseModel):
     """Single deviation response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: DeviationResponse
@@ -432,6 +433,7 @@ class DeviationApiResponse(BaseModel):
 
 class DeviationListApiResponse(BaseModel):
     """Deviation list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[DeviationResponse]
@@ -440,6 +442,7 @@ class DeviationListApiResponse(BaseModel):
 
 class DeviationStatisticsApiResponse(BaseModel):
     """Deviation statistics response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: DeviationStatistics
@@ -447,6 +450,7 @@ class DeviationStatisticsApiResponse(BaseModel):
 
 class InvestigationApiResponse(BaseModel):
     """Investigation response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: InvestigationResponse
@@ -454,6 +458,7 @@ class InvestigationApiResponse(BaseModel):
 
 class InvestigationListApiResponse(BaseModel):
     """Investigation list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[InvestigationResponse]
@@ -461,6 +466,7 @@ class InvestigationListApiResponse(BaseModel):
 
 class CorrectionApiResponse(BaseModel):
     """Correction response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: CorrectionResponse
@@ -468,6 +474,7 @@ class CorrectionApiResponse(BaseModel):
 
 class ClosingApiResponse(BaseModel):
     """Closing response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: ClosingResponse
@@ -475,6 +482,7 @@ class ClosingApiResponse(BaseModel):
 
 class AIAnalysisApiResponse(BaseModel):
     """AI analysis response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: dict[str, Any]

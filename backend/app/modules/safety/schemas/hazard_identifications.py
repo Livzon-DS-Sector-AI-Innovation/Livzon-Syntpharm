@@ -276,6 +276,7 @@ class HazardIdentificationBatchResponse(BaseModel):
 
 class HazardIdentificationApiResponse(BaseModel):
     """Single hazard identification response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: HazardIdentificationResponse
@@ -283,6 +284,7 @@ class HazardIdentificationApiResponse(BaseModel):
 
 class HazardIdentificationListApiResponse(BaseModel):
     """Hazard identification list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[HazardIdentificationResponse]
@@ -291,6 +293,7 @@ class HazardIdentificationListApiResponse(BaseModel):
 
 class HazardIdentificationBatchApiResponse(BaseModel):
     """Hazard identification batch response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: HazardIdentificationBatchResponse
@@ -298,6 +301,7 @@ class HazardIdentificationBatchApiResponse(BaseModel):
 
 class RegulationStagesApiResponse(BaseModel):
     """Regulation stages response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: RegulationStagesResponse

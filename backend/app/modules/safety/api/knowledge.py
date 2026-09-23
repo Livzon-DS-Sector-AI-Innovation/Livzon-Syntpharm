@@ -13,13 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.exceptions import NotFoundException
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
     SafetyKnowledgeArticleApiResponse,
-    SafetyKnowledgeArticleListApiResponse,
     SafetyKnowledgeArticleCreate,
+    SafetyKnowledgeArticleListApiResponse,
     SafetyKnowledgeArticleResponse,
     SafetyKnowledgeArticleUpdate,
 )
@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 knowledge_router = APIRouter()
 
 
-@knowledge_router.get("/knowledge-articles", response_model=SafetyKnowledgeArticleListApiResponse, summary="获取安全知识库文章列表")
+@knowledge_router.get(
+    "/knowledge-articles", response_model=SafetyKnowledgeArticleListApiResponse, summary="获取安全知识库文章列表"
+)
 async def handler(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),

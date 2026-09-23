@@ -9,23 +9,23 @@ from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.deviation_schemas import (
-    DeviationResponse,
-    DeviationApiResponse,
-    DeviationListApiResponse,
-    DeviationStatisticsApiResponse,
-    InvestigationApiResponse,
-    InvestigationListApiResponse,
-    CorrectionApiResponse,
-    ClosingApiResponse,
     AIAnalysisApiResponse,
     BatchLockRequest,
+    ClosingApiResponse,
     ClosingCreate,
     ClosingUpdate,
+    CorrectionApiResponse,
     CorrectionCreate,
     CorrectionUpdate,
+    DeviationApiResponse,
     DeviationCreate,
+    DeviationListApiResponse,
+    DeviationResponse,
+    DeviationStatisticsApiResponse,
     DeviationUpdate,
+    InvestigationApiResponse,
     InvestigationCreate,
+    InvestigationListApiResponse,
     InvestigationUpdate,
 )
 from app.modules.quality.qms.deviation_service import (
@@ -847,6 +847,7 @@ async def get(  # noqa: F811
             }
         )
 
+    deviations = [inv.deviation for inv in investigations if inv.deviation is not None]
     return DeviationListApiResponse(
         data=[
             DeviationResponse(
@@ -950,6 +951,7 @@ async def get(  # noqa: F811
             }
         )
 
+    deviations = [corr.deviation for corr in corrections if corr.deviation is not None]
     return DeviationListApiResponse(
         data=[
             DeviationResponse(
@@ -1052,6 +1054,7 @@ async def get(  # noqa: F811
             }
         )
 
+    deviations = [clo.deviation for clo in closings if clo.deviation is not None]
     return DeviationListApiResponse(
         data=[
             DeviationResponse(

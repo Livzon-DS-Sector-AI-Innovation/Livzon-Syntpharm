@@ -147,6 +147,7 @@ class DataSourceOption(BaseModel):
 
 class ScheduledTaskApiResponse(BaseModel):
     """Single scheduled task response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: ScheduledTaskResponse | None = None
@@ -154,6 +155,7 @@ class ScheduledTaskApiResponse(BaseModel):
 
 class ScheduledTaskListApiResponse(BaseModel):
     """Scheduled task list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[ScheduledTaskResponse]
@@ -162,6 +164,7 @@ class ScheduledTaskListApiResponse(BaseModel):
 
 class ScheduledTaskLogApiResponse(BaseModel):
     """Single scheduled task log response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: ScheduledTaskLogResponse | None = None
@@ -169,6 +172,7 @@ class ScheduledTaskLogApiResponse(BaseModel):
 
 class ScheduledTaskLogListApiResponse(BaseModel):
     """Scheduled task log list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[ScheduledTaskLogResponse]

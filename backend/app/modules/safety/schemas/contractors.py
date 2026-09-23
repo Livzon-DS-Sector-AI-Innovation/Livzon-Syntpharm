@@ -246,6 +246,7 @@ class EvaluateWorkRecordRequest(BaseModel):
 
 class ContractorApiResponse(BaseModel):
     """Single contractor response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: ContractorResponse | None = None
@@ -253,6 +254,7 @@ class ContractorApiResponse(BaseModel):
 
 class ContractorListApiResponse(BaseModel):
     """Contractor list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[ContractorResponse]
@@ -261,6 +263,7 @@ class ContractorListApiResponse(BaseModel):
 
 class ContractorWorkRecordApiResponse(BaseModel):
     """Single contractor work record response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: ContractorWorkRecordResponse | None = None
@@ -268,6 +271,7 @@ class ContractorWorkRecordApiResponse(BaseModel):
 
 class ContractorWorkRecordListApiResponse(BaseModel):
     """Contractor work record list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[ContractorWorkRecordResponse]

@@ -129,6 +129,7 @@ class TrainingRecordResponse(TrainingRecordBase):
 
 class SafetyTrainingApiResponse(BaseModel):
     """Single safety training response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: SafetyTrainingResponse | None = None
@@ -136,6 +137,7 @@ class SafetyTrainingApiResponse(BaseModel):
 
 class SafetyTrainingListApiResponse(BaseModel):
     """Safety training list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[SafetyTrainingResponse]
@@ -144,6 +146,7 @@ class SafetyTrainingListApiResponse(BaseModel):
 
 class TrainingRecordApiResponse(BaseModel):
     """Single training record response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: TrainingRecordResponse | None = None
@@ -151,6 +154,7 @@ class TrainingRecordApiResponse(BaseModel):
 
 class TrainingRecordListApiResponse(BaseModel):
     """Training record list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[TrainingRecordResponse]

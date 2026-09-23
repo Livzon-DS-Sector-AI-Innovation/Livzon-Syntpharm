@@ -287,6 +287,7 @@ class DailyRiskReportResponse(DailyRiskReportBase):
 
 class SpecialOperationReportApiResponse(BaseModel):
     """Single special operation report response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: SpecialOperationReportResponse | None = None
@@ -294,6 +295,7 @@ class SpecialOperationReportApiResponse(BaseModel):
 
 class SpecialOperationReportListApiResponse(BaseModel):
     """Special operation report list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[SpecialOperationReportResponse]
@@ -302,6 +304,7 @@ class SpecialOperationReportListApiResponse(BaseModel):
 
 class SpecialOperationLedgerStatsApiResponse(BaseModel):
     """Special operation ledger stats response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[SpecialOperationLedgerStats]
@@ -309,6 +312,7 @@ class SpecialOperationLedgerStatsApiResponse(BaseModel):
 
 class DailyRiskReportApiResponse(BaseModel):
     """Single daily risk report response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: DailyRiskReportResponse | None = None
@@ -316,6 +320,7 @@ class DailyRiskReportApiResponse(BaseModel):
 
 class DailyRiskReportListApiResponse(BaseModel):
     """Daily risk report list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[DailyRiskReportResponse]

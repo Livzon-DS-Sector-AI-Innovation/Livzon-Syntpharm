@@ -105,6 +105,7 @@ class AccidentResponse(AccidentBase):
 
 class AccidentApiResponse(BaseModel):
     """Single accident response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: AccidentResponse | None = None
@@ -112,6 +113,7 @@ class AccidentApiResponse(BaseModel):
 
 class AccidentListApiResponse(BaseModel):
     """Accident list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[AccidentResponse]

@@ -6,11 +6,10 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.core.response import ApiResponse, build_response
 from app.modules.safety.feishu.event_client import get_ws_status, restart_ws
 from app.modules.safety.schemas import (
-    FeishuWsStatusApiResponse,
     FeishuWsRestartApiResponse,
+    FeishuWsStatusApiResponse,
 )
 
 feishu_router = APIRouter()

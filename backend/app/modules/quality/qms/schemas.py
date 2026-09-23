@@ -232,6 +232,7 @@ class ObsoleteSubmit(BaseModel):
 
 class InspectionStandardApiResponse(BaseModel):
     """Single inspection standard response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: InspectionStandardResponse
@@ -239,6 +240,7 @@ class InspectionStandardApiResponse(BaseModel):
 
 class InspectionStandardListApiResponse(BaseModel):
     """Inspection standard list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[InspectionStandardResponse]
@@ -247,6 +249,7 @@ class InspectionStandardListApiResponse(BaseModel):
 
 class InspectionStandardItemApiResponse(BaseModel):
     """Single inspection standard item response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: InspectionStandardItemResponse
@@ -254,6 +257,7 @@ class InspectionStandardItemApiResponse(BaseModel):
 
 class InspectionStandardItemListApiResponse(BaseModel):
     """Inspection standard item list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[InspectionStandardItemResponse]
@@ -261,6 +265,7 @@ class InspectionStandardItemListApiResponse(BaseModel):
 
 class ApprovalRecordApiResponse(BaseModel):
     """Single approval record response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: ApprovalRecordResponse
@@ -268,6 +273,7 @@ class ApprovalRecordApiResponse(BaseModel):
 
 class ApprovalRecordListApiResponse(BaseModel):
     """Approval record list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[ApprovalRecordResponse]

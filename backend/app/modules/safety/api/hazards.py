@@ -13,22 +13,20 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
 from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
-    HazardApiResponse,
-    HazardListApiResponse,
-    HazardApiResponse,
-    HazardListApiResponse,
-    HazardStatsApiResponse,
     DepartmentLeaderApiResponse,
-    DepartmentSafetyOfficerApiResponse,
     DepartmentLeaderResponse,
+    DepartmentSafetyOfficerApiResponse,
     DepartmentSafetyOfficerResponse,
+    HazardApiResponse,
+    HazardListApiResponse,
     HazardReportCreate,
     HazardReportResponse,
     HazardReportUpdate,
+    HazardStatsApiResponse,
     HazardStatsResponse,
     RectificationReplyRequest,
     VerifyLevelRequest,

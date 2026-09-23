@@ -76,6 +76,7 @@ class VerifyMonitorRequest(BaseModel):
 
 class OhHazardMonitorApiResponse(BaseModel):
     """Single OH hazard monitor response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: OhHazardMonitorResponse
@@ -83,6 +84,7 @@ class OhHazardMonitorApiResponse(BaseModel):
 
 class OhHazardMonitorListApiResponse(BaseModel):
     """OH hazard monitor list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[OhHazardMonitorResponse]

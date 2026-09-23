@@ -11,8 +11,8 @@ from app.core.deps import CurrentUser, get_current_user
 from app.core.response import ApiResponse, build_response
 from app.modules.safety.schemas import (
     OhHazardMonitorApiResponse,
-    OhHazardMonitorListApiResponse,
     OhHazardMonitorCreate,
+    OhHazardMonitorListApiResponse,
     OhHazardMonitorResponse,
     OhHazardMonitorUpdate,
     VerifyMonitorRequest,

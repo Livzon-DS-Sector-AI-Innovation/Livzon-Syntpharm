@@ -82,6 +82,7 @@ class SetExamConclusionRequest(BaseModel):
 
 class OhHealthExamApiResponse(BaseModel):
     """Single OH health exam response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: OhHealthExamResponse | None = None
@@ -89,6 +90,7 @@ class OhHealthExamApiResponse(BaseModel):
 
 class OhHealthExamListApiResponse(BaseModel):
     """OH health exam list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[OhHealthExamResponse]

@@ -756,6 +756,7 @@ ABNORMALITY_STATUS_OPTIONS = [
 
 class SafetyEnumsApiResponse(BaseModel):
     """Safety enums response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: dict[str, Any]

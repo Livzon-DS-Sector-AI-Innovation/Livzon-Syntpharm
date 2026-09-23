@@ -190,6 +190,7 @@ class DepartmentSafetyOfficerResponse(BaseModel):
 
 class HazardApiResponse(BaseModel):
     """Single hazard response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: HazardReportResponse | None = None
@@ -197,6 +198,7 @@ class HazardApiResponse(BaseModel):
 
 class HazardListApiResponse(BaseModel):
     """Hazard list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[HazardReportResponse]
@@ -205,6 +207,7 @@ class HazardListApiResponse(BaseModel):
 
 class HazardStatsApiResponse(BaseModel):
     """Hazard statistics response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: HazardStatsResponse
@@ -212,6 +215,7 @@ class HazardStatsApiResponse(BaseModel):
 
 class DepartmentLeaderApiResponse(BaseModel):
     """Department leader response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: DepartmentLeaderResponse
@@ -219,6 +223,7 @@ class DepartmentLeaderApiResponse(BaseModel):
 
 class DepartmentSafetyOfficerApiResponse(BaseModel):
     """Department safety officer response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: DepartmentSafetyOfficerResponse

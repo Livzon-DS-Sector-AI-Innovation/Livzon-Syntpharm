@@ -53,7 +53,7 @@ async def list_capas(
         page=page,
         page_size=page_size,
     )
-    
+
     return CapaListApiResponse(
         data=[CapaResponse(**capa) for capa in capas],
         meta={"page": page, "page_size": page_size, "total": total},
@@ -71,7 +71,7 @@ async def get_capa(
     capa = await service.get_capa(capa_id)
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
@@ -85,7 +85,7 @@ async def create_capa(
     service = CapaService(db)
     capa = await service.create_capa(data)
     await db.commit()
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
@@ -102,7 +102,7 @@ async def update_capa(
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
@@ -118,7 +118,7 @@ async def delete_capa(
     if not success:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return {"message": "CAPA deleted successfully"}
 
 
@@ -202,7 +202,7 @@ async def add_execution_track(
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
@@ -219,7 +219,7 @@ async def delete_execution_track(
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return {"message": "Execution track deleted successfully"}
 
 
@@ -240,7 +240,7 @@ async def confirm_execution(
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
@@ -262,7 +262,7 @@ async def evaluate_capa(
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
@@ -304,5 +304,5 @@ async def confirm_dept_head(
     if not capa:
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
-    
+
     return CapaApiResponse(data=CapaResponse(**capa))

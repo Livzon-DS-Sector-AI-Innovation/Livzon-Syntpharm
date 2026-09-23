@@ -1,7 +1,7 @@
 """CAPA Pydantic Schemas"""
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,7 +11,6 @@ from app.modules.quality.qms.capa_models import (
     CapaSource,
     CapaWorkflowStatus,
 )
-
 
 # ============ Base Schemas ============
 
@@ -46,11 +45,11 @@ class CapaItemResponse(CapaItemBase):
 class ExecutionTrackBase(BaseModel):
     """执行跟踪基础模式"""
 
-    executionStatus: str = Field(..., description="执行状态")
+    executionStatus: str = Field(..., description="执行状态")  # noqa: N815
     execution_date: str | None = Field(None, description="执行日期")
     execution_notes: str | None = Field(None, description="执行备注")
-    qaConfirmer: str | None = Field(None, description="QA确认人")
-    qaConfirmDate: str | None = Field(None, description="QA确认日期")
+    qaConfirmer: str | None = Field(None, description="QA确认人")  # noqa: N815
+    qaConfirmDate: str | None = Field(None, description="QA确认日期")  # noqa: N815
 
 
 class ExecutionTrackCreate(ExecutionTrackBase):
@@ -72,10 +71,10 @@ class DeptHeadConfirmationBase(BaseModel):
     """部门负责人确认基础模式"""
 
     department: str = Field(..., description="部门")
-    deptHeadUserId: str = Field(..., description="部门负责人用户ID")
+    deptHeadUserId: str = Field(..., description="部门负责人用户ID")  # noqa: N815
     result: str = Field(..., description="确认结果")
     opinion: str = Field(..., description="确认意见")
-    confirmTime: str = Field(..., description="确认时间")
+    confirmTime: str = Field(..., description="确认时间")  # noqa: N815
 
 
 class DeptHeadConfirmationCreate(DeptHeadConfirmationBase):
@@ -191,7 +190,7 @@ class CapaResponse(BaseModel):
 class ExecutionTrackSubmit(BaseModel):
     """提交执行跟踪"""
 
-    executionStatus: str = Field(..., description="执行状态")
+    executionStatus: str = Field(..., description="执行状态")  # noqa: N815
     execution_date: str | None = Field(None, description="执行日期")
     execution_notes: str | None = Field(None, description="执行备注")
 
@@ -199,8 +198,8 @@ class ExecutionTrackSubmit(BaseModel):
 class ExecutionConfirm(BaseModel):
     """确认执行"""
 
-    qaConfirmer: str = Field(..., description="QA确认人")
-    qaConfirmDate: str = Field(..., description="QA确认日期")
+    qaConfirmer: str = Field(..., description="QA确认人")  # noqa: N815
+    qaConfirmDate: str = Field(..., description="QA确认日期")  # noqa: N815
 
 
 class EvaluationSubmit(BaseModel):
@@ -221,7 +220,7 @@ class DeptHeadConfirm(BaseModel):
     """部门负责人确认"""
 
     department: str = Field(..., description="部门")
-    deptHeadUserId: str = Field(..., description="部门负责人用户ID")
+    deptHeadUserId: str = Field(..., description="部门负责人用户ID")  # noqa: N815
     result: str = Field(..., description="确认结果")
     opinion: str = Field(..., description="确认意见")
 
@@ -231,6 +230,7 @@ class DeptHeadConfirm(BaseModel):
 
 class CapaApiResponse(BaseModel):
     """Single CAPA response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: CapaResponse
@@ -238,6 +238,7 @@ class CapaApiResponse(BaseModel):
 
 class CapaListApiResponse(BaseModel):
     """CAPA list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[CapaResponse]

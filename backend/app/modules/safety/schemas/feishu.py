@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class FeishuWsStatusResponse(BaseModel):
     """Feishu WebSocket status response"""
+
     connected: bool = Field(..., description="WebSocket 是否存活")
     subscription_ok: bool = Field(..., description="Bitable 文档事件订阅是否成功")
     registered_events: list[str] = Field(default_factory=list, description="已注册的事件类型")
@@ -17,6 +18,7 @@ class FeishuWsStatusResponse(BaseModel):
 
 class FeishuWsRestartResponse(BaseModel):
     """Feishu WebSocket restart response"""
+
     success: bool = Field(..., description="是否成功")
     message: str = Field(..., description="结果消息")
 
@@ -26,6 +28,7 @@ class FeishuWsRestartResponse(BaseModel):
 
 class FeishuWsStatusApiResponse(BaseModel):
     """Feishu WebSocket status response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: FeishuWsStatusResponse | None = None
@@ -33,6 +36,7 @@ class FeishuWsStatusApiResponse(BaseModel):
 
 class FeishuWsRestartApiResponse(BaseModel):
     """Feishu WebSocket restart response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: FeishuWsRestartResponse | None = None

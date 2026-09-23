@@ -194,6 +194,7 @@ class RegulationReviseResponse(BaseModel):
 
 class OperationRegulationApiResponse(BaseModel):
     """Single operation regulation response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: OperationRegulationResponse | None = None
@@ -201,6 +202,7 @@ class OperationRegulationApiResponse(BaseModel):
 
 class OperationRegulationListApiResponse(BaseModel):
     """Operation regulation list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[OperationRegulationResponse]
@@ -209,6 +211,7 @@ class OperationRegulationListApiResponse(BaseModel):
 
 class RegulationRevisionApiResponse(BaseModel):
     """Single regulation revision response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: RegulationRevisionResponse | None = None
@@ -216,6 +219,7 @@ class RegulationRevisionApiResponse(BaseModel):
 
 class RegulationRevisionListApiResponse(BaseModel):
     """Regulation revision list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[RegulationRevisionResponse]

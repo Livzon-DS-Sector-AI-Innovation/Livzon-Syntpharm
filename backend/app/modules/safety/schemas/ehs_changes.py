@@ -251,6 +251,7 @@ class AbnormalityRecordItem(BaseModel):
 
 class EhsChangeApiResponse(BaseModel):
     """Single EHS change response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: EhsChangeResponse | None = None
@@ -258,6 +259,7 @@ class EhsChangeApiResponse(BaseModel):
 
 class EhsChangeListApiResponse(BaseModel):
     """EHS change list response wrapper"""
+
     code: int = 200
     message: str = "success"
     data: list[EhsChangeResponse]
