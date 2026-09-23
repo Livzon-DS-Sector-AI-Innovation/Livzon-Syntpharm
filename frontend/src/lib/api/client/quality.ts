@@ -4,12 +4,7 @@ import type { DeviationListResponse, DepartmentContactListResponse, DeviationDet
 
 type CapaResponse = components['schemas']['CapaResponse']
 type CapaApiResponse = components['schemas']['CapaApiResponse']
-type CapaListApiResponse = components['schemas']['CapaListApiResponse']
 
-// Type aliases for backward compatibility
-type CapaDetail = CapaResponse
-type CapaListItem = CapaResponse
-type CapaListResponse = CapaListApiResponse
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 export async function fetchModuleInfo(): Promise<ModuleInfo> {

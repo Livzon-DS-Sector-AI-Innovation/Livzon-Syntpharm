@@ -8,7 +8,6 @@ import type { components } from '@/types/generated/schema'
 // Response type aliases for safety module
 type HazardIdentificationApiResponse = components['schemas']['HazardIdentificationApiResponse']
 type RegulationRevisionApiResponse = components['schemas']['RegulationRevisionApiResponse']
-type RegulationRevisionListApiResponse = components['schemas']['RegulationRevisionListApiResponse']
 import type {
   AccidentFormData,
   AccidentQueryParams,
@@ -51,7 +50,6 @@ import type {
   SpecialOperationReportFormData,
   SpecialOperationReportQueryParams,
   SpecialOperationLedgerQueryParams,
-  SpecialOperationLedgerStats,
   DailyRiskReportFormData,
   DailyRiskReportQueryParams,
   RectificationReplyRequest,
@@ -81,10 +79,7 @@ import type {
   SemanticSearchResult,
   SyncKnowledgeResponse,
   HazardIdentification,
-  HazardIdentificationStats,
   HazardIdentificationBatchResponse,
-  HazardLedgerStats,
-  HazardLedgerExportParsedFilters,
   RegulationStagesResponse,
   HazardRiskOption,
   DailyRiskReport,

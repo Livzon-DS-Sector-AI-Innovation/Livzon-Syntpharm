@@ -1,9 +1,7 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
 
-type CapaResponse = components['schemas']['CapaResponse']
 type CapaApiResponse = components['schemas']['CapaApiResponse']
-type CapaListApiResponse = components['schemas']['CapaListApiResponse']
 
 async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
   const res = await apiFetchRaw(endpoint, { method: 'DELETE' })
