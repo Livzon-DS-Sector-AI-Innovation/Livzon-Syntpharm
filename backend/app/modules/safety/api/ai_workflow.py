@@ -14,7 +14,7 @@ from app.core.exceptions import AppException, NotFoundException
 from app.modules.safety.schemas import (
     AIWorkflowConfigApiResponse,
     AIWorkflowConfigCreate,
-    AIWorkflowConfigListApiResponse,  # type: ignore[attr-defined]
+    AIWorkflowConfigListApiResponse,
     AIWorkflowConfigResponse,
     AIWorkflowConfigUpdate,
     KnowledgeAttachmentRequest,

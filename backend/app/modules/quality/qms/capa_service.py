@@ -1,5 +1,6 @@
 """CAPA Service"""
 
+import uuid
 from datetime import datetime
 from typing import Any
 from uuid import UUID
@@ -183,7 +184,7 @@ class CapaService:
 
         # 添加新记录
         new_track = {
-            "id": str(UUID.uuid4()),
+            "id": str(uuid.uuid4()),
             "executionStatus": execution_status,
             "execution_date": execution_date,
             "execution_notes": execution_notes,

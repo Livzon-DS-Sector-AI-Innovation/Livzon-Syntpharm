@@ -113,10 +113,10 @@ class Capa(BaseModel):
 
     # 执行跟踪
     execution_status: Mapped[str | None] = mapped_column(Text, nullable=True)
-    execution_tracks: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    execution_tracks: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
 
     # 部门负责人确认
-    dept_head_confirmations: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    dept_head_confirmations: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB, nullable=True)
 
     # 评估
     evaluation_result: Mapped[str | None] = mapped_column(Text, nullable=True)

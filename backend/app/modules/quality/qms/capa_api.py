@@ -153,8 +153,8 @@ async def approve_capa(
     try:
         capa = await service.approve_capa(
             capa_id,
-            approver_id=UUID(current_user.id),
-            approver_name=current_user.display_name,
+            approver_id=current_user.id,
+            approver_name=current_user.name,
             opinion=opinion,
             approved=approved,
         )

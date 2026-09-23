@@ -182,8 +182,8 @@ async def handler(  # noqa: F811
     """审批通过"""
     service = QualityService(db)
     try:
-        user_id = uuid.UUID(current_user.id)
-        user_name = current_user.display_name
+        user_id = current_user.id
+        user_name = current_user.name
         standard = await service.approve_standard(standard_id, user_id, user_name)
         if not standard:
             return ApiResponse(code=404, message="检验标准不存在")

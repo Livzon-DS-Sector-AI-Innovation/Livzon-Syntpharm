@@ -137,6 +137,7 @@ async def get(
                 batch_locked_at=dev.batch_locked_at,
                 status=dev.status,
                 created_at=dev.created_at,
+                updated_at=dev.updated_at,
             )
             for dev in deviations
         ],
@@ -782,7 +783,7 @@ async def post(  # noqa: F811
     """审批偏差"""
     try:
         user_id = current_user.id
-        user_name = current_user.display_name
+        user_name = current_user.name
         await service.approve_deviation(deviation_id, approved, comments, approval_type, user_id, user_name)
         return ApiResponse(message="审批完成")
     except ValueError as e:
@@ -873,6 +874,7 @@ async def get(  # noqa: F811
                 batch_locked_at=dev.batch_locked_at,
                 status=dev.status,
                 created_at=dev.created_at,
+                updated_at=dev.updated_at,
             )
             for dev in deviations
         ],
@@ -977,6 +979,7 @@ async def get(  # noqa: F811
                 batch_locked_at=dev.batch_locked_at,
                 status=dev.status,
                 created_at=dev.created_at,
+                updated_at=dev.updated_at,
             )
             for dev in deviations
         ],
@@ -1080,6 +1083,7 @@ async def get(  # noqa: F811
                 batch_locked_at=dev.batch_locked_at,
                 status=dev.status,
                 created_at=dev.created_at,
+                updated_at=dev.updated_at,
             )
             for dev in deviations
         ],

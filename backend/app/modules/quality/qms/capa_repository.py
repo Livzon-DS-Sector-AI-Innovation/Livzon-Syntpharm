@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import ColumnElement, and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.qms.capa_models import Capa
@@ -76,21 +76,21 @@ class CapaRepository:
         """带筛选条件的列表查询"""
         query = select(Capa).where(Capa.is_deleted == False)  # noqa: E712
 
-        conditions = []
+        conditions: list[ColumnElement[bool]] = []
         if capa_code:
             conditions.append(Capa.capa_code.ilike(f"%{capa_code}%"))
         if source:
-            conditions.append(Capa.source == source)  # type: ignore[arg-type]
+            conditions.append(Capa.source == source)
         if category:
-            conditions.append(Capa.category == category)  # type: ignore[arg-type]
+            conditions.append(Capa.category == category)
         if status:
-            conditions.append(Capa.status == status)  # type: ignore[arg-type]
+            conditions.append(Capa.status == status)
         if deviation_id:
             conditions.append(Capa.deviation_id == deviation_id)
         if start_date:
-            conditions.append(Capa.created_at >= start_date)  # type: ignore[arg-type]
+            conditions.append(Capa.created_at >= start_date)
         if end_date:
-            conditions.append(Capa.created_at <= end_date)  # type: ignore[arg-type]
+            conditions.append(Capa.created_at <= end_date)
 
         if conditions:
             query = query.where(and_(*conditions))
