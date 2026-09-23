@@ -3647,3 +3647,112 @@ No findings. The PR introduces no SQL changes. Existing repository code uses SQL
 - antd 升级到 v6.4.3
 
 **建议：** 可以合并（已合并）。
+---
+
+### PR #60: fix(ocr): update OCR service for PaddleOCR 3.7.0 API changes (base: main, head: hotfix, date: 2026-09-23)
+
+**Commit:** `67fd25c0` — fix(ocr): update OCR service for PaddleOCR 3.7.0 API changes
+
+**Changed files (1):**
+- `backend/app/shared/ocr_service.py` — 适配 PaddleOCR 3.7.0 结果格式变化（对象属性 → 字典访问）
+
+**Affected categories:** 3, 6, 7
+
+#### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 (公共 shared 层使用、跨模块导入、全局层边界) |
+| Rules not evaluated | 5 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+_None._
+
+**Uncertain:**
+_None._
+
+#### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 (日志规范、配置管理) |
+| Rules not evaluated | 7 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+_None._
+
+**Uncertain:**
+_None._
+
+#### Category 7: External services and background tasks
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 (外部调用重试、降级策略) |
+| Rules not evaluated | 7 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+_None._
+
+**Uncertain:**
+- [ ] `backend/app/shared/ocr_service.py:152-153` — 外部调用重试 — `hasattr(res, "json")` 直接赋值 `res.json`，无重试逻辑。OCR 是本地进程内调用而非外部服务，但 AGENTS.md 规定"外部调用（LLM、飞书、MinIO 等）最多 3 次重试"。当前 OCR 调用失败时异常直接上抛，无重试。此为既有模式，非本 PR 引入。— severity: low
+
+#### Categories not affected
+1, 2, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15, 16 — no relevant files changed.
+
+#### PR #60 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 0 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 1 |
+| 8. Backend tests | 0 | 0 |
+| 9. Frontend component boundaries | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 0 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL injection | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **0** | **1** |
+
+#### PR #60 Overall Assessment
+
+**Overall assessment:** PR #60 符合 AGENTS.md 规范，无违规问题。
+
+**变更分析：**
+- PP-OCR 结果访问：`res.res["rec_texts"]` → `res["rec_texts"]`（PaddleOCR 3.7.0 返回字典而非对象）
+- PP-StructureV3 Markdown：新增 `res.markdown` 属性直接访问，保留 `save_to_markdown()` 回退兼容
+- PP-StructureV3 JSON：`save_to_json()` 文件读写 → `res.json` 直接属性访问（消除临时文件 I/O）
+- PP-StructureV3 Layout：`res.res["layout_parsing_res"]` → `res["parsing_res_list"]`（键名变更）
+
+**代码质量观察：**
+- Markdown 提取实现了良好的向后兼容（新 API 优先，旧 API 回退）
+- JSON 提取简化消除了临时文件 I/O，性能更好
+- 无未使用的导入残留（旧的 `import json` 已随代码块移除）
+
+**建议：** 可以合并。
+
+#### Notes/observations
+
+| Note | Rule | Categories |
+|------|------|------------|
+| hotfix 分支使用 `OCRService`（直接 PaddleOCR 调用），不含 `SubprocessOCRService`/`ocr_worker.py`（子进程模式在其他分支开发中）。合并到 main 后，需确认子进程 worker 也同步更新 PaddleOCR 3.7.0 API。 | 外部服务适配 | 7 |
