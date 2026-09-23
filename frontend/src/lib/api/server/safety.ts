@@ -65,6 +65,12 @@ type ScheduledTaskApiResponse = components['schemas']['ScheduledTaskApiResponse'
 type ScheduledTaskListApiResponse = components['schemas']['ScheduledTaskListApiResponse']
 type ScheduledTaskLogResponse = components['schemas']['ScheduledTaskLogResponse']
 type ScheduledTaskLogListApiResponse = components['schemas']['ScheduledTaskLogListApiResponse']
+type OhHazardMonitorResponse = components['schemas']['OhHazardMonitorResponse']
+type OhHazardMonitorApiResponse = components['schemas']['OhHazardMonitorApiResponse']
+type OhHazardMonitorListApiResponse = components['schemas']['OhHazardMonitorListApiResponse']
+type AIWorkflowConfigResponse = components['schemas']['AIWorkflowConfigResponse']
+type AIWorkflowConfigApiResponse = components['schemas']['AIWorkflowConfigApiResponse']
+type AIWorkflowConfigListApiResponse = components['schemas']['AIWorkflowConfigListApiResponse']
 
 type HazardIdentificationResponse = components['schemas']['HazardIdentificationResponse']
 type HazardIdentificationApiResponse = components['schemas']['HazardIdentificationApiResponse']
@@ -182,7 +188,7 @@ export async function getDepartmentSafetyOfficer(departmentName: string, authHea
 }
 
 export async function createHazard(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazards', {
+  return apiFetch<HazardListApiResponse>('/api/v1/safety/hazards', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -190,7 +196,7 @@ export async function createHazard(data: unknown, authHeaders?: Record<string, s
 }
 
 export async function updateHazard(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -198,14 +204,14 @@ export async function updateHazard(id: string, data: unknown, authHeaders?: Reco
 }
 
 export async function startRectification(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/start`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/start`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function replyRectification(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/reply`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/reply`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -213,7 +219,7 @@ export async function replyRectification(id: string, data: unknown, authHeaders?
 }
 
 export async function verifyLevel(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/verify-level`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/verify-level`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -221,28 +227,28 @@ export async function verifyLevel(id: string, data: unknown, authHeaders?: Recor
 }
 
 export async function notifyReviewer(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/notify-reviewer`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/notify-reviewer`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function notifyRectification(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/notify-rectification`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/notify-rectification`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function triggerRectificationReview(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/review`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/review`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function reworkRectification(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/rectification/rework`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/rectification/rework`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -263,7 +269,7 @@ export async function uploadHazardPhoto(endpoint: string, file: File, authHeader
 }
 
 export async function runHazardAI(hazardId: string, scriptNumber: number, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${hazardId}/ai/run/${scriptNumber}`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${hazardId}/ai/run/${scriptNumber}`, {
     method: 'POST',
     headers: authHeaders,
     body: '{}',
@@ -560,14 +566,14 @@ export async function updateHazardIdentification(id: string, data: unknown, auth
 }
 
 export async function submitHazardIdentification(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-identifications/${id}/submit`, {
+  return apiFetch<HazardIdentificationApiResponse>(`/api/v1/safety/hazard-identifications/${id}/submit`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function runHazardScript(id: string, body: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-identifications/${id}/run-script`, {
+  return apiFetch<HazardIdentificationApiResponse>(`/api/v1/safety/hazard-identifications/${id}/run-script`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(body),
@@ -575,7 +581,7 @@ export async function runHazardScript(id: string, body: unknown, authHeaders?: R
 }
 
 export async function reviewHazardScript(id: string, body: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-identifications/${id}/review`, {
+  return apiFetch<HazardIdentificationApiResponse>(`/api/v1/safety/hazard-identifications/${id}/review`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(body),
@@ -747,21 +753,21 @@ export async function manualRevisionComplete(revisionId: string, formData: FormD
 }
 
 export async function aiRevisionGenerate(revisionId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/revisions/${revisionId}/ai-generate`, {
+  return apiFetch<RegulationRevisionApiResponse>(`/api/v1/safety/revisions/${revisionId}/ai-generate`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function aiRevisionConfirm(revisionId: string, params: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/revisions/${revisionId}/ai-confirm?${params}`, {
+  return apiFetch<RegulationRevisionApiResponse>(`/api/v1/safety/revisions/${revisionId}/ai-confirm?${params}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function identifyRevisionScope(revisionId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/revisions/${revisionId}/identify-scope`, {
+  return apiFetch<RegulationRevisionApiResponse>(`/api/v1/safety/revisions/${revisionId}/identify-scope`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -909,14 +915,14 @@ export async function deleteKnowledgeArticle(id: string, authHeaders?: Record<st
 }
 
 export async function publishKnowledgeArticle(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${id}/publish`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${id}/publish`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function archiveKnowledgeArticle(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${id}/archive`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${id}/archive`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -937,7 +943,7 @@ export async function uploadKnowledgeAttachment(articleId: string, file: File, a
 }
 
 export async function checkDuplicateArticle(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/knowledge-articles/check-duplicate', {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>('/api/v1/safety/knowledge-articles/check-duplicate', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -949,7 +955,7 @@ export async function getArticleVersions(id: string, authHeaders?: Record<string
 }
 
 export async function createNewArticleVersion(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${id}/new-version`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${id}/new-version`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -960,18 +966,18 @@ export async function semanticSearchArticles(params: Record<string, unknown> = {
 }
 
 export async function generateKnowledgeCard(articleId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${articleId}/generate-card`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${articleId}/generate-card`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function getAgentUsageStats(articleId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${articleId}/agent-stats`, { headers: authHeaders })
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${articleId}/agent-stats`, { headers: authHeaders })
 }
 
 export async function batchGenerateKnowledgeCards(articleIds: string[], authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/knowledge-articles/batch/generate-cards', {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>('/api/v1/safety/knowledge-articles/batch/generate-cards', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify({ article_ids: articleIds }),
@@ -979,7 +985,7 @@ export async function batchGenerateKnowledgeCards(articleIds: string[], authHead
 }
 
 export async function generatePpt(articleId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${articleId}/generate-ppt`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${articleId}/generate-ppt`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -987,18 +993,18 @@ export async function generatePpt(articleId: string, data: unknown, authHeaders?
 }
 
 export async function getPptHistory(articleId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${articleId}/ppt-history`, { headers: authHeaders })
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${articleId}/ppt-history`, { headers: authHeaders })
 }
 
 export async function generateSummary(articleId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${articleId}/generate-summary`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${articleId}/generate-summary`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function syncKnowledgeArticles(authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/knowledge-articles/sync', {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>('/api/v1/safety/knowledge-articles/sync', {
     method: 'POST',
     headers: authHeaders,
   })
@@ -1114,21 +1120,21 @@ export async function deleteDailyRiskReport(id: string, authHeaders?: Record<str
 }
 
 export async function submitDailyRiskReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/daily-risk-reports/${id}/submit`, {
+  return apiFetch<DailyRiskReportApiResponse>(`/api/v1/safety/daily-risk-reports/${id}/submit`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function approveDailyRiskReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/daily-risk-reports/${id}/approve`, {
+  return apiFetch<DailyRiskReportApiResponse>(`/api/v1/safety/daily-risk-reports/${id}/approve`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function rejectDailyRiskReport(id: string, reason: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/daily-risk-reports/${id}/reject?reason=${encodeURIComponent(reason)}`, {
+  return apiFetch<DailyRiskReportApiResponse>(`/api/v1/safety/daily-risk-reports/${id}/reject?reason=${encodeURIComponent(reason)}`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -1172,14 +1178,14 @@ export async function deleteEhsChange(id: string, authHeaders?: Record<string, s
 }
 
 export async function submitEhsChange(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/submit`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/submit`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function approveEhsChange(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/approve`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/approve`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1188,28 +1194,28 @@ export async function approveEhsChange(id: string, data: unknown, authHeaders?: 
 
 export async function rejectEhsChange(id: string, comments?: string, authHeaders?: Record<string, string>) {
   const params = comments ? `?comments=${encodeURIComponent(comments)}` : ''
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/reject${params}`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/reject${params}`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function startImplementationEhsChange(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/start-implementation`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/start-implementation`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function commissionEhsChange(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/commission`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/commission`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function closeEhsChange(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/close`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/close`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1217,14 +1223,14 @@ export async function closeEhsChange(id: string, data: unknown, authHeaders?: Re
 }
 
 export async function cancelEhsChange(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/cancel`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/cancel`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function addRiskAssessment(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/risk-assessments`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/risk-assessments`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1232,14 +1238,14 @@ export async function addRiskAssessment(id: string, data: unknown, authHeaders?:
 }
 
 export async function updateActionItem(id: string, index: number, status: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/action-items/${index}?status=${encodeURIComponent(status)}`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/action-items/${index}?status=${encodeURIComponent(status)}`, {
     method: 'PUT',
     headers: authHeaders,
   })
 }
 
 export async function updatePSSRChecklist(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/pssr-checklist`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/pssr-checklist`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1247,7 +1253,7 @@ export async function updatePSSRChecklist(id: string, data: unknown, authHeaders
 }
 
 export async function submitVerification(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}/verification`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}/verification`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1261,11 +1267,11 @@ export async function getOhHazardMonitors(params: Record<string, unknown> = {}, 
 }
 
 export async function getOhHazardMonitor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}`, { headers: authHeaders })
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}`, { headers: authHeaders })
 }
 
 export async function createOhHazardMonitor(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/oh-hazard-monitors', {
+  return apiFetch<OhHazardMonitorListApiResponse>('/api/v1/safety/oh-hazard-monitors', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1273,7 +1279,7 @@ export async function createOhHazardMonitor(data: unknown, authHeaders?: Record<
 }
 
 export async function updateOhHazardMonitor(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1288,21 +1294,21 @@ export async function deleteOhHazardMonitor(id: string, authHeaders?: Record<str
 }
 
 export async function startMonitor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/start`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/start`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function completeMonitor(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/complete`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/complete`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function verifyMonitor(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/verify`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/verify`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1310,7 +1316,7 @@ export async function verifyMonitor(id: string, data: unknown, authHeaders?: Rec
 }
 
 export async function addDetectionResult(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/detection-results`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/detection-results`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1318,7 +1324,7 @@ export async function addDetectionResult(id: string, data: unknown, authHeaders?
 }
 
 export async function updateDetectionResult(id: string, index: number, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/detection-results/${index}`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/detection-results/${index}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1333,7 +1339,7 @@ export async function deleteDetectionResult(id: string, index: number, authHeade
 }
 
 export async function addMonitorAbnormality(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/abnormality-records`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/abnormality-records`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1341,7 +1347,7 @@ export async function addMonitorAbnormality(id: string, data: unknown, authHeade
 }
 
 export async function updateMonitorAbnormalityStatus(id: string, index: number, status: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-hazard-monitors/${id}/abnormality-records/${index}?status=${encodeURIComponent(status)}`, {
+  return apiFetch<OhHazardMonitorApiResponse>(`/api/v1/safety/oh-hazard-monitors/${id}/abnormality-records/${index}?status=${encodeURIComponent(status)}`, {
     method: 'PUT',
     headers: authHeaders,
   })
@@ -1381,28 +1387,28 @@ export async function deleteOhHealthExam(id: string, authHeaders?: Record<string
 }
 
 export async function startExam(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/start`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/start`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function completeExam(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/complete`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/complete`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function archiveExam(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/archive`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/archive`, {
     method: 'POST',
     headers: authHeaders,
   })
 }
 
 export async function addExamItem(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/exam-items`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/exam-items`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1410,7 +1416,7 @@ export async function addExamItem(id: string, data: unknown, authHeaders?: Recor
 }
 
 export async function updateExamItem(id: string, index: number, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/exam-items/${index}`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/exam-items/${index}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1425,7 +1431,7 @@ export async function deleteExamItem(id: string, index: number, authHeaders?: Re
 }
 
 export async function setExamConclusion(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/conclusion`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/conclusion`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1433,7 +1439,7 @@ export async function setExamConclusion(id: string, data: unknown, authHeaders?:
 }
 
 export async function addExamAbnormality(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/abnormality-records`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/abnormality-records`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1441,7 +1447,7 @@ export async function addExamAbnormality(id: string, data: unknown, authHeaders?
 }
 
 export async function updateExamAbnormalityStatus(id: string, index: number, status: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}/abnormality-records/${index}?status=${encodeURIComponent(status)}`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}/abnormality-records/${index}?status=${encodeURIComponent(status)}`, {
     method: 'PUT',
     headers: authHeaders,
   })
@@ -1450,7 +1456,7 @@ export async function updateExamAbnormalityStatus(id: string, index: number, sta
 // ============ SpecialOps ============
 
 export async function parseSpecialOpsExportQuery(query: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/special-ops/parse-export-query', {
+  return apiFetch<SpecialOperationReportApiResponse>('/api/v1/safety/special-ops/parse-export-query', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify({ natural_query: query }),
@@ -1473,7 +1479,7 @@ export async function exportSpecialOpsLedger(data: unknown) {
 // ============ Knowledge Graph ============
 
 export async function getFullGraph(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-graph/full-graph${buildQueryString(params)}`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-graph/full-graph${buildQueryString(params)}`, {
     method: 'GET',
     headers: authHeaders,
   })
@@ -1501,14 +1507,14 @@ export async function searchGraphNodes(query: string, nodeTypes?: string, authHe
 }
 
 export async function expandGraphNode(params: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-graph/expand${buildQueryString(params)}`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-graph/expand${buildQueryString(params)}`, {
     method: 'GET',
     headers: authHeaders,
   })
 }
 
 export async function triggerGraphGeneration(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/knowledge-graph/generate', {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>('/api/v1/safety/knowledge-graph/generate', {
     method: 'POST',
     headers: {
       ...authHeaders,
@@ -1528,7 +1534,7 @@ export async function getAIWorkflowConfigs(params: Record<string, unknown>, auth
 }
 
 export async function createAIWorkflowConfig(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/ai-workflow-configs', {
+  return apiFetch<AIWorkflowConfigListApiResponse>('/api/v1/safety/ai-workflow-configs', {
     method: 'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1536,7 +1542,7 @@ export async function createAIWorkflowConfig(data: Record<string, unknown>, auth
 }
 
 export async function updateAIWorkflowConfig(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ai-workflow-configs/${id}`, {
+  return apiFetch<AIWorkflowConfigApiResponse>(`/api/v1/safety/ai-workflow-configs/${id}`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1544,7 +1550,7 @@ export async function updateAIWorkflowConfig(id: string, data: Record<string, un
 }
 
 export async function deleteAIWorkflowConfig(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ai-workflow-configs/${id}`, {
+  return apiFetch<AIWorkflowConfigApiResponse>(`/api/v1/safety/ai-workflow-configs/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
@@ -1590,7 +1596,7 @@ export async function deleteScheduledTask(id: string, authHeaders?: Record<strin
 }
 
 export async function toggleScheduledTask(id: string, enabled: boolean, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/scheduled-tasks/${id}/toggle`, {
+  return apiFetch<ScheduledTaskApiResponse>(`/api/v1/safety/scheduled-tasks/${id}/toggle`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ is_enabled: enabled }),
@@ -1598,7 +1604,7 @@ export async function toggleScheduledTask(id: string, enabled: boolean, authHead
 }
 
 export async function runScheduledTaskNow(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/scheduled-tasks/${id}/run`, {
+  return apiFetch<ScheduledTaskApiResponse>(`/api/v1/safety/scheduled-tasks/${id}/run`, {
     method: 'POST',
     headers: authHeaders,
   })
@@ -1626,7 +1632,7 @@ export async function getFeishuChats(authHeaders?: Record<string, string>) {
 }
 
 export async function previewCard(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/scheduled-tasks/preview-card', {
+  return apiFetch<ScheduledTaskApiResponse>('/api/v1/safety/scheduled-tasks/preview-card', {
     method: 'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1636,7 +1642,7 @@ export async function previewCard(data: Record<string, unknown>, authHeaders?: R
 // ============ Hazard Legacy APIs ============
 
 export async function completeRectification(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/complete`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/complete`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1644,7 +1650,7 @@ export async function completeRectification(id: string, data: Record<string, unk
 }
 
 export async function verifyRectification(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazards/${id}/verify`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazards/${id}/verify`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1661,7 +1667,7 @@ export async function getHazardRevisionRecords(params: Record<string, unknown>, 
 }
 
 export async function createHazardRevisionRecord(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazard-revision-records', {
+  return apiFetch<HazardApiResponse>('/api/v1/safety/hazard-revision-records', {
     method: 'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1669,7 +1675,7 @@ export async function createHazardRevisionRecord(data: Record<string, unknown>, 
 }
 
 export async function updateHazardRevisionRecord(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-records/${id}`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-records/${id}`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1677,21 +1683,21 @@ export async function updateHazardRevisionRecord(id: string, data: Record<string
 }
 
 export async function deleteHazardRevisionRecord(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-records/${id}`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-records/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
 }
 
 export async function approveHazardRevision(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-records/${id}/approve`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-records/${id}/approve`, {
     method: 'PUT',
     headers: authHeaders,
   })
 }
 
 export async function uploadHazardRevisionDocument(id: string, formData: FormData, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-records/${id}/upload-document`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-records/${id}/upload-document`, {
     method: 'POST',
     headers: authHeaders,
     body: formData,
@@ -1699,7 +1705,7 @@ export async function uploadHazardRevisionDocument(id: string, formData: FormDat
 }
 
 export async function linkRevisionToArchive(revisionId: string, archiveId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-records/${revisionId}/link-archive`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-records/${revisionId}/link-archive`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify({ archive_id: archiveId }),
@@ -1714,7 +1720,7 @@ export async function getHazardRevisionArchives(params: Record<string, unknown>,
 }
 
 export async function createHazardRevisionArchive(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazard-revision-archives', {
+  return apiFetch<HazardApiResponse>('/api/v1/safety/hazard-revision-archives', {
     method: 'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1722,7 +1728,7 @@ export async function createHazardRevisionArchive(data: Record<string, unknown>,
 }
 
 export async function updateHazardRevisionArchive(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-archives/${id}`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-archives/${id}`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1730,7 +1736,7 @@ export async function updateHazardRevisionArchive(id: string, data: Record<strin
 }
 
 export async function deleteHazardRevisionArchive(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-revision-archives/${id}`, {
+  return apiFetch<HazardApiResponse>(`/api/v1/safety/hazard-revision-archives/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })

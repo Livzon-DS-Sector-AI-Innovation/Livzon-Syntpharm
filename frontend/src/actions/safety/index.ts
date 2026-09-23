@@ -178,21 +178,21 @@ export async function createHazard(data: HazardReportFormData): Promise<ApiRespo
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazard(data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function updateHazard(id: string, data: Partial<HazardReportFormData>): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazard(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function startRectification(id: string): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.startRectification(id, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function confirmCheck(id: string, data: ConfirmCheckRequest): Promise<ApiResponse<SafetyCheck>> {
@@ -206,14 +206,14 @@ export async function replyRectification(id: string, data: RectificationReplyReq
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.replyRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function verifyLevel(id: string, data: VerifyLevelRequest): Promise<ApiResponse<HazardReport>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyLevel(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function notifyReviewer(id: string): Promise<ApiResponse<HazardReport>> {
@@ -235,7 +235,7 @@ export async function reworkRectification(id: string, data: RectificationReplyRe
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reworkRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function deleteHazard(id: string): Promise<ApiResponse<null>> {
@@ -1025,7 +1025,7 @@ export async function uploadKnowledgeAttachment(articleId: string, file: File): 
 
 export async function checkDuplicateArticle(data: DuplicateCheckRequest): Promise<ApiResponse<DuplicateCheckResponse>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.checkDuplicateArticle(data, authHeaders) as Promise<ApiResponse<DuplicateCheckResponse>>
+  return safetyApi.checkDuplicateArticle(data, authHeaders) as Promise<unknown> as Promise<ApiResponse<DuplicateCheckResponse>>
 }
 
 // ── 版本管理 ──
@@ -1039,7 +1039,7 @@ export async function createNewArticleVersion(id: string): Promise<ApiResponse<N
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createNewArticleVersion(id, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<NewVersionResponse>
+  return response as unknown as ApiResponse<NewVersionResponse>
 }
 
 // ── 语义搜索 ──
@@ -1055,19 +1055,19 @@ export async function generateKnowledgeCard(articleId: string): Promise<ApiRespo
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generateKnowledgeCard(articleId, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<GenerateCardResponse>
+  return response as unknown as ApiResponse<GenerateCardResponse>
 }
 
 export async function getAgentUsageStats(articleId: string): Promise<ApiResponse<AgentUsageStats>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getAgentUsageStats(articleId, authHeaders) as Promise<ApiResponse<AgentUsageStats>>
+  return safetyApi.getAgentUsageStats(articleId, authHeaders) as Promise<unknown> as Promise<ApiResponse<AgentUsageStats>>
 }
 
 export async function batchGenerateKnowledgeCards(articleIds: string[]): Promise<ApiResponse<BatchGenerateCardsResponse>> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.batchGenerateKnowledgeCards(articleIds, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<BatchGenerateCardsResponse>
+  return response as unknown as ApiResponse<BatchGenerateCardsResponse>
 }
 
 // ── AI PPT 生成 ──
@@ -1076,12 +1076,12 @@ export async function generatePpt(articleId: string, data: GeneratePptRequest): 
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generatePpt(articleId, data, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<GeneratePptResponse>
+  return response as unknown as ApiResponse<GeneratePptResponse>
 }
 
 export async function getPptHistory(articleId: string): Promise<ApiResponse<PptHistoryResponse>> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getPptHistory(articleId, authHeaders) as Promise<ApiResponse<PptHistoryResponse>>
+  return safetyApi.getPptHistory(articleId, authHeaders) as Promise<unknown> as Promise<ApiResponse<PptHistoryResponse>>
 }
 
 // ── AI 摘要生成 ──
@@ -1090,7 +1090,7 @@ export async function generateSummary(articleId: string): Promise<ApiResponse<Ge
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.generateSummary(articleId, authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<GenerateSummaryResponse>
+  return response as unknown as ApiResponse<GenerateSummaryResponse>
 }
 
 // ── Bitable 同步 ──
@@ -1099,7 +1099,7 @@ export async function syncKnowledgeArticles(): Promise<ApiResponse<SyncKnowledge
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.syncKnowledgeArticles(authHeaders)
   revalidatePath('/safety/knowledge-base')
-  return response as ApiResponse<SyncKnowledgeResponse>
+  return response as unknown as ApiResponse<SyncKnowledgeResponse>
 }
 
 // ── 批量导入 ──
@@ -1402,14 +1402,14 @@ export async function createOhHazardMonitor(data: OhHazardMonitorFormData): Prom
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.createOhHazardMonitor(data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function updateOhHazardMonitor(id: string, data: Partial<OhHazardMonitorFormData>): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateOhHazardMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function deleteOhHazardMonitor(id: string): Promise<ApiResponse<null>> {
@@ -1424,21 +1424,21 @@ export async function startMonitor(id: string): Promise<ApiResponse<OhHazardMoni
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.startMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function completeMonitor(id: string): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.completeMonitor(id, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function verifyMonitor(id: string, data: { verified_by?: string; comments?: string }): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.verifyMonitor(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 // Monitor Sub-records
@@ -1446,14 +1446,14 @@ export async function addDetectionResult(id: string, data: Record<string, unknow
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addDetectionResult(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function updateDetectionResult(id: string, index: number, data: Record<string, unknown>): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateDetectionResult(id, index, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function deleteDetectionResult(id: string, index: number): Promise<ApiResponse<null>> {
@@ -1467,14 +1467,14 @@ export async function addMonitorAbnormality(id: string, data: Record<string, unk
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.addMonitorAbnormality(id, data, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 export async function updateMonitorAbnormalityStatus(id: string, index: number, status: string): Promise<ApiResponse<OhHazardMonitor>> {
   const authHeaders = await getAuthHeaders()
   const res = await safetyApi.updateMonitorAbnormalityStatus(id, index, status, authHeaders)
   revalidatePath('/safety/occupational-health')
-  return res as ApiResponse<OhHazardMonitor>
+  return res as unknown as ApiResponse<OhHazardMonitor>
 }
 
 
@@ -1599,14 +1599,14 @@ export async function createAIWorkflowConfig(data: components['schemas']['AIWork
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createAIWorkflowConfig(data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as ApiResponse<AIWorkflowConfig>
+  return response as unknown as ApiResponse<AIWorkflowConfig>
 }
 
 export async function updateAIWorkflowConfig(id: string, data: components['schemas']['AIWorkflowConfigUpdate']) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateAIWorkflowConfig(id, data, authHeaders)
   revalidatePath('/safety/ai-workflow-config')
-  return response as ApiResponse<AIWorkflowConfig>
+  return response as unknown as ApiResponse<AIWorkflowConfig>
 }
 
 export async function deleteAIWorkflowConfig(id: string) {
@@ -1685,14 +1685,14 @@ export async function completeRectification(id: string, data?: Record<string, un
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.completeRectification(id, data || {}, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 export async function verifyRectification(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.verifyRectification(id, data, authHeaders)
   revalidatePath('/safety/hazard')
-  return response as ApiResponse<HazardReport>
+  return response as unknown as ApiResponse<HazardReport>
 }
 
 // ============ Hazard Revision Actions ============
@@ -1706,14 +1706,14 @@ export async function createHazardRevisionRecord(data: Record<string, unknown>) 
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardRevisionRecord(data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response as unknown as ApiResponse<HazardRevisionRecord>
 }
 
 export async function updateHazardRevisionRecord(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardRevisionRecord(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response as unknown as ApiResponse<HazardRevisionRecord>
 }
 
 export async function deleteHazardRevisionRecord(id: string) {
@@ -1727,7 +1727,7 @@ export async function approveHazardRevision(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.approveHazardRevision(id, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response as unknown as ApiResponse<HazardRevisionRecord>
 }
 
 export async function uploadHazardRevisionDocument(id: string, file: File) {
@@ -1743,7 +1743,7 @@ export async function linkRevisionToArchive(revisionId: string, archiveId: strin
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.linkRevisionToArchive(revisionId, archiveId, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionRecord>
+  return response as unknown as ApiResponse<HazardRevisionRecord>
 }
 
 export async function getHazardRevisionArchives(params: Record<string, unknown>) {
@@ -1755,14 +1755,14 @@ export async function createHazardRevisionArchive(data: Record<string, unknown>)
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardRevisionArchive(data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionArchive>
+  return response as unknown as ApiResponse<HazardRevisionArchive>
 }
 
 export async function updateHazardRevisionArchive(id: string, data: Record<string, unknown>) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardRevisionArchive(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification-legacy')
-  return response as ApiResponse<HazardRevisionArchive>
+  return response as unknown as ApiResponse<HazardRevisionArchive>
 }
 
 export async function deleteHazardRevisionArchive(id: string) {
