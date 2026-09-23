@@ -1,7 +1,7 @@
-"""0056_fix_daily_risk_report_and_special_op_index
+"""0058_fix_daily_risk_report_and_special_op_index
 
-Revision ID: 0056_fix_daily_risk_report_and_special_op_index
-Revises: 0055_add_sync_operation_log
+Revision ID: 0058_fix_daily_risk_report_and_special_op_index
+Revises: 0056_add_sync_operation_log
 Create Date: 2026-08-25 17:30:00.000000
 """
 from typing import Sequence, Union
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from sqlalchemy import text,  inspect
 
 
-revision: str = '0056_fix_daily_risk_report_and_special_op_index'
-down_revision: Union[str, None] = '0055_add_sync_operation_log'
+revision: str = '0058_fix_daily_risk_report_and_special_op_index'
+down_revision: Union[str, None] = '0056_add_sync_operation_log'
 branch_labels: Union[str, None] = None
 depends_on: Union[str, None] = None
 

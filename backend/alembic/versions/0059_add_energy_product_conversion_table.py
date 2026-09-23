@@ -1,7 +1,7 @@
 """add energy product conversion table
 
-Revision ID: 29a5a96069e8
-Revises: 0054_add_product_conversion
+Revision ID: 0059_add_energy_product_conversion_table
+Revises: 0054_add_energy_unit_consumption_targets
 Create Date: 2026-08-13 08:15:52.433887
 """
 
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = "0056_add_energy_product_conversion_table"
-down_revision: Union[str, None] = "0053_add_energy_unit_consumption_targets"
+revision: str = "0059_add_energy_product_conversion_table"
+down_revision: Union[str, None] = "0054_add_energy_unit_consumption_targets"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -264,6 +264,14 @@ run_migration_scope() {
     fi
 
     SCOPE_FAILED=0
+
+    echo ""
+    echo "=== Migration Number Uniqueness Check ==="
+    if ! python3 scripts/ci/check_migration_numbers.py alembic/versions; then
+        log_error "Migration numbering check failed! NNNN prefixes must be globally unique."
+        SCOPE_FAILED=1
+    fi
+
     for migration in ${MIGRATIONS}; do
         if ! python3 scripts/ci/check_migration_scope.py "${migration}"; then
             SCOPE_FAILED=1
@@ -271,10 +279,10 @@ run_migration_scope() {
     done
 
     if [ ${SCOPE_FAILED} -eq 1 ]; then
-        log_error "Migration scope check failed! Each migration should only modify one module's schema."
+        log_error "Migration checks failed! Use globally unique NNNN prefixes and one module's schema per migration."
         FAILED=1
     else
-        log_info "All migrations follow single-module principle"
+        log_info "Migrations use unique numbers and follow the single-module principle"
     fi
 }
 

@@ -480,6 +480,8 @@ Full audit
 - 迁移文件必须使用顺序编号格式 `NNNN_descriptive_name.py`，NNNN 是 4 位数字（如 `0001`、`0002`）
 - Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）
 - 禁止使用 Alembic 自动生成的哈希 ID（如 `3cb28d1e1ac7`）
+- 4 位 NNNN 编号必须全局唯一：不存在两个使用相同 NNNN 前缀的迁移文件
+- 编号唯一性与 down_revision 引用完整性由 `scripts/ci/check_migration_numbers.py` 检查
 
 **迁移规范 / 初始基线例外:**
 - `0001_baseline_full_schema` 迁移允许跨所有 schema
@@ -521,6 +523,7 @@ Full audit
 9. Are there any `CASCADE DELETE` foreign keys across module boundaries?
 10. Are there any circular foreign key dependencies?
 11. Is `module_registry.py` updated when a new schema is introduced?
+12. Are the 4-digit NNNN prefixes across `alembic/versions/` globally unique (no two migration files share a number)?
 
 
 

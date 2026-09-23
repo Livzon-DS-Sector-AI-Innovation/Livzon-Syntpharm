@@ -1,6 +1,6 @@
-"""0053_add_energy_unit_consumption_targets
+"""0054_add_energy_unit_consumption_targets
 
-Revision ID: 0053
+Revision ID: 0054_add_energy_unit_consumption_targets
 Revises: 0053_add_dossier_unique_indexes_and_cleanup
 Create Date: 2026-08-07 15:00:00.000000
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0053_add_energy_unit_consumption_targets'
+revision: str = '0054_add_energy_unit_consumption_targets'
 down_revision: Union[str, None] = '0053_add_dossier_unique_indexes_and_cleanup'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

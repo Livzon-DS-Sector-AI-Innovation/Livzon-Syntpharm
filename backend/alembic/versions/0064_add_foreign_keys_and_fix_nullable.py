@@ -1,7 +1,7 @@
 """add_foreign_keys_and_fix_nullable
 
-Revision ID: 0060_add_foreign_keys_and_fix_nullable
-Revises: 0059_add_ppt_generation_records
+Revision ID: 0064_add_foreign_keys_and_fix_nullable
+Revises: 0063_add_ppt_generation_records
 Create Date: 2026-09-14 13:00:00.000000
 """
 from typing import Sequence, Union
@@ -10,8 +10,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = '0060_add_foreign_keys_and_fix_nullable'
-down_revision: Union[str, None] = '0059_add_ppt_generation_records'
+revision: str = '0064_add_foreign_keys_and_fix_nullable'
+down_revision: Union[str, None] = '0063_add_ppt_generation_records'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

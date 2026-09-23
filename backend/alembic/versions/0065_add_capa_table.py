@@ -1,7 +1,7 @@
 """add capa table
 
-Revision ID: 0061_add_capa_table
-Revises: 0060_add_foreign_keys_and_fix_nullable
+Revision ID: 0065_add_capa_table
+Revises: 0064_add_foreign_keys_and_fix_nullable
 Create Date: 2026-09-23 08:49:51.802149
 """
 from typing import Sequence, Union
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '0061_add_capa_table'
-down_revision: Union[str, None] = '0060_add_foreign_keys_and_fix_nullable'
+revision: str = '0065_add_capa_table'
+down_revision: Union[str, None] = '0064_add_foreign_keys_and_fix_nullable'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
