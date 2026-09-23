@@ -4,6 +4,11 @@ import { revalidatePath } from 'next/cache'
 import { getAuthHeaders } from '@/lib/auth'
 import * as safetyApi from '@/lib/api/server/safety'
 import type { components } from '@/types/generated/schema'
+
+// Response type aliases for safety module
+type HazardIdentificationApiResponse = components['schemas']['HazardIdentificationApiResponse']
+type RegulationRevisionApiResponse = components['schemas']['RegulationRevisionApiResponse']
+type RegulationRevisionListApiResponse = components['schemas']['RegulationRevisionListApiResponse']
 import type {
   AccidentFormData,
   AccidentQueryParams,
@@ -551,7 +556,7 @@ export async function getHazardIdentifications(
 
 export async function getHIStats() {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHIStats(authHeaders) as Promise<ApiResponse<HazardIdentificationStats>>
+  return safetyApi.getHIStats(authHeaders) as Promise<HazardIdentificationApiResponse>
 }
 
 export async function getHILedgerStats(
@@ -564,12 +569,12 @@ export async function getHILedgerStats(
   } = {}
 ) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHILedgerStats(params, authHeaders) as Promise<ApiResponse<HazardLedgerStats>>
+  return safetyApi.getHILedgerStats(params, authHeaders) as Promise<HazardIdentificationApiResponse>
 }
 
 export async function getHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getHazardIdentification(id, authHeaders) as Promise<ApiResponse<HazardIdentification>>
+  return safetyApi.getHazardIdentification(id, authHeaders) as Promise<HazardIdentificationApiResponse>
 }
 
 export async function createHazardIdentification(
@@ -578,7 +583,7 @@ export async function createHazardIdentification(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createHazardIdentification(data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response as HazardIdentificationApiResponse
 }
 
 // ── 批量辨识 ──
@@ -604,14 +609,14 @@ export async function updateHazardIdentification(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateHazardIdentification(id, data, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response as HazardIdentificationApiResponse
 }
 
 export async function submitHazardIdentification(id: string) {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.submitHazardIdentification(id, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response as HazardIdentificationApiResponse
 }
 
 export async function runHazardScript(
@@ -626,7 +631,7 @@ export async function runHazardScript(
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.runHazardScript(id, body, authHeaders)
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response as HazardIdentificationApiResponse
 }
 
 export async function reviewHazardScript(
@@ -641,7 +646,7 @@ export async function reviewHazardScript(
     authHeaders
   )
   revalidatePath('/safety/hazard-identification')
-  return response as ApiResponse<HazardIdentification>
+  return response as HazardIdentificationApiResponse
 }
 
 export async function uploadHazardAttachment(id: string, file: File) {
@@ -664,7 +669,7 @@ export async function deleteHazardIdentification(id: string) {
 
 export async function parseHazardExportQuery(naturalQuery: string) {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.parseHazardExportQuery(naturalQuery, authHeaders) as Promise<ApiResponse<HazardLedgerExportParsedFilters>>
+  return safetyApi.parseHazardExportQuery(naturalQuery, authHeaders) as Promise<HazardIdentificationApiResponse>
 }
 
 export async function exportHazardLedgerPdf(
@@ -759,7 +764,7 @@ export async function reviseRegulation(
   content: string,
   revisionOpinion?: string,
   reviserName?: string,
-): Promise<ApiResponse<RegulationRevision>> {
+): Promise<RegulationRevisionApiResponse> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.reviseRegulation(regulationId, {
     content,
@@ -767,7 +772,7 @@ export async function reviseRegulation(
     reviser_name: reviserName || null,
   }, authHeaders)
   revalidatePath('/safety/regulation')
-  return response as ApiResponse<RegulationRevision>
+  return response as RegulationRevisionApiResponse
 }
 
 // ============ RegulationRevision Actions ============
@@ -777,23 +782,23 @@ export async function getRevisions(params: RegulationRevisionQueryParams = {}): 
   return safetyApi.getRevisions(params as Record<string, unknown>, authHeaders) as Promise<ApiResponse<RegulationRevision[]>>
 }
 
-export async function getRevision(id: string): Promise<ApiResponse<RegulationRevision>> {
+export async function getRevision(id: string): Promise<RegulationRevisionApiResponse> {
   const authHeaders = await getAuthHeaders()
-  return safetyApi.getRevision(id, authHeaders) as Promise<ApiResponse<RegulationRevision>>
+  return safetyApi.getRevision(id, authHeaders) as Promise<RegulationRevisionApiResponse>
 }
 
-export async function createRevision(data: RegulationRevisionFormData): Promise<ApiResponse<RegulationRevision>> {
+export async function createRevision(data: RegulationRevisionFormData): Promise<RegulationRevisionApiResponse> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.createRevision(data, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response as RegulationRevisionApiResponse
 }
 
-export async function updateRevision(id: string, data: Partial<RegulationRevision>): Promise<ApiResponse<RegulationRevision>> {
+export async function updateRevision(id: string, data: Partial<RegulationRevision>): Promise<RegulationRevisionApiResponse> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.updateRevision(id, data, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response as RegulationRevisionApiResponse
 }
 
 export async function deleteRevision(id: string): Promise<ApiResponse<null>> {
@@ -803,13 +808,13 @@ export async function deleteRevision(id: string): Promise<ApiResponse<null>> {
   return response as ApiResponse<null>
 }
 
-export async function manualRevisionComplete(revisionId: string, file: File): Promise<ApiResponse<RegulationRevision>> {
+export async function manualRevisionComplete(revisionId: string, file: File): Promise<RegulationRevisionApiResponse> {
   const formData = new FormData()
   formData.append('file', file)
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.manualRevisionComplete(revisionId, formData, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response as RegulationRevisionApiResponse
 }
 
 export async function aiRevisionGenerate(revisionId: string): Promise<ApiResponse<unknown>> {
@@ -821,21 +826,21 @@ export async function aiRevisionConfirm(
   revisionId: string,
   generatedContent: string,
   documentName?: string
-): Promise<ApiResponse<RegulationRevision>> {
+): Promise<RegulationRevisionApiResponse> {
   const params = new URLSearchParams({ generated_content: generatedContent })
   if (documentName) params.set('document_name', documentName)
 
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.aiRevisionConfirm(revisionId, params.toString(), authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response as RegulationRevisionApiResponse
 }
 
-export async function identifyRevisionScope(revisionId: string): Promise<ApiResponse<RegulationRevision>> {
+export async function identifyRevisionScope(revisionId: string): Promise<RegulationRevisionApiResponse> {
   const authHeaders = await getAuthHeaders()
   const response = await safetyApi.identifyRevisionScope(revisionId, authHeaders)
   revalidatePath('/safety/regulation-revision')
-  return response as ApiResponse<RegulationRevision>
+  return response as RegulationRevisionApiResponse
 }
 
 // ============ SpecialOperationPersonnel Actions ============

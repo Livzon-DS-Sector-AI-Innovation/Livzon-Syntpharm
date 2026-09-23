@@ -532,7 +532,7 @@ export async function getHazardIdentification(id: string, authHeaders?: Record<s
 }
 
 export async function createHazardIdentification(data: unknown, authHeaders?: Record<string, string>) {
-  return apiFetch<HazardIdentificationListApiResponse>('/api/v1/safety/hazard-identifications', {
+  return apiFetch<HazardIdentificationApiResponse>('/api/v1/safety/hazard-identifications', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -720,7 +720,7 @@ export async function getRevision(id: string, authHeaders?: Record<string, strin
 }
 
 export async function createRevision(data: unknown, authHeaders?: Record<string, string>) {
-  return apiFetch<RegulationRevisionListApiResponse>('/api/v1/safety/revisions', {
+  return apiFetch<RegulationRevisionApiResponse>('/api/v1/safety/revisions', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
