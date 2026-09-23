@@ -5,11 +5,14 @@
 #   docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
 #   docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
 
+# 容器名可通过 .env.local 覆盖（LOCAL_BACKEND_NAME / LOCAL_FRONTEND_NAME）：
+# 当 docker daemon 名称索引残留脏记录（报 "container name already in use" 但容器实际不存在）时，
+# 无需 sudo 重启 daemon，改个名字即可绕过。
 services:
   backend:
     build:
       context: ./backend
-    container_name: local-backend
+    container_name: ${LOCAL_BACKEND_NAME:-local-backend}
     restart: unless-stopped
     env_file:
       - .env.local
@@ -42,7 +45,7 @@ services:
     build:
       context: ./frontend
       target: dev
-    container_name: local-frontend
+    container_name: ${LOCAL_FRONTEND_NAME:-local-frontend}
     restart: unless-stopped
     environment:
       - API_BASE_URL=http://backend:8000
