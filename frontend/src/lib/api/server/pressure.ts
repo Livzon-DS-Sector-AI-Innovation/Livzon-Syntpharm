@@ -249,7 +249,7 @@ export async function exportByArea(
   if (params.end_date) searchParams.set('end_date', params.end_date)
   if (params.point_id) searchParams.set('point_id', params.point_id)
   const qs = searchParams.toString()
-  return apiFetch<ApiResponse<any[]>>(
+  return apiFetch<ApiResponse<unknown[]>>(
     `/api/v1/production/pressure/records/export/by-area${qs ? `?${qs}` : ''}`,
     { headers }
   )
@@ -295,7 +295,7 @@ export async function createOcrTask(
 export async function submitOcrTaskResult(
   headers: Record<string, string>,
   taskId: string,
-  data: { records: any[] }
+  data: { records: unknown[] }
 ) {
   return apiFetch<ApiResponse<OcrSubmitResponse>>(
     `/api/v1/production/pressure/ocr-tasks/${taskId}/submit`,

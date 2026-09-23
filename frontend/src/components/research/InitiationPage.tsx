@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, InputNumber, DatePicker } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchInitiations } from '@/lib/api/client/research/rd-project'
@@ -12,6 +13,26 @@ import {
 import dayjs from 'dayjs'
 import { createInitiation, updateInitiation } from '@/actions/research/rd-project'
 
+
+// JSON structure interfaces for InitiationPage
+interface ResourceRequirements {
+  personnel?: string
+  equipment?: string
+  budget?: string
+}
+
+interface TimelinePlan {
+  start?: string
+  milestones?: string
+  target_filing?: string
+}
+
+interface RiskAssessment {
+  technical?: string
+  regulatory?: string
+  commercial?: string
+  mitigation?: string
+}
 interface Props { projectId: string }
 
 const reviewStatusOptions = Object.entries(REVIEW_STATUS_LABELS).map(([value, label]) => ({ value, label }))
@@ -31,25 +52,19 @@ const approvalColorMap: Record<string, string> = {
 
 export function InitiationPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [items, setItems] = useState<RdInitiation[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdInitiation | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: ['initiations', projectId],
+    queryFn: async () => {
       const data = await fetchInitiations(projectId)
-      setItems(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -71,18 +86,18 @@ export function InitiationPage({ projectId }: Props) {
       expected_outcomes: record.expected_outcomes,
       application_date: record.application_date ? dayjs(record.application_date) : undefined,
       // resource_requirements JSON
-      rr_personnel: (record.resource_requirements as any)?.personnel || '',
-      rr_equipment: (record.resource_requirements as any)?.equipment || '',
-      rr_budget: (record.resource_requirements as any)?.budget || '',
+      rr_personnel: (record.resource_requirements as ResourceRequirements)?.personnel || '',
+      rr_equipment: (record.resource_requirements as ResourceRequirements)?.equipment || '',
+      rr_budget: (record.resource_requirements as ResourceRequirements)?.budget || '',
       // timeline_plan JSON
-      tp_start: (record.timeline_plan as any)?.start || '',
-      tp_milestones: (record.timeline_plan as any)?.milestones || '',
-      tp_target_filing: (record.timeline_plan as any)?.target_filing || '',
+      tp_start: (record.timeline_plan as TimelinePlan)?.start || '',
+      tp_milestones: (record.timeline_plan as TimelinePlan)?.milestones || '',
+      tp_target_filing: (record.timeline_plan as TimelinePlan)?.target_filing || '',
       // risk_assessment JSON
-      ra_technical: (record.risk_assessment as any)?.technical || '',
-      ra_regulatory: (record.risk_assessment as any)?.regulatory || '',
-      ra_commercial: (record.risk_assessment as any)?.commercial || '',
-      ra_mitigation: (record.risk_assessment as any)?.mitigation || '',
+      ra_technical: (record.risk_assessment as RiskAssessment)?.technical || '',
+      ra_regulatory: (record.risk_assessment as RiskAssessment)?.regulatory || '',
+      ra_commercial: (record.risk_assessment as RiskAssessment)?.commercial || '',
+      ra_mitigation: (record.risk_assessment as RiskAssessment)?.mitigation || '',
       // review
       review_status: record.review_status,
       review_date: record.review_date ? dayjs(record.review_date) : undefined,
@@ -136,14 +151,14 @@ export function InitiationPage({ projectId }: Props) {
         await updateInitiation(editingRecord.id, payload)
         msgApi.success('更新成功')
       } else {
-        await createInitiation(projectId, payload as any)
+        await createInitiation(projectId, payload)
         msgApi.success('创建成功')
       }
       setDrawerOpen(false)
-      loadData()
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+      queryClient.invalidateQueries({ queryKey: ['initiations', projectId] })
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -151,9 +166,9 @@ export function InitiationPage({ projectId }: Props) {
     try {
       await deleteInitiation(id)
       msgApi.success('删除成功')
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+      queryClient.invalidateQueries({ queryKey: ['initiations', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 

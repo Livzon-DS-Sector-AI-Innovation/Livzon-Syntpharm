@@ -23,7 +23,7 @@ export function PersonnelSelect({ personnel, ...rest }: Props) {
   return (
     <Select
       {...rest}
-      showSearch={{ optionFilterProp: 'label' }}
+      showSearch optionFilterProp='label'
       popupMatchSelectWidth={false}
       options={personnel.map(p => ({
         label: `${p.name}${p.department ? ' · ' + p.department : ''}`,

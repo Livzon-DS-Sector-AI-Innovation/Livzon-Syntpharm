@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Tabs,
   Table,
@@ -18,7 +19,6 @@ import {
   Statistic,
   message,
   Popconfirm,
-  Divider,
   Alert,
   Tooltip,
   Spin,
@@ -30,7 +30,6 @@ import {
   EditOutlined,
   DeleteOutlined,
   CheckOutlined,
-  CloseOutlined,
   LockOutlined,
   UnlockOutlined,
   FileTextOutlined,
@@ -46,6 +45,7 @@ import dayjs from 'dayjs'
 import jsPDF from 'jspdf'
 import {
   Deviation,
+  DeviationCreate,
   deviationTypeLabels,
   deviationLevelLabels,
   deviationStatusLabels,
@@ -53,6 +53,39 @@ import {
   DeviationStatistics,
 } from '@/types/deviation'
 import * as deviationActions from '@/actions/deviation'
+
+interface DeviationDetailResponse {
+  deviation: Deviation & {
+    deviation_no: string
+    deviation_type: string
+    deviation_level: string
+    occurrence_date?: string
+    discovering_department?: string
+    production_batch?: string
+    abnormal_description?: string
+    description?: string
+    emergency_measures?: string
+  }
+  investigation?: {
+    direct_cause?: string
+    root_cause?: string
+    investigation_conclusion?: string
+  } | null
+  correction?: {
+    correction_measures?: string
+    responsible_department?: string
+    plan_completion_date?: string
+    actual_completion_date?: string
+    progress?: number
+  } | null
+}
+
+interface SearchFormValues {
+  deviation_type?: string
+  status?: string
+  date_range?: [{ format: (fmt: string) => string }?, { format: (fmt: string) => string }?] | null
+}
+
 
 const { TextArea } = Input
 
@@ -158,8 +191,6 @@ const DeviationListTab: React.FC<{
   onView: (deviation: Deviation) => void
   onRefresh: () => void
 }> = ({ onView, onRefresh }) => {
-  const [loading, setLoading] = useState(false)
-  const [deviations, setDeviations] = useState<Deviation[]>([])
   const [pagination, setPagination] = useState({ current: 1, pageSize: 20, total: 0 })
   const [searchForm] = Form.useForm()
   const [createModalVisible, setCreateModalVisible] = useState(false)
@@ -169,31 +200,27 @@ const DeviationListTab: React.FC<{
   const [aiModalTitle, setAiModalTitle] = useState('')
   const [aiResult, setAiResult] = useState('')
   const [aiTargetField, setAiTargetField] = useState('')
+  const [searchValues, setSearchValues] = useState<SearchFormValues | undefined>(undefined)
+  const _queryClient = useQueryClient()
 
-  const fetchDeviations = async (values?: any) => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
+    queryKey: ['deviations', pagination.current, pagination.pageSize, searchValues],
+    queryFn: async () => {
       const result = await deviationActions.getDeviations({
-        deviation_type: values?.deviation_type,
-        status: values?.status,
-        start_date: values?.date_range?.[0]?.format('YYYY-MM-DD'),
-        end_date: values?.date_range?.[1]?.format('YYYY-MM-DD'),
+        deviation_type: searchValues?.deviation_type,
+        status: searchValues?.status,
+        start_date: (searchValues?.date_range?.[0] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
+        end_date: (searchValues?.date_range?.[1] as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         page: pagination.current,
         page_size: pagination.pageSize,
       })
       const data = result.data || result
-      setDeviations(data.items || [])
-      setPagination(prev => ({ ...prev, total: data.total || 0 }))
-    } catch (error: any) {
-      message.error(error.message || '获取偏差列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { items: data.items || [], total: data.total || 0 }
+    },
+  })
 
-  useEffect(() => {
-    fetchDeviations()
-  }, [pagination.current, pagination.pageSize])
+  const deviations = queryResult?.items || []
+  const paginationWithTotal = { ...pagination, total: queryResult?.total || 0 }
 
   // AI生成偏差描述（基于完整表单数据）
   const handleAIGenerateDescription = async () => {
@@ -209,7 +236,7 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.aiGenerateDescription({
         deviation_type: values.deviation_type,
         deviation_level: values.deviation_level,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         discovering_department: values.discovering_department,
         product_name: values.product_name,
         production_batch: values.production_batch,
@@ -218,8 +245,8 @@ const DeviationListTab: React.FC<{
       const data = result.data || result
       setAiResult(data.description || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI生成失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI生成失败'))
     } finally {
       setAiLoading(false)
     }
@@ -239,7 +266,7 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.aiAnalyzeImpact({
         deviation_type: values.deviation_type,
         deviation_level: values.deviation_level,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         discovering_department: values.discovering_department,
         product_name: values.product_name,
         production_batch: values.production_batch,
@@ -248,8 +275,8 @@ const DeviationListTab: React.FC<{
       const data = result.data || result
       setAiResult(data.impact_analysis || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI分析失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI分析失败'))
     } finally {
       setAiLoading(false)
     }
@@ -269,7 +296,7 @@ const DeviationListTab: React.FC<{
       const result = await deviationActions.aiGenerateEmergencyMeasures({
         deviation_type: values.deviation_type,
         deviation_level: values.deviation_level,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        occurrence_date: (values.occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
         discovering_department: values.discovering_department,
         product_name: values.product_name,
         production_batch: values.production_batch,
@@ -278,8 +305,8 @@ const DeviationListTab: React.FC<{
       const data = result.data || result
       setAiResult(data.emergency_measures || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI生成失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI生成失败'))
     } finally {
       setAiLoading(false)
     }
@@ -294,24 +321,22 @@ const DeviationListTab: React.FC<{
     }
   }
 
-  const handleCreate = async (values: any) => {
+  const handleCreate = async (values: Record<string, unknown>) => {
     try {
+      const { description, occurrence_date, ...rest } = values as Record<string, unknown>
       const processedValues = {
-        ...values,
-        // 映射前端字段名到后端字段名
-        abnormal_description: values.description,
-        occurrence_date: values.occurrence_date?.format('YYYY-MM-DD'),
+        ...rest,
+        abnormal_description: description as string | undefined,
+        occurrence_date: (occurrence_date as { format?: (f: string) => string } | undefined)?.format?.('YYYY-MM-DD'),
       }
-      // 删除不需要的字段
-      delete processedValues.description
-      await deviationActions.createDeviation(processedValues)
+      await deviationActions.createDeviation(processedValues as unknown as DeviationCreate)
       message.success('创建成功')
       setCreateModalVisible(false)
       createForm.resetFields()
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '创建失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '创建失败'))
     }
   }
 
@@ -321,8 +346,8 @@ const DeviationListTab: React.FC<{
       message.success('删除成功')
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '删除失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '删除失败'))
     }
   }
 
@@ -332,8 +357,8 @@ const DeviationListTab: React.FC<{
       message.success('提交成功，偏差已进入调查流程')
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '提交失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '提交失败'))
     }
   }
 
@@ -420,7 +445,7 @@ const DeviationListTab: React.FC<{
       <Card size="small" style={{ marginBottom: 16 }}>
         <Form form={searchForm} layout="inline" onFinish={() => {
           setPagination(prev => ({ ...prev, current: 1 }))
-          fetchDeviations(searchForm.getFieldsValue())
+          setSearchValues(searchForm.getFieldsValue())
         }}>
           <Form.Item name="deviation_type" label="偏差类型">
             <Select allowClear style={{ width: 120 }}>
@@ -442,7 +467,7 @@ const DeviationListTab: React.FC<{
           <Form.Item>
             <Space>
               <Button type="primary" icon={<SearchOutlined />} htmlType="submit">查询</Button>
-              <Button onClick={() => { searchForm.resetFields(); fetchDeviations() }}>重置</Button>
+              <Button onClick={() => { searchForm.resetFields(); setSearchValues(undefined); setPagination(prev => ({ ...prev, current: 1 })) }}>重置</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -462,10 +487,10 @@ const DeviationListTab: React.FC<{
           loading={loading}
           scroll={{ x: 1200 }}
           pagination={{
-            ...pagination,
+            ...paginationWithTotal,
             showSizeChanger: true,
             showTotal: (total) => `共 ${total} 条`,
-            onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: pagination.total }),
+            onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: paginationWithTotal.total }),
           }}
         />
       </Card>
@@ -616,8 +641,6 @@ const DeviationListTab: React.FC<{
 
 // ============ 偏差调查标签页 ============
 const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
-  const [loading, setLoading] = useState(false)
-  const [deviations, setDeviations] = useState<Deviation[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [aiModalVisible, setAiModalVisible] = useState(false)
   const [aiModalTitle, setAiModalTitle] = useState('')
@@ -625,25 +648,18 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
   const [aiTargetField, setAiTargetField] = useState('')
   const [form] = Form.useForm()
 
-  useEffect(() => {
-    fetchDeviations()
-  }, [])
-
-  const fetchDeviations = async () => {
-    setLoading(true)
-    try {
+  const { data: invQueryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
+    queryKey: ['deviations-investigation'],
+    queryFn: async () => {
       const result = await deviationActions.getDeviations({ page_size: 100 })
       const data = result.data || result
-      const list = (data.items || []).filter((d: Deviation) =>
-        d.status === 'submitted' || d.status === 'investigating'
-      )
-      setDeviations(list)
-    } catch (error: any) {
-      message.error(error.message || '获取偏差列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return (data.items || []) as Deviation[]
+    },
+  })
+
+  const deviations = (invQueryResult || []).filter((d: Deviation) =>
+    d.status === 'submitted' || d.status === 'investigating'
+  )
 
   // AI直接原因分析
   const handleAIDirectCauseAnalysis = async () => {
@@ -665,8 +681,8 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
       const data = result.data || result
       setAiResult(data.direct_cause_analysis || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI分析失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI分析失败'))
     } finally {
       setAiLoading(false)
     }
@@ -692,15 +708,15 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
       const data = result.data || result
       setAiResult(data.root_cause_analysis || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI分析失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI分析失败'))
     } finally {
       setAiLoading(false)
     }
   }
 
   // AI影响评估
-  const handleAIImpactAssessment = async () => {
+  const _handleAIImpactAssessment = async () => {
     const values = form.getFieldsValue()
     if (!values.deviation_id) {
       message.warning('请先选择偏差')
@@ -720,8 +736,8 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
       const data = result.data || result
       setAiResult(data.impact_analysis || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI分析失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI分析失败'))
     } finally {
       setAiLoading(false)
     }
@@ -779,7 +795,7 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
       title: '操作',
       key: 'action',
       width: 120,
-      render: (_: any, record: Deviation) => (
+      render: (_: unknown, record: Deviation) => (
         <Space size={2}>
           <Tooltip title="查看">
             <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDeviation(record)} style={{ padding: '0 4px' }} />
@@ -851,8 +867,8 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
             fetchDeviations()
             onRefresh()
           }
-        } catch (error: any) {
-          message.error(error.message || '操作失败')
+        } catch (error: unknown) {
+          message.error((error instanceof Error ? error.message : '操作失败'))
         }
       },
     })
@@ -911,8 +927,8 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
 调查结论：${data.root_cause_analysis || '经过系统分析，该偏差的根本原因已明确，建议采取相应的纠正和预防措施。'}`
       setAiResult(conclusion)
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI生成失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI生成失败'))
     } finally {
       setAiLoading(false)
     }
@@ -938,8 +954,8 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
       // 刷新列表以显示更新后的数据
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '保存失败'))
     }
   }
 
@@ -964,8 +980,8 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
       form.resetFields()
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '操作失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -1110,9 +1126,6 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
 
 // ============ CAPA整改标签页 ============
 const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
-  const [loading, setLoading] = useState(false)
-  const [deviations, setDeviations] = useState<Deviation[]>([])
-  const [completedDeviations, setCompletedDeviations] = useState<Deviation[]>([])
   const [aiLoading, setAiLoading] = useState(false)
   const [aiModalVisible, setAiModalVisible] = useState(false)
   const [aiModalTitle, setAiModalTitle] = useState('')
@@ -1121,36 +1134,26 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
   const [form] = Form.useForm()
   const [activeTab, setActiveTab] = useState('pending')
   const [detailModalVisible, setDetailModalVisible] = useState(false)
-  const [selectedDeviation, setSelectedDeviation] = useState<any>(null)
+  const [selectedDeviation, setSelectedDeviation] = useState<DeviationDetailResponse | null>(null)
   const [reportGenerating, setReportGenerating] = useState(false)
   const [completeCorrectionModalVisible, setCompleteCorrectionModalVisible] = useState(false)
   const [completeForm] = Form.useForm()
 
-  useEffect(() => {
-    fetchDeviations()
-  }, [])
-
-  const fetchDeviations = async () => {
-    setLoading(true)
-    try {
+  const { data: capaQueryResult, isLoading: loading, refetch: fetchDeviations } = useQuery({
+    queryKey: ['deviations-capa'],
+    queryFn: async () => {
       const result = await deviationActions.getDeviations({ page_size: 100 })
       const data = result.data || result
-      // 待整改列表
-      const pendingList = (data.items || []).filter((d: Deviation) =>
-        d.status === 'investigation_completed' || d.status === 'correction_pending' || d.status === 'correction_in_progress'
-      )
-      // 已完成整改列表
-      const completedList = (data.items || []).filter((d: Deviation) =>
-        d.status === 'correction_completed' || d.status === 'closed'
-      )
-      setDeviations(pendingList)
-      setCompletedDeviations(completedList)
-    } catch (error: any) {
-      message.error(error.message || '获取偏差列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return (data.items || []) as Deviation[]
+    },
+  })
+
+  const deviations = (capaQueryResult || []).filter((d: Deviation) =>
+    d.status === 'investigation_completed' || d.status === 'correction_pending' || d.status === 'correction_in_progress'
+  )
+  const completedDeviations = (capaQueryResult || []).filter((d: Deviation) =>
+    d.status === 'correction_completed' || d.status === 'closed'
+  )
 
   // 查看已完成整改偏差详情
   const handleViewCompleted = async (record: Deviation) => {
@@ -1160,8 +1163,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
         setSelectedDeviation(result.data)
         setDetailModalVisible(true)
       }
-    } catch (error: any) {
-      message.error(error.message || '获取详情失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '获取详情失败'))
     }
   }
 
@@ -1340,23 +1343,23 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       drawLabelLine('偏差类型', deviationTypeLabels[deviation.deviation_type] || deviation.deviation_type)
       drawLabelLine('偏差等级', deviationLevelLabels[deviation.deviation_level] || deviation.deviation_level)
       drawLabelLine('发生日期', deviation.occurrence_date ? new Date(deviation.occurrence_date).toLocaleDateString() : '未填写')
-      drawLabelLine('发现部门', deviation.discovering_department || '未填写')
-      drawLabelLine('产品批次', deviation.production_batch || '未填写')
+      drawLabelLine('发现部门', String(deviation.discovering_department || '未填写'))
+      drawLabelLine('产品批次', String(deviation.production_batch || '未填写'))
       currentY += 8
 
       // 二、偏差描述
       drawSectionTitle('二、偏差描述')
-      drawMultilineText(deviation.abnormal_description || deviation.description)
+      drawMultilineText(deviation.abnormal_description || deviation.description || '')
       currentY += 8
 
       // 三、应急措施
       drawSectionTitle('三、应急措施')
-      drawMultilineText(deviation.emergency_measures)
+      drawMultilineText(deviation.emergency_measures || '')
       currentY += 8
 
       // 四、调查信息
       drawSectionTitle('四、调查信息')
-      drawLabelLine('直接原因', investigation?.direct_cause || '未填写')
+      drawLabelLine('直接原因', String(investigation?.direct_cause || '未填写'))
       drawMultilineText(`根本原因（5M1E分析）：${investigation?.root_cause || '未填写'}`)
       drawMultilineText(`调查结论：${investigation?.investigation_conclusion || '未填写'}`)
       currentY += 8
@@ -1365,7 +1368,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       drawSectionTitle('五、整改措施')
       drawLabelLine('整改措施（CA+PA）', '')
       drawMultilineText(correction?.correction_measures || '未填写')
-      drawLabelLine('责任部门', correction?.responsible_department)
+      drawLabelLine('责任部门', correction?.responsible_department || '')
       drawLabelLine('计划完成日期', correction?.plan_completion_date ? new Date(correction.plan_completion_date).toLocaleDateString() : '未填写')
       drawLabelLine('整改进度', `${correction?.progress || 0}%`)
       currentY += 8
@@ -1388,8 +1391,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       pdf.save(fileName)
 
       message.success('整改报告已生成')
-    } catch (error: any) {
-      message.error(error.message || '生成报告失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '生成报告失败'))
     } finally {
       setReportGenerating(false)
     }
@@ -1416,8 +1419,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       const data = result.data || result
       setAiResult(data.capa || '')
       setAiModalVisible(true)
-    } catch (error: any) {
-      message.error(error.message || 'AI生成失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : 'AI生成失败'))
     } finally {
       setAiLoading(false)
     }
@@ -1460,7 +1463,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       title: '操作',
       key: 'action',
       width: 160,
-      render: (_: any, record: Deviation) => (
+      render: (_: unknown, record: Deviation) => (
         <Space size={2}>
           <Tooltip title="查看详情">
             <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewPending(record)} style={{ padding: '0 4px' }} />
@@ -1481,8 +1484,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
         setSelectedDeviation(result.data)
         setDetailModalVisible(true)
       }
-    } catch (error: any) {
-      message.error(error.message || '获取详情失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '获取详情失败'))
     }
   }
 
@@ -1491,7 +1494,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
     try {
       const result = await deviationActions.getDeviationById(record.id)
       if (result.code === 200 && result.data) {
-        const deviation = result.data.deviation
+        const _deviation = result.data.deviation
         const correction = result.data.correction
         // 填充表单
         form.setFieldsValue({
@@ -1503,8 +1506,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
         // 显示完成整改弹窗
         setCompleteCorrectionModalVisible(true)
       }
-    } catch (error: any) {
-      message.error(error.message || '获取详情失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '获取详情失败'))
     }
   }
 
@@ -1538,8 +1541,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       message.success('保存成功')
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '保存失败'))
     }
   }
 
@@ -1563,8 +1566,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
       form.resetFields()
       fetchDeviations()
       onRefresh()
-    } catch (error: any) {
-      message.error(error.message || '操作失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     }
   }
 
@@ -1699,7 +1702,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
                     {
                       title: '操作',
                       width: 80,
-                      render: (_: any, record: Deviation) => (
+                      render: (_: unknown, record: Deviation) => (
                         <Button type="link" size="small" onClick={() => handleViewCompleted(record)}>
                           查看详情
                         </Button>
@@ -1827,8 +1830,8 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
                     completeForm.resetFields()
                     fetchDeviations()
                     onRefresh()
-                  } catch (error: any) {
-                    message.error(error.message || '操作失败')
+                  } catch (error: unknown) {
+                    message.error((error instanceof Error ? error.message : '操作失败'))
                   }
                 }}
                 style={{ backgroundColor: '#52c41a' }}
@@ -1899,8 +1902,8 @@ const DeviationDetailModal: React.FC<{
           onRefresh()
         }, 100)
       }
-    } catch (error: any) {
-      message.error(error.message || '锁定失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '锁定失败'))
     } finally {
       setLocking(false)
     }
@@ -1920,8 +1923,8 @@ const DeviationDetailModal: React.FC<{
           onRefresh()
         }, 100)
       }
-    } catch (error: any) {
-      message.error(error.message || '解锁失败')
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '解锁失败'))
     } finally {
       setUnlocking(false)
     }
@@ -2042,24 +2045,26 @@ const DeviationDetailModal: React.FC<{
 // ============ 主页面组件 ============
 export default function DeviationPage() {
   const [activeTab, setActiveTab] = useState('list')
-  const [statistics, setStatistics] = useState<DeviationStatistics | null>(null)
   const [selectedDeviation, setSelectedDeviation] = useState<Deviation | null>(null)
   const [detailModalVisible, setDetailModalVisible] = useState(false)
 
-  const refreshData = async () => {
-    try {
+  const queryClient = useQueryClient()
+  
+  const { data: statisticsData } = useQuery({
+    queryKey: ['deviation-statistics'],
+    queryFn: async () => {
       const result = await deviationActions.getDeviationStatistics()
       if (result.code === 200 || result.code === 0) {
-        setStatistics(result.data as DeviationStatistics)
+        return result.data as DeviationStatistics
       }
-    } catch (error) {
-      console.error('Failed to refresh statistics:', error)
-    }
-  }
+      return null
+    },
+  })
 
-  useEffect(() => {
-    refreshData()
-  }, [])
+  const statistics = statisticsData
+  const refreshData = () => {
+    queryClient.invalidateQueries({ queryKey: ['deviation-statistics'] })
+  }
 
   const handleViewDeviation = async (deviation: Deviation) => {
     try {

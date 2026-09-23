@@ -527,6 +527,184 @@
         }
       }
     },
+    "/api/v1/identity/feishu-config": {
+      "get": {
+        "tags": [
+          "Livzon \u98de\u4e66\u914d\u7f6e",
+          "Livzon \u98de\u4e66\u914d\u7f6e"
+        ],
+        "summary": "\u83b7\u53d6 Livzon \u98de\u4e66\u914d\u7f6e",
+        "description": "\u83b7\u53d6\u5f53\u524d Livzon \u98de\u4e66\u914d\u7f6e",
+        "operationId": "get_feishu_config_api_v1_identity_feishu_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuConfigApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Livzon \u98de\u4e66\u914d\u7f6e",
+          "Livzon \u98de\u4e66\u914d\u7f6e"
+        ],
+        "summary": "\u4fdd\u5b58 Livzon \u98de\u4e66\u914d\u7f6e",
+        "description": "\u4fdd\u5b58 Livzon \u98de\u4e66\u914d\u7f6e",
+        "operationId": "save_feishu_config_api_v1_identity_feishu_config_put",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeishuConfigUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuConfigApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/feishu-config/test": {
+      "post": {
+        "tags": [
+          "Livzon \u98de\u4e66\u914d\u7f6e",
+          "Livzon \u98de\u4e66\u914d\u7f6e"
+        ],
+        "summary": "\u6d4b\u8bd5 Livzon \u98de\u4e66\u914d\u7f6e",
+        "description": "\u6d4b\u8bd5 Livzon \u98de\u4e66\u914d\u7f6e\u8fde\u63a5",
+        "operationId": "test_feishu_config_api_v1_identity_feishu_config_test_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/FeishuConfigUpsert"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeishuDiagnosticApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/identity/login-logs": {
       "get": {
         "tags": [
@@ -20814,7 +20992,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u5bfc\u51fa\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26 PDF",
-        "description": "\u5bfc\u51fa\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26\u4e3a PDF \u6587\u4ef6\u3002\n\n\u6d41\u7a0b\uff1a\n1. AI \u89e3\u6790\u81ea\u7136\u8bed\u8a00 \u2192 \u7b5b\u9009\u6761\u4ef6\uff08\u5982\u300c\u5bfc\u51fa\u6240\u6709\u91cd\u5927\u5371\u9669\u6e90\u300d\u300c\u63d0\u70bc\u4e00\u90e8\u4e0a\u6708\u8bb0\u5f55\u300d\uff09\n2. \u6309\u6761\u4ef6\u67e5\u8be2\u6570\u636e\u5e93\n3. Excel \u6807\u51c6\u5316\u8f93\u51fa\u63d2\u4ef6\u586b\u8868 \u2192 LibreOffice \u8f6c PDF\n\n\u4e0d\u63d0\u4f9b natural_query \u65f6\u5bfc\u51fa\u5168\u90e8\u5df2\u5b8c\u6210\u8bb0\u5f55\u3002",
+        "description": "\u5bfc\u51fa\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26\u4e3a PDF \u6587\u4ef6\u3002\n\n\u6d41\u7a0b\uff1a\n1. AI \u89e3\u6790\u81ea\u7136\u8bed\u8a00 \u2192 \u7b5b\u9009\u6761\u4ef6\uff08\u5982\u300c\u5bfc\u51fa\u6240\u6709\u91cd\u5927\u5371\u9669\u6e90\u300d\u300c\u63d0\u70bc\u4e00\u90e8\u4e0a\u6708\u8bb0\u5f55\u300d\uff09\n2. \u6309\u6761\u4ef6\u67e5\u8be2\u6570\u636e\u5e93\n3. Excel \u6807\u51c6\u5316\u8f93\u51fa\u63d2\u4ef6\u586b\u8868 \u2192 LibreOffice \u8f6c PDF\n\n\u4e0d\u63d0\u4f9b natural_query \u65f6\u5bfc\u51fa\u5168\u90e8\u5df2\u5b8c\u6210\u8bb0\u5f55\u3002\n\nTODO(H7): PDF export can take >5s for large datasets. Consider async task + polling pattern.",
         "operationId": "handler_api_v1_safety_hazard_identifications_export_pdf_post",
         "parameters": [
           {
@@ -20846,14 +21024,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response Handler Api V1 Safety Hazard Identifications Export Pdf Post"
-                }
-              }
-            }
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -22667,6 +22838,949 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-graph/full-graph": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u5b8c\u6574\u77e5\u8bc6\u56fe\u8c31",
+        "description": "\u83b7\u53d6\u5b8c\u6574\u77e5\u8bc6\u56fe\u8c31\u6570\u636e",
+        "operationId": "get_full_graph_api_v1_safety_knowledge_graph_full_graph_get",
+        "parameters": [
+          {
+            "name": "node_types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Node Types"
+            }
+          },
+          {
+            "name": "relation_types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Relation Types"
+            }
+          },
+          {
+            "name": "max_nodes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 500,
+              "title": "Max Nodes"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-graph/nodes": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u56fe\u8c31\u8282\u70b9\u5217\u8868",
+        "description": "\u83b7\u53d6\u56fe\u8c31\u8282\u70b9\u5217\u8868",
+        "operationId": "get_graph_nodes_api_v1_safety_knowledge_graph_nodes_get",
+        "parameters": [
+          {
+            "name": "node_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Node Type"
+            }
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Keyword"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-graph/edges": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6\u56fe\u8c31\u8fb9\u5217\u8868",
+        "description": "\u83b7\u53d6\u56fe\u8c31\u8fb9\u5217\u8868",
+        "operationId": "get_graph_edges_api_v1_safety_knowledge_graph_edges_get",
+        "parameters": [
+          {
+            "name": "relation_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Relation Type"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-graph/search": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u641c\u7d22\u56fe\u8c31\u8282\u70b9",
+        "description": "\u641c\u7d22\u56fe\u8c31\u8282\u70b9",
+        "operationId": "search_graph_nodes_api_v1_safety_knowledge_graph_search_get",
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "title": "Query"
+            }
+          },
+          {
+            "name": "node_types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Node Types"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-graph/expand": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u5c55\u5f00\u8282\u70b9\u90bb\u5c45",
+        "description": "\u5c55\u5f00\u6307\u5b9a\u8282\u70b9\u7684\u90bb\u5c45\u8282\u70b9",
+        "operationId": "expand_graph_node_api_v1_safety_knowledge_graph_expand_get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Node Id"
+            }
+          },
+          {
+            "name": "hops",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 3,
+              "minimum": 1,
+              "default": 1,
+              "title": "Hops"
+            }
+          },
+          {
+            "name": "relation_types",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Relation Types"
+            }
+          },
+          {
+            "name": "max_nodes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 30,
+              "title": "Max Nodes"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-graph/generate": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "AI \u751f\u6210\u77e5\u8bc6\u56fe\u8c31",
+        "description": "\u4ece\u77e5\u8bc6\u5e93\u6587\u7ae0 AI \u751f\u6210\u77e5\u8bc6\u56fe\u8c31",
+        "operationId": "generate_graph_api_v1_safety_knowledge_graph_generate_post",
+        "parameters": [
+          {
+            "name": "force_rebuild",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Force Rebuild"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Document Ids"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-articles/batch-import": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u5bfc\u5165\u77e5\u8bc6\u5e93\u6587\u7ae0",
+        "description": "\u6279\u91cf\u5bfc\u5165\u77e5\u8bc6\u5e93\u6587\u7ae0",
+        "operationId": "handler_api_v1_safety_knowledge_articles_batch_import_post",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_handler_api_v1_safety_knowledge_articles_batch_import_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-card": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u751f\u6210\u77e5\u8bc6\u5361\u7247",
+        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210\u7ed3\u6784\u5316\u77e5\u8bc6\u5361\u7247\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09\n\nTODO(H7): Consider async task pattern for large documents.",
+        "operationId": "generate_card_api_v1_safety_knowledge_articles__article_id__generate_card_post",
+        "parameters": [
+          {
+            "name": "article_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Article Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-ppt": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u751f\u6210 PPT",
+        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210 PPT\uff08.pptx \u6587\u4ef6\uff09\n\nTODO(H7): This operation can take >5s. Consider converting to async task + polling:\n1. Accept request \u2192 create task record \u2192 return task_id immediately\n2. Background worker generates PPT\n3. Client polls /tasks/{task_id}/status for completion",
+        "operationId": "generate_ppt_api_v1_safety_knowledge_articles__article_id__generate_ppt_post",
+        "parameters": [
+          {
+            "name": "article_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Article Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-articles/{article_id}/ppt-history": {
+      "get": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u83b7\u53d6 PPT \u751f\u6210\u5386\u53f2",
+        "description": "\u67e5\u8be2\u67d0\u6587\u7ae0\u7684 PPT \u751f\u6210\u5386\u53f2\u8bb0\u5f55\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09",
+        "operationId": "get_ppt_history_api_v1_safety_knowledge_articles__article_id__ppt_history_get",
+        "parameters": [
+          {
+            "name": "article_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Article Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-summary": {
+      "post": {
+        "tags": [
+          "\u5b89\u5168\u7ba1\u7406"
+        ],
+        "summary": "\u751f\u6210\u6458\u8981",
+        "description": "\u4f7f\u7528 AI \u4ece\u6587\u7ae0\u5185\u5bb9\u751f\u6210\u6458\u8981\uff08\u59d4\u6258\u7ed9 KnowledgeService\uff09\n\nTODO(H7): Consider async task pattern for large documents.",
+        "operationId": "generate_summary_api_v1_safety_knowledge_articles__article_id__generate_summary_post",
+        "parameters": [
+          {
+            "name": "article_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Article Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -27827,7 +28941,7 @@
           "\u5b89\u5168\u7ba1\u7406"
         ],
         "summary": "\u5bfc\u51fa\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26 Excel",
-        "description": "\u5bfc\u51fa\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26\u4e3a Excel \u6587\u4ef6\uff0c\u652f\u6301 AI \u81ea\u7136\u8bed\u8a00\u7b5b\u9009",
+        "description": "\u5bfc\u51fa\u7279\u6b8a\u4f5c\u4e1a\u53f0\u8d26\u4e3a Excel \u6587\u4ef6\uff0c\u652f\u6301 AI \u81ea\u7136\u8bed\u8a00\u7b5b\u9009\n\nTODO(H7): Excel export can take >5s for large datasets. Consider async task + polling pattern.",
         "operationId": "handler_api_v1_safety_special_operation_ledger_export_post",
         "parameters": [
           {
@@ -27859,14 +28973,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "title": "Response Handler Api V1 Safety Special Operation Ledger Export Post"
-                }
-              }
-            }
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -30002,7 +31109,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyPlatformListApiResponse"
                 }
               }
             }
@@ -30091,7 +31198,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyOverviewApiResponse"
                 }
               }
             }
@@ -30150,7 +31257,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigApiResponse"
                 }
               }
             }
@@ -30314,7 +31421,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigListApiResponse"
                 }
               }
             }
@@ -30373,7 +31480,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigApiResponse"
                 }
               }
             }
@@ -30440,7 +31547,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeviceConfigApiResponse"
                 }
               }
             }
@@ -30497,7 +31604,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -30646,7 +31753,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDataListApiResponse"
                 }
               }
             }
@@ -30747,7 +31854,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyStatisticsApiResponse"
                 }
               }
             }
@@ -30806,7 +31913,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CollectTriggerApiResponse"
                 }
               }
             }
@@ -30914,7 +32021,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CollectLogListApiResponse"
                 }
               }
             }
@@ -30973,7 +32080,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/CollectLogDetailApiResponse"
                 }
               }
             }
@@ -31032,7 +32139,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleApiResponse"
                 }
               }
             }
@@ -31160,7 +32267,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleListApiResponse"
                 }
               }
             }
@@ -31219,7 +32326,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleApiResponse"
                 }
               }
             }
@@ -31286,7 +32393,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRuleApiResponse"
                 }
               }
             }
@@ -31343,7 +32450,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -31509,7 +32616,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRecordListApiResponse"
                 }
               }
             }
@@ -31578,7 +32685,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyAlertRecordApiResponse"
                 }
               }
             }
@@ -31638,7 +32745,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopApiResponse"
                 }
               }
             }
@@ -31749,7 +32856,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopListApiResponse"
                 }
               }
             }
@@ -31809,7 +32916,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopApiResponse"
                 }
               }
             }
@@ -31877,7 +32984,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyWorkshopApiResponse"
                 }
               }
             }
@@ -31935,7 +33042,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -31995,7 +33102,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyRecordApiResponse"
                 }
               }
             }
@@ -32143,7 +33250,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyRecordListApiResponse"
                 }
               }
             }
@@ -32203,7 +33310,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyBatchCreateApiResponse"
                 }
               }
             }
@@ -32326,7 +33433,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/MonthlySummaryApiResponse"
                 }
               }
             }
@@ -32386,7 +33493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyMonthlyRecordApiResponse"
                 }
               }
             }
@@ -32444,7 +33551,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }
               }
             }
@@ -32504,7 +33611,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/FeishuImportApiResponse"
                 }
               }
             }
@@ -32553,7 +33660,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -32602,7 +33709,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -32651,7 +33758,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -32710,7 +33817,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -32759,7 +33866,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -32817,7 +33924,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/SyncJobApiResponse"
                 }
               }
             }
@@ -32876,7 +33983,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/UnitConsumptionTargetApiResponse"
                 }
               }
             }
@@ -32944,7 +34051,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/UnitConsumptionTargetApiResponse"
                 }
               }
             }
@@ -33013,7 +34120,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/UnitConsumptionTargetApiResponse"
                 }
               }
             }
@@ -33073,7 +34180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AIAnalysisApiResponse"
                 }
               }
             }
@@ -84093,6 +85200,28 @@
   },
   "components": {
     "schemas": {
+      "AIAnalysisApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AIAnalysisResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "AIAnalysisApiResponse"
+      },
       "AIAnalysisRequest": {
         "properties": {
           "workshop_id": {
@@ -84131,6 +85260,96 @@
         ],
         "title": "AIAnalysisRequest",
         "description": "AI \u80fd\u8017\u5206\u6790\u8bf7\u6c42\uff08V2 - \u652f\u6301\u5355\u8017\u5206\u6790\uff09"
+      },
+      "AIAnalysisResponse": {
+        "properties": {
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id"
+          },
+          "workshop_name": {
+            "type": "string",
+            "title": "Workshop Name"
+          },
+          "analysis_month": {
+            "type": "string",
+            "title": "Analysis Month"
+          },
+          "total_energy_kwh": {
+            "type": "number",
+            "title": "Total Energy Kwh"
+          },
+          "production_items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionItemDetail"
+            },
+            "type": "array",
+            "title": "Production Items"
+          },
+          "converted_production": {
+            "type": "number",
+            "title": "Converted Production"
+          },
+          "actual_unit_consumption": {
+            "type": "number",
+            "title": "Actual Unit Consumption"
+          },
+          "target_unit_consumption": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Unit Consumption"
+          },
+          "deviation_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Rate"
+          },
+          "deviation_status": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "warning",
+              "critical",
+              "unknown"
+            ],
+            "title": "Deviation Status"
+          },
+          "ai_suggestion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AISuggestion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "workshop_id",
+          "workshop_name",
+          "analysis_month",
+          "total_energy_kwh",
+          "production_items",
+          "converted_production",
+          "actual_unit_consumption",
+          "deviation_status"
+        ],
+        "title": "AIAnalysisResponse",
+        "description": "AI \u80fd\u8017\u5206\u6790\u54cd\u5e94\uff08\u652f\u6301\u591a\u4ea7\u54c1\uff09"
       },
       "AIConfirmData": {
         "properties": {
@@ -84223,6 +85442,53 @@
         ],
         "title": "AIFillResultItem",
         "description": "AI \u586b\u5145\u5b57\u6bb5\u7ed3\u679c"
+      },
+      "AISuggestion": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "\u72b6\u6001\uff1anormal/warning/critical/info/unknown"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "\u4e00\u53e5\u8bdd\u603b\u7ed3"
+          },
+          "detailed_analysis": {
+            "type": "string",
+            "title": "Detailed Analysis",
+            "description": "\u8be6\u7ec6\u5206\u6790"
+          },
+          "recommendations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommendations",
+            "description": "\u5efa\u8bae\u5217\u8868"
+          },
+          "confidence_level": {
+            "type": "string",
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Confidence Level",
+            "description": "\u7f6e\u4fe1\u5ea6"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "summary",
+          "detailed_analysis",
+          "recommendations",
+          "confidence_level"
+        ],
+        "title": "AISuggestion",
+        "description": "AI \u5efa\u8bae\u5bf9\u8c61"
       },
       "AIWorkflowConfigCreate": {
         "properties": {
@@ -87230,6 +88496,23 @@
         ],
         "title": "Body_handler_api_v1_safety_knowledge_articles__article_id__upload_post"
       },
+      "Body_handler_api_v1_safety_knowledge_articles_batch_import_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_handler_api_v1_safety_knowledge_articles_batch_import_post"
+      },
       "Body_handler_api_v1_safety_regulations__regulation_id__upload_post": {
         "properties": {
           "file": {
@@ -90014,6 +91297,285 @@
         "type": "object",
         "title": "ClosingUpdate",
         "description": "\u5173\u95ed\u66f4\u65b0"
+      },
+      "CollectLogDetailApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CollectLogDetailResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CollectLogDetailApiResponse"
+      },
+      "CollectLogDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "platform_code": {
+            "type": "string",
+            "title": "Platform Code"
+          },
+          "collect_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collect Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "device_count": {
+            "type": "integer",
+            "title": "Device Count"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "devices": {
+            "items": {
+              "$ref": "#/components/schemas/CollectLogDeviceDetail"
+            },
+            "type": "array",
+            "title": "Devices",
+            "description": "\u8bbe\u5907\u6570\u636e\u8be6\u60c5\u5217\u8868"
+          },
+          "time_range_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Range Start",
+            "description": "\u6570\u636e\u8986\u76d6\u8d77\u59cb\u65f6\u95f4"
+          },
+          "time_range_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time Range End",
+            "description": "\u6570\u636e\u8986\u76d6\u7ed3\u675f\u65f6\u95f4"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_code",
+          "collect_time",
+          "status",
+          "device_count",
+          "success_count",
+          "error_message",
+          "created_at"
+        ],
+        "title": "CollectLogDetailResponse",
+        "description": "\u91c7\u96c6\u65e5\u5fd7\u8be6\u60c5\u54cd\u5e94"
+      },
+      "CollectLogDeviceDetail": {
+        "properties": {
+          "device_name": {
+            "type": "string",
+            "title": "Device Name",
+            "description": "\u8bbe\u5907\u540d\u79f0"
+          },
+          "platform_device_code": {
+            "type": "string",
+            "title": "Platform Device Code",
+            "description": "\u5e73\u53f0\u8bbe\u5907\u7f16\u7801"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type",
+            "description": "\u80fd\u6e90\u7c7b\u578b"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "description": "\u91c7\u96c6\u503c"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "description": "\u8ba1\u91cf\u5355\u4f4d"
+          },
+          "data_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Data Timestamp",
+            "description": "\u6570\u636e\u65f6\u95f4\u70b9"
+          }
+        },
+        "type": "object",
+        "required": [
+          "device_name",
+          "platform_device_code",
+          "energy_type",
+          "value",
+          "unit",
+          "data_timestamp"
+        ],
+        "title": "CollectLogDeviceDetail",
+        "description": "\u91c7\u96c6\u65e5\u5fd7\u4e2d\u5355\u4e2a\u8bbe\u5907\u7684\u6570\u636e\u8be6\u60c5"
+      },
+      "CollectLogListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/CollectLogResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CollectLogListApiResponse"
+      },
+      "CollectLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "platform_code": {
+            "type": "string",
+            "title": "Platform Code"
+          },
+          "collect_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collect Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "device_count": {
+            "type": "integer",
+            "title": "Device Count"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_code",
+          "collect_time",
+          "status",
+          "device_count",
+          "success_count",
+          "error_message",
+          "created_at"
+        ],
+        "title": "CollectLogResponse"
+      },
+      "CollectTriggerApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CollectTriggerApiResponse"
       },
       "CollectTriggerRequest": {
         "properties": {
@@ -99204,6 +100766,197 @@
         "type": "object",
         "title": "EmployeeUpdate"
       },
+      "EnergyAlertRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyAlertRecordResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRecordApiResponse"
+      },
+      "EnergyAlertRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyAlertRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRecordListApiResponse"
+      },
+      "EnergyAlertRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "rule_id": {
+            "type": "string",
+            "title": "Rule Id"
+          },
+          "device_config_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Config Id"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "alert_level": {
+            "type": "string",
+            "title": "Alert Level"
+          },
+          "trigger_value": {
+            "type": "number",
+            "title": "Trigger Value"
+          },
+          "threshold_value": {
+            "type": "number",
+            "title": "Threshold Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "alert_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Alert Time"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "processed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed By"
+          },
+          "processed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processed At"
+          },
+          "process_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rule_id",
+          "device_config_id",
+          "energy_type",
+          "alert_level",
+          "trigger_value",
+          "threshold_value",
+          "unit",
+          "alert_time",
+          "status",
+          "processed_by",
+          "processed_at",
+          "process_note",
+          "created_at"
+        ],
+        "title": "EnergyAlertRecordResponse"
+      },
+      "EnergyAlertRuleApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyAlertRuleResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRuleApiResponse"
+      },
       "EnergyAlertRuleCreate": {
         "properties": {
           "rule_name": {
@@ -99364,6 +101117,171 @@
           "notify_users"
         ],
         "title": "EnergyAlertRuleCreate"
+      },
+      "EnergyAlertRuleListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyAlertRuleResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyAlertRuleListApiResponse"
+      },
+      "EnergyAlertRuleResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "rule_name": {
+            "type": "string",
+            "title": "Rule Name"
+          },
+          "rule_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Description"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "monitor_metric": {
+            "type": "string",
+            "title": "Monitor Metric"
+          },
+          "threshold_type": {
+            "type": "string",
+            "title": "Threshold Type"
+          },
+          "threshold_value": {
+            "type": "number",
+            "title": "Threshold Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "alert_level": {
+            "type": "string",
+            "title": "Alert Level"
+          },
+          "notify_method": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notify Method"
+          },
+          "notify_users": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notify Users"
+          },
+          "notify_frequency": {
+            "type": "string",
+            "title": "Notify Frequency"
+          },
+          "effective_time": {
+            "type": "string",
+            "title": "Effective Time"
+          },
+          "custom_time_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Time Start"
+          },
+          "custom_time_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Time End"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "rule_name",
+          "rule_description",
+          "energy_type",
+          "monitor_metric",
+          "threshold_type",
+          "threshold_value",
+          "unit",
+          "alert_level",
+          "notify_method",
+          "notify_users",
+          "notify_frequency",
+          "effective_time",
+          "custom_time_start",
+          "custom_time_end",
+          "is_enabled",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyAlertRuleResponse"
       },
       "EnergyAlertRuleUpdate": {
         "properties": {
@@ -99581,6 +101499,127 @@
         "type": "object",
         "title": "EnergyAlertRuleUpdate"
       },
+      "EnergyDataListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyDataResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyDataListApiResponse"
+      },
+      "EnergyDataResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "device_config_id": {
+            "type": "string",
+            "title": "Device Config Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "device_config_id",
+          "timestamp",
+          "value",
+          "unit",
+          "collected_at"
+        ],
+        "title": "EnergyDataResponse"
+      },
+      "EnergyDeleteResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "\u5220\u9664\u6210\u529f"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "EnergyDeleteResponse",
+        "description": "\u901a\u7528\u5220\u9664\u54cd\u5e94"
+      },
+      "EnergyDeviceConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyDeviceConfigResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyDeviceConfigApiResponse"
+      },
       "EnergyDeviceConfigCreate": {
         "properties": {
           "platform_code": {
@@ -99697,6 +101736,143 @@
           "unit"
         ],
         "title": "EnergyDeviceConfigCreate"
+      },
+      "EnergyDeviceConfigListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyDeviceConfigResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyDeviceConfigListApiResponse"
+      },
+      "EnergyDeviceConfigResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "platform_code": {
+            "type": "string",
+            "title": "Platform Code"
+          },
+          "platform_device_code": {
+            "type": "string",
+            "title": "Platform Device Code"
+          },
+          "device_name": {
+            "type": "string",
+            "title": "Device Name"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "api_endpoint": {
+            "type": "string",
+            "title": "Api Endpoint"
+          },
+          "workshop": {
+            "type": "string",
+            "title": "Workshop"
+          },
+          "production_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Line"
+          },
+          "monitor_level": {
+            "type": "string",
+            "title": "Monitor Level"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "collection_interval": {
+            "type": "integer",
+            "title": "Collection Interval"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "platform_code",
+          "platform_device_code",
+          "device_name",
+          "energy_type",
+          "api_endpoint",
+          "workshop",
+          "production_line",
+          "monitor_level",
+          "unit",
+          "collection_interval",
+          "is_enabled",
+          "remark",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyDeviceConfigResponse"
       },
       "EnergyDeviceConfigUpdate": {
         "properties": {
@@ -99855,6 +102031,52 @@
         "type": "object",
         "title": "EnergyDeviceConfigUpdate"
       },
+      "EnergyMonthlyBatchCreateApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyMonthlyBatchCreateApiResponse"
+      },
+      "EnergyMonthlyRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyMonthlyRecordResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyMonthlyRecordApiResponse"
+      },
       "EnergyMonthlyRecordBatchCreate": {
         "properties": {
           "records": {
@@ -99954,6 +102176,269 @@
         ],
         "title": "EnergyMonthlyRecordCreate"
       },
+      "EnergyMonthlyRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyMonthlyRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyMonthlyRecordListApiResponse"
+      },
+      "EnergyMonthlyRecordResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id"
+          },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type"
+          },
+          "record_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Record Date"
+          },
+          "date_range_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Range End"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workshop_id",
+          "energy_type",
+          "record_date",
+          "date_range_end",
+          "value",
+          "unit",
+          "source",
+          "remark",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyMonthlyRecordResponse"
+      },
+      "EnergyOverviewApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyOverviewApiResponse"
+      },
+      "EnergyPlatformListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyPlatformResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyPlatformListApiResponse"
+      },
+      "EnergyPlatformResponse": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "name"
+        ],
+        "title": "EnergyPlatformResponse"
+      },
+      "EnergyStatisticsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyStatisticsResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyStatisticsApiResponse"
+      },
+      "EnergyStatisticsResponse": {
+        "properties": {
+          "group_key": {
+            "type": "string",
+            "title": "Group Key",
+            "description": "\u5206\u7ec4\u952e(\u8f66\u95f4/\u4ea7\u7ebf/\u8bbe\u5907\u540d)"
+          },
+          "total_value": {
+            "type": "number",
+            "title": "Total Value",
+            "description": "\u80fd\u8017\u5408\u8ba1"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "description": "\u8ba1\u91cf\u5355\u4f4d"
+          },
+          "data_count": {
+            "type": "integer",
+            "title": "Data Count",
+            "description": "\u6570\u636e\u6761\u6570"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_key",
+          "total_value",
+          "unit",
+          "data_count"
+        ],
+        "title": "EnergyStatisticsResponse"
+      },
+      "EnergyWorkshopApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EnergyWorkshopResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyWorkshopApiResponse"
+      },
       "EnergyWorkshopCreate": {
         "properties": {
           "code": {
@@ -100013,6 +102498,106 @@
           "category"
         ],
         "title": "EnergyWorkshopCreate"
+      },
+      "EnergyWorkshopListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyWorkshopResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EnergyWorkshopListApiResponse"
+      },
+      "EnergyWorkshopResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "code",
+          "name",
+          "category",
+          "parent_id",
+          "sort_order",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EnergyWorkshopResponse"
       },
       "EnergyWorkshopUpdate": {
         "properties": {
@@ -102392,6 +104977,396 @@
         "title": "FeishuBotConfigRequest",
         "description": "\u98de\u4e66\u673a\u5668\u4eba\u914d\u7f6e\u8bf7\u6c42"
       },
+      "FeishuConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuConfigResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuConfigApiResponse"
+      },
+      "FeishuConfigResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "config_name": {
+            "type": "string",
+            "title": "Config Name",
+            "default": "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+          },
+          "app_id": {
+            "type": "string",
+            "title": "App Id",
+            "default": ""
+          },
+          "app_secret_configured": {
+            "type": "boolean",
+            "title": "App Secret Configured",
+            "default": false
+          },
+          "app_secret_masked": {
+            "type": "string",
+            "title": "App Secret Masked",
+            "default": ""
+          },
+          "card_callback_verification_token_configured": {
+            "type": "boolean",
+            "title": "Card Callback Verification Token Configured",
+            "default": false
+          },
+          "card_callback_verification_token_masked": {
+            "type": "string",
+            "title": "Card Callback Verification Token Masked",
+            "default": ""
+          },
+          "card_callback_encrypt_key_configured": {
+            "type": "boolean",
+            "title": "Card Callback Encrypt Key Configured",
+            "default": false
+          },
+          "card_callback_encrypt_key_masked": {
+            "type": "string",
+            "title": "Card Callback Encrypt Key Masked",
+            "default": ""
+          },
+          "card_callback_url": {
+            "type": "string",
+            "title": "Card Callback Url",
+            "default": "/api/v1/identity/feishu/card-callback"
+          },
+          "sync_root_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Root Department Id"
+          },
+          "sync_member_department_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Member Department Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          },
+          "last_sync_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Status"
+          },
+          "last_sync_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Sync Message"
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "last_diagnostic_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Status"
+          },
+          "last_diagnostic_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Message"
+          },
+          "last_diagnostic_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnostic Result"
+          },
+          "last_diagnosed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Diagnosed At"
+          }
+        },
+        "type": "object",
+        "title": "FeishuConfigResponse"
+      },
+      "FeishuConfigUpsert": {
+        "properties": {
+          "config_name": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Config Name",
+            "description": "\u914d\u7f6e\u540d\u79f0\uff0c\u4ec5\u7528\u4e8e Livzon \u52a9\u624b",
+            "default": "Livzon \u52a9\u624b\u98de\u4e66\u8bbe\u7f6e"
+          },
+          "app_id": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "App Id"
+          },
+          "app_secret": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "App Secret"
+          },
+          "card_callback_verification_token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Callback Verification Token"
+          },
+          "card_callback_encrypt_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Callback Encrypt Key"
+          },
+          "sync_root_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Root Department Id"
+          },
+          "sync_member_department_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Member Department Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "app_id"
+        ],
+        "title": "FeishuConfigUpsert"
+      },
+      "FeishuDiagnosticApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuDiagnosticResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuDiagnosticApiResponse"
+      },
+      "FeishuDiagnosticResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/FeishuDiagnosticStep"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "department_count": {
+            "type": "integer",
+            "title": "Department Count",
+            "default": 0
+          },
+          "sample_user_count": {
+            "type": "integer",
+            "title": "Sample User Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "message",
+          "steps"
+        ],
+        "title": "FeishuDiagnosticResult"
+      },
+      "FeishuDiagnosticStep": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "warning",
+              "error"
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status",
+          "message"
+        ],
+        "title": "FeishuDiagnosticStep"
+      },
       "FeishuEnergyImportRequest": {
         "properties": {
           "spreadsheet_token": {
@@ -102431,6 +105406,62 @@
         ],
         "title": "FeishuEnergyImportRequest",
         "description": "\u98de\u4e66\u8868\u683c\u5bfc\u5165\u8bf7\u6c42"
+      },
+      "FeishuEnergyImportResponse": {
+        "properties": {
+          "workshops_created": {
+            "type": "integer",
+            "title": "Workshops Created",
+            "default": 0
+          },
+          "workshops_existing": {
+            "type": "integer",
+            "title": "Workshops Existing",
+            "default": 0
+          },
+          "records_created": {
+            "type": "integer",
+            "title": "Records Created",
+            "default": 0
+          },
+          "records_skipped": {
+            "type": "integer",
+            "title": "Records Skipped",
+            "default": 0
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "title": "FeishuEnergyImportResponse",
+        "description": "\u98de\u4e66\u8868\u683c\u5bfc\u5165\u7ed3\u679c"
+      },
+      "FeishuImportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/FeishuEnergyImportResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "FeishuImportApiResponse"
       },
       "HTTPValidationError": {
         "properties": {
@@ -110550,6 +113581,50 @@
         "title": "ModuleSettingUpdate",
         "description": "Request schema for updating a setting value."
       },
+      "MonthlySummaryApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MonthlySummaryItem"
+            },
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MonthlySummaryApiResponse"
+      },
+      "MonthlySummaryItem": {
+        "properties": {
+          "total_value": {
+            "type": "number",
+            "title": "Total Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_value",
+          "unit"
+        ],
+        "title": "MonthlySummaryItem"
+      },
       "MonthlyTrend": {
         "properties": {
           "month": {
@@ -114407,6 +117482,35 @@
         },
         "type": "object",
         "title": "ProductUpdate"
+      },
+      "ProductionItemDetail": {
+        "properties": {
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "conversion_factor": {
+            "type": "number",
+            "title": "Conversion Factor"
+          },
+          "converted_quantity": {
+            "type": "number",
+            "title": "Converted Quantity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "quantity",
+          "conversion_factor",
+          "converted_quantity"
+        ],
+        "title": "ProductionItemDetail",
+        "description": "\u4ea7\u54c1\u4ea7\u91cf\u660e\u7ec6"
       },
       "ProductionPlanCreate": {
         "properties": {
@@ -128049,6 +131153,30 @@
         ],
         "title": "SupplierResponse"
       },
+      "SyncJobApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SyncJobApiResponse"
+      },
       "SyncTriggerRequest": {
         "properties": {
           "sourceCode": {
@@ -130592,6 +133720,28 @@
         ],
         "title": "TrueFalseQuestion"
       },
+      "UnitConsumptionTargetApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UnitConsumptionTargetResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "UnitConsumptionTargetApiResponse"
+      },
       "UnitConsumptionTargetCreate": {
         "properties": {
           "workshop_id": {
@@ -130621,6 +133771,52 @@
         ],
         "title": "UnitConsumptionTargetCreate",
         "description": "\u521b\u5efa\u5355\u8017\u76ee\u6807\u8bf7\u6c42"
+      },
+      "UnitConsumptionTargetResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "workshop_id": {
+            "type": "string",
+            "title": "Workshop Id"
+          },
+          "workshop_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workshop Name"
+          },
+          "target_month": {
+            "type": "string",
+            "title": "Target Month"
+          },
+          "target_unit_consumption": {
+            "type": "number",
+            "title": "Target Unit Consumption"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "workshop_id",
+          "target_month",
+          "target_unit_consumption",
+          "created_at"
+        ],
+        "title": "UnitConsumptionTargetResponse",
+        "description": "\u5355\u8017\u76ee\u6807\u54cd\u5e94"
       },
       "UnitConsumptionTargetUpdate": {
         "properties": {

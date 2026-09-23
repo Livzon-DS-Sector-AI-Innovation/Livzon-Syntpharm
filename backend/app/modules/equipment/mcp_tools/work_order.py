@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools.base import ToolResult
 
 from app.modules.equipment.mcp_tools._helpers import (
     _resolve_work_order,

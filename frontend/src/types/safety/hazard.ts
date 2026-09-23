@@ -46,7 +46,7 @@ export interface HazardReport {
   script1_review_status: string
   script2_review_status: string
   // ── AI 整改初审 ──
-  ai_review_result?: Record<string, any> | null
+  ai_review_result?: Record<string, unknown> | null
   ai_review_status: string
   ai_review_completed_at?: string | null
   created_at: string

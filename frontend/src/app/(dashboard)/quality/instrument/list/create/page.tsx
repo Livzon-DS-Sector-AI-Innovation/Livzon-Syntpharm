@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useRef } from 'react'
 import {
   Card,
@@ -258,12 +259,14 @@ export default function CreateInstrumentPage() {
                     重新上传
                   </Button>
                 </div>
-                <img
+                <Image
                   src={previewUrl}
                   alt="设备标签预览"
+                  width={400}
+                  height={200}
                   style={{
                     maxWidth: '100%',
-                    maxHeight: 200,
+                    height: 'auto',
                     objectFit: 'contain',
                     display: 'block',
                     margin: '0 auto',

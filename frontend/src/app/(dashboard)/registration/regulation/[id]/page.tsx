@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Spin, Button, Tag, App } from 'antd'
 import {
@@ -57,7 +57,7 @@ export default function RegulatoryDocumentDetailPage() {
   const [doc, setDoc] = useState<DocumentDetail | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadDetail = async () => {
+  const _loadDetail = async () => {
     setLoading(true)
     try {
       const data = await fetchDocumentDetail(docId)
@@ -74,8 +74,6 @@ export default function RegulatoryDocumentDetailPage() {
       setLoading(false)
     }
   }
-
-  useEffect(() => { loadDetail() }, [docId])
 
   if (loading) {
     return (

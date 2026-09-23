@@ -1,9 +1,8 @@
 'use client'
 
- 'use client'
 
 import { useState } from 'react'
-import { Form, Input, Upload, Button, App, Card, Radio, Typography } from 'antd'
+import { UploadFile,  Form, Input, Upload, Button, App, Card, Radio, Typography } from 'antd'
 import {
   InboxOutlined, ArrowLeftOutlined, CheckCircleFilled,
   FileTextOutlined, AuditOutlined, SyncOutlined,
@@ -47,7 +46,7 @@ export default function ValidationAuditNewClient() {
   const router = useRouter()
   const [form] = Form.useForm()
   const [submitting, setSubmitting] = useState(false)
-  const [fileList, setFileList] = useState<any[]>([])
+  const [fileList, setFileList] = useState<UploadFile[]>([])
   const [auditMode, setAuditMode] = useState<AuditMode>('protocol')
 
   const handleSubmit = async () => {
@@ -75,19 +74,19 @@ export default function ValidationAuditNewClient() {
         return
       }
 
-      const taskId = createResult.data.id
+      const taskId = createResult.data.id as string as string as string
 
       const formData = new FormData()
       for (const file of fileList) {
         const originFile = file.originFileObj || file
-        formData.append('files', originFile)
+        formData.append('files', originFile as File)
       }
-      const fileType = values.audit_mode === 'protocol_report' ? 'protocol' : values.audit_mode
+      const fileType = values.audit_mode === 'protocol_report' ? 'protocol' : (values.audit_mode as string)
       formData.append('file_type', fileType)
 
       const uploadResult = await uploadValidationAuditFiles(taskId, formData)
       if (!uploadResult.success) {
-        message.error(`文件上传失败: ${uploadResult.message}`)
+        message.error(`文件上传失败: ${uploadResult.message as string}`)
         setSubmitting(false)
         return
       }
@@ -96,7 +95,7 @@ export default function ValidationAuditNewClient() {
       router.push(`/registration/validation-audit/${taskId}`)
     } catch (error) {
       if (error instanceof Error) {
-        message.error(error.message)
+        message.error((error instanceof Error ? error.message : null))
       }
     } finally {
       setSubmitting(false)
@@ -285,7 +284,7 @@ export default function ValidationAuditNewClient() {
                       {f.name}
                     </span>
                     <span className="text-[var(--color-stone)] shrink-0">
-                      {(f.size / 1024 / 1024).toFixed(2)} MB
+                      {((f.size || 0) / 1024 / 1024).toFixed(2)} MB
                     </span>
                   </div>
                 ))}

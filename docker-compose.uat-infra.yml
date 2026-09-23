@@ -1,0 +1,71 @@
+# UAT 服务器 - 基础设施层
+# 运行: docker compose --env-file .env.uat -f docker-compose.uat-infra.yml up -d
+# 用途: 提供 UAT 专用的数据库、缓存、对象存储服务
+#
+# 容器名统一 uat- 前缀、网络统一 uat-net，与 test 环境（test- 前缀）互不干扰。
+# 数据目录独立于 ./postgres-data（test 环境使用），避免两个环境互相覆盖数据。
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: uat-postgres
+    restart: unless-stopped
+    env_file:
+      - .env.uat
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-erp_uat}
+      POSTGRES_USER: ${POSTGRES_USER:-erp_uat_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./uat-data/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-erp_uat_user} -d ${POSTGRES_DB:-erp_uat}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uat-net
+
+  redis:
+    image: redis:8-alpine
+    container_name: uat-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-redis_uat_pwd}"]
+    volumes:
+      - ./uat-data/redis:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_uat_pwd}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uat-net
+
+  minio:
+    image: minio/minio:latest
+    container_name: uat-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - ./uat-data/minio:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - uat-net
+
+networks:
+  uat-net:
+    driver: bridge

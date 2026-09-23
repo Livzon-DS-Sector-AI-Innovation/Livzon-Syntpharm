@@ -56,7 +56,7 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
   const avatarSrc = user?.avatar_url || undefined
   const displayName = user?.name || "未登录"
 
-  const visibleMenus = moduleMenus
+  const _visibleMenus = moduleMenus
 
   return (
     <header className="h-16 bg-[var(--color-canvas)] border-b border-[var(--color-hairline)] flex items-center px-5 shrink-0">

@@ -80,8 +80,8 @@ export function ReportPage({ projectId }: Props) {
       const data = await fetchReports(projectId)
       setReports(data)
       void loadDocGenMap()
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -118,8 +118,8 @@ export function ReportPage({ projectId }: Props) {
       await deleteReport(id)
       msgApi.success('删除成功')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -128,8 +128,8 @@ export function ReportPage({ projectId }: Props) {
       await updateReport(id, { status: active ? 'approved' : 'draft' })
       msgApi.success(active ? '已启用' : '已停用')
       loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '操作失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '操作失败')
     }
   }
 
@@ -181,7 +181,7 @@ export function ReportPage({ projectId }: Props) {
       render: (v: string) => <Tag color={statusColorMap[v] || 'default'}>{REPORT_STATUS_LABELS[v as RdReportStatus] || v}</Tag> },
     {
       title: '生成进度', key: 'doc_gen_progress', width: 180,
-      render: (_: any, record: RdReport) => {
+      render: (_: unknown, record: RdReport) => {
         const job = docGenMap[record.id]
         if (!job) return <span style={{ color: '#bfbfbf' }}>未生成</span>
         const statusLabel = DOC_GEN_STATUS_LABELS[job.status] || job.status
@@ -212,7 +212,7 @@ export function ReportPage({ projectId }: Props) {
     { title: '摘要', dataIndex: 'summary', key: 'summary', width: 200, ellipsis: true, render: (v: string) => v || '-' },
     {
       title: '操作', key: 'action', width: 260, fixed: 'right' as const,
-      render: (_: any, record: RdReport) => {
+      render: (_: unknown, record: RdReport) => {
         const docReady = hasCompletedDoc(record)
         return (
           <Space size="small" wrap>

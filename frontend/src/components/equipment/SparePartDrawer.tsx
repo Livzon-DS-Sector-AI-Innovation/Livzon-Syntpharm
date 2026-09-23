@@ -67,18 +67,18 @@ export function SparePartDrawer({ onRefresh }: SparePartDrawerProps) {
       }
       closeSparePartDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 
   return (
     <Drawer
       title={editingSparePart ? '编辑备件' : '新建备件'}
-      size={480}
+      width={480}
       open={sparePartDrawerOpen}
       onClose={closeSparePartDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeSparePartDrawer}>取消</Button>

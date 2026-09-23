@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, Row, Col, Typography, Button, Space, Spin } from 'antd'
 import {
   BookOutlined,
@@ -60,8 +60,22 @@ export default function RegistrationPage() {
   }
 
   useEffect(() => {
-    loadData()
+    let cancelled = false
+    const load = async () => {
+      setLoading(true)
+      try {
+        const data = await fetchLedgerSummary()
+        if (!cancelled) setSummary(data)
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
+    return () => { cancelled = true }
   }, [])
+
 
   const statCards: StatCard[] = [
     {

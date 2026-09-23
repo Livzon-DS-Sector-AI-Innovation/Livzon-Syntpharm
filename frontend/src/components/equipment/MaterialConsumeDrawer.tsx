@@ -42,8 +42,8 @@ export function MaterialConsumeDrawer({ workOrderId, spareParts, onRefresh }: Ma
       message.success('领料成功')
       setOpen(false)
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     } finally {
       setLoading(false)
     }
@@ -56,10 +56,10 @@ export function MaterialConsumeDrawer({ workOrderId, spareParts, onRefresh }: Ma
       </Button>
       <Drawer
         title="工单领料"
-        size={480}
+        width={480}
         open={open}
         onClose={() => setOpen(false)}
-        destroyOnHidden
+        destroyOnClose
         extra={
           <Space>
             <Button onClick={() => setOpen(false)}>取消</Button>

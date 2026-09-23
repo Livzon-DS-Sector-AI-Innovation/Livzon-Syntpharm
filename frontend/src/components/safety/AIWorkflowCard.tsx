@@ -8,8 +8,6 @@ import {
   FileTextOutlined,
   ThunderboltOutlined,
   RobotOutlined,
-  ExportOutlined,
-  SafetyCertificateOutlined,
 } from '@ant-design/icons'
 import type { MenuProps } from 'antd'
 import type { AIWorkflowConfig } from '@/types/safety'
@@ -38,7 +36,7 @@ export default function AIWorkflowCard({
 
   const menuInfo = WORKFLOW_MENU_MAP[workflow.module_code]
   const icon = WORKFLOW_ICONS[workflow.module_code] || '🤖'
-  const scriptCount = workflow.script_configs?.filter((s: any) => s.is_enabled).length || 0
+  const scriptCount = workflow.script_configs?.filter((s: { is_enabled: boolean }) => s.is_enabled).length || 0
   const totalScripts = workflow.script_configs?.length || 0
 
   const handleToggle = async (checked: boolean) => {

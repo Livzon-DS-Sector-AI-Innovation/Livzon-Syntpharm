@@ -40,14 +40,14 @@ export function StatsPage() {
         ])
         setStats(s)
         setProgress(p)
-      } catch (e: any) {
-        msgApi.error(e.message || '加载统计数据失败')
+      } catch (e: unknown) {
+        msgApi.error(e instanceof Error ? e.message : '加载统计数据失败')
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [])
+  }, [msgApi])
 
   if (loading) {
     return (
@@ -95,7 +95,7 @@ export function StatsPage() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      render: (status: string, record: any) => {
+      render: (status: string, record: RdProjectProgress) => {
         // Derive meaningful status from current_stage when status is always 'initiation'
         const stage = record.current_stage
         const stageStatusLabels: Record<string, string> = {
@@ -164,7 +164,7 @@ export function StatsPage() {
                 title="研发项目"
                 value={stats.projects.total}
                 prefix={<ProjectOutlined />}
-                styles={{ content: { color: '#1677ff' } }}
+                valueStyle={{ color: '#1677ff' }}
               />
             </Card>
           </Link>
@@ -176,7 +176,7 @@ export function StatsPage() {
                 title="研究项"
                 value={stats.tracks.total}
                 prefix={<ExperimentOutlined />}
-                styles={{ content: { color: '#7b3ff2' } }}
+                valueStyle={{ color: '#7b3ff2' }}
               />
             </Card>
           </Link>
@@ -188,7 +188,7 @@ export function StatsPage() {
                 title="交付物"
                 value={stats.deliverables.total}
                 prefix={<CheckCircleOutlined />}
-                styles={{ content: { color: '#52c41a' } }}
+                valueStyle={{ color: '#52c41a' }}
               />
             </Card>
           </Link>

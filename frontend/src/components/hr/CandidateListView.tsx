@@ -100,7 +100,7 @@ export default function CandidateListView({
       key: 'action',
       width: 140,
       fixed: 'right',
-      render: (_: any, record: Candidate) => (
+      render: (_: unknown, record: Candidate) => (
         <Space size="small">
           <a onClick={() => handleRowClick(record)}>
             <EyeOutlined /> 查看

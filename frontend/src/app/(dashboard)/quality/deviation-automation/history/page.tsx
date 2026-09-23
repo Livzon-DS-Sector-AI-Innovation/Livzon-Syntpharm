@@ -18,7 +18,7 @@ import {
   DownloadOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { useRouter } from 'next/navigation'
 
@@ -97,8 +97,8 @@ export default function HistoryPage() {
         pageSize,
         total: result.data.total,
       })
-    } catch (error: any) {
-      message.error(error.message)
+    } catch (error: unknown) {
+      message.error((error instanceof Error ? error.message : '操作失败'))
     } finally {
       setLoading(false)
     }
@@ -113,8 +113,8 @@ export default function HistoryPage() {
     fetchData(1, pagination.pageSize)
   }
 
-  const handleTableChange = (newPagination: any) => {
-    fetchData(newPagination.current, newPagination.pageSize)
+  const handleTableChange = (newPagination: TablePaginationConfig) => {
+    fetchData(newPagination.current ?? 1, newPagination.pageSize ?? 20)
   }
 
   const handleView = (record: TaskItem) => {

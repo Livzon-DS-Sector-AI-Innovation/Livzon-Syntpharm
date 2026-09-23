@@ -5,11 +5,7 @@ import type {
   ChapterAsset,
   PaginatedResponse,
   ApiResponse,
-  UploadResult,
-  UploadResponse,
   ChapterPreview,
-  MatchResult,
-  FieldFillResult,
   AssetCategory,
   AvailableAsset,
 } from '@/types/dossier-writer'

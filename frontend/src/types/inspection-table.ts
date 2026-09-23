@@ -30,7 +30,7 @@ export interface InspectionTable {
 export interface InspectionTableRow {
   id: number
   table_id: string
-  row_data: Record<string, any>
+  row_data: Record<string, unknown>
   sort_order: number
   created_at: string
 }
@@ -69,7 +69,7 @@ export interface TableListItem {
 export interface RecognizeResult {
   image_url?: string
   images?: Array<{ original_name: string; saved_path: string }>
-  recognized_rows: Record<string, any>[]
+  recognized_rows: Record<string, unknown>[]
   columns_config: Array<{
     key: string
     label: string

@@ -13,6 +13,7 @@ Fixtures override ``get_db`` and ``get_current_user`` only.
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import AsyncIterator
 
 import pytest
@@ -98,7 +99,8 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
     back at teardown, so no test can leak data to another test.
     """
     async with _test_engine.connect() as connection:
-        async with connection.begin():
+        trans = await connection.begin()
+        try:
             factory = async_sessionmaker(
                 bind=connection,
                 class_=AsyncSession,
@@ -107,7 +109,8 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
             )
             async with factory() as session:
                 yield session
-                await session.rollback()
+        finally:
+            await trans.rollback()
 
 
 @pytest.fixture
@@ -120,8 +123,8 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     """
     test_user = _make_user(
         "Test User",
-        "TEST-001",
-        feishu_open_id="test_open_id",
+        f"TEST-{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"test_open_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()
@@ -141,8 +144,8 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     """
     test_user = _make_user(
         "Admin User",
-        "ADMIN-001",
-        feishu_open_id="admin_open_id",
+        f"ADMIN-{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"admin_open_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()

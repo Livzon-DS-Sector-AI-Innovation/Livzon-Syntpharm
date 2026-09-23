@@ -74,3 +74,5 @@ export type {
   KnowledgeMenuGroup,
   KnowledgeMenuItem,
 } from './knowledgeConstants'
+
+export { default as KnowledgeImportModal } from './KnowledgeImportModal'

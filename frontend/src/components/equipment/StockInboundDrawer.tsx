@@ -36,18 +36,18 @@ export function StockInboundDrawer({ onRefresh }: StockInboundDrawerProps) {
       message.success('入库成功')
       closeStockInboundDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 
   return (
     <Drawer
       title="备件入库"
-      size={480}
+      width={480}
       open={stockInboundDrawerOpen}
       onClose={closeStockInboundDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeStockInboundDrawer}>取消</Button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState, useEffect, useRef, type CSSProperties } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { App, Table, Space, Input, Select, Button } from 'antd'
 import { EditOutlined, DeleteOutlined, SearchOutlined, ToolOutlined, PlusOutlined, EyeOutlined, ImportOutlined, SettingOutlined } from '@ant-design/icons'
 import { Equipment } from '@/types/equipment/generated-bridge'
@@ -21,7 +21,7 @@ const statusConfig: Record<EquipmentStatus, { color: string; bg: string }> = {
   '报废':   { color: '#e03131', bg: '#fde0ec' },
 }
 
-const statusPillMap: Record<EquipmentStatus, React.CSSProperties> = Object.fromEntries(
+const _statusPillMap: Record<EquipmentStatus, React.CSSProperties> = Object.fromEntries(
   Object.entries(statusConfig).map(([k, v]) => [k, statusPill(v.color, v.bg)])
 ) as Record<EquipmentStatus, React.CSSProperties>
 
@@ -51,10 +51,12 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
   const [localPage, setLocalPage] = useState(1)
   const [localPageSize, setLocalPageSize] = useState(20)
 
-  // resetKey 变化 → 重置到第一页
-  useEffect(() => {
+  // resetKey 变化 → 重置到第一页 (adjusting state during render)
+  const [prevResetKey, setPrevResetKey] = useState<unknown>(undefined)
+  if (resetKey !== prevResetKey) {
+    setPrevResetKey(resetKey)
     setLocalPage(1)
-  }, [resetKey])
+  }
 
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([])
 
@@ -62,7 +64,20 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
   const [detailEquipment, setDetailEquipment] = useState<Equipment | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [columnConfigOpen, setColumnConfigOpen] = useState(false)
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([])
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('equipment_visible_columns')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load column config:', e)
+    }
+    return ['asset_no', 'name', 'location_text', 'department', 'responsible', 'status', 'commissioning_date']
+  })
 
   // 动态计算 scroll.y，使表头和筛选栏固定，仅表格数据行滚动
   const rootRef = useRef<HTMLDivElement>(null)
@@ -81,26 +96,6 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
     })
     observer.observe(tableWrap)
     return () => observer.disconnect()
-  }, [])
-  // Load column config from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('equipment_visible_columns')
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setVisibleColumns(parsed)
-          return
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to load column config:', e)
-    }
-    // Default visible columns
-    setVisibleColumns([
-      'asset_no', 'name', 'location_text', 'department', 
-      'responsible', 'status', 'commissioning_date'
-    ])
   }, [])
 
   // 多选配置
@@ -124,7 +119,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
           setSelectedRowKeys([])
           onPageChange(localPage, localPageSize)
           onRefreshStatistics?.()
-        } catch (error) {
+        } catch (_error) {
           message.error('批量删除失败')
         }
       },
@@ -150,18 +145,18 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
             onPageChange(localPage, localPageSize)
           }
           onRefreshStatistics?.()
-        } catch (error: any) {
-          message.error(error?.message || '删除设备失败')
+        } catch (error: unknown) {
+          message.error((error instanceof Error ? error.message : null) || '删除设备失败')
         }
       },
     })
   }
 
   const columns = [
-    { title: '资产编号', dataIndex: 'asset_no', key: 'asset_no', width: 140, fixed: 'start' as const },
+    { title: '资产编号', dataIndex: 'asset_no', key: 'asset_no', width: 140, fixed: 'left' as const },
     { title: '标签号', dataIndex: 'label_no', key: 'label_no', width: 120, render: (v: string | null) => v || '-' },
     { title: '设备位号', dataIndex: 'equipment_tag', key: 'equipment_tag', width: 120, render: (v: string | null) => v || '-' },
-    { title: '设备名称', dataIndex: 'name', key: 'name', width: 180, fixed: 'start' as const, ellipsis: true },
+    { title: '设备名称', dataIndex: 'name', key: 'name', width: 180, fixed: 'left' as const, ellipsis: true },
     { title: '设备分类', dataIndex: 'equipment_class', key: 'equipment_class', width: 100, render: (v: string) => v ? `${v}类` : '-' },
     { title: '设备位置', dataIndex: 'location_text', key: 'location_text', width: 150, render: (v: string | null) => v || '-' },
     { title: '归属部门', dataIndex: 'department_name', key: 'department', width: 120,
@@ -190,7 +185,7 @@ export function EquipmentTable({ loading = false, onPageChange, resetKey, onRefr
         return quantity ?? '-'
       } 
     },
-    { title: '操作', key: 'action', width: 240, fixed: 'end' as const,
+    { title: '操作', key: 'action', width: 240, fixed: 'right' as const,
       render: (_: unknown, record: Equipment) => (
         <Space size={8}>
           <span role="button" onClick={() => { setDetailEquipment(record); setDetailOpen(true) }} style={linkPrimary}><EyeOutlined />详情</span>

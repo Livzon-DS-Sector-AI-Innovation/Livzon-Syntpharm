@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -37,29 +38,19 @@ export default function ModuleSettingsClient({
   moduleDescription,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
-  const [settings, setSettings] = useState<ModuleSetting[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [editingSetting, setEditingSetting] = useState<ModuleSetting | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
 
-  const loadSettings = async () => {
-    setLoading(true)
-    try {
+  const { data: settings = [], isLoading: loading } = useQuery({
+    queryKey: ['module-settings', moduleCode],
+    queryFn: async () => {
       const res = await getModuleSettings(moduleCode)
-      setSettings(res.data || [])
-    } catch (error) {
-      console.error('Failed to load settings:', error)
-      message.error('加载配置失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadSettings()
-  }, [moduleCode])
+      return res.data || []
+    },
+  })
 
   const handleEdit = (setting: ModuleSetting) => {
     setEditingSetting(setting)
@@ -82,7 +73,7 @@ export default function ModuleSettingsClient({
 
       message.success('配置已更新')
       setModalOpen(false)
-      loadSettings()
+      queryClient.invalidateQueries({ queryKey: ['module-settings', moduleCode] })
     } catch (error) {
       console.error('Failed to save setting:', error)
       message.error('保存失败')
@@ -144,7 +135,7 @@ export default function ModuleSettingsClient({
       key: 'key',
       width: 300,
       render: (key: string, setting: ModuleSetting) => (
-        <Space orientation="vertical" size={0}>
+        <Space direction="vertical" size={0}>
           <Text strong>{key}</Text>
           {setting.description && (
             <Text type="secondary" style={{ fontSize: 12 }}>
@@ -169,13 +160,13 @@ export default function ModuleSettingsClient({
       title: '当前值',
       dataIndex: 'value',
       key: 'value',
-      render: (_: any, setting: ModuleSetting) => renderValue(setting),
+      render: (_: unknown, setting: ModuleSetting) => renderValue(setting),
     },
     {
       title: '操作',
       key: 'action',
       width: 100,
-      render: (_: any, setting: ModuleSetting) => (
+      render: (_: unknown, setting: ModuleSetting) => (
         <Button
           type="link"
           icon={<EditOutlined />}
@@ -190,7 +181,7 @@ export default function ModuleSettingsClient({
   return (
     <>
       <Card>
-        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <div>
             <Title level={4}>{moduleName}配置</Title>
             <Text type="secondary">{moduleDescription}</Text>

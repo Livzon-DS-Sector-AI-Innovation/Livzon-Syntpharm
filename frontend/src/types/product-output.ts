@@ -8,41 +8,12 @@ import type { components } from '@/types/generated/schema'
 // product-output module TypeScript types
 
 import type { ApiResponse } from '@/types/production'
-// Annual Review types (manually defined since not in OpenAPI spec)
-export interface MonthlyTrend {
-  month: number
-  current_year_weight: number
-  previous_year_weight: number
-}
-
-export interface WorkshopRanking {
-  workshop: string
-  total_weight: number
-  batch_count: number
-}
-
-export interface TopProduct {
-  key: string
-  product_name: string
-  total_weight: number
-  batch_count: number
-}
-
-export interface AnnualOverview {
-  total_weight: number
-  weight_yoy: number
-  total_batches: number
-  batch_yoy: number
-  active_workshops: number
-  active_products: number
-}
-
-export interface AnnualReviewData {
-  overview: AnnualOverview
-  monthly_trend: MonthlyTrend[]
-  workshop_ranking: WorkshopRanking[]
-  top_products: TopProduct[]
-}
+// Annual Review types (from generated schema)
+export type MonthlyTrend = components["schemas"]["MonthlyTrend"]
+export type WorkshopRanking = components["schemas"]["WorkshopRanking"]
+export type TopProduct = components["schemas"]["TopProduct"]
+export type AnnualOverview = components["schemas"]["AnnualOverview"]
+export type AnnualReviewData = components["schemas"]["AnnualReviewResponse"]
 
 export type { ApiResponse }
 

@@ -2,7 +2,7 @@
 import { apiGet } from '@/lib/api/client'
 import { deleteRegistrationProject, createRegistrationProject, updateRegistrationProject } from '@/actions/registration'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Table, Button, Space, Tag, Modal, Form, Input, Select, DatePicker,
@@ -71,9 +71,6 @@ function ProjectsContent() {
     }
   }
 
-  useEffect(() => {
-    loadProjects()
-  }, [])
 
   const handleAdd = () => {
     setEditingProject(null)

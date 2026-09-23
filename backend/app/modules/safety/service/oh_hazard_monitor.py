@@ -106,16 +106,23 @@ class OhHazardMonitorService:
         for i, item in enumerate(results):
             value = item.get("detection_value")
             limit_val = item.get("oel_limit")
-            if value is not None and limit_val is not None and limit_val > 0:
-                ratio = value / limit_val
+            # 转换为数值类型，避免字符串比较错误
+            try:
+                value_float = float(value) if value is not None else None
+                limit_float = float(limit_val) if limit_val is not None else None
+            except (TypeError, ValueError):
+                value_float = None
+                limit_float = None
+            if value_float is not None and limit_float is not None and limit_float > 0:
+                ratio = value_float / limit_float
                 if ratio > 1.0:
                     results[i]["compliance_status"] = "exceeding"
                     # 自动创建异常记录
                     abnormality_records.append(
                         {
                             "abnormality_desc": (
-                                f"{item.get('factor_name', '未知因素')} 检测值 {value} {item.get('unit', '')} "
-                                f"超过OEL限值 {limit_val} {item.get('unit', '')}"
+                                f"{item.get('factor_name', '未知因素')} 检测值 {value_float} {item.get('unit', '')} "
+                                f"超过OEL限值 {limit_float} {item.get('unit', '')}"
                             ),
                             "corrective_action": "",
                             "responsible_person": "",

@@ -1,7 +1,7 @@
 'use client'
 
 import { fetchPreviewPush, fetchPreviewPull, fetchUndoLastSync } from '@/actions/product-sync'
-import {useEffect, useState} from 'react'
+import { useState } from 'react'
 import {
   Table,
   Button,
@@ -23,7 +23,8 @@ import {
   Dropdown,
   Alert,
 } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
+import type { SorterResult, FilterValue } from 'antd/es/table/interface'
 import {
   PlusOutlined,
   SearchOutlined,
@@ -54,10 +55,37 @@ import {
   pullFromFeishu,
 } from '@/actions/product-output'
 import { getProduct } from '@/actions/product'
-import type { ProductOutput, ProductOutputFormData } from '@/types/product-output'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import type { ProductOutput, ProductOutputFormData, ProductOutputQueryParams } from '@/types/product-output'
 import ProductSyncConfig from '@/components/production/product/ProductSyncConfig'
 import type { Product } from '@/types/product'
 import dayjs from 'dayjs'
+
+interface PreviewRecord {
+  row_num: number
+  workshop: string
+  product_name: string
+  batch_no: string
+  production_date: string
+  weight: number
+  unit?: string
+  is_duplicate: boolean
+  product_found: boolean
+}
+
+interface InvalidDetail {
+  row: number
+  error: string
+}
+
+interface PreviewImportData {
+  total_rows: number
+  new_records: number
+  duplicate_records: number
+  not_found_product: number
+  records: PreviewRecord[]
+  invalid_details?: InvalidDetail[]
+}
 
 const { Title, Text } = Typography
 
@@ -68,12 +96,9 @@ export default function ProductOutputRecordsPage() {
   const productId = params.productId as string
   const { message } = App.useApp()
 
-  const [product, setProduct] = useState<Product | null>(null)
-  const [records, setRecords] = useState<ProductOutput[]>([])
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
-  const [loading, setLoading] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null)
 
@@ -83,7 +108,7 @@ export default function ProductOutputRecordsPage() {
   const [form] = Form.useForm()
 
   const [importModalVisible, setImportModalVisible] = useState(false)
-  const [previewData, setPreviewData] = useState<any>(null)
+  const [previewData, setPreviewData] = useState<PreviewImportData | null>(null)
   const [lastBatchId, setLastBatchId] = useState<string | null>(null)
   const [importing, setImporting] = useState(false)
   const [importFile, setImportFile] = useState<File | null>(null)
@@ -91,31 +116,31 @@ export default function ProductOutputRecordsPage() {
   const [bitableUrl, setBitableUrl] = useState('')
   const [bitableImporting, setBitableImporting] = useState(false)
   const [syncing, setSyncing] = useState(false)
-  const [_lastSyncAt, setLastSyncAt] = useState<string | null>(null)
+  const [_lastSyncAt, _setLastSyncAt] = useState<string | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
   const [sortInfo, setSortInfo] = useState<{ field: string; order: 'asc' | 'desc' } | null>(null)
 
-  const [summary, setSummary] = useState<{
-    daily: number
-    monthly: number
-    yearly: number
-  }>({ daily: 0, monthly: 0, yearly: 0 })
 
-  const loadProduct = async () => {
-    try {
-      const response = await getProduct(productId)
-      if (response.code === 200) {
-        setProduct(response.data)
+
+  const { data: product = null } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: async () => {
+      try {
+        const response = await getProduct(productId) as { code: number; data: unknown }
+        if (response.code === 200) {
+          return response.data as Product
+        }
+      } catch {
+        message.error('加载产品信息失败')
       }
-    } catch {
-      message.error('加载产品信息失败')
-    }
-  }
+      return null
+    },
+  })
 
-  const loadRecords = async () => {
-    setLoading(true)
-    try {
-      const params: any = {
+  const { data: recordsData, isLoading: loading } = useQuery({
+    queryKey: ['product-outputs', { page, pageSize, productId, sortInfo, searchText, dateRange: dateRange ? [dateRange[0]?.toISOString(), dateRange[1]?.toISOString()] : null }],
+    queryFn: async () => {
+      const params: ProductOutputQueryParams = {
         page,
         page_size: pageSize,
         product_id: productId,
@@ -130,53 +155,45 @@ export default function ProductOutputRecordsPage() {
 
       const response = await getProductOutputs(params)
       if (response.code === 200) {
-        setRecords(response.data || [])
-        setTotal(response.meta?.total || 0)
+        return { records: response.data || [], total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { records: [], total: 0 }
+    },
+  })
 
-  const loadSummary = async () => {
-    try {
-      const today = dayjs().format('YYYY-MM-DD')
-      const month = dayjs().format('YYYY-MM')
-      const year = dayjs().year()
+  const records = recordsData?.records || []
+  const total = recordsData?.total || 0
 
-      const [dailyRes, monthlyRes, yearlyRes] = await Promise.all([
-        getSummary({ target_date: today, product_id: productId }),
-        getSummary({ month, product_id: productId }),
-        getSummary({ year, product_id: productId }),
-      ])
+  const { data: summary = { daily: 0, monthly: 0, yearly: 0 } } = useQuery({
+    queryKey: ['product-output-summary', productId],
+    queryFn: async () => {
+      try {
+        const today = dayjs().format('YYYY-MM-DD')
+        const month = dayjs().format('YYYY-MM')
+        const year = dayjs().year()
 
-      setSummary({
-        daily: dailyRes.data?.grand_total || 0,
-        monthly: monthlyRes.data?.grand_total || 0,
-        yearly: yearlyRes.data?.grand_total || 0,
-      })
-    } catch {
-      // ignore
-    }
-  }
+        const [dailyRes, monthlyRes, yearlyRes] = await Promise.all([
+          getSummary({ target_date: today, product_id: productId }),
+          getSummary({ month, product_id: productId }),
+          getSummary({ year, product_id: productId }),
+        ])
 
-  useEffect(() => {
-    loadProduct()
-  }, [productId])
+        return {
+          daily: dailyRes.data?.grand_total || 0,
+          monthly: monthlyRes.data?.grand_total || 0,
+          yearly: yearlyRes.data?.grand_total || 0,
+        }
+      } catch {
+        return { daily: 0, monthly: 0, yearly: 0 }
+      }
+    },
+  })
 
-  useEffect(() => {
-    loadRecords()
-  }, [page, pageSize, productId, sortInfo])
 
-  useEffect(() => {
-    loadSummary()
-  }, [productId])
 
   const handleSearch = () => {
     setPage(1)
-    loadRecords()
+    queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
   }
 
   const handleAdd = () => {
@@ -209,8 +226,8 @@ export default function ProductOutputRecordsPage() {
           const response = await deleteProductOutput(id)
           if (response.code === 200) {
             message.success('删除成功')
-            loadRecords()
-            loadSummary()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+            queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -247,8 +264,8 @@ export default function ProductOutputRecordsPage() {
       if (response.code === 200) {
         message.success(editingRecord ? '更新成功' : '创建成功')
         setModalVisible(false)
-        loadRecords()
-        loadSummary()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+        queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
       } else {
         message.error(response.message || '操作失败')
       }
@@ -264,10 +281,11 @@ export default function ProductOutputRecordsPage() {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const response = await fetchPreviewImport(formData)
+      const response = await fetchPreviewImport(formData) as { code: number; message: string; data: Record<string, unknown> }
       if (response.code === 200) {
-        setPreviewData(response.data)
-        message.info(`预览完成：共 ${response.data.total_rows} 行，可导入 ${response.data.new_records} 行`)
+        const respData = response.data as unknown as PreviewImportData
+        setPreviewData(respData)
+        message.info(`预览完成：共 ${respData.total_rows} 行，可导入 ${respData.new_records} 行`)
       } else {
         message.error(response.message || '预览失败')
       }
@@ -290,8 +308,8 @@ export default function ProductOutputRecordsPage() {
         setImportModalVisible(false)
         setPreviewData(null)
         setImportFile(null)
-        loadRecords()
-        loadSummary()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+        queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
       } else {
         message.error(response.message || '导入失败')
       }
@@ -319,8 +337,8 @@ export default function ProductOutputRecordsPage() {
           if (response.code === 200) {
             message.success(response.message || '撤销成功')
             setLastBatchId(null)
-            loadRecords()
-            loadSummary()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+            queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
           } else {
             message.error(response.message || '撤销失败')
           }
@@ -348,8 +366,8 @@ export default function ProductOutputRecordsPage() {
           if (response.code === 200) {
             message.success(response.message || '批量删除成功')
             setSelectedRowKeys([])
-            loadRecords()
-            loadSummary()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+            queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
           } else {
             message.error(response.message || '批量删除失败')
           }
@@ -366,7 +384,7 @@ export default function ProductOutputRecordsPage() {
       const res = await pushToFeishu(productId)
       if (res.code === 200) {
         message.success(res.data?.message || '推送成功')
-        loadRecords()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
       } else {
         message.error(res.message || '推送失败')
       }
@@ -383,7 +401,7 @@ export default function ProductOutputRecordsPage() {
       const res = await pullFromFeishu(productId)
       if (res.code === 200) {
         message.success(res.data?.message || '拉取成功')
-        loadRecords()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
       } else {
         message.error(res.message || '拉取失败')
       }
@@ -397,7 +415,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPush = async () => {
     try {
-      const data = await fetchPreviewPush(productId)
+      const data = await fetchPreviewPush(productId) as { code: number; message: string; data: { to_create: number; to_update: number; to_skip: number } }
       if (data.code === 200) {
         Modal.info({
           title: '推送预览',
@@ -420,7 +438,7 @@ export default function ProductOutputRecordsPage() {
 
   const handlePreviewPull = async () => {
     try {
-      const data = await fetchPreviewPull(productId)
+      const data = await fetchPreviewPull(productId) as { code: number; message: string; data: { to_create: number; to_update: number } }
       if (data.code === 200) {
         Modal.info({
           title: '拉取预览',
@@ -446,10 +464,10 @@ export default function ProductOutputRecordsPage() {
       content: '确定要撤销上次同步操作吗？此操作不可恢复。',
       onOk: async () => {
         try {
-          const data = await fetchUndoLastSync(productId)
+          const data = await fetchUndoLastSync(productId) as { code: number; message: string }
           if (data.code === 200) {
             message.success(data.message || '撤销成功')
-            loadRecords()
+            queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
           } else {
             message.error(data.message || '撤销失败')
           }
@@ -512,8 +530,8 @@ export default function ProductOutputRecordsPage() {
         message.success(response.message || '从飞书导入成功')
         setBitableModalVisible(false)
         setBitableUrl('')
-        loadRecords()
-        loadSummary()
+        queryClient.invalidateQueries({ queryKey: ['product-outputs'] })
+        queryClient.invalidateQueries({ queryKey: ['product-output-summary'] })
       } else {
         message.error(response.message || '从飞书导入失败')
       }
@@ -534,7 +552,7 @@ export default function ProductOutputRecordsPage() {
   }
 
   // 表单值变化监听：当结束日期被清空时，自动设置备注为"生产中"
-  const handleFormValuesChange = (changedValues: any, allValues: any) => {
+  const handleFormValuesChange = (changedValues: Partial<ProductOutputFormData>, allValues: ProductOutputFormData) => {
     if ('end_date' in changedValues) {
       if (!changedValues.end_date && allValues.production_date) {
         // 结束日期被清空，且有生产日期，自动设置备注为"生产中"
@@ -606,70 +624,29 @@ export default function ProductOutputRecordsPage() {
     },
   ]
 
-  const handleTableChange = (_pagination: any, _filters: any, sorter: any) => {
-    console.log('handleTableChange called', { sorter, sorterField: sorter?.field, sorterOrder: sorter?.order })
-    if (sorter && sorter.order) {
+  const handleTableChange = (_pagination: TablePaginationConfig, _filters: Record<string, FilterValue | null>, sorter: SorterResult<ProductOutput> | SorterResult<ProductOutput>[]) => {
+    // Multi-sort not supported; use only the first sorter
+    const s: SorterResult<ProductOutput> | undefined = Array.isArray(sorter) ? sorter[0] : sorter
+    console.log('handleTableChange called', { sorter, sorterField: s?.field, sorterOrder: s?.order })
+    if (s && s.order) {
       const fieldMap: Record<string, string> = {
         batch_no: 'batch_no',
         production_date: 'production_date',
         end_date: 'end_date',
         weight: 'weight',
       }
-      const field = fieldMap[sorter.field]
-      console.log('Mapped field:', field, 'from sorter.field:', sorter.field)
+      const field = fieldMap[String(s.field)]
+      console.log('Mapped field:', field, 'from sorter.field:', s.field)
       if (field) {
-        const newSortInfo: { field: string; order: 'asc' | 'desc' } = { field, order: sorter.order === 'ascend' ? 'asc' : 'desc' }
+        const newSortInfo: { field: string; order: 'asc' | 'desc' } = { field, order: s.order === 'ascend' ? 'asc' : 'desc' }
         setSortInfo(newSortInfo)
         setPage(1)
-        // Directly call loadRecords with new sort info
-        setLoading(true)
-        const params: any = {
-          page: 1,
-          page_size: pageSize,
-          product_id: productId,
-          sort_by: newSortInfo.field,
-          sort_order: newSortInfo.order,
-        }
-        if (searchText) params.batch_no = searchText
-        if (dateRange?.[0]) params.start_date = dateRange[0].format('YYYY-MM-DD')
-        if (dateRange?.[1]) params.end_date = dateRange[1].format('YYYY-MM-DD')
-        console.log('Calling API with params:', params)
-        getProductOutputs(params).then((response) => {
-          console.log('API response:', response)
-          if (response.code === 200) {
-            setRecords(response.data || [])
-            setTotal(response.meta?.total || 0)
-          }
-          setLoading(false)
-        }).catch((error) => {
-          console.error('API error:', error)
-          message.error('加载数据失败')
-          setLoading(false)
-        })
+        // useQuery will automatically refetch with new sortInfo
       }
     } else {
       setSortInfo(null)
       setPage(1)
-      // Reload without sorting
-      setLoading(true)
-      const params: any = {
-        page: 1,
-        page_size: pageSize,
-        product_id: productId,
-      }
-      if (searchText) params.batch_no = searchText
-      if (dateRange?.[0]) params.start_date = dateRange[0].format('YYYY-MM-DD')
-      if (dateRange?.[1]) params.end_date = dateRange[1].format('YYYY-MM-DD')
-      getProductOutputs(params).then((response) => {
-        if (response.code === 200) {
-          setRecords(response.data || [])
-          setTotal(response.meta?.total || 0)
-        }
-        setLoading(false)
-      }).catch(() => {
-        message.error('加载数据失败')
-        setLoading(false)
-      })
+      // useQuery will automatically refetch without sorting
     }
   }
 
@@ -790,7 +767,7 @@ export default function ProductOutputRecordsPage() {
               >
                 撤销导入
               </Button>
-              <ProductSyncConfig productId={productId} onSynced={loadRecords} />
+              <ProductSyncConfig productId={productId} onSynced={() => queryClient.invalidateQueries({ queryKey: ['product-outputs'] })} />
               {selectedRowKeys.length > 0 && (
                 <Button danger icon={<DeleteOutlined />} onClick={handleBatchDelete}>
                   批量删除 ({selectedRowKeys.length})
@@ -967,7 +944,7 @@ export default function ProductOutputRecordsPage() {
                 rowKey="row_num"
                 pagination={false}
                 scroll={{ y: 350 }}
-                rowClassName={(record: any) => {
+                rowClassName={(record: PreviewRecord) => {
                   if (record.is_duplicate) return 'bg-orange-50';
                   if (!record.product_found) return 'bg-red-50';
                   return '';
@@ -977,7 +954,7 @@ export default function ProductOutputRecordsPage() {
                     title: '状态', 
                     width: 80, 
                     align: 'center',
-                    render: (_: any, r: any) => {
+                    render: (_: unknown, r: PreviewRecord) => {
                       if (r.is_duplicate) return <Tag color="orange">⚠️ 重复</Tag>;
                       if (!r.product_found) return <Tag color="red">❌ 未匹配</Tag>;
                       return <Tag color="green">✅ 可导入</Tag>;
@@ -988,12 +965,12 @@ export default function ProductOutputRecordsPage() {
                   { title: '产品名称', dataIndex: 'product_name', width: 140, ellipsis: true },
                   { title: '批号', dataIndex: 'batch_no', width: 160, ellipsis: true },
                   { title: '生产日期', dataIndex: 'production_date', width: 110 },
-                  { title: '重量', dataIndex: 'weight', width: 90, render: (val: number, r: any) => `${val} ${r.unit || 'kg'}` },
+                  { title: '重量', dataIndex: 'weight', width: 90, render: (val: number, r: PreviewRecord) => `${val} ${r.unit || 'kg'}` },
                   { 
                     title: '产品匹配', 
                     width: 90, 
                     align: 'center',
-                    render: (_: any, r: any) => r.product_found ? (
+                    render: (_: unknown, r: PreviewRecord) => r.product_found ? (
                       <span className="text-green-600 font-bold">✓</span>
                     ) : (
                       <span className="text-red-600 font-bold">✗</span>
@@ -1005,7 +982,7 @@ export default function ProductOutputRecordsPage() {
                 <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded">
                   <Text strong type="danger">无效记录 ({previewData.invalid_details.length} 条):</Text>
                   <ul className="mt-2 text-sm text-red-600 list-disc list-inside max-h-32 overflow-y-auto">
-                    {previewData.invalid_details.map((item: any, idx: number) => (
+                    {previewData.invalid_details.map((item: InvalidDetail, idx: number) => (
                       <li key={idx}>第 {item.row} 行: {item.error}</li>
                     ))}
                   </ul>

@@ -73,8 +73,8 @@ export default function TrainingEvaluationClient() {
       }
       await generateTrainingEvaluation(payload)
       message.success('培训效果评估表已生成')
-    } catch (err: any) {
-      message.error(err.message || '生成失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '生成失败')
     } finally {
       setSubmitting(false)
     }

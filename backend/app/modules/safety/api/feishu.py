@@ -6,7 +6,7 @@ from typing import Any
 
 from fastapi import APIRouter
 
-from app.core.response import ApiResponse
+from app.core.response import ApiResponse, build_response
 from app.modules.safety.feishu.event_client import get_ws_status, restart_ws
 
 feishu_router = APIRouter()
@@ -29,7 +29,7 @@ async def ws_status() -> Any:
         pong_watchdog_healthy: PONG 看门狗是否健康
     """
     status = await get_ws_status()
-    return ApiResponse(data=status)
+    return build_response(data=status)
 
 
 @feishu_router.post(  # public
@@ -44,4 +44,4 @@ async def ws_restart() -> Any:
     正常运行时调用无害（会先关闭旧连接再建新连接）。
     """
     result = await restart_ws()
-    return ApiResponse(data=result, message=result.get("message", ""))
+    return build_response(data=result, message=result.get("message", ""))

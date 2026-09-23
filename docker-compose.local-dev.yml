@@ -1,0 +1,57 @@
+# 本地开发环境 - 独立的 compose 文件，只启动前后端
+# 连接 UAT 基础设施（数据库/Redis/MinIO 在 UAT 服务器上）
+#
+# 使用方法:
+#   docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
+#   docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
+
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: local-backend
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    volumes:
+      - ./backend/app:/app/app:ro
+      - ./uploads:/app/uploads
+      - ./storage:/app/storage
+      - ./backend/scripts:/app/scripts
+    ports:
+      - 8000:8000
+    command: >
+      bash -c "
+        cd /app &&
+        uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+      "
+
+  migrate:
+    build:
+      context: ./backend
+    container_name: local-migrate
+    env_file:
+      - .env.local
+    command:
+      - /app/.venv/bin/alembic
+      - upgrade
+      - head
+    restart: "no"
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    container_name: local-frontend
+    restart: unless-stopped
+    environment:
+      - API_BASE_URL=http://backend:8000
+      - NEXT_TELEMETRY_DISABLED=1
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - 3000:3000
+    depends_on:
+      - backend
+    command: ["pnpm", "dev"]

@@ -10,11 +10,10 @@ import {
   EyeOutlined,
   EditOutlined,
   EllipsisOutlined,
-  ThunderboltOutlined,
   PaperClipOutlined,
 } from '@ant-design/icons'
 import type { SafetyKnowledgeArticle } from '@/types/safety'
-import {BT_CATEGORY_STYLE, getCategoryStyle} from './knowledgeConstants'
+import { getCategoryStyle } from './knowledgeConstants'
 
 interface Props {
   article: SafetyKnowledgeArticle

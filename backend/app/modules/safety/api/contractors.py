@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
+from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
     ContractorCreate,
     ContractorResponse,
@@ -48,7 +48,7 @@ async def handler(
         training_status,
         keyword,
     )
-    return ApiResponse(
+    return build_response(
         data=[ContractorResponse.model_validate(c) for c in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -66,8 +66,8 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.get_contractor(contractor_id)
     if not item:
-        return ApiResponse(code=404, message="承包商不存在")
-    return ApiResponse(data=ContractorResponse.model_validate(item))
+        return build_response(code=404, message="承包商不存在")
+    return build_response(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.post(  # type: ignore[no-redef]
@@ -82,7 +82,7 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.create_contractor(data)
     await db.commit()
-    return ApiResponse(data=ContractorResponse.model_validate(item))
+    return build_response(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.put(  # type: ignore[no-redef]
@@ -98,9 +98,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_contractor(contractor_id, data)
     if not item:
-        return ApiResponse(code=404, message="承包商不存在")
+        return build_response(code=404, message="承包商不存在")
     await db.commit()
-    return ApiResponse(data=ContractorResponse.model_validate(item))
+    return build_response(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.delete(  # type: ignore[no-redef]
@@ -115,9 +115,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_contractor(contractor_id)
     if not result:
-        return ApiResponse(code=404, message="承包商不存在")
+        return build_response(code=404, message="承包商不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @contractors_router.post(  # type: ignore[no-redef]
@@ -134,9 +134,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.blacklist_contractor(contractor_id)
     if not item:
-        return ApiResponse(code=404, message="承包商不存在")
+        return build_response(code=404, message="承包商不存在")
     await db.commit()
-    return ApiResponse(data=ContractorResponse.model_validate(item))
+    return build_response(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.post(  # type: ignore[no-redef]
@@ -153,9 +153,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.activate_contractor(contractor_id)
     if not item:
-        return ApiResponse(code=404, message="承包商不存在")
+        return build_response(code=404, message="承包商不存在")
     await db.commit()
-    return ApiResponse(data=ContractorResponse.model_validate(item))
+    return build_response(data=ContractorResponse.model_validate(item))
 
 
 @contractors_router.post(  # type: ignore[no-redef]
@@ -173,9 +173,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_contractor_training(contractor_id, training_status)
     if not item:
-        return ApiResponse(code=404, message="承包商不存在")
+        return build_response(code=404, message="承包商不存在")
     await db.commit()
-    return ApiResponse(data=ContractorResponse.model_validate(item))
+    return build_response(data=ContractorResponse.model_validate(item))
 
 
 # ── 施工记录子表 ──
@@ -194,7 +194,7 @@ async def handler(  # noqa: F811
     """获取承包商的施工记录列表"""
     service = SafetyService(db)
     items = await service.get_work_records(contractor_id)
-    return ApiResponse(data=[ContractorWorkRecordResponse.model_validate(r) for r in items])
+    return build_response(data=[ContractorWorkRecordResponse.model_validate(r) for r in items])
 
 
 @contractors_router.post(  # type: ignore[no-redef]
@@ -212,7 +212,7 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.create_work_record(contractor_id, data)
     await db.commit()
-    return ApiResponse(data=ContractorWorkRecordResponse.model_validate(item))
+    return build_response(data=ContractorWorkRecordResponse.model_validate(item))
 
 
 @contractors_router.put(  # type: ignore[no-redef]
@@ -231,9 +231,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_work_record(record_id, data)
     if not item:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(data=ContractorWorkRecordResponse.model_validate(item))
+    return build_response(data=ContractorWorkRecordResponse.model_validate(item))
 
 
 @contractors_router.delete(  # type: ignore[no-redef]
@@ -251,9 +251,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_work_record(record_id)
     if not result:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return build_response(message="删除成功")
 
 
 @contractors_router.post(  # type: ignore[no-redef]
@@ -277,6 +277,6 @@ async def handler(  # noqa: F811
         data.evaluator,
     )
     if not item:
-        return ApiResponse(code=404, message="记录不存在")
+        return build_response(code=404, message="记录不存在")
     await db.commit()
-    return ApiResponse(data=ContractorWorkRecordResponse.model_validate(item))
+    return build_response(data=ContractorWorkRecordResponse.model_validate(item))

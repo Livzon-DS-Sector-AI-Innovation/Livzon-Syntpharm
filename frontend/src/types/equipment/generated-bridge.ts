@@ -680,8 +680,8 @@ export type CreateRoleInput = components['schemas']['RoleCreate']
 export type UpdateRoleInput = components['schemas']['RoleUpdate']
 export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 
-export type AssignRolesInput = any
-export type AssignCategoriesInput = any
+export type AssignRolesInput = components["schemas"]["PersonnelRoleAssign"]
+export type AssignCategoriesInput = components["schemas"]["PersonnelCategoryAssign"]
 export type CalibrationType = string
 export type CalibrationResult = string
 

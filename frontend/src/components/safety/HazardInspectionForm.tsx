@@ -7,6 +7,7 @@ import {
   DatePicker,
   Select,
   Upload,
+  UploadFile,
   Button,
   Space,
   Card,
@@ -41,10 +42,10 @@ interface UserOption {
 }
 
 export interface InspectionFormValues {
-  inspection_category?: string     // 逗号分隔的多选值（匹配 Bitable multi_select）
-  discovered_by?: string           // user UUID (person field)
-  discovered_by_name?: string      // display name
-  inspector_department?: string    // 逗号分隔的多选值（匹配 Bitable multi_select）
+  inspection_category?: string | string[]     // 逗号分隔的多选值（匹配 Bitable multi_select）
+  discovered_by?: string                      // user UUID (person field)
+  discovered_by_name?: string                 // display name
+  inspector_department?: string | string[]    // 逗号分隔的多选值（匹配 Bitable multi_select）
   department?: string
   discovered_at?: string
   description?: string
@@ -53,8 +54,8 @@ export interface InspectionFormValues {
 interface Props {
   initialValues?: InspectionFormValues
   loading: boolean
-  onSubmit: (values: InspectionFormValues, files: File[]) => Promise<void>
-  onSaveDraft: (values: InspectionFormValues, files: File[]) => Promise<void>
+  onSubmit: (values: Record<string, unknown>, files: File[]) => Promise<void>
+  onSaveDraft: (values: Record<string, unknown>, files: File[]) => Promise<void>
 }
 
 export default function HazardInspectionForm({
@@ -64,7 +65,7 @@ export default function HazardInspectionForm({
   onSaveDraft,
 }: Props) {
   const [form] = Form.useForm<InspectionFormValues>()
-  const [fileList, setFileList] = useState<any[]>([])
+  const [fileList, setFileList] = useState<UploadFile[]>([])
 
   // ── 人员搜索状态 ──
   const [userOptions, setUserOptions] = useState<UserOption[]>([])
@@ -104,13 +105,17 @@ export default function HazardInspectionForm({
   useEffect(() => {
     if (initialValues) {
       form.setFieldsValue({
-        // inspection_category 是 multi_select → 回填时拆分为数组
-        inspection_category: initialValues.inspection_category
-          ? initialValues.inspection_category.split(/[,，]/).filter(Boolean)
-          : undefined,
-        inspector_department: initialValues.inspector_department
-          ? initialValues.inspector_department.split(/[,，]/).filter(Boolean)
-          : undefined,
+        // inspection_category / inspector_department 兼容字符串和数组
+        inspection_category: Array.isArray(initialValues.inspection_category)
+          ? initialValues.inspection_category
+          : initialValues.inspection_category
+            ? initialValues.inspection_category.split(/[,，]/).filter(Boolean)
+            : undefined,
+        inspector_department: Array.isArray(initialValues.inspector_department)
+          ? initialValues.inspector_department
+          : initialValues.inspector_department
+            ? initialValues.inspector_department.split(/[,，]/).filter(Boolean)
+            : undefined,
         discovered_by: initialValues.discovered_by || undefined,
         discovered_by_name: initialValues.discovered_by_name,
         department: initialValues.department,
@@ -120,21 +125,16 @@ export default function HazardInspectionForm({
           : undefined,
       } as Record<string, unknown>)
       // 回填时预填当前用户到选项列表，确保 Select 正确显示
-      if (initialValues.discovered_by && initialValues.discovered_by_name) {
-        setUserOptions([{
-          value: initialValues.discovered_by,
-          label: `${initialValues.discovered_by_name} - ${initialValues.inspector_department || ''}`,
-        }])
-      }
+      // This is now handled by useMemo below
     }
-  })
+  }, [initialValues, form])
 
   // 从飞书登录信息自动填充检查人员姓名和部门（仅新建表单，草稿不覆盖）
   useEffect(() => {
     if (initialValues) return // 有草稿数据时不覆盖
     getCurrentUser().then((user) => {
       if (!user) return
-      const patch: Record<string, any> = {}
+      const patch: Record<string, unknown> = {}
       if (user.name && user.id) {
         patch.discovered_by = user.id
         patch.discovered_by_name = user.name
@@ -158,10 +158,10 @@ export default function HazardInspectionForm({
         form.setFieldsValue(patch)
       }
     })
-  }, [initialValues])
+  }, [initialValues, form])
 
   // 规范化表单值：mode="multiple" 字段返回数组，需转为逗号分隔字符串（匹配 Bitable multi_select）
-  const normalizeValues = (values: any): InspectionFormValues => {
+  const normalizeValues = (values: Record<string, unknown>): Record<string, unknown> => {
     // 从选中的用户选项中提取纯姓名（去掉 " - 部门" 后缀）
     let discoveredByName = values.discovered_by_name || ''
     if (!discoveredByName && values.discovered_by) {
@@ -172,8 +172,8 @@ export default function HazardInspectionForm({
     }
     return {
       ...values,
-      discovered_by: values.discovered_by || undefined,
-      discovered_by_name: discoveredByName || undefined,
+      discovered_by: (values.discovered_by as string) || undefined,
+      discovered_by_name: (discoveredByName as string) || undefined,
       // multi_select 字段：数组 → 逗号分隔字符串（匹配 Bitable 字段类型）
       inspection_category: Array.isArray(values.inspection_category)
         ? values.inspection_category.join(',')
@@ -182,9 +182,9 @@ export default function HazardInspectionForm({
         ? values.inspector_department.join(',')
         : values.inspector_department,
       discovered_at: values.discovered_at
-        ? dayjs(values.discovered_at).format('YYYY-MM-DD')
+        ? dayjs(values.discovered_at as string).format('YYYY-MM-DD')
         : undefined,
-    }
+    } as Record<string, unknown>
   }
 
   const handleSubmit = async () => {
@@ -193,7 +193,7 @@ export default function HazardInspectionForm({
       const rawFiles = fileList
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj as File)
-      await onSubmit(normalizeValues(values), rawFiles)
+      await onSubmit(normalizeValues(values as Record<string, unknown>), rawFiles)
     } catch {
       // 表单校验失败
     }
@@ -205,14 +205,14 @@ export default function HazardInspectionForm({
       const rawFiles = fileList
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj as File)
-      await onSaveDraft(normalizeValues(values), rawFiles)
+      await onSaveDraft(normalizeValues(values as Record<string, unknown>), rawFiles)
     } catch {
       // 草稿允许不完整，直接取 form 当前值
       const values = form.getFieldsValue()
       const rawFiles = fileList
         .filter((f) => f.originFileObj)
         .map((f) => f.originFileObj as File)
-      await onSaveDraft(normalizeValues(values), rawFiles)
+      await onSaveDraft(normalizeValues(values as Record<string, unknown>), rawFiles)
     }
   }
 
@@ -248,8 +248,24 @@ export default function HazardInspectionForm({
         form={form}
         layout="vertical"
         initialValues={{
-          discovered_at: dayjs(),
           ...initialValues,
+          // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
+          inspection_category: Array.isArray(initialValues?.inspection_category)
+            ? initialValues.inspection_category
+            : initialValues?.inspection_category
+              ? initialValues.inspection_category.split(/[,，]/).filter(Boolean)
+              : undefined,
+          inspector_department: Array.isArray(initialValues?.inspector_department)
+            ? initialValues.inspector_department
+            : initialValues?.inspector_department
+              ? initialValues.inspector_department.split(/[,，]/).filter(Boolean)
+              : undefined,
+          // DatePicker 需要 dayjs 对象（兼容字符串和 dayjs 对象）
+          discovered_at: initialValues?.discovered_at
+            ? (dayjs.isDayjs(initialValues.discovered_at)
+                ? initialValues.discovered_at
+                : dayjs(initialValues.discovered_at))
+            : dayjs(),
         }}
       >
         <Row gutter={16}>

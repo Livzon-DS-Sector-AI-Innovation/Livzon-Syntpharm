@@ -3,6 +3,12 @@
 
 import type { components } from '@/types/generated/schema'
 
+// Type aliases for generated types
+export type FeishuConfig = components['schemas']['FeishuConfigResponse']
+export type FeishuConfigUpsert = components['schemas']['FeishuConfigUpsert']
+export type FeishuDiagnosticStep = components['schemas']['FeishuDiagnosticStep']
+export type FeishuDiagnosticResult = components['schemas']['FeishuDiagnosticResult']
+
 export interface LLMConfig {
   id: string
   config_name: string
@@ -22,11 +28,13 @@ export type LLMConfigFormData = components['schemas']['LLMConfigCreate']
 
 export type LLMConfigUpdate = components['schemas']['LLMConfigUpdate']
 
-export type FeishuConfig = any
+// FeishuConfig (use generated type)
 
-export type FeishuConfigUpsert = any
+// FeishuConfigUpsert (use generated type)
 
-export type FeishuDiagnosticResult = any
+// FeishuDiagnosticStep (use generated type)
+
+// FeishuDiagnosticResult (use generated type)
 
 export interface ApiResponse<T> {
   code: number

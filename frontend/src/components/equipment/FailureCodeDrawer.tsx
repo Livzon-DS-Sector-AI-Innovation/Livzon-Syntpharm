@@ -62,8 +62,8 @@ export function FailureCodeDrawer({ onRefresh }: FailureCodeDrawerProps) {
       }
       closeFailureCodeDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 
@@ -72,10 +72,10 @@ export function FailureCodeDrawer({ onRefresh }: FailureCodeDrawerProps) {
   return (
     <Drawer
       title={title}
-      size={420}
+      width={420}
       open={failureCodeDrawerOpen}
       onClose={closeFailureCodeDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeFailureCodeDrawer}>取消</Button>

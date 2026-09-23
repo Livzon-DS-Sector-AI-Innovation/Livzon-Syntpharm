@@ -17,12 +17,6 @@ const statusOptions: { label: string; value: EquipmentStatus }[] = [
   { label: '报废', value: '报废' },
 ]
 
-interface StaffOption {
-  id: string
-  name: string
-  employee_no: string | null
-  department: string | null
-}
 
 interface EquipmentDrawerProps {
   onRefresh?: () => void
@@ -106,9 +100,9 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
       }
       closeEquipmentDrawer()
       onRefresh?.()
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Ant Design validation errors have an errorFields property
-      if (err?.errorFields) return
+      if ((err as { errorFields?: unknown[] })?.errorFields) return
       message.error('操作失败')
     } finally {
       setSubmitting(false)
@@ -118,10 +112,10 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
   return (
     <Drawer
       title={editingEquipment ? '编辑设备' : '新增设备'}
-      size={480}
+      width={480}
       open={equipmentDrawerOpen}
       onClose={closeEquipmentDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },
@@ -139,7 +133,6 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
         form={form}
         layout="vertical"
         requiredMark="optional"
-        styles={{ label: { fontWeight: 500, color: '#1a1a1a' } }}
       >
         <Form.Item
           name="name"

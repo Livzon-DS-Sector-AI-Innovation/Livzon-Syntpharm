@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Select, InputNumber } from 'antd'
 import {
   PlusOutlined, DeleteOutlined, EnvironmentOutlined,
@@ -60,35 +61,39 @@ const C = {
 export function InspectionRouteEquipmentDrawer({ equipments, locations, templates }: Props) {
   const { message } = App.useApp()
   const { routeEquipmentDrawerOpen, editingRouteId, closeRouteEquipmentDrawer, triggerRoutesRefresh } = useInspectionStore()
-  const [locationRows, setLocationRows] = useState<LocationRow[]>([])
-  const [_loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   /* ── data ── */
-  const loadData = useCallback(async () => {
-    if (!editingRouteId) return
-    setLoading(true)
-    try {
-      const detail = await fetchInspectionRouteById(editingRouteId)
-      setLocationRows((detail.locations || []).map(loc => ({
-        key: loc.id, location_id: loc.location_id,
-        location_name: loc.location_name || undefined,
-        sort_order: loc.sort_order, collapsed: false,
-        equipments: (loc.equipments || []).map(eq => ({
-          key: eq.id, equipment_id: eq.equipment_id,
-          equipment_name: eq.equipment_name || undefined,
-          asset_no: undefined,
-          sort_order: eq.sort_order,
-          template_ids: (eq.templates || []).map(t => t.template_id),
-        })),
-      })))
-    } catch { message.error('加载路线配置失败') }
-    finally { setLoading(false) }
-  }, [editingRouteId, message])
+  const { data: routeDetail } = useQuery({
+    queryKey: ['inspection-route', editingRouteId],
+    queryFn: async () => {
+      if (!editingRouteId) return null
+      return await fetchInspectionRouteById(editingRouteId)
+    },
+    enabled: routeEquipmentDrawerOpen && !!editingRouteId,
+  })
 
-  useEffect(() => { if (routeEquipmentDrawerOpen && editingRouteId) loadData() },
-    [routeEquipmentDrawerOpen, editingRouteId, loadData])
+  const [locationRows, setLocationRows] = useState<LocationRow[]>([])
+  
+  // Sync location rows when drawer opens (adjusting state during render)
+  const [prevRouteState, setPrevRouteState] = useState<string>('')
+  const routeState = routeEquipmentDrawerOpen && routeDetail ? routeDetail.id || 'open' : 'closed'
+  if (routeState !== prevRouteState && routeEquipmentDrawerOpen && routeDetail) {
+    setPrevRouteState(routeState)
+    setLocationRows((routeDetail.locations || []).map(loc => ({
+      key: loc.id, location_id: loc.location_id,
+      location_name: loc.location_name || undefined,
+      sort_order: loc.sort_order, collapsed: false,
+      equipments: (loc.equipments || []).map(eq => ({
+        key: eq.id, equipment_id: eq.equipment_id,
+        equipment_name: eq.equipment_name || undefined,
+        asset_no: undefined,
+        sort_order: eq.sort_order,
+        template_ids: (eq.templates || []).map(t => t.template_id),
+      })),
+    })))
+  }
 
   /* ── mutations ── */
   const toggle = (k: string) => setLocationRows(prev =>
@@ -149,10 +154,10 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
   return (
     <Drawer
       title={null}
-      size={840}
+      width={840}
       open={routeEquipmentDrawerOpen}
       onClose={closeRouteEquipmentDrawer}
-      destroyOnHidden
+      destroyOnClose
       styles={{ body: { padding: 0, background: C.surface } }}
     >
       {/* ═══ HEADER ═══ */}
@@ -267,7 +272,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                         地点选择
                       </div>
                       <Select
-                        showSearch={{ optionFilterProp: 'label' }} size="small" style={{ width: '100%' }}
+                        showSearch optionFilterProp='label' size="small" style={{ width: '100%' }}
                         placeholder="选择巡检地点"
                         value={loc.location_id || undefined}
                         onChange={(v) => {
@@ -335,7 +340,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                         {/* equipment select */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <Select
-                            showSearch={{ optionFilterProp: 'label' }} size="small" style={{ width: '100%' }}
+                            showSearch optionFilterProp='label' size="small" style={{ width: '100%' }}
                             placeholder="选择设备"
                             value={eq.equipment_id || undefined}
                             onChange={(v) => {
@@ -385,7 +390,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
                           placeholder="绑定巡检模板（可多选，合并检查项）"
                           value={eq.template_ids}
                           onChange={v => updEq(loc.key, eq.key, 'template_ids', v)}
-                          showSearch={{ optionFilterProp: 'label' }} options={tplOptions}
+                          showSearch optionFilterProp='label' options={tplOptions}
                         />
                       </div>
                     </div>

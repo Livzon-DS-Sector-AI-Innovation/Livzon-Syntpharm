@@ -2,11 +2,9 @@ import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import {
   DeviationListItem,
-  DeviationDetail,
   DeviationStatus,
   DeviationLevel,
   CapaListItem,
-  CapaDetail,
   CapaWorkflowStatus,
   CapaSource,
   CapaCategory,

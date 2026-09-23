@@ -1,9 +1,5 @@
-import { PersonnelPage, PersonnelQueryProvider } from '@/components/equipment'
+import { PersonnelPage } from '@/components/equipment'
 
 export default function Page() {
-  return (
-    <PersonnelQueryProvider>
-      <PersonnelPage />
-    </PersonnelQueryProvider>
-  )
+  return <PersonnelPage />
 }

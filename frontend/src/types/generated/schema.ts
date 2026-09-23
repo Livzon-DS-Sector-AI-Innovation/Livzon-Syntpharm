@@ -209,6 +209,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/feishu-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 Livzon 飞书配置
+         * @description 获取当前 Livzon 飞书配置
+         */
+        get: operations["get_feishu_config_api_v1_identity_feishu_config_get"];
+        /**
+         * 保存 Livzon 飞书配置
+         * @description 保存 Livzon 飞书配置
+         */
+        put: operations["save_feishu_config_api_v1_identity_feishu_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/feishu-config/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 测试 Livzon 飞书配置
+         * @description 测试 Livzon 飞书配置连接
+         */
+        post: operations["test_feishu_config_api_v1_identity_feishu_config_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/login-logs": {
         parameters: {
             query?: never;
@@ -4113,6 +4157,8 @@ export interface paths {
          *     3. Excel 标准化输出插件填表 → LibreOffice 转 PDF
          *
          *     不提供 natural_query 时导出全部已完成记录。
+         *
+         *     TODO(H7): PDF export can take >5s for large datasets. Consider async task + polling pattern.
          */
         post: operations["handler_api_v1_safety_hazard_identifications_export_pdf_post"];
         delete?: never;
@@ -4592,6 +4638,235 @@ export interface paths {
          * @description 上传知识库文章附件
          */
         post: operations["handler_api_v1_safety_knowledge_articles__article_id__upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/full-graph": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取完整知识图谱
+         * @description 获取完整知识图谱数据
+         */
+        get: operations["get_full_graph_api_v1_safety_knowledge_graph_full_graph_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取图谱节点列表
+         * @description 获取图谱节点列表
+         */
+        get: operations["get_graph_nodes_api_v1_safety_knowledge_graph_nodes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/edges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取图谱边列表
+         * @description 获取图谱边列表
+         */
+        get: operations["get_graph_edges_api_v1_safety_knowledge_graph_edges_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 搜索图谱节点
+         * @description 搜索图谱节点
+         */
+        get: operations["search_graph_nodes_api_v1_safety_knowledge_graph_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/expand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 展开节点邻居
+         * @description 展开指定节点的邻居节点
+         */
+        get: operations["expand_graph_node_api_v1_safety_knowledge_graph_expand_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-graph/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * AI 生成知识图谱
+         * @description 从知识库文章 AI 生成知识图谱
+         */
+        post: operations["generate_graph_api_v1_safety_knowledge_graph_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/batch-import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量导入知识库文章
+         * @description 批量导入知识库文章
+         */
+        post: operations["handler_api_v1_safety_knowledge_articles_batch_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-card": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成知识卡片
+         * @description 使用 AI 从文章内容生成结构化知识卡片（委托给 KnowledgeService）
+         *
+         *     TODO(H7): Consider async task pattern for large documents.
+         */
+        post: operations["generate_card_api_v1_safety_knowledge_articles__article_id__generate_card_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-ppt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成 PPT
+         * @description 使用 AI 从文章内容生成 PPT（.pptx 文件）
+         *
+         *     TODO(H7): This operation can take >5s. Consider converting to async task + polling:
+         *     1. Accept request → create task record → return task_id immediately
+         *     2. Background worker generates PPT
+         *     3. Client polls /tasks/{task_id}/status for completion
+         */
+        post: operations["generate_ppt_api_v1_safety_knowledge_articles__article_id__generate_ppt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/ppt-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 获取 PPT 生成历史
+         * @description 查询某文章的 PPT 生成历史记录（委托给 KnowledgeService）
+         */
+        get: operations["get_ppt_history_api_v1_safety_knowledge_articles__article_id__ppt_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/safety/knowledge-articles/{article_id}/generate-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 生成摘要
+         * @description 使用 AI 从文章内容生成摘要（委托给 KnowledgeService）
+         *
+         *     TODO(H7): Consider async task pattern for large documents.
+         */
+        post: operations["generate_summary_api_v1_safety_knowledge_articles__article_id__generate_summary_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5686,6 +5961,8 @@ export interface paths {
         /**
          * 导出特殊作业台账 Excel
          * @description 导出特殊作业台账为 Excel 文件，支持 AI 自然语言筛选
+         *
+         *     TODO(H7): Excel export can take >5s for large datasets. Consider async task + polling pattern.
          */
         post: operations["handler_api_v1_safety_special_operation_ledger_export_post"];
         delete?: never;
@@ -19084,6 +19361,11 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_handler_api_v1_safety_knowledge_articles_batch_import_post */
+        Body_handler_api_v1_safety_knowledge_articles_batch_import_post: {
+            /** Files */
+            files: string[];
+        };
         /** Body_handler_api_v1_safety_regulations__regulation_id__upload_post */
         Body_handler_api_v1_safety_regulations__regulation_id__upload_post: {
             /** File */
@@ -24235,6 +24517,28 @@ export interface components {
              */
             remark?: string | null;
         };
+        /** EnergyPlatformListApiResponse */
+        EnergyPlatformListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyPlatformResponse"][];
+        };
+        /** EnergyPlatformResponse */
+        EnergyPlatformResponse: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
         /** EnergyWorkshopCreate */
         EnergyWorkshopCreate: {
             /**
@@ -25233,6 +25537,171 @@ export interface components {
              * @description 验证Token
              */
             verification_token?: string | null;
+        };
+        /** FeishuConfigApiResponse */
+        FeishuConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["FeishuConfigResponse"];
+        };
+        /** FeishuConfigResponse */
+        FeishuConfigResponse: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Config Name
+             * @default Livzon 助手飞书设置
+             */
+            config_name: string;
+            /**
+             * App Id
+             * @default
+             */
+            app_id: string;
+            /**
+             * App Secret Configured
+             * @default false
+             */
+            app_secret_configured: boolean;
+            /**
+             * App Secret Masked
+             * @default
+             */
+            app_secret_masked: string;
+            /**
+             * Card Callback Verification Token Configured
+             * @default false
+             */
+            card_callback_verification_token_configured: boolean;
+            /**
+             * Card Callback Verification Token Masked
+             * @default
+             */
+            card_callback_verification_token_masked: string;
+            /**
+             * Card Callback Encrypt Key Configured
+             * @default false
+             */
+            card_callback_encrypt_key_configured: boolean;
+            /**
+             * Card Callback Encrypt Key Masked
+             * @default
+             */
+            card_callback_encrypt_key_masked: string;
+            /**
+             * Card Callback Url
+             * @default /api/v1/identity/feishu/card-callback
+             */
+            card_callback_url: string;
+            /** Sync Root Department Id */
+            sync_root_department_id?: string | null;
+            /** Sync Member Department Id */
+            sync_member_department_id?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+            /** Last Sync Status */
+            last_sync_status?: string | null;
+            /** Last Sync Message */
+            last_sync_message?: string | null;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+            /** Last Diagnostic Status */
+            last_diagnostic_status?: string | null;
+            /** Last Diagnostic Message */
+            last_diagnostic_message?: string | null;
+            /** Last Diagnostic Result */
+            last_diagnostic_result?: string | null;
+            /** Last Diagnosed At */
+            last_diagnosed_at?: string | null;
+        };
+        /** FeishuConfigUpsert */
+        FeishuConfigUpsert: {
+            /**
+             * Config Name
+             * @description 配置名称，仅用于 Livzon 助手
+             * @default Livzon 助手飞书设置
+             */
+            config_name: string;
+            /** App Id */
+            app_id: string;
+            /** App Secret */
+            app_secret?: string | null;
+            /** Card Callback Verification Token */
+            card_callback_verification_token?: string | null;
+            /** Card Callback Encrypt Key */
+            card_callback_encrypt_key?: string | null;
+            /** Sync Root Department Id */
+            sync_root_department_id?: string | null;
+            /** Sync Member Department Id */
+            sync_member_department_id?: string | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** FeishuDiagnosticApiResponse */
+        FeishuDiagnosticApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["FeishuDiagnosticResult"];
+        };
+        /** FeishuDiagnosticResult */
+        FeishuDiagnosticResult: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "warning" | "error";
+            /** Message */
+            message: string;
+            /** Steps */
+            steps: components["schemas"]["FeishuDiagnosticStep"][];
+            /**
+             * Department Count
+             * @default 0
+             */
+            department_count: number;
+            /**
+             * Sample User Count
+             * @default 0
+             */
+            sample_user_count: number;
+        };
+        /** FeishuDiagnosticStep */
+        FeishuDiagnosticStep: {
+            /** Name */
+            name: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "warning" | "error";
+            /** Message */
+            message: string;
+            /** Suggestion */
+            suggestion?: string | null;
+            /** Code */
+            code?: number | null;
         };
         /**
          * FeishuEnergyImportRequest
@@ -28362,6 +28831,30 @@ export interface components {
              * @description New value (as string)
              */
             value: string;
+        };
+        /** MonthlySummaryApiResponse */
+        MonthlySummaryApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: components["schemas"]["MonthlySummaryItem"];
+            };
+        };
+        /** MonthlySummaryItem */
+        MonthlySummaryItem: {
+            /** Total Value */
+            total_value: number;
+            /** Unit */
+            unit: string;
         };
         /**
          * MonthlyTrend
@@ -37801,6 +38294,92 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feishu_config_api_v1_identity_feishu_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeishuConfigApiResponse"];
+                };
+            };
+        };
+    };
+    save_feishu_config_api_v1_identity_feishu_config_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeishuConfigUpsert"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeishuConfigApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_feishu_config_api_v1_identity_feishu_config_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["FeishuConfigUpsert"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeishuDiagnosticApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48094,9 +48673,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": unknown;
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -49012,6 +49589,400 @@ export interface operations {
                 "multipart/form-data": components["schemas"]["Body_handler_api_v1_safety_knowledge_articles__article_id__upload_post"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_full_graph_api_v1_safety_knowledge_graph_full_graph_get: {
+        parameters: {
+            query?: {
+                node_types?: string | null;
+                relation_types?: string | null;
+                max_nodes?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_graph_nodes_api_v1_safety_knowledge_graph_nodes_get: {
+        parameters: {
+            query?: {
+                node_type?: string | null;
+                entity_type?: string | null;
+                status?: string | null;
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_graph_edges_api_v1_safety_knowledge_graph_edges_get: {
+        parameters: {
+            query?: {
+                relation_type?: string | null;
+                status?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_graph_nodes_api_v1_safety_knowledge_graph_search_get: {
+        parameters: {
+            query: {
+                query: string;
+                node_types?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    expand_graph_node_api_v1_safety_knowledge_graph_expand_get: {
+        parameters: {
+            query: {
+                node_id: string;
+                hops?: number;
+                relation_types?: string | null;
+                max_nodes?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_graph_api_v1_safety_knowledge_graph_generate_post: {
+        parameters: {
+            query?: {
+                force_rebuild?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": string[] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    handler_api_v1_safety_knowledge_articles_batch_import_post: {
+        parameters: {
+            query?: {
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_handler_api_v1_safety_knowledge_articles_batch_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_card_api_v1_safety_knowledge_articles__article_id__generate_card_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_ppt_api_v1_safety_knowledge_articles__article_id__generate_ppt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ppt_history_api_v1_safety_knowledge_articles__article_id__ppt_history_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_summary_api_v1_safety_knowledge_articles__article_id__generate_summary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                article_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -51537,9 +52508,7 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": unknown;
-                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -52617,7 +53586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyPlatformListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53624,7 +54593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["MonthlySummaryApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Card, Row, Col, Typography, Spin, Empty, Button, Modal, Form, Input, App, Breadcrumb, Select, DatePicker } from 'antd'
 const { RangePicker } = DatePicker
 import { PlusOutlined, AppstoreOutlined, HomeOutlined } from '@ant-design/icons'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { getProductsByWorkshop, createWorkshopProduct, deleteProduct } from '@/actions/product'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getSummary, getBatchCount } from '@/actions/product-output'
 import type { WorkshopProduct } from '@/types/workshop-product'
 import dayjs from 'dayjs'
@@ -40,10 +41,8 @@ export default function WorkshopProductsPage() {
   const workshop = decodeURIComponent(params.workshop as string)
   const { message, modal } = App.useApp()
 
-  const [products, setProducts] = useState<WorkshopProduct[]>([])
-  const [summaries, setSummaries] = useState<Record<string, ProductSummary>>({})
-  const [loading, setLoading] = useState(true)
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
+  const queryClient = useQueryClient()
+    const [viewMode, setViewMode] = useState<ViewMode>('month')
   const [selectedDate, setSelectedDate] = useState(dayjs())
   const [selectedMonth, setSelectedMonth] = useState(dayjs().month() + 1)
   const [selectedYear, setSelectedYear] = useState(dayjs().year())
@@ -52,91 +51,82 @@ export default function WorkshopProductsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [form] = Form.useForm()
 
-  const loadProducts = async () => {
-    setLoading(true)
-    try {
-      const response = await getProductsByWorkshop(workshop)
+  const { data: products = [], isLoading: loading } = useQuery({
+    queryKey: ['workshop-products', workshop],
+    queryFn: async () => {
+      const response = await getProductsByWorkshop(workshop) as { code: number; data: unknown }
       if (response.code === 200) {
-        setProducts(response.data || [])
-        loadSummaries(response.data || [])
+        return (response.data || []) as WorkshopProduct[]
       }
-    } catch {
-      message.error('加载产品列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return []
+    },
+  })
 
-  const loadSummaries = async (productList: WorkshopProduct[]) => {
-    const newSummaries: Record<string, ProductSummary> = {}
+  const { data: summaries = {} } = useQuery({
+    queryKey: ['product-summaries', workshop, products.map(p => p.id), viewMode, selectedDate?.format('YYYY-MM-DD'), selectedMonth, selectedYear, dateRange?.[0]?.format('YYYY-MM-DD'), dateRange?.[1]?.format('YYYY-MM-DD')],
+    queryFn: async () => {
+      if (products.length === 0) return {}
+      const newSummaries: Record<string, ProductSummary> = {}
 
-    const promises = productList.map(async (product) => {
-      let dailyRes, monthlyRes, yearlyRes
-      let dailyBatchRes, monthlyBatchRes, yearlyBatchRes
+      const promises = products.map(async (product) => {
+        let dailyRes, monthlyRes, yearlyRes
+        let dailyBatchRes, monthlyBatchRes, yearlyBatchRes
 
-      if (viewMode === 'day') {
-        const targetDate = selectedDate.format('YYYY-MM-DD')
-        const monthStr = selectedDate.format('YYYY-MM')
-        const year = selectedDate.year()
-        ;[dailyRes, monthlyRes, yearlyRes] = await Promise.all([
-          getSummary({ target_date: targetDate, product_id: product.id }),
-          getSummary({ month: monthStr, product_id: product.id }),
-          getSummary({ year, product_id: product.id }),
-        ])
-        ;[dailyBatchRes, monthlyBatchRes, yearlyBatchRes] = await Promise.all([
-          getBatchCount({ target_date: targetDate, product_id: product.id }),
-          getBatchCount({ month: monthStr, product_id: product.id }),
-          getBatchCount({ year, product_id: product.id }),
-        ])
-      } else if (viewMode === 'month') {
-        const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
-        const year = selectedYear
-        monthlyRes = await getSummary({ month: monthStr, product_id: product.id })
-        yearlyRes = await getSummary({ year, product_id: product.id })
-        monthlyBatchRes = await getBatchCount({ month: monthStr, product_id: product.id })
-        yearlyBatchRes = await getBatchCount({ year, product_id: product.id })
-      } else if (viewMode === 'year') {
-        yearlyRes = await getSummary({ year: selectedYear, product_id: product.id })
-        yearlyBatchRes = await getBatchCount({ year: selectedYear, product_id: product.id })
-      } else if (viewMode === 'range' && dateRange[0] && dateRange[1]) {
-        const startDate = dateRange[0].format('YYYY-MM-DD')
-        const endDate = dateRange[1].format('YYYY-MM-DD')
-        monthlyRes = await getSummary({ start_date: startDate, end_date: endDate, product_id: product.id })
-        monthlyBatchRes = await getBatchCount({ start_date: startDate, end_date: endDate, product_id: product.id })
-      }
-
-      const extractBatchCount = (res: any) => {
-        const data = res.data
-        if (Array.isArray(data)) {
-          const item = data.find((d: any) => d.product_id === product.id)
-          return item?.batch_count || 0
+        if (viewMode === 'day') {
+          const targetDate = selectedDate.format('YYYY-MM-DD')
+          const monthStr = selectedDate.format('YYYY-MM')
+          const year = selectedDate.year()
+          ;[dailyRes, monthlyRes, yearlyRes] = await Promise.all([
+            getSummary({ target_date: targetDate, product_id: product.id }),
+            getSummary({ month: monthStr, product_id: product.id }),
+            getSummary({ year, product_id: product.id }),
+          ])
+          ;[dailyBatchRes, monthlyBatchRes, yearlyBatchRes] = await Promise.all([
+            getBatchCount({ target_date: targetDate, product_id: product.id }),
+            getBatchCount({ month: monthStr, product_id: product.id }),
+            getBatchCount({ year, product_id: product.id }),
+          ])
+        } else if (viewMode === 'month') {
+          const monthStr = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`
+          const year = selectedYear
+          monthlyRes = await getSummary({ month: monthStr, product_id: product.id })
+          yearlyRes = await getSummary({ year, product_id: product.id })
+          monthlyBatchRes = await getBatchCount({ month: monthStr, product_id: product.id })
+          yearlyBatchRes = await getBatchCount({ year, product_id: product.id })
+        } else if (viewMode === 'year') {
+          yearlyRes = await getSummary({ year: selectedYear, product_id: product.id })
+          yearlyBatchRes = await getBatchCount({ year: selectedYear, product_id: product.id })
+        } else if (viewMode === 'range' && dateRange[0] && dateRange[1]) {
+          const startDate = dateRange[0].format('YYYY-MM-DD')
+          const endDate = dateRange[1].format('YYYY-MM-DD')
+          monthlyRes = await getSummary({ start_date: startDate, end_date: endDate, product_id: product.id })
+          monthlyBatchRes = await getBatchCount({ start_date: startDate, end_date: endDate, product_id: product.id })
         }
-        return 0
-      }
 
-      newSummaries[product.id] = {
-        daily: dailyRes?.data?.grand_total || 0,
-        monthly: monthlyRes?.data?.grand_total || 0,
-        yearly: yearlyRes?.data?.grand_total || 0,
-        dailyBatches: dailyBatchRes ? extractBatchCount(dailyBatchRes) : 0,
-        monthlyBatches: monthlyBatchRes ? extractBatchCount(monthlyBatchRes) : 0,
-        yearlyBatches: yearlyBatchRes ? extractBatchCount(yearlyBatchRes) : 0,
-      }
-    })
+        const extractBatchCount = (res: { data: unknown }) => {
+          const data = res.data as Array<{ product_id: string; batch_count: number }> | null
+          if (Array.isArray(data)) {
+            const item = data.find((d) => d.product_id === product.id)
+            return item?.batch_count || 0
+          }
+          return 0
+        }
 
-    await Promise.all(promises)
-    setSummaries(newSummaries)
-  }
+        newSummaries[product.id] = {
+          daily: dailyRes?.data?.grand_total || 0,
+          monthly: monthlyRes?.data?.grand_total || 0,
+          yearly: yearlyRes?.data?.grand_total || 0,
+          dailyBatches: dailyBatchRes ? extractBatchCount(dailyBatchRes) : 0,
+          monthlyBatches: monthlyBatchRes ? extractBatchCount(monthlyBatchRes) : 0,
+          yearlyBatches: yearlyBatchRes ? extractBatchCount(yearlyBatchRes) : 0,
+        }
+      })
 
-  useEffect(() => {
-    loadProducts()
-  }, [workshop])
-
-  useEffect(() => {
-    if (products.length > 0) {
-      loadSummaries(products)
-    }
-  }, [viewMode, selectedDate, selectedMonth, selectedYear, dateRange, loadSummaries, products])
+      await Promise.all(promises)
+      return newSummaries
+    },
+    enabled: products.length > 0,
+  })
 
   const handleAddProduct = async () => {
     try {
@@ -151,9 +141,9 @@ export default function WorkshopProductsPage() {
         message.success('产品创建成功')
         setModalVisible(false)
         form.resetFields()
-        loadProducts()
+        queryClient.invalidateQueries({ queryKey: ['workshop-products'] })
       } else {
-        message.error(response.message || '创建失败')
+        message.error((response.message as string) || '创建失败')
       }
     } catch {
       message.error('创建失败')
@@ -168,12 +158,12 @@ export default function WorkshopProductsPage() {
       content: `确定要删除产品"${product.name}"吗？`,
       onOk: async () => {
         try {
-          const response = await deleteProduct(product.id)
+          const response = await deleteProduct(product.id) as { code: number; message: string }
           if (response.code === 200) {
             message.success('删除成功')
-            loadProducts()
+            queryClient.invalidateQueries({ queryKey: ['workshop-products'] })
           } else {
-            message.error(response.message || '删除失败')
+            message.error((response.message as string) || '删除失败')
           }
         } catch {
           message.error('删除失败')
@@ -346,6 +336,7 @@ export default function WorkshopProductsPage() {
                   className="h-full"
                   actions={[
                     <Button
+                      key="delete"
                       type="link"
                       danger
                       onClick={(e) => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import {Card, Button, Space, Tag, Divider, Row, Col, Descriptions, App, Modal, Input} from 'antd'
+import {Card, Button, Space, Tag, Divider, Row, Col, App, Modal, Input} from 'antd'
 import { CheckCircleOutlined, DownloadOutlined, EditOutlined, SendOutlined, FileTextOutlined } from '@ant-design/icons'
 import type {
   LabConfirmationStudy,
@@ -26,7 +26,7 @@ interface ModuleReportProps {
 }
 
 export function ModuleReport({
-  optimizationId,
+  optimizationId: _optimizationId,
   optimizationName,
   doeExperiment,
   impurityStudy,
@@ -159,7 +159,7 @@ export function ModuleReport({
         {/* 可下载附件 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 600, marginBottom: 8 }}>📎 可下载附件</div>
-          <Space orientation="vertical" style={{ width: '100%' }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
             {[
               { name: '工艺优化报告.md', icon: '📄' },
               { name: 'DOE实验数据.xlsx', icon: '📊' },

@@ -26,7 +26,7 @@ export default function CardTemplateEditor({
   }
 
   return (
-    <Space orientation="vertical" style={{ width: '100%' }}>
+    <Space direction="vertical" style={{ width: '100%' }}>
       <TextArea
         value={value}
         onChange={(e) => onChange?.(e.target.value)}

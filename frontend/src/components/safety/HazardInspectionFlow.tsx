@@ -1,7 +1,7 @@
 'use client'
 import { uploadHazardPhoto } from '@/actions/safety'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Steps,
@@ -88,7 +88,7 @@ function StatusPill({
 }
 
 /** 阶段编号圆点 */
-function StageDot({ num, active }: { num: number; active: boolean }) {
+function _StageDot({ num, active }: { num: number; active: boolean }) {
   return (
     <div
       style={{
@@ -112,7 +112,7 @@ function StageDot({ num, active }: { num: number; active: boolean }) {
 }
 
 /** 阶段连接竖线 */
-function StageConnector() {
+function _StageConnector() {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
       <div style={{ width: 2, height: 20, background: '#ede9e4', borderRadius: 1 }} />
@@ -194,10 +194,6 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setDraftsLoading(false)
     }
   }, [])
-
-  useEffect(() => {
-    loadDrafts()
-  }, [loadDrafts])
 
   // ── 提交隐患 → 创建/更新记录 + 上传图片 + 触发AI ──
   const handleSubmit = async (values: InspectionFormValues, files: File[]) => {
@@ -286,7 +282,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
       setCompletedHazardNo(updated?.hazard_no || hazard.hazard_no)
       setCurrentStep('done')
     } catch (err) {
-      const errMsg = err instanceof Error ? err.message : '请重试'
+      const errMsg = err instanceof Error ? (err instanceof Error ? err.message : null) : '请重试'
       message.error(`提交失败：${errMsg}`)
     } finally {
       setSubmitting(false)
@@ -370,10 +366,19 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
   // ── 从草稿继续登记 ──
   const handleContinueDraft = (draft: HazardReport) => {
     setDraftFormValues({
-      inspection_category: draft.inspection_category,
+      // mode="multiple" 的 Select 需要数组格式（兼容字符串和数组）
+      inspection_category: Array.isArray(draft.inspection_category)
+        ? draft.inspection_category
+        : draft.inspection_category
+          ? draft.inspection_category.split(/[,，]/).filter(Boolean)
+          : undefined,
       discovered_by: draft.discovered_by,
       discovered_by_name: draft.discovered_by_name,
-      inspector_department: draft.inspector_department,
+      inspector_department: Array.isArray(draft.inspector_department)
+        ? draft.inspector_department
+        : draft.inspector_department
+          ? draft.inspector_department.split(/[,，]/).filter(Boolean)
+          : undefined,
       department: draft.department,
       discovered_at: draft.discovered_at,
       description: draft.description,
@@ -473,7 +478,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
                   AI 正在分析中
                 </Title>
               </div>
-              <Space orientation="vertical" size="middle" style={{ marginTop: 8 }}>
+              <Space direction="vertical" size="middle" style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {aiProgress === 'script1' ? (
                     <LoadingOutlined style={{ color: '#5645d4' }} />
@@ -542,7 +547,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
         styles={{ body: { padding: '16px 24px' } }}
-        size={420}
+        width={420}
       >
         {draftsLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>

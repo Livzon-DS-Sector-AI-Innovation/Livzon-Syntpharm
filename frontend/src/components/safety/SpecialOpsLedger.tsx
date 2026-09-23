@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, DatePicker, Tag, Card,
   Typography, Drawer, Descriptions, Switch, App, Tooltip, Modal,
@@ -8,10 +9,9 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  SearchOutlined, ExportOutlined, EyeOutlined, FilterOutlined,
   SafetyCertificateOutlined,
   EnvironmentOutlined, ClockCircleOutlined, RobotOutlined,
-  AlertOutlined,
+  AlertOutlined, EyeOutlined, ExportOutlined, SearchOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
@@ -28,7 +28,7 @@ import {
   STATUS_CONFIG, RISK_LEVEL_OPTIONS, OP_TYPE_KEYS,
 } from './SpecialOpsConstants'
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 const { RangePicker } = DatePicker
 
 // ═══════════════════════════════════════════════════════════
@@ -49,9 +49,6 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
-  // ── Stats ──
-  const [stats, setStats] = useState<SpecialOperationLedgerStats[]>(initialStats || [])
-
   // ── Filters ──
   const [opType, setOpType] = useState<string | undefined>()
   const [opLevel, setOpLevel] = useState<string | undefined>()
@@ -59,6 +56,15 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [dept, setDept] = useState<string | undefined>()
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs] | null>(null)
   const [keyword, setKeyword] = useState('')
+  const [debouncedKeyword, setDebouncedKeyword] = useState('')
+  const keywordTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const handleKeywordChange = (value: string) => {
+    setKeyword(value)
+    clearTimeout(keywordTimer.current)
+    keywordTimer.current = setTimeout(() => setDebouncedKeyword(value), 300)
+  }
+
   const [isCritical, setIsCritical] = useState<boolean | undefined>()
 
   // ── Detail drawer ──
@@ -72,14 +78,18 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
   const [exportExplanation, setExportExplanation] = useState('')
 
   // ── Fetch stats ──
-  const fetchStats = useCallback(async () => {
-    try {
+  const { data: fetchedStats } = useQuery({
+    queryKey: ['special-ops-ledger-stats'],
+    queryFn: async () => {
       const res = await getSpecialOperationLedgerStats()
-      if (res.code === 200 && res.data) setStats(res.data)
-    } catch { /* silent */ }
-  }, [])
+      if (res.code === 200 && res.data) return res.data
+      return []
+    },
+    enabled: !initialStats?.length,
+  })
 
-  useEffect(() => { if (!initialStats?.length) fetchStats() }, [fetchStats, initialStats])
+  // Use initialStats if provided, otherwise use fetched stats
+  const stats = initialStats?.length ? initialStats : (fetchedStats || [])
 
   // ── Fetch data ──
   const fetchData = useCallback(async () => {
@@ -93,7 +103,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
         department: dept,
         date_from: dateRange?.[0]?.format('YYYY-MM-DD'),
         date_to: dateRange?.[1]?.format('YYYY-MM-DD'),
-        keyword: keyword || undefined,
+        keyword: debouncedKeyword || undefined,
         is_critical: isCritical,
       })
       setData(res.data || [])
@@ -103,9 +113,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, keyword, isCritical])
-
-  useEffect(() => { fetchData() }, [fetchData])
+  }, [page, pageSize, opType, opLevel, riskLevel, dept, dateRange, debouncedKeyword, isCritical, message])
 
   // ── AI Export ──
 
@@ -308,7 +316,7 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
                   </div>
                   <Statistic
                     value={st.count}
-                    styles={{ content: { fontSize: 24, fontWeight: 700, color: T.ink } }}
+                    valueStyle={{ fontSize: 24, fontWeight: 700, color: T.ink }}
                     suffix={
                       st.critical > 0
                         ? <Tag style={{ fontSize: 10, color: T.error, backgroundColor: T.rose, border: 'none', borderRadius: 4, marginLeft: 6 }}>关键{st.critical}</Tag>
@@ -374,8 +382,8 @@ export default function SpecialOpsLedger({ initialStats }: SpecialOpsLedgerProps
             prefix={<SearchOutlined style={{ color: T.muted }} />}
             style={{ width: 200, borderRadius: 8 }}
             value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onPressEnter={() => { setPage(1); fetchData() }}
+            onChange={(e) => handleKeywordChange(e.target.value)}
+            onPressEnter={(e) => { const v = (e.target as HTMLInputElement).value; setKeyword(v); setDebouncedKeyword(v); setPage(1); fetchData() }}
             allowClear
           />
           <Space>

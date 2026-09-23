@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, BeforeValidator, Field
 
@@ -46,8 +46,6 @@ class EnergyWorkshopResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 # ── 月度记录 ──
 
@@ -75,8 +73,6 @@ class EnergyMonthlyRecordResponse(BaseModel):
     remark: str | None
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class EnergyMonthlyRecordBatchCreate(BaseModel):
@@ -135,8 +131,6 @@ class EnergyDeviceConfigResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class EnergyDataResponse(BaseModel):
     id: StrUUID
@@ -145,8 +139,6 @@ class EnergyDataResponse(BaseModel):
     value: float
     unit: str
     collected_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class EnergyStatisticsResponse(BaseModel):
@@ -165,8 +157,6 @@ class CollectLogResponse(BaseModel):
     success_count: int
     error_message: str | None
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class CollectLogDeviceDetail(BaseModel):
@@ -269,8 +259,6 @@ class EnergyAlertRuleResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {"from_attributes": True}
-
 
 class EnergyAlertRecordResponse(BaseModel):
     id: StrUUID
@@ -287,8 +275,6 @@ class EnergyAlertRecordResponse(BaseModel):
     processed_at: datetime | None
     process_note: str | None
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class AlertRecordProcessRequest(BaseModel):
@@ -345,14 +331,12 @@ class UnitConsumptionTargetUpdate(BaseModel):
 class UnitConsumptionTargetResponse(BaseModel):
     """单耗目标响应"""
 
-    id: int
+    id: str
     workshop_id: str
     workshop_name: str | None = None
     target_month: str
     target_unit_consumption: float
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class AISuggestion(BaseModel):
@@ -401,3 +385,175 @@ class AIAnalysisResponse(BaseModel):
     ai_suggestion: AISuggestion | None = None
 
     model_config = {"from_attributes": False}
+
+
+# ── 平台信息 ──
+
+
+class EnergyPlatformResponse(BaseModel):
+    code: str
+    name: str
+
+
+class EnergyPlatformListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyPlatformResponse]
+
+
+# ── 月度汇总 ──
+
+
+class MonthlySummaryItem(BaseModel):
+    total_value: float
+    unit: str
+
+
+class MonthlySummaryApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, MonthlySummaryItem]
+
+
+# ─ API Response Wrappers ──
+
+
+class EnergyWorkshopApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyWorkshopResponse
+
+
+class EnergyWorkshopListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyWorkshopResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyDeviceConfigApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyDeviceConfigResponse
+
+
+class EnergyDeviceConfigListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyDeviceConfigResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyAlertRuleApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyAlertRuleResponse
+
+
+class EnergyAlertRuleListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyAlertRuleResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyAlertRecordApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyAlertRecordResponse
+
+
+class EnergyAlertRecordListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyAlertRecordResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyMonthlyRecordApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyMonthlyRecordResponse
+
+
+class EnergyMonthlyRecordListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyMonthlyRecordResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyMonthlyBatchCreateApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class EnergyDataListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[EnergyDataResponse]
+    meta: dict[str, Any] | None = None
+
+
+class EnergyStatisticsApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: EnergyStatisticsResponse
+
+
+class CollectLogListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[CollectLogResponse]
+    meta: dict[str, Any] | None = None
+
+
+class CollectLogDetailApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: CollectLogDetailResponse
+
+
+class CollectTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class EnergyOverviewApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class FeishuImportApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: FeishuEnergyImportResponse
+
+
+class SyncJobApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class UnitConsumptionTargetApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UnitConsumptionTargetResponse
+
+
+class EnergyDeleteResponse(BaseModel):
+    """通用删除响应"""
+
+    code: int = 200
+    message: str = "删除成功"
+    data: None = None
+
+
+class AIAnalysisApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AIAnalysisResponse

@@ -43,7 +43,7 @@ export default function HazardVerifyModal({
   const detectLevel = (): number => {
     if (!record) return 1
     const rstatus = record.rectification_status
-    const v1 = record.verify_level_1_status || 'pending'
+    const _v1 = record.verify_level_1_status || 'pending'
     const v2 = record.verify_level_2_status || 'pending'
     const v3 = record.verify_level_3_status || 'pending'
 
@@ -106,7 +106,7 @@ export default function HazardVerifyModal({
       okText="提交复核"
       cancelText="取消"
       width={650}
-      destroyOnHidden
+      destroyOnClose
     >
       {/* 隐患信息摘要 */}
       {record && (

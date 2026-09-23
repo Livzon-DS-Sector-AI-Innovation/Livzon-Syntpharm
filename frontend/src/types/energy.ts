@@ -1,4 +1,8 @@
 import type { components } from '@/types/generated/schema'
+
+// Type aliases for generated types
+export type EnergyPlatform = components['schemas']['EnergyPlatformResponse']
+export type MonthlySummary = components['schemas']['MonthlySummaryApiResponse']['data']
 export type CreateDeviceInput = components['schemas']['EnergyDeviceConfigCreate']
 export type UpdateDeviceInput = components['schemas']['EnergyDeviceConfigUpdate']
 export type CreateRuleInput = components['schemas']['EnergyAlertRuleCreate']
@@ -328,3 +332,9 @@ export interface FeishuImportResult {
   records_skipped: number
   errors: string[]
 }
+
+// ── 平台管理 ──
+// 平台 (use generated type)
+
+// ── 月度汇总 ──
+// 月度汇总 (use generated type)

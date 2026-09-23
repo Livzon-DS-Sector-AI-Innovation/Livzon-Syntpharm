@@ -49,9 +49,9 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
       }
       closeLocationDrawer()
       onRefresh?.()
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Ant Design validation errors have an errorFields property
-      if (err?.errorFields) return
+      if ((err as { errorFields?: unknown[] })?.errorFields) return
       message.error('操作失败')
     } finally {
       setSubmitting(false)
@@ -88,10 +88,10 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <Drawer
       title={editingLocation ? '编辑位置' : '新增位置'}
-      size={400}
+      width={400}
       open={locationDrawerOpen}
       onClose={closeLocationDrawer}
-      destroyOnHidden
+      destroyOnClose
       extra={
         <Space>
           <Button onClick={closeLocationDrawer}>取消</Button>
