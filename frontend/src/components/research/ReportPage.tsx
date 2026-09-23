@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Card, Table, Button, Tag, Space, Popconfirm, Switch, Progress, Tooltip, Modal, Spin } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, DownloadOutlined } from '@ant-design/icons'
 import { fetchReports } from '@/lib/api/client/research/rd-project'
@@ -40,13 +41,46 @@ const typeColorMap: Record<string, string> = {
 
 export function ReportPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [reports, setReports] = useState<RdReport[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdReport | null>(null)
-  /** 各报告最新一次文档生成任务，key = reportId */
-  const [docGenMap, setDocGenMap] = useState<Record<string, DocGenJobResponse>>({})
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const { data: reports = [], isLoading: loading } = useQuery({
+    queryKey: ['reports', projectId],
+    queryFn: async () => {
+      const data = await fetchReports(projectId)
+      return data || []
+    },
+    enabled: !!projectId,
+  })
+
+  /**
+   * 各报告最新一次文档生成任务，key = reportId。
+   * 一次请求覆盖整个列表，避免逐报告查询造成 N+1；
+   * 存在进行中任务时每 3 秒轮询，全部到达终态后自动停止。
+   */
+  const { data: docGenMap = {} } = useQuery({
+    queryKey: ['doc-gen-jobs', projectId],
+    queryFn: async () => {
+      try {
+        const jobs = await fetchDocGenJobsByProject(projectId)
+        const map: Record<string, DocGenJobResponse> = {}
+        ;(jobs || []).forEach((job) => {
+          if (job.report_id && !map[job.report_id]) map[job.report_id] = job
+        })
+        return map
+      } catch {
+        // 状态列属于附加信息，取不到时不影响报告列表本身
+        return {}
+      }
+    },
+    enabled: !!projectId,
+    refetchInterval: (query) => {
+      const map = query.state.data
+      if (!map) return false
+      return Object.values(map).some((j) => !isDocGenTerminal(j.status)) ? 3000 : false
+    },
+  })
 
   // 报告预览弹窗
   const [previewOpen, setPreviewOpen] = useState(false)
@@ -55,53 +89,8 @@ export function ReportPage({ projectId }: Props) {
   const previewContentRef = useRef<HTMLDivElement | null>(null)
   const { loading: previewLoading, error: previewError, renderDocx, reset: resetPreview } = useDocxPreview()
 
-  /**
-   * 加载项目下全部生成任务，按报告取最新一条（后端按 created_at 倒序返回）。
-   * 一次请求覆盖整个列表，避免逐报告查询造成 N+1。
-   */
-  const loadDocGenMap = async () => {
-    try {
-      const jobs = await fetchDocGenJobsByProject(projectId)
-      const map: Record<string, DocGenJobResponse> = {}
-      jobs.forEach((job) => {
-        if (job.report_id && !map[job.report_id]) map[job.report_id] = job
-      })
-      setDocGenMap(map)
-      return map
-    } catch {
-      // 状态列属于附加信息，取不到时不影响报告列表本身
-      return {}
-    }
-  }
-
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      const data = await fetchReports(projectId)
-      setReports(data)
-      void loadDocGenMap()
-    } catch (e: unknown) {
-      msgApi.error(e instanceof Error ? e.message : '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
-
-  // 轮询：存在进行中任务时每 3 秒刷新 docGenMap，全部到达终态后停止
-  useEffect(() => {
-    const hasActive = Object.values(docGenMap).some((j) => !isDocGenTerminal(j.status))
-    if (pollTimerRef.current) {
-      clearInterval(pollTimerRef.current)
-      pollTimerRef.current = null
-    }
-    if (!hasActive) return
-    pollTimerRef.current = setInterval(() => { void loadDocGenMap() }, 3000)
-    return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-    }
-  }, [docGenMap]) // eslint-disable-line react-hooks/exhaustive-deps
+  const invalidateReports = () => queryClient.invalidateQueries({ queryKey: ['reports', projectId] })
+  const invalidateDocGen = () => queryClient.invalidateQueries({ queryKey: ['doc-gen-jobs', projectId] })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -117,7 +106,7 @@ export function ReportPage({ projectId }: Props) {
     try {
       await deleteReport(id)
       msgApi.success('删除成功')
-      loadData()
+      invalidateReports()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
@@ -127,7 +116,7 @@ export function ReportPage({ projectId }: Props) {
     try {
       await updateReport(id, { status: active ? 'approved' : 'draft' })
       msgApi.success(active ? '已启用' : '已停用')
-      loadData()
+      invalidateReports()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '操作失败')
     }
@@ -261,7 +250,7 @@ export function ReportPage({ projectId }: Props) {
         open={createModalOpen}
         projectId={projectId}
         onCancel={() => { setCreateModalOpen(false); setEditingRecord(null) }}
-        onCreated={() => { loadData(); void loadDocGenMap(); setEditingRecord(null) }}
+        onCreated={() => { invalidateReports(); invalidateDocGen(); setEditingRecord(null) }}
         editingReport={editingRecord}
       />
 

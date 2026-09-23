@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   App,
@@ -38,7 +39,6 @@ import {
   fetchDocGenSlotProfiles,
   uploadDeliverableTemplateFile,
   uploadDeliverableTemplates,
-  type DocGenSlotProfile,
   type DocGenTemplateVersion,
 } from '@/lib/api/client/research/doc-gen'
 import {
@@ -71,9 +71,34 @@ interface PreviewSource {
 /** 交付物模板管理：模板一律以 Word 模板原件（docx/dotx/doc）为准，支持在线预览与下载。 */
 export function DeliverableTemplatePage() {
   const { message: msgApi } = App.useApp()
-  const [templates, setTemplates] = useState<RdDeliverableTemplate[]>([])
-  const [loading, setLoading] = useState(false)
-  const [profiles, setProfiles] = useState<DocGenSlotProfile[]>([])
+  const queryClient = useQueryClient()
+
+  const { data: templates = [], isLoading: loading } = useQuery({
+    queryKey: ['deliverable-templates'],
+    queryFn: async () => {
+      try {
+        const data = await fetchDeliverableTemplates()
+        return data
+      } catch (e: unknown) {
+        msgApi.error(e instanceof Error ? e.message : '加载模板列表失败')
+        return []
+      }
+    },
+  })
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['doc-gen-slot-profiles'],
+    queryFn: async () => {
+      try {
+        return await fetchDocGenSlotProfiles()
+      } catch {
+        msgApi.error('加载填充项配置失败，可能是后端服务不可用')
+        return []
+      }
+    },
+  })
+
+  const invalidateTemplates = () => queryClient.invalidateQueries({ queryKey: ['deliverable-templates'] })
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<RdDeliverableTemplate | null>(null)
@@ -96,65 +121,36 @@ export function DeliverableTemplatePage() {
   const [pendingNote, setPendingNote] = useState<{ record: RdDeliverableTemplate; file: File } | null>(null)
   const [pendingNoteText, setPendingNoteText] = useState('')
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      setTemplates(await fetchDeliverableTemplates())
-    } catch (e) {
-      msgApi.error(e instanceof Error ? e.message : '加载模板列表失败')
-    } finally {
-      setLoading(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  useEffect(() => {
-    const init = async () => {
-      await loadData()
-      try {
-        setProfiles(await fetchDocGenSlotProfiles())
-      } catch {
-        msgApi.error('加载填充项配置失败，可能是后端服务不可用')
-      }
-    }
-    void init()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   /** .doc 是旧二进制格式，docx-preview 无法渲染，由渲染分支直接给出提示 */
   const previewUnsupported = previewSource?.ext === '.doc'
   const previewNotice = previewUnsupported
     ? '该模板文件是 .doc 旧格式，浏览器无法在线预览，请下载后用 Word 打开'
     : previewError
 
-  /** 预览：拉取模板原件字节流后交给 docx-preview 渲染 */
-  useEffect(() => {
-    if (!previewSource || previewSource.ext === '.doc') return
-    let cancelled = false
+  /** 预览：拉取模板原件字节流后交给 docx-preview 渲染（事件驱动，不放在 effect 里避免级联渲染） */
+  const runPreviewRender = async (source: PreviewSource) => {
+    if (source.ext === '.doc') return
     setPreviewLoading(true)
     setPreviewError(null)
-    void (async () => {
-      try {
-        const blob = previewSource.versionId
-          ? await downloadDeliverableTemplateVersion(previewSource.templateId, previewSource.versionId)
-          : await downloadDeliverableTemplate(previewSource.templateId)
-        if (cancelled || !previewRef.current) return
-        previewRef.current.innerHTML = ''
-        await renderAsync(blob, previewRef.current, undefined, { inWrapper: true, ignoreWidth: true })
-      } catch (e) {
-        if (!cancelled) setPreviewError(e instanceof Error ? e.message : '预览失败')
-      } finally {
-        if (!cancelled) setPreviewLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
+    try {
+      const blob = source.versionId
+        ? await downloadDeliverableTemplateVersion(source.templateId, source.versionId)
+        : await downloadDeliverableTemplate(source.templateId)
+      if (!previewRef.current) return
+      previewRef.current.innerHTML = ''
+      await renderAsync(blob, previewRef.current, undefined, { inWrapper: true, ignoreWidth: true })
+    } catch (e) {
+      setPreviewError(e instanceof Error ? e.message : '预览失败')
+    } finally {
+      setPreviewLoading(false)
     }
-  }, [previewSource])
+  }
 
   const openPreview = (source: PreviewSource) => {
     setPreviewSource(source)
     setPreviewOpen(true)
+    // 等 Modal 内容挂载后再渲染
+    setTimeout(() => void runPreviewRender(source), 0)
   }
 
   /** 预览当前生效母本 */
@@ -228,8 +224,8 @@ export function DeliverableTemplatePage() {
         msgApi.success('创建成功，请在列表中为该模板上传 Word 模板')
       }
       setDrawerOpen(false)
-      void loadData()
-    } catch (e) {
+      invalidateTemplates()
+    } catch (e: unknown) {
       // 表单校验失败：antd 会在字段下方标红，但不弹提示时用户会误以为「保存没反应」
       if (e && typeof e === 'object' && 'errorFields' in e) {
         msgApi.warning('请检查表单必填项后再保存')
@@ -243,8 +239,8 @@ export function DeliverableTemplatePage() {
     try {
       await deleteDeliverableTemplate(id)
       msgApi.success('删除成功')
-      void loadData()
-    } catch (e) {
+      invalidateTemplates()
+    } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
@@ -274,8 +270,8 @@ export function DeliverableTemplatePage() {
       }
       result.skipped.forEach((reason) => msgApi.warning(reason))
       setPendingFiles([])
-      void loadData()
-    } catch (e) {
+      invalidateTemplates()
+    } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '批量上传失败')
     } finally {
       setBatchUploading(false)
@@ -288,8 +284,8 @@ export function DeliverableTemplatePage() {
       const replaced = Boolean(record.file_object_key)
       await uploadDeliverableTemplateFile(record.id, file, changeNote)
       msgApi.success(replaced ? `已上传新版本：${file.name}` : `已上传 Word 模板：${file.name}`)
-      void loadData()
-    } catch (e) {
+      invalidateTemplates()
+    } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '上传失败')
     } finally {
       setUploadingFile(false)
@@ -313,7 +309,7 @@ export function DeliverableTemplatePage() {
   const handleDownload = async (record: RdDeliverableTemplate) => {
     try {
       saveBlob(await downloadDeliverableTemplate(record.id), record.file_name ?? `${record.name}.docx`)
-    } catch (e) {
+    } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '下载失败')
     }
   }
@@ -325,7 +321,7 @@ export function DeliverableTemplatePage() {
       const blob = await downloadDeliverableTemplateVersion(versionDrawer.id, version.id)
       const ext = version.file_ext ?? '.docx'
       saveBlob(blob, `${versionDrawer.name}-v${version.version_no}${ext}`)
-    } catch (e) {
+    } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '下载历史版本失败')
     }
   }
@@ -338,7 +334,7 @@ export function DeliverableTemplatePage() {
         ? await downloadDeliverableTemplateVersion(previewSource.templateId, previewSource.versionId)
         : await downloadDeliverableTemplate(previewSource.templateId)
       saveBlob(blob, previewSource.fileName)
-    } catch (e) {
+    } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '下载失败')
     }
   }
@@ -624,7 +620,7 @@ export function DeliverableTemplatePage() {
         templateId={versionDrawer?.id ?? null}
         templateName={versionDrawer?.name ?? ''}
         onClose={() => setVersionDrawer(null)}
-        onChanged={() => void loadData()}
+        onChanged={invalidateTemplates}
         onPreview={openVersionPreview}
         onDownload={(version) => void handleVersionDownload(version)}
       />
