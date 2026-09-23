@@ -78,7 +78,7 @@ class Capa(BaseModel):
 
     # 关联信息
     deviation_id: Mapped[uuid.UUID | None] = mapped_column(
-        PG_UUID(as_uuid=True), ForeignKey("quality.deviations.id"), nullable=True
+        PG_UUID(as_uuid=True), ForeignKey("quality.quality_deviations.id"), nullable=True
     )
     source: Mapped[str | None] = mapped_column(String(255), nullable=True)
     source_code: Mapped[str | None] = mapped_column(String(255), nullable=True)
