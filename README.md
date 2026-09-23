@@ -125,6 +125,78 @@
 
 ## 开发
 
+### 个人开发启动模式
+
+本地只启动前后端，数据库/Redis/MinIO 连接 UAT 服务器（内网互通）。
+
+```bash
+# 1. 从 main 拉分支
+git checkout main && git pull origin main
+git checkout -b feature/你的功能名
+
+# 2. 配置本地环境（已预设 UAT 地址，只需填写凭证）
+cp .env.local.example .env.local
+# 编辑 .env.local，填写 <从团队获取> 的占位符:
+#   - POSTGRES_PASSWORD / DATABASE_URL 中的密码
+#   - REDIS_PASSWORD / REDIS_URL 中的密码
+#   - MINIO_SECRET_KEY
+#   - 飞书应用凭证（FEISHU__*__APP_ID / APP_SECRET）
+#   - AI API Keys（如需要）
+
+# 3. 只启动前后端（不启动本地数据库/Redis/MinIO）
+docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
+
+# 4. 首次启动或 model 变更后执行迁移
+docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
+
+# 5. 访问
+# 前端: http://localhost:3000
+# 后端: http://localhost:8000/docs
+```
+
+**配置文件**：`.env.local.example`（已预设 UAT 内网地址 172.17.62.101）
+
+### UAT 启动模式
+
+在 UAT 服务器上部署完整环境（包含所有基础设施）。
+
+```bash
+# 1. 配置 UAT 环境
+cp .env.uat.example .env.uat
+# 编辑 .env.uat，填写所有 <从团队获取> 的占位符
+
+# 2. 启动完整环境（基础设施 + 应用服务）
+docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-compose.uat.yml up -d --build
+
+# 3. 执行数据库迁移（首次启动或 model 变更后）
+docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-compose.uat.yml run --rm migrate
+
+# 4. 访问
+# 前端: http://<服务器IP或域名>
+# 后端: http://<服务器IP或域名>/api/v1/
+```
+
+**配置文件**：`.env.uat.example`（UAT 服务器专用）
+
+**说明**：
+- `docker-compose.uat-infra.yml` - 基础设施层（PostgreSQL/Redis/MinIO）
+- `docker-compose.uat.yml` - 应用层（backend/frontend/migrate/nginx）
+- 两个文件必须一起使用，应用层依赖基础设施层的健康检查
+
+### 开发流程
+
+```
+main 拉 feature → 修改 → PR → 合并 uat → 测试 →feature →  发布 PR → 合并 main → 新版本生成
+```
+
+1. 从 `main` 拉分支开发
+2. 完成后合并到 `uat` 测试
+3. UAT 验证通过后，创建 PR 合并到 `main`
+
+### 本地直接启动（不用 Docker）
+
+如果已在本地安装好 Python 和 Node.js 环境，也可以直接启动：
+
 ```bash
 # 后端开发服务器
 cd backend && uv run uvicorn app.main:app --reload
