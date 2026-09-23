@@ -9,8 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
+from app.core.exceptions import NotFoundException
 from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.modules.safety.schemas import (
+    DailyRiskReportApiResponse,
+    DailyRiskReportListApiResponse,
     DailyRiskReportCreate,
     DailyRiskReportResponse,
     DailyRiskReportUpdate,
@@ -24,7 +27,7 @@ daily_risk_reports_router = APIRouter()
 
 @daily_risk_reports_router.get(
     "/daily-risk-reports",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportListApiResponse,
     summary="获取每日风险作业报备列表",
 )
 async def handler(
@@ -47,14 +50,14 @@ async def handler(
 
         parsed_date = dt.fromisoformat(report_date)
     items, total = await service.get_reports(skip, page_size, status, department, parsed_date, keyword, report_type)
-    return build_response(
+    return DailyRiskReportListApiResponse(
         data=[DailyRiskReportResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
-    "/daily-risk-reports", response_model=ApiResponse, summary="创建每日风险作业报备"
+    "/daily-risk-reports", response_model=DailyRiskReportApiResponse, summary="创建每日风险作业报备"
 )
 async def handler(  # noqa: F811
     data: DailyRiskReportCreate,
@@ -65,12 +68,12 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.create_report(data)
     await db.commit()
-    return build_response(data=DailyRiskReportResponse.model_validate(item))
+    return DailyRiskReportApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.get(  # type: ignore[no-redef]
     "/daily-risk-reports/{report_id}",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportApiResponse,
     summary="获取每日风险作业报备详情",
 )
 async def handler(  # noqa: F811
@@ -82,13 +85,13 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.get_report(report_id)
     if not item:
-        return build_response(code=404, message="报备不存在")
-    return build_response(data=DailyRiskReportResponse.model_validate(item))
+        raise NotFoundException(resource="报备")
+    return DailyRiskReportApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.put(  # type: ignore[no-redef]
     "/daily-risk-reports/{report_id}",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportApiResponse,
     summary="更新每日风险作业报备",
 )
 async def handler(  # noqa: F811
@@ -101,14 +104,14 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.update_report(report_id, data)
     if not item:
-        return build_response(code=404, message="报备不存在")
+        raise NotFoundException(resource="报备")
     await db.commit()
-    return build_response(data=DailyRiskReportResponse.model_validate(item))
+    return DailyRiskReportApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.delete(  # type: ignore[no-redef]
     "/daily-risk-reports/{report_id}",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportApiResponse,
     summary="删除每日风险作业报备",
 )
 async def handler(  # noqa: F811
@@ -120,14 +123,14 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     ok = await service.delete_report(report_id)
     if not ok:
-        return build_response(code=404, message="报备不存在")
+        raise NotFoundException(resource="报备")
     await db.commit()
-    return build_response(message="删除成功")
+    return DailyRiskReportApiResponse(code=200, message="删除成功", data=None)
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
     "/daily-risk-reports/{report_id}/submit",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportApiResponse,
     summary="提交每日风险作业报备",
 )
 async def handler(  # noqa: F811
@@ -139,14 +142,14 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.submit_report(report_id)
     if not item:
-        return build_response(code=400, message="无法提交，当前状态不允许")
+        raise ValueError("无法提交，当前状态不允许")
     await db.commit()
-    return build_response(data=DailyRiskReportResponse.model_validate(item))
+    return DailyRiskReportApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
     "/daily-risk-reports/{report_id}/approve",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportApiResponse,
     summary="审批每日风险作业报备",
 )
 async def handler(  # noqa: F811
@@ -158,14 +161,14 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.approve_report(report_id)
     if not item:
-        return build_response(code=400, message="无法审批，当前状态不允许")
+        raise ValueError("无法审批，当前状态不允许")
     await db.commit()
-    return build_response(data=DailyRiskReportResponse.model_validate(item))
+    return DailyRiskReportApiResponse(data=DailyRiskReportResponse.model_validate(item))
 
 
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
     "/daily-risk-reports/{report_id}/reject",
-    response_model=ApiResponse,
+    response_model=DailyRiskReportApiResponse,
     summary="驳回每日风险作业报备",
 )
 async def handler(  # noqa: F811
@@ -178,6 +181,6 @@ async def handler(  # noqa: F811
     service = DailyRiskReportService(db)
     item = await service.reject_report(report_id, reason)
     if not item:
-        return build_response(code=400, message="无法驳回，当前状态不允许")
+        raise ValueError("无法驳回，当前状态不允许")
     await db.commit()
-    return build_response(data=DailyRiskReportResponse.model_validate(item))
+    return DailyRiskReportApiResponse(data=DailyRiskReportResponse.model_validate(item))

@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -186,3 +187,36 @@ class RegulationReviseResponse(BaseModel):
     revision_no: str
     regulation_name: str
     status: str
+
+
+# ============ API Response Wrappers ============
+
+
+class OperationRegulationApiResponse(BaseModel):
+    """Single operation regulation response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: OperationRegulationResponse | None = None
+
+
+class OperationRegulationListApiResponse(BaseModel):
+    """Operation regulation list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[OperationRegulationResponse]
+    meta: dict[str, Any] | None = None
+
+
+class RegulationRevisionApiResponse(BaseModel):
+    """Single regulation revision response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: RegulationRevisionResponse | None = None
+
+
+class RegulationRevisionListApiResponse(BaseModel):
+    """Regulation revision list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[RegulationRevisionResponse]
+    meta: dict[str, Any] | None = None

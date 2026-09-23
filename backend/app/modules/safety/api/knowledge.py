@@ -12,10 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
+from app.core.exceptions import NotFoundException
 from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    SafetyKnowledgeArticleApiResponse,
+    SafetyKnowledgeArticleListApiResponse,
     SafetyKnowledgeArticleCreate,
     SafetyKnowledgeArticleResponse,
     SafetyKnowledgeArticleUpdate,
@@ -29,7 +32,7 @@ logger = logging.getLogger(__name__)
 knowledge_router = APIRouter()
 
 
-@knowledge_router.get("/knowledge-articles", response_model=ApiResponse, summary="获取安全知识库文章列表")
+@knowledge_router.get("/knowledge-articles", response_model=SafetyKnowledgeArticleListApiResponse, summary="获取安全知识库文章列表")
 async def handler(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -43,14 +46,14 @@ async def handler(
     service = KnowledgeService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_articles(skip, page_size, category, status, keyword)
-    return build_response(
+    return SafetyKnowledgeArticleListApiResponse(
         data=[SafetyKnowledgeArticleResponse.model_validate(a) for a in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
-    "/knowledge-articles", response_model=ApiResponse, summary="创建安全知识库文章"
+    "/knowledge-articles", response_model=SafetyKnowledgeArticleApiResponse, summary="创建安全知识库文章"
 )
 async def handler(  # noqa: F811
     data: SafetyKnowledgeArticleCreate,
@@ -61,12 +64,12 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.create_article(data)
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.get(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取安全知识库文章详情",
 )
 async def handler(  # noqa: F811
@@ -78,13 +81,13 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.get_article(article_id)
     if not item:
-        return build_response(code=404, message="文章不存在")
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+        raise NotFoundException(resource="文章")
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.put(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="更新安全知识库文章",
 )
 async def handler(  # noqa: F811
@@ -97,14 +100,14 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     item = await service.update_article(article_id, data)
     if not item:
-        return build_response(code=404, message="文章不存在")
+        raise NotFoundException(resource="文章")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.delete(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="删除安全知识库文章",
 )
 async def handler(  # noqa: F811
@@ -116,14 +119,14 @@ async def handler(  # noqa: F811
     service = KnowledgeService(db)
     result = await service.delete_article(article_id)
     if not result:
-        return build_response(code=404, message="文章不存在")
+        raise NotFoundException(resource="文章")
     await db.commit()
-    return build_response(message="删除成功")
+    return SafetyKnowledgeArticleApiResponse(code=200, message="删除成功", data=None)
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}/publish",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="发布知识库文章",
 )
 async def handler(  # noqa: F811
@@ -137,12 +140,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法发布，当前状态不允许")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}/archive",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="归档知识库文章",
 )
 async def handler(  # noqa: F811
@@ -156,12 +159,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法归档，当前状态不允许")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}/upload",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="上传知识库文章附件",
 )
 async def handler(  # noqa: F811
@@ -203,9 +206,9 @@ async def handler(  # noqa: F811
         },
     )
     if not item:
-        return build_response(code=404, message="文章不存在")
+        raise NotFoundException(resource="文章")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 # ── 知识图谱端点 ──────────────────────────────────────────
@@ -249,7 +252,7 @@ def _edge_to_dict(e) -> dict:
 
 @knowledge_router.get(
     "/knowledge-graph/full-graph",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取完整知识图谱",
 )
 async def get_full_graph(
@@ -275,7 +278,7 @@ async def get_full_graph(
 
 @knowledge_router.get(
     "/knowledge-graph/nodes",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取图谱节点列表",
 )
 async def get_graph_nodes(
@@ -302,7 +305,7 @@ async def get_graph_nodes(
 
 @knowledge_router.get(
     "/knowledge-graph/edges",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取图谱边列表",
 )
 async def get_graph_edges(
@@ -327,7 +330,7 @@ async def get_graph_edges(
 
 @knowledge_router.get(
     "/knowledge-graph/search",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="搜索图谱节点",
 )
 async def search_graph_nodes(
@@ -346,7 +349,7 @@ async def search_graph_nodes(
 
 @knowledge_router.get(
     "/knowledge-graph/expand",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="展开节点邻居",
 )
 async def expand_graph_node(
@@ -373,7 +376,7 @@ async def expand_graph_node(
 
 @knowledge_router.post(
     "/knowledge-graph/generate",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="AI 生成知识图谱",
 )
 async def generate_graph(
@@ -393,7 +396,7 @@ async def generate_graph(
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/batch-import",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="批量导入知识库文章",
 )
 async def handler(  # noqa: F811
@@ -534,7 +537,7 @@ async def handler(  # noqa: F811
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-card",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="生成知识卡片",
 )
 async def generate_card(
@@ -568,7 +571,7 @@ async def generate_card(
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-ppt",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="生成 PPT",
 )
 async def generate_ppt(
@@ -603,7 +606,7 @@ async def generate_ppt(
 
 @knowledge_router.get(
     "/knowledge-articles/{article_id}/ppt-history",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取 PPT 生成历史",
 )
 async def get_ppt_history(
@@ -637,7 +640,7 @@ async def get_ppt_history(
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-summary",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="生成摘要",
 )
 async def generate_summary(

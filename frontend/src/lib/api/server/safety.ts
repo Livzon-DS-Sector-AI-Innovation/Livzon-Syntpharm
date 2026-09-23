@@ -41,6 +41,40 @@ type SpecialOperationPersonnelListApiResponse = components['schemas']['SpecialOp
 type SpecialOperationReportResponse = components['schemas']['SpecialOperationReportResponse']
 type SpecialOperationReportApiResponse = components['schemas']['SpecialOperationReportApiResponse']
 type SpecialOperationReportListApiResponse = components['schemas']['SpecialOperationReportListApiResponse']
+
+type EhsChangeResponse = components['schemas']['EhsChangeResponse']
+type EhsChangeApiResponse = components['schemas']['EhsChangeApiResponse']
+type EhsChangeListApiResponse = components['schemas']['EhsChangeListApiResponse']
+type DailyRiskReportResponse = components['schemas']['DailyRiskReportResponse']
+type DailyRiskReportApiResponse = components['schemas']['DailyRiskReportApiResponse']
+type DailyRiskReportListApiResponse = components['schemas']['DailyRiskReportListApiResponse']
+type SafetyKnowledgeArticleResponse = components['schemas']['SafetyKnowledgeArticleResponse']
+type SafetyKnowledgeArticleApiResponse = components['schemas']['SafetyKnowledgeArticleApiResponse']
+type SafetyKnowledgeArticleListApiResponse = components['schemas']['SafetyKnowledgeArticleListApiResponse']
+type OhHealthExamResponse = components['schemas']['OhHealthExamResponse']
+type OhHealthExamApiResponse = components['schemas']['OhHealthExamApiResponse']
+type OhHealthExamListApiResponse = components['schemas']['OhHealthExamListApiResponse']
+type OperationRegulationResponse = components['schemas']['OperationRegulationResponse']
+type OperationRegulationApiResponse = components['schemas']['OperationRegulationApiResponse']
+type OperationRegulationListApiResponse = components['schemas']['OperationRegulationListApiResponse']
+type RegulationRevisionResponse = components['schemas']['RegulationRevisionResponse']
+type RegulationRevisionApiResponse = components['schemas']['RegulationRevisionApiResponse']
+type RegulationRevisionListApiResponse = components['schemas']['RegulationRevisionListApiResponse']
+type ScheduledTaskResponse = components['schemas']['ScheduledTaskResponse']
+type ScheduledTaskApiResponse = components['schemas']['ScheduledTaskApiResponse']
+type ScheduledTaskListApiResponse = components['schemas']['ScheduledTaskListApiResponse']
+type ScheduledTaskLogResponse = components['schemas']['ScheduledTaskLogResponse']
+type ScheduledTaskLogListApiResponse = components['schemas']['ScheduledTaskLogListApiResponse']
+
+type HazardIdentificationResponse = components['schemas']['HazardIdentificationResponse']
+type HazardIdentificationApiResponse = components['schemas']['HazardIdentificationApiResponse']
+type HazardIdentificationListApiResponse = components['schemas']['HazardIdentificationListApiResponse']
+type HazardIdentificationBatchApiResponse = components['schemas']['HazardIdentificationBatchApiResponse']
+type RegulationStagesResponse = components['schemas']['RegulationStagesResponse']
+type RegulationStagesApiResponse = components['schemas']['RegulationStagesApiResponse']
+type SafetyEnumsApiResponse = components['schemas']['SafetyEnumsApiResponse']
+type FeishuWsStatusApiResponse = components['schemas']['FeishuWsStatusApiResponse']
+type FeishuWsRestartApiResponse = components['schemas']['FeishuWsRestartApiResponse']
 type SpecialOperationLedgerStatsApiResponse = components['schemas']['SpecialOperationLedgerStatsApiResponse']
 type AccidentListApiResponse = components['schemas']['AccidentListApiResponse']
 
@@ -486,19 +520,19 @@ export async function getHazardIdentifications(params: Record<string, unknown> =
 }
 
 export async function getHIStats(authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazard-identifications/stats', { headers: authHeaders })
+  return apiFetch<HazardIdentificationApiResponse>('/api/v1/safety/hazard-identifications/stats', { headers: authHeaders })
 }
 
 export async function getHILedgerStats(params: Record<string, unknown> = {}, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-identifications/ledger-stats${buildQueryString(params)}`, { headers: authHeaders })
+  return apiFetch<HazardIdentificationApiResponse>(`/api/v1/safety/hazard-identifications/ledger-stats${buildQueryString(params)}`, { headers: authHeaders })
 }
 
 export async function getHazardIdentification(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-identifications/${id}`, { headers: authHeaders })
+  return apiFetch<HazardIdentificationApiResponse>(`/api/v1/safety/hazard-identifications/${id}`, { headers: authHeaders })
 }
 
 export async function createHazardIdentification(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazard-identifications', {
+  return apiFetch<HazardIdentificationListApiResponse>('/api/v1/safety/hazard-identifications', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -506,11 +540,11 @@ export async function createHazardIdentification(data: unknown, authHeaders?: Re
 }
 
 export async function getRegulationStages(regulationId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/regulations/${regulationId}/stages`, { headers: authHeaders })
+  return apiFetch<RegulationStagesApiResponse>(`/api/v1/safety/regulations/${regulationId}/stages`, { headers: authHeaders })
 }
 
 export async function createHazardIdentificationBatch(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazard-identifications/batch', {
+  return apiFetch<HazardIdentificationBatchApiResponse>('/api/v1/safety/hazard-identifications/batch', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -518,7 +552,7 @@ export async function createHazardIdentificationBatch(data: unknown, authHeaders
 }
 
 export async function updateHazardIdentification(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/hazard-identifications/${id}`, {
+  return apiFetch<HazardIdentificationApiResponse>(`/api/v1/safety/hazard-identifications/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -560,7 +594,7 @@ export async function deleteHazardIdentification(id: string, authHeaders?: Recor
 }
 
 export async function parseHazardExportQuery(naturalQuery: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/hazard-identifications/parse-query', {
+  return apiFetch<HazardIdentificationApiResponse>('/api/v1/safety/hazard-identifications/parse-query', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify({ natural_query: naturalQuery }),
@@ -584,7 +618,7 @@ export async function exportHazardLedgerPdf(data: unknown, authHeaders?: Record<
 }
 
 export async function getSafetyEnums(authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/enums', { headers: authHeaders })
+  return apiFetch<SafetyEnumsApiResponse>('/api/v1/safety/enums', { headers: authHeaders })
 }
 
 // ============ OperationRegulation ============
@@ -594,11 +628,11 @@ export async function getRegulations(params: Record<string, unknown> = {}, authH
 }
 
 export async function getRegulation(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/regulations/${id}`, { headers: authHeaders })
+  return apiFetch<OperationRegulationApiResponse>(`/api/v1/safety/regulations/${id}`, { headers: authHeaders })
 }
 
 export async function createRegulation(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/regulations', {
+  return apiFetch<OperationRegulationApiResponse>('/api/v1/safety/regulations', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -606,7 +640,7 @@ export async function createRegulation(data: unknown, authHeaders?: Record<strin
 }
 
 export async function updateRegulation(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/regulations/${id}`, {
+  return apiFetch<OperationRegulationApiResponse>(`/api/v1/safety/regulations/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -629,7 +663,7 @@ export async function generateSop(formData: FormData, authHeaders?: Record<strin
 }
 
 export async function updateSopContent(regulationId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/regulations/${regulationId}/content`, {
+  return apiFetch<OperationRegulationApiResponse>(`/api/v1/safety/regulations/${regulationId}/content`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -668,7 +702,7 @@ export async function exportRegulationPdfBase64(regulationId: string, authHeader
 }
 
 export async function reviseRegulation(regulationId: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/regulations/${regulationId}/revise`, {
+  return apiFetch<RegulationRevisionApiResponse>(`/api/v1/safety/regulations/${regulationId}/revise`, {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -682,11 +716,11 @@ export async function getRevisions(params: Record<string, unknown> = {}, authHea
 }
 
 export async function getRevision(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/revisions/${id}`, { headers: authHeaders })
+  return apiFetch<RegulationRevisionApiResponse>(`/api/v1/safety/revisions/${id}`, { headers: authHeaders })
 }
 
 export async function createRevision(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/revisions', {
+  return apiFetch<RegulationRevisionListApiResponse>('/api/v1/safety/revisions', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -694,7 +728,7 @@ export async function createRevision(data: unknown, authHeaders?: Record<string,
 }
 
 export async function updateRevision(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/revisions/${id}`, {
+  return apiFetch<RegulationRevisionApiResponse>(`/api/v1/safety/revisions/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -848,11 +882,11 @@ export async function getKnowledgeArticles(params: Record<string, unknown> = {},
 }
 
 export async function getKnowledgeArticle(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${id}`, { headers: authHeaders })
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${id}`, { headers: authHeaders })
 }
 
 export async function createKnowledgeArticle(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/knowledge-articles', {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>('/api/v1/safety/knowledge-articles', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -860,7 +894,7 @@ export async function createKnowledgeArticle(data: unknown, authHeaders?: Record
 }
 
 export async function updateKnowledgeArticle(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/knowledge-articles/${id}`, {
+  return apiFetch<SafetyKnowledgeArticleApiResponse>(`/api/v1/safety/knowledge-articles/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1053,11 +1087,11 @@ export async function getDailyRiskReports(params: Record<string, unknown> = {}, 
 }
 
 export async function getDailyRiskReport(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/daily-risk-reports/${id}`, { headers: authHeaders })
+  return apiFetch<DailyRiskReportApiResponse>(`/api/v1/safety/daily-risk-reports/${id}`, { headers: authHeaders })
 }
 
 export async function createDailyRiskReport(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/daily-risk-reports', {
+  return apiFetch<DailyRiskReportApiResponse>('/api/v1/safety/daily-risk-reports', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1065,7 +1099,7 @@ export async function createDailyRiskReport(data: unknown, authHeaders?: Record<
 }
 
 export async function updateDailyRiskReport(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/daily-risk-reports/${id}`, {
+  return apiFetch<DailyRiskReportApiResponse>(`/api/v1/safety/daily-risk-reports/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1111,11 +1145,11 @@ export async function getEhsChanges(params: Record<string, unknown> = {}, authHe
 }
 
 export async function getEhsChange(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}`, { headers: authHeaders })
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}`, { headers: authHeaders })
 }
 
 export async function createEhsChange(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/ehs-changes', {
+  return apiFetch<EhsChangeApiResponse>('/api/v1/safety/ehs-changes', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1123,7 +1157,7 @@ export async function createEhsChange(data: unknown, authHeaders?: Record<string
 }
 
 export async function updateEhsChange(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/ehs-changes/${id}`, {
+  return apiFetch<EhsChangeApiResponse>(`/api/v1/safety/ehs-changes/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1320,11 +1354,11 @@ export async function getOhHealthExams(params: Record<string, unknown> = {}, aut
 }
 
 export async function getOhHealthExam(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}`, { headers: authHeaders })
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}`, { headers: authHeaders })
 }
 
 export async function createOhHealthExam(data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/oh-health-exams', {
+  return apiFetch<OhHealthExamApiResponse>('/api/v1/safety/oh-health-exams', {
     method: 'POST',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1332,7 +1366,7 @@ export async function createOhHealthExam(data: unknown, authHeaders?: Record<str
 }
 
 export async function updateOhHealthExam(id: string, data: unknown, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/oh-health-exams/${id}`, {
+  return apiFetch<OhHealthExamApiResponse>(`/api/v1/safety/oh-health-exams/${id}`, {
     method: 'PUT',
     headers: authHeaders,
     body: JSON.stringify(data),
@@ -1526,14 +1560,14 @@ export async function getScheduledTasks(params: Record<string, unknown>, authHea
 }
 
 export async function getScheduledTask(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/scheduled-tasks/${id}`, {
+  return apiFetch<ScheduledTaskApiResponse>(`/api/v1/safety/scheduled-tasks/${id}`, {
     method: 'GET',
     headers: authHeaders,
   })
 }
 
 export async function createScheduledTask(data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>('/api/v1/safety/scheduled-tasks', {
+  return apiFetch<ScheduledTaskApiResponse>('/api/v1/safety/scheduled-tasks', {
     method: 'POST',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1541,7 +1575,7 @@ export async function createScheduledTask(data: Record<string, unknown>, authHea
 }
 
 export async function updateScheduledTask(id: string, data: Record<string, unknown>, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/scheduled-tasks/${id}`, {
+  return apiFetch<ScheduledTaskApiResponse>(`/api/v1/safety/scheduled-tasks/${id}`, {
     method: 'PUT',
     headers: { ...authHeaders, 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -1549,7 +1583,7 @@ export async function updateScheduledTask(id: string, data: Record<string, unkno
 }
 
 export async function deleteScheduledTask(id: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown>(`/api/v1/safety/scheduled-tasks/${id}`, {
+  return apiFetch<ScheduledTaskApiResponse>(`/api/v1/safety/scheduled-tasks/${id}`, {
     method: 'DELETE',
     headers: authHeaders,
   })
@@ -1571,7 +1605,7 @@ export async function runScheduledTaskNow(id: string, authHeaders?: Record<strin
 }
 
 export async function getScheduledTaskLogs(taskId: string, authHeaders?: Record<string, string>) {
-  return safeApiFetch<unknown[]>(`/api/v1/safety/scheduled-tasks/${taskId}/logs`, {
+  return apiFetch<ScheduledTaskLogListApiResponse>(`/api/v1/safety/scheduled-tasks/${taskId}/logs`, {
     method: 'GET',
     headers: authHeaders,
   })

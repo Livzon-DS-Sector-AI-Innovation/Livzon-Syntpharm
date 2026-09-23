@@ -8,13 +8,17 @@ from fastapi import APIRouter
 
 from app.core.response import ApiResponse, build_response
 from app.modules.safety.feishu.event_client import get_ws_status, restart_ws
+from app.modules.safety.schemas import (
+    FeishuWsStatusApiResponse,
+    FeishuWsRestartApiResponse,
+)
 
 feishu_router = APIRouter()
 
 
 @feishu_router.get(  # public
     "/feishu/ws/status",
-    response_model=ApiResponse,
+    response_model=FeishuWsStatusApiResponse,
     summary="查询飞书 WebSocket 连接状态",
 )
 async def ws_status() -> Any:
@@ -29,12 +33,12 @@ async def ws_status() -> Any:
         pong_watchdog_healthy: PONG 看门狗是否健康
     """
     status = await get_ws_status()
-    return build_response(data=status)
+    return FeishuWsStatusApiResponse(data=status)
 
 
 @feishu_router.post(  # public
     "/feishu/ws/restart",
-    response_model=ApiResponse,
+    response_model=FeishuWsRestartApiResponse,
     summary="手动恢复飞书 WebSocket 连接",
 )
 async def ws_restart() -> Any:
@@ -44,4 +48,4 @@ async def ws_restart() -> Any:
     正常运行时调用无害（会先关闭旧连接再建新连接）。
     """
     result = await restart_ws()
-    return build_response(data=result, message=result.get("message", ""))
+    return FeishuWsRestartApiResponse(data=result, message=result.get("message", ""))

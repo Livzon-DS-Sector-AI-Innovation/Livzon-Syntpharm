@@ -1,6 +1,9 @@
 """Safety request and response schemas."""
 
 from enum import StrEnum
+from typing import Any
+
+from pydantic import BaseModel
 
 
 class ChangeType(StrEnum):
@@ -746,3 +749,13 @@ ABNORMALITY_STATUS_OPTIONS = [
     {"value": AbnormalityStatusEnum.CORRECTED, "label": "已纠正", "color": "green"},
     {"value": AbnormalityStatusEnum.CLOSED, "label": "已关闭", "color": "default"},
 ]
+
+
+# ============ API Response Wrappers ============
+
+
+class SafetyEnumsApiResponse(BaseModel):
+    """Safety enums response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]

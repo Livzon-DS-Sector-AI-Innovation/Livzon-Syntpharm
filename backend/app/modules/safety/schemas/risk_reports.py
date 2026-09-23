@@ -305,3 +305,18 @@ class SpecialOperationLedgerStatsApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[SpecialOperationLedgerStats]
+
+
+class DailyRiskReportApiResponse(BaseModel):
+    """Single daily risk report response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: DailyRiskReportResponse | None = None
+
+
+class DailyRiskReportListApiResponse(BaseModel):
+    """Daily risk report list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[DailyRiskReportResponse]
+    meta: dict[str, Any] | None = None

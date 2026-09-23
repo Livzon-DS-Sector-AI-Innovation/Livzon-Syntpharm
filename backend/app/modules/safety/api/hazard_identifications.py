@@ -12,10 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
+from app.core.exceptions import NotFoundException
 from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    HazardIdentificationApiResponse,
+    HazardIdentificationListApiResponse,
     HazardIdentificationApiResponse,
     HazardIdentificationListApiResponse,
     HazardIdentificationBatchApiResponse,
@@ -95,7 +98,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/ledger-stats",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识台账统计",
 )
 async def handler(  # noqa: F811
@@ -121,7 +124,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/risk-options",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源风险选项（常规作业报备用）",
 )
 async def handler(  # noqa: F811
@@ -144,7 +147,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识详情",
 )
 async def handler(  # noqa: F811
@@ -156,7 +159,7 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.get_hazard_identification(hid)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
@@ -219,7 +222,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.put(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="更新危险源辨识记录",
 )
 async def handler(  # noqa: F811
@@ -232,14 +235,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_hazard_identification(hid, data)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
     return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/submit",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="提交基础信息，进入AI流程",
 )
 async def handler(  # noqa: F811
@@ -258,7 +261,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/run-script",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="执行AI脚本",
 )
 async def handler(  # noqa: F811
@@ -278,7 +281,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/review",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="审核脚本输出",
 )
 async def handler(  # noqa: F811
@@ -298,7 +301,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/upload",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="上传岗位资料附件",
 )
 async def handler(  # noqa: F811
@@ -334,14 +337,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.upload_attachment(hid, file.filename or "unknown", stored_path)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
     return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.delete(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="删除危险源辨识记录",
 )
 async def handler(  # noqa: F811
@@ -353,9 +356,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_hazard_identification(hid)
     if not result:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(message="删除成功")
+    return HazardIdentificationApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 危险源辨识台账导出 ──
@@ -363,7 +366,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/parse-query",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="AI 解析危险源辨识台账自然语言筛选条件",
 )
 async def handler(  # noqa: F811
@@ -381,7 +384,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/export-pdf",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="导出危险源辨识台账 PDF",
     response_class=Response,
 )

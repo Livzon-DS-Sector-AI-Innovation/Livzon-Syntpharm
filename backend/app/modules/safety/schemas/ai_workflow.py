@@ -79,3 +79,21 @@ class KnowledgeAttachmentRequest(BaseModel):
     """从知识库创建附件请求"""
 
     knowledge_ids: list[str] = Field(..., description="知识库文章 ID 列表")
+
+
+# ============ API Response Wrappers ============
+
+
+class AIWorkflowConfigApiResponse(BaseModel):
+    """Single AI workflow config response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: AIWorkflowConfigResponse | None = None
+
+
+class AIWorkflowConfigListApiResponse(BaseModel):
+    """AI workflow config list response wrapper"""
+    code: int = 200
+    message: str = "success"
+    data: list[AIWorkflowConfigResponse]
+    meta: dict[str, Any] | None = None

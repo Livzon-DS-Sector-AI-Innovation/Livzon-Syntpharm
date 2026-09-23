@@ -107,7 +107,7 @@ async def handler(  # noqa: F811
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/investigate",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="开始调查事故",
 )
 async def handler(  # noqa: F811
@@ -128,7 +128,7 @@ async def handler(  # noqa: F811
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/resolve",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="完成调查事故",
 )
 async def handler(  # noqa: F811
@@ -161,7 +161,7 @@ async def handler(  # noqa: F811
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/start-capa",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="启动CAPA",
 )
 async def handler(  # noqa: F811
@@ -186,7 +186,7 @@ async def handler(  # noqa: F811
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/verify-capa",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="验证CAPA并关闭事故",
 )
 async def handler(  # noqa: F811
@@ -207,7 +207,7 @@ async def handler(  # noqa: F811
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/close",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="直接关闭事故",
 )
 async def handler(  # noqa: F811
