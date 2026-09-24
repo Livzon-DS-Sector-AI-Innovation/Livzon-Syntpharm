@@ -30783,6 +30783,24 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * MessageApiResponse
+         * @description Message-only response wrapper for actions that return no data payload
+         */
+        MessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
          * MessageTemplateRequest
          * @description 消息模板请求
          */
@@ -73153,7 +73171,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -73597,7 +73617,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -73701,7 +73723,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -73736,7 +73760,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -73768,7 +73794,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -73799,7 +73827,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -73834,7 +73864,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -73869,7 +73901,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -73901,7 +73935,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -73911,7 +73947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73932,7 +73968,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -73967,7 +74005,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -74004,7 +74044,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -74014,7 +74056,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74036,7 +74078,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -74046,7 +74090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DeviationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74067,7 +74111,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -74102,7 +74148,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -74137,7 +74185,9 @@ export interface operations {
             path: {
                 deviation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -74147,7 +74197,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["MessageApiResponse"];
                 };
             };
             /** @description Validation Error */

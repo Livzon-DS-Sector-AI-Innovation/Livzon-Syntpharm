@@ -486,3 +486,11 @@ class AIAnalysisApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: dict[str, Any]
+
+
+class MessageApiResponse(BaseModel):
+    """Message-only response wrapper for actions that return no data payload"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

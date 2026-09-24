@@ -27,6 +27,7 @@ from app.modules.quality.qms.deviation_schemas import (
     InvestigationCreate,
     InvestigationListApiResponse,
     InvestigationUpdate,
+    MessageApiResponse,
 )
 from app.modules.quality.qms.deviation_service import (
     ClosingService,
@@ -59,6 +60,7 @@ def get_closing_service(session=Depends(get_db)) -> Any:  # type: ignore[no-unty
 
 @router.get("", response_model=DeviationListApiResponse)
 async def get(
+    current_user: RequiredUser,
     deviation_no: str | None = Query(None, description="偏差编号"),
     deviation_type: str | None = Query(None, description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差等级"),
@@ -744,6 +746,7 @@ async def put(
 @router.delete("/{deviation_id}")
 async def delete(
     deviation_id: UUID,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """删除偏差"""
@@ -794,6 +797,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: BatchLockRequest,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """锁定批次"""
@@ -807,6 +811,7 @@ async def post(  # noqa: F811
 @router.post("/{deviation_id}/unlock-batch", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """解锁批次"""
@@ -822,6 +827,7 @@ async def post(  # noqa: F811
 
 @router.get("/investigations/list", response_model=InvestigationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: InvestigationService = Depends(get_investigation_service),
@@ -886,6 +892,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: InvestigationCreate,
+    current_user: RequiredUser,
     service: InvestigationService = Depends(get_investigation_service),
 ) -> Any:
     """创建调查"""
@@ -900,6 +907,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     deviation_id: UUID,
     data: InvestigationUpdate,
+    current_user: RequiredUser,
     service: InvestigationService = Depends(get_investigation_service),
 ) -> Any:
     """更新调查"""
@@ -915,6 +923,7 @@ async def put(  # noqa: F811
 @router.post("/{deviation_id}/investigation/complete", response_model=InvestigationApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
+    current_user: RequiredUser,
     service: InvestigationService = Depends(get_investigation_service),
 ) -> Any:
     """完成调查"""
@@ -928,8 +937,9 @@ async def post(  # noqa: F811
 # ========== 偏差整改 API ==========
 
 
-@router.get("/corrections/list", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/corrections/list", response_model=DeviationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: CorrectionService = Depends(get_correction_service),
@@ -991,6 +1001,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: CorrectionCreate,
+    current_user: RequiredUser,
     service: CorrectionService = Depends(get_correction_service),
 ) -> Any:
     """创建整改"""
@@ -1005,6 +1016,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     deviation_id: UUID,
     data: CorrectionUpdate,
+    current_user: RequiredUser,
     service: CorrectionService = Depends(get_correction_service),
 ) -> Any:
     """更新整改"""
@@ -1017,9 +1029,10 @@ async def put(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/correction/progress", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/correction/progress", response_model=MessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
+    current_user: RequiredUser,
     progress: int = Query(..., ge=0, le=100),
     service: CorrectionService = Depends(get_correction_service),
 ) -> Any:
@@ -1034,8 +1047,9 @@ async def post(  # noqa: F811
 # ========== 偏差关闭 API ==========
 
 
-@router.get("/closings/list", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/closings/list", response_model=DeviationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: ClosingService = Depends(get_closing_service),
@@ -1095,6 +1109,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     data: ClosingCreate,
+    current_user: RequiredUser,
     service: ClosingService = Depends(get_closing_service),
 ) -> Any:
     """创建关闭申请"""
@@ -1109,6 +1124,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     deviation_id: UUID,
     data: ClosingUpdate,
+    current_user: RequiredUser,
     service: ClosingService = Depends(get_closing_service),
 ) -> Any:
     """更新关闭记录"""
@@ -1121,9 +1137,10 @@ async def put(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{deviation_id}/closing/complete", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{deviation_id}/closing/complete", response_model=MessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     deviation_id: UUID,
+    current_user: RequiredUser,
     service: ClosingService = Depends(get_closing_service),
 ) -> Any:
     """完成关闭"""
