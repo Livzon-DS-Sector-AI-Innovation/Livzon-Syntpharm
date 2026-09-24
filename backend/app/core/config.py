@@ -186,6 +186,15 @@ class Settings(BaseSettings):
     ENCRYPTION_KEY: str | None = None
     E2E_AUTH_SECRET: str | None = None
 
+    # Logging
+    LOG_LEVEL: str = "INFO"
+    LOG_DIR: str = "logs"
+    LOG_ENABLED_MODULES: str = ""
+    LOG_DISABLED_MODULES: str = ""
+    LOG_THIRD_PARTY_LEVEL: str = ""
+    LOG_THIRD_PARTY_HANDLER_LEVEL: str = "WARNING"
+    LOG_ROOT_LEVEL: str = "WARNING"
+
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/dazah"
 

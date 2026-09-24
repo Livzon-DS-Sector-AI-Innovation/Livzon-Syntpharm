@@ -20,6 +20,7 @@ import app.platform.audit.models  # noqa: F401
 import app.platform.identity.models  # noqa: F401
 from app.api.router import api_router
 from app.core.config import get_settings
+from app.core.logging_config import setup_logging
 from app.core.exceptions import AppException
 from app.core.response import error_response
 from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
@@ -31,17 +32,16 @@ from app.shared.file_conversion import init_file_conversion
 
 settings = get_settings()
 
-logging.basicConfig(
-    level=logging.DEBUG if settings.DEBUG else logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+setup_logging(
+    is_production=settings.is_production,
+    log_level="DEBUG" if settings.DEBUG else settings.LOG_LEVEL,
+    log_dir=settings.LOG_DIR,
+    enabled_modules=settings.LOG_ENABLED_MODULES,
+    disabled_modules=settings.LOG_DISABLED_MODULES,
+    third_party_level=settings.LOG_THIRD_PARTY_LEVEL,
+    third_party_handler_level=settings.LOG_THIRD_PARTY_HANDLER_LEVEL,
+    root_level=settings.LOG_ROOT_LEVEL,
 )
-
-# 抑制第三方库的 DEBUG 日志噪音
-logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
-logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-logging.getLogger("httpx").setLevel(logging.WARNING)
-logging.getLogger("httpcore").setLevel(logging.WARNING)
-logging.getLogger("websockets").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 

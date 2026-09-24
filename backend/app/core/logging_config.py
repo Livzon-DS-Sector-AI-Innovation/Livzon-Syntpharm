@@ -40,15 +40,25 @@ from zoneinfo import ZoneInfo
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
 
 # ── 业务模块 logger 前缀 → 短名称映射（用于文件命名和终端列显示）──
-_MODULE_PREFIX_MAP: dict[str, str] = {
-    "app.modules.safety": "safety",
-    "app.modules.equipment": "equipment",
-    "app.modules.energy": "energy",
-    "app.modules.hr": "hr",
-    "app.platform.audit": "audit",
-    "app.platform": "platform",
-    "app.core": "core",
-}
+
+
+def _build_module_prefix_map() -> dict[str, str]:
+    """Derive the prefix map from the module registry so it cannot drift.
+
+    Business modules come first so their prefixes win the first-match lookup in
+    ``_short_module_name``; ``app.platform.audit`` is listed before ``app.platform``
+    for the same reason.
+    """
+    from app.shared.module_registry import BUSINESS_MODULES
+
+    prefix_map = {f"app.modules.{module.code}": module.code for module in BUSINESS_MODULES}
+    prefix_map["app.platform.audit"] = "audit"
+    prefix_map["app.platform"] = "platform"
+    prefix_map["app.core"] = "core"
+    return prefix_map
+
+
+_MODULE_PREFIX_MAP: dict[str, str] = _build_module_prefix_map()
 
 # ── 三方库默认日志级别 ──
 _THIRD_PARTY_LOGGERS: dict[str, str] = {
