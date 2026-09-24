@@ -12,18 +12,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.exceptions import NotFoundException
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    HazardIdentificationApiResponse,
+    HazardIdentificationBatchApiResponse,
     HazardIdentificationBatchCreate,
     HazardIdentificationCreate,
+    HazardIdentificationListApiResponse,
     HazardIdentificationResponse,
     HazardIdentificationReview,
     HazardIdentificationRunScript,
     HazardIdentificationUpdate,
     HazardLedgerExportRequest,
     HazardRiskOption,
+    RegulationStagesApiResponse,
 )
 from app.modules.safety.service import (
     SafetyService,
@@ -34,7 +39,7 @@ hazard_identifications_router = APIRouter()
 
 @hazard_identifications_router.get(
     "/hazard-identifications",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationListApiResponse,
     summary="获取危险源辨识列表",
 )
 async def handler(
@@ -68,7 +73,7 @@ async def handler(
         date_to,
         batch_id,
     )
-    return build_response(
+    return HazardIdentificationListApiResponse(
         data=[HazardIdentificationResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -76,7 +81,7 @@ async def handler(
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/stats",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识工作流统计",
 )
 async def handler(  # noqa: F811
@@ -86,12 +91,12 @@ async def handler(  # noqa: F811
     """获取危险源辨识工作流统计（草案/进行中/待审核/已完成）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_stats()
-    return build_response(data=stats)
+    return HazardIdentificationApiResponse(data=stats)
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/ledger-stats",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识台账统计",
 )
 async def handler(  # noqa: F811
@@ -112,12 +117,12 @@ async def handler(  # noqa: F811
         date_from,
         date_to,
     )
-    return build_response(data=stats)
+    return HazardIdentificationApiResponse(data=stats)
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/risk-options",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源风险选项（常规作业报备用）",
 )
 async def handler(  # noqa: F811
@@ -140,7 +145,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识详情",
 )
 async def handler(  # noqa: F811
@@ -152,13 +157,13 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.get_hazard_identification(hid)
     if not item:
-        return build_response(code=404, message="记录不存在")
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+        raise NotFoundException(resource="记录")
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationListApiResponse,
     summary="创建危险源辨识记录",
 )
 async def handler(  # noqa: F811
@@ -170,7 +175,7 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.create_hazard_identification(data)
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 # ── 批量辨识 + 工段预览 ──
@@ -178,7 +183,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/stages",
-    response_model=ApiResponse,
+    response_model=RegulationStagesApiResponse,
     summary="获取操规工艺阶段列表（批量辨识前预览）",
 )
 async def handler(  # noqa: F811
@@ -190,12 +195,12 @@ async def handler(  # noqa: F811
     stages = await service.get_regulation_stages(regulation_id)
     if stages is None:
         return build_response(code=404, message="操规不存在或无可解析的第七章内容")
-    return build_response(data=stages)
+    return RegulationStagesApiResponse(data=stages)
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/batch",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationBatchApiResponse,
     summary="批量创建危险源辨识（一个操规多工段）",
 )
 async def handler(  # noqa: F811
@@ -208,14 +213,14 @@ async def handler(  # noqa: F811
     try:
         result = await service.create_hazard_identification_batch(data)
         await db.commit()
-        return build_response(data=result)
+        return HazardIdentificationApiResponse(data=result)
     except ValueError as e:
         return build_response(code=400, message=str(e))
 
 
 @hazard_identifications_router.put(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="更新危险源辨识记录",
 )
 async def handler(  # noqa: F811
@@ -228,14 +233,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.update_hazard_identification(hid, data)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/submit",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="提交基础信息，进入AI流程",
 )
 async def handler(  # noqa: F811
@@ -249,12 +254,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/run-script",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="执行AI脚本",
 )
 async def handler(  # noqa: F811
@@ -269,12 +274,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法执行脚本，当前状态不允许或条件不满足")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/review",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="审核脚本输出",
 )
 async def handler(  # noqa: F811
@@ -289,12 +294,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法审核，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/upload",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="上传岗位资料附件",
 )
 async def handler(  # noqa: F811
@@ -330,14 +335,14 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.upload_attachment(hid, file.filename or "unknown", stored_path)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.delete(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="删除危险源辨识记录",
 )
 async def handler(  # noqa: F811
@@ -349,9 +354,9 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     result = await service.delete_hazard_identification(hid)
     if not result:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(message="删除成功")
+    return HazardIdentificationApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 危险源辨识台账导出 ──
@@ -359,7 +364,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/parse-query",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="AI 解析危险源辨识台账自然语言筛选条件",
 )
 async def handler(  # noqa: F811
@@ -372,12 +377,12 @@ async def handler(  # noqa: F811
     if not data.natural_query:
         return build_response(code=400, message="请提供自然语言查询")
     result = await service.parse_hazard_export_query(data.natural_query)
-    return build_response(data=result)
+    return HazardIdentificationApiResponse(data=result)
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/export-pdf",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="导出危险源辨识台账 PDF",
     response_class=Response,
 )

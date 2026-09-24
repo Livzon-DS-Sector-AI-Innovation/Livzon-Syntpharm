@@ -9,10 +9,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.response import ApiResponse, paginated_response, success_response
+from app.core.response import paginated_response, success_response
 from app.modules.safety.schemas import (
     CardPreviewRequest,
+    ScheduledTaskApiResponse,
     ScheduledTaskCreate,
+    ScheduledTaskListApiResponse,
+    ScheduledTaskLogListApiResponse,
     ScheduledTaskLogResponse,
     ScheduledTaskResponse,
     ScheduledTaskUpdate,
@@ -25,7 +28,7 @@ scheduled_tasks_router = APIRouter()
 
 
 @scheduled_tasks_router.get(
-    "/scheduled-tasks/data-source-options", response_model=ApiResponse, summary="获取可用数据来源选项"
+    "/scheduled-tasks/data-source-options", response_model=ScheduledTaskApiResponse, summary="获取可用数据来源选项"
 )
 async def get_data_source_options(current_user: RequiredUser) -> Any:
     """获取可用的数据来源列表（供前端下拉选择）"""
@@ -33,7 +36,9 @@ async def get_data_source_options(current_user: RequiredUser) -> Any:
     return success_response(data=options)
 
 
-@scheduled_tasks_router.post("/scheduled-tasks/preview-card", response_model=ApiResponse, summary="预览消息卡片")
+@scheduled_tasks_router.post(
+    "/scheduled-tasks/preview-card", response_model=ScheduledTaskApiResponse, summary="预览消息卡片"
+)
 async def preview_card(
     data: CardPreviewRequest,
     current_user: RequiredUser,
@@ -45,7 +50,9 @@ async def preview_card(
     return success_response(data=result)
 
 
-@scheduled_tasks_router.get("/scheduled-tasks/feishu-chats", response_model=ApiResponse, summary="获取飞书群聊列表")
+@scheduled_tasks_router.get(
+    "/scheduled-tasks/feishu-chats", response_model=ScheduledTaskApiResponse, summary="获取飞书群聊列表"
+)
 async def get_feishu_chats(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
@@ -73,7 +80,7 @@ async def get_feishu_chats(
     return success_response(data=chats)
 
 
-@scheduled_tasks_router.get("/scheduled-tasks", response_model=ApiResponse, summary="获取定时任务列表")
+@scheduled_tasks_router.get("/scheduled-tasks", response_model=ScheduledTaskListApiResponse, summary="获取定时任务列表")
 async def get_scheduled_tasks(
     current_user: RequiredUser,
     page: int = Query(1, ge=1),
@@ -94,7 +101,7 @@ async def get_scheduled_tasks(
     )
 
 
-@scheduled_tasks_router.post("/scheduled-tasks", response_model=ApiResponse, summary="创建定时任务")
+@scheduled_tasks_router.post("/scheduled-tasks", response_model=ScheduledTaskApiResponse, summary="创建定时任务")
 async def create_scheduled_task(
     data: ScheduledTaskCreate,
     current_user: RequiredUser,
@@ -107,7 +114,9 @@ async def create_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.get("/scheduled-tasks/{task_id}", response_model=ApiResponse, summary="获取定时任务详情")
+@scheduled_tasks_router.get(
+    "/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="获取定时任务详情"
+)
 async def get_scheduled_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -121,7 +130,9 @@ async def get_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.put("/scheduled-tasks/{task_id}", response_model=ApiResponse, summary="更新定时任务")
+@scheduled_tasks_router.put(
+    "/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="更新定时任务"
+)
 async def update_scheduled_task(
     task_id: uuid.UUID,
     data: ScheduledTaskUpdate,
@@ -137,7 +148,9 @@ async def update_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.delete("/scheduled-tasks/{task_id}", response_model=ApiResponse, summary="删除定时任务")
+@scheduled_tasks_router.delete(
+    "/scheduled-tasks/{task_id}", response_model=ScheduledTaskApiResponse, summary="删除定时任务"
+)
 async def delete_scheduled_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -153,7 +166,7 @@ async def delete_scheduled_task(
 
 
 @scheduled_tasks_router.post(
-    "/scheduled-tasks/{task_id}/toggle", response_model=ApiResponse, summary="启用/禁用定时任务"
+    "/scheduled-tasks/{task_id}/toggle", response_model=ScheduledTaskApiResponse, summary="启用/禁用定时任务"
 )
 async def toggle_scheduled_task(
     task_id: uuid.UUID,
@@ -170,7 +183,9 @@ async def toggle_scheduled_task(
     return success_response(data=ScheduledTaskResponse.model_validate(task))
 
 
-@scheduled_tasks_router.post("/scheduled-tasks/{task_id}/run", response_model=ApiResponse, summary="手动执行定时任务")
+@scheduled_tasks_router.post(
+    "/scheduled-tasks/{task_id}/run", response_model=ScheduledTaskApiResponse, summary="手动执行定时任务"
+)
 async def run_scheduled_task_now(
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -186,7 +201,7 @@ async def run_scheduled_task_now(
 
 
 @scheduled_tasks_router.get(
-    "/scheduled-tasks/{task_id}/logs", response_model=ApiResponse, summary="获取定时任务执行日志"
+    "/scheduled-tasks/{task_id}/logs", response_model=ScheduledTaskLogListApiResponse, summary="获取定时任务执行日志"
 )
 async def get_scheduled_task_logs(
     task_id: uuid.UUID,
@@ -210,7 +225,9 @@ async def get_scheduled_task_logs(
 # ── 安全模块飞书 WebSocket 管理 ──
 
 
-@scheduled_tasks_router.post("/feishu/ws/restart", response_model=ApiResponse, summary="手动恢复飞书 WebSocket 连接")
+@scheduled_tasks_router.post(
+    "/feishu/ws/restart", response_model=ScheduledTaskApiResponse, summary="手动恢复飞书 WebSocket 连接"
+)
 async def restart_feishu_ws(
     current_user: RequiredUser,
 ) -> Any:
@@ -225,7 +242,9 @@ async def restart_feishu_ws(
     return success_response(data=result)
 
 
-@scheduled_tasks_router.get("/feishu/ws/status", response_model=ApiResponse, summary="查询飞书 WebSocket 连接状态")
+@scheduled_tasks_router.get(
+    "/feishu/ws/status", response_model=ScheduledTaskApiResponse, summary="查询飞书 WebSocket 连接状态"
+)
 async def get_feishu_ws_status(current_user: RequiredUser) -> Any:
     """查询安全模块飞书 WebSocket 当前状态。
 

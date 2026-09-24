@@ -196,11 +196,13 @@ async def list_employees(...):
 
 **命名规范**：迁移文件必须使用顺序编号格式 `NNNN_descriptive_name.py`，其中 NNNN 是 4 位数字（如 0001、0002）。Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）。禁止使用 Alembic 自动生成的哈希 ID（如 `3cb28d1e1ac7`）。
 
+**全局唯一编号**：`alembic/versions/` 下任意两个迁移文件不得使用相同的 `NNNN` 前缀，且文件名与 Revision ID 使用的 `NNNN` 必须一致。CI 通过 `scripts/ci/check_migration_numbers.py` 检查，重复编号会导致 PR 无法合并。
+
 **初始基线例外**：`0001_baseline_full_schema` 迁移允许跨所有 schema，这是唯一允许跨模块的迁移。
 
 **单模块原则**：基线之后的每个迁移文件只能修改一个模块的 schema。跨模块外键、`platform`/`core`/`shared` 级变更可以跨 schema，但必须由架构负责人审批。
 
-CI 会自动检查（`scripts/ci/check_migration_scope.py`），违反会导致 PR 无法合并。
+CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check_migration_numbers.py`），违反会导致 PR 无法合并。
 
 ### Model 与 Migration 绑定规则
 

@@ -13,15 +13,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.exceptions import NotFoundException
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    OperationRegulationApiResponse,
     OperationRegulationCreate,
+    OperationRegulationListApiResponse,
     OperationRegulationResponse,
     OperationRegulationUpdate,
     RegulationReviseRequest,
+    RegulationRevisionApiResponse,
     RegulationRevisionCreate,
+    RegulationRevisionListApiResponse,
     RegulationRevisionResponse,
     RegulationRevisionUpdate,
     SopContentUpdate,
@@ -35,7 +40,9 @@ from app.modules.safety.service import (
 regulations_router = APIRouter()
 
 
-@regulations_router.get("/regulations", response_model=ApiResponse, summary="获取安全操作规程列表")
+@regulations_router.get(
+    "/regulations", response_model=OperationRegulationListApiResponse, summary="获取安全操作规程列表"
+)
 async def handler(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -49,7 +56,7 @@ async def handler(
     service = RegulationService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_regulations(skip, page_size, position, keyword, status)
-    return build_response(
+    return OperationRegulationListApiResponse(
         data=[OperationRegulationResponse.model_validate(r) for r in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -57,7 +64,7 @@ async def handler(
 
 @regulations_router.get(  # type: ignore[no-redef]
     "/regulations/{regulation_id}",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="获取安全操作规程详情",
 )
 async def handler(  # noqa: F811
@@ -70,11 +77,11 @@ async def handler(  # noqa: F811
     item = await service.get_regulation(regulation_id)
     if not item:
         return build_response(code=404, message="操规不存在")
-    return build_response(data=OperationRegulationResponse.model_validate(item))
+    return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
 
 @regulations_router.post(  # type: ignore[no-redef]
-    "/regulations", response_model=ApiResponse, summary="创建安全操作规程"
+    "/regulations", response_model=OperationRegulationApiResponse, summary="创建安全操作规程"
 )
 async def handler(  # noqa: F811
     data: OperationRegulationCreate,
@@ -85,12 +92,12 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.create_regulation(data)
     await db.commit()
-    return build_response(data=OperationRegulationResponse.model_validate(item))
+    return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
 
 @regulations_router.put(  # type: ignore[no-redef]
     "/regulations/{regulation_id}",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="更新安全操作规程",
 )
 async def handler(  # noqa: F811
@@ -105,12 +112,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=404, message="操规不存在")
     await db.commit()
-    return build_response(data=OperationRegulationResponse.model_validate(item))
+    return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
 
 @regulations_router.delete(  # type: ignore[no-redef]
     "/regulations/{regulation_id}",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="删除安全操作规程",
 )
 async def handler(  # noqa: F811
@@ -124,12 +131,12 @@ async def handler(  # noqa: F811
     if not result:
         return build_response(code=404, message="操规不存在")
     await db.commit()
-    return build_response(message="删除成功")
+    return OperationRegulationApiResponse(code=200, message="删除成功", data=None)
 
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/upload",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="上传操规文档",
 )
 async def handler(  # noqa: F811
@@ -167,14 +174,14 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=404, message="操规不存在")
     await db.commit()
-    return build_response(data=OperationRegulationResponse.model_validate(item))
+    return OperationRegulationApiResponse(data=OperationRegulationResponse.model_validate(item))
 
 
 # ==================== 操规修订记录 Routes ====================
 
 
 @regulations_router.get(  # type: ignore[no-redef]
-    "/revisions", response_model=ApiResponse, summary="获取修订记录列表"
+    "/revisions", response_model=RegulationRevisionListApiResponse, summary="获取修订记录列表"
 )
 async def handler(  # noqa: F811
     page: int = Query(1, ge=1),
@@ -192,7 +199,7 @@ async def handler(  # noqa: F811
     items, total = await service.get_revisions(
         skip, page_size, regulation_id, revision_type, review_opinion, revision_scope
     )
-    return build_response(
+    return RegulationRevisionListApiResponse(
         data=[RegulationRevisionResponse.model_validate(r) for r in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -200,7 +207,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.get(  # type: ignore[no-redef]
     "/revisions/{revision_id}",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="获取修订记录详情",
 )
 async def handler(  # noqa: F811
@@ -212,12 +219,12 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.get_revision(revision_id)
     if not item:
-        return build_response(code=404, message="修订记录不存在")
-    return build_response(data=RegulationRevisionResponse.model_validate(item))
+        raise NotFoundException(resource="修订记录")
+    return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
 @regulations_router.post(  # type: ignore[no-redef]
-    "/revisions", response_model=ApiResponse, summary="创建修订记录"
+    "/revisions", response_model=RegulationRevisionApiResponse, summary="创建修订记录"
 )
 async def handler(  # noqa: F811
     data: RegulationRevisionCreate,
@@ -230,12 +237,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=404, message="关联的操规不存在")
     await db.commit()
-    return build_response(data=RegulationRevisionResponse.model_validate(item))
+    return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
 @regulations_router.put(  # type: ignore[no-redef]
     "/revisions/{revision_id}",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="更新修订记录",
 )
 async def handler(  # noqa: F811
@@ -248,14 +255,14 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.update_revision(revision_id, data)
     if not item:
-        return build_response(code=404, message="修订记录不存在")
+        raise NotFoundException(resource="修订记录")
     await db.commit()
-    return build_response(data=RegulationRevisionResponse.model_validate(item))
+    return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
 @regulations_router.delete(  # type: ignore[no-redef]
     "/revisions/{revision_id}",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="删除修订记录",
 )
 async def handler(  # noqa: F811
@@ -267,9 +274,9 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     result = await service.delete_revision(revision_id)
     if not result:
-        return build_response(code=404, message="修订记录不存在")
+        raise NotFoundException(resource="修订记录")
     await db.commit()
-    return build_response(message="删除成功")
+    return OperationRegulationApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 人工修订 ──
@@ -277,7 +284,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/revisions/{revision_id}/manual-complete",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="完成人工修订",
 )
 async def handler(  # noqa: F811
@@ -319,7 +326,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法完成修订，当前状态不允许或修订类型不是人工修订")
     await db.commit()
-    return build_response(data=RegulationRevisionResponse.model_validate(item))
+    return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
 # ── AI 修订 ──
@@ -327,7 +334,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/revisions/{revision_id}/ai-generate",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="AI生成修订版本",
 )
 async def handler(  # noqa: F811
@@ -345,7 +352,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/revisions/{revision_id}/ai-confirm",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="确认AI修订版本",
 )
 async def handler(  # noqa: F811
@@ -361,7 +368,7 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法确认，修订类型不是AI修订或修订记录不存在")
     await db.commit()
-    return build_response(data=RegulationRevisionResponse.model_validate(item))
+    return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
 # ── 修订范围识别 ──
@@ -369,7 +376,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/revisions/{revision_id}/identify-scope",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="AI识别修订范围",
 )
 async def handler(  # noqa: F811
@@ -383,9 +390,9 @@ async def handler(  # noqa: F811
     service = RegulationService(db)
     item = await service.identify_revision_scope(revision_id)
     if not item:
-        return build_response(code=404, message="修订记录不存在")
+        raise NotFoundException(resource="修订记录")
     await db.commit()
-    return build_response(data=RegulationRevisionResponse.model_validate(item))
+    return RegulationRevisionApiResponse(data=RegulationRevisionResponse.model_validate(item))
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -395,7 +402,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/regulations/generate",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="上传旧版操规并生成标准化版本",
 )
 async def handler(  # noqa: F811
@@ -420,7 +427,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.get(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/content",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="获取操规标准化内容",
 )
 async def handler(  # noqa: F811
@@ -439,7 +446,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.put(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/content",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="保存编辑后的操规内容",
 )
 async def handler(  # noqa: F811
@@ -466,7 +473,7 @@ async def handler(  # noqa: F811
 
 @regulations_router.post(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/revise",
-    response_model=ApiResponse,
+    response_model=OperationRegulationApiResponse,
     summary="在线修订操规",
 )
 async def handler(  # noqa: F811

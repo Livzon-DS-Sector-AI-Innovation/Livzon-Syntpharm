@@ -75,3 +75,23 @@ class SetExamConclusionRequest(BaseModel):
 
     conclusion: str = Field(..., description="体检结论")
     remarks: str | None = Field(None, description="备注")
+
+
+# ============ API Response Wrappers ============
+
+
+class OhHealthExamApiResponse(BaseModel):
+    """Single OH health exam response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: OhHealthExamResponse | None = None
+
+
+class OhHealthExamListApiResponse(BaseModel):
+    """OH health exam list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[OhHealthExamResponse]
+    meta: dict[str, Any] | None = None

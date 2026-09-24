@@ -418,3 +418,71 @@ class BatchUnlockRequest(BaseModel):
     """批次解锁请求"""
 
     deviation_id: UUID
+
+
+# ============ API Response Wrappers ============
+
+
+class DeviationApiResponse(BaseModel):
+    """Single deviation response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: DeviationResponse
+
+
+class DeviationListApiResponse(BaseModel):
+    """Deviation list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[DeviationResponse]
+    meta: dict[str, Any] | None = None
+
+
+class DeviationStatisticsApiResponse(BaseModel):
+    """Deviation statistics response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: DeviationStatistics
+
+
+class InvestigationApiResponse(BaseModel):
+    """Investigation response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: InvestigationResponse
+
+
+class InvestigationListApiResponse(BaseModel):
+    """Investigation list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[InvestigationResponse]
+
+
+class CorrectionApiResponse(BaseModel):
+    """Correction response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: CorrectionResponse
+
+
+class ClosingApiResponse(BaseModel):
+    """Closing response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ClosingResponse
+
+
+class AIAnalysisApiResponse(BaseModel):
+    """AI analysis response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]

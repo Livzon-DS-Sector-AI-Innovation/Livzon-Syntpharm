@@ -9,9 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
+    SpecialOperationPersonnelApiResponse,
     SpecialOperationPersonnelCreate,
+    SpecialOperationPersonnelListApiResponse,
     SpecialOperationPersonnelResponse,
     SpecialOperationPersonnelUpdate,
 )
@@ -24,7 +26,7 @@ special_ops_personnel_router = APIRouter()
 
 @special_ops_personnel_router.get(
     "/special-operation-personnel",
-    response_model=ApiResponse,
+    response_model=SpecialOperationPersonnelListApiResponse,
     summary="获取特殊作业人员资质列表",
 )
 async def handler(
@@ -41,7 +43,7 @@ async def handler(
     service = SpecialOperationService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_personnel(skip, page_size, status, certificate_type, department, keyword)
-    return build_response(
+    return SpecialOperationPersonnelListApiResponse(
         data=[SpecialOperationPersonnelResponse.model_validate(p) for p in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -49,7 +51,7 @@ async def handler(
 
 @special_ops_personnel_router.post(  # type: ignore[no-redef]
     "/special-operation-personnel",
-    response_model=ApiResponse,
+    response_model=SpecialOperationPersonnelApiResponse,
     summary="创建特殊作业人员资质",
 )
 async def handler(  # noqa: F811
@@ -61,12 +63,12 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.create_personnel(data)
     await db.commit()
-    return build_response(data=SpecialOperationPersonnelResponse.model_validate(item))
+    return SpecialOperationPersonnelApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
 
 
 @special_ops_personnel_router.get(  # type: ignore[no-redef]
     "/special-operation-personnel/{personnel_id}",
-    response_model=ApiResponse,
+    response_model=SpecialOperationPersonnelApiResponse,
     summary="获取特殊作业人员资质详情",
 )
 async def handler(  # noqa: F811
@@ -78,13 +80,13 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.get_personnel_by_id(personnel_id)
     if not item:
-        return build_response(code=404, message="人员资质不存在")
-    return build_response(data=SpecialOperationPersonnelResponse.model_validate(item))
+        raise NotFoundException(resource="人员资质")
+    return SpecialOperationPersonnelApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
 
 
 @special_ops_personnel_router.put(  # type: ignore[no-redef]
     "/special-operation-personnel/{personnel_id}",
-    response_model=ApiResponse,
+    response_model=SpecialOperationPersonnelApiResponse,
     summary="更新特殊作业人员资质",
 )
 async def handler(  # noqa: F811
@@ -97,14 +99,14 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     item = await service.update_personnel(personnel_id, data)
     if not item:
-        return build_response(code=404, message="人员资质不存在")
+        raise NotFoundException(resource="人员资质")
     await db.commit()
-    return build_response(data=SpecialOperationPersonnelResponse.model_validate(item))
+    return SpecialOperationPersonnelApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
 
 
 @special_ops_personnel_router.delete(  # type: ignore[no-redef]
     "/special-operation-personnel/{personnel_id}",
-    response_model=ApiResponse,
+    response_model=SpecialOperationPersonnelApiResponse,
     summary="删除特殊作业人员资质",
 )
 async def handler(  # noqa: F811
@@ -116,6 +118,6 @@ async def handler(  # noqa: F811
     service = SpecialOperationService(db)
     result = await service.delete_personnel(personnel_id)
     if not result:
-        return build_response(code=404, message="人员资质不存在")
+        raise NotFoundException(resource="人员资质")
     await db.commit()
-    return build_response(message="删除成功")
+    return SpecialOperationPersonnelApiResponse(code=200, message="删除成功", data=None)

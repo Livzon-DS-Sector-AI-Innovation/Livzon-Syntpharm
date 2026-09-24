@@ -1,13 +1,18 @@
 import type { ModuleInfo } from '@/types'
-import type { CapaListResponse, DeviationListResponse, DepartmentContactListResponse, CapaDetail, DeviationDetail, DepartmentContact, CapaListItem, DeviationListItem } from '@/types/quality'
+import type { components } from '@/types/generated/schema'
+import type { DeviationListResponse, DepartmentContactListResponse, DeviationDetail, DepartmentContact, DeviationListItem } from '@/types/quality'
+
+type CapaResponse = components['schemas']['CapaResponse']
+type CapaApiResponse = components['schemas']['CapaApiResponse']
+
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
 export async function fetchModuleInfo(): Promise<ModuleInfo> {
   return apiGet(`/api/v1/quality`)
 }
 
-export async function fetchCapa(id: string): Promise<CapaDetail> {
-  return apiGet<CapaDetail>(`/api/v1/quality/capas/${id}`)
+export async function fetchCapa(id: string): Promise<CapaApiResponse> {
+  return apiGet<CapaApiResponse>(`/api/v1/quality/capas/${id}`)
 }
 
 export async function fetchCapas(params?: {
@@ -16,14 +21,14 @@ export async function fetchCapas(params?: {
   keyword?: string
   page?: number
   page_size?: number
-  status?: string
-}): Promise<CapaListResponse> {
-  const searchParams = new URLSearchParams()
-  if (params?.page) searchParams.set('page', String(params.page))
-  if (params?.page_size) searchParams.set('page_size', String(params.page_size))
-  if (params?.status) searchParams.set('status', params.status)
-  const query = searchParams.toString()
-  return apiFetchPaginated<CapaListItem>(`/api/v1/quality/capas${query ? `?${query}` : ''}`) as Promise<CapaListResponse>
+}): Promise<{ items: CapaResponse[]; total: number; page: number; page_size: number }> {
+  const query = params
+    ? Object.entries(params)
+        .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
+        .join('&')
+    : ''
+  return apiFetchPaginated<CapaResponse>(`/api/v1/quality/capas${query ? `?${query}` : ''}`)
 }
 
 export async function fetchDeviations(params?: {

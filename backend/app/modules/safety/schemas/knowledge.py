@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -52,3 +53,23 @@ class SafetyKnowledgeArticleResponse(SafetyKnowledgeArticleBase):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class SafetyKnowledgeArticleApiResponse(BaseModel):
+    """Single safety knowledge article response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: SafetyKnowledgeArticleResponse | None = None
+
+
+class SafetyKnowledgeArticleListApiResponse(BaseModel):
+    """Safety knowledge article list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[SafetyKnowledgeArticleResponse]
+    meta: dict[str, Any] | None = None

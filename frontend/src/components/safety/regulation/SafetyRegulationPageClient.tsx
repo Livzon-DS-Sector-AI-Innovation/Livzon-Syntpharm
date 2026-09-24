@@ -363,7 +363,7 @@ export function SafetyRegulationPageClient() {
       const response = await createRevision(values as RegulationRevisionFormData)
       if (response.code === 200) {
         message.success('创建修订记录成功')
-        addRevision(response.data)
+        if (response.data) addRevision(response.data as RegulationRevision)
         setRevDrawerOpen(false)
         revForm.resetFields()
       } else {

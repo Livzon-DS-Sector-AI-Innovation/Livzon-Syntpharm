@@ -14,6 +14,7 @@ from app.modules.production.product import output_router as product_output_route
 from app.modules.production.product import product_router as workshop_product_router
 from app.modules.production.product.sync_config_api import router as product_sync_config_router
 from app.modules.quality import (
+    capa_router,
     cpv_router,
     deviation_router,
     deviation_settings_router,
@@ -95,6 +96,7 @@ api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管�
 api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])
 api_router.include_router(reagent_reminder_router, prefix="/quality", tags=["质量管理 - 试剂提醒"])
 api_router.include_router(instrument_router, prefix="/quality", tags=["质量管理 - 仪器校准"])
+api_router.include_router(capa_router, prefix="/quality", tags=["质量管理 - CAPA"])
 # CPV router
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
 api_router.include_router(sop_ai_router, prefix="/quality/sop-ai", tags=["SOP AI"])

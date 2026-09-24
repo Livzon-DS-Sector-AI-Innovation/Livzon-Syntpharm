@@ -11,16 +11,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, get_current_user
+from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    DepartmentLeaderApiResponse,
     DepartmentLeaderResponse,
+    DepartmentSafetyOfficerApiResponse,
     DepartmentSafetyOfficerResponse,
+    HazardApiResponse,
+    HazardListApiResponse,
     HazardReportCreate,
     HazardReportResponse,
     HazardReportUpdate,
+    HazardStatsApiResponse,
     HazardStatsResponse,
     RectificationReplyRequest,
     VerifyLevelRequest,
@@ -36,7 +42,7 @@ from app.modules.safety.service.hazard import (
 hazards_router = APIRouter()
 
 
-@hazards_router.get("/hazards", response_model=ApiResponse, summary="获取隐患列表")
+@hazards_router.get("/hazards", response_model=HazardListApiResponse, summary="获取隐患列表")
 async def get(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -66,24 +72,24 @@ async def get(
         department,
         keyword,
     )
-    return build_response(
+    return HazardListApiResponse(
         data=[HazardReportResponse.model_validate(h) for h in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@hazards_router.get("/hazards/stats", response_model=ApiResponse, summary="获取隐患统计数据")
+@hazards_router.get("/hazards/stats", response_model=HazardStatsApiResponse, summary="获取隐患统计数据")
 async def handler(
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取隐患全局统计数据（不受分页/筛选影响，用于统计药丸展示）。"""
     service = HazardService(db)
     stats = await service.get_hazard_stats()
-    return build_response(data=HazardStatsResponse(**stats))
+    return HazardStatsApiResponse(data=HazardStatsResponse(**stats))
 
 
 @hazards_router.get(  # type: ignore[no-redef]
-    "/hazards/department-leader", response_model=ApiResponse, summary="查询部门负责人"
+    "/hazards/department-leader", response_model=DepartmentLeaderApiResponse, summary="查询部门负责人"
 )
 async def handler(  # noqa: F811
     department_name: str = Query(..., min_length=1, description="部门名称"),
@@ -100,7 +106,7 @@ async def handler(  # noqa: F811
     person = await resolver.resolve_department_leader(department_name)
     if person is None:
         return build_response(code=404, message=f"未找到部门 '{department_name}' 或其负责人")
-    return build_response(
+    return DepartmentLeaderApiResponse(
         data=DepartmentLeaderResponse(
             department=person.department or department_name,
             leader_name=person.name,
@@ -111,7 +117,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.get(  # type: ignore[no-redef]
     "/hazards/department-safety-officer",
-    response_model=ApiResponse,
+    response_model=DepartmentSafetyOfficerApiResponse,
     summary="查询部门分管安全员",
 )
 async def handler(  # noqa: F811
@@ -129,7 +135,7 @@ async def handler(  # noqa: F811
     person = await resolver.resolve_safety_officer(department_name)
     if person is None:
         return build_response(code=404, message=f"未找到部门 '{department_name}' 的安全员")
-    return build_response(
+    return DepartmentSafetyOfficerApiResponse(
         data=DepartmentSafetyOfficerResponse(
             department=person.department or department_name,
             safety_officer_name=person.name,
@@ -139,7 +145,7 @@ async def handler(  # noqa: F811
 
 
 @hazards_router.get(  # type: ignore[no-redef]
-    "/hazards/{hazard_id}", response_model=ApiResponse, summary="获取隐患详情"
+    "/hazards/{hazard_id}", response_model=HazardApiResponse, summary="获取隐患详情"
 )
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
@@ -150,11 +156,11 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     item = await service.get_hazard(hazard_id)
     if not item:
-        return build_response(code=404, message="隐患不存在")
-    return build_response(data=HazardReportResponse.model_validate(item))
+        raise NotFoundException(resource="隐患")
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
-@hazards_router.post("/hazards", response_model=ApiResponse, summary="创建隐患")
+@hazards_router.post("/hazards", response_model=HazardApiResponse, summary="创建隐患")
 async def post(
     data: HazardReportCreate,
     db: AsyncSession = Depends(get_db),
@@ -165,11 +171,11 @@ async def post(
     service = HazardService(db)
     item = await service.create_hazard(data, auto_run_ai=False)
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.put(  # type: ignore[no-redef]
-    "/hazards/{hazard_id}", response_model=ApiResponse, summary="更新隐患"
+    "/hazards/{hazard_id}", response_model=HazardApiResponse, summary="更新隐患"
 )
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
@@ -181,14 +187,14 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     item = await service.update_hazard(hazard_id, data)
     if not item:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/upload-photo",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="上传隐患图片",
 )
 async def handler(  # noqa: F811
@@ -226,14 +232,14 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     item = await service.upload_hazard_photo(hazard_id, file.filename or "unknown", stored_path)
     if not item:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/upload-rectification-photo",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="上传整改图片",
 )
 async def handler(  # noqa: F811
@@ -270,14 +276,14 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     item = await service.upload_rectification_photo(hazard_id, stored_path)
     if not item:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/start",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="开始整改",
 )
 async def handler(  # noqa: F811
@@ -291,12 +297,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法开始整改，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/reply",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="整改回复",
 )
 async def handler(  # noqa: F811
@@ -318,12 +324,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法回复，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/verify-level",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="三级复核",
 )
 async def handler(  # noqa: F811
@@ -347,12 +353,12 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法复核，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/rework",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="重新整改",
 )
 async def handler(  # noqa: F811
@@ -375,11 +381,11 @@ async def handler(  # noqa: F811
     if not item:
         return build_response(code=400, message="无法重新整改，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.delete(  # type: ignore[no-redef]
-    "/hazards/{hazard_id}", response_model=ApiResponse, summary="删除隐患"
+    "/hazards/{hazard_id}", response_model=HazardApiResponse, summary="删除隐患"
 )
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
@@ -390,14 +396,14 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     result = await service.delete_hazard(hazard_id)
     if not result:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
     await db.commit()
-    return build_response(message="删除成功")
+    return HazardApiResponse(code=200, message="删除成功", data=None)
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/ai/run/{script_number}",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="执行隐患AI工作流",
 )
 async def handler(  # noqa: F811
@@ -421,12 +427,12 @@ async def handler(  # noqa: F811
     if script_number == 1 and item and not item.ai_error_message:
         spawn_task(_send_rectification_notification(item))
 
-    return build_response(data=HazardReportResponse.model_validate(item))
+    return HazardApiResponse(data=HazardReportResponse.model_validate(item))
 
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/notify-reviewer",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="飞书通知当前复核人",
 )
 async def handler(  # noqa: F811
@@ -444,7 +450,7 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     hazard = await service.repo.get_hazard_by_id(hazard_id)
     if not hazard:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
 
     # 判断当前复核级别（与前端 currentLevel 逻辑一致）
     rstatus = hazard.rectification_status
@@ -481,7 +487,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/review",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="触发整改回复 AI 初审",
 )
 async def handler(  # noqa: F811
@@ -498,7 +504,7 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     hazard = await service.repo.get_hazard_by_id(hazard_id)
     if not hazard:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
 
     if hazard.rectification_status not in ("replied",):
         return build_response(
@@ -514,7 +520,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.post(  # type: ignore[no-redef]
     "/hazards/{hazard_id}/rectification/notify-rectification",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="飞书通知整改责任人",
 )
 async def handler(  # noqa: F811
@@ -526,7 +532,7 @@ async def handler(  # noqa: F811
     service = HazardService(db)
     hazard = await service.repo.get_hazard_by_id(hazard_id)
     if not hazard:
-        return build_response(code=404, message="隐患不存在")
+        raise NotFoundException(resource="隐患")
 
     # 异步发送飞书通知，不阻塞响应
     spawn_task(_send_rectification_notification(hazard))
@@ -539,7 +545,7 @@ async def handler(  # noqa: F811
 
 @hazards_router.get(  # type: ignore[no-redef]
     "/hazards/catch-up/diagnose",
-    response_model=ApiResponse,
+    response_model=HazardApiResponse,
     summary="Bitable 漏单诊断",
 )
 async def handler(  # noqa: F811
