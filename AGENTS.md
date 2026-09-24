@@ -600,7 +600,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 ### Issue tracker
 
-Issues and specs live as local markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`.
+Issues and specs live as GitHub issues (`Livzon-DS-Sector-AI-Innovation/Livzon-Syntpharm`), managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 
