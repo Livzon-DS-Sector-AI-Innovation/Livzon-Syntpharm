@@ -7,6 +7,9 @@ Uses hybrid approach: PP-OCR for simple text, PP-StructureV3 for structured docu
 
 import logging
 from pathlib import Path
+from typing import Any
+
+from app.shared.ocr_service import OCRError
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +56,10 @@ class DocumentParser:
 
         # If no text extracted, this is likely a scanned PDF - use OCR
         if len(text.strip()) < 100:  # Less than 100 chars means probably empty
-            logger.info(f"PDF appears to be scanned (extracted {len(text)} chars), attempting OCR...")
+            logger.info(
+                "PDF 无文本层，回退到 OCR",
+                extra={"file": Path(path).name, "extracted_chars": len(text.strip())},
+            )
             text = DocumentParser._extract_pdf_ocr(path, max_pages=10)
 
         return text
@@ -95,7 +101,13 @@ class DocumentParser:
             return "\n\n".join(parts)
 
         except Exception as e:
-            logger.error(f"OCR extraction failed: {e}")
+            # Staged adoption: the seam raises a typed OCRError, but this parser keeps
+            # returning a degraded string until each caller is migrated (#67, #70-#72).
+            context: dict[str, Any] = {"file": Path(path).name}
+            if isinstance(e, OCRError):
+                context["ocr_engine"] = e.engine
+                context["ocr_output_format"] = e.output_format
+            logger.exception("OCR 提取失败，返回降级内容", extra=context)
             return f"[OCR提取失败: {str(e)}]"
 
     @staticmethod

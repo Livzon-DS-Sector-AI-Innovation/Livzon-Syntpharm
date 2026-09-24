@@ -11,34 +11,94 @@ from typing import Any
 
 import numpy as np
 from PIL import Image
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+OCR_ENGINE_PP_OCR = "pp_ocr"
+OCR_ENGINE_PP_STRUCTURE = "pp_structurev3"
+_EMPTY_OUTPUT_ERROR = "未提取到文本内容"
+
+
+class OCRError(Exception):
+    """A typed OCR failure that carries the context a caller needs.
+
+    This is an internal error, not an HTTP status mapping (ADR-0002). Endpoint
+    layers translate it: a job records it, an endpoint decides what the user sees.
+    """
+
+    def __init__(self, *, input_name: str, engine: str, output_format: str, cause: BaseException) -> None:
+        super().__init__(f"{engine} 提取失败 ({input_name}): {cause}")
+        self.input_name = input_name
+        self.engine = engine
+        self.output_format = output_format
+        self.cause = cause
+
+
+class ExtractionOutcome(BaseModel):
+    """Typed extraction result — the additive contract consumers migrate to.
+
+    The dictionary-shaped results stay available until the contract step, so
+    existing readers keep working while callers move over one at a time.
+    """
+
+    text: str = ""
+    markdown: str = ""
+    structure: dict[str, Any] = Field(default_factory=dict)
+    page_count: int = 0
+    degraded: bool = False
+    error: str | None = None
+
+
+def _input_name(image_input: str | Path | Image.Image) -> str:
+    """A log-safe name for the input: the filename, never the full path."""
+    if isinstance(image_input, (str, Path)):
+        return Path(image_input).name
+    return "image"
 
 
 class OCRService:
     """PaddleOCR service supporting both PP-OCR and PP-StructureV3."""
 
-    def __init__(self) -> Any:  # type: ignore[misc]
-        """Initialize both PaddleOCR pipelines."""
-        from paddleocr import PaddleOCR, PPStructureV3
+    def __init__(
+        self,
+        *,
+        ocr_engine: Any | None = None,
+        structure_engine: Any | None = None,
+    ) -> None:
+        """Initialize the pipelines, or accept injected engines.
 
-        # PP-OCR for simple text extraction (fast)
-        # PP-OCRv6 is the default, supports 50 languages including zh, en, vi, id
-        self.pp_ocr = PaddleOCR(
+        Injecting both engines is the test seam: tests exercise the seam's own
+        logging, error typing and outcome contract without loading any model.
+        """
+        self.pp_ocr = ocr_engine if ocr_engine is not None else self._build_ocr_engine()
+        self.pp_structure = structure_engine if structure_engine is not None else self._build_structure_engine()
+
+    @staticmethod
+    def _build_ocr_engine() -> Any:
+        """Create the PP-OCR pipeline (fast, simple text extraction)."""
+        from paddleocr import PaddleOCR
+
+        engine = PaddleOCR(
             use_doc_orientation_classify=False,
             use_doc_unwarping=False,
             use_textline_orientation=False,
         )
         logger.info("PP-OCR initialized with PP-OCRv6")
+        return engine
 
-        # PP-StructureV3 for structured document analysis
-        # Supports tables, formulas, layout detection, Markdown output
-        self.pp_structure = PPStructureV3(
+    @staticmethod
+    def _build_structure_engine() -> Any:
+        """Create the PP-StructureV3 pipeline (tables, formulas, layout, Markdown)."""
+        from paddleocr import PPStructureV3
+
+        engine = PPStructureV3(
             use_doc_orientation_classify=False,
             use_doc_unwarping=False,
             use_textline_orientation=False,
         )
         logger.info("PP-StructureV3 initialized")
+        return engine
 
     def _to_input(self, image_input: str | Path | Image.Image) -> str | np.ndarray:
         """Convert input to format expected by PaddleOCR."""
@@ -56,6 +116,41 @@ class OCRService:
             return path.suffix.lower() == ".pdf"
         return False
 
+    def _predict(self, engine: Any, engine_name: str, image_input: str | Path | Image.Image, output_format: str) -> Any:
+        """Run one engine call, logging and re-raising failures as a typed error.
+
+        This is the single logging point: every extraction failure is recorded here
+        with a traceback plus structured context, then raised as `OCRError`.
+        """
+        try:
+            return engine.predict(self._to_input(image_input))
+        except Exception as cause:
+            logger.exception(
+                "OCR 提取失败",
+                extra={
+                    "ocr_input": _input_name(image_input),
+                    "ocr_engine": engine_name,
+                    "ocr_output_format": output_format,
+                },
+            )
+            raise OCRError(
+                input_name=_input_name(image_input),
+                engine=engine_name,
+                output_format=output_format,
+                cause=cause,
+            ) from cause
+
+    def _text_with_pages(self, image_input: str | Path | Image.Image) -> tuple[str, int]:
+        """Extract text plus the number of page results the engine returned."""
+        result = self._predict(self.pp_ocr, OCR_ENGINE_PP_OCR, image_input, "text")
+
+        texts: list[str] = []
+        for res in result:
+            if "rec_texts" in res:
+                texts.extend(res["rec_texts"])
+
+        return "\n".join(texts), len(result)
+
     def extract_text(self, image_input: str | Path | Image.Image) -> str:
         """
         Extract text from image using PP-OCR (fast, simple text extraction).
@@ -65,16 +160,12 @@ class OCRService:
 
         Returns:
             Extracted text as a single string
+
+        Raises:
+            OCRError: when the engine fails.
         """
-        input_data = self._to_input(image_input)
-        result = self.pp_ocr.predict(input_data)
-
-        texts = []
-        for res in result:
-            if "rec_texts" in res:
-                texts.extend(res["rec_texts"])
-
-        return "\n".join(texts)
+        text, _ = self._text_with_pages(image_input)
+        return text
 
     def extract_with_positions(self, image_input: str | Path | Image.Image) -> list[dict[str, Any]]:
         """
@@ -85,9 +176,11 @@ class OCRService:
 
         Returns:
             List of dicts with keys: text, bbox (x_min, y_min, x_max, y_max), confidence
+
+        Raises:
+            OCRError: when the engine fails.
         """
-        input_data = self._to_input(image_input)
-        result = self.pp_ocr.predict(input_data)
+        result = self._predict(self.pp_ocr, OCR_ENGINE_PP_OCR, image_input, "positions")
 
         blocks = []
         for res in result:
@@ -124,9 +217,16 @@ class OCRService:
             - json: JSON representation
             - layout: Layout detection results
             - tables: Extracted tables
+
+        Raises:
+            OCRError: when the engine fails.
         """
-        input_data = self._to_input(image_input)
-        result = self.pp_structure.predict(input_data)
+        output, _ = self._structure_with_pages(image_input)
+        return output
+
+    def _structure_with_pages(self, image_input: str | Path | Image.Image) -> tuple[dict[str, Any], int]:
+        """Extract structured content plus the number of page results."""
+        result = self._predict(self.pp_structure, OCR_ENGINE_PP_STRUCTURE, image_input, "structure")
 
         # Extract structured data from result
         output = {"markdown": "", "json": {}, "layout": [], "tables": []}
@@ -160,7 +260,7 @@ class OCRService:
                             output["tables"].append(item)  # type: ignore[attr-defined]
                         output["layout"].append(item)  # type: ignore[attr-defined]
 
-        return output
+        return output, len(result)
 
     def extract_markdown(self, image_input: str | Path | Image.Image) -> str:
         """
@@ -175,6 +275,50 @@ class OCRService:
         """
         result = self.extract_structure(image_input)
         return result.get("markdown", "")  # type: ignore[no-any-return]
+
+    def extract_outcome(self, image_input: str | Path | Image.Image, output_format: str = "text") -> ExtractionOutcome:
+        """Extract and return the typed outcome (the additive contract).
+
+        Empty output is reported through `degraded` and `error` rather than raised,
+        so the caller decides what a blank result means. Engine failures raise
+        `OCRError`.
+
+        Raises:
+            OCRError: when the engine fails.
+            ValueError: when `output_format` is not supported.
+        """
+        if output_format == "text":
+            text, page_count = self._text_with_pages(image_input)
+            degraded = not text.strip()
+            return ExtractionOutcome(
+                text=text,
+                page_count=page_count,
+                degraded=degraded,
+                error=_EMPTY_OUTPUT_ERROR if degraded else None,
+            )
+
+        if output_format == "markdown":
+            structure, page_count = self._structure_with_pages(image_input)
+            markdown = str(structure.get("markdown", ""))
+            degraded = not markdown.strip()
+            return ExtractionOutcome(
+                markdown=markdown,
+                page_count=page_count,
+                degraded=degraded,
+                error=_EMPTY_OUTPUT_ERROR if degraded else None,
+            )
+
+        if output_format == "structure":
+            structure, page_count = self._structure_with_pages(image_input)
+            degraded = not structure.get("markdown") and not structure.get("tables")
+            return ExtractionOutcome(
+                structure=structure,
+                page_count=page_count,
+                degraded=degraded,
+                error=_EMPTY_OUTPUT_ERROR if degraded else None,
+            )
+
+        raise ValueError(f"Unknown output_format: {output_format}. Use 'text', 'markdown' or 'structure'")
 
     def extract(
         self,
