@@ -1,25 +1,28 @@
 """Energy's dict-shaped view of the shared job primitive.
 
-The module's job state now lives in `app.core.jobs`, so this file only keeps the API the
-energy endpoints already use: `create()` returns a job id, and `get()` returns a mapping
-with exactly `status`/`result`/`error`/`created_at`. Behaviour is unchanged — the status
-strings and the record shape are the same as before the move.
+The module's job state lives in `app.core.jobs`, so this file keeps the API the energy
+endpoints already use — `create()` returns a job id and `get()` returns a mapping with
+exactly `status`/`result`/`error`/`created_at` — and adds `spawn()`, which runs work through
+the primitive's background helper.
+
+Behaviour is unchanged: the status strings and the record shape are the same as before.
 """
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import Any
 
-from app.core.jobs import InMemoryJobStore
+from app.core.jobs import JobRecord, JobStoreProtocol, job_store, spawn_job
 
 _LEGACY_KEYS = ("status", "result", "error", "created_at")
 
 
 class JobStore:
-    """Thin adapter over the core job primitive, preserving the original module API."""
+    """Adapter over the shared job primitive, preserving the original module API."""
 
-    def __init__(self, store: InMemoryJobStore | None = None) -> None:
-        self._store = store if store is not None else InMemoryJobStore()
+    def __init__(self, store: JobStoreProtocol | None = None) -> None:
+        self._store: JobStoreProtocol = store if store is not None else job_store
 
     def create(self) -> str:
         return self._store.create().job_id
@@ -35,6 +38,16 @@ class JobStore:
 
     def fail(self, job_id: str, error: str) -> None:
         self._store.fail(job_id, error)
+
+    def spawn(
+        self,
+        work: Callable[[JobRecord], Awaitable[Any]],
+        *,
+        name: str | None = None,
+        timeout_seconds: float | None = None,
+    ) -> str:
+        """Run `work` in the background through the primitive; return its job id."""
+        return spawn_job(self._store, work, name=name, timeout_seconds=timeout_seconds).job_id
 
 
 sync_job_store = JobStore()

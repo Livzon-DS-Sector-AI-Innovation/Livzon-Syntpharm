@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
-from app.core.jobs import spawn_task
+from app.core.jobs import JobRecord
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
@@ -964,125 +965,89 @@ router.include_router(monthly_router, prefix="/monthly", tags=["月度记录"])
 
 @router.post("/sync/bitable", summary="从飞书多维表格同步数据")
 async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
-    job_id = sync_job_store.create()
-
-    async def _run() -> None:
+    async def _run(record: JobRecord) -> Any:
         from app.modules.energy.bitable_sync import EnergyBitableSync
 
         async with async_session_factory() as db:
-            try:
-                sync_service = EnergyBitableSync()
-                result = await sync_service.sync_all(db)
-                sync_job_store.complete(job_id, result)
-            except Exception as e:
-                logger.exception("sync_from_bitable failed")
-                sync_job_store.fail(job_id, str(e))
+            sync_service = EnergyBitableSync()
+            return await sync_service.sync_all(db)
 
-    spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
+    job_id = sync_job_store.spawn(_run, name="energy-sync-bitable")
     return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
 async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
-    job_id = sync_job_store.create()
-
-    async def _run() -> None:
+    async def _run(record: JobRecord) -> Any:
         from app.modules.energy.bitable_sync import EnergyBitableSync
 
         async with async_session_factory() as db:
-            try:
-                sync_service = EnergyBitableSync()
-                result = await sync_service.sync_workshops(db)
-                sync_job_store.complete(job_id, result)
-            except Exception as e:
-                logger.exception("sync_workshops_from_bitable failed")
-                sync_job_store.fail(job_id, str(e))
+            sync_service = EnergyBitableSync()
+            return await sync_service.sync_workshops(db)
 
-    spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
+    job_id = sync_job_store.spawn(_run, name="energy-sync-workshops")
     return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
 async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
-    job_id = sync_job_store.create()
-
-    async def _run() -> None:
+    async def _run(record: JobRecord) -> Any:
         from app.modules.energy.bitable_sync import EnergyBitableSync
 
         async with async_session_factory() as db:
-            try:
-                sync_service = EnergyBitableSync()
-                result = await sync_service.sync_monthly_records(db)
-                sync_job_store.complete(job_id, result)
-            except Exception as e:
-                logger.exception("sync_monthly_from_bitable failed")
-                sync_job_store.fail(job_id, str(e))
+            sync_service = EnergyBitableSync()
+            return await sync_service.sync_monthly_records(db)
 
-    spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
+    job_id = sync_job_store.spawn(_run, name="energy-sync-monthly")
     return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
 async def cross_import_from_bitable(body: BitableCrossImportRequest, current_user: RequiredUser) -> SyncJobApiResponse:
-    job_id = sync_job_store.create()
-
-    async def _run() -> None:
+    async def _run(record: JobRecord) -> Any:
         from app.modules.energy.bitable_cross_import import EnergyBitableCrossImport
 
         async with async_session_factory() as db:
-            try:
-                importer = EnergyBitableCrossImport()
-                if body.year:
-                    result = await importer.import_year(db, body.year)
-                elif body.month:
-                    result = await importer.import_month(db, body.month)
-                else:
-                    sync_job_store.fail(job_id, "请提供 year 或 month 参数")
-                    return
-                sync_job_store.complete(job_id, result)
-            except Exception as e:
-                logger.exception("cross_import_from_bitable failed")
-                sync_job_store.fail(job_id, str(e))
+            importer = EnergyBitableCrossImport()
+            if body.year:
+                return await importer.import_year(db, body.year)
+            if body.month:
+                return await importer.import_month(db, body.month)
+            raise ValueError("请提供 year 或 month 参数")
 
-    spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
+    job_id = sync_job_store.spawn(_run, name="energy-cross-import")
     return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
 async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
-    job_id = sync_job_store.create()
-
-    async def _run() -> None:
+    async def _run(record: JobRecord) -> Any:
         from sqlalchemy import distinct, select
 
         from app.modules.energy.bitable_daily_import import EnergyBitableDailyImport
         from app.modules.energy.models import EnergyDailyData
 
         async with async_session_factory() as db:
-            try:
-                importer = EnergyBitableDailyImport()
-                result = await importer.import_all_tables(db)
+            importer = EnergyBitableDailyImport()
+            result = await importer.import_all_tables(db)
 
-                dates_result = await db.execute(
-                    select(distinct(EnergyDailyData.date))
-                    .where(EnergyDailyData.is_alert, EnergyDailyData.alert_record_id.is_(None))
-                    .order_by(EnergyDailyData.date.desc())
-                )
-                dates_to_check = [str(d) for d in dates_result.scalars().all()]
+            dates_result = await db.execute(
+                select(distinct(EnergyDailyData.date))
+                .where(EnergyDailyData.is_alert, EnergyDailyData.alert_record_id.is_(None))
+                .order_by(EnergyDailyData.date.desc())
+            )
+            dates_to_check = [str(d) for d in dates_result.scalars().all()]
 
-                total_alerts = 0
-                for date_str in dates_to_check:
-                    check_date = date.fromisoformat(date_str)
-                    alert_records = await importer.check_alerts(db, check_date)
-                    total_alerts += len(alert_records)
+            total_alerts = 0
+            for date_str in dates_to_check:
+                check_date = date.fromisoformat(date_str)
+                alert_records = await importer.check_alerts(db, check_date)
+                total_alerts += len(alert_records)
 
-                result["auto_check_alerts"] = total_alerts
-                sync_job_store.complete(job_id, result)
-            except Exception as e:
-                logger.exception("daily_import_from_bitable failed")
-                sync_job_store.fail(job_id, str(e))
+            result["auto_check_alerts"] = total_alerts
+            return result
 
-    spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
+    job_id = sync_job_store.spawn(_run, name="energy-daily-import")
     return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
 
 

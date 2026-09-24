@@ -7,6 +7,9 @@ exactly status/result/error/created_at, and the status strings are unchanged.
 
 from __future__ import annotations
 
+import asyncio
+
+from app.core.jobs import JobRecord
 from app.modules.energy.job_store import JobStore, sync_job_store
 
 LEGACY_KEYS = {"status", "result", "error", "created_at"}
@@ -48,3 +51,24 @@ def test_unknown_job_returns_none() -> None:
 def test_the_module_singleton_is_a_job_store() -> None:
     assert isinstance(sync_job_store, JobStore)
     assert sync_job_store.get("missing") is None
+
+
+async def test_spawn_runs_the_work_through_the_primitive() -> None:
+    """The module's jobs now run through the shared spawn helper."""
+    store = JobStore()
+
+    async def work(record: JobRecord) -> dict[str, int]:
+        return {"rows": 1}
+
+    job_id = store.spawn(work, name="energy-unit-test")
+
+    for _ in range(100):
+        await asyncio.sleep(0)
+        job = store.get(job_id)
+        if job is not None and job["status"] != "running":
+            break
+
+    job = store.get(job_id)
+    assert job is not None
+    assert job["status"] == "done"
+    assert job["result"] == {"rows": 1}

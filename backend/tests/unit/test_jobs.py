@@ -117,40 +117,6 @@ class TestInMemoryJobStore:
 
         assert store.get("missing") is None
 
-    def test_a_running_job_past_its_timeout_reports_expired(self) -> None:
-        store = InMemoryJobStore()
-        record = store.create(timeout_seconds=0.01)
-
-        time.sleep(0.02)
-
-        assert store.is_expired(record.job_id) is True
-
-    def test_a_finished_job_never_reports_expired(self) -> None:
-        store = InMemoryJobStore()
-        record = store.create(timeout_seconds=0.01)
-        store.complete(record.job_id, None)
-
-        time.sleep(0.02)
-
-        assert store.is_expired(record.job_id) is False
-
-    def test_a_job_without_a_timeout_never_expires(self) -> None:
-        store = InMemoryJobStore()
-        record = store.create(timeout_seconds=None)
-
-        assert store.is_expired(record.job_id) is False
-
-    def test_fail_if_expired_marks_the_job_once(self) -> None:
-        store = InMemoryJobStore()
-        record = store.create(timeout_seconds=0.01)
-
-        time.sleep(0.02)
-
-        assert store.fail_if_expired(record.job_id) is True
-        assert record.status == JOB_STATUS_FAILED
-        assert "timed out" in (record.error or "")
-        assert store.fail_if_expired(record.job_id) is False
-
 
 async def wait_for_task(record: JobRecord) -> None:
     """Await the job's background task. `spawn_job` always sets it."""
@@ -221,6 +187,19 @@ class TestSpawnJob:
         assert record.status == JOB_STATUS_FAILED
         assert "timed out" in (record.error or "")
         assert cancelled.is_set()
+
+    async def test_work_raising_its_own_timeout_error_keeps_its_message(self) -> None:
+        """Our timeout is distinct from a TimeoutError raised inside the work."""
+        store = InMemoryJobStore()
+
+        async def work(record: JobRecord) -> None:
+            raise TimeoutError("upstream stalled")
+
+        record = spawn_job(store, work)
+        await wait_for_task(record)
+
+        assert record.status == JOB_STATUS_FAILED
+        assert record.error == "upstream stalled"
 
     async def test_work_without_a_timeout_is_not_cancelled(self) -> None:
         store = InMemoryJobStore()

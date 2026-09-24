@@ -1,8 +1,8 @@
 """Job primitive for user-triggered long-running operations.
 
-A job is a unit of background work with an observable record: status, progress, start time,
-timeout and outcome. It sits on top of `app.core.tasks.spawn_task` and keeps the created
-task on the record, so the job cannot be garbage collected before it finishes.
+A job is a unit of background work with an observable record: status, progress (0..1),
+start time, timeout and outcome. It sits on top of `app.core.tasks.spawn_task` and keeps the
+created task on the record, so the job cannot be garbage collected before it finishes.
 
 The store sits behind `JobStoreProtocol`, so a durable backing (database or cache) can
 replace the in-memory implementation without changing callers.
@@ -15,6 +15,7 @@ process's view.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 from collections.abc import Awaitable, Callable
@@ -33,9 +34,20 @@ JOB_STATUS_FAILED = "failed"
 DEFAULT_JOB_TIMEOUT_SECONDS: float = 600.0
 
 
+class JobTimeoutError(Exception):
+    """Raised internally when the primitive cancels work that outlived its timeout.
+
+    Distinct from a `TimeoutError` the work may raise itself, so the two cannot be confused.
+    Internal error, not an HTTP status mapping (ADR-0002).
+    """
+
+
 @dataclass
 class JobRecord:
-    """The observable state of one background job."""
+    """The observable state of one background job.
+
+    `status` is one of the `JOB_STATUS_*` values; `progress` is a fraction from 0.0 to 1.0.
+    """
 
     job_id: str
     status: str = JOB_STATUS_RUNNING
@@ -104,25 +116,28 @@ class InMemoryJobStore:
             return
         record.progress = min(1.0, max(0.0, progress))
 
-    def is_expired(self, job_id: str) -> bool:
-        """True when a running job has passed the timeout it was created with."""
-        record = self._jobs.get(job_id)
-        if record is None or record.status != JOB_STATUS_RUNNING:
-            return False
-        if record.timeout_seconds is None or record.started_at is None:
-            return False
-        return (time.time() - record.started_at) > record.timeout_seconds
-
-    def fail_if_expired(self, job_id: str) -> bool:
-        """Mark a running job failed if it has passed its timeout; True when it did."""
-        if not self.is_expired(job_id):
-            return False
-        record = self._jobs[job_id]
-        self.fail(job_id, f"job timed out after {record.timeout_seconds}s")
-        return True
-
 
 job_store = InMemoryJobStore()
+
+
+async def _await_work(work: Awaitable[Any], timeout_seconds: float | None) -> Any:
+    """Await `work`, cancelling it once `timeout_seconds` have passed.
+
+    Only a cancellation caused here raises `JobTimeoutError`; an error the work raises
+    itself — including its own `TimeoutError` — propagates untouched.
+    """
+    if timeout_seconds is None:
+        return await work
+
+    task = asyncio.ensure_future(work)
+    done, _ = await asyncio.wait({task}, timeout=timeout_seconds)
+    if task in done:
+        return task.result()
+
+    task.cancel()
+    with contextlib.suppress(asyncio.CancelledError):
+        await task
+    raise JobTimeoutError
 
 
 def spawn_job(
@@ -135,8 +150,8 @@ def spawn_job(
     """Run `work` in the background and keep the outcome on its job record.
 
     The created task is retained on the record, so the job cannot be garbage collected
-    before it finishes. A timeout marks the job failed and cancels the work; any other
-    exception is recorded rather than raised, because nothing is awaiting the task.
+    before it finishes. A timeout fails the job and cancels the work; any other exception is
+    recorded rather than raised, because nothing is awaiting the task.
 
     The **store owns the job's state** — this function only reports the outcome to it. With
     the in-memory store the returned record is the live object; with a durable backing, read
@@ -145,19 +160,21 @@ def spawn_job(
     Args:
         store: where the job record lives.
         work: the coroutine to run; it receives the record so it can report progress.
-        name: background task name. Defaults to the job id.
+        name: background task name, used in logs. Defaults to the job id.
         timeout_seconds: cancel and fail the job after this long. None means no limit.
     """
     record = store.create(timeout_seconds=timeout_seconds)
+    label = name or record.job_id
+    log_context = {"job_id": record.job_id, "job_name": name}
 
     async def run() -> None:
         try:
-            result = await asyncio.wait_for(work(record), timeout=record.timeout_seconds)
-        except TimeoutError:
-            logger.warning("Job %s timed out after %ss", record.job_id, record.timeout_seconds)
+            result = await _await_work(work(record), record.timeout_seconds)
+        except JobTimeoutError:
+            logger.error("Job %s timed out after %ss", label, record.timeout_seconds, extra=log_context)
             store.fail(record.job_id, f"job timed out after {record.timeout_seconds}s")
         except Exception as error:
-            logger.exception("Job %s failed", record.job_id)
+            logger.exception("Job %s failed", label, extra=log_context)
             store.fail(record.job_id, str(error))
         else:
             store.complete(record.job_id, result)
@@ -174,6 +191,7 @@ __all__ = [
     "InMemoryJobStore",
     "JobRecord",
     "JobStoreProtocol",
+    "JobTimeoutError",
     "job_store",
     "spawn_job",
     "spawn_task",
