@@ -19,14 +19,25 @@ def restore_logging() -> Iterator[None]:
     original_handlers = list(root.handlers)
     original_level = root.level
     original_loggers = set(logging.root.manager.loggerDict)
+    request_id_token = request_id_var.set(request_id_var.get())
 
     yield
 
+    request_id_var.reset(request_id_token)
     root.handlers[:] = original_handlers
     root.setLevel(original_level)
     for name in list(logging.root.manager.loggerDict):
         if name not in original_loggers:
             del logging.root.manager.loggerDict[name]
+
+
+def test_short_module_names_prefer_the_specific_prefix() -> None:
+    """The audit logger reports as "audit", not the broader "platform"."""
+    from app.core.logging_config import _short_module_name
+
+    assert _short_module_name("app.modules.registration.dossier_writer.asset_text_extractor") == "registration"
+    assert _short_module_name("app.platform.audit.middleware") == "audit"
+    assert _short_module_name("app.platform.identity.models") == "platform"
 
 
 def test_every_business_module_gets_a_logger_configuration() -> None:

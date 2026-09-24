@@ -463,8 +463,6 @@ def setup_logging(
             continue
         for prefix, default_level in _THIRD_PARTY_LOGGERS.items():
             if existing_name == prefix or existing_name.startswith(prefix + "."):
-                level_str = (
-                    os.getenv(f"LOG_{prefix.upper().replace('.', '_')}_LEVEL", "") or third_party_level or default_level
-                )
+                level_str = third_party_level or default_level
                 existing_obj.setLevel(_resolve_log_level(level_str))
                 break
