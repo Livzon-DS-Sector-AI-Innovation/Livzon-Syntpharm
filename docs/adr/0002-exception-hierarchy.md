@@ -35,3 +35,15 @@ All exceptions inherit from `AppException` which inherits from `HTTPException`.
 ## Related
 - ADR-001: API Response Pattern
 - Ticket 01: Add BadRequestException class
+
+## Scope note: internal (non-HTTP) errors
+
+The hierarchy above governs errors that cross the HTTP boundary. An error raised *inside* a
+shared module's seam — one that never reaches a client on its own and is translated by the
+layer above — may be a plain `Exception` subclass instead, provided it carries the context
+the translating layer needs. The OCR seam's `OCRError` is the first such case: it is not an
+`AppException`, because an endpoint or a background job decides what the user sees.
+
+Rationale: forcing an internal failure into an HTTP status code leaks a transport decision
+into the shared module. The rule to keep: if an exception is returned to a client directly,
+it must come from this hierarchy.

@@ -7,7 +7,7 @@ with a hybrid approach that allows automatic or manual engine selection.
 import logging
 import threading
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from PIL import Image
@@ -55,6 +55,11 @@ def _input_name(image_input: str | Path | Image.Image) -> str:
     if isinstance(image_input, (str, Path)):
         return Path(image_input).name
     return "image"
+
+
+def _degraded_error(is_empty: bool) -> tuple[bool, str | None]:
+    """Map "no content extracted" onto the outcome's degraded/error pair."""
+    return (True, _EMPTY_OUTPUT_ERROR) if is_empty else (False, None)
 
 
 class OCRService:
@@ -221,12 +226,20 @@ class OCRService:
         Raises:
             OCRError: when the engine fails.
         """
-        output, _ = self._structure_with_pages(image_input)
+        output, _ = self._structure_with_pages(image_input, "structure")
         return output
 
-    def _structure_with_pages(self, image_input: str | Path | Image.Image) -> tuple[dict[str, Any], int]:
-        """Extract structured content plus the number of page results."""
-        result = self._predict(self.pp_structure, OCR_ENGINE_PP_STRUCTURE, image_input, "structure")
+    def _structure_with_pages(
+        self,
+        image_input: str | Path | Image.Image,
+        output_format: str = "structure",
+    ) -> tuple[dict[str, Any], int]:
+        """Extract structured content plus the number of page results.
+
+        `output_format` is the format the *caller* asked for, so a failure reports the
+        format that was requested rather than the engine that happened to serve it.
+        """
+        result = self._predict(self.pp_structure, OCR_ENGINE_PP_STRUCTURE, image_input, output_format)
 
         # Extract structured data from result
         output = {"markdown": "", "json": {}, "layout": [], "tables": []}
@@ -272,11 +285,18 @@ class OCRService:
 
         Returns:
             Markdown representation of the document
-        """
-        result = self.extract_structure(image_input)
-        return result.get("markdown", "")  # type: ignore[no-any-return]
 
-    def extract_outcome(self, image_input: str | Path | Image.Image, output_format: str = "text") -> ExtractionOutcome:
+        Raises:
+            OCRError: when the engine fails.
+        """
+        structure, _ = self._structure_with_pages(image_input, "markdown")
+        return str(structure.get("markdown", ""))
+
+    def extract_outcome(
+        self,
+        image_input: str | Path | Image.Image,
+        output_format: Literal["text", "markdown", "structure"] = "text",
+    ) -> ExtractionOutcome:
         """Extract and return the typed outcome (the additive contract).
 
         Empty output is reported through `degraded` and `error` rather than raised,
@@ -289,34 +309,19 @@ class OCRService:
         """
         if output_format == "text":
             text, page_count = self._text_with_pages(image_input)
-            degraded = not text.strip()
-            return ExtractionOutcome(
-                text=text,
-                page_count=page_count,
-                degraded=degraded,
-                error=_EMPTY_OUTPUT_ERROR if degraded else None,
-            )
+            degraded, error = _degraded_error(not text.strip())
+            return ExtractionOutcome(text=text, page_count=page_count, degraded=degraded, error=error)
 
         if output_format == "markdown":
-            structure, page_count = self._structure_with_pages(image_input)
+            structure, page_count = self._structure_with_pages(image_input, "markdown")
             markdown = str(structure.get("markdown", ""))
-            degraded = not markdown.strip()
-            return ExtractionOutcome(
-                markdown=markdown,
-                page_count=page_count,
-                degraded=degraded,
-                error=_EMPTY_OUTPUT_ERROR if degraded else None,
-            )
+            degraded, error = _degraded_error(not markdown.strip())
+            return ExtractionOutcome(markdown=markdown, page_count=page_count, degraded=degraded, error=error)
 
         if output_format == "structure":
-            structure, page_count = self._structure_with_pages(image_input)
-            degraded = not structure.get("markdown") and not structure.get("tables")
-            return ExtractionOutcome(
-                structure=structure,
-                page_count=page_count,
-                degraded=degraded,
-                error=_EMPTY_OUTPUT_ERROR if degraded else None,
-            )
+            structure, page_count = self._structure_with_pages(image_input, "structure")
+            degraded, error = _degraded_error(not structure.get("markdown") and not structure.get("tables"))
+            return ExtractionOutcome(structure=structure, page_count=page_count, degraded=degraded, error=error)
 
         raise ValueError(f"Unknown output_format: {output_format}. Use 'text', 'markdown' or 'structure'")
 
@@ -355,12 +360,12 @@ class OCRService:
             if output_format == "markdown":
                 return self.extract_markdown(image_input)
             elif output_format == "json":
-                result = self.extract_structure(image_input)
+                result = self._structure_with_pages(image_input, "json")[0]
                 return result.get("json", {})  # type: ignore[no-any-return]
             elif output_format == "structure":
                 return self.extract_structure(image_input)
             else:  # text
-                result = self.extract_structure(image_input)
+                result = self._structure_with_pages(image_input, "text")[0]
                 return result.get("markdown", "")  # type: ignore[no-any-return]
 
         else:

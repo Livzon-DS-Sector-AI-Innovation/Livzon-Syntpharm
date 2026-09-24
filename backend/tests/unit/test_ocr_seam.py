@@ -7,8 +7,9 @@ logging, error typing and outcome contract are what is under test.
 from __future__ import annotations
 
 import logging
+import threading
 import time
-from typing import Any
+from typing import Any, cast
 
 import pytest
 from fastapi import HTTPException
@@ -129,13 +130,29 @@ class TestTypedFailure:
             service.extract_markdown("scan.pdf")
 
         assert caught.value.engine == "pp_structurev3"
-        assert caught.value.output_format in {"structure", "markdown"}
+        assert caught.value.output_format == "markdown"
 
-    def test_slow_engine_is_not_timed_out_by_the_seam(self) -> None:
-        """Timeouts belong to the caller or the job, not to the seam."""
-        service, _, _ = build_service(ocr=FakeOcrEngine(texts=["slow"], delay=0.05))
+    def test_hanging_engine_is_not_interrupted_by_the_seam(self) -> None:
+        """A hanging engine blocks the caller: timeouts belong to the caller or the job."""
+        release = threading.Event()
 
-        assert service.extract_text("scan.png") == "slow"
+        class HangingEngine(FakeOcrEngine):
+            def predict(self, input_data: Any) -> list[dict[str, Any]]:
+                self.calls.append(input_data)
+                release.wait(timeout=2)
+                return [{"rec_texts": ["late"]}]
+
+        service = OCRService(ocr_engine=HangingEngine(), structure_engine=FakeStructureEngine())
+        results: list[str] = []
+        worker = threading.Thread(target=lambda: results.append(service.extract_text("scan.png")))
+
+        worker.start()
+        worker.join(timeout=0.05)
+        assert results == []  # still blocked — the seam applied no timeout of its own
+
+        release.set()
+        worker.join(timeout=2)
+        assert results == ["late"]
 
 
 class TestTypedOutcome:
@@ -176,5 +193,6 @@ class TestTypedOutcome:
     def test_unknown_output_format_is_rejected(self) -> None:
         service, _, _ = build_service()
 
+        # Deliberately bypass the Literal type so the runtime guard is exercised.
         with pytest.raises(ValueError, match="Unknown output_format"):
-            service.extract_outcome("scan.png", output_format="nonsense")
+            service.extract_outcome("scan.png", output_format=cast(Any, "nonsense"))

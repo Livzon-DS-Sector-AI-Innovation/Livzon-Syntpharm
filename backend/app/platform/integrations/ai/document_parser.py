@@ -107,6 +107,8 @@ class DocumentParser:
             if isinstance(e, OCRError):
                 context["ocr_engine"] = e.engine
                 context["ocr_output_format"] = e.output_format
+                context["ocr_input"] = e.input_name
+                context["ocr_cause"] = str(e.cause)
             logger.exception("OCR 提取失败，返回降级内容", extra=context)
             return f"[OCR提取失败: {str(e)}]"
 

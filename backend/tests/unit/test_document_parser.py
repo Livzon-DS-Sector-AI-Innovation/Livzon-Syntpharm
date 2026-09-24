@@ -47,6 +47,8 @@ def test_ocr_failure_is_logged_with_context_and_returns_degraded_text(
     record = next(record for record in caplog.records if getattr(record, "ocr_engine", None))
     assert extra(record, "ocr_engine") == "pp_structurev3"
     assert extra(record, "ocr_output_format") == "markdown"
+    assert extra(record, "ocr_input") == "scan.pdf"
+    assert extra(record, "ocr_cause") == "model exploded"
     assert extra(record, "file") == "scan.pdf"
     assert record.exc_info is not None
 
