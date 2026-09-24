@@ -48,18 +48,6 @@ def upgrade() -> None:
     op.create_index('ix_graph_knowledge_edges_source', 'graph_knowledge_edges', ['source_node_id'], schema='safety')
     op.drop_index('ix_graph_knowledge_edges_target', table_name='graph_knowledge_edges', schema='safety')
     op.create_index('ix_graph_knowledge_edges_target', 'graph_knowledge_edges', ['target_node_id'], schema='safety')
-    op.drop_index('ix_graph_knowledge_edges_relation', table_name='graph_knowledge_edges', schema='safety')
-    op.create_index('ix_graph_knowledge_edges_relation', 'graph_knowledge_edges', ['relation_type'], schema='safety')
-    op.drop_index('ix_graph_knowledge_edges_source', table_name='graph_knowledge_edges', schema='safety')
-    op.create_index('ix_graph_knowledge_edges_source', 'graph_knowledge_edges', ['source_node_id'], schema='safety')
-    op.drop_index('ix_graph_knowledge_edges_target', table_name='graph_knowledge_edges', schema='safety')
-    op.create_index('ix_graph_knowledge_edges_target', 'graph_knowledge_edges', ['target_node_id'], schema='safety')
-    op.drop_index('ix_graph_knowledge_edges_relation', table_name='graph_knowledge_edges', schema='safety')
-    op.create_index('ix_graph_knowledge_edges_relation', 'graph_knowledge_edges', ['relation_type'], schema='safety')
-    op.drop_index('ix_graph_knowledge_edges_source', table_name='graph_knowledge_edges', schema='safety')
-    op.create_index('ix_graph_knowledge_edges_source', 'graph_knowledge_edges', ['source_node_id'], schema='safety')
-    op.drop_index('ix_graph_knowledge_edges_target', table_name='graph_knowledge_edges', schema='safety')
-    op.create_index('ix_graph_knowledge_edges_target', 'graph_knowledge_edges', ['target_node_id'], schema='safety')
     op.create_foreign_key('fk_graph_knowledge_edges_created_by', 'graph_knowledge_edges', 'users',
                           ['created_by'], ['id'], source_schema='safety', referent_schema='identity')
     op.create_foreign_key('fk_graph_knowledge_edges_updated_by', 'graph_knowledge_edges', 'users',
