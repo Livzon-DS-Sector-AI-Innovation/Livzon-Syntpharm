@@ -27,6 +27,7 @@ accidents_router = APIRouter()
 
 @accidents_router.get("/accidents", response_model=AccidentListApiResponse, summary="获取事故列表")
 async def get(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
@@ -36,9 +37,8 @@ async def get(
     date_from: str | None = Query(None, description="发生时间起 (YYYY-MM-DD)"),
     date_to: str | None = Query(None, description="发生时间止 (YYYY-MM-DD)"),
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取事故列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -61,10 +61,10 @@ async def get(
 
 @accidents_router.get("/accidents/{accident_id}", response_model=AccidentApiResponse, summary="获取事故详情")
 async def handler(
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    accident_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取事故详情"""
     service = SafetyService(db)
     item = await service.get_accident(accident_id)
@@ -75,10 +75,10 @@ async def handler(
 
 @accidents_router.post("/accidents", response_model=AccidentApiResponse, summary="创建事故")
 async def post(
-    data: AccidentCreate,
-    db: AsyncSession = Depends(get_db),
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    data: AccidentCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建事故"""
     service = SafetyService(db)
     item = await service.create_accident(data)
@@ -89,12 +89,13 @@ async def post(
 @accidents_router.put(  # type: ignore[no-redef]
     "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="更新事故"
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     accident_id: uuid.UUID,
     data: AccidentUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新事故"""
     service = SafetyService(db)
     item = await service.update_accident(accident_id, data)
@@ -109,11 +110,12 @@ async def handler(  # noqa: F811
     response_model=AccidentApiResponse,
     summary="开始调查事故",
 )
-async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    accident_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """开始调查事故"""
     service = SafetyService(db)
     user_id = current_user.id if current_user else None
@@ -130,7 +132,9 @@ async def handler(  # noqa: F811
     response_model=AccidentApiResponse,
     summary="完成调查事故",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     accident_id: uuid.UUID,
     direct_cause: str = Query(..., description="直接原因"),
     root_cause: str = Query(..., description="根本原因"),
@@ -138,9 +142,8 @@ async def handler(  # noqa: F811
     corrective_actions: str | None = Query(None, description="纠正预防措施"),
     investigation_findings: str | None = Query(None, description="调查发现"),
     investigation_method: str | None = Query(None, description="调查方法"),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """完成调查事故"""
     service = SafetyService(db)
     item = await service.resolve_accident(
@@ -163,13 +166,14 @@ async def handler(  # noqa: F811
     response_model=AccidentApiResponse,
     summary="启动CAPA",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     accident_id: uuid.UUID,
     corrective_action_deadline: str = Query(..., description="CAPA截止日期 (YYYY-MM-DD)"),
     corrective_action_responsible: str = Query(..., description="CAPA责任人"),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """启动CAPA: investigated → capa_in_progress"""
     service = SafetyService(db)
     item = await service.start_capa(
@@ -188,11 +192,12 @@ async def handler(  # noqa: F811
     response_model=AccidentApiResponse,
     summary="验证CAPA并关闭事故",
 )
-async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    accident_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """验证CAPA并关闭事故: capa_in_progress → closed"""
     service = SafetyService(db)
     user_id = current_user.id if current_user else None
@@ -209,11 +214,12 @@ async def handler(  # noqa: F811
     response_model=AccidentApiResponse,
     summary="直接关闭事故",
 )
-async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    accident_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """直接关闭事故（无CAPA时）"""
     service = SafetyService(db)
     item = await service.close_accident(accident_id)
@@ -226,11 +232,12 @@ async def handler(  # noqa: F811
 @accidents_router.delete(  # type: ignore[no-redef]
     "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="删除事故"
 )
-async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    accident_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除事故"""
     service = SafetyService(db)
     result = await service.delete_accident(accident_id)

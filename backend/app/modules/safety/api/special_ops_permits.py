@@ -30,15 +30,15 @@ special_ops_permits_router = APIRouter()
     summary="获取特殊作业票列表",
 )
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
     operation_type: str | None = None,
     operation_level: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取特殊作业票列表"""
     service = SpecialOperationService(db)
     skip = (page - 1) * page_size
@@ -54,11 +54,12 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="创建特殊作业票",
 )
-async def handler(  # noqa: F811
-    data: SpecialOperationPermitCreate,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: SpecialOperationPermitCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建特殊作业票"""
     service = SpecialOperationService(db)
     item = await service.create_permit(data)
@@ -71,11 +72,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="获取特殊作业票详情",
 )
-async def handler(  # noqa: F811
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    permit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取特殊作业票详情"""
     service = SpecialOperationService(db)
     item = await service.get_permit(permit_id)
@@ -89,12 +91,13 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="更新特殊作业票",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     permit_id: uuid.UUID,
     data: SpecialOperationPermitUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新特殊作业票"""
     service = SpecialOperationService(db)
     item = await service.update_permit(permit_id, data)
@@ -109,11 +112,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="删除特殊作业票",
 )
-async def handler(  # noqa: F811
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    permit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除特殊作业票"""
     service = SpecialOperationService(db)
     result = await service.delete_permit(permit_id)
@@ -131,11 +135,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="提交作业票",
 )
-async def handler(  # noqa: F811
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    permit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """提交作业票（草稿→已提交）"""
     service = SpecialOperationService(db)
     item = await service.submit_permit(permit_id)
@@ -150,11 +155,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="审批作业票",
 )
-async def handler(  # noqa: F811
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    permit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """审批作业票（已提交→已审批）"""
     service = SpecialOperationService(db)
     item = await service.approve_permit(permit_id)
@@ -169,12 +175,13 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="驳回作业票",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     permit_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """驳回作业票（已提交→已驳回）"""
     service = SpecialOperationService(db)
     item = await service.reject_permit(permit_id, reason)
@@ -189,11 +196,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="开始作业",
 )
-async def handler(  # noqa: F811
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    permit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """开始作业（已审批→作业中）"""
     service = SpecialOperationService(db)
     item = await service.start_permit(permit_id)
@@ -208,12 +216,13 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="完工验收",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     permit_id: uuid.UUID,
     method: str = Query(..., description="完工方式: normal/early_termination"),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """完工验收（作业中→已完工）"""
     service = SpecialOperationService(db)
     item = await service.complete_permit(permit_id, method)
@@ -228,11 +237,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPermitApiResponse,
     summary="归档作业票",
 )
-async def handler(  # noqa: F811
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    permit_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """归档作业票（已完工→已归档）"""
     service = SpecialOperationService(db)
     item = await service.archive_permit(permit_id)

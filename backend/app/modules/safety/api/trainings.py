@@ -31,14 +31,14 @@ trainings_router = APIRouter()
 
 @trainings_router.get("/trainings", response_model=SafetyTrainingListApiResponse, summary="获取安全培训列表")
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
     training_type: str | None = None,
     department: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取安全培训列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -52,11 +52,12 @@ async def handler(
 @trainings_router.get(  # type: ignore[no-redef]
     "/trainings/{training_id}", response_model=SafetyTrainingApiResponse, summary="获取安全培训详情"
 )
-async def handler(  # noqa: F811
-    training_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    training_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取安全培训详情"""
     service = SafetyService(db)
     item = await service.get_training(training_id)
@@ -67,10 +68,10 @@ async def handler(  # noqa: F811
 
 @trainings_router.post("/trainings", response_model=SafetyTrainingApiResponse, summary="创建安全培训")
 async def post(
-    data: SafetyTrainingCreate,
-    db: AsyncSession = Depends(get_db),
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    data: SafetyTrainingCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建安全培训"""
     service = SafetyService(db)
     item = await service.create_training(data)
@@ -81,12 +82,13 @@ async def post(
 @trainings_router.put(  # type: ignore[no-redef]
     "/trainings/{training_id}", response_model=SafetyTrainingApiResponse, summary="更新安全培训"
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     training_id: uuid.UUID,
     data: SafetyTrainingUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新安全培训"""
     service = SafetyService(db)
     item = await service.update_training(training_id, data)
@@ -99,11 +101,12 @@ async def handler(  # noqa: F811
 @trainings_router.post(  # type: ignore[no-redef]
     "/trainings/{training_id}/start", response_model=SafetyTrainingApiResponse, summary="开始培训"
 )
-async def handler(  # noqa: F811
-    training_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    training_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """开始培训（草稿→进行中）"""
     service = SafetyService(db)
     item = await service.start_training(training_id)
@@ -116,11 +119,12 @@ async def handler(  # noqa: F811
 @trainings_router.post(  # type: ignore[no-redef]
     "/trainings/{training_id}/complete", response_model=SafetyTrainingApiResponse, summary="完成培训"
 )
-async def handler(  # noqa: F811
-    training_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    training_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """完成培训"""
     service = SafetyService(db)
     item = await service.complete_training(training_id)
@@ -133,11 +137,12 @@ async def handler(  # noqa: F811
 @trainings_router.delete(  # type: ignore[no-redef]
     "/trainings/{training_id}", response_model=SafetyTrainingApiResponse, summary="删除安全培训"
 )
-async def handler(  # noqa: F811
-    training_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    training_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除安全培训"""
     service = SafetyService(db)
     result = await service.delete_training(training_id)
@@ -155,11 +160,12 @@ async def handler(  # noqa: F811
     response_model=TrainingRecordListApiResponse,
     summary="获取培训签到记录列表",
 )
-async def handler(  # noqa: F811
-    training_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    training_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取培训签到记录列表"""
     service = SafetyService(db)
     items = await service.get_training_records(training_id)
@@ -173,12 +179,13 @@ async def handler(  # noqa: F811
     response_model=TrainingRecordApiResponse,
     summary="添加培训签到记录",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     training_id: uuid.UUID,
     data: TrainingRecordCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """添加培训签到记录"""
     service = SafetyService(db)
     data.training_id = training_id
@@ -192,12 +199,13 @@ async def handler(  # noqa: F811
     response_model=TrainingRecordApiResponse,
     summary="更新培训签到记录",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     record_id: uuid.UUID,
     data: TrainingRecordUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新培训签到记录"""
     service = SafetyService(db)
     item = await service.update_training_record(record_id, data)
@@ -212,11 +220,12 @@ async def handler(  # noqa: F811
     response_model=TrainingRecordApiResponse,
     summary="删除培训签到记录",
 )
-async def handler(  # noqa: F811
-    record_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    record_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除培训签到记录"""
     service = SafetyService(db)
     result = await service.delete_training_record(record_id)
@@ -232,14 +241,15 @@ async def handler(  # noqa: F811
 @trainings_router.get(  # type: ignore[no-redef]
     "/training-certificates", response_model=TrainingRecordListApiResponse, summary="获取证书列表"
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     certificate_status: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取所有培训证书列表（含即将到期/已过期筛选）"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -260,10 +270,11 @@ async def handler(  # noqa: F811
     response_model=TrainingRecordListApiResponse,
     summary="获取即将到期证书",
 )
-async def handler(  # noqa: F811
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取30天内即将到期的证书"""
     service = SafetyService(db)
     items = await service.get_expiring_certificates()

@@ -30,15 +30,15 @@ special_ops_personnel_router = APIRouter()
     summary="获取特殊作业人员资质列表",
 )
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
     certificate_type: str | None = None,
     department: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取特殊作业人员资质列表"""
     service = SpecialOperationService(db)
     skip = (page - 1) * page_size
@@ -54,11 +54,12 @@ async def handler(
     response_model=SpecialOperationPersonnelApiResponse,
     summary="创建特殊作业人员资质",
 )
-async def handler(  # noqa: F811
-    data: SpecialOperationPersonnelCreate,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: SpecialOperationPersonnelCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建特殊作业人员资质"""
     service = SpecialOperationService(db)
     item = await service.create_personnel(data)
@@ -71,11 +72,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPersonnelApiResponse,
     summary="获取特殊作业人员资质详情",
 )
-async def handler(  # noqa: F811
-    personnel_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    personnel_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取特殊作业人员资质详情"""
     service = SpecialOperationService(db)
     item = await service.get_personnel_by_id(personnel_id)
@@ -89,12 +91,13 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPersonnelApiResponse,
     summary="更新特殊作业人员资质",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     personnel_id: uuid.UUID,
     data: SpecialOperationPersonnelUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新特殊作业人员资质"""
     service = SpecialOperationService(db)
     item = await service.update_personnel(personnel_id, data)
@@ -109,11 +112,12 @@ async def handler(  # noqa: F811
     response_model=SpecialOperationPersonnelApiResponse,
     summary="删除特殊作业人员资质",
 )
-async def handler(  # noqa: F811
-    personnel_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    personnel_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除特殊作业人员资质"""
     service = SpecialOperationService(db)
     result = await service.delete_personnel(personnel_id)

@@ -44,14 +44,14 @@ regulations_router = APIRouter()
     "/regulations", response_model=OperationRegulationListApiResponse, summary="获取安全操作规程列表"
 )
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     position: str | None = None,
     keyword: str | None = None,
     status: str | None = Query(None, description="操规状态，逗号分隔多值: draft,generated,reviewed,exported"),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取安全操作规程列表，支持按岗位、关键词和状态筛选"""
     service = RegulationService(db)
     skip = (page - 1) * page_size
@@ -67,11 +67,12 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="获取安全操作规程详情",
 )
-async def handler(  # noqa: F811
-    regulation_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    regulation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取安全操作规程详情，包含修订记录"""
     service = RegulationService(db)
     item = await service.get_regulation(regulation_id)
@@ -83,11 +84,12 @@ async def handler(  # noqa: F811
 @regulations_router.post(  # type: ignore[no-redef]
     "/regulations", response_model=OperationRegulationApiResponse, summary="创建安全操作规程"
 )
-async def handler(  # noqa: F811
-    data: OperationRegulationCreate,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: OperationRegulationCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建安全操作规程"""
     service = RegulationService(db)
     item = await service.create_regulation(data)
@@ -100,12 +102,13 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="更新安全操作规程",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     regulation_id: uuid.UUID,
     data: OperationRegulationUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新安全操作规程"""
     service = RegulationService(db)
     item = await service.update_regulation(regulation_id, data)
@@ -120,11 +123,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="删除安全操作规程",
 )
-async def handler(  # noqa: F811
-    regulation_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    regulation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除安全操作规程"""
     service = RegulationService(db)
     result = await service.delete_regulation(regulation_id)
@@ -139,12 +143,13 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="上传操规文档",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     regulation_id: uuid.UUID,
     file: UploadFile,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """上传操规文档并更新操规记录"""
 
     file_ext = os.path.splitext(file.filename or ".md")[1]
@@ -183,16 +188,17 @@ async def handler(  # noqa: F811
 @regulations_router.get(  # type: ignore[no-redef]
     "/revisions", response_model=RegulationRevisionListApiResponse, summary="获取修订记录列表"
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     regulation_id: uuid.UUID | None = None,
     revision_type: str | None = None,
     review_opinion: str | None = None,
     revision_scope: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取修订记录列表，支持多条件筛选"""
     service = RegulationService(db)
     skip = (page - 1) * page_size
@@ -210,11 +216,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="获取修订记录详情",
 )
-async def handler(  # noqa: F811
-    revision_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    revision_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取修订记录详情，包含关联的危险源辨识记录"""
     service = RegulationService(db)
     item = await service.get_revision(revision_id)
@@ -226,11 +233,12 @@ async def handler(  # noqa: F811
 @regulations_router.post(  # type: ignore[no-redef]
     "/revisions", response_model=RegulationRevisionApiResponse, summary="创建修订记录"
 )
-async def handler(  # noqa: F811
-    data: RegulationRevisionCreate,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: RegulationRevisionCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建修订记录，自动从操规表获取旧文档链接"""
     service = RegulationService(db)
     item = await service.create_revision(data)
@@ -245,12 +253,13 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="更新修订记录",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     revision_id: uuid.UUID,
     data: RegulationRevisionUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新修订记录"""
     service = RegulationService(db)
     item = await service.update_revision(revision_id, data)
@@ -265,11 +274,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="删除修订记录",
 )
-async def handler(  # noqa: F811
-    revision_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    revision_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除修订记录"""
     service = RegulationService(db)
     result = await service.delete_revision(revision_id)
@@ -287,12 +297,13 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="完成人工修订",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     revision_id: uuid.UUID,
     file: UploadFile,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """上传修订后的文档，完成人工修订流程：
     1. 保存新文档（MinIO 或本地）
     2. 更新修订记录（新文档链接 + 审核通过）
@@ -337,11 +348,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="AI生成修订版本",
 )
-async def handler(  # noqa: F811
-    revision_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    revision_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """AI根据修订意见生成修订后的操规文档（返回供用户确认，不持久化）"""
     service = RegulationService(db)
     result = await service.ai_revision_generate(revision_id)
@@ -355,13 +367,14 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="确认AI修订版本",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     revision_id: uuid.UUID,
     generated_content: str = Query(..., description="AI生成的修订后完整内容"),
     document_name: str | None = Query(None, description="文档名称（可选）"),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """用户确认AI生成的修订内容后，保存文档并更新所有关联记录"""
     service = RegulationService(db)
     item = await service.ai_revision_confirm(revision_id, generated_content, document_name)
@@ -379,11 +392,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="AI识别修订范围",
 )
-async def handler(  # noqa: F811
-    revision_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    revision_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """AI分析修订意见，识别修订范围（工艺/安全要求）。
     若识别出工艺变更，自动触发危险源辨识修订流程。
     """
@@ -405,11 +419,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="上传旧版操规并生成标准化版本",
 )
-async def handler(  # noqa: F811
-    file: UploadFile,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    file: UploadFile,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """上传旧版操规初稿（.docx），自动运行三层 pipeline 生成 9 章标准化操规。
 
     返回提取的元信息（产品/岗位/部门/编号）和完整 Markdown 内容，
@@ -430,11 +445,12 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="获取操规标准化内容",
 )
-async def handler(  # noqa: F811
-    regulation_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    regulation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取操规的标准化 Markdown 内容，供编辑器加载。"""
     service = SopGeneratorService(db)
     result = await service.get_content(regulation_id)
@@ -449,12 +465,13 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="保存编辑后的操规内容",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     regulation_id: uuid.UUID,
     data: SopContentUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """保存用户编辑后的标准化 Markdown 内容，可选更新状态。"""
     service = SopGeneratorService(db)
     item = await service.update_content(regulation_id, data.content, data.status)
@@ -476,12 +493,13 @@ async def handler(  # noqa: F811
     response_model=OperationRegulationApiResponse,
     summary="在线修订操规",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     regulation_id: uuid.UUID,
     data: "RegulationReviseRequest",
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """保存修订后的操规内容，并自动生成一条修订记录。
 
     与 /content 端点不同，本端点会额外：
@@ -506,11 +524,12 @@ async def handler(  # noqa: F811
     "/regulations/{regulation_id}/export",
     summary="导出标准化操规 PDF",
 )
-async def handler(  # noqa: F811
-    regulation_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    regulation_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """将存储的标准化 Markdown 渲染为 PDF，返回文件下载。"""
     from io import BytesIO
 

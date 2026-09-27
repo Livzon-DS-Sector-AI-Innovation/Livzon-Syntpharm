@@ -56,7 +56,7 @@ enums_router = APIRouter()
 
 @enums_router.get("/enums", response_model=SafetyEnumsApiResponse, summary="获取枚举值列表")
 async def get(
-    current_user: RequiredUser,
+    current_user: RequiredUser
 ) -> Any:
     """获取安全模块的所有枚举值选项"""
 

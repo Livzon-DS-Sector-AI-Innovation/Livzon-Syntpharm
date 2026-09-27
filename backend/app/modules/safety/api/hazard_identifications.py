@@ -43,6 +43,7 @@ hazard_identifications_router = APIRouter()
     summary="获取危险源辨识列表",
 )
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     department: str | None = None,
@@ -54,9 +55,8 @@ async def handler(
     date_from: str | None = None,
     date_to: str | None = None,
     batch_id: str | None = None,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取危险源辨识列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -84,10 +84,11 @@ async def handler(
     response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识工作流统计",
 )
-async def handler(  # noqa: F811
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取危险源辨识工作流统计（草案/进行中/待审核/已完成）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_stats()
@@ -99,15 +100,16 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识台账统计",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     department: str | None = Query(None),
     position: str | None = Query(None),
     risk_level: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取危险源辨识台账统计（总记录/按风险等级分组）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_ledger_stats(
@@ -125,14 +127,15 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="获取危险源风险选项（常规作业报备用）",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     department: str | None = Query(None, description="部门筛选"),
     keyword: str | None = Query(None, description="搜索关键字（编号/部门/岗位）"),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """返回风险等级为 level_1/level_2 且 overall_status=completed 的危险源辨识项"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -148,11 +151,12 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识详情",
 )
-async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    hid: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取危险源辨识详情"""
     service = SafetyService(db)
     item = await service.get_hazard_identification(hid)
@@ -166,11 +170,12 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationListApiResponse,
     summary="创建危险源辨识记录",
 )
-async def handler(  # noqa: F811
-    data: HazardIdentificationCreate,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: HazardIdentificationCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建危险源辨识记录（填写基础信息）"""
     service = SafetyService(db)
     item = await service.create_hazard_identification(data)
@@ -203,11 +208,12 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationBatchApiResponse,
     summary="批量创建危险源辨识（一个操规多工段）",
 )
-async def handler(  # noqa: F811
-    data: HazardIdentificationBatchCreate,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: HazardIdentificationBatchCreate,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """根据操规第7章的工艺阶段，批量创建危险源辨识记录"""
     service = SafetyService(db)
     try:
@@ -223,12 +229,13 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="更新危险源辨识记录",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     hid: uuid.UUID,
     data: HazardIdentificationUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新危险源辨识记录（人工编辑字段）"""
     service = SafetyService(db)
     item = await service.update_hazard_identification(hid, data)
@@ -243,11 +250,12 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="提交基础信息，进入AI流程",
 )
-async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    hid: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """提交基础信息 → 进入待AI解析附件阶段"""
     service = SafetyService(db)
     item = await service.submit_hazard_identification(hid)
@@ -262,12 +270,13 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="执行AI脚本",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     hid: uuid.UUID,
     data: HazardIdentificationRunScript,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """执行指定编号的AI脚本（脚本1-7）"""
     service = SafetyService(db)
     item = await service.run_script(hid, data.script_number, data.ai_output)
@@ -282,12 +291,13 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="审核脚本输出",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     hid: uuid.UUID,
     data: HazardIdentificationReview,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """审核确认或驳回AI脚本输出结果"""
     service = SafetyService(db)
     item = await service.review_script(hid, data.script_number, data.action)
@@ -302,12 +312,13 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="上传岗位资料附件",
 )
-async def handler(  # noqa: F811
+async def handler(
+    current_user: RequiredUser,
+    # noqa: F811
     hid: uuid.UUID,
     file: UploadFile,
-    db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """上传危险源辨识的岗位资料附件"""
 
     file_ext = os.path.splitext(file.filename or ".bin")[1]
@@ -345,11 +356,12 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="删除危险源辨识记录",
 )
-async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    hid: uuid.UUID,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除危险源辨识记录"""
     service = SafetyService(db)
     result = await service.delete_hazard_identification(hid)
@@ -367,11 +379,12 @@ async def handler(  # noqa: F811
     response_model=HazardIdentificationApiResponse,
     summary="AI 解析危险源辨识台账自然语言筛选条件",
 )
-async def handler(  # noqa: F811
-    data: HazardLedgerExportRequest,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: HazardLedgerExportRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """使用 AI 将自然语言查询解析为结构化的危险源辨识台账筛选条件"""
     service = SafetyService(db)
     if not data.natural_query:
@@ -386,11 +399,12 @@ async def handler(  # noqa: F811
     summary="导出危险源辨识台账 PDF",
     response_class=Response,
 )
-async def handler(  # noqa: F811
-    data: HazardLedgerExportRequest,
-    db: AsyncSession = Depends(get_db),
+async def handler(
     current_user: RequiredUser,
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    # noqa: F811
+    data: HazardLedgerExportRequest,
+    db: AsyncSession = Depends(get_db)
+) -> Any:
     """导出危险源辨识台账为 PDF 文件。
 
     流程：
