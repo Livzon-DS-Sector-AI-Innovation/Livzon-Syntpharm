@@ -22,9 +22,18 @@ export type EnergyMonthlyRecord = components['schemas']['EnergyMonthlyRecordResp
 // 处理预警记录输入
 export type ProcessRecordInput = components['schemas']['AlertRecordProcessRequest']
 
-// ── Backend Spec Gaps ──
-// The following types are NOT in the backend OpenAPI spec yet.
-// They need backend response models to be added before they can use generated types.
+// ── API 响应类型（唯一来源：@/types/generated/schema）──
+
+export type EnergyData = components['schemas']['EnergyDataResponse']
+export type EnergyStatistics = components['schemas']['EnergyOverviewSummary']
+export type EnergyOverviewData = components['schemas']['EnergyOverviewApiResponse']['data']
+export type TrendDataPoint = components['schemas']['EnergyOverviewTrendPoint']
+export type CollectLog = components['schemas']['CollectLogResponse']
+export type CollectLogDeviceDetail = components['schemas']['CollectLogDeviceDetail']
+export type CollectLogDetail = components['schemas']['CollectLogDetailResponse']
+export type FeishuImportResult = components['schemas']['FeishuEnergyImportResponse']
+
+// ── UI 类型（用于入参、表单状态、组件 props、本地状态；非 API 契约）──
 
 // 能源类型枚举
 export type EnergyType = 'electricity' | 'water' | 'steam' | 'natural_gas'
@@ -42,20 +51,6 @@ export interface DeviceQueryParams {
   page_size?: number
 }
 
-// 能耗数据
-export interface EnergyData {
-  id: string
-  config_id: string
-  device_name: string
-  energy_type: EnergyType
-  workshop: string
-  production_line?: string
-  value: number
-  unit: string
-  collected_at: string
-  created_at: string
-}
-
 // 能耗数据查询参数
 export interface DataQueryParams {
   energy_type?: EnergyType
@@ -67,21 +62,6 @@ export interface DataQueryParams {
   page_size?: number
 }
 
-// 能耗统计
-export interface EnergyStatistics {
-  total_electricity: number
-  total_water: number
-  total_steam: number
-  total_natural_gas: number
-}
-
-// 总览数据
-export interface EnergyOverviewData {
-  summary: EnergyStatistics
-  trend: TrendDataPoint[]
-  distribution: DistributionDataPoint[]
-}
-
 // 统计查询参数
 export interface StatisticsParams {
   start_time?: string
@@ -91,43 +71,6 @@ export interface StatisticsParams {
 
 // 采集状态
 export type CollectStatus = 'success' | 'partial' | 'failed'
-
-// 采集日志
-export interface CollectLog {
-  id: string
-  platform_code: string
-  collect_time: string
-  status: CollectStatus
-  device_count: number
-  success_count: number
-  error_message: string | null
-  created_at: string
-}
-
-// 采集日志设备详情
-export interface CollectLogDeviceDetail {
-  device_name: string
-  platform_device_code: string
-  energy_type: string
-  value: number
-  unit: string
-  data_timestamp: string
-}
-
-// 采集日志详情（含设备数据）
-export interface CollectLogDetail {
-  id: string
-  platform_code: string
-  collect_time: string
-  status: CollectStatus
-  device_count: number
-  success_count: number
-  error_message: string | null
-  created_at: string
-  devices: CollectLogDeviceDetail[]
-  time_range_start: string | null
-  time_range_end: string | null
-}
 
 // 采集日志查询参数
 export interface LogQueryParams {
@@ -183,24 +126,10 @@ export interface RecordQueryParams {
   page_size?: number
 }
 
-// 趋势数据点
-export interface TrendDataPoint {
-  time: string
-  value: number
-  type: string
-}
-
-// 分布数据点
+// 分布数据点（图表输入，由总览 distribution 映射而来）
 export interface DistributionDataPoint {
   name: string
   value: number
-}
-
-// 设备排行数据
-export interface DeviceRankItem {
-  device_name: string
-  value: number
-  unit: string
 }
 
 // ── 车间管理 ──
@@ -224,13 +153,4 @@ export interface MonthlyRecordQueryParams {
   end_date?: string
   page?: number
   page_size?: number
-}
-
-// 飞书导入结果
-export interface FeishuImportResult {
-  workshops_created: number
-  workshops_existing: number
-  records_created: number
-  records_skipped: number
-  errors: string[]
 }

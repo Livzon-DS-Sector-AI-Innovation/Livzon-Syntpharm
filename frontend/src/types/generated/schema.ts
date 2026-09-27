@@ -25387,10 +25387,70 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+            data: components["schemas"]["EnergyOverviewResponse"];
+        };
+        /**
+         * EnergyOverviewDistributionPoint
+         * @description 总览分布数据点（按车间分组）
+         */
+        EnergyOverviewDistributionPoint: {
+            /** Group Key */
+            group_key: string;
+            /** Total Value */
+            total_value: number;
+            /** Unit */
+            unit: string;
+            /** Data Count */
+            data_count: number;
+        };
+        /**
+         * EnergyOverviewResponse
+         * @description 能源总览数据
+         */
+        EnergyOverviewResponse: {
+            summary: components["schemas"]["EnergyOverviewSummary"];
+            /** Trend */
+            trend: components["schemas"]["EnergyOverviewTrendPoint"][];
+            /** Distribution */
+            distribution: components["schemas"]["EnergyOverviewDistributionPoint"][];
+        };
+        /**
+         * EnergyOverviewSummary
+         * @description 总览汇总：各能源类型合计
+         */
+        EnergyOverviewSummary: {
+            /**
+             * Total Electricity
+             * @default 0
+             */
+            total_electricity: number;
+            /**
+             * Total Water
+             * @default 0
+             */
+            total_water: number;
+            /**
+             * Total Steam
+             * @default 0
+             */
+            total_steam: number;
+            /**
+             * Total Natural Gas
+             * @default 0
+             */
+            total_natural_gas: number;
+        };
+        /**
+         * EnergyOverviewTrendPoint
+         * @description 总览趋势数据点
+         */
+        EnergyOverviewTrendPoint: {
+            /** Time */
+            time: string;
+            /** Value */
+            value: number;
+            /** Type */
+            type: string;
         };
         /** EnergyPlatformListApiResponse */
         EnergyPlatformListApiResponse: {
@@ -25426,7 +25486,8 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["EnergyStatisticsResponse"];
+            /** Data */
+            data: components["schemas"]["EnergyStatisticsResponse"][];
         };
         /** EnergyStatisticsResponse */
         EnergyStatisticsResponse: {

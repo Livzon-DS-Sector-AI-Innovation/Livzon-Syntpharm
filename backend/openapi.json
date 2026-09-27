@@ -103401,9 +103401,7 @@
             "default": "success"
           },
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+            "$ref": "#/components/schemas/EnergyOverviewResponse"
           }
         },
         "type": "object",
@@ -103411,6 +103409,115 @@
           "data"
         ],
         "title": "EnergyOverviewApiResponse"
+      },
+      "EnergyOverviewDistributionPoint": {
+        "properties": {
+          "group_key": {
+            "type": "string",
+            "title": "Group Key"
+          },
+          "total_value": {
+            "type": "number",
+            "title": "Total Value"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "data_count": {
+            "type": "integer",
+            "title": "Data Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group_key",
+          "total_value",
+          "unit",
+          "data_count"
+        ],
+        "title": "EnergyOverviewDistributionPoint",
+        "description": "\u603b\u89c8\u5206\u5e03\u6570\u636e\u70b9\uff08\u6309\u8f66\u95f4\u5206\u7ec4\uff09"
+      },
+      "EnergyOverviewResponse": {
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/EnergyOverviewSummary"
+          },
+          "trend": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyOverviewTrendPoint"
+            },
+            "type": "array",
+            "title": "Trend"
+          },
+          "distribution": {
+            "items": {
+              "$ref": "#/components/schemas/EnergyOverviewDistributionPoint"
+            },
+            "type": "array",
+            "title": "Distribution"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "trend",
+          "distribution"
+        ],
+        "title": "EnergyOverviewResponse",
+        "description": "\u80fd\u6e90\u603b\u89c8\u6570\u636e"
+      },
+      "EnergyOverviewSummary": {
+        "properties": {
+          "total_electricity": {
+            "type": "number",
+            "title": "Total Electricity",
+            "default": 0
+          },
+          "total_water": {
+            "type": "number",
+            "title": "Total Water",
+            "default": 0
+          },
+          "total_steam": {
+            "type": "number",
+            "title": "Total Steam",
+            "default": 0
+          },
+          "total_natural_gas": {
+            "type": "number",
+            "title": "Total Natural Gas",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "EnergyOverviewSummary",
+        "description": "\u603b\u89c8\u6c47\u603b\uff1a\u5404\u80fd\u6e90\u7c7b\u578b\u5408\u8ba1"
+      },
+      "EnergyOverviewTrendPoint": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "title": "Time"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "time",
+          "value",
+          "type"
+        ],
+        "title": "EnergyOverviewTrendPoint",
+        "description": "\u603b\u89c8\u8d8b\u52bf\u6570\u636e\u70b9"
       },
       "EnergyPlatformListApiResponse": {
         "properties": {
@@ -103469,7 +103576,11 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/EnergyStatisticsResponse"
+            "items": {
+              "$ref": "#/components/schemas/EnergyStatisticsResponse"
+            },
+            "type": "array",
+            "title": "Data"
           }
         },
         "type": "object",
