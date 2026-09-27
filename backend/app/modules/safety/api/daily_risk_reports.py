@@ -58,9 +58,8 @@ async def handler(
 @daily_risk_reports_router.post(  # type: ignore[no-redef]
     "/daily-risk-reports", response_model=DailyRiskReportApiResponse, summary="创建每日风险作业报备"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: DailyRiskReportCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -76,9 +75,8 @@ async def handler(
     response_model=DailyRiskReportApiResponse,
     summary="获取每日风险作业报备详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -95,9 +93,8 @@ async def handler(
     response_model=DailyRiskReportApiResponse,
     summary="更新每日风险作业报备",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     report_id: uuid.UUID,
     data: DailyRiskReportUpdate,
     db: AsyncSession = Depends(get_db)
@@ -116,9 +113,8 @@ async def handler(
     response_model=DailyRiskReportApiResponse,
     summary="删除每日风险作业报备",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -136,9 +132,8 @@ async def handler(
     response_model=DailyRiskReportApiResponse,
     summary="提交每日风险作业报备",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -156,9 +151,8 @@ async def handler(
     response_model=DailyRiskReportApiResponse,
     summary="审批每日风险作业报备",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     report_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -176,9 +170,8 @@ async def handler(
     response_model=DailyRiskReportApiResponse,
     summary="驳回每日风险作业报备",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     report_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
     db: AsyncSession = Depends(get_db)

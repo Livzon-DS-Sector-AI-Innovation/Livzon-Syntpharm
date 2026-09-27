@@ -61,9 +61,8 @@ async def handler(
 @contractors_router.get(  # type: ignore[no-redef]
     "/contractors/{contractor_id}", response_model=ContractorApiResponse, summary="获取承包商详情"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -78,9 +77,8 @@ async def handler(
 @contractors_router.post(  # type: ignore[no-redef]
     "/contractors", response_model=ContractorApiResponse, summary="创建承包商"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: ContractorCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -94,9 +92,8 @@ async def handler(
 @contractors_router.put(  # type: ignore[no-redef]
     "/contractors/{contractor_id}", response_model=ContractorApiResponse, summary="更新承包商"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     data: ContractorUpdate,
     db: AsyncSession = Depends(get_db)
@@ -113,9 +110,8 @@ async def handler(
 @contractors_router.delete(  # type: ignore[no-redef]
     "/contractors/{contractor_id}", response_model=ContractorApiResponse, summary="删除承包商"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -133,9 +129,8 @@ async def handler(
     response_model=ContractorApiResponse,
     summary="加入黑名单",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -153,9 +148,8 @@ async def handler(
     response_model=ContractorApiResponse,
     summary="激活承包商",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -173,9 +167,8 @@ async def handler(
     response_model=ContractorApiResponse,
     summary="更新培训状态",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     training_status: str = Query(..., description="培训状态: untrained/in_progress/passed/expired"),
     db: AsyncSession = Depends(get_db)
@@ -197,9 +190,8 @@ async def handler(
     response_model=ContractorWorkRecordListApiResponse,
     summary="获取承包商施工记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -216,9 +208,8 @@ async def handler(
     response_model=ContractorWorkRecordApiResponse,
     summary="创建施工记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     data: ContractorWorkRecordCreate,
     db: AsyncSession = Depends(get_db)
@@ -235,9 +226,8 @@ async def handler(
     response_model=ContractorWorkRecordApiResponse,
     summary="更新施工记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     record_id: uuid.UUID,
     data: ContractorWorkRecordUpdate,
@@ -257,9 +247,8 @@ async def handler(
     response_model=ContractorWorkRecordApiResponse,
     summary="删除施工记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
@@ -278,9 +267,8 @@ async def handler(
     response_model=ContractorWorkRecordApiResponse,
     summary="评价施工记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     contractor_id: uuid.UUID,
     record_id: uuid.UUID,
     data: EvaluateWorkRecordRequest,

@@ -54,9 +54,8 @@ async def handler(
     response_model=SpecialOperationPersonnelApiResponse,
     summary="创建特殊作业人员资质",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: SpecialOperationPersonnelCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -72,9 +71,8 @@ async def handler(
     response_model=SpecialOperationPersonnelApiResponse,
     summary="获取特殊作业人员资质详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     personnel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -91,9 +89,8 @@ async def handler(
     response_model=SpecialOperationPersonnelApiResponse,
     summary="更新特殊作业人员资质",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     personnel_id: uuid.UUID,
     data: SpecialOperationPersonnelUpdate,
     db: AsyncSession = Depends(get_db)
@@ -112,9 +109,8 @@ async def handler(
     response_model=SpecialOperationPersonnelApiResponse,
     summary="删除特殊作业人员资质",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     personnel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:

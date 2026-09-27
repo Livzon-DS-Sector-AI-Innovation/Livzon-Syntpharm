@@ -51,9 +51,8 @@ async def handler(
 @oh_health_exams_router.post(  # type: ignore[no-redef]
     "/oh-health-exams", response_model=OhHealthExamApiResponse, summary="创建职业健康体检"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: OhHealthExamCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -69,9 +68,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="获取职业健康体检详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -86,9 +84,8 @@ async def handler(
 @oh_health_exams_router.put(  # type: ignore[no-redef]
     "/oh-health-exams/{exam_id}", response_model=OhHealthExamApiResponse, summary="更新职业健康体检"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     data: OhHealthExamUpdate,
     db: AsyncSession = Depends(get_db)
@@ -105,9 +102,8 @@ async def handler(
 @oh_health_exams_router.delete(  # type: ignore[no-redef]
     "/oh-health-exams/{exam_id}", response_model=OhHealthExamApiResponse, summary="删除职业健康体检"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -126,9 +122,8 @@ async def handler(
 @oh_health_exams_router.post(  # type: ignore[no-redef]
     "/oh-health-exams/{exam_id}/start", response_model=OhHealthExamApiResponse, summary="开始体检"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -146,9 +141,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="完成体检",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -164,9 +158,8 @@ async def handler(
 @oh_health_exams_router.post(  # type: ignore[no-redef]
     "/oh-health-exams/{exam_id}/archive", response_model=OhHealthExamApiResponse, summary="归档体检"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -187,9 +180,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="添加体检项目",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db)
@@ -208,9 +200,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="更新体检项目",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     index: int,
     data: dict[str, Any],
@@ -230,9 +221,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="删除体检项目",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     index: int,
     db: AsyncSession = Depends(get_db)
@@ -251,9 +241,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="设置体检结论",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     data: SetExamConclusionRequest,
     db: AsyncSession = Depends(get_db)
@@ -272,9 +261,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="添加体检异常处置记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db)
@@ -293,9 +281,8 @@ async def handler(
     response_model=OhHealthExamApiResponse,
     summary="更新体检异常处置状态",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     exam_id: uuid.UUID,
     index: int,
     status: str = Query(..., description="状态: open/investigating/corrected/closed"),

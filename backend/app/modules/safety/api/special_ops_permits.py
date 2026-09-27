@@ -54,9 +54,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="创建特殊作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: SpecialOperationPermitCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -72,9 +71,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="获取特殊作业票详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -91,9 +89,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="更新特殊作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     data: SpecialOperationPermitUpdate,
     db: AsyncSession = Depends(get_db)
@@ -112,9 +109,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="删除特殊作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -135,9 +131,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="提交作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -155,9 +150,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="审批作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -175,9 +169,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="驳回作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
     db: AsyncSession = Depends(get_db)
@@ -196,9 +189,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="开始作业",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -216,9 +208,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="完工验收",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     method: str = Query(..., description="完工方式: normal/early_termination"),
     db: AsyncSession = Depends(get_db)
@@ -237,9 +228,8 @@ async def handler(
     response_model=SpecialOperationPermitApiResponse,
     summary="归档作业票",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:

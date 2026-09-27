@@ -60,9 +60,8 @@ async def handler(
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes", response_model=EhsChangeApiResponse, summary="创建EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: EhsChangeCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -76,9 +75,8 @@ async def handler(
 @ehs_changes_router.get(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}", response_model=EhsChangeApiResponse, summary="获取EHS变更详情"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -93,9 +91,8 @@ async def handler(
 @ehs_changes_router.put(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}", response_model=EhsChangeApiResponse, summary="更新EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     data: EhsChangeUpdate,
     db: AsyncSession = Depends(get_db)
@@ -112,9 +109,8 @@ async def handler(
 @ehs_changes_router.delete(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}", response_model=EhsChangeApiResponse, summary="删除EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -133,9 +129,8 @@ async def handler(
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/submit", response_model=EhsChangeApiResponse, summary="提交EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -153,9 +148,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="审批EHS变更",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     data: ApproveEhsChangeRequest,
     db: AsyncSession = Depends(get_db)
@@ -172,9 +166,8 @@ async def handler(
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/reject", response_model=EhsChangeApiResponse, summary="驳回EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     comments: str | None = Query(None, description="驳回原因"),
     db: AsyncSession = Depends(get_db)
@@ -193,9 +186,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="开始实施EHS变更",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -213,9 +205,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="投用EHS变更",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -231,9 +222,8 @@ async def handler(
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/close", response_model=EhsChangeApiResponse, summary="关闭EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     data: CloseEhsChangeRequest,
     db: AsyncSession = Depends(get_db)
@@ -250,9 +240,8 @@ async def handler(
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/cancel", response_model=EhsChangeApiResponse, summary="取消EHS变更"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -273,9 +262,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="添加风险评估记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db)
@@ -294,9 +282,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="更新行动项状态",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     index: int,
     status: str = Query(..., description="状态: pending/in_progress/completed"),
@@ -316,9 +303,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="更新PSSR检查清单",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     data: list[dict[str, Any]],
     db: AsyncSession = Depends(get_db)
@@ -337,9 +323,8 @@ async def handler(
     response_model=EhsChangeApiResponse,
     summary="提交变更验证数据",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     change_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db)

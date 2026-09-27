@@ -89,9 +89,8 @@ async def post(
 @accidents_router.put(  # type: ignore[no-redef]
     "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="更新事故"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     data: AccidentUpdate,
     db: AsyncSession = Depends(get_db)
@@ -110,9 +109,8 @@ async def handler(
     response_model=AccidentApiResponse,
     summary="开始调查事故",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -132,9 +130,8 @@ async def handler(
     response_model=AccidentApiResponse,
     summary="完成调查事故",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     direct_cause: str = Query(..., description="直接原因"),
     root_cause: str = Query(..., description="根本原因"),
@@ -166,9 +163,8 @@ async def handler(
     response_model=AccidentApiResponse,
     summary="启动CAPA",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     corrective_action_deadline: str = Query(..., description="CAPA截止日期 (YYYY-MM-DD)"),
     corrective_action_responsible: str = Query(..., description="CAPA责任人"),
@@ -192,9 +188,8 @@ async def handler(
     response_model=AccidentApiResponse,
     summary="验证CAPA并关闭事故",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -214,9 +209,8 @@ async def handler(
     response_model=AccidentApiResponse,
     summary="直接关闭事故",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -232,9 +226,8 @@ async def handler(
 @accidents_router.delete(  # type: ignore[no-redef]
     "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="删除事故"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:

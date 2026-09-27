@@ -52,9 +52,8 @@ async def handler(
 @trainings_router.get(  # type: ignore[no-redef]
     "/trainings/{training_id}", response_model=SafetyTrainingApiResponse, summary="获取安全培训详情"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -82,9 +81,8 @@ async def post(
 @trainings_router.put(  # type: ignore[no-redef]
     "/trainings/{training_id}", response_model=SafetyTrainingApiResponse, summary="更新安全培训"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     data: SafetyTrainingUpdate,
     db: AsyncSession = Depends(get_db)
@@ -101,9 +99,8 @@ async def handler(
 @trainings_router.post(  # type: ignore[no-redef]
     "/trainings/{training_id}/start", response_model=SafetyTrainingApiResponse, summary="开始培训"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -119,9 +116,8 @@ async def handler(
 @trainings_router.post(  # type: ignore[no-redef]
     "/trainings/{training_id}/complete", response_model=SafetyTrainingApiResponse, summary="完成培训"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -137,9 +133,8 @@ async def handler(
 @trainings_router.delete(  # type: ignore[no-redef]
     "/trainings/{training_id}", response_model=SafetyTrainingApiResponse, summary="删除安全培训"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -160,9 +155,8 @@ async def handler(
     response_model=TrainingRecordListApiResponse,
     summary="获取培训签到记录列表",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -179,9 +173,8 @@ async def handler(
     response_model=TrainingRecordApiResponse,
     summary="添加培训签到记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     training_id: uuid.UUID,
     data: TrainingRecordCreate,
     db: AsyncSession = Depends(get_db)
@@ -199,9 +192,8 @@ async def handler(
     response_model=TrainingRecordApiResponse,
     summary="更新培训签到记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     record_id: uuid.UUID,
     data: TrainingRecordUpdate,
     db: AsyncSession = Depends(get_db)
@@ -220,9 +212,8 @@ async def handler(
     response_model=TrainingRecordApiResponse,
     summary="删除培训签到记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -241,9 +232,8 @@ async def handler(
 @trainings_router.get(  # type: ignore[no-redef]
     "/training-certificates", response_model=TrainingRecordListApiResponse, summary="获取证书列表"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     certificate_status: str | None = None,
@@ -270,9 +260,8 @@ async def handler(
     response_model=TrainingRecordListApiResponse,
     summary="获取即将到期证书",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取30天内即将到期的证书"""

@@ -52,9 +52,8 @@ async def handler(
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
     "/oh-hazard-monitors", response_model=OhHazardMonitorApiResponse, summary="创建职业危害因素监测"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: OhHazardMonitorCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -70,9 +69,8 @@ async def handler(
     response_model=OhHazardMonitorApiResponse,
     summary="获取职业危害因素监测详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -89,9 +87,8 @@ async def handler(
     response_model=OhHazardMonitorApiResponse,
     summary="更新职业危害因素监测",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     data: OhHazardMonitorUpdate,
     db: AsyncSession = Depends(get_db)
@@ -110,9 +107,8 @@ async def handler(
     response_model=OhHazardMonitorApiResponse,
     summary="删除职业危害因素监测",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -133,9 +129,8 @@ async def handler(
     response_model=ApiResponse,
     summary="开始监测",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -153,9 +148,8 @@ async def handler(
     response_model=ApiResponse,
     summary="完成监测",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -173,9 +167,8 @@ async def handler(
     response_model=ApiResponse,
     summary="验证监测",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     data: VerifyMonitorRequest,
     db: AsyncSession = Depends(get_db)
@@ -197,9 +190,8 @@ async def handler(
     response_model=ApiResponse,
     summary="添加检测结果",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db)
@@ -218,9 +210,8 @@ async def handler(
     response_model=ApiResponse,
     summary="更新检测结果",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     index: int,
     data: dict[str, Any],
@@ -240,9 +231,8 @@ async def handler(
     response_model=ApiResponse,
     summary="删除检测结果",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     index: int,
     db: AsyncSession = Depends(get_db)
@@ -261,9 +251,8 @@ async def handler(
     response_model=ApiResponse,
     summary="添加异常处置记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db)
@@ -282,9 +271,8 @@ async def handler(
     response_model=ApiResponse,
     summary="更新异常处置状态",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     monitor_id: uuid.UUID,
     index: int,
     status: str = Query(..., description="状态: open/investigating/corrected/closed"),

@@ -67,9 +67,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="获取安全操作规程详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -84,9 +83,8 @@ async def handler(
 @regulations_router.post(  # type: ignore[no-redef]
     "/regulations", response_model=OperationRegulationApiResponse, summary="创建安全操作规程"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: OperationRegulationCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -102,9 +100,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="更新安全操作规程",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     data: OperationRegulationUpdate,
     db: AsyncSession = Depends(get_db)
@@ -123,9 +120,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="删除安全操作规程",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -143,9 +139,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="上传操规文档",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     file: UploadFile,
     db: AsyncSession = Depends(get_db)
@@ -188,9 +183,8 @@ async def handler(
 @regulations_router.get(  # type: ignore[no-redef]
     "/revisions", response_model=RegulationRevisionListApiResponse, summary="获取修订记录列表"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     regulation_id: uuid.UUID | None = None,
@@ -216,9 +210,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="获取修订记录详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -233,9 +226,8 @@ async def handler(
 @regulations_router.post(  # type: ignore[no-redef]
     "/revisions", response_model=RegulationRevisionApiResponse, summary="创建修订记录"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: RegulationRevisionCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -253,9 +245,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="更新修订记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     data: RegulationRevisionUpdate,
     db: AsyncSession = Depends(get_db)
@@ -274,9 +265,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="删除修订记录",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -297,9 +287,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="完成人工修订",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     file: UploadFile,
     db: AsyncSession = Depends(get_db)
@@ -348,9 +337,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="AI生成修订版本",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -367,9 +355,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="确认AI修订版本",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     generated_content: str = Query(..., description="AI生成的修订后完整内容"),
     document_name: str | None = Query(None, description="文档名称（可选）"),
@@ -392,9 +379,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="AI识别修订范围",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     revision_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -419,9 +405,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="上传旧版操规并生成标准化版本",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     file: UploadFile,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -445,9 +430,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="获取操规标准化内容",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -465,9 +449,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="保存编辑后的操规内容",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     data: SopContentUpdate,
     db: AsyncSession = Depends(get_db)
@@ -493,9 +476,8 @@ async def handler(
     response_model=OperationRegulationApiResponse,
     summary="在线修订操规",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     data: "RegulationReviseRequest",
     db: AsyncSession = Depends(get_db)
@@ -524,9 +506,8 @@ async def handler(
     "/regulations/{regulation_id}/export",
     summary="导出标准化操规 PDF",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     regulation_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:

@@ -75,9 +75,8 @@ async def post(
 @checks_router.put(  # type: ignore[no-redef]
     "/checks/{check_id}", response_model=SafetyCheckApiResponse, summary="更新安全检查"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     check_id: uuid.UUID,
     data: SafetyCheckUpdate,
     db: AsyncSession = Depends(get_db)
@@ -94,9 +93,8 @@ async def handler(
 @checks_router.post(  # type: ignore[no-redef]
     "/checks/{check_id}/submit", response_model=SafetyCheckApiResponse, summary="提交安全检查"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -112,9 +110,8 @@ async def handler(
 @checks_router.post(  # type: ignore[no-redef]
     "/checks/{check_id}/review", response_model=SafetyCheckApiResponse, summary="审核安全检查"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     check_id: uuid.UUID,
     result: str = Query(..., description="审核结果: qualified/unqualified"),
     db: AsyncSession = Depends(get_db)
@@ -131,9 +128,8 @@ async def handler(
 @checks_router.post(  # type: ignore[no-redef]
     "/checks/{check_id}/confirm", response_model=SafetyCheckApiResponse, summary="确认检查"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     check_id: uuid.UUID,
     data: ConfirmCheckRequest,
     db: AsyncSession = Depends(get_db)
@@ -150,9 +146,8 @@ async def handler(
 @checks_router.delete(  # type: ignore[no-redef]
     "/checks/{check_id}", response_model=SafetyCheckApiResponse, summary="删除安全检查"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:

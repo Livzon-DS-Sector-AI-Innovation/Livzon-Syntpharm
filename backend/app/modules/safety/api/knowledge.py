@@ -62,9 +62,8 @@ async def handler(
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles", response_model=SafetyKnowledgeArticleApiResponse, summary="创建安全知识库文章"
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     data: SafetyKnowledgeArticleCreate,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -80,9 +79,8 @@ async def handler(
     response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取安全知识库文章详情",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -99,9 +97,8 @@ async def handler(
     response_model=SafetyKnowledgeArticleApiResponse,
     summary="更新安全知识库文章",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     article_id: uuid.UUID,
     data: SafetyKnowledgeArticleUpdate,
     db: AsyncSession = Depends(get_db)
@@ -120,9 +117,8 @@ async def handler(
     response_model=SafetyKnowledgeArticleApiResponse,
     summary="删除安全知识库文章",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -140,9 +136,8 @@ async def handler(
     response_model=SafetyKnowledgeArticleApiResponse,
     summary="发布知识库文章",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -160,9 +155,8 @@ async def handler(
     response_model=SafetyKnowledgeArticleApiResponse,
     summary="归档知识库文章",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db)
 ) -> Any:
@@ -180,9 +174,8 @@ async def handler(
     response_model=SafetyKnowledgeArticleApiResponse,
     summary="上传知识库文章附件",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     article_id: uuid.UUID,
     file: UploadFile,
     db: AsyncSession = Depends(get_db)
@@ -413,9 +406,8 @@ async def generate_graph(
     response_model=SafetyKnowledgeBatchImportApiResponse,
     summary="批量导入知识库文章",
 )
-async def handler(
+async def handler(  # noqa: F811
     current_user: RequiredUser,
-    # noqa: F811
     files: list[UploadFile] = File(...),
     category: str | None = None,
     db: AsyncSession = Depends(get_db)
