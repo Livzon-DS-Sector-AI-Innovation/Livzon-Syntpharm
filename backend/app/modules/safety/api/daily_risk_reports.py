@@ -38,7 +38,7 @@ async def handler(
     report_date: str | None = Query(None, description="报备日期 (YYYY-MM-DD)"),
     keyword: str | None = None,
     report_type: str | None = Query(None, description="报备类型: regular/non_regular"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取每日风险作业报备列表"""
     service = DailyRiskReportService(db)
@@ -59,9 +59,7 @@ async def handler(
     "/daily-risk-reports", response_model=DailyRiskReportApiResponse, summary="创建每日风险作业报备"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: DailyRiskReportCreate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: DailyRiskReportCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """创建每日风险作业报备"""
     service = DailyRiskReportService(db)
@@ -76,9 +74,7 @@ async def handler(  # noqa: F811
     summary="获取每日风险作业报备详情",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取每日风险作业报备详情"""
     service = DailyRiskReportService(db)
@@ -94,10 +90,7 @@ async def handler(  # noqa: F811
     summary="更新每日风险作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    data: DailyRiskReportUpdate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, data: DailyRiskReportUpdate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """更新每日风险作业报备"""
     service = DailyRiskReportService(db)
@@ -114,9 +107,7 @@ async def handler(  # noqa: F811
     summary="删除每日风险作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除每日风险作业报备（软删除）"""
     service = DailyRiskReportService(db)
@@ -133,9 +124,7 @@ async def handler(  # noqa: F811
     summary="提交每日风险作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """提交报备（草稿→已提交）"""
     service = DailyRiskReportService(db)
@@ -152,9 +141,7 @@ async def handler(  # noqa: F811
     summary="审批每日风险作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """审批通过报备（已提交→已审批）"""
     service = DailyRiskReportService(db)
@@ -174,7 +161,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     report_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """驳回报备（已提交→已驳回）"""
     service = DailyRiskReportService(db)

@@ -37,7 +37,7 @@ async def handler(
     certificate_type: str | None = None,
     department: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取特殊作业人员资质列表"""
     service = SpecialOperationService(db)
@@ -55,9 +55,7 @@ async def handler(
     summary="创建特殊作业人员资质",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: SpecialOperationPersonnelCreate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: SpecialOperationPersonnelCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """创建特殊作业人员资质"""
     service = SpecialOperationService(db)
@@ -72,9 +70,7 @@ async def handler(  # noqa: F811
     summary="获取特殊作业人员资质详情",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    personnel_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, personnel_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取特殊作业人员资质详情"""
     service = SpecialOperationService(db)
@@ -93,7 +89,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     personnel_id: uuid.UUID,
     data: SpecialOperationPersonnelUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新特殊作业人员资质"""
     service = SpecialOperationService(db)
@@ -110,9 +106,7 @@ async def handler(  # noqa: F811
     summary="删除特殊作业人员资质",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    personnel_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, personnel_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除特殊作业人员资质"""
     service = SpecialOperationService(db)

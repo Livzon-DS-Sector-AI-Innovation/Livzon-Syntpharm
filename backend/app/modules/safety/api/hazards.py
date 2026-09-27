@@ -55,7 +55,7 @@ async def get(
     inspection_category: str | None = None,
     department: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取隐患列表"""
     service = HazardService(db)
@@ -148,9 +148,7 @@ async def handler(  # noqa: F811
     "/hazards/{hazard_id}", response_model=HazardApiResponse, summary="获取隐患详情"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取隐患详情"""
     service = HazardService(db)
@@ -161,11 +159,7 @@ async def handler(  # noqa: F811
 
 
 @hazards_router.post("/hazards", response_model=HazardApiResponse, summary="创建隐患")
-async def post(
-    current_user: RequiredUser,
-    data: HazardReportCreate,
-    db: AsyncSession = Depends(get_db)
-) -> Any:
+async def post(current_user: RequiredUser, data: HazardReportCreate, db: AsyncSession = Depends(get_db)) -> Any:
     """创建隐患（AI 识别不在此处执行——调用方应在图片上传完成后通过
     POST /hazards/{id}/ai/run/1 手动触发，与 Bitable 同步流程对齐）。"""
     service = HazardService(db)
@@ -178,10 +172,7 @@ async def post(
     "/hazards/{hazard_id}", response_model=HazardApiResponse, summary="更新隐患"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    data: HazardReportUpdate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, data: HazardReportUpdate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """更新隐患"""
     service = HazardService(db)
@@ -198,10 +189,7 @@ async def handler(  # noqa: F811
     summary="上传隐患图片",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    file: UploadFile,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, file: UploadFile, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """上传隐患缺陷图片，追加到 defect_photos JSON 数组"""
 
@@ -243,10 +231,7 @@ async def handler(  # noqa: F811
     summary="上传整改图片",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    file: UploadFile,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, file: UploadFile, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """上传整改后图片，追加到 rectification_photos JSON 数组"""
 
@@ -287,9 +272,7 @@ async def handler(  # noqa: F811
     summary="开始整改",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """开始整改"""
     service = HazardService(db)
@@ -309,7 +292,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     hazard_id: uuid.UUID,
     data: RectificationReplyRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """责任人提交整改回复（含纠正预防措施），rectification_status: in_progress → replied"""
     service = HazardService(db)
@@ -333,10 +316,7 @@ async def handler(  # noqa: F811
     summary="三级复核",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    data: VerifyLevelRequest,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, data: VerifyLevelRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """三级复核确认：1=一级(部门负责人), 2=二级(分管领导), 3=三级(隐患发现人)"""
     service = HazardService(db)
@@ -365,7 +345,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     hazard_id: uuid.UUID,
     data: RectificationReplyRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """复核驳回后重新整改，rejected → replied，重置所有复核级别"""
     service = HazardService(db)
@@ -388,9 +368,7 @@ async def handler(  # noqa: F811
     "/hazards/{hazard_id}", response_model=HazardApiResponse, summary="删除隐患"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除隐患"""
     service = HazardService(db)
@@ -407,10 +385,7 @@ async def handler(  # noqa: F811
     summary="执行隐患AI工作流",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    script_number: int,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, script_number: int, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """执行隐患AI工作流脚本。AI从已有数据库数据读取上下文，无需额外传入参数。
 
@@ -436,9 +411,7 @@ async def handler(  # noqa: F811
     summary="飞书通知当前复核人",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """手动触发飞书通知，提醒当前复核阶段的责任人进行复核。
 
@@ -491,9 +464,7 @@ async def handler(  # noqa: F811
     summary="触发整改回复 AI 初审",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """手动触发整改回复 AI 初审（异步执行，不阻塞响应）。
 
@@ -524,9 +495,7 @@ async def handler(  # noqa: F811
     summary="飞书通知整改责任人",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    hazard_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, hazard_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """手动触发飞书通知，提醒整改责任人进行整改回复。"""
     service = HazardService(db)
@@ -549,8 +518,7 @@ async def handler(  # noqa: F811
     summary="Bitable 漏单诊断",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """诊断 Bitable 多维表格中是否有在 WebSocket 断线期间被遗漏的记录。
 

@@ -47,7 +47,7 @@ async def handler(
     category: str | None = None,
     status: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取安全知识库文章列表"""
     service = KnowledgeService(db)
@@ -63,9 +63,7 @@ async def handler(
     "/knowledge-articles", response_model=SafetyKnowledgeArticleApiResponse, summary="创建安全知识库文章"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: SafetyKnowledgeArticleCreate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: SafetyKnowledgeArticleCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """创建安全知识库文章"""
     service = KnowledgeService(db)
@@ -80,9 +78,7 @@ async def handler(  # noqa: F811
     summary="获取安全知识库文章详情",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取安全知识库文章详情"""
     service = KnowledgeService(db)
@@ -101,7 +97,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     article_id: uuid.UUID,
     data: SafetyKnowledgeArticleUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新安全知识库文章"""
     service = KnowledgeService(db)
@@ -118,9 +114,7 @@ async def handler(  # noqa: F811
     summary="删除安全知识库文章",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除安全知识库文章"""
     service = KnowledgeService(db)
@@ -137,9 +131,7 @@ async def handler(  # noqa: F811
     summary="发布知识库文章",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """发布文章（草稿→已发布）"""
     service = KnowledgeService(db)
@@ -156,9 +148,7 @@ async def handler(  # noqa: F811
     summary="归档知识库文章",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """归档文章（已发布→已归档）"""
     service = KnowledgeService(db)
@@ -175,10 +165,7 @@ async def handler(  # noqa: F811
     summary="上传知识库文章附件",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    file: UploadFile,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, article_id: uuid.UUID, file: UploadFile, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """上传知识库文章附件"""
 
@@ -267,7 +254,7 @@ async def get_full_graph(
     node_types: str | None = None,
     relation_types: str | None = None,
     max_nodes: int = Query(500, ge=1, le=1000),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取完整知识图谱数据"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -296,7 +283,7 @@ async def get_graph_nodes(
     keyword: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取图谱节点列表"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -321,7 +308,7 @@ async def get_graph_edges(
     status: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取图谱边列表"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -344,7 +331,7 @@ async def search_graph_nodes(
     current_user: RequiredUser,
     query: str = Query(..., min_length=1),
     node_types: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """搜索图谱节点"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -365,7 +352,7 @@ async def expand_graph_node(
     hops: int = Query(1, ge=1, le=3),
     relation_types: str | None = None,
     max_nodes: int = Query(30, ge=1, le=100),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """展开指定节点的邻居节点"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -390,7 +377,7 @@ async def generate_graph(
     current_user: RequiredUser,
     document_ids: list[uuid.UUID] | None = None,
     force_rebuild: bool = False,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """从知识库文章 AI 生成知识图谱"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -410,7 +397,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     files: list[UploadFile] = File(...),
     category: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """批量导入知识库文章"""
     from app.modules.safety.service.document_parser import parse_document
@@ -547,11 +534,7 @@ async def handler(  # noqa: F811
     response_model=SafetyKnowledgeGenerateCardApiResponse,
     summary="生成知识卡片",
 )
-async def generate_card(
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
-) -> Any:
+async def generate_card(current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
     """使用 AI 从文章内容生成结构化知识卡片（委托给 KnowledgeService）
 
     TODO(H7): Consider async task pattern for large documents.
@@ -585,7 +568,7 @@ async def generate_ppt(
     current_user: RequiredUser,
     article_id: uuid.UUID,
     data: dict[str, Any] = Body(default_factory=dict),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """使用 AI 从文章内容生成 PPT（.pptx 文件）
 
@@ -621,7 +604,7 @@ async def get_ppt_history(
     article_id: uuid.UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """查询某文章的 PPT 生成历史记录（委托给 KnowledgeService）"""
     service = KnowledgeService(db)
@@ -651,9 +634,7 @@ async def get_ppt_history(
     summary="生成摘要",
 )
 async def generate_summary(
-    current_user: RequiredUser,
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """使用 AI 从文章内容生成摘要（委托给 KnowledgeService）
 

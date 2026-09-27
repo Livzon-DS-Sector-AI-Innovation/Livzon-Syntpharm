@@ -37,7 +37,7 @@ async def handler(
     operation_type: str | None = None,
     operation_level: str | None = None,
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取特殊作业票列表"""
     service = SpecialOperationService(db)
@@ -55,9 +55,7 @@ async def handler(
     summary="创建特殊作业票",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: SpecialOperationPermitCreate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: SpecialOperationPermitCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """创建特殊作业票"""
     service = SpecialOperationService(db)
@@ -72,9 +70,7 @@ async def handler(  # noqa: F811
     summary="获取特殊作业票详情",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, permit_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取特殊作业票详情"""
     service = SpecialOperationService(db)
@@ -93,7 +89,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     permit_id: uuid.UUID,
     data: SpecialOperationPermitUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新特殊作业票"""
     service = SpecialOperationService(db)
@@ -110,9 +106,7 @@ async def handler(  # noqa: F811
     summary="删除特殊作业票",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, permit_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除特殊作业票"""
     service = SpecialOperationService(db)
@@ -132,9 +126,7 @@ async def handler(  # noqa: F811
     summary="提交作业票",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, permit_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """提交作业票（草稿→已提交）"""
     service = SpecialOperationService(db)
@@ -151,9 +143,7 @@ async def handler(  # noqa: F811
     summary="审批作业票",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, permit_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """审批作业票（已提交→已审批）"""
     service = SpecialOperationService(db)
@@ -173,7 +163,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     permit_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """驳回作业票（已提交→已驳回）"""
     service = SpecialOperationService(db)
@@ -190,9 +180,7 @@ async def handler(  # noqa: F811
     summary="开始作业",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, permit_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """开始作业（已审批→作业中）"""
     service = SpecialOperationService(db)
@@ -212,7 +200,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     permit_id: uuid.UUID,
     method: str = Query(..., description="完工方式: normal/early_termination"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """完工验收（作业中→已完工）"""
     service = SpecialOperationService(db)
@@ -229,9 +217,7 @@ async def handler(  # noqa: F811
     summary="归档作业票",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    permit_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, permit_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """归档作业票（已完工→已归档）"""
     service = SpecialOperationService(db)

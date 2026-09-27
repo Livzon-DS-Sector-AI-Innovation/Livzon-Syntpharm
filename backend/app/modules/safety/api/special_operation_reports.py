@@ -47,7 +47,7 @@ async def handler(
     date_to: str | None = Query(None, description="计划结束日期止 (YYYY-MM-DD)"),
     keyword: str | None = None,
     is_critical: bool | None = Query(None, description="是否关键作业"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取特殊作业报备列表"""
     service = SpecialOperationReportService(db)
@@ -75,9 +75,7 @@ async def handler(
     "/special-operation-reports", response_model=SpecialOperationReportApiResponse, summary="创建特殊作业报备"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: SpecialOperationReportCreate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: SpecialOperationReportCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """创建特殊作业报备"""
     service = SpecialOperationReportService(db)
@@ -92,9 +90,7 @@ async def handler(  # noqa: F811
     summary="获取特殊作业报备详情",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取特殊作业报备详情"""
     service = SpecialOperationReportService(db)
@@ -113,7 +109,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     report_id: uuid.UUID,
     data: SpecialOperationReportUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新特殊作业报备"""
     service = SpecialOperationReportService(db)
@@ -130,9 +126,7 @@ async def handler(  # noqa: F811
     summary="删除特殊作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除特殊作业报备（软删除）"""
     service = SpecialOperationReportService(db)
@@ -149,9 +143,7 @@ async def handler(  # noqa: F811
     summary="提交特殊作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """提交报备（草稿→已提交）"""
     service = SpecialOperationReportService(db)
@@ -168,9 +160,7 @@ async def handler(  # noqa: F811
     summary="审批特殊作业报备",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """审批通过报备（已提交→已审批）"""
     service = SpecialOperationReportService(db)
@@ -190,7 +180,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     report_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """驳回报备（已提交→已驳回）"""
     service = SpecialOperationReportService(db)
@@ -207,10 +197,7 @@ async def handler(  # noqa: F811
     summary="手动设置关键作业标记",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    report_id: uuid.UUID,
-    data: SetCriticalRequest,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, report_id: uuid.UUID, data: SetCriticalRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """手动修改特殊作业报备的关键作业标记"""
     service = SpecialOperationReportService(db)
@@ -242,7 +229,7 @@ async def handler(  # noqa: F811
     date_to: str | None = Query(None, description="计划结束日期止 (YYYY-MM-DD)"),
     keyword: str | None = None,
     is_critical: bool | None = Query(None, description="是否关键作业"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取特殊作业台账列表（审批中 + 已审批的报备记录）"""
     service = SpecialOperationReportService(db)
@@ -271,8 +258,7 @@ async def handler(  # noqa: F811
     summary="获取特殊作业台账统计",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """按作业类型统计台账数量和关键作业数量"""
     service = SpecialOperationReportService(db)
@@ -286,9 +272,7 @@ async def handler(  # noqa: F811
     summary="AI 解析自然语言筛选条件",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: LedgerExportRequest,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: LedgerExportRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """使用 AI 将自然语言查询解析为结构化的台账筛选条件"""
     service = SpecialOperationReportService(db)
@@ -305,9 +289,7 @@ async def handler(  # noqa: F811
     response_class=Response,
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    data: LedgerExportRequest,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, data: LedgerExportRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """导出特殊作业台账为 Excel 文件，支持 AI 自然语言筛选
 

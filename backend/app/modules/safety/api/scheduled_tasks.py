@@ -30,9 +30,7 @@ scheduled_tasks_router = APIRouter()
 @scheduled_tasks_router.get(
     "/scheduled-tasks/data-source-options", response_model=ScheduledTaskApiResponse, summary="获取可用数据来源选项"
 )
-async def get_data_source_options(
-    current_user: RequiredUser
-) -> Any:
+async def get_data_source_options(current_user: RequiredUser) -> Any:
     """获取可用的数据来源列表（供前端下拉选择）"""
     options = ScheduledTaskService.get_data_source_options()
     return success_response(data=options)
@@ -44,8 +42,7 @@ async def get_data_source_options(
 async def preview_card(
     current_user: RequiredUser,
     data: CardPreviewRequest,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """预览消息卡片渲染效果"""
     service = ScheduledTaskService(db)
@@ -58,8 +55,7 @@ async def preview_card(
 )
 async def get_feishu_chats(
     current_user: RequiredUser,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取可选的飞书群聊列表（从缓存或配置中读取）"""
     from app.core.config import get_settings
@@ -87,8 +83,7 @@ async def get_feishu_chats(
 @scheduled_tasks_router.get("/scheduled-tasks", response_model=ScheduledTaskListApiResponse, summary="获取定时任务列表")
 async def get_scheduled_tasks(
     current_user: RequiredUser,
-    page: int = Query(1, ge=1
-),
+    page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     is_enabled: bool | None = None,
     search: str | None = None,
@@ -110,8 +105,7 @@ async def get_scheduled_tasks(
 async def create_scheduled_task(
     current_user: RequiredUser,
     data: ScheduledTaskCreate,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建新的定时任务"""
     service = ScheduledTaskService(db)
@@ -126,8 +120,7 @@ async def create_scheduled_task(
 async def get_scheduled_task(
     current_user: RequiredUser,
     task_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取单个定时任务详情"""
     service = ScheduledTaskService(db)
@@ -144,8 +137,7 @@ async def update_scheduled_task(
     current_user: RequiredUser,
     task_id: uuid.UUID,
     data: ScheduledTaskUpdate,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新定时任务配置"""
     service = ScheduledTaskService(db)
@@ -162,8 +154,7 @@ async def update_scheduled_task(
 async def delete_scheduled_task(
     current_user: RequiredUser,
     task_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除定时任务（软删除）"""
     service = ScheduledTaskService(db)
@@ -180,8 +171,7 @@ async def delete_scheduled_task(
 async def toggle_scheduled_task(
     current_user: RequiredUser,
     task_id: uuid.UUID,
-    enabled: bool = Query(..., description="是否启用"
-),
+    enabled: bool = Query(..., description="是否启用"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """切换定时任务的启用/禁用状态"""
@@ -199,8 +189,7 @@ async def toggle_scheduled_task(
 async def run_scheduled_task_now(
     current_user: RequiredUser,
     task_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db
-),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """立即手动执行一次定时任务"""
     service = ScheduledTaskService(db)
@@ -217,8 +206,7 @@ async def run_scheduled_task_now(
 async def get_scheduled_task_logs(
     current_user: RequiredUser,
     task_id: uuid.UUID,
-    page: int = Query(1, ge=1
-),
+    page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -240,9 +228,7 @@ async def get_scheduled_task_logs(
 @scheduled_tasks_router.post(
     "/feishu/ws/restart", response_model=ScheduledTaskApiResponse, summary="手动恢复飞书 WebSocket 连接"
 )
-async def restart_feishu_ws(
-    current_user: RequiredUser
-) -> Any:
+async def restart_feishu_ws(current_user: RequiredUser) -> Any:
     """WS 因重试次数耗尽（3 次）自动停止后，手动重新建立连接。
 
     无需传参，调用即重置重试计数并创建新的 WS 任务。
@@ -257,9 +243,7 @@ async def restart_feishu_ws(
 @scheduled_tasks_router.get(
     "/feishu/ws/status", response_model=ScheduledTaskApiResponse, summary="查询飞书 WebSocket 连接状态"
 )
-async def get_feishu_ws_status(
-    current_user: RequiredUser
-) -> Any:
+async def get_feishu_ws_status(current_user: RequiredUser) -> Any:
     """查询安全模块飞书 WebSocket 当前状态。
 
     返回是否已连接、已注册事件类型、最大重试次数。

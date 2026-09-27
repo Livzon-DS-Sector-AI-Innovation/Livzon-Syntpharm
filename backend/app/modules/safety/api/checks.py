@@ -33,7 +33,7 @@ async def get(
     status: str | None = None,
     check_type: str | None = None,
     department: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取安全检查列表"""
     service = SafetyService(db)
@@ -46,11 +46,7 @@ async def get(
 
 
 @checks_router.get("/checks/{check_id}", response_model=SafetyCheckApiResponse, summary="获取安全检查详情")
-async def handler(
-    current_user: RequiredUser,
-    check_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
-) -> Any:
+async def handler(current_user: RequiredUser, check_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
     """获取安全检查详情"""
     service = SafetyService(db)
     item = await service.get_check(check_id)
@@ -60,11 +56,7 @@ async def handler(
 
 
 @checks_router.post("/checks", response_model=SafetyCheckApiResponse, summary="创建安全检查")
-async def post(
-    current_user: RequiredUser,
-    data: SafetyCheckCreate,
-    db: AsyncSession = Depends(get_db)
-) -> Any:
+async def post(current_user: RequiredUser, data: SafetyCheckCreate, db: AsyncSession = Depends(get_db)) -> Any:
     """创建安全检查"""
     service = SafetyService(db)
     item = await service.create_check(data)
@@ -76,10 +68,7 @@ async def post(
     "/checks/{check_id}", response_model=SafetyCheckApiResponse, summary="更新安全检查"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    check_id: uuid.UUID,
-    data: SafetyCheckUpdate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, check_id: uuid.UUID, data: SafetyCheckUpdate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """更新安全检查"""
     service = SafetyService(db)
@@ -94,9 +83,7 @@ async def handler(  # noqa: F811
     "/checks/{check_id}/submit", response_model=SafetyCheckApiResponse, summary="提交安全检查"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    check_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, check_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """提交安全检查（草稿→已提交）"""
     service = SafetyService(db)
@@ -114,7 +101,7 @@ async def handler(  # noqa: F811
     current_user: RequiredUser,
     check_id: uuid.UUID,
     result: str = Query(..., description="审核结果: qualified/unqualified"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """审核安全检查"""
     service = SafetyService(db)
@@ -129,10 +116,7 @@ async def handler(  # noqa: F811
     "/checks/{check_id}/confirm", response_model=SafetyCheckApiResponse, summary="确认检查"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    check_id: uuid.UUID,
-    data: ConfirmCheckRequest,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, check_id: uuid.UUID, data: ConfirmCheckRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """确认安全检查（role=inspector 检查人员确认 / role=safety_officer 安全办确认）"""
     service = SafetyService(db)
@@ -147,9 +131,7 @@ async def handler(  # noqa: F811
     "/checks/{check_id}", response_model=SafetyCheckApiResponse, summary="删除安全检查"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    check_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, check_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除安全检查"""
     service = SafetyService(db)

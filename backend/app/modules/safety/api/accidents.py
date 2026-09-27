@@ -37,7 +37,7 @@ async def get(
     date_from: str | None = Query(None, description="发生时间起 (YYYY-MM-DD)"),
     date_to: str | None = Query(None, description="发生时间止 (YYYY-MM-DD)"),
     keyword: str | None = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取事故列表"""
     service = SafetyService(db)
@@ -60,11 +60,7 @@ async def get(
 
 
 @accidents_router.get("/accidents/{accident_id}", response_model=AccidentApiResponse, summary="获取事故详情")
-async def handler(
-    current_user: RequiredUser,
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
-) -> Any:
+async def handler(current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
     """获取事故详情"""
     service = SafetyService(db)
     item = await service.get_accident(accident_id)
@@ -74,11 +70,7 @@ async def handler(
 
 
 @accidents_router.post("/accidents", response_model=AccidentApiResponse, summary="创建事故")
-async def post(
-    current_user: RequiredUser,
-    data: AccidentCreate,
-    db: AsyncSession = Depends(get_db)
-) -> Any:
+async def post(current_user: RequiredUser, data: AccidentCreate, db: AsyncSession = Depends(get_db)) -> Any:
     """创建事故"""
     service = SafetyService(db)
     item = await service.create_accident(data)
@@ -90,10 +82,7 @@ async def post(
     "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="更新事故"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    accident_id: uuid.UUID,
-    data: AccidentUpdate,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, accident_id: uuid.UUID, data: AccidentUpdate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """更新事故"""
     service = SafetyService(db)
@@ -110,9 +99,7 @@ async def handler(  # noqa: F811
     summary="开始调查事故",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """开始调查事故"""
     service = SafetyService(db)
@@ -139,7 +126,7 @@ async def handler(  # noqa: F811
     corrective_actions: str | None = Query(None, description="纠正预防措施"),
     investigation_findings: str | None = Query(None, description="调查发现"),
     investigation_method: str | None = Query(None, description="调查方法"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """完成调查事故"""
     service = SafetyService(db)
@@ -168,7 +155,7 @@ async def handler(  # noqa: F811
     accident_id: uuid.UUID,
     corrective_action_deadline: str = Query(..., description="CAPA截止日期 (YYYY-MM-DD)"),
     corrective_action_responsible: str = Query(..., description="CAPA责任人"),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """启动CAPA: investigated → capa_in_progress"""
     service = SafetyService(db)
@@ -189,9 +176,7 @@ async def handler(  # noqa: F811
     summary="验证CAPA并关闭事故",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """验证CAPA并关闭事故: capa_in_progress → closed"""
     service = SafetyService(db)
@@ -210,9 +195,7 @@ async def handler(  # noqa: F811
     summary="直接关闭事故",
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """直接关闭事故（无CAPA时）"""
     service = SafetyService(db)
@@ -227,9 +210,7 @@ async def handler(  # noqa: F811
     "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="删除事故"
 )
 async def handler(  # noqa: F811
-    current_user: RequiredUser,
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除事故"""
     service = SafetyService(db)
