@@ -37,7 +37,7 @@ async def get(
     date_to: str | None = Query(None, description="发生时间止 (YYYY-MM-DD)"),
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取事故列表"""
     service = SafetyService(db)
@@ -63,7 +63,7 @@ async def get(
 async def handler(
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取事故详情"""
     service = SafetyService(db)
@@ -77,7 +77,7 @@ async def handler(
 async def post(
     data: AccidentCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建事故"""
     service = SafetyService(db)
@@ -93,7 +93,7 @@ async def handler(  # noqa: F811
     accident_id: uuid.UUID,
     data: AccidentUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新事故"""
     service = SafetyService(db)
@@ -112,7 +112,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """开始调查事故"""
     service = SafetyService(db)
@@ -139,7 +139,7 @@ async def handler(  # noqa: F811
     investigation_findings: str | None = Query(None, description="调查发现"),
     investigation_method: str | None = Query(None, description="调查方法"),
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """完成调查事故"""
     service = SafetyService(db)
@@ -168,7 +168,7 @@ async def handler(  # noqa: F811
     corrective_action_deadline: str = Query(..., description="CAPA截止日期 (YYYY-MM-DD)"),
     corrective_action_responsible: str = Query(..., description="CAPA责任人"),
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """启动CAPA: investigated → capa_in_progress"""
     service = SafetyService(db)
@@ -191,7 +191,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """验证CAPA并关闭事故: capa_in_progress → closed"""
     service = SafetyService(db)
@@ -212,7 +212,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """直接关闭事故（无CAPA时）"""
     service = SafetyService(db)
@@ -229,7 +229,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     accident_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除事故"""
     service = SafetyService(db)

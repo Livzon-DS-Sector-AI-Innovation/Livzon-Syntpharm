@@ -37,7 +37,7 @@ async def handler(
     operation_level: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取特殊作业票列表"""
     service = SpecialOperationService(db)
@@ -57,7 +57,7 @@ async def handler(
 async def handler(  # noqa: F811
     data: SpecialOperationPermitCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建特殊作业票"""
     service = SpecialOperationService(db)
@@ -74,7 +74,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取特殊作业票详情"""
     service = SpecialOperationService(db)
@@ -93,7 +93,7 @@ async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     data: SpecialOperationPermitUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新特殊作业票"""
     service = SpecialOperationService(db)
@@ -112,7 +112,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除特殊作业票"""
     service = SpecialOperationService(db)
@@ -134,7 +134,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交作业票（草稿→已提交）"""
     service = SpecialOperationService(db)
@@ -153,7 +153,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """审批作业票（已提交→已审批）"""
     service = SpecialOperationService(db)
@@ -173,7 +173,7 @@ async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     reason: str = Query(..., description="驳回原因"),
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """驳回作业票（已提交→已驳回）"""
     service = SpecialOperationService(db)
@@ -192,7 +192,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """开始作业（已审批→作业中）"""
     service = SpecialOperationService(db)
@@ -212,7 +212,7 @@ async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     method: str = Query(..., description="完工方式: normal/early_termination"),
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """完工验收（作业中→已完工）"""
     service = SpecialOperationService(db)
@@ -231,7 +231,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     permit_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """归档作业票（已完工→已归档）"""
     service = SpecialOperationService(db)

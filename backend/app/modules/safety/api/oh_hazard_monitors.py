@@ -37,7 +37,7 @@ async def handler(
     workplace: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """获取职业危害因素监测列表，支持多条件筛选"""
     service = OhHazardMonitorService(db)
@@ -55,7 +55,7 @@ async def handler(
 async def handler(  # noqa: F811
     data: OhHazardMonitorCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """创建职业危害因素监测记录"""
     service = OhHazardMonitorService(db)
@@ -72,7 +72,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """获取职业危害因素监测详情"""
     service = OhHazardMonitorService(db)
@@ -91,7 +91,7 @@ async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     data: OhHazardMonitorUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """更新职业危害因素监测"""
     service = OhHazardMonitorService(db)
@@ -110,7 +110,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """删除职业危害因素监测（软删除）"""
     service = OhHazardMonitorService(db)
@@ -132,7 +132,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """开始监测（草稿→检测中）"""
     service = OhHazardMonitorService(db)
@@ -151,7 +151,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """完成监测（检测中→已完成），自动计算OEL合规状态"""
     service = OhHazardMonitorService(db)
@@ -171,7 +171,7 @@ async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     data: VerifyMonitorRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """验证监测（已完成→已验证）"""
     service = OhHazardMonitorService(db)
@@ -194,7 +194,7 @@ async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """追加检测结果到监测记录"""
     service = OhHazardMonitorService(db)
@@ -215,7 +215,7 @@ async def handler(  # noqa: F811
     index: int,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """更新指定索引的检测结果"""
     service = OhHazardMonitorService(db)
@@ -235,7 +235,7 @@ async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     index: int,
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """删除指定索引的检测结果"""
     service = OhHazardMonitorService(db)
@@ -255,7 +255,7 @@ async def handler(  # noqa: F811
     monitor_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """追加异常处置记录到监测"""
     service = OhHazardMonitorService(db)
@@ -276,7 +276,7 @@ async def handler(  # noqa: F811
     index: int,
     status: str = Query(..., description="状态: open/investigating/corrected/closed"),
     db: AsyncSession = Depends(get_db),
-    current_user: RequiredUser = Depends(get_current_user),
+    current_user: RequiredUser,
 ) -> Any:
     """更新异常处置记录状态"""
     service = OhHazardMonitorService(db)
