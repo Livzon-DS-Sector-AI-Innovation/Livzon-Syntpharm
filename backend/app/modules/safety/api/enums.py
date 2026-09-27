@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from app.core.deps import RequiredUser
 from app.modules.safety.schemas import (
