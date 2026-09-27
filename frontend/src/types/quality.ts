@@ -280,20 +280,6 @@ export interface CapaFilters {
 }
 
 // ============ List Response Types ============
-export interface DeviationListResponse {
-  items: DeviationListItem[];
-  total: number;
-  page: number;
-  page_size: number;
-}
-
-export interface CapaListResponse {
-  items: CapaListItem[];
-  total: number;
-  page: number;
-  page_size: number;
-}
-
 export interface DepartmentContactListResponse {
   items: DepartmentContact[];
   total: number;
@@ -302,26 +288,6 @@ export interface DepartmentContactListResponse {
 }
 
 // ============ Create/Update Request Types ============
-export interface CreateDeviationRequest {
-  title: string;
-  description: string;
-  deviation_type: string;
-  deviation_level: string;
-  [key: string]: unknown;
-}
-
-export interface UpdateDeviationRequest {
-  [key: string]: unknown;
-}
-
-export interface CreateCapaRequest {
-  [key: string]: unknown;
-}
-
-export interface UpdateCapaRequest {
-  [key: string]: unknown;
-}
-
 export interface CreateDepartmentContactRequest {
   department: string;
   dept_head_id?: string | null;
@@ -435,17 +401,6 @@ export interface UploadLcResponse {
   message: string
 }
 // quality module TypeScript types
-
-export interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-  meta?: {
-    page?: number
-    page_size?: number
-    total?: number
-  }
-}
 
 // ============ Enums ============
 

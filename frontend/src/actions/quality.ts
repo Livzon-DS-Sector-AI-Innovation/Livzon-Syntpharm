@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import type { components } from '@/types/generated/schema'
 import type {
   InspectionStandard,
   InspectionStandardItem,
@@ -9,11 +10,6 @@ import type {
   ObsoleteData,
   ApprovalRecord,
   StandardQueryParams,
-  ApiResponse,
-  CreateDeviationRequest,
-  UpdateDeviationRequest,
-  CreateCapaRequest,
-  UpdateCapaRequest,
   CreateDepartmentContactRequest,
   UpdateDepartmentContactRequest,
   AiLogItem,
@@ -21,6 +17,17 @@ import type {
   AiLogFilter,
   UploadLcResponse,
 } from '@/types/quality'
+
+type DeviationCreate = components['schemas']['DeviationCreate']
+type DeviationUpdate = components['schemas']['DeviationUpdate']
+type CapaCreate = components['schemas']['CapaCreate']
+type CapaUpdate = components['schemas']['CapaUpdate']
+
+interface ApiResponse<T> {
+  code: number
+  message: string
+  data: T
+}
 import type {
   SamplingOrder,
   SamplingOrderCreate,
@@ -493,14 +500,14 @@ export async function getAiLogById(id: string) {
 
 // ============ Deviation Actions ============
 
-export async function createDeviation(data: CreateDeviationRequest) {
+export async function createDeviation(data: DeviationCreate) {
   const result = await QualityServer.createDeviation(data)
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   return result
 }
 
-export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
+export async function updateDeviation(deviationId: string, data: DeviationUpdate) {
   const result = await QualityServer.updateDeviation(deviationId, data)
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
@@ -516,14 +523,14 @@ export async function deleteDeviation(deviationId: string) {
 
 // ============ CAPA Actions ============
 
-export async function createCapa(data: CreateCapaRequest) {
+export async function createCapa(data: CapaCreate) {
   const result = await QualityServer.createCapa(data)
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   return result
 }
 
-export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
+export async function updateCapa(capaId: string, data: CapaUpdate) {
   const result = await QualityServer.updateCapa(capaId, data)
   revalidatePath('/quality')
   revalidatePath('/quality/capas')

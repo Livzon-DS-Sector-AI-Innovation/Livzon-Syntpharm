@@ -2,6 +2,10 @@ import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/
 import type { components } from '@/types/generated/schema'
 
 type CapaApiResponse = components['schemas']['CapaApiResponse']
+type DeviationCreate = components['schemas']['DeviationCreate']
+type DeviationUpdate = components['schemas']['DeviationUpdate']
+type CapaCreate = components['schemas']['CapaCreate']
+type CapaUpdate = components['schemas']['CapaUpdate']
 
 async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
   const res = await apiFetchRaw(endpoint, { method: 'DELETE' })
@@ -14,13 +18,9 @@ import type {
   StandardCopyData,
   ObsoleteData,
   StandardQueryParams,
-  CreateDeviationRequest,
-  UpdateDeviationRequest,
-  CreateCapaRequest,
-  UpdateCapaRequest,
   CreateDepartmentContactRequest,
-  UploadLcResponse,
   UpdateDepartmentContactRequest,
+  UploadLcResponse,
 } from '@/types/quality'
 import type {
   SamplingOrderCreate,
@@ -599,14 +599,14 @@ export async function getAiLogById(id: string) {
 
 // ============ Deviation Actions ============
 
-export async function createDeviation(data: CreateDeviationRequest) {
+export async function createDeviation(data: DeviationCreate) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
+export async function updateDeviation(deviationId: string, data: DeviationUpdate) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -619,14 +619,14 @@ export async function deleteDeviation(deviationId: string) {
 
 // ============ CAPA Actions ============
 
-export async function createCapa(data: CreateCapaRequest): Promise<CapaApiResponse> {
+export async function createCapa(data: CapaCreate): Promise<CapaApiResponse> {
   return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateCapa(capaId: string, data: UpdateCapaRequest): Promise<CapaApiResponse> {
+export async function updateCapa(capaId: string, data: CapaUpdate): Promise<CapaApiResponse> {
   return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
     method: 'PUT',
     body: JSON.stringify(data),

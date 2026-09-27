@@ -1,9 +1,10 @@
 import type { ModuleInfo } from '@/types'
 import type { components } from '@/types/generated/schema'
-import type { DeviationListResponse, DepartmentContactListResponse, DeviationDetail, DepartmentContact, DeviationListItem } from '@/types/quality'
+import type { DepartmentContactListResponse, DeviationDetail, DepartmentContact } from '@/types/quality'
 
 type CapaResponse = components['schemas']['CapaResponse']
 type CapaApiResponse = components['schemas']['CapaApiResponse']
+type DeviationResponse = components['schemas']['DeviationResponse']
 
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
@@ -38,13 +39,13 @@ export async function fetchDeviations(params?: {
   page?: number
   page_size?: number
   status?: string
-}): Promise<DeviationListResponse> {
+}): Promise<{ items: DeviationResponse[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.status) searchParams.set('status', params.status)
   const query = searchParams.toString()
-  return apiFetchPaginated<DeviationListItem>(`/api/v1/quality/deviations${query ? `?${query}` : ''}`) as Promise<DeviationListResponse>
+  return apiFetchPaginated<DeviationResponse>(`/api/v1/quality/deviations${query ? `?${query}` : ''}`)
 }
 
 export async function fetchDeviation(id: string): Promise<DeviationDetail> {
