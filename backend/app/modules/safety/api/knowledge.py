@@ -22,6 +22,11 @@ from app.modules.safety.schemas import (
     SafetyKnowledgeArticleListApiResponse,
     SafetyKnowledgeArticleResponse,
     SafetyKnowledgeArticleUpdate,
+    SafetyKnowledgeBatchImportApiResponse,
+    SafetyKnowledgeGenerateCardApiResponse,
+    SafetyKnowledgeGeneratePptApiResponse,
+    SafetyKnowledgeGenerateSummaryApiResponse,
+    SafetyKnowledgePptHistoryApiResponse,
 )
 from app.modules.safety.service import (
     KnowledgeService,
@@ -398,7 +403,7 @@ async def generate_graph(
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/batch-import",
-    response_model=SafetyKnowledgeArticleApiResponse,
+    response_model=SafetyKnowledgeBatchImportApiResponse,
     summary="批量导入知识库文章",
 )
 async def handler(  # noqa: F811
@@ -539,7 +544,7 @@ async def handler(  # noqa: F811
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-card",
-    response_model=SafetyKnowledgeArticleApiResponse,
+    response_model=SafetyKnowledgeGenerateCardApiResponse,
     summary="生成知识卡片",
 )
 async def generate_card(
@@ -573,7 +578,7 @@ async def generate_card(
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-ppt",
-    response_model=SafetyKnowledgeArticleApiResponse,
+    response_model=SafetyKnowledgeGeneratePptApiResponse,
     summary="生成 PPT",
 )
 async def generate_ppt(
@@ -608,7 +613,7 @@ async def generate_ppt(
 
 @knowledge_router.get(
     "/knowledge-articles/{article_id}/ppt-history",
-    response_model=SafetyKnowledgeArticleApiResponse,
+    response_model=SafetyKnowledgePptHistoryApiResponse,
     summary="获取 PPT 生成历史",
 )
 async def get_ppt_history(
@@ -642,7 +647,7 @@ async def get_ppt_history(
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-summary",
-    response_model=SafetyKnowledgeArticleApiResponse,
+    response_model=SafetyKnowledgeGenerateSummaryApiResponse,
     summary="生成摘要",
 )
 async def generate_summary(
