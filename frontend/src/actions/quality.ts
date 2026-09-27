@@ -27,6 +27,11 @@ interface ApiResponse<T> {
   code: number
   message: string
   data: T
+  meta?: {
+    total?: number
+    page?: number
+    page_size?: number
+  }
 }
 import type {
   SamplingOrder,
