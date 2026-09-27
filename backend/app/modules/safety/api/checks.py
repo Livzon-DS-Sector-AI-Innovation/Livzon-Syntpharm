@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
     ConfirmCheckRequest,
@@ -33,7 +33,7 @@ async def get(
     check_type: str | None = None,
     department: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取安全检查列表"""
     service = SafetyService(db)
@@ -49,7 +49,7 @@ async def get(
 async def handler(
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取安全检查详情"""
     service = SafetyService(db)
@@ -63,7 +63,7 @@ async def handler(
 async def post(
     data: SafetyCheckCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建安全检查"""
     service = SafetyService(db)
@@ -79,7 +79,7 @@ async def handler(  # noqa: F811
     check_id: uuid.UUID,
     data: SafetyCheckUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新安全检查"""
     service = SafetyService(db)
@@ -96,7 +96,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交安全检查（草稿→已提交）"""
     service = SafetyService(db)
@@ -114,7 +114,7 @@ async def handler(  # noqa: F811
     check_id: uuid.UUID,
     result: str = Query(..., description="审核结果: qualified/unqualified"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """审核安全检查"""
     service = SafetyService(db)
@@ -132,7 +132,7 @@ async def handler(  # noqa: F811
     check_id: uuid.UUID,
     data: ConfirmCheckRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """确认安全检查（role=inspector 检查人员确认 / role=safety_officer 安全办确认）"""
     service = SafetyService(db)
@@ -149,7 +149,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     check_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除安全检查"""
     service = SafetyService(db)

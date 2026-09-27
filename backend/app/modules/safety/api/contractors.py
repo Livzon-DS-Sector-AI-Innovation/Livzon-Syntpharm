@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
     ContractorApiResponse,
@@ -39,7 +39,7 @@ async def handler(
     training_status: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取承包商列表"""
     service = SafetyService(db)
@@ -64,7 +64,7 @@ async def handler(
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取承包商详情（含施工记录）"""
     service = SafetyService(db)
@@ -80,7 +80,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     data: ContractorCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建承包商"""
     service = SafetyService(db)
@@ -96,7 +96,7 @@ async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     data: ContractorUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新承包商"""
     service = SafetyService(db)
@@ -113,7 +113,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除承包商（软删除）"""
     service = SafetyService(db)
@@ -132,7 +132,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """将承包商加入黑名单"""
     service = SafetyService(db)
@@ -151,7 +151,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """激活承包商（从停用或黑名单恢复）"""
     service = SafetyService(db)
@@ -171,7 +171,7 @@ async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     training_status: str = Query(..., description="培训状态: untrained/in_progress/passed/expired"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新承包商培训状态"""
     service = SafetyService(db)
@@ -193,7 +193,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取承包商的施工记录列表"""
     service = SafetyService(db)
@@ -212,7 +212,7 @@ async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     data: ContractorWorkRecordCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建承包商的施工记录"""
     service = SafetyService(db)
@@ -231,7 +231,7 @@ async def handler(  # noqa: F811
     record_id: uuid.UUID,
     data: ContractorWorkRecordUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新施工记录"""
     service = SafetyService(db)
@@ -251,7 +251,7 @@ async def handler(  # noqa: F811
     contractor_id: uuid.UUID,
     record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除施工记录（软删除）"""
     service = SafetyService(db)
@@ -272,7 +272,7 @@ async def handler(  # noqa: F811
     record_id: uuid.UUID,
     data: EvaluateWorkRecordRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """评价施工记录"""
     service = SafetyService(db)

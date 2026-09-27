@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.response import build_response
 from app.modules.safety.schemas import (
@@ -36,7 +36,7 @@ async def handler(
     department: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取职业健康体检列表，支持多条件筛选"""
     service = OhHealthExamService(db)
@@ -54,7 +54,7 @@ async def handler(
 async def handler(  # noqa: F811
     data: OhHealthExamCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """创建职业健康体检记录"""
     service = OhHealthExamService(db)
@@ -71,7 +71,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取职业健康体检详情"""
     service = OhHealthExamService(db)
@@ -88,7 +88,7 @@ async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     data: OhHealthExamUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """更新职业健康体检"""
     service = OhHealthExamService(db)
@@ -105,7 +105,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """删除职业健康体检（软删除）"""
     service = OhHealthExamService(db)
@@ -125,7 +125,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """开始体检（已安排→体检中）"""
     service = OhHealthExamService(db)
@@ -144,7 +144,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """完成体检（体检中→已完成）"""
     service = OhHealthExamService(db)
@@ -161,7 +161,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """归档体检（已完成→已归档）"""
     service = OhHealthExamService(db)
@@ -184,7 +184,7 @@ async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """追加体检项目到体检记录"""
     service = OhHealthExamService(db)
@@ -205,7 +205,7 @@ async def handler(  # noqa: F811
     index: int,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """更新指定索引的体检项目"""
     service = OhHealthExamService(db)
@@ -225,7 +225,7 @@ async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     index: int,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """删除指定索引的体检项目"""
     service = OhHealthExamService(db)
@@ -245,7 +245,7 @@ async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     data: SetExamConclusionRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """设置体检结论（异常结论自动创建处置记录）"""
     service = OhHealthExamService(db)
@@ -265,7 +265,7 @@ async def handler(  # noqa: F811
     exam_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """追加异常处置记录到体检"""
     service = OhHealthExamService(db)
@@ -286,7 +286,7 @@ async def handler(  # noqa: F811
     index: int,
     status: str = Query(..., description="状态: open/investigating/corrected/closed"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """更新体检异常处置记录状态"""
     service = OhHealthExamService(db)

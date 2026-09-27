@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
 from app.core.response import build_response  # type: ignore[attr-defined]
@@ -55,7 +55,7 @@ async def get(
     department: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取隐患列表"""
     service = HazardService(db)
@@ -150,7 +150,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取隐患详情"""
     service = HazardService(db)
@@ -164,7 +164,7 @@ async def handler(  # noqa: F811
 async def post(
     data: HazardReportCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建隐患（AI 识别不在此处执行——调用方应在图片上传完成后通过
     POST /hazards/{id}/ai/run/1 手动触发，与 Bitable 同步流程对齐）。"""
@@ -181,7 +181,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     data: HazardReportUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新隐患"""
     service = HazardService(db)
@@ -201,7 +201,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """上传隐患缺陷图片，追加到 defect_photos JSON 数组"""
 
@@ -246,7 +246,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """上传整改后图片，追加到 rectification_photos JSON 数组"""
 
@@ -289,7 +289,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """开始整改"""
     service = HazardService(db)
@@ -309,7 +309,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     data: RectificationReplyRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """责任人提交整改回复（含纠正预防措施），rectification_status: in_progress → replied"""
     service = HazardService(db)
@@ -336,7 +336,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     data: VerifyLevelRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """三级复核确认：1=一级(部门负责人), 2=二级(分管领导), 3=三级(隐患发现人)"""
     service = HazardService(db)
@@ -365,7 +365,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     data: RectificationReplyRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """复核驳回后重新整改，rejected → replied，重置所有复核级别"""
     service = HazardService(db)
@@ -390,7 +390,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除隐患"""
     service = HazardService(db)
@@ -410,7 +410,7 @@ async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     script_number: int,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """执行隐患AI工作流脚本。AI从已有数据库数据读取上下文，无需额外传入参数。
 
@@ -438,7 +438,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """手动触发飞书通知，提醒当前复核阶段的责任人进行复核。
 
@@ -493,7 +493,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """手动触发整改回复 AI 初审（异步执行，不阻塞响应）。
 
@@ -526,7 +526,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     hazard_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """手动触发飞书通知，提醒整改责任人进行整改回复。"""
     service = HazardService(db)
@@ -550,7 +550,7 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """诊断 Bitable 多维表格中是否有在 WebSocket 断线期间被遗漏的记录。
 

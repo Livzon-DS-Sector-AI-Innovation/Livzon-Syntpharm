@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
     SafetyTrainingApiResponse,
@@ -37,7 +37,7 @@ async def handler(
     training_type: str | None = None,
     department: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取安全培训列表"""
     service = SafetyService(db)
@@ -55,7 +55,7 @@ async def handler(
 async def handler(  # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取安全培训详情"""
     service = SafetyService(db)
@@ -69,7 +69,7 @@ async def handler(  # noqa: F811
 async def post(
     data: SafetyTrainingCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建安全培训"""
     service = SafetyService(db)
@@ -85,7 +85,7 @@ async def handler(  # noqa: F811
     training_id: uuid.UUID,
     data: SafetyTrainingUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新安全培训"""
     service = SafetyService(db)
@@ -102,7 +102,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """开始培训（草稿→进行中）"""
     service = SafetyService(db)
@@ -119,7 +119,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """完成培训"""
     service = SafetyService(db)
@@ -136,7 +136,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除安全培训"""
     service = SafetyService(db)
@@ -158,7 +158,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     training_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取培训签到记录列表"""
     service = SafetyService(db)
@@ -177,7 +177,7 @@ async def handler(  # noqa: F811
     training_id: uuid.UUID,
     data: TrainingRecordCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """添加培训签到记录"""
     service = SafetyService(db)
@@ -196,7 +196,7 @@ async def handler(  # noqa: F811
     record_id: uuid.UUID,
     data: TrainingRecordUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新培训签到记录"""
     service = SafetyService(db)
@@ -215,7 +215,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除培训签到记录"""
     service = SafetyService(db)
@@ -238,7 +238,7 @@ async def handler(  # noqa: F811
     certificate_status: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取所有培训证书列表（含即将到期/已过期筛选）"""
     service = SafetyService(db)
@@ -262,7 +262,7 @@ async def handler(  # noqa: F811
 )
 async def handler(  # noqa: F811
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取30天内即将到期的证书"""
     service = SafetyService(db)

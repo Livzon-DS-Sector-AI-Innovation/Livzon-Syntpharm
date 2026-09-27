@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
     ApproveEhsChangeRequest,
@@ -36,7 +36,7 @@ async def handler(
     department: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取EHS变更列表，支持多条件筛选"""
     service = EhsChangeService(db)
@@ -63,7 +63,7 @@ async def handler(
 async def handler(  # noqa: F811
     data: EhsChangeCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """创建EHS变更申请"""
     service = EhsChangeService(db)
@@ -78,7 +78,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取EHS变更详情"""
     service = EhsChangeService(db)
@@ -95,7 +95,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     data: EhsChangeUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """更新EHS变更"""
     service = EhsChangeService(db)
@@ -112,7 +112,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """删除EHS变更（软删除）"""
     service = EhsChangeService(db)
@@ -132,7 +132,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """提交变更（草稿→审核中；紧急变更自动批准）"""
     service = EhsChangeService(db)
@@ -152,7 +152,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     data: ApproveEhsChangeRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """审批变更（审核中→已批准/已驳回）"""
     service = EhsChangeService(db)
@@ -170,7 +170,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     comments: str | None = Query(None, description="驳回原因"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """驳回变更（审核中→已驳回）"""
     service = EhsChangeService(db)
@@ -189,7 +189,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """开始实施变更（已批准→实施中）"""
     service = EhsChangeService(db)
@@ -208,7 +208,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """投用变更（实施中→已投用）"""
     service = EhsChangeService(db)
@@ -226,7 +226,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     data: CloseEhsChangeRequest,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """关闭变更（已投用→已关闭）"""
     service = EhsChangeService(db)
@@ -243,7 +243,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     change_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """取消变更（草稿→已关闭）"""
     service = EhsChangeService(db)
@@ -266,7 +266,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """追加风险评估记录到变更"""
     service = EhsChangeService(db)
@@ -287,7 +287,7 @@ async def handler(  # noqa: F811
     index: int,
     status: str = Query(..., description="状态: pending/in_progress/completed"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """更新行动项状态"""
     service = EhsChangeService(db)
@@ -307,7 +307,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     data: list[dict[str, Any]],
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """更新PSSR检查清单"""
     service = EhsChangeService(db)
@@ -327,7 +327,7 @@ async def handler(  # noqa: F811
     change_id: uuid.UUID,
     data: dict[str, Any],
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """提交变更验证数据"""
     service = EhsChangeService(db)

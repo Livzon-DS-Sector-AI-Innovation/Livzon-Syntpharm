@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
     SpecialOperationPersonnelApiResponse,
@@ -37,7 +37,7 @@ async def handler(
     department: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取特殊作业人员资质列表"""
     service = SpecialOperationService(db)
@@ -57,7 +57,7 @@ async def handler(
 async def handler(  # noqa: F811
     data: SpecialOperationPersonnelCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建特殊作业人员资质"""
     service = SpecialOperationService(db)
@@ -74,7 +74,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     personnel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取特殊作业人员资质详情"""
     service = SpecialOperationService(db)
@@ -93,7 +93,7 @@ async def handler(  # noqa: F811
     personnel_id: uuid.UUID,
     data: SpecialOperationPersonnelUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新特殊作业人员资质"""
     service = SpecialOperationService(db)
@@ -112,7 +112,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     personnel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除特殊作业人员资质"""
     service = SpecialOperationService(db)

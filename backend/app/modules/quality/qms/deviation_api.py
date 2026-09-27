@@ -152,6 +152,7 @@ async def get(
 
 @router.get("/statistics", response_model=DeviationStatisticsApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """获取统计数据"""
@@ -599,6 +600,7 @@ async def post(  # noqa: F811
 @router.get("/{deviation_id}", response_model=DeviationApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     deviation_id: UUID,
+    current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """获取偏差详情"""

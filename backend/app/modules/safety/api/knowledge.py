@@ -11,7 +11,7 @@ from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
+from app.core.deps import RequiredUser
 from app.core.exceptions import NotFoundException
 from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
@@ -47,7 +47,7 @@ async def handler(
     status: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取安全知识库文章列表"""
     service = KnowledgeService(db)
@@ -65,7 +65,7 @@ async def handler(
 async def handler(  # noqa: F811
     data: SafetyKnowledgeArticleCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建安全知识库文章"""
     service = KnowledgeService(db)
@@ -82,7 +82,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取安全知识库文章详情"""
     service = KnowledgeService(db)
@@ -101,7 +101,7 @@ async def handler(  # noqa: F811
     article_id: uuid.UUID,
     data: SafetyKnowledgeArticleUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新安全知识库文章"""
     service = KnowledgeService(db)
@@ -120,7 +120,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除安全知识库文章"""
     service = KnowledgeService(db)
@@ -139,7 +139,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """发布文章（草稿→已发布）"""
     service = KnowledgeService(db)
@@ -158,7 +158,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """归档文章（已发布→已归档）"""
     service = KnowledgeService(db)
@@ -178,7 +178,7 @@ async def handler(  # noqa: F811
     article_id: uuid.UUID,
     file: UploadFile,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """上传知识库文章附件"""
 
@@ -267,7 +267,7 @@ async def get_full_graph(
     relation_types: str | None = None,
     max_nodes: int = Query(500, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取完整知识图谱数据"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -296,7 +296,7 @@ async def get_graph_nodes(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取图谱节点列表"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -321,7 +321,7 @@ async def get_graph_edges(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """获取图谱边列表"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -344,7 +344,7 @@ async def search_graph_nodes(
     query: str = Query(..., min_length=1),
     node_types: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """搜索图谱节点"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -365,7 +365,7 @@ async def expand_graph_node(
     relation_types: str | None = None,
     max_nodes: int = Query(30, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """展开指定节点的邻居节点"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -390,7 +390,7 @@ async def generate_graph(
     document_ids: list[uuid.UUID] | None = None,
     force_rebuild: bool = False,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """从知识库文章 AI 生成知识图谱"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -410,7 +410,7 @@ async def handler(  # noqa: F811
     files: list[UploadFile] = File(...),
     category: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """批量导入知识库文章"""
     from app.modules.safety.service.document_parser import parse_document
@@ -550,7 +550,7 @@ async def handler(  # noqa: F811
 async def generate_card(
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成结构化知识卡片（委托给 KnowledgeService）
 
@@ -585,7 +585,7 @@ async def generate_ppt(
     article_id: uuid.UUID,
     data: dict[str, Any] = Body(default_factory=dict),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成 PPT（.pptx 文件）
 
@@ -621,7 +621,7 @@ async def get_ppt_history(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """查询某文章的 PPT 生成历史记录（委托给 KnowledgeService）"""
     service = KnowledgeService(db)
@@ -653,7 +653,7 @@ async def get_ppt_history(
 async def generate_summary(
     article_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成摘要（委托给 KnowledgeService）
 
