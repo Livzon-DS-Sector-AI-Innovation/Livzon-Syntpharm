@@ -87,7 +87,7 @@ async def get(
 
     batches, total = await service.get_batches(skip, page_size, status, product_code, batch_no, exclude_cancelled_bool)
 
-    return ApiResponse(
+    return BatchApiResponse(
         data=[BatchResponse.model_validate(b) for b in batches],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -106,9 +106,9 @@ async def get(  # noqa: F811
     batch = await service.get_batch(batch_id)
 
     if not batch:
-        return ApiResponse(code=404, message="批次不存在")
+        return BatchApiResponse(code=404, message="批次不存在")
 
-    return ApiResponse(data=BatchResponse.model_validate(batch))
+    return BatchApiResponse(data=BatchResponse.model_validate(batch))
 
 
 @router.post("/batches", response_model=BatchApiResponse, summary="创建批次")
@@ -125,7 +125,7 @@ async def post(
 
     await db.commit()
 
-    return ApiResponse(data=BatchResponse.model_validate(batch))
+    return BatchApiResponse(data=BatchResponse.model_validate(batch))
 
 
 @router.put("/batches/{batch_id}", response_model=BatchApiResponse, summary="更新批次")
@@ -142,11 +142,11 @@ async def put(
     batch = await service.update_batch(batch_id, data)
 
     if not batch:
-        return ApiResponse(code=404, message="批次不存在")
+        return BatchApiResponse(code=404, message="批次不存在")
 
     await db.commit()
 
-    return ApiResponse(data=BatchResponse.model_validate(batch))
+    return BatchApiResponse(data=BatchResponse.model_validate(batch))
 
 
 @router.put("/batches/{batch_id}/status", response_model=BatchApiResponse, summary="更新批次状态")
@@ -164,14 +164,14 @@ async def handler(
         batch = await service.update_batch_status(batch_id, data)
 
         if not batch:
-            return ApiResponse(code=404, message="批次不存在")
+            return BatchApiResponse(code=404, message="批次不存在")
 
         await db.commit()
 
-        return ApiResponse(data=BatchResponse.model_validate(batch))
+        return BatchApiResponse(data=BatchResponse.model_validate(batch))
 
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return BatchApiResponse(code=400, message=str(e))
 
 
 @router.delete("/batches/{batch_id}", response_model=MessageApiResponse, summary="删除批次")
@@ -187,11 +187,11 @@ async def delete(
     result = await service.delete_batch(batch_id)
 
     if not result:
-        return ApiResponse(code=404, message="批次不存在")
+        return BatchApiResponse(code=404, message="批次不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return BatchApiResponse(message="删除成功")
 
 
 # ============ BatchMaterial Routes ============
@@ -213,7 +213,7 @@ async def handler(  # noqa: F811
 
     materials = await service.get_batch_materials(batch_id)
 
-    return ApiResponse(data=[BatchMaterialResponse.model_validate(m) for m in materials])
+    return BatchMaterialApiResponse(data=[BatchMaterialResponse.model_validate(m) for m in materials])
 
 
 @router.post(  # type: ignore[no-redef]
@@ -233,7 +233,7 @@ async def handler(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=BatchMaterialResponse.model_validate(material))
+    return BatchMaterialApiResponse(data=BatchMaterialResponse.model_validate(material))
 
 
 @router.put(  # type: ignore[no-redef]
@@ -254,11 +254,11 @@ async def handler(  # noqa: F811
     material = await service.update_batch_material(material_id, update_data)
 
     if not material:
-        return ApiResponse(code=404, message="物料不存在")
+        return BatchMaterialApiResponse(code=404, message="物料不存在")
 
     await db.commit()
 
-    return ApiResponse(data=BatchMaterialResponse.model_validate(material))
+    return BatchMaterialApiResponse(data=BatchMaterialResponse.model_validate(material))
 
 
 @router.delete(  # type: ignore[no-redef]
@@ -276,11 +276,11 @@ async def handler(  # noqa: F811
     result = await service.delete_batch_material(material_id)
 
     if not result:
-        return ApiResponse(code=404, message="物料不存在")
+        return BatchMaterialApiResponse(code=404, message="物料不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return BatchMaterialApiResponse(message="删除成功")
 
 
 # ============ ProductionPlan Routes ============
@@ -303,7 +303,7 @@ async def get(  # noqa: F811
 
     plans, total = await service.get_plans(skip, page_size, status, plan_month)
 
-    return ApiResponse(
+    return ProductionPlanApiResponse(
         data=[ProductionPlanResponse.model_validate(p) for p in plans],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -322,9 +322,9 @@ async def get(  # noqa: F811
     plan = await service.get_plan(plan_id)
 
     if not plan:
-        return ApiResponse(code=404, message="计划不存在")
+        return ProductionPlanApiResponse(code=404, message="计划不存在")
 
-    return ApiResponse(data=ProductionPlanResponse.model_validate(plan))
+    return ProductionPlanApiResponse(data=ProductionPlanResponse.model_validate(plan))
 
 
 @router.post("/plans", response_model=ProductionPlanApiResponse, summary="创建生产计划")  # type: ignore[no-redef]
@@ -341,7 +341,7 @@ async def post(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=ProductionPlanResponse.model_validate(plan))
+    return ProductionPlanApiResponse(data=ProductionPlanResponse.model_validate(plan))
 
 
 @router.put("/plans/{plan_id}", response_model=ProductionPlanApiResponse, summary="更新生产计划")  # type: ignore[no-redef]
@@ -358,11 +358,11 @@ async def put(  # noqa: F811
     plan = await service.update_plan(plan_id, data)
 
     if not plan:
-        return ApiResponse(code=404, message="计划不存在")
+        return ProductionPlanApiResponse(code=404, message="计划不存在")
 
     await db.commit()
 
-    return ApiResponse(data=ProductionPlanResponse.model_validate(plan))
+    return ProductionPlanApiResponse(data=ProductionPlanResponse.model_validate(plan))
 
 
 @router.delete("/plans/{plan_id}", response_model=MessageApiResponse, summary="删除生产计划")  # type: ignore[no-redef]
@@ -378,11 +378,11 @@ async def delete(  # noqa: F811
     result = await service.delete_plan(plan_id)
 
     if not result:
-        return ApiResponse(code=404, message="计划不存在")
+        return ProductionPlanApiResponse(code=404, message="计划不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return ProductionPlanApiResponse(message="删除成功")
 
 
 # ============ PlanTask Routes ============
@@ -402,7 +402,7 @@ async def handler(  # noqa: F811
 
     tasks = await service.get_tasks(plan_id)
 
-    return ApiResponse(data=[PlanTaskResponse.model_validate(t) for t in tasks])
+    return PlanTaskApiResponse(data=[PlanTaskResponse.model_validate(t) for t in tasks])
 
 
 @router.post("/tasks", response_model=PlanTaskApiResponse, summary="创建计划任务")  # type: ignore[no-redef]
@@ -419,7 +419,7 @@ async def post(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=PlanTaskResponse.model_validate(task))
+    return PlanTaskApiResponse(data=PlanTaskResponse.model_validate(task))
 
 
 @router.put("/tasks/{task_id}", response_model=PlanTaskApiResponse, summary="更新计划任务")  # type: ignore[no-redef]
@@ -436,11 +436,11 @@ async def put(  # noqa: F811
     task = await service.update_task(task_id, data)
 
     if not task:
-        return ApiResponse(code=404, message="任务不存在")
+        return PlanTaskApiResponse(code=404, message="任务不存在")
 
     await db.commit()
 
-    return ApiResponse(data=PlanTaskResponse.model_validate(task))
+    return PlanTaskApiResponse(data=PlanTaskResponse.model_validate(task))
 
 
 @router.delete("/tasks/{task_id}", response_model=MessageApiResponse, summary="删除计划任务")  # type: ignore[no-redef]
@@ -456,11 +456,11 @@ async def delete(  # noqa: F811
     result = await service.delete_task(task_id)
 
     if not result:
-        return ApiResponse(code=404, message="任务不存在")
+        return PlanTaskApiResponse(code=404, message="任务不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return PlanTaskApiResponse(message="删除成功")
 
 
 # ============ ProcessSpec Routes ============
@@ -483,7 +483,7 @@ async def get(  # noqa: F811
 
     specs, total = await service.get_process_specs(skip, page_size, status, product_code)
 
-    return ApiResponse(
+    return ProcessSpecApiResponse(
         data=[ProcessSpecResponse.model_validate(s) for s in specs],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -504,9 +504,9 @@ async def handler(  # noqa: F811
     spec = await service.get_process_spec(spec_id)
 
     if not spec:
-        return ApiResponse(code=404, message="工艺规程不存在")
+        return ProcessSpecApiResponse(code=404, message="工艺规程不存在")
 
-    return ApiResponse(data=ProcessSpecResponse.model_validate(spec))
+    return ProcessSpecApiResponse(data=ProcessSpecResponse.model_validate(spec))
 
 
 @router.post("/process-specs", response_model=ProcessSpecApiResponse, summary="创建工艺规程")  # type: ignore[no-redef]
@@ -523,7 +523,7 @@ async def post(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=ProcessSpecResponse.model_validate(spec))
+    return ProcessSpecApiResponse(data=ProcessSpecResponse.model_validate(spec))
 
 
 @router.put(  # type: ignore[no-redef]
@@ -542,11 +542,11 @@ async def handler(  # noqa: F811
     spec = await service.update_process_spec(spec_id, data)
 
     if not spec:
-        return ApiResponse(code=404, message="工艺规程不存在")
+        return ProcessSpecApiResponse(code=404, message="工艺规程不存在")
 
     await db.commit()
 
-    return ApiResponse(data=ProcessSpecResponse.model_validate(spec))
+    return ProcessSpecApiResponse(data=ProcessSpecResponse.model_validate(spec))
 
 
 @router.delete(  # type: ignore[no-redef]
@@ -564,11 +564,11 @@ async def handler(  # noqa: F811
     result = await service.delete_process_spec(spec_id)
 
     if not result:
-        return ApiResponse(code=404, message="工艺规程不存在")
+        return ProcessSpecApiResponse(code=404, message="工艺规程不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return ProcessSpecApiResponse(message="删除成功")
 
 
 # ============ ProcessStep Routes =====
@@ -590,7 +590,7 @@ async def handler(  # noqa: F811
 
     steps = await service.get_steps(spec_id)
 
-    return ApiResponse(data=[ProcessStepResponse.model_validate(s) for s in steps])
+    return ProcessStepApiResponse(data=[ProcessStepResponse.model_validate(s) for s in steps])
 
 
 @router.post("/steps", response_model=ProcessStepApiResponse, summary="创建工艺步骤")  # type: ignore[no-redef]
@@ -607,7 +607,7 @@ async def post(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=ProcessStepResponse.model_validate(step))
+    return ProcessStepApiResponse(data=ProcessStepResponse.model_validate(step))
 
 
 @router.put("/steps/{step_id}", response_model=ProcessStepApiResponse, summary="更新工艺步骤")  # type: ignore[no-redef]
@@ -624,11 +624,11 @@ async def put(  # noqa: F811
     step = await service.update_process_step(step_id, data)
 
     if not step:
-        return ApiResponse(code=404, message="步骤不存在")
+        return ProcessStepApiResponse(code=404, message="步骤不存在")
 
     await db.commit()
 
-    return ApiResponse(data=ProcessStepResponse.model_validate(step))
+    return ProcessStepApiResponse(data=ProcessStepResponse.model_validate(step))
 
 
 @router.delete("/steps/{step_id}", response_model=MessageApiResponse, summary="删除工艺步骤")  # type: ignore[no-redef]
@@ -644,11 +644,11 @@ async def delete(  # noqa: F811
     result = await service.delete_process_step(step_id)
 
     if not result:
-        return ApiResponse(code=404, message="步骤不存在")
+        return ProcessStepApiResponse(code=404, message="步骤不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return ProcessStepApiResponse(message="删除成功")
 
 
 # ============ ProcessParameter Routes ============
@@ -670,7 +670,7 @@ async def handler(  # noqa: F811
 
     params = await service.get_parameters(step_id)
 
-    return ApiResponse(data=[ProcessParameterResponse.model_validate(p) for p in params])
+    return ProcessParameterApiResponse(data=[ProcessParameterResponse.model_validate(p) for p in params])
 
 
 @router.post("/parameters", response_model=ProcessParameterApiResponse, summary="创建工艺参数")  # type: ignore[no-redef]
@@ -687,7 +687,7 @@ async def post(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=ProcessParameterResponse.model_validate(param))
+    return ProcessParameterApiResponse(data=ProcessParameterResponse.model_validate(param))
 
 
 @router.delete(  # type: ignore[no-redef]
@@ -705,11 +705,11 @@ async def handler(  # noqa: F811
     result = await service.delete_process_parameter(param_id)
 
     if not result:
-        return ApiResponse(code=404, message="参数不存在")
+        return ProcessParameterApiResponse(code=404, message="参数不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return ProcessParameterApiResponse(message="删除成功")
 
 
 # ============ ProductionRecord Routes ============
@@ -735,7 +735,7 @@ async def handler(  # noqa: F811
 
     records = await service.get_records(batch_id, skip, page_size)
 
-    return ApiResponse(data=[ProductionRecordResponse.model_validate(r) for r in records])
+    return ProductionRecordApiResponse(data=[ProductionRecordResponse.model_validate(r) for r in records])
 
 
 @router.post("/records", response_model=ProductionRecordApiResponse, summary="创建生产记录")  # type: ignore[no-redef]
@@ -752,7 +752,7 @@ async def post(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data=ProductionRecordResponse.model_validate(record))
+    return ProductionRecordApiResponse(data=ProductionRecordResponse.model_validate(record))
 
 
 @router.put("/records/{record_id}", response_model=ProductionRecordApiResponse, summary="更新生产记录")  # type: ignore[no-redef]
@@ -771,11 +771,11 @@ async def put(  # noqa: F811
     record = await service.update_production_record(record_id, update_data)  # type: ignore[arg-type]
 
     if not record:
-        return ApiResponse(code=404, message="记录不存在")
+        return ProductionRecordApiResponse(code=404, message="记录不存在")
 
     await db.commit()
 
-    return ApiResponse(data=ProductionRecordResponse.model_validate(record))
+    return ProductionRecordApiResponse(data=ProductionRecordResponse.model_validate(record))
 
 
 @router.delete(  # type: ignore[no-redef]
@@ -793,11 +793,11 @@ async def handler(  # noqa: F811
     result = await service.delete_production_record(record_id)
 
     if not result:
-        return ApiResponse(code=404, message="记录不存在")
+        return ProductionRecordApiResponse(code=404, message="记录不存在")
 
     await db.commit()
 
-    return ApiResponse(message="删除成功")
+    return ProductionRecordApiResponse(message="删除成功")
 
 
 # ============ MaterialBalance Routes ============
@@ -818,9 +818,9 @@ async def handler(  # noqa: F811
     balance = await service.get_material_balance(batch_id)
 
     if not balance:
-        return ApiResponse(code=404, message="物料平衡不存在")
+        return MaterialBalanceApiResponse(code=404, message="物料平衡不存在")
 
-    return ApiResponse(data=MaterialBalanceResponse.model_validate(balance))
+    return MaterialBalanceApiResponse(data=MaterialBalanceResponse.model_validate(balance))
 
 
 @router.post(  # type: ignore[no-redef]
@@ -841,11 +841,11 @@ async def handler(  # noqa: F811
     balance = await service.calculate_material_balance(batch_id, min_balance_rate)
 
     if not balance:
-        return ApiResponse(code=404, message="批次不存在")
+        return MaterialBalanceApiResponse(code=404, message="批次不存在")
 
     await db.commit()
 
-    return ApiResponse(data=MaterialBalanceResponse.model_validate(balance))
+    return MaterialBalanceApiResponse(data=MaterialBalanceResponse.model_validate(balance))
 
 
 @router.put(  # type: ignore[no-redef]
@@ -866,11 +866,11 @@ async def handler(  # noqa: F811
     balance = await service.update_material_balance(batch_id, update_data)
 
     if not balance:
-        return ApiResponse(code=404, message="物料平衡不存在")
+        return MaterialBalanceApiResponse(code=404, message="物料平衡不存在")
 
     await db.commit()
 
-    return ApiResponse(data=MaterialBalanceResponse.model_validate(balance))
+    return MaterialBalanceApiResponse(data=MaterialBalanceResponse.model_validate(balance))
 
 
 # ============ 压差统计路由 ============
