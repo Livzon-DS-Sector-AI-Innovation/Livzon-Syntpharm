@@ -158,7 +158,7 @@ export function RawMaterialTable({ initialItems }: RawMaterialTableProps) {
               suffix="种"
               styles={{ content: {
                 color: stats.warningCount > 0 ? '#dd5b00' : undefined,
-              }}
+              }}}
             />
           </Card>
         </Col>
