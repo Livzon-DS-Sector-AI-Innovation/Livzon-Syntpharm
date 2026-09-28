@@ -3,12 +3,11 @@ import type {
   Chapter,
   ChapterDetail,
   ChapterAsset,
-  PaginatedResponse,
-  ApiResponse,
   ChapterPreview,
   AssetCategory,
   AvailableAsset,
 } from '@/types/dossier-writer'
+import type { ApiResponse, PaginatedResponse } from '@/types/common'
 
 
 const _headers = { 'Content-Type': 'application/json' }

@@ -23513,7 +23513,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafetyKnowledgeArticleApiResponse"
+                  "$ref": "#/components/schemas/SafetyKnowledgeBatchImportApiResponse"
                 }
               }
             }
@@ -23573,7 +23573,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafetyKnowledgeArticleApiResponse"
+                  "$ref": "#/components/schemas/SafetyKnowledgeGenerateCardApiResponse"
                 }
               }
             }
@@ -23644,7 +23644,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafetyKnowledgeArticleApiResponse"
+                  "$ref": "#/components/schemas/SafetyKnowledgeGeneratePptApiResponse"
                 }
               }
             }
@@ -23727,7 +23727,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafetyKnowledgeArticleApiResponse"
+                  "$ref": "#/components/schemas/SafetyKnowledgePptHistoryApiResponse"
                 }
               }
             }
@@ -23787,7 +23787,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SafetyKnowledgeArticleApiResponse"
+                  "$ref": "#/components/schemas/SafetyKnowledgeGenerateSummaryApiResponse"
                 }
               }
             }
@@ -44845,7 +44845,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
               }
             }
           },
@@ -56872,7 +56874,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/InspectionStandardApiResponse"
+                  "$ref": "#/components/schemas/InspectionStandardDeleteApiResponse"
                 }
               }
             }
@@ -62315,6 +62317,24 @@
         "summary": "Get",
         "description": "\u83b7\u53d6\u7edf\u8ba1\u6570\u636e",
         "operationId": "get_api_v1_quality_deviation_statistics_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -62322,6 +62342,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeviationStatisticsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -63257,6 +63287,22 @@
               "format": "uuid",
               "title": "Deviation Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -63393,7 +63439,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Api V1 Quality Deviation  Deviation Id  Delete"
+                  "$ref": "#/components/schemas/MessageApiResponse"
                 }
               }
             }
@@ -73296,7 +73342,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Capa Api V1 Quality Capas  Capa Id  Delete"
+                  "$ref": "#/components/schemas/CapaDeleteApiResponse"
                 }
               }
             }
@@ -73642,7 +73688,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Execution Track Api V1 Quality Capas  Capa Id  Execution Tracks  Track Id  Delete"
+                  "$ref": "#/components/schemas/CapaDeleteApiResponse"
                 }
               }
             }
@@ -90335,6 +90381,44 @@
         "type": "object",
         "title": "CapaCreate",
         "description": "\u521b\u5efa CAPA"
+      },
+      "CapaDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/CapaDeleteResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "CapaDeleteApiResponse",
+        "description": "CAPA delete API response wrapper"
+      },
+      "CapaDeleteResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u5220\u9664\u7ed3\u679c\u6d88\u606f"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "CapaDeleteResponse",
+        "description": "CAPA delete response"
       },
       "CapaItemCreate": {
         "properties": {
@@ -112577,6 +112661,27 @@
         "title": "InspectionStandardCreate",
         "description": "\u521b\u5efa\u68c0\u9a8c\u6807\u51c6"
       },
+      "InspectionStandardDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InspectionStandardDeleteApiResponse",
+        "description": "Inspection standard delete response wrapper"
+      },
       "InspectionStandardItemCreate": {
         "properties": {
           "item_no": {
@@ -130006,6 +130111,70 @@
             "$ref": "#/components/schemas/KnowledgeCategory",
             "description": "\u5206\u7c7b",
             "default": "other"
+          },
+          "article_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article No",
+            "description": "\u6587\u6863\u7f16\u53f7"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "\u6765\u6e90"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author",
+            "description": "\u4f5c\u8005"
+          },
+          "publish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publish Date",
+            "description": "\u53d1\u5e03\u65e5\u671f"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
           }
         },
         "type": "object",
@@ -130173,6 +130342,90 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "article_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article No"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "publish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publish Date"
+          },
+          "superseded_by_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded By Id"
+          },
+          "superseded_by_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded By Title"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
           }
         },
         "type": "object",
@@ -130261,11 +130514,466 @@
             ],
             "title": "Status",
             "description": "\u72b6\u6001"
+          },
+          "article_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article No",
+            "description": "\u6587\u6863\u7f16\u53f7"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "\u6765\u6e90"
+          },
+          "author": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author",
+            "description": "\u4f5c\u8005"
+          },
+          "publish_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publish Date",
+            "description": "\u53d1\u5e03\u65e5\u671f"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
           }
         },
         "type": "object",
         "title": "SafetyKnowledgeArticleUpdate",
         "description": "\u66f4\u65b0\u77e5\u8bc6\u5e93\u6587\u7ae0"
+      },
+      "SafetyKnowledgeBatchImportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyKnowledgeBatchImportData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SafetyKnowledgeBatchImportApiResponse",
+        "description": "\u6279\u91cf\u5bfc\u5165\u54cd\u5e94\u5305\u88c5"
+      },
+      "SafetyKnowledgeBatchImportData": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SafetyKnowledgeBatchImportResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SafetyKnowledgeBatchImportSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results",
+          "summary"
+        ],
+        "title": "SafetyKnowledgeBatchImportData",
+        "description": "\u6279\u91cf\u5bfc\u5165\u6570\u636e\u4f53"
+      },
+      "SafetyKnowledgeBatchImportResultItem": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "article_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Article Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "status"
+        ],
+        "title": "SafetyKnowledgeBatchImportResultItem",
+        "description": "\u6279\u91cf\u5bfc\u5165\u5355\u6587\u4ef6\u7ed3\u679c"
+      },
+      "SafetyKnowledgeBatchImportSummary": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "success": {
+            "type": "integer",
+            "title": "Success"
+          },
+          "error": {
+            "type": "integer",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "success",
+          "error"
+        ],
+        "title": "SafetyKnowledgeBatchImportSummary",
+        "description": "\u6279\u91cf\u5bfc\u5165\u6c47\u603b"
+      },
+      "SafetyKnowledgeGenerateCardApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyKnowledgeGeneratedCardContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SafetyKnowledgeGenerateCardApiResponse",
+        "description": "\u751f\u6210\u77e5\u8bc6\u5361\u7247\u54cd\u5e94\u5305\u88c5"
+      },
+      "SafetyKnowledgeGeneratePptApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyKnowledgePptData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SafetyKnowledgeGeneratePptApiResponse",
+        "description": "\u751f\u6210 PPT \u54cd\u5e94\u5305\u88c5"
+      },
+      "SafetyKnowledgeGenerateSummaryApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SafetyKnowledgeSummaryData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SafetyKnowledgeGenerateSummaryApiResponse",
+        "description": "\u751f\u6210\u6458\u8981\u54cd\u5e94\u5305\u88c5"
+      },
+      "SafetyKnowledgeGeneratedCardContent": {
+        "properties": {
+          "title": {
+            "title": "Title"
+          },
+          "key_points": {
+            "title": "Key Points"
+          },
+          "applicable_scope": {
+            "title": "Applicable Scope"
+          },
+          "important_deadlines": {
+            "title": "Important Deadlines"
+          },
+          "responsible_parties": {
+            "title": "Responsible Parties"
+          },
+          "penalties": {
+            "title": "Penalties"
+          },
+          "summary": {
+            "title": "Summary"
+          },
+          "message": {
+            "title": "Message"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "SafetyKnowledgeGeneratedCardContent",
+        "description": "AI \u751f\u6210\u7684\u77e5\u8bc6\u5361\u7247\u5185\u5bb9\uff08LLM \u81ea\u7531\u5b57\u6bb5\uff0c\u5141\u8bb8\u989d\u5916\u952e\uff09"
+      },
+      "SafetyKnowledgePptData": {
+        "properties": {
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "download_url",
+          "file_name",
+          "page_count",
+          "message"
+        ],
+        "title": "SafetyKnowledgePptData",
+        "description": "AI \u751f\u6210 PPT \u7684\u6570\u636e\u4f53"
+      },
+      "SafetyKnowledgePptHistoryApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SafetyKnowledgePptHistoryData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "SafetyKnowledgePptHistoryApiResponse",
+        "description": "PPT \u751f\u6210\u5386\u53f2\u54cd\u5e94\u5305\u88c5"
+      },
+      "SafetyKnowledgePptHistoryData": {
+        "properties": {
+          "records": {
+            "items": {
+              "$ref": "#/components/schemas/SafetyKnowledgePptRecordItem"
+            },
+            "type": "array",
+            "title": "Records"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "records",
+          "total"
+        ],
+        "title": "SafetyKnowledgePptHistoryData",
+        "description": "PPT \u751f\u6210\u5386\u53f2\u6570\u636e\u4f53"
+      },
+      "SafetyKnowledgePptRecordItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "template": {
+            "type": "string",
+            "title": "Template"
+          },
+          "style": {
+            "type": "string",
+            "title": "Style"
+          },
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "file_name",
+          "template",
+          "style",
+          "page_count",
+          "download_url"
+        ],
+        "title": "SafetyKnowledgePptRecordItem",
+        "description": "PPT \u751f\u6210\u5386\u53f2\u8bb0\u5f55\u9879"
+      },
+      "SafetyKnowledgeSummaryData": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "summary",
+          "message"
+        ],
+        "title": "SafetyKnowledgeSummaryData",
+        "description": "AI \u751f\u6210\u6458\u8981\u6570\u636e\u4f53"
       },
       "SafetyTrainingApiResponse": {
         "properties": {
