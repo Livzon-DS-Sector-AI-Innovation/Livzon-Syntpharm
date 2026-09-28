@@ -451,9 +451,8 @@ export default function CalibrationRecordsPage() {
         title="新增校准记录"
         open={createDrawerVisible}
         onClose={() => setCreateDrawerVisible(false)}
-        width={isMobile ? '100%' : 800}
         className="instrument-drawer"
-        styles={{ body: { paddingBottom: 80 } }}
+        styles={{ body: { paddingBottom: 80 }, wrapper: { width: isMobile ? '100%' : 800 } }}
       >
         <Form form={createForm} layout="vertical">
           <Form.Item name="instrument_id" label="关联仪器" rules={[{ required: true }]}>
