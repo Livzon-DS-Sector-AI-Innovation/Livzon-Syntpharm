@@ -70856,7 +70856,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentFeishuUserApiResponse"
                 }
               }
             }
@@ -70889,7 +70889,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentReminderConfigListApiResponse"
                 }
               }
             }
@@ -70920,7 +70920,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentReminderConfigApiResponse"
                 }
               }
             }
@@ -70975,7 +70975,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentReminderConfigApiResponse"
                 }
               }
             }
@@ -71018,7 +71018,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentMessageApiResponse"
                 }
               }
             }
@@ -71188,7 +71188,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentListApiResponse"
                 }
               }
             }
@@ -71247,7 +71247,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -71308,7 +71308,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -71410,7 +71410,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -71471,7 +71471,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -71543,7 +71543,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -71596,7 +71596,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRuleListApiResponse"
                 }
               }
             }
@@ -71655,7 +71655,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRuleApiResponse"
                 }
               }
             }
@@ -71700,7 +71700,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRuleListApiResponse"
                 }
               }
             }
@@ -71771,7 +71771,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRuleApiResponse"
                 }
               }
             }
@@ -71861,7 +71861,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordListApiResponse"
                 }
               }
             }
@@ -72067,7 +72067,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordListApiResponse"
                 }
               }
             }
@@ -72126,7 +72126,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordApiResponse"
                 }
               }
             }
@@ -72171,7 +72171,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordApiResponse"
                 }
               }
             }
@@ -72240,7 +72240,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordApiResponse"
                 }
               }
             }
@@ -72344,7 +72344,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordApiResponse"
                 }
               }
             }
@@ -72446,7 +72446,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApprovalApiResponse"
                 }
               }
             }
@@ -72491,7 +72491,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -72560,7 +72560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -72646,7 +72646,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentApiResponse"
                 }
               }
             }
@@ -72695,7 +72695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordListApiResponse"
                 }
               }
             }
@@ -72744,7 +72744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentRecordListApiResponse"
                 }
               }
             }
@@ -72864,7 +72864,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentMessageApiResponse"
                 }
               }
             }
@@ -72897,7 +72897,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/InstrumentMessageApiResponse"
                 }
               }
             }
@@ -114902,6 +114902,64 @@
         "title": "InspectionTemplateUpdate",
         "description": "\u66f4\u65b0\u5de1\u68c0\u6a21\u677f\u8bf7\u6c42"
       },
+      "InstrumentApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentApiResponse",
+        "description": "\u4eea\u5668\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentApprovalApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentApprovalApiResponse",
+        "description": "\u5ba1\u6279\u54cd\u5e94\u5305\u88c5"
+      },
       "InstrumentCategory": {
         "type": "string",
         "enum": [
@@ -115123,6 +115181,259 @@
         ],
         "title": "InstrumentCreate",
         "description": "\u521b\u5efa\u4eea\u5668"
+      },
+      "InstrumentFeishuUserApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentFeishuUserApiResponse",
+        "description": "\u98de\u4e66\u7528\u6237\u67e5\u8be2\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentListApiResponse",
+        "description": "\u4eea\u5668\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentMessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentMessageApiResponse",
+        "description": "\u6d88\u606f\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentRecordApiResponse",
+        "description": "\u6821\u51c6\u8bb0\u5f55\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentRecordListApiResponse",
+        "description": "\u6821\u51c6\u8bb0\u5f55\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentReminderConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentReminderConfigApiResponse",
+        "description": "\u63d0\u9192\u914d\u7f6e\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentReminderConfigListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentReminderConfigListApiResponse",
+        "description": "\u63d0\u9192\u914d\u7f6e\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentRuleApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentRuleApiResponse",
+        "description": "\u6821\u51c6\u89c4\u5219\u54cd\u5e94\u5305\u88c5"
+      },
+      "InstrumentRuleListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "InstrumentRuleListApiResponse",
+        "description": "\u6821\u51c6\u89c4\u5219\u5217\u8868\u54cd\u5e94\u5305\u88c5"
       },
       "InstrumentUpdate": {
         "properties": {
