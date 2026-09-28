@@ -20627,6 +20627,12 @@ export interface components {
             related_project_id?: string | null;
         };
         /**
+         * CheckStatus
+         * @description 校验状态
+         * @enum {string}
+         */
+        CheckStatus: "pending" | "processing" | "completed" | "failed";
+        /**
          * CheckType
          * @description 检查类型枚举（16种）
          * @enum {string}
@@ -23893,6 +23899,43 @@ export interface components {
             status?: string | null;
         };
         /**
+         * DocCheckBatchUpdateApiResponse
+         * @description 批量更新响应包装
+         */
+        DocCheckBatchUpdateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DocCheckConfigApiResponse
+         * @description 配置响应包装
+         */
+        DocCheckConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocCheckConfigResponse"] | null;
+        };
+        /**
          * DocCheckConfigCreate
          * @description 创建配置
          */
@@ -23912,6 +23955,44 @@ export interface components {
              * @description 描述
              */
             description?: string | null;
+        };
+        /**
+         * DocCheckConfigListApiResponse
+         * @description 配置列表响应包装
+         */
+        DocCheckConfigListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["DocCheckConfigResponse"][];
+        };
+        /**
+         * DocCheckConfigResponse
+         * @description 配置响应（与 SopAiConfig 匹配）
+         */
+        DocCheckConfigResponse: {
+            /** Id */
+            id?: string | null;
+            /** Config Key */
+            config_key: string;
+            /** Config Value */
+            config_value: string;
+            /** Description */
+            description?: string | null;
+            /** Operator */
+            operator?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * DocCheckConfigUpdate
@@ -23964,6 +24045,298 @@ export interface components {
             } | null;
         };
         /**
+         * DocCheckDetailApiResponse
+         * @description 校验详情响应包装
+         */
+        DocCheckDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["DocCheckDetailResponse"] | null;
+        };
+        /**
+         * DocCheckDetailResponse
+         * @description 校验任务详情响应(含问题列表)
+         */
+        DocCheckDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** File Code */
+            file_code?: string | null;
+            /** File Name */
+            file_name?: string | null;
+            /** File Type */
+            file_type?: string | null;
+            status: components["schemas"]["CheckStatus"];
+            /** Result Summary */
+            result_summary?: string | null;
+            /**
+             * Total Problems
+             * @default 0
+             */
+            total_problems: number;
+            /**
+             * Risk High
+             * @default 0
+             */
+            risk_high: number;
+            /**
+             * Risk Medium
+             * @default 0
+             */
+            risk_medium: number;
+            /**
+             * Risk Low
+             * @default 0
+             */
+            risk_low: number;
+            /** Operator */
+            operator?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /**
+             * Problems
+             * @description 问题列表
+             */
+            problems?: components["schemas"]["ProblemItem"][];
+        };
+        /**
+         * DocCheckExportApiResponse
+         * @description 导出响应包装
+         */
+        DocCheckExportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * DocCheckListApiResponse
+         * @description 校验列表响应包装
+         */
+        DocCheckListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["DocCheckResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * DocCheckMessageApiResponse
+         * @description 消息响应包装
+         */
+        DocCheckMessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
+         * DocCheckProblemListApiResponse
+         * @description 问题列表响应包装
+         */
+        DocCheckProblemListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ProblemResponse"][];
+        };
+        /**
+         * DocCheckProblemUpdateApiResponse
+         * @description 问题更新响应包装
+         */
+        DocCheckProblemUpdateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DocCheckProgressApiResponse
+         * @description 校验进度响应包装
+         */
+        DocCheckProgressApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DocCheckRecordsApiResponse
+         * @description 校验记录响应包装
+         */
+        DocCheckRecordsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DocCheckResponse
+         * @description 校验任务响应
+         */
+        DocCheckResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** File Code */
+            file_code?: string | null;
+            /** File Name */
+            file_name?: string | null;
+            /** File Type */
+            file_type?: string | null;
+            status: components["schemas"]["CheckStatus"];
+            /** Result Summary */
+            result_summary?: string | null;
+            /**
+             * Total Problems
+             * @default 0
+             */
+            total_problems: number;
+            /**
+             * Risk High
+             * @default 0
+             */
+            risk_high: number;
+            /**
+             * Risk Medium
+             * @default 0
+             */
+            risk_medium: number;
+            /**
+             * Risk Low
+             * @default 0
+             */
+            risk_low: number;
+            /** Operator */
+            operator?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
+         * DocCheckSuccessApiResponse
+         * @description 成功响应包装
+         */
+        DocCheckSuccessApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DocCheckTaskApiResponse
+         * @description 校验任务响应包装
+         */
+        DocCheckTaskApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
          * DocCheckUpdate
          * @description 更新校验任务
          */
@@ -23988,6 +24361,46 @@ export interface components {
              * @description 校验状态
              */
             status?: string | null;
+        };
+        /**
+         * DocCheckUploadApiResponse
+         * @description 文件上传响应包装
+         */
+        DocCheckUploadApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * DocCheckVectorCacheListApiResponse
+         * @description 向量缓存列表响应包装
+         */
+        DocCheckVectorCacheListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            }[];
         };
         /** DomesticApprovalCreate */
         DomesticApprovalCreate: {
@@ -32812,6 +33225,12 @@ export interface components {
             trainer: string;
         };
         /**
+         * ProblemCategory
+         * @description 问题分类
+         * @enum {string}
+         */
+        ProblemCategory: "format" | "content" | "compliance" | "logic" | "missing";
+        /**
          * ProblemHandleRequest
          * @description 问题处理请求
          */
@@ -32832,6 +33251,110 @@ export interface components {
              */
             operator?: string | null;
         };
+        /**
+         * ProblemItem
+         * @description 问题明细
+         */
+        ProblemItem: {
+            /**
+             * Problem No
+             * @description 问题序号
+             */
+            problem_no: number;
+            category: components["schemas"]["ProblemCategory"];
+            /** @description 严重程度 */
+            severity: components["schemas"]["ProblemSeverity"];
+            /**
+             * Title
+             * @description 问题标题
+             */
+            title: string;
+            /**
+             * Description
+             * @description 问题描述
+             */
+            description: string;
+            /**
+             * Location
+             * @description 位置信息
+             */
+            location?: string | null;
+            /**
+             * Suggestion
+             * @description 改进建议
+             */
+            suggestion?: string | null;
+            /**
+             * Reference
+             * @description 参考依据
+             */
+            reference?: string | null;
+        };
+        /**
+         * ProblemResponse
+         * @description 问题响应
+         */
+        ProblemResponse: {
+            /**
+             * Problem No
+             * @description 问题序号
+             */
+            problem_no: number;
+            category: components["schemas"]["ProblemCategory"];
+            /** @description 严重程度 */
+            severity: components["schemas"]["ProblemSeverity"];
+            /**
+             * Title
+             * @description 问题标题
+             */
+            title: string;
+            /**
+             * Description
+             * @description 问题描述
+             */
+            description: string;
+            /**
+             * Location
+             * @description 位置信息
+             */
+            location?: string | null;
+            /**
+             * Suggestion
+             * @description 改进建议
+             */
+            suggestion?: string | null;
+            /**
+             * Reference
+             * @description 参考依据
+             */
+            reference?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Check Main Id
+             * Format: uuid
+             */
+            check_main_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ProblemSeverity
+         * @description 问题严重程度
+         * @enum {string}
+         */
+        ProblemSeverity: "info" | "warning" | "error" | "critical";
         /**
          * ProblemUpdate
          * @description 问题更新请求
@@ -76796,7 +77319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76831,7 +77354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76864,7 +77387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76901,7 +77424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76943,7 +77466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76978,7 +77501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77011,7 +77534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77044,7 +77567,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77081,7 +77604,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77114,7 +77637,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77148,7 +77671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckProblemListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77184,7 +77707,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckVectorCacheListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77219,7 +77742,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77252,7 +77775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckProgressApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77285,7 +77808,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckProgressApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77320,7 +77843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckSuccessApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77357,7 +77880,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckSuccessApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77403,7 +77926,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckRecordsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77436,7 +77959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckRecordsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77471,7 +77994,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckSuccessApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77508,7 +78031,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckProblemUpdateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77547,7 +78070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckBatchUpdateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77583,7 +78106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["DocCheckExportApiResponse"];
                 };
             };
             /** @description Validation Error */
