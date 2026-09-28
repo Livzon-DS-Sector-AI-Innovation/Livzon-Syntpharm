@@ -156,7 +156,7 @@ export function RawMaterialTable({ initialItems }: RawMaterialTableProps) {
               title="库存不足"
               value={stats.warningCount}
               suffix="种"
-              valueStyle={{
+              styles.content={{
                 color: stats.warningCount > 0 ? '#dd5b00' : undefined,
               }}
             />
@@ -168,7 +168,7 @@ export function RawMaterialTable({ initialItems }: RawMaterialTableProps) {
               title="严重不足"
               value={stats.criticalCount}
               suffix="种"
-              valueStyle={{
+              styles.content={{
                 color: stats.criticalCount > 0 ? '#e03131' : undefined,
               }}
             />

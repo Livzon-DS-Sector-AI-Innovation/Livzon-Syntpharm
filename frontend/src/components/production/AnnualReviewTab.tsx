@@ -253,7 +253,7 @@ export default function AnnualReviewTab({ year }: Props) {
               value={safeOverview.total_weight}
               suffix="kg"
               precision={0}
-              valueStyle={{ color: '#5645d4' }}
+              styles.content={{ color: '#5645d4' }}
             />
             <div className="mt-2">
               {safeOverview.weight_yoy >= 0 ? (
@@ -273,7 +273,7 @@ export default function AnnualReviewTab({ year }: Props) {
             <Statistic
               title="年度总批次"
               value={safeOverview.total_batches}
-              valueStyle={{ color: '#1aae39' }}
+              styles.content={{ color: '#1aae39' }}
             />
             <div className="mt-2">
               {safeOverview.batch_yoy >= 0 ? (
@@ -294,7 +294,7 @@ export default function AnnualReviewTab({ year }: Props) {
               title="活跃车间"
               value={safeOverview.active_workshops}
               suffix="个"
-              valueStyle={{ color: '#dd5b00' }}
+              styles.content={{ color: '#dd5b00' }}
             />
           </Card>
         </Col>
@@ -304,7 +304,7 @@ export default function AnnualReviewTab({ year }: Props) {
               title="活跃产品"
               value={safeOverview.active_products}
               suffix="个"
-              valueStyle={{ color: '#13c2c2' }}
+              styles.content={{ color: '#13c2c2' }}
             />
           </Card>
         </Col>
