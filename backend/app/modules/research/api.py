@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import build_response, paginated_response
+from app.core.response import ApiResponse, build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
     EDBOOptimizeApiResponse,
@@ -77,7 +77,7 @@ async def create_project(
     data: ResearchProjectCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     project = await service.create_project(db, data)
 
@@ -94,7 +94,7 @@ async def get_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     projects, total = await service.get_projects(
         db,
@@ -119,7 +119,7 @@ async def get_project(
     project_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     project = await service.get_project(db, project_id)
 
@@ -132,7 +132,7 @@ async def update_project(
     data: ResearchProjectUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     project = await service.update_project(db, project_id, data)
 
@@ -144,7 +144,7 @@ async def delete_project(
     project_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     await service.delete_project(db, project_id)
 
@@ -157,7 +157,7 @@ async def analyze_ich_q3c(
     file: UploadFile = File(...),
     route: str = Query("oral", description="给药途径"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     file_content = await file.read()
 
@@ -175,7 +175,7 @@ async def analyze_ich_combined(
     route: str = Query("oral", description="给药途径"),
     use_llm: bool = Query(False, description="是否使用 LLM 增强"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     file_content = await file.read()
 
@@ -192,7 +192,7 @@ async def get_ich_records(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     records, total = await service.get_ich_records(db, page=page, page_size=page_size)
 
@@ -221,7 +221,7 @@ async def get_ich_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     record = await service.get_ich_record(db, record_id)
 
@@ -244,7 +244,7 @@ async def delete_ich_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     await service.delete_ich_record(db, record_id)
 
@@ -680,7 +680,7 @@ async def create_pilot_workflow(
     data: PilotWorkflowCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     workflow_data = data.model_dump()
 
@@ -705,7 +705,7 @@ async def get_pilot_workflows(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     workflows, total = await pilot_repo.get_workflows(
         db, status=status, keyword=keyword, page=page, page_size=page_size
@@ -741,7 +741,7 @@ async def get_pilot_workflow_detail(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -762,7 +762,7 @@ async def start_pilot_workflow(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -783,7 +783,7 @@ async def start_pilot_workflow(
 async def approve_pilot_workflow_step(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     result = await approve_step_engine(workflow_id)
 
@@ -799,7 +799,7 @@ async def get_pilot_workflow_step(
     step_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     step = await pilot_repo.get_workflow_step_by_id(db, step_id)
 
@@ -815,7 +815,7 @@ async def upload_pilot_document(
     current_user: RequiredUser,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -858,7 +858,7 @@ async def delete_pilot_workflow(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
@@ -1017,7 +1017,7 @@ async def get_routes(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import func, or_, select
 
@@ -1094,7 +1094,7 @@ async def get_route(
     route_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1177,7 +1177,7 @@ async def create_route(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     import uuid as uuid_mod
     from datetime import date as date_mod
@@ -1213,7 +1213,7 @@ async def update_route(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1265,7 +1265,7 @@ async def delete_route(
     route_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1305,7 +1305,7 @@ async def create_experiment(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     import uuid as uuid_mod
     from datetime import date as date_mod
@@ -1357,7 +1357,7 @@ async def update_experiment(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from datetime import date as date_mod
 
@@ -1413,7 +1413,7 @@ async def delete_experiment(
     exp_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1450,7 +1450,7 @@ async def get_optimizations(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import func, select
 
@@ -1520,7 +1520,7 @@ async def get_optimization(
     optimization_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1560,7 +1560,7 @@ async def create_optimization(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     import uuid
     from datetime import date
@@ -1603,7 +1603,7 @@ async def update_optimization(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1642,7 +1642,7 @@ async def delete_optimization(
     optimization_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     from sqlalchemy import select
 
@@ -1969,7 +1969,7 @@ async def get_rd_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     projects, total = await service.get_rd_projects(
         db,
@@ -1994,7 +1994,7 @@ async def get_rd_project(
     project_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     project = await service.get_rd_project(db, project_id)
 
@@ -2006,7 +2006,7 @@ async def create_rd_project(
     data: RdProjectCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2024,7 +2024,7 @@ async def update_rd_project(
     data: RdProjectUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2041,7 +2041,7 @@ async def delete_rd_project(
     project_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2059,7 +2059,7 @@ async def transition_stage(
     current_user: RequiredUser,
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     target_stage = data.get("target_stage")
 
@@ -2088,7 +2088,7 @@ async def check_stage_transition(
     current_user: RequiredUser,
     target_stage: str = Query(..., description="目标阶段"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     result = await service.check_stage_transition(db, project_id, target_stage)
 
@@ -2103,7 +2103,7 @@ async def get_pilot_studies(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     studies = await service.get_pilot_studies(db, project_id)
 
@@ -2115,7 +2115,7 @@ async def create_pilot_study(
     data: RdPilotStudyCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2133,7 +2133,7 @@ async def update_pilot_study(
     data: RdPilotStudyUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2153,7 +2153,7 @@ async def get_validations(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     validations = await service.get_validations(db, project_id)
 
@@ -2165,7 +2165,7 @@ async def create_validation(
     data: RdProcessValidationCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2183,7 +2183,7 @@ async def update_validation(
     data: RdProcessValidationUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2203,7 +2203,7 @@ async def get_filings(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     filings = await service.get_filings(db, project_id)
 
@@ -2215,7 +2215,7 @@ async def create_filing(
     data: RdRegistrationFilingCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2233,7 +2233,7 @@ async def update_filing(
     data: RdRegistrationFilingUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2608,7 +2608,7 @@ async def get_experiment_logs(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     logs = await service.get_experiment_logs(db, project_id)
 
@@ -2620,7 +2620,7 @@ async def create_experiment_log(
     data: RdExperimentLogCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2640,7 +2640,7 @@ async def update_experiment_log(
     data: RdExperimentLogUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2676,7 +2676,7 @@ async def get_reports(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     reports = await service.get_reports(db, project_id)
 
@@ -2688,7 +2688,7 @@ async def create_report(
     data: RdReportCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2708,7 +2708,7 @@ async def update_report(
     data: RdReportUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2744,7 +2744,7 @@ async def get_initiations(
     current_user: RequiredUser,
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     items = await service.get_initiations(db, project_id)
 
@@ -2756,7 +2756,7 @@ async def create_initiation(
     data: RdInitiationCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2776,7 +2776,7 @@ async def update_initiation(
     data: RdInitiationUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -2877,7 +2877,7 @@ async def get_track_detail(
     track_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
     """获取研究项详情，包含研究发现和结论历史"""
 
     from sqlalchemy import select
@@ -2922,7 +2922,7 @@ async def create_conclusion_version_api(
     data: RdTrackConclusionVersionCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
     """发布新的结论版本"""
 
     version_data = data.model_dump()
@@ -2953,7 +2953,7 @@ async def get_conclusion_versions_api(
     track_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
     """获取研究项的结论版本历史"""
 
     versions = await service.get_conclusion_history(db, track_id)
@@ -3198,7 +3198,7 @@ async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
 async def get_stats_overview(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
     """获取研发模块概览统计数据"""
 
     from sqlalchemy import func, select
@@ -3307,7 +3307,7 @@ async def get_stats_overview(
 async def get_project_progress(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
     """获取各项目进度统计"""
 
     from sqlalchemy import select
@@ -3375,7 +3375,7 @@ async def get_deliverable_templates(
     deliverable_type: str | None = Query(None, description="交付物类型"),
     is_active: bool | None = Query(None, description="是否启用"),
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     templates = await service.get_deliverable_templates(db, stage, deliverable_type, is_active)
 
@@ -3387,7 +3387,7 @@ async def create_deliverable_template(
     data: RdDeliverableTemplateCreate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -3407,7 +3407,7 @@ async def update_deliverable_template(
     data: RdDeliverableTemplateUpdate,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     user_id = current_user.id
 
@@ -3443,7 +3443,7 @@ async def generate_report(
     data: RdReportGenerateRequest,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> EDBOOptimizeApiResponse:
+) -> ApiResponse:
 
     result = await service.generate_report_with_ai(
         db,
