@@ -142,7 +142,7 @@ async def handler(  # noqa: F811
 ) -> InspectionStandardDeleteApiResponse:  # noqa: F821  # type: ignore[name-defined]
     """删除检验标准"""
     from fastapi import HTTPException
-    
+
     service = QualityService(db)
     try:
         result = await service.delete_standard(standard_id)

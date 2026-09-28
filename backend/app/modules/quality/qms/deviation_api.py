@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse, success_response
+from app.core.response import ApiResponse
 from app.modules.quality.qms.deviation_schemas import (
     AIAnalysisApiResponse,
     BatchLockRequest,

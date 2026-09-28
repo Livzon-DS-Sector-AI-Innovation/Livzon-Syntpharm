@@ -208,7 +208,11 @@ async def add_execution_track(
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
-@capa_router.delete("/{capa_id}/execution-tracks/{track_id}", response_model=CapaDeleteApiResponse, summary="删除执行跟踪")
+@capa_router.delete(
+    "/{capa_id}/execution-tracks/{track_id}",
+    response_model=CapaDeleteApiResponse,
+    summary="删除执行跟踪"
+)
 async def delete_execution_track(
     capa_id: UUID,
     track_id: str,
