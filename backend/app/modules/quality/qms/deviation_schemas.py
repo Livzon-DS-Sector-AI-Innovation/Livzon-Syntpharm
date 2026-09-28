@@ -428,7 +428,7 @@ class DeviationApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: DeviationResponse
+    data: DeviationResponse | None = None
 
 
 class DeviationListApiResponse(BaseModel):

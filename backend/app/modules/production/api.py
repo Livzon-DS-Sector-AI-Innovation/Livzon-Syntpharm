@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.production.schemas import (
     BatchApiResponse,
     BatchCreate,

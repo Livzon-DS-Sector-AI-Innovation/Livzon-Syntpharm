@@ -4,6 +4,7 @@ Pydantic validation schemas for API request/response.
 """
 
 from datetime import date, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -403,3 +404,116 @@ class StandardResponse(StandardBase, AuditFields):
 
     class Config:
         from_attributes = True
+
+
+# ========== API Response Wrappers ==========
+
+
+class StorageConditionApiResponse(BaseModel):
+    """Storage condition response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: StorageConditionResponse | None = None
+
+
+class StorageConditionListApiResponse(BaseModel):
+    """Storage condition list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[StorageConditionResponse]
+    meta: dict[str, Any] | None = None
+
+
+class UnitApiResponse(BaseModel):
+    """Unit response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: UnitResponse | None = None
+
+
+class UnitListApiResponse(BaseModel):
+    """Unit list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[UnitResponse]
+    meta: dict[str, Any] | None = None
+
+
+class HplcReferenceApiResponse(BaseModel):
+    """HPLC reference response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: HplcReferenceResponse | None = None
+
+
+class HplcReferenceListApiResponse(BaseModel):
+    """HPLC reference list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[HplcReferenceResponse]
+    meta: dict[str, Any] | None = None
+
+
+class ChromColumnApiResponse(BaseModel):
+    """Chromatography column response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ChromColumnResponse | None = None
+
+
+class ChromColumnListApiResponse(BaseModel):
+    """Chromatography column list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ChromColumnResponse]
+    meta: dict[str, Any] | None = None
+
+
+class MediumApiResponse(BaseModel):
+    """Medium response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: MediumResponse | None = None
+
+
+class MediumListApiResponse(BaseModel):
+    """Medium list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[MediumResponse]
+    meta: dict[str, Any] | None = None
+
+
+class StandardApiResponse(BaseModel):
+    """Standard response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: StandardResponse | None = None
+
+
+class StandardListApiResponse(BaseModel):
+    """Standard list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[StandardResponse]
+    meta: dict[str, Any] | None = None
+
+
+class MessageApiResponse(BaseModel):
+    """Message response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

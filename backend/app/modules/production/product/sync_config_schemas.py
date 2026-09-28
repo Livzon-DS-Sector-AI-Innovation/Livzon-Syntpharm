@@ -53,3 +53,31 @@ class SyncResult(BaseModel):
     skipped: int = Field(0, description="跳过数量（重复）")
     errors: list[str] = Field(default_factory=list, description="错误信息")
     message: str = Field("", description="结果描述")
+
+
+# ========== API Response Wrappers ==========
+
+
+class ProductSyncConfigApiResponse(BaseModel):
+    """Product sync config response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProductSyncConfigResponse | None = None
+
+
+class ProductSyncConfigListApiResponse(BaseModel):
+    """Product sync config list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProductSyncConfigResponse]
+    meta: dict[str, Any] | None = None
+
+
+class MessageApiResponse(BaseModel):
+    """Message response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

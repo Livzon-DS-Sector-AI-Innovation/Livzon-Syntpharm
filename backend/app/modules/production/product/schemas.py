@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
@@ -27,3 +28,31 @@ class ProductResponse(ProductBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ========== API Response Wrappers ==========
+
+
+class ProductApiResponse(BaseModel):
+    """Product response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProductResponse | None = None
+
+
+class ProductListApiResponse(BaseModel):
+    """Product list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProductResponse]
+    meta: dict[str, Any] | None = None
+
+
+class MessageApiResponse(BaseModel):
+    """Message response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

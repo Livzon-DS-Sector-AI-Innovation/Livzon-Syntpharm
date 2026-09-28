@@ -13,16 +13,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
     AnnualReviewResponse,
+    DataApiResponse,
     ImportResponse,
+    MessageApiResponse,
     PreviewImportResponse,
+    ProductOutputApiResponse,
     ProductOutputCreate,
     ProductOutputResponse,
     ProductOutputUpdate,
+    SummaryApiResponse,
     UndoImportResponse,
 )
 from app.modules.production.product.output_service import ProductOutputService
@@ -34,7 +37,7 @@ router = APIRouter()
 @router.get("/product-output/workshops", summary="获取车间列表")
 async def get_workshops() -> Any:
     """获取所有车间列表"""
-    return ApiResponse(data=WORKSHOP_CHOICES)
+    return DataApiResponse(data=WORKSHOP_CHOICES)
 
 
 @router.get("/product-output", summary="获取产量记录列表")
@@ -67,7 +70,7 @@ async def get_product_outputs(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    return ApiResponse(
+    return MessageApiResponse(
         data=[ProductOutputResponse.model_validate(r) for r in records],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -94,7 +97,7 @@ async def get_product_outputs_summary(
         start_date=start_date,
         end_date=end_date,
     )
-    return ApiResponse(data=summary)
+    return SummaryApiResponse(data=summary)
 
 
 @router.get("/product-output/batch-count", summary="获取批次统计")
@@ -118,7 +121,7 @@ async def get_product_outputs_batch_count(
         start_date=start_date,
         end_date=end_date,
     )
-    return ApiResponse(data=batch_counts)
+    return SummaryApiResponse(data=batch_counts)
 
 
 @router.get("/product-output/export", summary="导出产量记录")
@@ -276,8 +279,8 @@ async def get_product_output(
     service = ProductOutputService(db)
     record = await service.get_by_id(record_id)
     if not record:
-        return ApiResponse(code=404, message="记录不存在")
-    return ApiResponse(data=ProductOutputResponse.model_validate(record))
+        return MessageApiResponse(code=404, message="记录不存在", data=None)
+    return ProductOutputApiResponse(data=ProductOutputResponse.model_validate(record))
 
 
 @router.post("/product-output", summary="新建产量记录")
@@ -289,7 +292,7 @@ async def create_product_output(
     """新建产量记录"""
     service = ProductOutputService(db)
     record = await service.create(data)
-    return ApiResponse(
+    return MessageApiResponse(
         data=ProductOutputResponse.model_validate(record),
         message="创建成功",
     )
@@ -306,9 +309,9 @@ async def update_product_output(
     service = ProductOutputService(db)
     existing = await service.get_by_id(record_id)
     if not existing:
-        return ApiResponse(code=404, message="记录不存在")
+        return MessageApiResponse(code=404, message="记录不存在", data=None)
     record = await service.update(record_id, data)
-    return ApiResponse(
+    return MessageApiResponse(
         data=ProductOutputResponse.model_validate(record),
         message="更新成功",
     )
@@ -323,14 +326,14 @@ async def batch_delete_product_outputs(
     """批量软删除产量记录"""
     id_list = [uuid.UUID(id_str.strip()) for id_str in ids.split(",") if id_str.strip()]
     if not id_list:
-        return ApiResponse(code=400, message="未提供有效的记录 ID")
+        return MessageApiResponse(code=400, message="未提供有效的记录 ID", data=None)
     service = ProductOutputService(db)
     count = 0
     for record_id in id_list:
         success = await service.delete(record_id)
         if success:
             count += 1
-    return ApiResponse(data={"deleted": count}, message=f"成功删除 {count} 条记录")
+    return DataApiResponse(data={"deleted": count}, message=f"成功删除 {count} 条记录")
 
 
 @router.delete("/product-output/{record_id}", summary="删除产量记录")
@@ -343,8 +346,8 @@ async def delete_product_output(
     service = ProductOutputService(db)
     success = await service.delete(record_id)
     if not success:
-        return ApiResponse(code=404, message="记录不存在")
-    return ApiResponse(message="删除成功")
+        return MessageApiResponse(code=404, message="记录不存在", data=None)
+    return MessageApiResponse(message="删除成功", data=None)
 
 
 async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -473,7 +476,7 @@ async def preview_import(
     duplicate_count = sum(1 for r in records_data if r["is_duplicate"])
     not_found_count = sum(1 for r in records_data if not r["product_found"])
 
-    return ApiResponse(
+    return MessageApiResponse(
         data=PreviewImportResponse(
             total_rows=len(records_data) + len(invalid_records),
             valid_records=len(records_data),
@@ -501,7 +504,7 @@ async def import_product_outputs(
     records_data, invalid_records = await parse_import_file(file, db)
 
     if not records_data:
-        return ApiResponse(code=400, message="未找到有效数据，请检查文件格式")
+        return MessageApiResponse(code=400, message="未找到有效数据，请检查文件格式", data=None)
 
     # 按 (批号 + 产品ID) 组合检查重复
     existing_result = await db.execute(
@@ -515,7 +518,7 @@ async def import_product_outputs(
     skipped_count = len(records_data) - len(new_records)
 
     if not new_records:
-        return ApiResponse(code=400, message=f"所有 {skipped_count} 条记录的批号已存在，跳过导入")
+        return MessageApiResponse(code=400, message=f"所有 {skipped_count} 条记录的批号已存在，跳过导入", data=None)
 
     # 添加批次ID
     for record in new_records:
@@ -531,7 +534,7 @@ async def import_product_outputs(
     if skipped_count > 0:
         message += f"，跳过 {skipped_count} 条重复批号"
 
-    return ApiResponse(
+    return MessageApiResponse(
         data=ImportResponse(imported=count, skipped=skipped_count, batch_id=batch_id),
         message=message,
     )
@@ -553,7 +556,7 @@ async def undo_import(
     records = result.scalars().all()
 
     if not records:
-        return ApiResponse(code=404, message=f"未找到批次 {batch_id} 的记录")
+        return MessageApiResponse(code=404, message=f"未找到批次 {batch_id} 的记录", data=None)
 
     count = len(records)
     for record in records:
@@ -561,7 +564,7 @@ async def undo_import(
 
     await db.commit()
 
-    return ApiResponse(data=UndoImportResponse(deleted=count, batch_id=batch_id))
+    return ProductOutputApiResponse(data=UndoImportResponse(deleted=count, batch_id=batch_id))
 
 
 @router.post("/product-output/import-from-bitable", summary="从飞书多维表格导入产量记录")
@@ -575,7 +578,7 @@ async def import_from_bitable(
     from app.modules.production.product.feishu.bitable import ProductBitableClient
 
     if not app_token:
-        return ApiResponse(code=400, message="请提供 app_token")
+        return MessageApiResponse(code=400, message="请提供 app_token", data=None)
 
     resolved_table_id = table_id
     if not resolved_table_id:
@@ -584,19 +587,19 @@ async def import_from_bitable(
             bitable_temp.app_token = app_token
             tables = await bitable_temp.get_tables()
             if not tables:
-                return ApiResponse(code=400, message="该多维表格中没有数据表")
+                return MessageApiResponse(code=400, message="该多维表格中没有数据表", data=None)
             resolved_table_id = tables[0].get("table_id", "")
             if not resolved_table_id:
-                return ApiResponse(code=400, message="无法自动获取表格 ID，请在链接中指定 table 参数")
+                return MessageApiResponse(code=400, message="无法自动获取表格 ID，请在链接中指定 table 参数", data=None)
         except Exception as e:
-            return ApiResponse(code=500, message=f"获取表格列表失败：{str(e)}")
+            return MessageApiResponse(code=500, message=f"获取表格列表失败：{str(e)}", data=None)
 
     try:
         bitable = ProductBitableClient(app_token=app_token, table_id=resolved_table_id)
         records = await bitable.search_records(page_size=500)
 
         if not records:
-            return ApiResponse(code=400, message="多维表格中没有数据")
+            return MessageApiResponse(code=400, message="多维表格中没有数据", data=None)
 
         def _extract_text(value: Any) -> str:
             if value is None:
@@ -709,7 +712,7 @@ async def import_from_bitable(
                 continue
 
         if not records_data:
-            return ApiResponse(code=400, message="未找到有效数据，请检查多维表格字段")
+            return MessageApiResponse(code=400, message="未找到有效数据，请检查多维表格字段", data=None)
 
         existing_keys = set()
         for record_data in records_data:
@@ -759,7 +762,7 @@ async def import_from_bitable(
             filtered_records.append(record_data)
 
         if not filtered_records:
-            return ApiResponse(
+            return MessageApiResponse(
                 code=200,
                 message=f"所有 {skipped_count} 条记录已存在，无需导入",
                 data=ImportResponse(imported=0, skipped=skipped_count, batch_id=""),
@@ -783,9 +786,9 @@ async def import_from_bitable(
 
         service = ProductOutputService(db)
         count = await service.batch_import(filtered_records)
-        return ApiResponse(
+        return MessageApiResponse(
             data=ImportResponse(imported=count, skipped=skipped_count, batch_id=""),
             message=f"成功导入 {count} 条记录，跳过 {skipped_count} 条重复记录",
         )
     except Exception as e:
-        return ApiResponse(code=500, message=f"导入失败：{str(e)}")
+        return MessageApiResponse(code=500, message=f"导入失败：{str(e)}", data=None)
