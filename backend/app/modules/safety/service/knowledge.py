@@ -67,6 +67,8 @@ class KnowledgeService:
     async def create_article(self, data: SafetyKnowledgeArticleCreate) -> SafetyKnowledgeArticle:
         """创建知识库文章"""
         article_data = data.model_dump()
+        article_data.setdefault("version", 1)
+        article_data.setdefault("article_no", None)
         return await self.repo.create_knowledge_article(article_data)
 
     async def update_article(

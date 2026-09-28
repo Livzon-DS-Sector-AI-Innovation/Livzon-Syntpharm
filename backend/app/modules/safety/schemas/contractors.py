@@ -239,3 +239,40 @@ class EvaluateWorkRecordRequest(BaseModel):
     score: int = Field(..., ge=0, le=100, description="评分")
     comments: str | None = Field(None, description="评价意见")
     evaluator: str | None = Field(None, max_length=100, description="评价人")
+
+
+# ============ API Response Wrappers ============
+
+
+class ContractorApiResponse(BaseModel):
+    """Single contractor response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ContractorResponse | None = None
+
+
+class ContractorListApiResponse(BaseModel):
+    """Contractor list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ContractorResponse]
+    meta: dict[str, Any] | None = None
+
+
+class ContractorWorkRecordApiResponse(BaseModel):
+    """Single contractor work record response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ContractorWorkRecordResponse | None = None
+
+
+class ContractorWorkRecordListApiResponse(BaseModel):
+    """Contractor work record list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ContractorWorkRecordResponse]
+    meta: dict[str, Any] | None = None

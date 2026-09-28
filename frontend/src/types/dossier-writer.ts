@@ -80,12 +80,9 @@ export interface ExportResult {
   filename?: string
 }
 
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  skip: number
-  limit: number
-}
+import type { PaginatedResponse } from '@/types/common'
+
+export type { PaginatedResponse }
 
 // ====== AI Fill Types ======
 

@@ -215,7 +215,7 @@ export default function HazardLedgerPanel() {
         date_to: dateRange?.[1],
       })
       if (res.code === 200 && res.data) {
-        setStats(res.data as HazardLedgerStats)
+        setStats(res.data as unknown as HazardLedgerStats)
       }
     } catch { /* non-critical */ }
   }, [department, position, riskLevel, dateRange])

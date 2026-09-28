@@ -374,10 +374,10 @@ export function CollectLogDetailDrawer({
             {/* ── 设备采集详情 ── */}
             <SectionLabel
               icon={<ThunderboltOutlined />}
-              text={`设备采集详情${detail.devices.length > 0 ? `（${detail.devices.length}）` : ''}`}
+              text={`设备采集详情${(detail.devices ?? []).length > 0 ? `（${(detail.devices ?? []).length}）` : ''}`}
             />
 
-            {detail.devices.length > 0 ? (
+            {(detail.devices ?? []).length > 0 ? (
               <div
                 style={{
                   borderRadius: 12,
@@ -388,7 +388,7 @@ export function CollectLogDetailDrawer({
                 <Table<CollectLogDeviceDetail>
                   className="luxury-detail-table"
                   columns={deviceColumns}
-                  dataSource={detail.devices}
+                  dataSource={detail.devices ?? []}
                   rowKey={(r) =>
                     `${r.platform_device_code}-${r.data_timestamp}`
                   }

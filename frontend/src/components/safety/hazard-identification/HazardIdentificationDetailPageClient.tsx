@@ -554,7 +554,7 @@ function renderRiskCard(label: string, levelKey?: string, levelLabel?: string, d
           title={label}
           value={dValue ?? '-'}
           suffix={dValue ? 'D值' : ''}
-          valueStyle={{ color: opt?.color || '#000' }}
+          styles={{ content: { color: opt?.color || '#000' } }}
         />
         <Tag color={opt?.color} style={{ marginTop: 8 }}>{levelLabel || levelKey}</Tag>
       </Card>

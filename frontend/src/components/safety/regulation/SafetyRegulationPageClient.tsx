@@ -128,27 +128,8 @@ export function SafetyRegulationPageClient() {
   // Regulations cache for revision create form
 
   // ========== Store ==========
-  const {
-    regulations,
-    regulationTotal,
-    regulationQueryParams,
-    setRegulations,
-    setRegulationTotal,
-    setRegulationQueryParams,
-    addRegulation,
-    updateRegulation: updateRegulationInStore,
-    removeRegulation,
-
-    revisions,
-    revisionTotal,
-    revisionQueryParams,
-    setRevisions,
-    setRevisionTotal,
-    setRevisionQueryParams,
-    addRevision,
-    updateRevision: _updateRevisionInStore,
-    removeRevision,
-  } = useSafetyStore()
+  const { regulationQueryParams, setRegulationQueryParams, revisionQueryParams, setRevisionQueryParams } =
+    useSafetyStore()
 
   // ========== Regulation Handlers ==========
 
@@ -170,13 +151,8 @@ export function SafetyRegulationPageClient() {
     enabled: activeTab === 'regulations',
   })
 
-  // Update store when data changes
-  useEffect(() => {
-    if (regulationsData) {
-      setRegulations(regulationsData.data)
-      setRegulationTotal(regulationsData.total)
-    }
-  }, [regulationsData, setRegulations, setRegulationTotal])
+  const regulations = regulationsData?.data ?? []
+  const regulationTotal = regulationsData?.total ?? 0
 
   // Show error message
   useEffect(() => {
@@ -203,13 +179,8 @@ export function SafetyRegulationPageClient() {
     enabled: activeTab === 'revisions',
   })
 
-  // Update store when data changes
-  useEffect(() => {
-    if (revisionsData) {
-      setRevisions(revisionsData.data)
-      setRevisionTotal(revisionsData.total)
-    }
-  }, [revisionsData, setRevisions, setRevisionTotal])
+  const revisions = revisionsData?.data ?? []
+  const revisionTotal = revisionsData?.total ?? 0
 
   // Show error message
   useEffect(() => {
@@ -258,7 +229,7 @@ export function SafetyRegulationPageClient() {
           const response = await deleteRegulation(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeRegulation(id)
+            queryClient.invalidateQueries({ queryKey: ['regulations'] })
           } else {
             message.error(response.message || '删除失败')
           }
@@ -304,7 +275,7 @@ export function SafetyRegulationPageClient() {
         const response = await updateRegulation(editingRegulation.id, values)
         if (response.code === 200) {
           message.success('更新成功')
-          updateRegulationInStore(editingRegulation.id, response.data)
+          queryClient.invalidateQueries({ queryKey: ['regulations'] })
           setRegDrawerOpen(false)
         } else {
           message.error(response.message || '更新失败')
@@ -313,7 +284,7 @@ export function SafetyRegulationPageClient() {
         const response = await createRegulation(values as OperationRegulationFormData)
         if (response.code === 200) {
           message.success('创建成功')
-          addRegulation(response.data)
+          queryClient.invalidateQueries({ queryKey: ['regulations'] })
           setRegDrawerOpen(false)
           regForm.resetFields()
         } else {
@@ -363,7 +334,7 @@ export function SafetyRegulationPageClient() {
       const response = await createRevision(values as RegulationRevisionFormData)
       if (response.code === 200) {
         message.success('创建修订记录成功')
-        addRevision(response.data)
+        queryClient.invalidateQueries({ queryKey: ['revisions'] })
         setRevDrawerOpen(false)
         revForm.resetFields()
       } else {
@@ -388,7 +359,7 @@ export function SafetyRegulationPageClient() {
           const response = await deleteRevision(id)
           if (response.code === 200) {
             message.success('删除成功')
-            removeRevision(id)
+            queryClient.invalidateQueries({ queryKey: ['revisions'] })
           } else {
             message.error(response.message || '删除失败')
           }

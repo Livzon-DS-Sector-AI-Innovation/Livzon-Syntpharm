@@ -1329,6 +1329,19 @@ class SafetyKnowledgeArticle(BaseModel):
     view_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False, comment="浏览次数")
     attachment_path: Mapped[str | None] = mapped_column(String(500), nullable=True, comment="附件路径")
     attachment_original_name: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="附件原始文件名")
+    # ── 文档管理字段 ──
+    article_no: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="文档编号")
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False, comment="版本号")
+    source: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="来源")
+    author: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="作者")
+    publish_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="发布日期")
+    superseded_by_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("safety.knowledge_articles.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="被哪个新版本替代",
+    )
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True, comment="备注")
     # ── AI 知识增强字段 ──
     knowledge_card: Mapped[dict[str, Any] | None] = mapped_column(
         JSON,

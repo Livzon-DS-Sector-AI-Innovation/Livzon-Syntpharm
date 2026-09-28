@@ -140,3 +140,40 @@ class DataSourceOption(BaseModel):
     label: str = Field(..., description="数据源显示名")
     description: str | None = Field(None, description="数据源说明")
     default_enabled: bool = Field(False, description="新建任务时默认是否勾选")
+
+
+# ============ API Response Wrappers ============
+
+
+class ScheduledTaskApiResponse(BaseModel):
+    """Single scheduled task response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ScheduledTaskResponse | None = None
+
+
+class ScheduledTaskListApiResponse(BaseModel):
+    """Scheduled task list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ScheduledTaskResponse]
+    meta: dict[str, Any] | None = None
+
+
+class ScheduledTaskLogApiResponse(BaseModel):
+    """Single scheduled task log response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ScheduledTaskLogResponse | None = None
+
+
+class ScheduledTaskLogListApiResponse(BaseModel):
+    """Scheduled task log list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ScheduledTaskLogResponse]
+    meta: dict[str, Any] | None = None

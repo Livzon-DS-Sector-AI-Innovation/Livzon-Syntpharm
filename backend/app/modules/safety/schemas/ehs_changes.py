@@ -244,3 +244,23 @@ class AbnormalityRecordItem(BaseModel):
     status: str = Field("open", description="状态: open/investigating/corrected/closed")
     completed_at: str | None = Field(None, description="完成时间")
     remarks: str | None = Field(None, description="备注")
+
+
+# ============ API Response Wrappers ============
+
+
+class EhsChangeApiResponse(BaseModel):
+    """Single EHS change response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: EhsChangeResponse | None = None
+
+
+class EhsChangeListApiResponse(BaseModel):
+    """EHS change list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[EhsChangeResponse]
+    meta: dict[str, Any] | None = None

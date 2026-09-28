@@ -11,19 +11,24 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.deps import RequiredUser
+from app.core.exceptions import NotFoundException
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    HazardIdentificationApiResponse,
+    HazardIdentificationBatchApiResponse,
     HazardIdentificationBatchCreate,
     HazardIdentificationCreate,
+    HazardIdentificationListApiResponse,
     HazardIdentificationResponse,
     HazardIdentificationReview,
     HazardIdentificationRunScript,
     HazardIdentificationUpdate,
     HazardLedgerExportRequest,
     HazardRiskOption,
+    RegulationStagesApiResponse,
 )
 from app.modules.safety.service import (
     SafetyService,
@@ -34,10 +39,11 @@ hazard_identifications_router = APIRouter()
 
 @hazard_identifications_router.get(
     "/hazard-identifications",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationListApiResponse,
     summary="获取危险源辨识列表",
 )
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     department: str | None = None,
@@ -50,8 +56,7 @@ async def handler(
     date_to: str | None = None,
     batch_id: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """获取危险源辨识列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -68,7 +73,7 @@ async def handler(
         date_to,
         batch_id,
     )
-    return build_response(
+    return HazardIdentificationListApiResponse(
         data=[HazardIdentificationResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -76,33 +81,32 @@ async def handler(
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/stats",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识工作流统计",
 )
 async def handler(  # noqa: F811
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取危险源辨识工作流统计（草案/进行中/待审核/已完成）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_stats()
-    return build_response(data=stats)
+    return HazardIdentificationApiResponse(data=stats)
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/ledger-stats",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识台账统计",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     department: str | None = Query(None),
     position: str | None = Query(None),
     risk_level: str | None = Query(None),
     date_from: str | None = Query(None),
     date_to: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """获取危险源辨识台账统计（总记录/按风险等级分组）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_ledger_stats(
@@ -112,22 +116,22 @@ async def handler(  # noqa: F811
         date_from,
         date_to,
     )
-    return build_response(data=stats)
+    return HazardIdentificationApiResponse(data=stats)
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/risk-options",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源风险选项（常规作业报备用）",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     department: str | None = Query(None, description="部门筛选"),
     keyword: str | None = Query(None, description="搜索关键字（编号/部门/岗位）"),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """返回风险等级为 level_1/level_2 且 overall_status=completed 的危险源辨识项"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -140,37 +144,33 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识详情",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取危险源辨识详情"""
     service = SafetyService(db)
     item = await service.get_hazard_identification(hid)
     if not item:
-        return build_response(code=404, message="记录不存在")
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+        raise NotFoundException(resource="记录")
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationListApiResponse,
     summary="创建危险源辨识记录",
 )
 async def handler(  # noqa: F811
-    data: HazardIdentificationCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, data: HazardIdentificationCreate, db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建危险源辨识记录（填写基础信息）"""
     service = SafetyService(db)
     item = await service.create_hazard_identification(data)
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 # ── 批量辨识 + 工段预览 ──
@@ -178,7 +178,7 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/regulations/{regulation_id}/stages",
-    response_model=ApiResponse,
+    response_model=RegulationStagesApiResponse,
     summary="获取操规工艺阶段列表（批量辨识前预览）",
 )
 async def handler(  # noqa: F811
@@ -190,119 +190,103 @@ async def handler(  # noqa: F811
     stages = await service.get_regulation_stages(regulation_id)
     if stages is None:
         return build_response(code=404, message="操规不存在或无可解析的第七章内容")
-    return build_response(data=stages)
+    return RegulationStagesApiResponse(data=stages)
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/batch",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationBatchApiResponse,
     summary="批量创建危险源辨识（一个操规多工段）",
 )
 async def handler(  # noqa: F811
-    data: HazardIdentificationBatchCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, data: HazardIdentificationBatchCreate, db: AsyncSession = Depends(get_db)
+) -> Any:
     """根据操规第7章的工艺阶段，批量创建危险源辨识记录"""
     service = SafetyService(db)
     try:
         result = await service.create_hazard_identification_batch(data)
         await db.commit()
-        return build_response(data=result)
+        return HazardIdentificationApiResponse(data=result)
     except ValueError as e:
         return build_response(code=400, message=str(e))
 
 
 @hazard_identifications_router.put(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="更新危险源辨识记录",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    data: HazardIdentificationUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, data: HazardIdentificationUpdate, db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新危险源辨识记录（人工编辑字段）"""
     service = SafetyService(db)
     item = await service.update_hazard_identification(hid, data)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/submit",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="提交基础信息，进入AI流程",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """提交基础信息 → 进入待AI解析附件阶段"""
     service = SafetyService(db)
     item = await service.submit_hazard_identification(hid)
     if not item:
         return build_response(code=400, message="无法提交，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/run-script",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="执行AI脚本",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    data: HazardIdentificationRunScript,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, data: HazardIdentificationRunScript, db: AsyncSession = Depends(get_db)
+) -> Any:
     """执行指定编号的AI脚本（脚本1-7）"""
     service = SafetyService(db)
     item = await service.run_script(hid, data.script_number, data.ai_output)
     if not item:
         return build_response(code=400, message="无法执行脚本，当前状态不允许或条件不满足")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/review",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="审核脚本输出",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    data: HazardIdentificationReview,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, data: HazardIdentificationReview, db: AsyncSession = Depends(get_db)
+) -> Any:
     """审核确认或驳回AI脚本输出结果"""
     service = SafetyService(db)
     item = await service.review_script(hid, data.script_number, data.action)
     if not item:
         return build_response(code=400, message="无法审核，当前状态不允许")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}/upload",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="上传岗位资料附件",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    file: UploadFile,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, file: UploadFile, db: AsyncSession = Depends(get_db)
+) -> Any:
     """上传危险源辨识的岗位资料附件"""
 
     file_ext = os.path.splitext(file.filename or ".bin")[1]
@@ -330,28 +314,26 @@ async def handler(  # noqa: F811
     service = SafetyService(db)
     item = await service.upload_attachment(hid, file.filename or "unknown", stored_path)
     if not item:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(data=HazardIdentificationResponse.model_validate(item))
+    return HazardIdentificationApiResponse(data=HazardIdentificationResponse.model_validate(item))
 
 
 @hazard_identifications_router.delete(  # type: ignore[no-redef]
     "/hazard-identifications/{hid}",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="删除危险源辨识记录",
 )
 async def handler(  # noqa: F811
-    hid: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, hid: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除危险源辨识记录"""
     service = SafetyService(db)
     result = await service.delete_hazard_identification(hid)
     if not result:
-        return build_response(code=404, message="记录不存在")
+        raise NotFoundException(resource="记录")
     await db.commit()
-    return build_response(message="删除成功")
+    return HazardIdentificationApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── 危险源辨识台账导出 ──
@@ -359,33 +341,29 @@ async def handler(  # noqa: F811
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/parse-query",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="AI 解析危险源辨识台账自然语言筛选条件",
 )
 async def handler(  # noqa: F811
-    data: HazardLedgerExportRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, data: HazardLedgerExportRequest, db: AsyncSession = Depends(get_db)
+) -> Any:
     """使用 AI 将自然语言查询解析为结构化的危险源辨识台账筛选条件"""
     service = SafetyService(db)
     if not data.natural_query:
         return build_response(code=400, message="请提供自然语言查询")
     result = await service.parse_hazard_export_query(data.natural_query)
-    return build_response(data=result)
+    return HazardIdentificationApiResponse(data=result)
 
 
 @hazard_identifications_router.post(  # type: ignore[no-redef]
     "/hazard-identifications/export-pdf",
-    response_model=ApiResponse,
+    response_model=HazardIdentificationApiResponse,
     summary="导出危险源辨识台账 PDF",
     response_class=Response,
 )
 async def handler(  # noqa: F811
-    data: HazardLedgerExportRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, data: HazardLedgerExportRequest, db: AsyncSession = Depends(get_db)
+) -> Any:
     """导出危险源辨识台账为 PDF 文件。
 
     流程：
