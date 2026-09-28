@@ -16,6 +16,7 @@ from app.modules.quality.qms.schemas import (
     InspectionStandardApiResponse,
     InspectionStandardCopy,
     InspectionStandardCreate,
+    InspectionStandardDeleteApiResponse,
     InspectionStandardItemListApiResponse,
     InspectionStandardItemResponse,
     InspectionStandardListApiResponse,
@@ -132,23 +133,25 @@ async def handler(  # noqa: F811
 
 
 @router.delete(  # type: ignore[no-redef]
-    "/standards/{standard_id}", response_model=InspectionStandardApiResponse, summary="删除检验标准"
+    "/standards/{standard_id}", response_model=InspectionStandardDeleteApiResponse, summary="删除检验标准"
 )
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> InspectionStandardDeleteApiResponse:  # noqa: F821  # type: ignore[name-defined]
     """删除检验标准"""
+    from fastapi import HTTPException
+    
     service = QualityService(db)
     try:
         result = await service.delete_standard(standard_id)
         if not result:
-            return ApiResponse(code=404, message="检验标准不存在")
+            raise HTTPException(status_code=404, detail="检验标准不存在")
         await db.commit()
-        return ApiResponse(message="删除成功")
+        return InspectionStandardDeleteApiResponse(message="删除成功")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post(  # type: ignore[no-redef]

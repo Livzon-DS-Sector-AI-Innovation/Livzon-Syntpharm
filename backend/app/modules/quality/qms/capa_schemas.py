@@ -243,3 +243,17 @@ class CapaListApiResponse(BaseModel):
     message: str = "success"
     data: list[CapaResponse]
     meta: dict[str, Any] | None = None
+
+
+class CapaDeleteResponse(BaseModel):
+    """CAPA delete response"""
+
+    message: str = Field(..., description="删除结果消息")
+
+
+class CapaDeleteApiResponse(BaseModel):
+    """CAPA delete API response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: CapaDeleteResponse

@@ -12,6 +12,8 @@ from app.core.deps import RequiredUser
 from app.modules.quality.qms.capa_schemas import (
     CapaApiResponse,
     CapaCreate,
+    CapaDeleteApiResponse,
+    CapaDeleteResponse,
     CapaListApiResponse,
     CapaResponse,
     CapaUpdate,
@@ -106,12 +108,12 @@ async def update_capa(
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
-@capa_router.delete("/{capa_id}", summary="删除 CAPA")
+@capa_router.delete("/{capa_id}", response_model=CapaDeleteApiResponse, summary="删除 CAPA")
 async def delete_capa(
     capa_id: UUID,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> CapaDeleteApiResponse:
     """删除 CAPA"""
     service = CapaService(db)
     success = await service.delete_capa(capa_id)
@@ -119,7 +121,7 @@ async def delete_capa(
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
 
-    return {"message": "CAPA deleted successfully"}
+    return CapaDeleteApiResponse(data=CapaDeleteResponse(message="CAPA deleted successfully"))
 
 
 @capa_router.post("/{capa_id}/submit", response_model=CapaApiResponse, summary="提交 CAPA")
@@ -206,13 +208,13 @@ async def add_execution_track(
     return CapaApiResponse(data=CapaResponse(**capa))
 
 
-@capa_router.delete("/{capa_id}/execution-tracks/{track_id}", summary="删除执行跟踪")
+@capa_router.delete("/{capa_id}/execution-tracks/{track_id}", response_model=CapaDeleteApiResponse, summary="删除执行跟踪")
 async def delete_execution_track(
     capa_id: UUID,
     track_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> Any:
+) -> CapaDeleteApiResponse:
     """删除执行跟踪"""
     service = CapaService(db)
     capa = await service.delete_execution_track(capa_id, track_id)
@@ -220,7 +222,7 @@ async def delete_execution_track(
         raise HTTPException(status_code=404, detail="CAPA not found")
     await db.commit()
 
-    return {"message": "Execution track deleted successfully"}
+    return CapaDeleteApiResponse(data=CapaDeleteResponse(message="Execution track deleted successfully"))
 
 
 @capa_router.post("/{capa_id}/confirm-execution", response_model=CapaApiResponse, summary="确认执行")

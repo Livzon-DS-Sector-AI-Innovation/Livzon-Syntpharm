@@ -277,3 +277,11 @@ class ApprovalRecordListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[ApprovalRecordResponse]
+
+
+class InspectionStandardDeleteApiResponse(BaseModel):
+    """Inspection standard delete response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

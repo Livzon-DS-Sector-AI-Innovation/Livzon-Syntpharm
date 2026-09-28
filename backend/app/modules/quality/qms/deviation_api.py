@@ -745,18 +745,18 @@ async def put(
         raise HTTPException(status_code=500, detail=f"更新失败: {str(e)}")
 
 
-@router.delete("/{deviation_id}")
+@router.delete("/{deviation_id}", response_model=MessageApiResponse)
 async def delete(
     deviation_id: UUID,
     current_user: RequiredUser,
     service: DeviationService = Depends(get_deviation_service),
-) -> Any:
+) -> MessageApiResponse:
     """删除偏差"""
     try:
         result = await service.delete_deviation(deviation_id)
         if not result:
             raise ValueError("偏差不存在")
-        return success_response(message="删除成功")
+        return MessageApiResponse(message="删除成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
