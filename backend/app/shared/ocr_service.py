@@ -194,8 +194,6 @@ class OCRService:
         self.pp_ocr = ocr_engine if ocr_engine is not None else self._build_ocr_engine()
         self.pp_structure = structure_engine if structure_engine is not None else self._build_structure_engine()
         self.failure_recorder = failure_recorder or NoOpFailureRecorder()
-        self._recent_failures: list[dict[str, Any]] = []
-        self._failure_lock = threading.Lock()
 
     @staticmethod
     def _build_ocr_engine() -> Any:

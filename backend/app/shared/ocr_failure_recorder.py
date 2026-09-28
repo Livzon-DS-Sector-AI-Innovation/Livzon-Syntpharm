@@ -47,6 +47,10 @@ class AuditFailureRecorder:
         This is a synchronous method that schedules an async task to write the audit log.
         The actual write happens asynchronously to avoid blocking the OCR call.
 
+        Note: If called from a sync context without a running event loop, the failure
+        will be logged as a warning but not persisted to the audit log. For reliable
+        recording, ensure OCR operations are called from async contexts.
+
         Args:
             input_name: Name of the input file/image
             engine: OCR engine that failed (pp_ocr or pp_structurev3)
@@ -103,10 +107,12 @@ class AuditFailureRecorder:
         except RuntimeError:
             # No running loop - this is a sync context, log warning
             logger.warning(
-                "Cannot write OCR failure to audit log: no async loop available",
+                "Cannot write OCR failure to audit log: no async loop available. "
+                "Failure will not be persisted. Call OCR from async context for reliable recording.",
                 extra={
                     "ocr_input": input_name,
                     "ocr_engine": engine,
+                    "error_type": error_type,
                 },
             )
 
