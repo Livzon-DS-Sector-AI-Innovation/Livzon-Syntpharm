@@ -15,7 +15,13 @@ import pytest
 from fastapi import HTTPException
 
 from app.core.exceptions import AppException
-from app.shared.ocr_service import ExtractionOutcome, OCRError, OCRService
+from app.shared.ocr_service import (
+    ExtractionOutcome,
+    InMemoryFailureRecorder,
+    NoOpFailureRecorder,
+    OCRError,
+    OCRService,
+)
 
 
 class FakeOcrEngine:
@@ -74,6 +80,118 @@ def build_service(
 def extra(record: logging.LogRecord, name: str) -> Any:
     """Read a structured field attached through logging's `extra`."""
     return getattr(record, name)
+
+
+class TestFailureRecorder:
+    """Tests for OCR failure recording."""
+
+    def test_default_recorder_is_noop(self) -> None:
+        """OCRService uses NoOpFailureRecorder by default."""
+        service, _, _ = build_service()
+        assert isinstance(service.failure_recorder, NoOpFailureRecorder)
+
+    def test_custom_recorder_is_injected(self) -> None:
+        """OCRService accepts a custom failure recorder."""
+        recorder = InMemoryFailureRecorder()
+        service = OCRService(
+            ocr_engine=FakeOcrEngine(),
+            structure_engine=FakeStructureEngine(),
+            failure_recorder=recorder,
+        )
+        assert service.failure_recorder is recorder
+
+    def test_failure_is_recorded_when_engine_fails(self) -> None:
+        """OCR failures are recorded by the failure recorder."""
+        recorder = InMemoryFailureRecorder()
+        service, _, _ = build_service(
+            ocr=FakeOcrEngine(error=ValueError("test error")),
+        )
+        service.failure_recorder = recorder
+
+        with pytest.raises(OCRError):
+            service.extract_text("test.pdf")
+
+        failures = recorder.get_failures()
+        assert len(failures) == 1
+        
+        failure = failures[0]
+        assert failure["input_name"] == "test.pdf"
+        assert failure["engine"] == "pp_ocr"
+        assert failure["output_format"] == "text"
+        assert failure["error_type"] == "ValueError"
+        assert failure["error_message"] == "test error"
+        assert "timestamp" in failure
+
+    def test_failure_recorder_receives_request_id(self) -> None:
+        """Failure recorder receives request_id from context."""
+        from app.core.logging_config import request_id_var
+        
+        recorder = InMemoryFailureRecorder()
+        service, _, _ = build_service(
+            ocr=FakeOcrEngine(error=ValueError("test error")),
+        )
+        service.failure_recorder = recorder
+
+        # Set request_id in context
+        token = request_id_var.set("test-request-123")
+        try:
+            with pytest.raises(OCRError):
+                service.extract_text("test.pdf")
+        finally:
+            request_id_var.reset(token)
+
+        failures = recorder.get_failures()
+        assert len(failures) == 1
+        assert failures[0]["request_id"] == "test-request-123"
+
+    def test_multiple_failures_are_recorded(self) -> None:
+        """Multiple OCR failures are all recorded."""
+        recorder = InMemoryFailureRecorder()
+        service, _, _ = build_service(
+            ocr=FakeOcrEngine(error=ValueError("error")),
+        )
+        service.failure_recorder = recorder
+
+        for i in range(3):
+            with pytest.raises(OCRError):
+                service.extract_text(f"test{i}.pdf")
+
+        failures = recorder.get_failures()
+        assert len(failures) == 3
+        assert [f["input_name"] for f in failures] == ["test0.pdf", "test1.pdf", "test2.pdf"]
+
+    def test_recorder_can_be_cleared(self) -> None:
+        """InMemoryFailureRecorder can be cleared."""
+        recorder = InMemoryFailureRecorder()
+        service, _, _ = build_service(
+            ocr=FakeOcrEngine(error=ValueError("error")),
+        )
+        service.failure_recorder = recorder
+
+        with pytest.raises(OCRError):
+            service.extract_text("test.pdf")
+
+        assert len(recorder.get_failures()) == 1
+        
+        recorder.clear()
+        assert len(recorder.get_failures()) == 0
+
+    def test_structure_failure_is_recorded(self) -> None:
+        """Structure engine failures are also recorded."""
+        recorder = InMemoryFailureRecorder()
+        service, _, _ = build_service(
+            structure=FakeStructureEngine(error=RuntimeError("structure error")),
+        )
+        service.failure_recorder = recorder
+
+        with pytest.raises(OCRError):
+            service.extract_markdown("test.pdf")
+
+        failures = recorder.get_failures()
+        assert len(failures) == 1
+        assert failures[0]["engine"] == "pp_structurev3"
+        assert failures[0]["output_format"] == "markdown"
+        assert failures[0]["error_type"] == "RuntimeError"
 
 
 class TestInjectedEngine:

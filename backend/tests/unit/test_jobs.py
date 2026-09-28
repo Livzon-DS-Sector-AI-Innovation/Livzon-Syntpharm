@@ -20,6 +20,7 @@ from app.core.jobs import (
     JobRecord,
     spawn_job,
 )
+from app.core.logging_config import request_id_var
 
 
 class RecordingStore:
@@ -30,8 +31,24 @@ class RecordingStore:
         self.completed: list[tuple[str, Any]] = []
         self.failed: list[tuple[str, str]] = []
 
-    def create(self, *, timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS) -> JobRecord:
-        record = JobRecord(job_id=f"job-{len(self.created)}", timeout_seconds=timeout_seconds)
+    def create(
+        self,
+        *,
+        timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS,
+        request_id: str | None = None,
+    ) -> JobRecord:
+        # Capture request_id from context if not explicitly provided
+        if request_id is None:
+            context_request_id = request_id_var.get()
+            # Only use it if it's a real request ID (not the default "-")
+            if context_request_id != "-":
+                request_id = context_request_id
+        
+        record = JobRecord(
+            job_id=f"job-{len(self.created)}",
+            timeout_seconds=timeout_seconds,
+            request_id=request_id,
+        )
         self.created.append(record)
         return record
 
@@ -65,6 +82,7 @@ class TestInMemoryJobStore:
         assert record.progress == 0.0
         assert record.result is None
         assert record.error is None
+        assert record.request_id is None
 
     def test_get_returns_the_record_and_none_for_an_unknown_id(self) -> None:
         store = InMemoryJobStore()
@@ -229,3 +247,112 @@ class TestSpawnJob:
 
         assert store.completed == [(record.job_id, 7)]
         assert store.failed == []
+
+
+class TestRequestIdPropagation:
+    """Tests for request_id support in the job primitive.
+
+    The request_id is captured when the job is spawned and must be available
+    throughout the job's lifecycle, even when the context changes.
+    """
+
+    def test_create_captures_request_id_from_context(self) -> None:
+        """The job record captures the request_id from the context variable."""
+        store = InMemoryJobStore()
+        token = request_id_var.set("test-request-123")
+        try:
+            record = store.create()
+            assert record.request_id == "test-request-123"
+        finally:
+            request_id_var.reset(token)
+
+    def test_create_with_explicit_request_id_overrides_context(self) -> None:
+        """An explicit request_id parameter takes precedence over the context."""
+        store = InMemoryJobStore()
+        token = request_id_var.set("context-request")
+        try:
+            record = store.create(request_id="explicit-request")
+            assert record.request_id == "explicit-request"
+        finally:
+            request_id_var.reset(token)
+
+    def test_create_without_request_id_in_context_is_none(self) -> None:
+        """If no request_id is in context and none is provided, it's None."""
+        store = InMemoryJobStore()
+        token = request_id_var.set("-")
+        try:
+            record = store.create()
+            assert record.request_id is None
+        finally:
+            request_id_var.reset(token)
+
+    async def test_spawn_job_captures_request_id(self) -> None:
+        """spawn_job captures the request_id and stores it on the record."""
+        store = InMemoryJobStore()
+        token = request_id_var.set("spawn-request-456")
+        try:
+            async def work(record: JobRecord) -> str:
+                return "done"
+
+            record = spawn_job(store, work)
+            await wait_for_task(record)
+
+            assert record.request_id == "spawn-request-456"
+        finally:
+            request_id_var.reset(token)
+
+    async def test_request_id_available_in_work_function(self) -> None:
+        """The work function can access the request_id from the record."""
+        store = InMemoryJobStore()
+        token = request_id_var.set("work-request-789")
+        captured_request_id = None
+
+        try:
+            async def work(record: JobRecord) -> str:
+                nonlocal captured_request_id
+                captured_request_id = record.request_id
+                return "done"
+
+            record = spawn_job(store, work)
+            await wait_for_task(record)
+
+            assert captured_request_id == "work-request-789"
+        finally:
+            request_id_var.reset(token)
+
+    async def test_request_id_persists_through_context_changes(self) -> None:
+        """The request_id remains available even if the context changes during execution."""
+        store = InMemoryJobStore()
+        token = request_id_var.set("original-request")
+        captured_ids = []
+
+        try:
+            async def work(record: JobRecord) -> str:
+                captured_ids.append(record.request_id)
+                # Change the context
+                inner_token = request_id_var.set("different-request")
+                try:
+                    captured_ids.append(record.request_id)
+                    await asyncio.sleep(0.001)
+                    captured_ids.append(record.request_id)
+                finally:
+                    request_id_var.reset(inner_token)
+                return "done"
+
+            record = spawn_job(store, work)
+            await wait_for_task(record)
+
+            # All three captures should have the original request_id
+            assert all(rid == "original-request" for rid in captured_ids)
+        finally:
+            request_id_var.reset(token)
+
+    def test_recording_store_supports_request_id(self) -> None:
+        """The RecordingStore test double also supports request_id."""
+        store = RecordingStore()
+        token = request_id_var.set("recording-request")
+        try:
+            record = store.create()
+            assert record.request_id == "recording-request"
+        finally:
+            request_id_var.reset(token)

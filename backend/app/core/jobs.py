@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 from uuid import uuid4
 
+from app.core.logging_config import request_id_var
 from app.core.tasks import spawn_task
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,8 @@ class JobRecord:
     """The observable state of one background job.
 
     `status` is one of the `JOB_STATUS_*` values; `progress` is a fraction from 0.0 to 1.0.
+    `request_id` is the correlation id from the request that spawned this job, captured at
+    creation time so it remains available throughout the job's lifecycle.
     """
 
     job_id: str
@@ -59,12 +62,18 @@ class JobRecord:
     finished_at: float | None = None
     timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS
     task: asyncio.Task[None] | None = None
+    request_id: str | None = None
 
 
 class JobStoreProtocol(Protocol):
     """What the job primitive needs from a store, so the backing can be swapped."""
 
-    def create(self, *, timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS) -> JobRecord: ...
+    def create(
+        self,
+        *,
+        timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS,
+        request_id: str | None = None,
+    ) -> JobRecord: ...
 
     def get(self, job_id: str) -> JobRecord | None: ...
 
@@ -81,11 +90,24 @@ class InMemoryJobStore:
     def __init__(self) -> None:
         self._jobs: dict[str, JobRecord] = {}
 
-    def create(self, *, timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS) -> JobRecord:
+    def create(
+        self,
+        *,
+        timeout_seconds: float | None = DEFAULT_JOB_TIMEOUT_SECONDS,
+        request_id: str | None = None,
+    ) -> JobRecord:
+        # Capture request_id from context if not explicitly provided
+        if request_id is None:
+            context_request_id = request_id_var.get()
+            # Only use it if it's a real request ID (not the default "-")
+            if context_request_id != "-":
+                request_id = context_request_id
+
         record = JobRecord(
             job_id=str(uuid4()),
             started_at=time.time(),
             timeout_seconds=timeout_seconds,
+            request_id=request_id,
         )
         self._jobs[record.job_id] = record
         return record

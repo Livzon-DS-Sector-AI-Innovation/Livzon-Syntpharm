@@ -7,7 +7,7 @@ with a hybrid approach that allows automatic or manual engine selection.
 import logging
 import threading
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Protocol
 
 import numpy as np
 from PIL import Image
@@ -33,6 +33,114 @@ class OCRError(Exception):
         self.engine = engine
         self.output_format = output_format
         self.cause = cause
+
+
+class OCRFailureRecorder(Protocol):
+    """Protocol for recording OCR failures durably.
+
+    Implementations can persist to audit logs, database, or other storage.
+    The recorder is called synchronously but should handle async persistence
+    internally (e.g., by queuing or using fire-and-forget tasks).
+    """
+
+    def record_failure(
+        self,
+        *,
+        input_name: str,
+        engine: str,
+        output_format: str,
+        error_type: str,
+        error_message: str,
+        request_id: str | None,
+        module: str | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+    ) -> None:
+        """Record an OCR failure durably.
+
+        Args:
+            input_name: Name of the input file/image
+            engine: OCR engine that failed (pp_ocr or pp_structurev3)
+            output_format: Requested output format
+            error_type: Type of error (e.g., "OCRError", "TimeoutError")
+            error_message: Human-readable error message
+            request_id: Request correlation ID from context
+            module: Module that initiated the OCR call (e.g., "safety", "registration")
+            resource_type: Type of resource being processed (e.g., "attachment", "document")
+            resource_id: ID of the resource being processed
+        """
+        ...
+
+
+class NoOpFailureRecorder:
+    """Default no-op recorder that only logs (existing behavior)."""
+
+    def record_failure(
+        self,
+        *,
+        input_name: str,
+        engine: str,
+        output_format: str,
+        error_type: str,
+        error_message: str,
+        request_id: str | None,
+        module: str | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+    ) -> None:
+        # Logging is already done in _predict, so this is a no-op
+        pass
+
+
+class InMemoryFailureRecorder:
+    """In-memory recorder for testing and development.
+
+    Stores failures in a list that can be queried. Thread-safe.
+    """
+
+    def __init__(self) -> None:
+        self._failures: list[dict[str, Any]] = []
+        self._lock = threading.Lock()
+
+    def record_failure(
+        self,
+        *,
+        input_name: str,
+        engine: str,
+        output_format: str,
+        error_type: str,
+        error_message: str,
+        request_id: str | None,
+        module: str | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+    ) -> None:
+        """Record an OCR failure to memory."""
+        import time
+        failure = {
+            "input_name": input_name,
+            "engine": engine,
+            "output_format": output_format,
+            "error_type": error_type,
+            "error_message": error_message,
+            "request_id": request_id,
+            "module": module,
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "timestamp": time.time(),
+        }
+        with self._lock:
+            self._failures.append(failure)
+
+    def get_failures(self) -> list[dict[str, Any]]:
+        """Get all recorded failures."""
+        with self._lock:
+            return list(self._failures)
+
+    def clear(self) -> None:
+        """Clear all recorded failures."""
+        with self._lock:
+            self._failures.clear()
 
 
 class ExtractionOutcome(BaseModel):
@@ -70,14 +178,24 @@ class OCRService:
         *,
         ocr_engine: Any | None = None,
         structure_engine: Any | None = None,
+        failure_recorder: OCRFailureRecorder | None = None,
     ) -> None:
         """Initialize the pipelines, or accept injected engines.
 
         Injecting both engines is the test seam: tests exercise the seam's own
         logging, error typing and outcome contract without loading any model.
+
+        Args:
+            ocr_engine: Optional injected PP-OCR engine (for testing)
+            structure_engine: Optional injected PP-StructureV3 engine (for testing)
+            failure_recorder: Optional recorder for durable failure tracking.
+                If None, uses NoOpFailureRecorder (logging only).
         """
         self.pp_ocr = ocr_engine if ocr_engine is not None else self._build_ocr_engine()
         self.pp_structure = structure_engine if structure_engine is not None else self._build_structure_engine()
+        self.failure_recorder = failure_recorder or NoOpFailureRecorder()
+        self._recent_failures: list[dict[str, Any]] = []
+        self._failure_lock = threading.Lock()
 
     @staticmethod
     def _build_ocr_engine() -> Any:
@@ -138,6 +256,20 @@ class OCRService:
                     "ocr_output_format": output_format,
                 },
             )
+
+            # Record failure durably if recorder is configured
+            from app.core.logging_config import request_id_var
+            request_id = request_id_var.get()
+
+            self.failure_recorder.record_failure(
+                input_name=_input_name(image_input),
+                engine=engine_name,
+                output_format=output_format,
+                error_type=type(cause).__name__,
+                error_message=str(cause),
+                request_id=request_id,
+            )
+
             raise OCRError(
                 input_name=_input_name(image_input),
                 engine=engine_name,
