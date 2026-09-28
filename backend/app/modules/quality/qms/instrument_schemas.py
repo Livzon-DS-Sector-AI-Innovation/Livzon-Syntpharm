@@ -5,6 +5,7 @@
 
 import enum
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -445,10 +446,6 @@ class ReminderConfigListResponse(BaseModel):
 
     items: list[ReminderConfigResponse]
     total: int
-
-
-# ========== API Response Wrappers ==========
-from typing import Any
 
 
 class InstrumentFeishuUserApiResponse(BaseModel):

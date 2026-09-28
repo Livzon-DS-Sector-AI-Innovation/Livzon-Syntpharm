@@ -10,13 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.stability_schemas import (
-    StabilityStudyApiResponse,
-    StabilityStudyListApiResponse,
-    StabilityInspectionApiResponse,
-    StabilityInspectionListApiResponse,
     StabilityApprovalCreate,
+    StabilityInspectionApiResponse,
     StabilityInspectionCreate,
     StabilityInspectionFilter,
     StabilityInspectionListResponse,
@@ -24,6 +20,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityInspectionUpdate,
     StabilitySampleNodeResponse,
     StabilitySampleNodeUpdate,
+    StabilityStudyApiResponse,
     StabilityStudyCreate,
     StabilityStudyFilter,
     StabilityStudyListResponse,
@@ -54,7 +51,7 @@ async def post(
     try:
         user_id = current_user.id if current_user else None
         study = await service.create_study(data, user_id)
-        return ApiResponse(
+        return StabilityStudyApiResponse(
             message="创建成功",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -106,7 +103,7 @@ async def get(  # noqa: F811
     """获取稳定性试验方案详情"""
     try:
         study = await service.get_study(study_id)
-        return ApiResponse(data=StabilityStudyResponse.model_validate(study))
+        return StabilityInspectionApiResponse(data=StabilityStudyResponse.model_validate(study))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -122,7 +119,7 @@ async def put(
     try:
         user_id = current_user.id if current_user else None
         study = await service.update_study(study_id, data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="更新成功",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -155,7 +152,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         study = await service.submit_study(study_id, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="提交成功",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -176,7 +173,7 @@ async def post(  # noqa: F811
         user_name = current_user.name if current_user else ""
         role = "approver"
         study = await service.approve_study(study_id, data, user_id, user_name, role)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="审批完成",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -209,7 +206,7 @@ async def put(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         node = await service.update_sample_node(node_id, data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="更新成功",
             data=StabilitySampleNodeResponse.model_validate(node),
         )
@@ -230,7 +227,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.create_inspection(data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="创建成功",
             data=StabilityInspectionResponse.model_validate(inspection),
         )
@@ -280,7 +277,7 @@ async def get(  # noqa: F811
     """获取稳定性检验记录详情"""
     try:
         inspection = await service.get_inspection(inspection_id)
-        return ApiResponse(data=StabilityInspectionResponse.model_validate(inspection))
+        return StabilityInspectionApiResponse(data=StabilityInspectionResponse.model_validate(inspection))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -296,7 +293,7 @@ async def put(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.update_inspection(inspection_id, data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="更新成功",
             data=StabilityInspectionResponse.model_validate(inspection),
         )
@@ -314,7 +311,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.submit_inspection(inspection_id, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="提交成功",
             data=StabilityInspectionResponse.model_validate(inspection),
         )
@@ -334,6 +331,6 @@ async def get(  # noqa: F811
     """获取稳定性试验趋势数据"""
     try:
         trend_data = await service.get_trend_data(study_id)
-        return ApiResponse(data=trend_data)
+        return StabilityInspectionApiResponse(data=trend_data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

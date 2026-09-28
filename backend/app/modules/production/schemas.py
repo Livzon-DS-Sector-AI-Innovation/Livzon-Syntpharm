@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -504,9 +505,6 @@ class MaterialBalanceCalculate(BaseModel):
 
 
 # ============ API Response Wrappers ============
-
-
-from typing import Any
 
 
 class BatchListApiResponse(BaseModel):

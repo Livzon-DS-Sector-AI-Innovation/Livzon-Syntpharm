@@ -15,6 +15,10 @@ from app.core.response import build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
     EDBOOptimizeApiResponse,
+    PilotWorkflowCreate,
+    PilotWorkflowListResponse,
+    PilotWorkflowResponse,
+    PilotWorkflowStepResponse,
     RdDeliverableTemplateCreate,
     RdDeliverableTemplateResponse,
     RdDeliverableTemplateUpdate,
@@ -62,7 +66,6 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.schemas import ApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -669,13 +672,6 @@ from app.modules.research.pilot_workflow.engine import (  # noqa: E402
 )
 from app.modules.research.pilot_workflow.engine import (  # noqa: E402
     start_workflow as start_workflow_engine,
-)
-from app.modules.research.schemas import (
-    EDBOOptimizeApiResponse,  # noqa: E402
-    PilotWorkflowCreate,
-    PilotWorkflowListResponse,
-    PilotWorkflowResponse,
-    PilotWorkflowStepResponse,
 )
 
 
@@ -1670,11 +1666,6 @@ async def delete_optimization(
 
 # ===== Pilot Workflow Endpoints =====
 
-
-from app.modules.research.schemas import (
-    EDBOOptimizeApiResponse,  # noqa: E402
-    PilotWorkflowCreate,
-)
 
 # Rd Project schemas
 

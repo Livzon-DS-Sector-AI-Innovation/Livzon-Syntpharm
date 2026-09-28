@@ -25,16 +25,11 @@ from app.modules.quality.qms.instrument_schemas import (
     CalibrationRuleCreate,
     CalibrationRuleResponse,
     CalibrationRuleUpdate,
-    # Instrument
-    InstrumentCreate,
-    InstrumentResponse,
-    InstrumentUpdate,
-    # ReminderConfig
-    ReminderConfigCreate,
-    ReminderConfigUpdate,
     # API Response Wrappers
     InstrumentApiResponse,
     InstrumentApprovalApiResponse,
+    # Instrument
+    InstrumentCreate,
     InstrumentFeishuUserApiResponse,
     InstrumentListApiResponse,
     InstrumentMessageApiResponse,
@@ -42,8 +37,13 @@ from app.modules.quality.qms.instrument_schemas import (
     InstrumentRecordListApiResponse,
     InstrumentReminderConfigApiResponse,
     InstrumentReminderConfigListApiResponse,
+    InstrumentResponse,
     InstrumentRuleApiResponse,
     InstrumentRuleListApiResponse,
+    InstrumentUpdate,
+    # ReminderConfig
+    ReminderConfigCreate,
+    ReminderConfigUpdate,
 )
 from app.modules.quality.qms.instrument_service import (
     CalibrationRecordService,
@@ -358,7 +358,9 @@ async def get(  # noqa: F811
 ) -> Any:
     """获取校准规则列表"""
     rules = await service.list_rules(instrument_id)
-    return InstrumentRuleListApiResponse(data=[CalibrationRuleResponse.model_validate(rule).model_dump() for rule in rules])
+    return InstrumentRuleListApiResponse(
+        data=[CalibrationRuleResponse.model_validate(rule).model_dump() for rule in rules]
+    )
 
 
 @router.get("/rules/{instrument_id}", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]

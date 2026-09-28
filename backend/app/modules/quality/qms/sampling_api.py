@@ -10,19 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import success_response
 from app.modules.quality.qms.sampling_schemas import (
-    SamplingOrderApiResponse,
-    SamplingOrderListApiResponse,
     RetentionLedgerFilter,
     SampleRetentionLedgerResponse,
     SamplingApprovalCreate,
-    SamplingApprovalRecordListApiResponse,
     SamplingApprovalRecordResponse,
     SamplingOrderApiResponse,
     SamplingOrderCreate,
     SamplingOrderFilter,
-    SamplingOrderListApiResponse,
     SamplingOrderListResponse,
     SamplingOrderResponse,
     SamplingOrderUpdate,
@@ -46,7 +41,7 @@ async def post(
     try:
         user_id = current_user.id if current_user else None
         order = await service.create_order(data, user_id)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="创建成功",
             data=SamplingOrderResponse.model_validate(order),
         )
@@ -98,7 +93,7 @@ async def get(  # noqa: F811
     """获取取样单详情"""
     try:
         order = await service.get_order(order_id)
-        return ApiResponse(data=SamplingOrderResponse.model_validate(order))
+        return SamplingOrderApiResponse(data=SamplingOrderResponse.model_validate(order))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -114,7 +109,7 @@ async def put(
     try:
         user_id = current_user.id if current_user else None
         order = await service.update_order(order_id, data, user_id)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="更新成功",
             data=SamplingOrderResponse.model_validate(order),
         )
@@ -147,7 +142,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         order = await service.submit_for_approval(order_id, user_id)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="提交成功",
             data=SamplingOrderResponse.model_validate(order),
         )
@@ -168,7 +163,7 @@ async def post(  # noqa: F811
         user_name = current_user.name if current_user else ""
         approver_role = "qa"
         order = await service.approve_order(order_id, data, user_id, user_name, approver_role)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="审批完成",
             data=SamplingOrderResponse.model_validate(order),
         )
