@@ -10,14 +10,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse, success_response
+from app.core.response import success_response
 from app.modules.quality.qms.sampling_schemas import (
+    SamplingOrderApiResponse,
+    SamplingOrderListApiResponse,
     RetentionLedgerFilter,
     SampleRetentionLedgerResponse,
     SamplingApprovalCreate,
+    SamplingApprovalRecordListApiResponse,
     SamplingApprovalRecordResponse,
+    SamplingOrderApiResponse,
     SamplingOrderCreate,
     SamplingOrderFilter,
+    SamplingOrderListApiResponse,
     SamplingOrderListResponse,
     SamplingOrderResponse,
     SamplingOrderUpdate,
@@ -31,7 +36,7 @@ def get_sampling_service(session: AsyncSession = Depends(get_db)) -> SamplingSer
     return SamplingService(session)
 
 
-@router.post("/orders", response_model=ApiResponse, status_code=201)
+@router.post("/orders", response_model=SamplingOrderApiResponse, status_code=201)
 async def post(
     data: SamplingOrderCreate,
     service: SamplingService = Depends(get_sampling_service),
@@ -84,7 +89,7 @@ async def get(
     }
 
 
-@router.get("/orders/{order_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/orders/{order_id}", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     order_id: UUID,
     service: SamplingService = Depends(get_sampling_service),
@@ -98,7 +103,7 @@ async def get(  # noqa: F811
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/orders/{order_id}", response_model=ApiResponse)
+@router.put("/orders/{order_id}", response_model=SamplingOrderApiResponse)
 async def put(
     order_id: UUID,
     data: SamplingOrderUpdate,
@@ -127,12 +132,12 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_order(order_id, user_id)
-        return success_response(message="删除成功")
+        return SamplingOrderApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/orders/{order_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/orders/{order_id}/submit", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     order_id: UUID,
     service: SamplingService = Depends(get_sampling_service),
@@ -150,7 +155,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/orders/{order_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/orders/{order_id}/approve", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     order_id: UUID,
     data: SamplingApprovalCreate,

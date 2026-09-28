@@ -26888,6 +26888,23 @@ export interface components {
          */
         FQCApprovalStatus: "pending" | "approved" | "rejected";
         /**
+         * FQCInspectionApiResponse
+         * @description FQC检验单响应包装
+         */
+        FQCInspectionApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["FQCInspectionResponse"] | null;
+        };
+        /**
          * FQCInspectionCategory
          * @description FQC检验类别
          * @enum {string}
@@ -27122,6 +27139,360 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * FQCInspectionItemResponse
+         * @description FQC检验明细响应
+         */
+        FQCInspectionItemResponse: {
+            /**
+             * Item No
+             * @description 项次
+             */
+            item_no: number;
+            /** @description 检验类别 */
+            inspection_category?: components["schemas"]["FQCInspectionCategory"] | null;
+            /**
+             * Inspection Item
+             * @description 检验项目名称
+             */
+            inspection_item: string;
+            /**
+             * Inspection Method
+             * @description 检验方法
+             */
+            inspection_method?: string | null;
+            /**
+             * Standard Value
+             * @description 标准值/限度
+             */
+            standard_value?: string | null;
+            /**
+             * Unit
+             * @description 单位
+             */
+            unit?: string | null;
+            /**
+             * Measured Value
+             * @description 实测值
+             */
+            measured_value?: string | null;
+            /** @description 单项判定 */
+            result?: components["schemas"]["FQCItemResult"] | null;
+            /**
+             * Is Oos
+             * @description 是否超标
+             * @default false
+             */
+            is_oos: boolean;
+            /**
+             * Oos Description
+             * @description 超标描述
+             */
+            oos_description?: string | null;
+            /**
+             * Is Repeat Test
+             * @description 是否复测
+             * @default false
+             */
+            is_repeat_test: boolean;
+            /**
+             * Repeat Times
+             * @description 复测次数
+             * @default 0
+             */
+            repeat_times: number;
+            /**
+             * Chromatogram Urls
+             * @description 图谱附件JSON
+             */
+            chromatogram_urls?: string | null;
+            /**
+             * Raw Record Url
+             * @description 原始记录PDF URL
+             */
+            raw_record_url?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Fqc Inspection Id
+             * Format: uuid
+             */
+            fqc_inspection_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+        };
+        /**
+         * FQCInspectionListApiResponse
+         * @description FQC检验单列表响应包装
+         */
+        FQCInspectionListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["FQCInspectionListResponse"] | null;
+        };
+        /**
+         * FQCInspectionListResponse
+         * @description FQC检验单列表响应
+         */
+        FQCInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Production Workshop */
+            production_workshop?: string | null;
+            /** Batch Quantity */
+            batch_quantity?: string | null;
+            /** Manufacturing Date */
+            manufacturing_date?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            /** Inspection Date */
+            inspection_date?: string | null;
+            status: components["schemas"]["FQCInspectionStatus"];
+            inspection_conclusion?: components["schemas"]["FQCInspectionConclusion"] | null;
+            release_status?: components["schemas"]["FQCReleaseStatus"] | null;
+            /**
+             * Batch Locked
+             * @default false
+             */
+            batch_locked: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * FQCInspectionResponse
+         * @description FQC检验单响应
+         */
+        FQCInspectionResponse: {
+            /**
+             * Batch Record Id
+             * @description 关联批生产记录ID
+             */
+            batch_record_id?: string | null;
+            /**
+             * Batch Record No
+             * @description 批生产记录编号
+             */
+            batch_record_no?: string | null;
+            /**
+             * Batch No
+             * @description 成品生产批号
+             */
+            batch_no?: string | null;
+            /**
+             * Product Code
+             * @description 成品物料编码
+             */
+            product_code: string;
+            /**
+             * Product Name
+             * @description 产品名称
+             */
+            product_name?: string | null;
+            /**
+             * Sampling Order Id
+             * @description 入库取样单ID
+             */
+            sampling_order_id?: string | null;
+            /**
+             * Sampling Order No
+             * @description 入库取样单号
+             */
+            sampling_order_no?: string | null;
+            /**
+             * Batch Quantity
+             * @description 批量
+             */
+            batch_quantity?: string | null;
+            /**
+             * Production Workshop
+             * @description 生产车间
+             */
+            production_workshop?: string | null;
+            /**
+             * Cas No
+             * @description CAS号
+             */
+            cas_no?: string | null;
+            /**
+             * Manufacturing Date
+             * @description 生产日期
+             */
+            manufacturing_date?: string | null;
+            /**
+             * Expiry Date
+             * @description 有效期至
+             */
+            expiry_date?: string | null;
+            /**
+             * Manufacturer
+             * @description 生产厂家
+             */
+            manufacturer?: string | null;
+            /**
+             * Specification
+             * @description 产品规格/包装
+             */
+            specification?: string | null;
+            /**
+             * Inspection Date
+             * @description 检验日期
+             */
+            inspection_date?: string | null;
+            /**
+             * Inspector Id
+             * @description 检验员ID
+             */
+            inspector_id?: string | null;
+            /**
+             * Inspector Name
+             * @description 检验员
+             */
+            inspector_name?: string | null;
+            /**
+             * Standard Id
+             * @description 检验标准ID
+             */
+            standard_id?: string | null;
+            /**
+             * Standard Name
+             * @description 质量标准名称
+             */
+            standard_name?: string | null;
+            /**
+             * Standard Version
+             * @description 标准版本
+             */
+            standard_version?: string | null;
+            /** @description 检验结论 */
+            inspection_conclusion?: components["schemas"]["FQCInspectionConclusion"] | null;
+            /**
+             * Conclusion Reason
+             * @description 结论说明
+             */
+            conclusion_reason?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Oos Report No
+             * @description OOS报告编号
+             */
+            oos_report_no?: string | null;
+            /**
+             * Reinspection Applied
+             * @description 是否申请复检
+             * @default false
+             */
+            reinspection_applied: boolean;
+            /**
+             * Reinspection Reason
+             * @description 复检原因
+             */
+            reinspection_reason?: string | null;
+            /**
+             * Attachments
+             * @description 附件JSON
+             */
+            attachments?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            status: components["schemas"]["FQCInspectionStatus"];
+            /**
+             * Batch Locked
+             * @default false
+             */
+            batch_locked: boolean;
+            /** Batch Lock Reason */
+            batch_lock_reason?: string | null;
+            /**
+             * Warehouse Isolation
+             * @default false
+             */
+            warehouse_isolation: boolean;
+            release_status?: components["schemas"]["FQCReleaseStatus"] | null;
+            /** Release Reason */
+            release_reason?: string | null;
+            /** Deviation Id */
+            deviation_id?: string | null;
+            /** Report No */
+            report_no?: string | null;
+            /** Report Url */
+            report_url?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["FQCInspectionItemResponse"][];
+        };
+        /**
+         * FQCInspectionStatus
+         * @description FQC检验单状态
+         * @enum {string}
+         */
+        FQCInspectionStatus: "draft" | "submitted" | "qc_supervisor_approved" | "qa_approved" | "final_approved" | "released" | "locked" | "closed" | "rejected";
+        /**
          * FQCInspectionUpdate
          * @description 更新FQC检验单
          */
@@ -27188,6 +27559,12 @@ export interface components {
          * @enum {string}
          */
         FQCItemResult: "pass" | "fail" | "na";
+        /**
+         * FQCReleaseStatus
+         * @description FQC放行状态
+         * @enum {string}
+         */
+        FQCReleaseStatus: "pending_release" | "released" | "not_released";
         /**
          * FailureCodeCreate
          * @description 创建故障代码请求
@@ -29000,6 +29377,23 @@ export interface components {
          */
         IPQCApprovalStatus: "pending" | "approved" | "rejected";
         /**
+         * IPQCInspectionApiResponse
+         * @description IPQC检验单响应包装
+         */
+        IPQCInspectionApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["IPQCInspectionResponse"] | null;
+        };
+        /**
          * IPQCInspectionConclusion
          * @description IPQC检验结论
          * @enum {string}
@@ -29204,6 +29598,265 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * IPQCInspectionItemResponse
+         * @description IPQC检验明细响应
+         */
+        IPQCInspectionItemResponse: {
+            /**
+             * Item No
+             * @description 项次
+             */
+            item_no: number;
+            /**
+             * Inspection Item
+             * @description 检验项目名称
+             */
+            inspection_item: string;
+            /**
+             * Inspection Method
+             * @description 检验方法
+             */
+            inspection_method?: string | null;
+            /**
+             * Standard Value
+             * @description 标准值
+             */
+            standard_value?: string | null;
+            /**
+             * Upper Limit
+             * @description 上限
+             */
+            upper_limit?: string | null;
+            /**
+             * Lower Limit
+             * @description 下限
+             */
+            lower_limit?: string | null;
+            /**
+             * Unit
+             * @description 单位
+             */
+            unit?: string | null;
+            /**
+             * Measured Value
+             * @description 实测值
+             */
+            measured_value?: string | null;
+            /** @description 单项判定 */
+            result?: components["schemas"]["IPQCItemResult"] | null;
+            /**
+             * Is Repeat Test
+             * @description 是否复测
+             * @default false
+             */
+            is_repeat_test: boolean;
+            /**
+             * Repeat Times
+             * @description 复测次数
+             * @default 0
+             */
+            repeat_times: number;
+            /**
+             * Raw Data
+             * @description 原始数据记录
+             */
+            raw_data?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Ipqc Inspection Id
+             * Format: uuid
+             */
+            ipqc_inspection_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+        };
+        /**
+         * IPQCInspectionResponse
+         * @description IPQC检验单响应
+         */
+        IPQCInspectionResponse: {
+            /**
+             * Batch Record Id
+             * @description 关联批次生产记录ID
+             */
+            batch_record_id?: string | null;
+            /**
+             * Batch Record No
+             * @description 批次生产记录单号
+             */
+            batch_record_no?: string | null;
+            /**
+             * Batch No
+             * @description 批次号
+             */
+            batch_no?: string | null;
+            /**
+             * Product Code
+             * @description 产品编码
+             */
+            product_code: string;
+            /**
+             * Product Name
+             * @description 产品名称
+             */
+            product_name?: string | null;
+            /**
+             * Product Specification
+             * @description 产品规格
+             */
+            product_specification?: string | null;
+            /**
+             * Process Stage
+             * @description 工序/工段
+             */
+            process_stage?: string | null;
+            /**
+             * Sampling Point
+             * @description 取样点
+             */
+            sampling_point?: string | null;
+            /**
+             * Sampling No
+             * @description 取样单号
+             */
+            sampling_no?: string | null;
+            /**
+             * Sampling Time
+             * @description 取样时间
+             */
+            sampling_time?: string | null;
+            /**
+             * Sampling Quantity
+             * @description 取样数量
+             */
+            sampling_quantity?: string | null;
+            /**
+             * Sampling Unit
+             * @description 取样单位
+             */
+            sampling_unit?: string | null;
+            /**
+             * Sampling Location
+             * @description 取样位置
+             */
+            sampling_location?: string | null;
+            /**
+             * Production Date
+             * @description 生产日期
+             */
+            production_date?: string | null;
+            /**
+             * Inspection Date
+             * @description 检验日期
+             */
+            inspection_date?: string | null;
+            /**
+             * Inspector Id
+             * @description 检验员ID
+             */
+            inspector_id?: string | null;
+            /**
+             * Inspector Name
+             * @description 检验员姓名
+             */
+            inspector_name?: string | null;
+            /**
+             * Standard Id
+             * @description 检验标准ID
+             */
+            standard_id?: string | null;
+            /**
+             * Standard Name
+             * @description 检验标准名称
+             */
+            standard_name?: string | null;
+            /**
+             * Standard Version
+             * @description 标准版本
+             */
+            standard_version?: string | null;
+            /** @description 检验结论 */
+            inspection_conclusion?: components["schemas"]["IPQCInspectionConclusion"] | null;
+            /**
+             * Conclusion Reason
+             * @description 结论说明
+             */
+            conclusion_reason?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Oos Report No
+             * @description OOS报告编号
+             */
+            oos_report_no?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            status: components["schemas"]["IPQCInspectionStatus"];
+            /**
+             * Batch Locked
+             * @default false
+             */
+            batch_locked: boolean;
+            /** Batch Lock Reason */
+            batch_lock_reason?: string | null;
+            /** Deviation Id */
+            deviation_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["IPQCInspectionItemResponse"][];
+        };
+        /**
+         * IPQCInspectionStatus
+         * @description IPQC检验单状态
+         * @enum {string}
+         */
+        IPQCInspectionStatus: "draft" | "submitted" | "workshop_approved" | "qc_supervisor_approved" | "qa_final_approved" | "rejected";
+        /**
          * IPQCInspectionUpdate
          * @description 更新IPQC检验单
          */
@@ -29309,6 +29962,23 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * IQCInspectionApiResponse
+         * @description IQC检验单响应包装
+         */
+        IQCInspectionApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["IQCInspectionResponse"] | null;
         };
         /**
          * IQCInspectionCreate
@@ -29479,6 +30149,224 @@ export interface components {
              * @description 备注
              */
             remark?: string | null;
+        };
+        /**
+         * IQCInspectionItemResponse
+         * @description IQC检验明细响应
+         */
+        IQCInspectionItemResponse: {
+            /**
+             * Item No
+             * @description 项次
+             */
+            item_no: number;
+            /**
+             * Inspection Item
+             * @description 检验项目名称
+             */
+            inspection_item: string;
+            /**
+             * Inspection Method
+             * @description 检验方法
+             */
+            inspection_method?: string | null;
+            /**
+             * Standard Value
+             * @description 标准值
+             */
+            standard_value?: string | null;
+            /**
+             * Unit
+             * @description 单位
+             */
+            unit?: string | null;
+            /**
+             * Measured Value
+             * @description 实测值
+             */
+            measured_value?: string | null;
+            /** @description 单项判定 */
+            result?: components["schemas"]["ItemResult"] | null;
+            /**
+             * Is Repeat Test
+             * @description 是否复测
+             * @default false
+             */
+            is_repeat_test: boolean;
+            /**
+             * Raw Data
+             * @description 原始数据记录
+             */
+            raw_data?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Iqc Inspection Id
+             * Format: uuid
+             */
+            iqc_inspection_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+        };
+        /**
+         * IQCInspectionResponse
+         * @description IQC检验单响应
+         */
+        IQCInspectionResponse: {
+            source_type: components["schemas"]["app__modules__quality__qms__iqc_schemas__SourceType"];
+            /**
+             * Source No
+             * @description 来源单号
+             */
+            source_no?: string | null;
+            /**
+             * Sampling Order Id
+             * @description 关联取样单ID
+             */
+            sampling_order_id?: string | null;
+            /**
+             * Sampling Order No
+             * @description 关联取样单号
+             */
+            sampling_order_no?: string | null;
+            /**
+             * Material Code
+             * @description 物料编码
+             */
+            material_code: string;
+            /**
+             * Material Name
+             * @description 物料名称
+             */
+            material_name?: string | null;
+            /** @description 物料类别 */
+            material_category?: components["schemas"]["app__modules__quality__qms__iqc_schemas__MaterialCategory"] | null;
+            /**
+             * Specification
+             * @description 规格
+             */
+            specification?: string | null;
+            /**
+             * Batch No
+             * @description 批次号
+             */
+            batch_no?: string | null;
+            /**
+             * Supplier Code
+             * @description 供应商编码
+             */
+            supplier_code?: string | null;
+            /**
+             * Supplier Name
+             * @description 供应商名称
+             */
+            supplier_name?: string | null;
+            /**
+             * Manufacturing Date
+             * @description 生产日期
+             */
+            manufacturing_date?: string | null;
+            /**
+             * Expiry Date
+             * @description 有效期
+             */
+            expiry_date?: string | null;
+            /**
+             * Quantity Received
+             * @description 到货数量
+             */
+            quantity_received?: string | null;
+            /**
+             * Unit
+             * @description 单位
+             */
+            unit?: string | null;
+            /**
+             * Inspection Date
+             * @description 检验日期
+             */
+            inspection_date?: string | null;
+            /**
+             * Inspector Id
+             * @description 检验员ID
+             */
+            inspector_id?: string | null;
+            /**
+             * Inspector Name
+             * @description 检验员姓名
+             */
+            inspector_name?: string | null;
+            /**
+             * Standard Id
+             * @description 检验标准ID
+             */
+            standard_id?: string | null;
+            /**
+             * Standard Name
+             * @description 检验标准名称
+             */
+            standard_name?: string | null;
+            /**
+             * Standard Version
+             * @description 标准版本
+             */
+            standard_version?: string | null;
+            /** @description 检验结论 */
+            inspection_conclusion?: components["schemas"]["InspectionConclusion"] | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            status: components["schemas"]["InspectionStatus"];
+            /** Deviation Id */
+            deviation_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["IQCInspectionItemResponse"][];
         };
         /**
          * IQCInspectionUpdate
@@ -29926,7 +30814,7 @@ export interface components {
              * @description CAS号
              */
             cas_no?: string | null;
-            material_category: components["schemas"]["MaterialCategory-Output"];
+            material_category: components["schemas"]["app__modules__quality__qms__schemas__MaterialCategory"];
             /** @description 执行药典 */
             pharmacopeia?: components["schemas"]["Pharmacopeia"] | null;
             /**
@@ -30060,6 +30948,12 @@ export interface components {
              */
             items?: components["schemas"]["InspectionStandardItemCreate"][] | null;
         };
+        /**
+         * InspectionStatus
+         * @description 检验单状态
+         * @enum {string}
+         */
+        InspectionStatus: "draft" | "submitted" | "department_approved" | "qa_approved" | "final_approved" | "rejected";
         /**
          * InspectionTaskClose
          * @description 关闭任务请求
@@ -30238,6 +31132,46 @@ export interface components {
             is_active?: boolean | null;
         };
         /**
+         * InstrumentApiResponse
+         * @description 仪器响应包装
+         */
+        InstrumentApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentApprovalApiResponse
+         * @description 审批响应包装
+         */
+        InstrumentApprovalApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
          * InstrumentCategory
          * @description 仪器分类
          * @enum {string}
@@ -30330,6 +31264,184 @@ export interface components {
              * @description 备注
              */
             remark?: string | null;
+        };
+        /**
+         * InstrumentFeishuUserApiResponse
+         * @description 飞书用户查询响应包装
+         */
+        InstrumentFeishuUserApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentListApiResponse
+         * @description 仪器列表响应包装
+         */
+        InstrumentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentMessageApiResponse
+         * @description 消息响应包装
+         */
+        InstrumentMessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
+         * InstrumentRecordApiResponse
+         * @description 校准记录响应包装
+         */
+        InstrumentRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentRecordListApiResponse
+         * @description 校准记录列表响应包装
+         */
+        InstrumentRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentReminderConfigApiResponse
+         * @description 提醒配置响应包装
+         */
+        InstrumentReminderConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentReminderConfigListApiResponse
+         * @description 提醒配置列表响应包装
+         */
+        InstrumentReminderConfigListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentRuleApiResponse
+         * @description 校准规则响应包装
+         */
+        InstrumentRuleApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * InstrumentRuleListApiResponse
+         * @description 校准规则列表响应包装
+         */
+        InstrumentRuleListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | null;
         };
         /**
          * InstrumentUpdate
@@ -31439,12 +32551,6 @@ export interface components {
              */
             notes?: string | null;
         };
-        /**
-         * MaterialCategory
-         * @description 物料分类
-         * @enum {string}
-         */
-        "MaterialCategory-Output": "raw_material" | "excipient" | "packaging_material" | "intermediate" | "finished_product";
         /**
          * MaterialConsumeItem
          * @description 单条领料项
@@ -38547,6 +39653,23 @@ export interface components {
             created_at: string;
         };
         /**
+         * SamplingOrderApiResponse
+         * @description 取样单响应包装
+         */
+        SamplingOrderApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["SamplingOrderResponse"] | null;
+        };
+        /**
          * SamplingOrderCreate
          * @description 创建取样单
          */
@@ -38685,6 +39808,184 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * SamplingOrderItemResponse
+         * @description 取样明细响应
+         */
+        SamplingOrderItemResponse: {
+            /**
+             * Item No
+             * @description 项次
+             */
+            item_no: number;
+            /**
+             * Sample No
+             * @description 样品编号
+             */
+            sample_no: string;
+            /**
+             * Sampling Count
+             * @description 取样份数
+             */
+            sampling_count?: number | null;
+            /**
+             * Retention Count
+             * @description 留样份数
+             */
+            retention_count?: number | null;
+            /**
+             * Retention Location
+             * @description 留样存放位置
+             */
+            retention_location?: string | null;
+            /** @description 样品状态 */
+            sample_status?: components["schemas"]["SampleStatus"] | null;
+            /**
+             * Retention Date
+             * @description 留样日期
+             */
+            retention_date?: string | null;
+            /**
+             * Expiry Date
+             * @description 留样有效期
+             */
+            expiry_date?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Sampling Order Id
+             * Format: uuid
+             */
+            sampling_order_id: string;
+            /** Is Expired */
+            is_expired: boolean;
+            /** Disposal Date */
+            disposal_date?: string | null;
+            /** Disposal Method */
+            disposal_method?: string | null;
+        };
+        /**
+         * SamplingOrderResponse
+         * @description 取样单响应
+         */
+        SamplingOrderResponse: {
+            source_type: components["schemas"]["app__modules__quality__qms__sampling_schemas__SourceType"];
+            /**
+             * Source No
+             * @description 关联单号
+             */
+            source_no?: string | null;
+            /**
+             * Material Code
+             * @description 物料编码
+             */
+            material_code: string;
+            /**
+             * Material Name
+             * @description 物料名称
+             */
+            material_name?: string | null;
+            /**
+             * Material Category
+             * @description 物料类别
+             */
+            material_category?: string | null;
+            /**
+             * Batch No
+             * @description 批次号
+             */
+            batch_no?: string | null;
+            /**
+             * Specification
+             * @description 规格
+             */
+            specification?: string | null;
+            /**
+             * Unit
+             * @description 单位
+             */
+            unit?: string | null;
+            /**
+             * Quantity
+             * @description 批量/数量
+             */
+            quantity?: string | null;
+            sampling_source: components["schemas"]["SamplingSource"];
+            /**
+             * Sampling Quantity
+             * @description 取样量
+             */
+            sampling_quantity?: string | null;
+            /**
+             * Sampling Location
+             * @description 取样地点
+             */
+            sampling_location?: string | null;
+            /**
+             * Sampling Date
+             * @description 取样日期
+             */
+            sampling_date?: string | null;
+            /**
+             * Sampler Id
+             * @description 取样人ID
+             */
+            sampler_id?: string | null;
+            /**
+             * Sampler Name
+             * @description 取样人姓名
+             */
+            sampler_name?: string | null;
+            /** @description 取样判定 */
+            sampling_result?: components["schemas"]["SamplingResult"] | null;
+            /**
+             * Exception Reasons
+             * @description 异常原因(JSON数组)
+             */
+            exception_reasons?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Order No */
+            order_no: string;
+            status: components["schemas"]["SamplingStatus"];
+            /** Deviation Id */
+            deviation_id?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Items
+             * @default []
+             */
+            items: components["schemas"]["SamplingOrderItemResponse"][];
+        };
+        /**
          * SamplingOrderUpdate
          * @description 更新取样单
          */
@@ -38737,6 +40038,12 @@ export interface components {
          * @enum {string}
          */
         SamplingSource: "purchased_material" | "workshop_intermediate" | "finished_product";
+        /**
+         * SamplingStatus
+         * @description 取样单状态
+         * @enum {string}
+         */
+        SamplingStatus: "draft" | "pending_warehouse" | "pending_qa" | "approved" | "effective" | "rejected";
         /**
          * ScheduledJobCreate
          * @description 创建定时任务
@@ -40735,6 +42042,23 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * StabilityStudyApiResponse
+         * @description 稳定性研究响应包装
+         */
+        StabilityStudyApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["StabilityStudyResponse"] | null;
+        };
+        /**
          * StabilityStudyConclusion
          * @description 稳定性试验结论
          * @enum {string}
@@ -40855,6 +42179,149 @@ export interface components {
              */
             sample_nodes?: components["schemas"]["StabilitySampleNodeCreate"][];
         };
+        /**
+         * StabilityStudyResponse
+         * @description 稳定性试验响应
+         */
+        StabilityStudyResponse: {
+            /**
+             * Product Code
+             * @description 产品编码
+             */
+            product_code: string;
+            /**
+             * Product Name
+             * @description 产品名称
+             */
+            product_name?: string | null;
+            /**
+             * Product Category
+             * @description 产品类别
+             */
+            product_category?: string | null;
+            /**
+             * Batch No
+             * @description 批号
+             */
+            batch_no: string;
+            /**
+             * Batch Quantity
+             * @description 批量
+             */
+            batch_quantity?: string | null;
+            /**
+             * Packaging Spec
+             * @description 包装规格
+             */
+            packaging_spec?: string | null;
+            /** @description 试验类型 */
+            study_type: components["schemas"]["StabilityStudyType"];
+            /**
+             * Temperature
+             * @description 温度条件
+             */
+            temperature?: string | null;
+            /**
+             * Humidity
+             * @description 湿度条件
+             */
+            humidity?: string | null;
+            /**
+             * Start Date
+             * @description 试验开始日期
+             */
+            start_date?: string | null;
+            /**
+             * End Date
+             * @description 试验结束日期
+             */
+            end_date?: string | null;
+            /**
+             * Expiry Date
+             * @description 有效期
+             */
+            expiry_date?: string | null;
+            /**
+             * Sample Intervals
+             * @description 取样周期节点，逗号分隔或数组
+             */
+            sample_intervals?: string | number[] | null;
+            /**
+             * Standard Id
+             * @description 检验标准ID
+             */
+            standard_id?: string | null;
+            /**
+             * Standard Name
+             * @description 质量标准名称
+             */
+            standard_name?: string | null;
+            /**
+             * Standard Version
+             * @description 标准版本
+             */
+            standard_version?: string | null;
+            /**
+             * Developer Id
+             * @description 研发人员ID
+             */
+            developer_id?: string | null;
+            /**
+             * Developer Name
+             * @description 研发人员
+             */
+            developer_name?: string | null;
+            /** @description 试验结论 */
+            study_conclusion?: components["schemas"]["StabilityStudyConclusion"] | null;
+            /**
+             * Conclusion Reason
+             * @description 结论说明
+             */
+            conclusion_reason?: string | null;
+            /**
+             * Remark
+             * @description 备注
+             */
+            remark?: string | null;
+            /**
+             * Attachments
+             * @description 附件JSON
+             */
+            attachments?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Study No */
+            study_no: string;
+            status: components["schemas"]["StabilityStudyStatus"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Created By */
+            created_by?: string | null;
+            /** Updated By */
+            updated_by?: string | null;
+            /**
+             * Sample Nodes
+             * @default []
+             */
+            sample_nodes: components["schemas"]["StabilitySampleNodeResponse"][];
+        };
+        /**
+         * StabilityStudyStatus
+         * @description 稳定性试验状态
+         * @enum {string}
+         */
+        StabilityStudyStatus: "draft" | "submitted" | "developer_approved" | "qc_supervisor_approved" | "qa_approved" | "final_approved" | "active" | "completed" | "closed" | "rejected";
         /**
          * StabilityStudyType
          * @description 稳定性试验类型
@@ -72994,7 +74461,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73027,7 +74494,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73064,7 +74531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73130,7 +74597,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73167,7 +74634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73372,7 +74839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73405,7 +74872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73442,7 +74909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73508,7 +74975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73545,7 +75012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73671,7 +75138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73704,7 +75171,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73741,7 +75208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73807,7 +75274,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73844,7 +75311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73913,7 +75380,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73946,7 +75413,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74004,9 +75471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["FQCInspectionListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74041,7 +75506,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74074,7 +75539,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74111,7 +75576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74177,7 +75642,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74214,7 +75679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74283,7 +75748,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74319,7 +75784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74355,7 +75820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74388,7 +75853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74477,7 +75942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74510,7 +75975,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74547,7 +76012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74613,7 +76078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74650,7 +76115,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74720,7 +76185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74807,7 +76272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74840,7 +76305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74877,7 +76342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74910,7 +76375,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74943,7 +76408,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79609,7 +81074,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentFeishuUserApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79638,7 +81103,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentReminderConfigListApiResponse"];
                 };
             };
         };
@@ -79662,7 +81127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentReminderConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79697,7 +81162,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentReminderConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79728,7 +81193,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79774,7 +81239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79809,7 +81274,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79842,7 +81307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79882,7 +81347,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79915,7 +81380,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79951,7 +81416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79983,7 +81448,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80018,7 +81483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80049,7 +81514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80086,7 +81551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80149,7 +81614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80199,7 +81664,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80234,7 +81699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80265,7 +81730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80302,7 +81767,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80366,7 +81831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80406,7 +81871,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApprovalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80437,7 +81902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80474,7 +81939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80538,7 +82003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80570,7 +82035,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80602,7 +82067,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80644,7 +82109,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80673,7 +82138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
         };

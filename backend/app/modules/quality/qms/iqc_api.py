@@ -12,6 +12,8 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser
 from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.iqc_schemas import (
+    IQCInspectionApiResponse,
+    IQCInspectionListApiResponse,
     IQCApprovalCreate,
     IQCApprovalRecordResponse,
     IQCInspectionCreate,
@@ -29,7 +31,7 @@ def get_iqc_service(session: AsyncSession = Depends(get_db)) -> IQCInspectionSer
     return IQCInspectionService(session)
 
 
-@router.post("/inspections", response_model=ApiResponse, status_code=201)
+@router.post("/inspections", response_model=IQCInspectionApiResponse, status_code=201)
 async def post(
     data: IQCInspectionCreate,
     service: IQCInspectionService = Depends(get_iqc_service),
@@ -84,7 +86,7 @@ async def get(
     }
 
 
-@router.get("/inspections/{inspection_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/inspections/{inspection_id}", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
     service: IQCInspectionService = Depends(get_iqc_service),
@@ -98,7 +100,7 @@ async def get(  # noqa: F811
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/inspections/{inspection_id}", response_model=ApiResponse)
+@router.put("/inspections/{inspection_id}", response_model=IQCInspectionApiResponse)
 async def put(
     inspection_id: UUID,
     data: IQCInspectionUpdate,
@@ -127,12 +129,12 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_inspection(inspection_id, user_id)
-        return success_response(message="删除成功")
+        return IQCInspectionApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/submit", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     service: IQCInspectionService = Depends(get_iqc_service),
@@ -150,7 +152,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/approve", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: IQCApprovalCreate,

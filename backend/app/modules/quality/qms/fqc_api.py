@@ -10,15 +10,19 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse, success_response
+from app.core.response import success_response
 from app.modules.quality.qms.fqc_schemas import (
     FQCApprovalCreate,
+    FQCApprovalRecordListApiResponse,
     FQCApprovalRecordResponse,
+    FQCInspectionApiResponse,
     FQCInspectionCreate,
     FQCInspectionFilter,
+    FQCInspectionListApiResponse,
     FQCInspectionListResponse,
     FQCInspectionResponse,
     FQCInspectionUpdate,
+    FQCMessageApiResponse,
 )
 from app.modules.quality.qms.fqc_service import FQCInspectionService
 
@@ -29,7 +33,7 @@ def get_fqc_service(session: AsyncSession = Depends(get_db)) -> FQCInspectionSer
     return FQCInspectionService(session)
 
 
-@router.post("/inspections", response_model=ApiResponse, status_code=201)
+@router.post("/inspections", response_model=FQCInspectionApiResponse, status_code=201)
 async def post(
     data: FQCInspectionCreate,
     service: FQCInspectionService = Depends(get_fqc_service),
@@ -39,7 +43,7 @@ async def post(
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.create_inspection(data, user_id)
-        return ApiResponse(
+        return FQCInspectionApiResponse(
             message="创建成功",
             data=FQCInspectionResponse.model_validate(inspection),
         )
@@ -47,7 +51,7 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/inspections", response_model=dict)
+@router.get("/inspections", response_model=FQCInspectionListApiResponse)
 async def get(
     inspection_no: str | None = Query(None, description="检验单号"),
     batch_no: str | None = Query(None, description="成品生产批号"),
@@ -80,15 +84,17 @@ async def get(
         end_date=datetime.fromisoformat(end_date) if end_date else None,
     )
     items, total = await service.get_inspection_list(filters, (page - 1) * page_size, page_size)
-    return {
-        "items": [FQCInspectionListResponse.model_validate(item) for item in items],
-        "total": total,
-        "page": page,
-        "page_size": page_size,
-    }
+    return FQCInspectionListApiResponse(
+        data=FQCInspectionListResponse(
+            items=[FQCInspectionResponse.model_validate(item) for item in items],
+            total=total,
+            page=page,
+            page_size=page_size,
+        )
+    )
 
 
-@router.get("/inspections/{inspection_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/inspections/{inspection_id}", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
     service: FQCInspectionService = Depends(get_fqc_service),
@@ -102,7 +108,7 @@ async def get(  # noqa: F811
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/inspections/{inspection_id}", response_model=ApiResponse)
+@router.put("/inspections/{inspection_id}", response_model=FQCInspectionApiResponse)
 async def put(
     inspection_id: UUID,
     data: FQCInspectionUpdate,
@@ -131,12 +137,12 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_inspection(inspection_id, user_id)
-        return success_response(message="删除成功")
+        return FQCInspectionApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/submit", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     service: FQCInspectionService = Depends(get_fqc_service),
@@ -154,7 +160,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/approve", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: FQCApprovalCreate,
@@ -189,7 +195,7 @@ async def handler(
     return approvals
 
 
-@router.post("/inspections/{inspection_id}/reinspection", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/reinspection", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     reason: str = Query(..., description="复检原因"),
@@ -208,7 +214,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/release", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/release", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     release_reason: str | None = Query(None, description="放行说明"),
@@ -227,7 +233,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/lock-batch", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/lock-batch", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     reason: str = Query(..., description="锁定原因"),
@@ -246,7 +252,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/unlock-batch", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/unlock-batch", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     service: FQCInspectionService = Depends(get_fqc_service),
