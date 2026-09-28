@@ -11,30 +11,48 @@ from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.production.schemas import (
+    BatchApiResponse,
     BatchCreate,
+    BatchListApiResponse,
+    BatchMaterialApiResponse,
     BatchMaterialCreate,
+    BatchMaterialListApiResponse,
     BatchMaterialResponse,
     BatchMaterialUpdate,
     BatchResponse,
     BatchStatusUpdate,
     BatchUpdate,
+    MaterialBalanceApiResponse,
     MaterialBalanceResponse,
     MaterialBalanceUpdate,
+    MessageApiResponse,
+    PlanTaskApiResponse,
     PlanTaskCreate,
+    PlanTaskListApiResponse,
     PlanTaskResponse,
     PlanTaskUpdate,
+    ProcessParameterApiResponse,
     ProcessParameterCreate,
+    ProcessParameterListApiResponse,
     ProcessParameterResponse,
+    ProcessSpecApiResponse,
     ProcessSpecCreate,
+    ProcessSpecListApiResponse,
     ProcessSpecResponse,
     ProcessSpecUpdate,
+    ProcessStepApiResponse,
     ProcessStepCreate,
+    ProcessStepListApiResponse,
     ProcessStepResponse,
     ProcessStepUpdate,
+    ProductionPlanApiResponse,
     ProductionPlanCreate,
+    ProductionPlanListApiResponse,
     ProductionPlanResponse,
     ProductionPlanUpdate,
+    ProductionRecordApiResponse,
     ProductionRecordCreate,
+    ProductionRecordListApiResponse,
     ProductionRecordResponse,
     ProductionRecordUpdate,
 )
@@ -46,7 +64,7 @@ router = APIRouter()
 # ============ Batch Routes ============
 
 
-@router.get("/batches", response_model=ApiResponse, summary="获取批次列表")
+@router.get("/batches", response_model=BatchListApiResponse, summary="获取批次列表")
 async def get(
     current_user: RequiredUser,
     page: int = Query(1, ge=1),
@@ -75,7 +93,7 @@ async def get(
     )
 
 
-@router.get("/batches/{batch_id}", response_model=ApiResponse, summary="获取批次详情")  # type: ignore[no-redef]
+@router.get("/batches/{batch_id}", response_model=BatchApiResponse, summary="获取批次详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     batch_id: uuid.UUID,
     current_user: RequiredUser,
@@ -93,7 +111,7 @@ async def get(  # noqa: F811
     return ApiResponse(data=BatchResponse.model_validate(batch))
 
 
-@router.post("/batches", response_model=ApiResponse, summary="创建批次")
+@router.post("/batches", response_model=BatchApiResponse, summary="创建批次")
 async def post(
     data: BatchCreate,
     current_user: RequiredUser,
@@ -110,7 +128,7 @@ async def post(
     return ApiResponse(data=BatchResponse.model_validate(batch))
 
 
-@router.put("/batches/{batch_id}", response_model=ApiResponse, summary="更新批次")
+@router.put("/batches/{batch_id}", response_model=BatchApiResponse, summary="更新批次")
 async def put(
     batch_id: uuid.UUID,
     data: BatchUpdate,
@@ -131,7 +149,7 @@ async def put(
     return ApiResponse(data=BatchResponse.model_validate(batch))
 
 
-@router.put("/batches/{batch_id}/status", response_model=ApiResponse, summary="更新批次状态")
+@router.put("/batches/{batch_id}/status", response_model=BatchApiResponse, summary="更新批次状态")
 async def handler(
     batch_id: uuid.UUID,
     data: BatchStatusUpdate,
@@ -156,7 +174,7 @@ async def handler(
         return ApiResponse(code=400, message=str(e))
 
 
-@router.delete("/batches/{batch_id}", response_model=ApiResponse, summary="删除批次")
+@router.delete("/batches/{batch_id}", response_model=MessageApiResponse, summary="删除批次")
 async def delete(
     batch_id: uuid.UUID,
     current_user: RequiredUser,
@@ -181,7 +199,7 @@ async def delete(
 
 @router.get(  # type: ignore[no-redef]
     "/batches/{batch_id}/materials",
-    response_model=ApiResponse,
+    response_model=BatchMaterialListApiResponse,
     summary="获取批次物料列表",
 )
 async def handler(  # noqa: F811
@@ -199,7 +217,7 @@ async def handler(  # noqa: F811
 
 
 @router.post(  # type: ignore[no-redef]
-    "/batches/{batch_id}/materials", response_model=ApiResponse, summary="添加批次物料"
+    "/batches/{batch_id}/materials", response_model=BatchMaterialApiResponse, summary="添加批次物料"
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
@@ -219,7 +237,7 @@ async def handler(  # noqa: F811
 
 
 @router.put(  # type: ignore[no-redef]
-    "/materials/{material_id}", response_model=ApiResponse, summary="更新批次物料"
+    "/materials/{material_id}", response_model=BatchMaterialApiResponse, summary="更新批次物料"
 )
 async def handler(  # noqa: F811
     material_id: uuid.UUID,
@@ -244,7 +262,7 @@ async def handler(  # noqa: F811
 
 
 @router.delete(  # type: ignore[no-redef]
-    "/materials/{material_id}", response_model=ApiResponse, summary="删除批次物料"
+    "/materials/{material_id}", response_model=MessageApiResponse, summary="删除批次物料"
 )
 async def handler(  # noqa: F811
     material_id: uuid.UUID,
@@ -268,7 +286,7 @@ async def handler(  # noqa: F811
 # ============ ProductionPlan Routes ============
 
 
-@router.get("/plans", response_model=ApiResponse, summary="获取生产计划列表")  # type: ignore[no-redef]
+@router.get("/plans", response_model=ProductionPlanListApiResponse, summary="获取生产计划列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     page: int = Query(1, ge=1),
@@ -291,7 +309,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.get("/plans/{plan_id}", response_model=ApiResponse, summary="获取生产计划详情")  # type: ignore[no-redef]
+@router.get("/plans/{plan_id}", response_model=ProductionPlanApiResponse, summary="获取生产计划详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     plan_id: uuid.UUID,
     current_user: RequiredUser,
@@ -309,7 +327,7 @@ async def get(  # noqa: F811
     return ApiResponse(data=ProductionPlanResponse.model_validate(plan))
 
 
-@router.post("/plans", response_model=ApiResponse, summary="创建生产计划")  # type: ignore[no-redef]
+@router.post("/plans", response_model=ProductionPlanApiResponse, summary="创建生产计划")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProductionPlanCreate,
     current_user: RequiredUser,
@@ -326,7 +344,7 @@ async def post(  # noqa: F811
     return ApiResponse(data=ProductionPlanResponse.model_validate(plan))
 
 
-@router.put("/plans/{plan_id}", response_model=ApiResponse, summary="更新生产计划")  # type: ignore[no-redef]
+@router.put("/plans/{plan_id}", response_model=ProductionPlanApiResponse, summary="更新生产计划")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     plan_id: uuid.UUID,
     data: ProductionPlanUpdate,
@@ -347,7 +365,7 @@ async def put(  # noqa: F811
     return ApiResponse(data=ProductionPlanResponse.model_validate(plan))
 
 
-@router.delete("/plans/{plan_id}", response_model=ApiResponse, summary="删除生产计划")  # type: ignore[no-redef]
+@router.delete("/plans/{plan_id}", response_model=MessageApiResponse, summary="删除生产计划")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     plan_id: uuid.UUID,
     current_user: RequiredUser,
@@ -371,7 +389,7 @@ async def delete(  # noqa: F811
 
 
 @router.get(  # type: ignore[no-redef]
-    "/plans/{plan_id}/tasks", response_model=ApiResponse, summary="获取计划任务列表"
+    "/plans/{plan_id}/tasks", response_model=PlanTaskListApiResponse, summary="获取计划任务列表"
 )
 async def handler(  # noqa: F811
     plan_id: uuid.UUID,
@@ -387,7 +405,7 @@ async def handler(  # noqa: F811
     return ApiResponse(data=[PlanTaskResponse.model_validate(t) for t in tasks])
 
 
-@router.post("/tasks", response_model=ApiResponse, summary="创建计划任务")  # type: ignore[no-redef]
+@router.post("/tasks", response_model=PlanTaskApiResponse, summary="创建计划任务")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: PlanTaskCreate,
     current_user: RequiredUser,
@@ -404,7 +422,7 @@ async def post(  # noqa: F811
     return ApiResponse(data=PlanTaskResponse.model_validate(task))
 
 
-@router.put("/tasks/{task_id}", response_model=ApiResponse, summary="更新计划任务")  # type: ignore[no-redef]
+@router.put("/tasks/{task_id}", response_model=PlanTaskApiResponse, summary="更新计划任务")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     task_id: uuid.UUID,
     data: PlanTaskUpdate,
@@ -425,7 +443,7 @@ async def put(  # noqa: F811
     return ApiResponse(data=PlanTaskResponse.model_validate(task))
 
 
-@router.delete("/tasks/{task_id}", response_model=ApiResponse, summary="删除计划任务")  # type: ignore[no-redef]
+@router.delete("/tasks/{task_id}", response_model=MessageApiResponse, summary="删除计划任务")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     task_id: uuid.UUID,
     current_user: RequiredUser,
@@ -448,7 +466,7 @@ async def delete(  # noqa: F811
 # ============ ProcessSpec Routes ============
 
 
-@router.get("/process-specs", response_model=ApiResponse, summary="获取工艺规程列表")  # type: ignore[no-redef]
+@router.get("/process-specs", response_model=ProcessSpecListApiResponse, summary="获取工艺规程列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     page: int = Query(1, ge=1),
@@ -472,7 +490,7 @@ async def get(  # noqa: F811
 
 
 @router.get(  # type: ignore[no-redef]
-    "/process-specs/{spec_id}", response_model=ApiResponse, summary="获取工艺规程详情"
+    "/process-specs/{spec_id}", response_model=ProcessSpecApiResponse, summary="获取工艺规程详情"
 )
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
@@ -491,7 +509,7 @@ async def handler(  # noqa: F811
     return ApiResponse(data=ProcessSpecResponse.model_validate(spec))
 
 
-@router.post("/process-specs", response_model=ApiResponse, summary="创建工艺规程")  # type: ignore[no-redef]
+@router.post("/process-specs", response_model=ProcessSpecApiResponse, summary="创建工艺规程")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProcessSpecCreate,
     current_user: RequiredUser,
@@ -509,7 +527,7 @@ async def post(  # noqa: F811
 
 
 @router.put(  # type: ignore[no-redef]
-    "/process-specs/{spec_id}", response_model=ApiResponse, summary="更新工艺规程"
+    "/process-specs/{spec_id}", response_model=ProcessSpecApiResponse, summary="更新工艺规程"
 )
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
@@ -532,7 +550,7 @@ async def handler(  # noqa: F811
 
 
 @router.delete(  # type: ignore[no-redef]
-    "/process-specs/{spec_id}", response_model=ApiResponse, summary="删除工艺规程"
+    "/process-specs/{spec_id}", response_model=MessageApiResponse, summary="删除工艺规程"
 )
 async def handler(  # noqa: F811
     spec_id: uuid.UUID,
@@ -558,7 +576,7 @@ async def handler(  # noqa: F811
 
 @router.get(  # type: ignore[no-redef]
     "/process-specs/{spec_id}/steps",
-    response_model=ApiResponse,
+    response_model=ProcessStepListApiResponse,
     summary="获取工艺步骤列表",
 )
 async def handler(  # noqa: F811
@@ -575,7 +593,7 @@ async def handler(  # noqa: F811
     return ApiResponse(data=[ProcessStepResponse.model_validate(s) for s in steps])
 
 
-@router.post("/steps", response_model=ApiResponse, summary="创建工艺步骤")  # type: ignore[no-redef]
+@router.post("/steps", response_model=ProcessStepApiResponse, summary="创建工艺步骤")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProcessStepCreate,
     current_user: RequiredUser,
@@ -592,7 +610,7 @@ async def post(  # noqa: F811
     return ApiResponse(data=ProcessStepResponse.model_validate(step))
 
 
-@router.put("/steps/{step_id}", response_model=ApiResponse, summary="更新工艺步骤")  # type: ignore[no-redef]
+@router.put("/steps/{step_id}", response_model=ProcessStepApiResponse, summary="更新工艺步骤")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     step_id: uuid.UUID,
     data: ProcessStepUpdate,
@@ -613,7 +631,7 @@ async def put(  # noqa: F811
     return ApiResponse(data=ProcessStepResponse.model_validate(step))
 
 
-@router.delete("/steps/{step_id}", response_model=ApiResponse, summary="删除工艺步骤")  # type: ignore[no-redef]
+@router.delete("/steps/{step_id}", response_model=MessageApiResponse, summary="删除工艺步骤")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     step_id: uuid.UUID,
     current_user: RequiredUser,
@@ -638,7 +656,7 @@ async def delete(  # noqa: F811
 
 @router.get(  # type: ignore[no-redef]
     "/steps/{step_id}/parameters",
-    response_model=ApiResponse,
+    response_model=ProcessParameterListApiResponse,
     summary="获取工艺参数列表",
 )
 async def handler(  # noqa: F811
@@ -655,7 +673,7 @@ async def handler(  # noqa: F811
     return ApiResponse(data=[ProcessParameterResponse.model_validate(p) for p in params])
 
 
-@router.post("/parameters", response_model=ApiResponse, summary="创建工艺参数")  # type: ignore[no-redef]
+@router.post("/parameters", response_model=ProcessParameterApiResponse, summary="创建工艺参数")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProcessParameterCreate,
     current_user: RequiredUser,
@@ -673,7 +691,7 @@ async def post(  # noqa: F811
 
 
 @router.delete(  # type: ignore[no-redef]
-    "/parameters/{param_id}", response_model=ApiResponse, summary="删除工艺参数"
+    "/parameters/{param_id}", response_model=MessageApiResponse, summary="删除工艺参数"
 )
 async def handler(  # noqa: F811
     param_id: uuid.UUID,
@@ -699,7 +717,7 @@ async def handler(  # noqa: F811
 
 @router.get(  # type: ignore[no-redef]
     "/batches/{batch_id}/records",
-    response_model=ApiResponse,
+    response_model=ProductionRecordListApiResponse,
     summary="获取生产记录列表",
 )
 async def handler(  # noqa: F811
@@ -720,7 +738,7 @@ async def handler(  # noqa: F811
     return ApiResponse(data=[ProductionRecordResponse.model_validate(r) for r in records])
 
 
-@router.post("/records", response_model=ApiResponse, summary="创建生产记录")  # type: ignore[no-redef]
+@router.post("/records", response_model=ProductionRecordApiResponse, summary="创建生产记录")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ProductionRecordCreate,
     current_user: RequiredUser,
@@ -737,7 +755,7 @@ async def post(  # noqa: F811
     return ApiResponse(data=ProductionRecordResponse.model_validate(record))
 
 
-@router.put("/records/{record_id}", response_model=ApiResponse, summary="更新生产记录")  # type: ignore[no-redef]
+@router.put("/records/{record_id}", response_model=ProductionRecordApiResponse, summary="更新生产记录")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     record_id: uuid.UUID,
     data: ProductionRecordUpdate,
@@ -761,7 +779,7 @@ async def put(  # noqa: F811
 
 
 @router.delete(  # type: ignore[no-redef]
-    "/records/{record_id}", response_model=ApiResponse, summary="删除生产记录"
+    "/records/{record_id}", response_model=MessageApiResponse, summary="删除生产记录"
 )
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
@@ -786,7 +804,7 @@ async def handler(  # noqa: F811
 
 
 @router.get(  # type: ignore[no-redef]
-    "/batches/{batch_id}/balance", response_model=ApiResponse, summary="获取物料平衡"
+    "/batches/{batch_id}/balance", response_model=MaterialBalanceApiResponse, summary="获取物料平衡"
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,
@@ -807,7 +825,7 @@ async def handler(  # noqa: F811
 
 @router.post(  # type: ignore[no-redef]
     "/batches/{batch_id}/balance/calculate",
-    response_model=ApiResponse,
+    response_model=MaterialBalanceApiResponse,
     summary="计算物料平衡",
 )
 async def handler(  # noqa: F811
@@ -831,7 +849,7 @@ async def handler(  # noqa: F811
 
 
 @router.put(  # type: ignore[no-redef]
-    "/batches/{batch_id}/balance", response_model=ApiResponse, summary="更新物料平衡"
+    "/batches/{batch_id}/balance", response_model=MaterialBalanceApiResponse, summary="更新物料平衡"
 )
 async def handler(  # noqa: F811
     batch_id: uuid.UUID,

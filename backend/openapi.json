@@ -962,7 +962,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchListApiResponse"
                 }
               }
             }
@@ -1020,7 +1020,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchApiResponse"
                 }
               }
             }
@@ -1080,7 +1080,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchApiResponse"
                 }
               }
             }
@@ -1148,7 +1148,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchApiResponse"
                 }
               }
             }
@@ -1206,7 +1206,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -1276,7 +1276,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchApiResponse"
                 }
               }
             }
@@ -1336,7 +1336,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchMaterialListApiResponse"
                 }
               }
             }
@@ -1404,7 +1404,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchMaterialApiResponse"
                 }
               }
             }
@@ -1474,7 +1474,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/BatchMaterialApiResponse"
                 }
               }
             }
@@ -1532,7 +1532,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -1637,7 +1637,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionPlanListApiResponse"
                 }
               }
             }
@@ -1695,7 +1695,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionPlanApiResponse"
                 }
               }
             }
@@ -1755,7 +1755,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionPlanApiResponse"
                 }
               }
             }
@@ -1823,7 +1823,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionPlanApiResponse"
                 }
               }
             }
@@ -1881,7 +1881,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -1941,7 +1941,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/PlanTaskListApiResponse"
                 }
               }
             }
@@ -2001,7 +2001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/PlanTaskApiResponse"
                 }
               }
             }
@@ -2071,7 +2071,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/PlanTaskApiResponse"
                 }
               }
             }
@@ -2129,7 +2129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -2234,7 +2234,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessSpecListApiResponse"
                 }
               }
             }
@@ -2292,7 +2292,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessSpecApiResponse"
                 }
               }
             }
@@ -2352,7 +2352,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessSpecApiResponse"
                 }
               }
             }
@@ -2420,7 +2420,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessSpecApiResponse"
                 }
               }
             }
@@ -2478,7 +2478,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -2538,7 +2538,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessStepListApiResponse"
                 }
               }
             }
@@ -2598,7 +2598,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessStepApiResponse"
                 }
               }
             }
@@ -2668,7 +2668,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessStepApiResponse"
                 }
               }
             }
@@ -2726,7 +2726,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -2786,7 +2786,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessParameterListApiResponse"
                 }
               }
             }
@@ -2846,7 +2846,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProcessParameterApiResponse"
                 }
               }
             }
@@ -2906,7 +2906,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -2989,7 +2989,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionRecordListApiResponse"
                 }
               }
             }
@@ -3049,7 +3049,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionRecordApiResponse"
                 }
               }
             }
@@ -3119,7 +3119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ProductionRecordApiResponse"
                 }
               }
             }
@@ -3177,7 +3177,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/app__modules__production__schemas__MessageApiResponse"
                 }
               }
             }
@@ -3237,7 +3237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/MaterialBalanceApiResponse"
                 }
               }
             }
@@ -3305,7 +3305,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/MaterialBalanceApiResponse"
                 }
               }
             }
@@ -3377,7 +3377,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/MaterialBalanceApiResponse"
                 }
               }
             }
@@ -63439,7 +63439,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__MessageApiResponse"
                 }
               }
             }
@@ -64295,7 +64295,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__MessageApiResponse"
                 }
               }
             }
@@ -64570,7 +64570,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MessageApiResponse"
+                  "$ref": "#/components/schemas/app__modules__quality__qms__deviation_schemas__MessageApiResponse"
                 }
               }
             }
@@ -87166,6 +87166,29 @@
         "title": "AutoTriggerRequest",
         "description": "\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u8bf7\u6c42"
       },
+      "BatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BatchResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchApiResponse",
+        "description": "\u6279\u6b21\u54cd\u5e94\u5305\u88c5"
+      },
       "BatchAuditRequest": {
         "properties": {
           "ids": {
@@ -87394,6 +87417,45 @@
         "title": "BatchDeleteRequest",
         "description": "\u6279\u91cf\u5220\u9664\u8bf7\u6c42"
       },
+      "BatchListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/BatchResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchListApiResponse",
+        "description": "\u6279\u6b21\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
       "BatchLockRequest": {
         "properties": {
           "deviation_id": {
@@ -87489,6 +87551,29 @@
           "date"
         ],
         "title": "BatchManualEntryRow"
+      },
+      "BatchMaterialApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BatchMaterialResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchMaterialApiResponse",
+        "description": "\u6279\u6b21\u7269\u6599\u54cd\u5e94\u5305\u88c5"
       },
       "BatchMaterialCreate": {
         "properties": {
@@ -87601,6 +87686,174 @@
         ],
         "title": "BatchMaterialCreate",
         "description": "\u521b\u5efa\u6279\u6b21\u7269\u6599"
+      },
+      "BatchMaterialListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/BatchMaterialResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchMaterialListApiResponse",
+        "description": "\u6279\u6b21\u7269\u6599\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "BatchMaterialResponse": {
+        "properties": {
+          "material_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Material Code",
+            "description": "\u7269\u6599\u7f16\u7801"
+          },
+          "material_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Name",
+            "description": "\u7269\u6599\u540d\u79f0"
+          },
+          "material_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Type",
+            "description": "\u7269\u6599\u7c7b\u578b"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit",
+            "description": "\u5355\u4f4d"
+          },
+          "planned_qty": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Qty",
+            "description": "\u8ba1\u5212\u7528\u91cf"
+          },
+          "lot_no": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot No",
+            "description": "\u6279\u53f7/\u6279\u6b21"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage",
+            "description": "\u5de5\u5e8f\u9636\u6bb5"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "actual_qty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Qty"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "material_code",
+          "id",
+          "batch_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BatchMaterialResponse",
+        "description": "\u6279\u6b21\u7269\u6599\u54cd\u5e94"
       },
       "BatchMaterialUpdate": {
         "properties": {
@@ -87741,6 +87994,187 @@
           "documentIds"
         ],
         "title": "BatchReadRequest"
+      },
+      "BatchResponse": {
+        "properties": {
+          "batch_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Batch No",
+            "description": "\u6279\u6b21\u53f7"
+          },
+          "product_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Product Code",
+            "description": "\u4ea7\u54c1\u7f16\u7801"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name",
+            "description": "\u4ea7\u54c1\u540d\u79f0"
+          },
+          "specification": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specification",
+            "description": "\u89c4\u683c"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit",
+            "description": "\u5355\u4f4d"
+          },
+          "planned_qty": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planned Qty",
+            "description": "\u8ba1\u5212\u6570\u91cf"
+          },
+          "process_spec_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Spec Id",
+            "description": "\u5de5\u827a\u89c4\u7a0bID"
+          },
+          "production_line": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Line",
+            "description": "\u751f\u4ea7\u7ebf"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BatchStatus"
+          },
+          "actual_qty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Qty"
+          },
+          "input_qty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Qty"
+          },
+          "start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Time"
+          },
+          "end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_no",
+          "product_code",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "BatchResponse",
+        "description": "\u6279\u6b21\u54cd\u5e94"
       },
       "BatchStatus": {
         "type": "string",
@@ -116559,6 +116993,162 @@
         "title": "MaintenancePlanUpdate",
         "description": "\u66f4\u65b0\u7ef4\u62a4\u8ba1\u5212\u8bf7\u6c42"
       },
+      "MaterialBalanceApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MaterialBalanceResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MaterialBalanceApiResponse",
+        "description": "\u7269\u6599\u5e73\u8861\u54cd\u5e94\u5305\u88c5"
+      },
+      "MaterialBalanceResponse": {
+        "properties": {
+          "input_qty": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Qty",
+            "description": "\u6295\u5165\u603b\u91cf"
+          },
+          "output_qty": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Qty",
+            "description": "\u4ea7\u51fa\u603b\u91cf"
+          },
+          "loss_qty": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Loss Qty",
+            "description": "\u635f\u8017\u603b\u91cf"
+          },
+          "balance_rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Rate",
+            "description": "\u5e73\u8861\u7387(%)"
+          },
+          "min_balance_rate": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Min Balance Rate",
+            "description": "\u6700\u4f4e\u5e73\u8861\u7387(%)",
+            "default": 95.0
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "is_balanced": {
+            "type": "boolean",
+            "title": "Is Balanced"
+          },
+          "deviation_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deviation Rate"
+          },
+          "calculated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculated At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "batch_id",
+          "is_balanced",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MaterialBalanceResponse",
+        "description": "\u7269\u6599\u5e73\u8861\u54cd\u5e94"
+      },
       "MaterialBalanceUpdate": {
         "properties": {
           "input_qty": {
@@ -117015,27 +117605,6 @@
         "type": "object",
         "title": "MediumUpdate",
         "description": "Update Medium"
-      },
-      "MessageApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "type": "null",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "title": "MessageApiResponse",
-        "description": "Message-only response wrapper for actions that return no data payload"
       },
       "MessageTemplateRequest": {
         "properties": {
@@ -119303,21 +119872,6 @@
         "title": "OperationRegulationUpdate",
         "description": "\u66f4\u65b0\u5b89\u5168\u64cd\u4f5c\u89c4\u7a0b"
       },
-      "OperationType-Output": {
-        "type": "string",
-        "enum": [
-          "hot_work",
-          "confined_space",
-          "blind_plate",
-          "height_work",
-          "lifting",
-          "temporary_electricity",
-          "excavation",
-          "road_breaking"
-        ],
-        "title": "OperationType",
-        "description": "\u7279\u6b8a\u4f5c\u4e1a\u7c7b\u578b\u679a\u4e3e\uff08GB 30871-2022\uff09"
-      },
       "OverseasApprovalCreate": {
         "properties": {
           "product_name": {
@@ -120116,6 +120670,29 @@
         "title": "PlanStatus",
         "description": "\u8ba1\u5212\u72b6\u6001\u679a\u4e3e"
       },
+      "PlanTaskApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PlanTaskResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "PlanTaskApiResponse",
+        "description": "\u8ba1\u5212\u4efb\u52a1\u54cd\u5e94\u5305\u88c5"
+      },
       "PlanTaskCreate": {
         "properties": {
           "product_code": {
@@ -120201,6 +120778,152 @@
         ],
         "title": "PlanTaskCreate",
         "description": "\u521b\u5efa\u8ba1\u5212\u4efb\u52a1"
+      },
+      "PlanTaskListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/PlanTaskResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "PlanTaskListApiResponse",
+        "description": "\u8ba1\u5212\u4efb\u52a1\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "PlanTaskResponse": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Product Code",
+            "description": "\u4ea7\u54c1\u7f16\u7801"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name",
+            "description": "\u4ea7\u54c1\u540d\u79f0"
+          },
+          "batch_qty": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Qty",
+            "description": "\u6279\u6b21\u6570\u91cf"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To",
+            "description": "\u8d1f\u8d23\u4eba"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "\u8ba1\u5212\u5b8c\u6210\u65e5\u671f"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Plan Id"
+          },
+          "assigned_to_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TaskStatus"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "id",
+          "plan_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PlanTaskResponse",
+        "description": "\u8ba1\u5212\u4efb\u52a1\u54cd\u5e94"
       },
       "PlanTaskUpdate": {
         "properties": {
@@ -120516,6 +121239,29 @@
         "title": "ProblemUpdate",
         "description": "\u95ee\u9898\u66f4\u65b0\u8bf7\u6c42"
       },
+      "ProcessParameterApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProcessParameterResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProcessParameterApiResponse",
+        "description": "\u5de5\u827a\u53c2\u6570\u54cd\u5e94\u5305\u88c5"
+      },
       "ProcessParameterCreate": {
         "properties": {
           "param_name": {
@@ -120631,6 +121377,189 @@
         "title": "ProcessParameterCreate",
         "description": "\u521b\u5efa\u5de5\u827a\u53c2\u6570"
       },
+      "ProcessParameterListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessParameterResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProcessParameterListApiResponse",
+        "description": "\u5de5\u827a\u53c2\u6570\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProcessParameterResponse": {
+        "properties": {
+          "param_name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Param Name",
+            "description": "\u53c2\u6570\u540d\u79f0"
+          },
+          "param_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Param Code",
+            "description": "\u53c2\u6570\u7f16\u7801"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit",
+            "description": "\u5355\u4f4d"
+          },
+          "min_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Value",
+            "description": "\u6700\u5c0f\u503c"
+          },
+          "max_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Value",
+            "description": "\u6700\u5927\u503c"
+          },
+          "target_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Value",
+            "description": "\u76ee\u6807\u503c"
+          },
+          "is_critical": {
+            "type": "boolean",
+            "title": "Is Critical",
+            "description": "\u662f\u5426\u5173\u952e\u53c2\u6570",
+            "default": false
+          },
+          "data_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Type",
+            "description": "\u6570\u636e\u7c7b\u578b"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "step_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Step Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "param_name",
+          "id",
+          "step_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProcessParameterResponse",
+        "description": "\u5de5\u827a\u53c2\u6570\u54cd\u5e94"
+      },
+      "ProcessSpecApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProcessSpecResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProcessSpecApiResponse",
+        "description": "\u5de5\u827a\u89c4\u7a0b\u54cd\u5e94\u5305\u88c5"
+      },
       "ProcessSpecCreate": {
         "properties": {
           "spec_code": {
@@ -120724,6 +121653,196 @@
         ],
         "title": "ProcessSpecCreate",
         "description": "\u521b\u5efa\u5de5\u827a\u89c4\u7a0b"
+      },
+      "ProcessSpecListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessSpecResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProcessSpecListApiResponse",
+        "description": "\u5de5\u827a\u89c4\u7a0b\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProcessSpecResponse": {
+        "properties": {
+          "spec_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Spec Code",
+            "description": "\u89c4\u7a0b\u7f16\u53f7"
+          },
+          "spec_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spec Name",
+            "description": "\u89c4\u7a0b\u540d\u79f0"
+          },
+          "product_code": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Product Code",
+            "description": "\u4ea7\u54c1\u7f16\u7801"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name",
+            "description": "\u4ea7\u54c1\u540d\u79f0"
+          },
+          "version": {
+            "type": "string",
+            "maxLength": 20,
+            "title": "Version",
+            "description": "\u7248\u672c\u53f7",
+            "default": "1.0"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date",
+            "description": "\u751f\u6548\u65e5\u671f"
+          },
+          "supersedes_version": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supersedes Version",
+            "description": "\u66ff\u4ee3\u7248\u672c"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProcessSpecStatus"
+          },
+          "approved_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By"
+          },
+          "approved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved By Name"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "spec_code",
+          "product_code",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProcessSpecResponse",
+        "description": "\u5de5\u827a\u89c4\u7a0b\u54cd\u5e94"
       },
       "ProcessSpecStatus": {
         "type": "string",
@@ -120883,6 +122002,29 @@
         "title": "ProcessSpecUpdate",
         "description": "\u66f4\u65b0\u5de5\u827a\u89c4\u7a0b"
       },
+      "ProcessStepApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProcessStepResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProcessStepApiResponse",
+        "description": "\u5de5\u827a\u6b65\u9aa4\u54cd\u5e94\u5305\u88c5"
+      },
       "ProcessStepCreate": {
         "properties": {
           "step_no": {
@@ -120986,6 +122128,155 @@
         ],
         "title": "ProcessStepCreate",
         "description": "\u521b\u5efa\u5de5\u827a\u6b65\u9aa4"
+      },
+      "ProcessStepListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProcessStepResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProcessStepListApiResponse",
+        "description": "\u5de5\u827a\u6b65\u9aa4\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProcessStepResponse": {
+        "properties": {
+          "step_no": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Step No",
+            "description": "\u6b65\u9aa4\u5e8f\u53f7"
+          },
+          "step_name": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Step Name",
+            "description": "\u6b65\u9aa4\u540d\u79f0"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "\u6b65\u9aa4\u63cf\u8ff0"
+          },
+          "equipment_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Type",
+            "description": "\u8bbe\u5907\u7c7b\u578b"
+          },
+          "equipment_spec": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Equipment Spec",
+            "description": "\u8bbe\u5907\u89c4\u683c"
+          },
+          "duration_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Minutes",
+            "description": "\u6301\u7eed\u65f6\u95f4(\u5206\u949f)"
+          },
+          "sequence_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence Order",
+            "description": "\u6392\u5e8f\u987a\u5e8f"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "spec_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Spec Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_no",
+          "step_name",
+          "id",
+          "spec_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProcessStepResponse",
+        "description": "\u5de5\u827a\u6b65\u9aa4\u54cd\u5e94"
       },
       "ProcessStepUpdate": {
         "properties": {
@@ -121815,6 +123106,29 @@
         "title": "ProductionItemDetail",
         "description": "\u4ea7\u54c1\u4ea7\u91cf\u660e\u7ec6"
       },
+      "ProductionPlanApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProductionPlanResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProductionPlanApiResponse",
+        "description": "\u751f\u4ea7\u8ba1\u5212\u54cd\u5e94\u5305\u88c5"
+      },
       "ProductionPlanCreate": {
         "properties": {
           "plan_no": {
@@ -121881,6 +123195,156 @@
         ],
         "title": "ProductionPlanCreate",
         "description": "\u521b\u5efa\u751f\u4ea7\u8ba1\u5212"
+      },
+      "ProductionPlanListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionPlanResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProductionPlanListApiResponse",
+        "description": "\u751f\u4ea7\u8ba1\u5212\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProductionPlanResponse": {
+        "properties": {
+          "plan_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Plan No",
+            "description": "\u8ba1\u5212\u7f16\u53f7"
+          },
+          "plan_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Name",
+            "description": "\u8ba1\u5212\u540d\u79f0"
+          },
+          "plan_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Type",
+            "description": "\u8ba1\u5212\u7c7b\u578b"
+          },
+          "plan_month": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 7
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Month",
+            "description": "\u8ba1\u5212\u6708\u4efd"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "total_batches": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Batches"
+          },
+          "completed_batches": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Batches"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_no",
+          "id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProductionPlanResponse",
+        "description": "\u751f\u4ea7\u8ba1\u5212\u54cd\u5e94"
       },
       "ProductionPlanUpdate": {
         "properties": {
@@ -121963,6 +123427,29 @@
         "type": "object",
         "title": "ProductionPlanUpdate",
         "description": "\u66f4\u65b0\u751f\u4ea7\u8ba1\u5212"
+      },
+      "ProductionRecordApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProductionRecordResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProductionRecordApiResponse",
+        "description": "\u751f\u4ea7\u8bb0\u5f55\u54cd\u5e94\u5305\u88c5"
       },
       "ProductionRecordCreate": {
         "properties": {
@@ -122051,6 +123538,168 @@
         ],
         "title": "ProductionRecordCreate",
         "description": "\u521b\u5efa\u751f\u4ea7\u8bb0\u5f55"
+      },
+      "ProductionRecordListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProductionRecordResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProductionRecordListApiResponse",
+        "description": "\u751f\u4ea7\u8bb0\u5f55\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProductionRecordResponse": {
+        "properties": {
+          "record_no": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Record No",
+            "description": "\u8bb0\u5f55\u7f16\u53f7"
+          },
+          "step_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step No",
+            "description": "\u6b65\u9aa4\u5e8f\u53f7"
+          },
+          "step_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step Name",
+            "description": "\u6b65\u9aa4\u540d\u79f0"
+          },
+          "operation_type": {
+            "$ref": "#/components/schemas/app__modules__production__schemas__OperationType",
+            "description": "\u64cd\u4f5c\u7c7b\u578b"
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters",
+            "description": "\u53c2\u6570JSON"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result",
+            "description": "\u64cd\u4f5c\u7ed3\u679c"
+          },
+          "remarks": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remarks",
+            "description": "\u5907\u6ce8"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Batch Id"
+          },
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
+          },
+          "operator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Name"
+          },
+          "operation_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Operation Time"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "record_no",
+          "operation_type",
+          "id",
+          "batch_id",
+          "operation_time",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProductionRecordResponse",
+        "description": "\u751f\u4ea7\u8bb0\u5f55\u54cd\u5e94"
       },
       "ProductionRecordUpdate": {
         "properties": {
@@ -133854,7 +135503,7 @@
             "description": "\u4f5c\u4e1a\u7968\u7f16\u53f7"
           },
           "operation_type": {
-            "$ref": "#/components/schemas/OperationType-Output",
+            "$ref": "#/components/schemas/app__modules__safety__schemas__enums__OperationType",
             "description": "\u4f5c\u4e1a\u7c7b\u578b"
           },
           "operation_level": {
@@ -134712,7 +136361,7 @@
             "description": "\u6240\u5c5e\u90e8\u95e8"
           },
           "certificate_type": {
-            "$ref": "#/components/schemas/OperationType-Output",
+            "$ref": "#/components/schemas/app__modules__safety__schemas__enums__OperationType",
             "description": "\u8bc1\u4e66\u7c7b\u578b"
           },
           "certificate_number": {
@@ -135353,7 +137002,7 @@
             "description": "\u5173\u8054\u4f5c\u4e1a\u7968ID"
           },
           "operation_type": {
-            "$ref": "#/components/schemas/OperationType-Output",
+            "$ref": "#/components/schemas/app__modules__safety__schemas__enums__OperationType",
             "description": "\u4f5c\u4e1a\u7c7b\u578b"
           },
           "operation_level": {
@@ -143565,6 +145214,27 @@
         "title": "InspectionRecordItem",
         "description": "\u5de1\u68c0\u8bb0\u5f55\u9879"
       },
+      "app__modules__production__schemas__MessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "MessageApiResponse",
+        "description": "\u6d88\u606f\u54cd\u5e94\u5305\u88c5\uff08\u7528\u4e8e\u5220\u9664\u7b49\u64cd\u4f5c\uff09"
+      },
       "app__modules__production__schemas__OperationType": {
         "type": "string",
         "enum": [
@@ -143602,6 +145272,27 @@
         ],
         "title": "AIAnalysisApiResponse",
         "description": "AI analysis response wrapper"
+      },
+      "app__modules__quality__qms__deviation_schemas__MessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "MessageApiResponse",
+        "description": "Message-only response wrapper for actions that return no data payload"
       },
       "app__modules__quality__qms__instrument_schemas__CalibrationRecordCreate": {
         "properties": {
