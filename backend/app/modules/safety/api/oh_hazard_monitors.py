@@ -117,7 +117,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/start",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="开始监测",
 )
 async def handler(  # noqa: F811
@@ -134,7 +134,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/complete",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="完成监测",
 )
 async def handler(  # noqa: F811
@@ -151,7 +151,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/verify",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="验证监测",
 )
 async def handler(  # noqa: F811
@@ -171,7 +171,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/detection-results",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="添加检测结果",
 )
 async def handler(  # noqa: F811
@@ -188,7 +188,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.put(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/detection-results/{index}",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="更新检测结果",
 )
 async def handler(  # noqa: F811
@@ -209,7 +209,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.delete(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/detection-results/{index}",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="删除检测结果",
 )
 async def handler(  # noqa: F811
@@ -226,7 +226,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.post(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/abnormality-records",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="添加异常处置记录",
 )
 async def handler(  # noqa: F811
@@ -243,7 +243,7 @@ async def handler(  # noqa: F811
 
 @oh_hazard_monitors_router.put(  # type: ignore[no-redef]
     "/oh-hazard-monitors/{monitor_id}/abnormality-records/{index}",
-    response_model=ApiResponse,
+    response_model=OhHazardMonitorApiResponse,
     summary="更新异常处置状态",
 )
 async def handler(  # noqa: F811

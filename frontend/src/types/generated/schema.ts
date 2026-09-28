@@ -24509,6 +24509,49 @@ export interface components {
             nodes?: components["schemas"]["DrugNodeUpdate"][] | null;
         };
         /**
+         * EDBOOptimizeApiResponse
+         * @description EDBO+ 优化响应包装
+         */
+        EDBOOptimizeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["EDBOOptimizeResponse"] | null;
+        };
+        /**
+         * EDBOOptimizeResponse
+         * @description EDBO+ 贝叶斯优化响应
+         */
+        EDBOOptimizeResponse: {
+            /**
+             * Csv Data
+             * @description 结果 CSV 文本
+             */
+            csv_data: string;
+            /**
+             * Row Count
+             * @description 结果行数
+             */
+            row_count: number;
+            /**
+             * Prediction Data
+             * @description 预测文件 CSV 文本（可选）
+             */
+            prediction_data?: string | null;
+            /**
+             * Prediction Filename
+             * @description 预测文件名（可选）
+             */
+            prediction_filename?: string | null;
+        };
+        /**
          * EhsChangeApiResponse
          * @description Single EHS change response wrapper
          */
@@ -57380,7 +57423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57413,7 +57456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57450,7 +57493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57489,7 +57532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57529,7 +57572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57563,7 +57606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57602,7 +57645,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57639,7 +57682,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67280,7 +67323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67315,7 +67358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67348,7 +67391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67385,7 +67428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67418,7 +67461,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67456,7 +67499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67496,7 +67539,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67530,7 +67573,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67563,7 +67606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67596,7 +67639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67631,7 +67674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67704,7 +67747,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67739,7 +67782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67772,7 +67815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67805,7 +67848,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67838,7 +67881,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67871,7 +67914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67905,7 +67948,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67942,7 +67985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68014,7 +68057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68051,7 +68094,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68084,7 +68127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68123,7 +68166,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68156,7 +68199,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68195,7 +68238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68234,7 +68277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68267,7 +68310,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68304,7 +68347,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68341,7 +68384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68374,7 +68417,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68413,7 +68456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68446,7 +68489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69094,7 +69137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69129,7 +69172,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69162,7 +69205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69199,7 +69242,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69232,7 +69275,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69271,7 +69314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69307,7 +69350,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69341,7 +69384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69376,7 +69419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69413,7 +69456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69447,7 +69490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69482,7 +69525,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69519,7 +69562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69553,7 +69596,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69588,7 +69631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69625,7 +69668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70337,7 +70380,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70372,7 +70415,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70409,7 +70452,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70478,7 +70521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70513,7 +70556,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70550,7 +70593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70619,7 +70662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70654,7 +70697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70691,7 +70734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70759,7 +70802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70792,7 +70835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70829,7 +70872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70959,7 +71002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70990,7 +71033,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71028,7 +71071,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71063,7 +71106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71100,7 +71143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71170,7 +71213,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */

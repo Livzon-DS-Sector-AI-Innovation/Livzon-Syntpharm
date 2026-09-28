@@ -24228,7 +24228,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24288,7 +24288,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24358,7 +24358,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24430,7 +24430,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24511,7 +24511,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24578,7 +24578,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24650,7 +24650,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -24730,7 +24730,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/OhHazardMonitorApiResponse"
                 }
               }
             }
@@ -44119,7 +44119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44261,7 +44261,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44320,7 +44320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44387,7 +44387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44444,7 +44444,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44515,7 +44515,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44598,7 +44598,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44670,7 +44670,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44729,7 +44729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44786,7 +44786,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44846,7 +44846,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -44963,7 +44963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45069,7 +45069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45128,7 +45128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45185,7 +45185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45244,7 +45244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45303,7 +45303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45372,7 +45372,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45441,7 +45441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45619,7 +45619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45678,7 +45678,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45736,7 +45736,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45804,7 +45804,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45860,7 +45860,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -45930,7 +45930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46000,7 +46000,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46056,7 +46056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46176,7 +46176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46235,7 +46235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46293,7 +46293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46361,7 +46361,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -46417,7 +46417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -47687,7 +47687,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -47744,7 +47744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -47803,7 +47803,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -47870,7 +47870,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -47927,7 +47927,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -47998,7 +47998,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48068,7 +48068,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48129,7 +48129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48186,7 +48186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48255,7 +48255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48316,7 +48316,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48373,7 +48373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48442,7 +48442,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48503,7 +48503,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48560,7 +48560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -48629,7 +48629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -49944,7 +49944,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50001,7 +50001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50070,7 +50070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50190,7 +50190,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50247,7 +50247,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50316,7 +50316,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50436,7 +50436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50493,7 +50493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50562,7 +50562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50681,7 +50681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50751,7 +50751,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -50809,7 +50809,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -51027,7 +51027,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -51077,7 +51077,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -51180,7 +51180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -51237,7 +51237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -51306,7 +51306,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -51424,7 +51424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
                 }
               }
             }
@@ -100672,6 +100672,78 @@
         },
         "type": "object",
         "title": "DrugUpdate"
+      },
+      "EDBOOptimizeApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EDBOOptimizeResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "EDBOOptimizeApiResponse",
+        "description": "EDBO+ \u4f18\u5316\u54cd\u5e94\u5305\u88c5"
+      },
+      "EDBOOptimizeResponse": {
+        "properties": {
+          "csv_data": {
+            "type": "string",
+            "title": "Csv Data",
+            "description": "\u7ed3\u679c CSV \u6587\u672c"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "description": "\u7ed3\u679c\u884c\u6570"
+          },
+          "prediction_data": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Data",
+            "description": "\u9884\u6d4b\u6587\u4ef6 CSV \u6587\u672c\uff08\u53ef\u9009\uff09"
+          },
+          "prediction_filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Filename",
+            "description": "\u9884\u6d4b\u6587\u4ef6\u540d\uff08\u53ef\u9009\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "csv_data",
+          "row_count"
+        ],
+        "title": "EDBOOptimizeResponse",
+        "description": "EDBO+ \u8d1d\u53f6\u65af\u4f18\u5316\u54cd\u5e94"
       },
       "EhsChangeApiResponse": {
         "properties": {
