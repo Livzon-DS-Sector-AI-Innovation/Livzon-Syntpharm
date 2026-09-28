@@ -2,17 +2,6 @@
 
 import type { components } from '@/types/generated/schema'
 
-export interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-  meta?: {
-    page?: number
-    page_size?: number
-    total?: number
-  }
-}
-
 // ============ Enums ============
 
 export enum BatchStatus {
