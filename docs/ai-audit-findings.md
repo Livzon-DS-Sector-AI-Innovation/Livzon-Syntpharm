@@ -3756,3 +3756,249 @@ _None._
 | Note | Rule | Categories |
 |------|------|------------|
 | hotfix 分支使用 `OCRService`（直接 PaddleOCR 调用），不含 `SubprocessOCRService`/`ocr_worker.py`（子进程模式在其他分支开发中）。合并到 main 后，需确认子进程 worker 也同步更新 PaddleOCR 3.7.0 API。 | 外部服务适配 | 7 |
+
+---
+
+### PR #61: feat: API 类型合规 + 前端 lint 修复 (base: origin/main, head: origin/ruanjiaheng-frontend-lint, date: 2026-09-28)
+
+**变更规模**: 374 files changed, 54 commits
+
+**基准说明**: 使用 `origin/main` 作为基准（非本地 `main`），排除已合并到 main 的 commits。
+
+**主要变更主题**:
+- API 类型合规：后端 endpoint 添加具体 `response_model`（254 处 `ApiResponse` → 具体类型）
+- 安全管理模块：response_model 实现、认证强化（`RequiredUser`）
+- 质量管理模块：CAPA 后端实现、deviation response_model
+- 前端：手写 API 类型迁移到 OpenAPI 生成类型、Ant Design v6 废弃 API 迁移
+- 前端 lint：3011 个未使用变量清除、`useEffect + setState` → React Query 迁移
+- LLM 重试策略修正：从 2 次重试修正为 3 次（1s, 2s, 4s）
+- 13 个新 Alembic 迁移（0054-0066）
+
+**Affected categories:** 3, 4, 5, 6, 7, 8, 10, 15, 16
+
+---
+
+#### Category 3: Backend Module Boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~80 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。
+
+**Notes:**
+- Safety API 文件缺少 `logger = logging.getLogger(__name__)` 是 pre-existing 问题（origin/main 已存在），非本 PR 引入
+
+---
+
+#### Category 4: API and Authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 25 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 2 |
+
+**Confirmed:**
+
+无。本 PR 修复了 120+ 个 endpoint 的 `response_model=ApiResponse` 问题，全部替换为具体 Pydantic 类型。
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/capa_api.py:105` — API 规范/必须使用具体响应模型 — DELETE `/capas/{id}` 缺少 `response_model`，返回纯 dict。应使用 `MessageApiResponse` 保持一致性。
+- [ ] `backend/app/modules/quality/qms/capa_api.py:138` — API 规范/必须使用具体响应模型 — DELETE `/capas/{id}/execution-tracks/{track_id}` 同样缺少 `response_model`。
+
+---
+
+#### Category 5: Models and Migrations
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 14 |
+| Files not inspected | 0 |
+| Rules evaluated | 9 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+无。所有 13 个迁移（0054-0066）均符合 NNNN 命名规范、单模块原则、模型-迁移配对。
+
+**Uncertain:**
+
+- [ ] `backend/alembic/versions/0054_add_energy_unit_consumption_targets.py:34` — 数据库规范/外键约束 — `ondelete='CASCADE'` 用于 `workshop_id → energy_workshops.id`。这是同 schema 内（energy→energy），不违反跨模块 CASCADE 规则，但如果 workshops 被删除，关联的 targets 会被级联删除。建议考虑软删除或应用层控制。
+
+---
+
+#### Category 6: Configuration and Logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~80 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。无敏感信息泄露，无 `os.getenv()` 滥用，无 `.env` 文件变更。
+
+---
+
+#### Category 7: External Services and Background Tasks
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~80 |
+| Files not inspected | 0 |
+| Rules evaluated | 10 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。
+
+**正面改进:**
+- `backend/app/core/llm/client.py:82` — 重试策略从 `range(3)` 修正为 `range(4)`，现在正确实现 3 次重试（1s, 2s, 4s），符合规范
+
+---
+
+#### Category 8: Backend Tests
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。所有测试放置在正确目录，异步测试使用 auto 模式，无外部服务调用。
+
+---
+
+#### Category 10: Frontend API and Generated Types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 37 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 2 |
+
+**Confirmed:**
+
+无。客户端 API 使用相对路径，服务端使用 `API_BASE_URL`，写操作在 Server Actions 中。`types/quality.ts` 成功移除 7 个手写 API 类型。
+
+**Uncertain:**
+
+- [ ] `frontend/src/actions/safety/index.ts` — 前端/API 类型来源 — 发现 **38 处 `as unknown as` 类型转换**，表明生成类型与实际 API 响应形状不匹配。例如：
+  - `return response as unknown as ApiResponse<HazardReport>` (6×)
+  - `return res as unknown as ApiResponse<OhHazardMonitor>` (8×)
+  
+  这削弱了使用生成类型的意义，建议检查 OpenAPI spec 或后端响应是否与生成类型一致。
+
+- [ ] `frontend/src/actions/quality.ts:25` — 前端/API 类型来源 — 本地定义 `interface ApiResponse<T>`，重复了 OpenAPI spec 中已有的契约。
+
+---
+
+#### Category 15: SQL Injection
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 5 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。所有 repository 文件使用 SQLAlchemy ORM，无 f-string SQL、无字符串拼接、无 `.format()` 用于 SQL。
+
+---
+
+#### Category 16: React Hooks & React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 50+ |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 3 |
+
+**Confirmed:**
+
+无。本 PR 未引入新的 `useEffect + setState` 违规。
+
+**Uncertain (Pre-existing, 非本 PR 引入):**
+
+- [ ] `frontend/src/components/production/pressure/PressureManualInputPageClient.tsx:78` — 前端/React Hooks/数据获取 — `useEffect(() => { loadData() }, [])` 调用 `getPressureDashboard()` → `setStats()`。应使用 React Query。
+- [ ] `frontend/src/components/production/ProductionDashboardClient.tsx:94` — 前端/React Hooks/数据获取 — `useEffect(() => { loadDashboardData() }, [])` 调用 `getBatches()` → `setStats()`。应使用 React Query。
+- [ ] `frontend/src/app/(dashboard)/production/stats/page.tsx:33` — 前端/React Hooks/数据获取 — `useEffect` 内 `loadData()` 调用多个 API → `setStats()`, `setProgress()`。应使用 React Query。
+
+---
+
+#### PR #61 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 2 |
+| 5. Models and migrations | 0 | 1 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 2 |
+| 15. SQL injection | 0 | 0 |
+| 16. React Hooks | 0 | 3 (pre-existing) |
+| **Total** | **0** | **8** |
+
+#### PR #61 Overall Assessment
+
+**Overall assessment:** PR #61 符合 AGENTS.md 规范，无确认违规。
+
+**关键改进：**
+1. **API 类型合规**：254 处 `response_model=ApiResponse` 替换为具体 Pydantic 类型
+2. **认证强化**：所有 safety API 从 `CurrentUser | None` 迁移到 `RequiredUser`
+3. **LLM 重试修正**：从 2 次重试修正为 3 次（1s, 2s, 4s），符合规范
+4. **前端类型迁移**：`types/quality.ts` 移除 7 个手写 API 类型
+5. **13 个迁移全部合规**：NNNN 命名、单模块原则、模型-迁移配对
+
+**待改进（非阻塞）：**
+1. `capa_api.py` 2 个 DELETE endpoint 缺少 `response_model`（minor）
+2. 38 处 `as unknown as` 类型转换表明 OpenAPI spec 与后端响应不匹配
+3. 3 个 pre-existing `useEffect + setState` 违规待后续修复
+
+**建议**：可以合并。Uncertain findings 可作为后续改进项跟踪。
+
+#### Notes/observations
+
+| Note | Rule | Categories |
+|------|------|------------|
+| 本审查使用 `origin/main` 作为基准（非本地 `main`），因为本地 `main` 落后于 `origin/main`。使用错误基准会导致已合并的 commits 被错误计入 PR 范围。 | 审查程序 | — |
+| Safety API 文件缺少 `logger = logging.getLogger(__name__)` 是 origin/main 已存在的技术债务，建议后续专项修复。 | 日志规范 | 6 |
+| 38 处 `as unknown as` 类型转换表明 OpenAPI spec 可能未完整覆盖后端响应结构，建议在 `scripts/ci/export_openapi.py` 中检查 `ApiResponse` 信封的生成。 | 前端/API 类型来源 | 10 |
