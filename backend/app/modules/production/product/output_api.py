@@ -70,7 +70,7 @@ async def get_product_outputs(
         sort_by=sort_by,
         sort_order=sort_order,
     )
-    return MessageApiResponse(
+    return ProductOutputListApiResponse(
         data=[ProductOutputResponse.model_validate(r) for r in records],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -292,7 +292,7 @@ async def create_product_output(
     """新建产量记录"""
     service = ProductOutputService(db)
     record = await service.create(data)
-    return MessageApiResponse(
+    return ProductOutputApiResponse(
         data=ProductOutputResponse.model_validate(record),
         message="创建成功",
     )
@@ -311,7 +311,7 @@ async def update_product_output(
     if not existing:
         return MessageApiResponse(code=404, message="记录不存在", data=None)
     record = await service.update(record_id, data)
-    return MessageApiResponse(
+    return ProductOutputApiResponse(
         data=ProductOutputResponse.model_validate(record),
         message="更新成功",
     )
@@ -476,7 +476,7 @@ async def preview_import(
     duplicate_count = sum(1 for r in records_data if r["is_duplicate"])
     not_found_count = sum(1 for r in records_data if not r["product_found"])
 
-    return MessageApiResponse(
+    return DataApiResponse(
         data=PreviewImportResponse(
             total_rows=len(records_data) + len(invalid_records),
             valid_records=len(records_data),
@@ -534,7 +534,7 @@ async def import_product_outputs(
     if skipped_count > 0:
         message += f"，跳过 {skipped_count} 条重复批号"
 
-    return MessageApiResponse(
+    return DataApiResponse(
         data=ImportResponse(imported=count, skipped=skipped_count, batch_id=batch_id),
         message=message,
     )
@@ -762,7 +762,7 @@ async def import_from_bitable(
             filtered_records.append(record_data)
 
         if not filtered_records:
-            return MessageApiResponse(
+            return DataApiResponse(
                 code=200,
                 message=f"所有 {skipped_count} 条记录已存在，无需导入",
                 data=ImportResponse(imported=0, skipped=skipped_count, batch_id=""),
@@ -786,7 +786,7 @@ async def import_from_bitable(
 
         service = ProductOutputService(db)
         count = await service.batch_import(filtered_records)
-        return MessageApiResponse(
+        return DataApiResponse(
             data=ImportResponse(imported=count, skipped=skipped_count, batch_id=""),
             message=f"成功导入 {count} 条记录，跳过 {skipped_count} 条重复记录",
         )
