@@ -1,6 +1,7 @@
 """Quality Management System (QMS) module."""
 
 from app.modules.quality.qms.api import router as quality_router
+from app.modules.quality.qms.capa_api import capa_router
 from app.modules.quality.qms.deviation_api import router as deviation_router
 from app.modules.quality.qms.deviation_settings_api import router as deviation_settings_router
 from app.modules.quality.qms.doc_check.api import router as doc_check_router
@@ -30,4 +31,5 @@ __all__ = [
     "static_data_router",
     "reagent_reminder_router",
     "instrument_router",
+    "capa_router",
 ]

@@ -146,11 +146,11 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
       {step === 'preview' && dryRunResult && (
         <div>
           <Alert
-            type={dryRunResult.errors.length > 0 ? 'warning' : 'success'}
+            type={(dryRunResult.errors ?? []).length > 0 ? 'warning' : 'success'}
             showIcon
             message={
-              dryRunResult.errors.length > 0
-                ? `解析完成，但有 ${dryRunResult.errors.length} 个问题`
+              (dryRunResult.errors ?? []).length > 0
+                ? `解析完成，但有 ${(dryRunResult.errors ?? []).length} 个问题`
                 : '解析成功'
             }
             description={
@@ -159,11 +159,11 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
               </div>
             }
           />
-          {dryRunResult.errors.length > 0 && (
+          {(dryRunResult.errors ?? []).length > 0 && (
             <div style={{ marginTop: 16 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>解析问题：</Text>
               <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
-                {dryRunResult.errors.map((err, i) => (
+                {(dryRunResult.errors ?? []).map((err, i) => (
                   <li key={i} style={{ color: '#dd5b00', fontSize: 13 }}>{err}</li>
                 ))}
               </ul>
@@ -174,8 +174,8 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
 
       {step === 'result' && finalResult && (
         <Result
-          status={finalResult.errors.length > 0 ? 'warning' : 'success'}
-          title={finalResult.errors.length > 0 ? '导入完成（有警告）' : '导入成功'}
+          status={(finalResult.errors ?? []).length > 0 ? 'warning' : 'success'}
+          title={(finalResult.errors ?? []).length > 0 ? '导入完成（有警告）' : '导入成功'}
           subTitle={
             <div>
               <div>新建车间：{finalResult.workshops_created} 个</div>
@@ -186,11 +186,11 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
             </div>
           }
         >
-          {finalResult.errors.length > 0 && (
+          {(finalResult.errors ?? []).length > 0 && (
             <div style={{ textAlign: 'left' }}>
               <Text type="secondary" style={{ fontSize: 12 }}>导入问题：</Text>
               <ul style={{ margin: '8px 0', paddingLeft: 20 }}>
-                {finalResult.errors.map((err, i) => (
+                {(finalResult.errors ?? []).map((err, i) => (
                   <li key={i} style={{ color: '#dd5b00', fontSize: 13 }}>{err}</li>
                 ))}
               </ul>

@@ -69,3 +69,23 @@ class VerifyMonitorRequest(BaseModel):
 
     verified_by: str | None = Field(None, max_length=100, description="验证人")
     comments: str | None = Field(None, description="验证意见")
+
+
+# ============ API Response Wrappers ============
+
+
+class OhHazardMonitorApiResponse(BaseModel):
+    """Single OH hazard monitor response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: OhHazardMonitorResponse
+
+
+class OhHazardMonitorListApiResponse(BaseModel):
+    """OH hazard monitor list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[OhHazardMonitorResponse]
+    meta: dict[str, Any] | None = None

@@ -23,7 +23,7 @@ import type {
 export async function getFullGraph(params?: GraphQueryParams): Promise<FullGraphData> {
   const authHeaders = await getAuthHeaders()
   const res = await getFullGraphApi((params || {}) as unknown as Record<string, unknown>, authHeaders)
-  return res.data as FullGraphData
+  return res.data as unknown as FullGraphData
 }
 
 export async function getGraphNodes(params?: GraphQueryParams): Promise<GraphNode[]> {
@@ -47,12 +47,12 @@ export async function searchGraphNodes(query: string, nodeTypes?: string): Promi
 export async function expandGraphNode(params: GraphExpandParams): Promise<FullGraphData> {
   const authHeaders = await getAuthHeaders()
   const res = await expandGraphNodeApi(params as unknown as Record<string, unknown>, authHeaders)
-  return res.data as FullGraphData
+  return res.data as unknown as FullGraphData
 }
 
 export async function triggerGraphGeneration(data?: GraphGenerateRequest): Promise<GraphGenerateResult> {
   const authHeaders = await getAuthHeaders()
   const res = await triggerGraphGenerationApi(data || {}, authHeaders)
   revalidatePath('/safety/knowledge-base/graph')
-  return res.data as GraphGenerateResult
+  return res.data as unknown as GraphGenerateResult
 }

@@ -61,3 +61,28 @@ async def test_trigger_collection_api(auth_client):
 async def test_list_collect_logs_api(auth_client):
     response = await auth_client.get("/api/v1/energy/collect/logs")
     assert response.status_code == 200
+
+
+async def test_energy_statistics_returns_list(auth_client):
+    """统计接口的 data 是分组列表，不是单个对象（response_model 契约）。"""
+    response = await auth_client.get(
+        "/api/v1/energy/data/statistics?start_time=2026-01-01T00:00:00&end_time=2026-12-31T00:00:00"
+    )
+    assert response.status_code == 200
+    assert isinstance(response.json()["data"], list)
+
+
+async def test_energy_overview_shape(auth_client):
+    """总览接口返回 summary/trend/distribution 三部分（具体响应模型）。"""
+    response = await auth_client.get(
+        "/api/v1/energy/overview?start_time=2026-01-01T00:00:00&end_time=2026-12-31T00:00:00"
+    )
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert set(data) == {"summary", "trend", "distribution"}
+    assert set(data["summary"]) == {
+        "total_electricity",
+        "total_water",
+        "total_steam",
+        "total_natural_gas",
+    }

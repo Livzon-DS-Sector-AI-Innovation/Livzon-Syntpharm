@@ -108,10 +108,10 @@ class LLMClient:
         if response_format:
             body["response_format"] = {"type": response_format}
 
-        # Retry logic for transient errors (max 3 attempts)
+        # Retry logic for transient errors (max 3 retries = 4 total attempts)
         # 注意：client 来自连接池（按 config 共享），重试后不可 aclose，否则破坏连接复用
         last_error: Exception | None = None
-        for attempt in range(3):
+        for attempt in range(4):
             try:
                 resp = await client.post("/chat/completions", json=body)
 
@@ -131,8 +131,8 @@ class LLMClient:
 
             except (LLMRateLimitError, httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout) as e:
                 last_error = e
-                if attempt < 2:
-                    # Exponential backoff: 1s, 2s
+                if attempt < 3:
+                    # Exponential backoff: 1s, 2s, 4s
                     await asyncio.sleep(2**attempt)
                     continue
                 raise
@@ -140,7 +140,7 @@ class LLMClient:
         # Should not reach here, but just in case
         if last_error:
             raise last_error
-        raise LLMProviderError("LLM request failed after 3 attempts")
+        raise LLMProviderError("LLM request failed after 4 attempts")
 
     async def chat_json(
         self,

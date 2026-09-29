@@ -499,7 +499,7 @@ class EnergyDataListApiResponse(BaseModel):
 class EnergyStatisticsApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
-    data: EnergyStatisticsResponse
+    data: list[EnergyStatisticsResponse]
 
 
 class CollectLogListApiResponse(BaseModel):
@@ -521,10 +521,44 @@ class CollectTriggerApiResponse(BaseModel):
     data: dict[str, Any]
 
 
+class EnergyOverviewSummary(BaseModel):
+    """总览汇总：各能源类型合计"""
+
+    total_electricity: float = 0
+    total_water: float = 0
+    total_steam: float = 0
+    total_natural_gas: float = 0
+
+
+class EnergyOverviewTrendPoint(BaseModel):
+    """总览趋势数据点"""
+
+    time: str
+    value: float
+    type: str
+
+
+class EnergyOverviewDistributionPoint(BaseModel):
+    """总览分布数据点（按车间分组）"""
+
+    group_key: str
+    total_value: float
+    unit: str
+    data_count: int
+
+
+class EnergyOverviewResponse(BaseModel):
+    """能源总览数据"""
+
+    summary: EnergyOverviewSummary
+    trend: list[EnergyOverviewTrendPoint]
+    distribution: list[EnergyOverviewDistributionPoint]
+
+
 class EnergyOverviewApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
-    data: dict[str, Any]
+    data: EnergyOverviewResponse
 
 
 class FeishuImportApiResponse(BaseModel):

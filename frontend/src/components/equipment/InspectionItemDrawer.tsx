@@ -117,8 +117,8 @@ export function InspectionItemDrawer() {
   ]
 
   return (
-    <Drawer title={null} width={780} open={inspectionItemDrawerOpen} onClose={close} destroyOnClose
-      styles={{ body: { padding: 0, background: C.surface } }}>
+    <Drawer title={null} open={inspectionItemDrawerOpen} onClose={close} destroyOnClose
+      styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 780 } }}>
       <div style={{ background: C.navy, padding: '16px 28px', borderBottom: `3px solid ${C.purple}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>Checklist Items</div>

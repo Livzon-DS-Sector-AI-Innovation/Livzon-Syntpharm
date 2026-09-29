@@ -43,8 +43,8 @@ export function InspectionDetailDrawer() {
   }
 
   return (
-    <Drawer title={null} width={780} open={historyDetailOpen} onClose={closeHistoryDetail} destroyOnClose
-      styles={{ body: { padding: 0, background: C.surface } }}>
+    <Drawer title={null} open={historyDetailOpen} onClose={closeHistoryDetail} destroyOnClose
+      styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 780 } }}>
       {/* header */}
       <div style={{ background: C.navy, padding: '18px 28px', borderBottom: `3px solid ${C.purple}` }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>Inspection Record</div>

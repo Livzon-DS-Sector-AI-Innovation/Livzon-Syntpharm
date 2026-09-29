@@ -9,10 +9,12 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.deps import RequiredUser
+from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
+    AccidentApiResponse,
     AccidentCreate,
+    AccidentListApiResponse,
     AccidentResponse,
     AccidentUpdate,
 )
@@ -23,8 +25,9 @@ from app.modules.safety.service import (
 accidents_router = APIRouter()
 
 
-@accidents_router.get("/accidents", response_model=ApiResponse, summary="获取事故列表")
+@accidents_router.get("/accidents", response_model=AccidentListApiResponse, summary="获取事故列表")
 async def get(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
@@ -35,8 +38,7 @@ async def get(
     date_to: str | None = Query(None, description="发生时间止 (YYYY-MM-DD)"),
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """获取事故列表"""
     service = SafetyService(db)
     skip = (page - 1) * page_size
@@ -51,84 +53,72 @@ async def get(
         datetime.fromisoformat(date_to) if date_to else None,
         keyword,
     )
-    return build_response(
+    return AccidentListApiResponse(
         data=[AccidentResponse.model_validate(a) for a in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@accidents_router.get("/accidents/{accident_id}", response_model=ApiResponse, summary="获取事故详情")
-async def handler(
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+@accidents_router.get("/accidents/{accident_id}", response_model=AccidentApiResponse, summary="获取事故详情")
+async def handler(current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
     """获取事故详情"""
     service = SafetyService(db)
     item = await service.get_accident(accident_id)
     if not item:
-        return build_response(code=404, message="事故不存在")
-    return build_response(data=AccidentResponse.model_validate(item))
+        raise NotFoundException(resource="事故")
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
-@accidents_router.post("/accidents", response_model=ApiResponse, summary="创建事故")
-async def post(
-    data: AccidentCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+@accidents_router.post("/accidents", response_model=AccidentApiResponse, summary="创建事故")
+async def post(current_user: RequiredUser, data: AccidentCreate, db: AsyncSession = Depends(get_db)) -> Any:
     """创建事故"""
     service = SafetyService(db)
     item = await service.create_accident(data)
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.put(  # type: ignore[no-redef]
-    "/accidents/{accident_id}", response_model=ApiResponse, summary="更新事故"
+    "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="更新事故"
 )
 async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    data: AccidentUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, accident_id: uuid.UUID, data: AccidentUpdate, db: AsyncSession = Depends(get_db)
+) -> Any:
     """更新事故"""
     service = SafetyService(db)
     item = await service.update_accident(accident_id, data)
     if not item:
-        return build_response(code=404, message="事故不存在")
+        raise NotFoundException(resource="事故")
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/investigate",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="开始调查事故",
 )
 async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """开始调查事故"""
     service = SafetyService(db)
     user_id = current_user.id if current_user else None
     user_name = current_user.name if current_user else None
     item = await service.investigate_accident(accident_id, user_id, user_name)
     if not item:
-        return build_response(code=400, message="无法开始调查，当前状态不允许")
+        raise ValueError("无法开始调查，当前状态不允许")
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/resolve",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="完成调查事故",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     accident_id: uuid.UUID,
     direct_cause: str = Query(..., description="直接原因"),
     root_cause: str = Query(..., description="根本原因"),
@@ -137,8 +127,7 @@ async def handler(  # noqa: F811
     investigation_findings: str | None = Query(None, description="调查发现"),
     investigation_method: str | None = Query(None, description="调查方法"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """完成调查事故"""
     service = SafetyService(db)
     item = await service.resolve_accident(
@@ -151,23 +140,23 @@ async def handler(  # noqa: F811
         investigation_method,
     )
     if not item:
-        return build_response(code=400, message="无法完成调查，当前状态不允许")
+        raise ValueError("无法完成调查，当前状态不允许")
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/start-capa",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="启动CAPA",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     accident_id: uuid.UUID,
     corrective_action_deadline: str = Query(..., description="CAPA截止日期 (YYYY-MM-DD)"),
     corrective_action_responsible: str = Query(..., description="CAPA责任人"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """启动CAPA: investigated → capa_in_progress"""
     service = SafetyService(db)
     item = await service.start_capa(
@@ -176,63 +165,57 @@ async def handler(  # noqa: F811
         corrective_action_responsible,
     )
     if not item:
-        return build_response(code=400, message="无法启动CAPA，当前状态不允许")
+        raise ValueError("无法启动CAPA，当前状态不允许")
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/verify-capa",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="验证CAPA并关闭事故",
 )
 async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """验证CAPA并关闭事故: capa_in_progress → closed"""
     service = SafetyService(db)
     user_id = current_user.id if current_user else None
     user_name = current_user.name if current_user else None
     item = await service.verify_capa(accident_id, user_id, user_name)
     if not item:
-        return build_response(code=400, message="无法验证CAPA，当前状态不允许")
+        raise ValueError("无法验证CAPA，当前状态不允许")
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.post(  # type: ignore[no-redef]
     "/accidents/{accident_id}/close",
-    response_model=ApiResponse,
+    response_model=AccidentApiResponse,
     summary="直接关闭事故",
 )
 async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """直接关闭事故（无CAPA时）"""
     service = SafetyService(db)
     item = await service.close_accident(accident_id)
     if not item:
-        return build_response(code=400, message="无法关闭，当前状态不允许")
+        raise ValueError("无法关闭，当前状态不允许")
     await db.commit()
-    return build_response(data=AccidentResponse.model_validate(item))
+    return AccidentApiResponse(data=AccidentResponse.model_validate(item))
 
 
 @accidents_router.delete(  # type: ignore[no-redef]
-    "/accidents/{accident_id}", response_model=ApiResponse, summary="删除事故"
+    "/accidents/{accident_id}", response_model=AccidentApiResponse, summary="删除事故"
 )
 async def handler(  # noqa: F811
-    accident_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, accident_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除事故"""
     service = SafetyService(db)
     result = await service.delete_accident(accident_id)
     if not result:
-        return build_response(code=404, message="事故不存在")
+        raise NotFoundException(resource="事故")
     await db.commit()
-    return build_response(message="删除成功")
+    return AccidentApiResponse(code=200, message="删除成功", data=None)  # type: ignore[arg-type]

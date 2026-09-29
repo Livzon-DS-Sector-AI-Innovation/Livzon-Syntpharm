@@ -55,8 +55,8 @@ export function InspectionTemplateDrawer({ categories, onRefresh }: Props) {
   }
 
   return (
-    <Drawer title={null} width={460} open={inspectionTemplateDrawerOpen} onClose={closeInspectionTemplateDrawer} destroyOnClose
-      styles={{ body: { padding: 0, background: C.surface } }}>
+    <Drawer title={null} open={inspectionTemplateDrawerOpen} onClose={closeInspectionTemplateDrawer} destroyOnClose
+      styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 460 } }}>
       <div style={{ background: C.navy, padding: '18px 28px', borderBottom: `3px solid ${C.purple}` }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>Template {isNew ? 'Creation' : 'Settings'}</div>
         <div style={{ fontSize: 18, fontWeight: 600, color: '#fff' }}>{isNew ? '新建巡检模板' : '编辑巡检模板'}</div>

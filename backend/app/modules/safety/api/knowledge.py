@@ -11,14 +11,22 @@ from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse, build_response  # type: ignore[attr-defined]
+from app.core.deps import RequiredUser
+from app.core.exceptions import NotFoundException
+from app.core.response import build_response  # type: ignore[attr-defined]
 from app.core.storage import is_enabled as minio_enabled
 from app.core.storage import upload_object
 from app.modules.safety.schemas import (
+    SafetyKnowledgeArticleApiResponse,
     SafetyKnowledgeArticleCreate,
+    SafetyKnowledgeArticleListApiResponse,
     SafetyKnowledgeArticleResponse,
     SafetyKnowledgeArticleUpdate,
+    SafetyKnowledgeBatchImportApiResponse,
+    SafetyKnowledgeGenerateCardApiResponse,
+    SafetyKnowledgeGeneratePptApiResponse,
+    SafetyKnowledgeGenerateSummaryApiResponse,
+    SafetyKnowledgePptHistoryApiResponse,
 )
 from app.modules.safety.service import (
     KnowledgeService,
@@ -29,147 +37,136 @@ logger = logging.getLogger(__name__)
 knowledge_router = APIRouter()
 
 
-@knowledge_router.get("/knowledge-articles", response_model=ApiResponse, summary="获取安全知识库文章列表")
+@knowledge_router.get(
+    "/knowledge-articles", response_model=SafetyKnowledgeArticleListApiResponse, summary="获取安全知识库文章列表"
+)
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     category: str | None = None,
     status: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """获取安全知识库文章列表"""
     service = KnowledgeService(db)
     skip = (page - 1) * page_size
     items, total = await service.get_articles(skip, page_size, category, status, keyword)
-    return build_response(
+    return SafetyKnowledgeArticleListApiResponse(
         data=[SafetyKnowledgeArticleResponse.model_validate(a) for a in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
-    "/knowledge-articles", response_model=ApiResponse, summary="创建安全知识库文章"
+    "/knowledge-articles", response_model=SafetyKnowledgeArticleApiResponse, summary="创建安全知识库文章"
 )
 async def handler(  # noqa: F811
-    data: SafetyKnowledgeArticleCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, data: SafetyKnowledgeArticleCreate, db: AsyncSession = Depends(get_db)
+) -> Any:
     """创建安全知识库文章"""
     service = KnowledgeService(db)
     item = await service.create_article(data)
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.get(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取安全知识库文章详情",
 )
 async def handler(  # noqa: F811
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """获取安全知识库文章详情"""
     service = KnowledgeService(db)
     item = await service.get_article(article_id)
     if not item:
-        return build_response(code=404, message="文章不存在")
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+        raise NotFoundException(resource="文章")
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.put(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="更新安全知识库文章",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     article_id: uuid.UUID,
     data: SafetyKnowledgeArticleUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """更新安全知识库文章"""
     service = KnowledgeService(db)
     item = await service.update_article(article_id, data)
     if not item:
-        return build_response(code=404, message="文章不存在")
+        raise NotFoundException(resource="文章")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.delete(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="删除安全知识库文章",
 )
 async def handler(  # noqa: F811
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """删除安全知识库文章"""
     service = KnowledgeService(db)
     result = await service.delete_article(article_id)
     if not result:
-        return build_response(code=404, message="文章不存在")
+        raise NotFoundException(resource="文章")
     await db.commit()
-    return build_response(message="删除成功")
+    return SafetyKnowledgeArticleApiResponse(code=200, message="删除成功", data=None)
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}/publish",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="发布知识库文章",
 )
 async def handler(  # noqa: F811
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """发布文章（草稿→已发布）"""
     service = KnowledgeService(db)
     item = await service.publish_article(article_id)
     if not item:
         return build_response(code=400, message="无法发布，当前状态不允许")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}/archive",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="归档知识库文章",
 )
 async def handler(  # noqa: F811
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
     """归档文章（已发布→已归档）"""
     service = KnowledgeService(db)
     item = await service.archive_article(article_id)
     if not item:
         return build_response(code=400, message="无法归档，当前状态不允许")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/{article_id}/upload",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="上传知识库文章附件",
 )
 async def handler(  # noqa: F811
-    article_id: uuid.UUID,
-    file: UploadFile,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    current_user: RequiredUser, article_id: uuid.UUID, file: UploadFile, db: AsyncSession = Depends(get_db)
+) -> Any:
     """上传知识库文章附件"""
 
     file_ext = os.path.splitext(file.filename or ".bin")[1]
@@ -203,9 +200,9 @@ async def handler(  # noqa: F811
         },
     )
     if not item:
-        return build_response(code=404, message="文章不存在")
+        raise NotFoundException(resource="文章")
     await db.commit()
-    return build_response(data=SafetyKnowledgeArticleResponse.model_validate(item))
+    return SafetyKnowledgeArticleApiResponse(data=SafetyKnowledgeArticleResponse.model_validate(item))
 
 
 # ── 知识图谱端点 ──────────────────────────────────────────
@@ -249,15 +246,15 @@ def _edge_to_dict(e) -> dict:
 
 @knowledge_router.get(
     "/knowledge-graph/full-graph",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取完整知识图谱",
 )
 async def get_full_graph(
+    current_user: RequiredUser,
     node_types: str | None = None,
     relation_types: str | None = None,
     max_nodes: int = Query(500, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取完整知识图谱数据"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -275,10 +272,11 @@ async def get_full_graph(
 
 @knowledge_router.get(
     "/knowledge-graph/nodes",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取图谱节点列表",
 )
 async def get_graph_nodes(
+    current_user: RequiredUser,
     node_type: str | None = None,
     entity_type: str | None = None,
     status: str | None = None,
@@ -286,7 +284,6 @@ async def get_graph_nodes(
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取图谱节点列表"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -302,16 +299,16 @@ async def get_graph_nodes(
 
 @knowledge_router.get(
     "/knowledge-graph/edges",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取图谱边列表",
 )
 async def get_graph_edges(
+    current_user: RequiredUser,
     relation_type: str | None = None,
     status: str | None = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取图谱边列表"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -327,14 +324,14 @@ async def get_graph_edges(
 
 @knowledge_router.get(
     "/knowledge-graph/search",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="搜索图谱节点",
 )
 async def search_graph_nodes(
+    current_user: RequiredUser,
     query: str = Query(..., min_length=1),
     node_types: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """搜索图谱节点"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -346,16 +343,16 @@ async def search_graph_nodes(
 
 @knowledge_router.get(
     "/knowledge-graph/expand",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="展开节点邻居",
 )
 async def expand_graph_node(
+    current_user: RequiredUser,
     node_id: uuid.UUID,
     hops: int = Query(1, ge=1, le=3),
     relation_types: str | None = None,
     max_nodes: int = Query(30, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """展开指定节点的邻居节点"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -373,14 +370,14 @@ async def expand_graph_node(
 
 @knowledge_router.post(
     "/knowledge-graph/generate",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeArticleApiResponse,
     summary="AI 生成知识图谱",
 )
 async def generate_graph(
+    current_user: RequiredUser,
     document_ids: list[uuid.UUID] | None = None,
     force_rebuild: bool = False,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """从知识库文章 AI 生成知识图谱"""
     from app.modules.safety.service import KnowledgeGraphService
@@ -393,15 +390,15 @@ async def generate_graph(
 
 @knowledge_router.post(  # type: ignore[no-redef]
     "/knowledge-articles/batch-import",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeBatchImportApiResponse,
     summary="批量导入知识库文章",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     files: list[UploadFile] = File(...),
     category: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:  # noqa: F821  # type: ignore[name-defined]
+) -> Any:
     """批量导入知识库文章"""
     from app.modules.safety.service.document_parser import parse_document
 
@@ -534,14 +531,10 @@ async def handler(  # noqa: F811
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-card",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeGenerateCardApiResponse,
     summary="生成知识卡片",
 )
-async def generate_card(
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:
+async def generate_card(current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
     """使用 AI 从文章内容生成结构化知识卡片（委托给 KnowledgeService）
 
     TODO(H7): Consider async task pattern for large documents.
@@ -568,14 +561,14 @@ async def generate_card(
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-ppt",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeGeneratePptApiResponse,
     summary="生成 PPT",
 )
 async def generate_ppt(
+    current_user: RequiredUser,
     article_id: uuid.UUID,
     data: dict[str, Any] = Body(default_factory=dict),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """使用 AI 从文章内容生成 PPT（.pptx 文件）
 
@@ -603,15 +596,15 @@ async def generate_ppt(
 
 @knowledge_router.get(
     "/knowledge-articles/{article_id}/ppt-history",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgePptHistoryApiResponse,
     summary="获取 PPT 生成历史",
 )
 async def get_ppt_history(
+    current_user: RequiredUser,
     article_id: uuid.UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """查询某文章的 PPT 生成历史记录（委托给 KnowledgeService）"""
     service = KnowledgeService(db)
@@ -637,13 +630,11 @@ async def get_ppt_history(
 
 @knowledge_router.post(
     "/knowledge-articles/{article_id}/generate-summary",
-    response_model=ApiResponse,
+    response_model=SafetyKnowledgeGenerateSummaryApiResponse,
     summary="生成摘要",
 )
 async def generate_summary(
-    article_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, article_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """使用 AI 从文章内容生成摘要（委托给 KnowledgeService）
 

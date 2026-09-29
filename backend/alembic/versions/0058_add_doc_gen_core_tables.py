@@ -19,7 +19,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = '0058_add_doc_gen_core_tables'
-down_revision: str | Sequence[str] | None = '0057_merge_migration_heads'
+down_revision: str | Sequence[str] | None = '0066_add_knowledge_article_document_fields'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

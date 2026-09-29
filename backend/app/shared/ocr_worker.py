@@ -18,6 +18,17 @@ from pathlib import Path
 from typing import Any
 
 
+def _extract_markdown_text(res: Any) -> str:
+    """从 PP-StructureV3 结果提取 markdown 文本（新版 API：res.markdown 属性）。"""
+    if hasattr(res, "markdown"):
+        md_info = res.markdown
+        if isinstance(md_info, dict):
+            return str(md_info.get("markdown_texts", ""))
+        if isinstance(md_info, str):
+            return md_info
+    return ""
+
+
 def process_request(request: dict[str, Any], pp_ocr: Any, get_pp_structure: Callable[[], Any]) -> dict[str, Any]:
     """处理单个 OCR 请求"""
     request_id = request.get("id")
@@ -31,34 +42,30 @@ def process_request(request: dict[str, Any], pp_ocr: Any, get_pp_structure: Call
                 result = pp_ocr.predict(input_path)
                 texts = []
                 for res in result:
-                    if hasattr(res, "res") and "rec_texts" in res.res:
-                        texts.extend(res.res["rec_texts"])
+                    if "rec_texts" in res:
+                        texts.extend(res["rec_texts"])
                 return {"id": request_id, "status": "ok", "data": "\n".join(texts)}
 
             elif method == "extract_with_positions":
                 result = pp_ocr.predict(input_path)
                 blocks = []
                 for res in result:
-                    if hasattr(res, "res"):
-                        rec_data = res.res
-                        if all(k in rec_data for k in ["rec_texts", "rec_scores", "rec_polys"]):
-                            for text, score, poly in zip(
-                                rec_data["rec_texts"], rec_data["rec_scores"], rec_data["rec_polys"]
-                            ):
-                                x_coords = [p[0] for p in poly]
-                                y_coords = [p[1] for p in poly]
-                                blocks.append(
-                                    {
-                                        "text": text,
-                                        "bbox": [
-                                            int(min(x_coords)),
-                                            int(min(y_coords)),
-                                            int(max(x_coords)),
-                                            int(max(y_coords)),
-                                        ],
-                                        "confidence": float(score),
-                                    }
-                                )
+                    if all(k in res for k in ["rec_texts", "rec_scores", "rec_polys"]):
+                        for text, score, poly in zip(res["rec_texts"], res["rec_scores"], res["rec_polys"]):
+                            x_coords = [p[0] for p in poly]
+                            y_coords = [p[1] for p in poly]
+                            blocks.append(
+                                {
+                                    "text": text,
+                                    "bbox": [
+                                        int(min(x_coords)),
+                                        int(min(y_coords)),
+                                        int(max(x_coords)),
+                                        int(max(y_coords)),
+                                    ],
+                                    "confidence": float(score),
+                                }
+                            )
                 return {"id": request_id, "status": "ok", "data": blocks}
 
         elif engine == "pp_structure":
@@ -70,7 +77,10 @@ def process_request(request: dict[str, Any], pp_ocr: Any, get_pp_structure: Call
 
                 markdown_parts = []
                 for res in result:
-                    if hasattr(res, "save_to_markdown"):
+                    md = _extract_markdown_text(res)
+                    if md:
+                        markdown_parts.append(md)
+                    elif hasattr(res, "save_to_markdown"):
                         with tempfile.TemporaryDirectory() as tmpdir:
                             res.save_to_markdown(save_path=tmpdir)
                             md_files = list(Path(tmpdir).glob("*.md"))
@@ -83,14 +93,19 @@ def process_request(request: dict[str, Any], pp_ocr: Any, get_pp_structure: Call
 
                 output: dict[str, Any] = {"markdown": "", "json": {}, "layout": [], "tables": []}
                 for res in result:
-                    if hasattr(res, "save_to_markdown"):
+                    md = _extract_markdown_text(res)
+                    if md:
+                        output["markdown"] = md
+                    elif hasattr(res, "save_to_markdown"):
                         with tempfile.TemporaryDirectory() as tmpdir:
                             res.save_to_markdown(save_path=tmpdir)
                             md_files = list(Path(tmpdir).glob("*.md"))
                             if md_files:
                                 output["markdown"] = md_files[0].read_text(encoding="utf-8")
 
-                    if hasattr(res, "save_to_json"):
+                    if hasattr(res, "json"):
+                        output["json"] = res.json
+                    elif hasattr(res, "save_to_json"):
                         with tempfile.TemporaryDirectory() as tmpdir:
                             res.save_to_json(save_path=tmpdir)
                             json_files = list(Path(tmpdir).glob("*.json"))
@@ -98,14 +113,12 @@ def process_request(request: dict[str, Any], pp_ocr: Any, get_pp_structure: Call
                                 with open(json_files[0], encoding="utf-8") as f:
                                     output["json"] = json.load(f)
 
-                    if hasattr(res, "res"):
-                        res_data = res.res
-                        if "layout_parsing_res" in res_data:
-                            for item in res_data["layout_parsing_res"]:
-                                if "block_label" in item:
-                                    if item["block_label"] == "table":
-                                        output["tables"].append(item)
-                                    output["layout"].append(item)
+                    if "parsing_res_list" in res:
+                        for item in res["parsing_res_list"]:
+                            if "block_label" in item:
+                                if item["block_label"] == "table":
+                                    output["tables"].append(item)
+                                output["layout"].append(item)
                 return {"id": request_id, "status": "ok", "data": output}
 
         return {"id": request_id, "status": "error", "message": f"Unknown method: {method}"}

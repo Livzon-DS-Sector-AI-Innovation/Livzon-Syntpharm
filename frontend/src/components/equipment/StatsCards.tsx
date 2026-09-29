@@ -98,7 +98,7 @@ export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
               <Statistic
                 title={<span style={{ color: '#5d5b54', fontSize: 14 }}>{label}</span>}
                 value={value}
-                valueStyle={{ color, fontWeight: 600 }}
+                styles={{ content: { color, fontWeight: 600 } }}
               />
             </Card>
           </Col>

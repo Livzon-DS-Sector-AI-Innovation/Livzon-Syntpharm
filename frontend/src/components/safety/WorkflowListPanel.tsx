@@ -233,7 +233,7 @@ export default function WorkflowListPanel() {
     try {
       const res = await getHIStats()
       if (res.code === 200 && res.data) {
-        setStats(res.data as HazardIdentificationStats)
+        setStats(res.data as unknown as HazardIdentificationStats)
       }
     } catch { /* 静默失败 */ }
   }

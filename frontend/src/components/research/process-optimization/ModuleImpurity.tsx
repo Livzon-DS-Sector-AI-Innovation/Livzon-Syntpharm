@@ -397,10 +397,10 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
                       <Card size="small"><Statistic title="总杂质数" value={impurities.length} /></Card>
                     </Col>
                     <Col span={6}>
-                      <Card size="small"><Statistic title="高风险" value={highRiskCount} valueStyle={{ color: highRiskCount > 0 ? '#ff4d4f' : '#52c41a' }} /></Card>
+                      <Card size="small"><Statistic title="高风险" value={highRiskCount} styles={{ content: { color: highRiskCount > 0 ? '#ff4d4f' : '#52c41a' } }} /></Card>
                     </Col>
                     <Col span={6}>
-                      <Card size="small"><Statistic title="中风险" value={medRiskCount} valueStyle={{ color: medRiskCount > 0 ? '#faad14' : '#52c41a' }} /></Card>
+                      <Card size="small"><Statistic title="中风险" value={medRiskCount} styles={{ content: { color: medRiskCount > 0 ? '#faad14' : '#52c41a' } }} /></Card>
                     </Col>
                     <Col span={6}>
                       <Card size="small"><Statistic title="总杂质水平" value={totalImp} precision={2} suffix="%" /></Card>
