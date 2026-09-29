@@ -86,7 +86,7 @@ async def get(
 
     batches, total = await service.get_batches(skip, page_size, status, product_code, batch_no, exclude_cancelled_bool)
 
-    return BatchApiResponse(
+    return BatchListApiResponse(
         data=[BatchResponse.model_validate(b) for b in batches],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -212,7 +212,7 @@ async def handler(  # noqa: F811
 
     materials = await service.get_batch_materials(batch_id)
 
-    return BatchMaterialApiResponse(data=[BatchMaterialResponse.model_validate(m) for m in materials])
+    return BatchMaterialListApiResponse(data=[BatchMaterialResponse.model_validate(m) for m in materials])
 
 
 @router.post(  # type: ignore[no-redef]
@@ -302,7 +302,7 @@ async def get(  # noqa: F811
 
     plans, total = await service.get_plans(skip, page_size, status, plan_month)
 
-    return ProductionPlanApiResponse(
+    return ProductionPlanListApiResponse(
         data=[ProductionPlanResponse.model_validate(p) for p in plans],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -401,7 +401,7 @@ async def handler(  # noqa: F811
 
     tasks = await service.get_tasks(plan_id)
 
-    return PlanTaskApiResponse(data=[PlanTaskResponse.model_validate(t) for t in tasks])
+    return PlanTaskListApiResponse(data=[PlanTaskResponse.model_validate(t) for t in tasks])
 
 
 @router.post("/tasks", response_model=PlanTaskApiResponse, summary="创建计划任务")  # type: ignore[no-redef]
@@ -589,7 +589,7 @@ async def handler(  # noqa: F811
 
     steps = await service.get_steps(spec_id)
 
-    return ProcessStepApiResponse(data=[ProcessStepResponse.model_validate(s) for s in steps])
+    return ProcessStepListApiResponse(data=[ProcessStepResponse.model_validate(s) for s in steps])
 
 
 @router.post("/steps", response_model=ProcessStepApiResponse, summary="创建工艺步骤")  # type: ignore[no-redef]
@@ -669,7 +669,7 @@ async def handler(  # noqa: F811
 
     params = await service.get_parameters(step_id)
 
-    return ProcessParameterApiResponse(data=[ProcessParameterResponse.model_validate(p) for p in params])
+    return ProcessParameterListApiResponse(data=[ProcessParameterResponse.model_validate(p) for p in params])
 
 
 @router.post("/parameters", response_model=ProcessParameterApiResponse, summary="创建工艺参数")  # type: ignore[no-redef]
@@ -734,7 +734,7 @@ async def handler(  # noqa: F811
 
     records = await service.get_records(batch_id, skip, page_size)
 
-    return ProductionRecordApiResponse(data=[ProductionRecordResponse.model_validate(r) for r in records])
+    return ProductionRecordListApiResponse(data=[ProductionRecordResponse.model_validate(r) for r in records])
 
 
 @router.post("/records", response_model=ProductionRecordApiResponse, summary="创建生产记录")  # type: ignore[no-redef]
