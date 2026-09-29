@@ -1,6 +1,6 @@
-"""0058_add_doc_gen_core_tables
+"""0067_add_doc_gen_core_tables
 
-Revision ID: 0058_add_doc_gen_core_tables
+Revision ID: 0067_add_doc_gen_core_tables
 Revises: 0057_merge_migration_heads
 Create Date: 2026-09-09 17:40:00.000000
 
@@ -18,7 +18,7 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = '0058_add_doc_gen_core_tables'
+revision: str = '0067_add_doc_gen_core_tables'
 down_revision: str | Sequence[str] | None = '0066_add_knowledge_article_document_fields'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

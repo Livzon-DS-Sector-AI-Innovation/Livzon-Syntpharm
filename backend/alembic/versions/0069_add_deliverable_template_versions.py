@@ -1,7 +1,7 @@
-"""0060_add_deliverable_template_versions
+"""0069_add_deliverable_template_versions
 
-Revision ID: 0060_add_deliverable_template_versions
-Revises: 0059_add_deliverable_template_fields
+Revision ID: 0069_add_deliverable_template_versions
+Revises: 0068_add_deliverable_template_fields
 Create Date: 2026-09-16 10:00:00.000000
 
 交付物模板版本管理：
@@ -21,8 +21,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = '0060_add_deliverable_template_versions'
-down_revision: str | Sequence[str] | None = '0059_add_deliverable_template_fields'
+revision: str = '0069_add_deliverable_template_versions'
+down_revision: str | Sequence[str] | None = '0068_add_deliverable_template_fields'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,7 +1,7 @@
-"""0064_add_kb_chunks_and_facts
+"""0073_add_kb_chunks_and_facts
 
-Revision ID: 0064_add_kb_chunks_and_facts
-Revises: 0063_add_doc_gen_corpus_documents
+Revision ID: 0073_add_kb_chunks_and_facts
+Revises: 0072_add_doc_gen_corpus_documents
 Create Date: 2026-09-28 09:40:00.000000
 
 知识库切片索引（``research.rd_kb_chunks``）与知识库事实库（``research.rd_kb_facts``）。
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = '0064_add_kb_chunks_and_facts'
-down_revision: str | Sequence[str] | None = '0063_add_doc_gen_corpus_documents'
+revision: str = '0073_add_kb_chunks_and_facts'
+down_revision: str | Sequence[str] | None = '0072_add_doc_gen_corpus_documents'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

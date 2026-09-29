@@ -1,7 +1,7 @@
-"""0062_add_research_knowledge_base
+"""0071_add_research_knowledge_base
 
-Revision ID: 0062_add_research_knowledge_base
-Revises: 0061_merge_0060_heads
+Revision ID: 0071_add_research_knowledge_base
+Revises: 0070_merge_0069_heads
 Create Date: 2026-09-24 11:05:00.000000
 
 研发管理「项目知识库」：
@@ -14,8 +14,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = '0062_add_research_knowledge_base'
-down_revision: str | Sequence[str] | None = '0061_merge_0060_heads'
+revision: str = '0071_add_research_knowledge_base'
+down_revision: str | Sequence[str] | None = '0070_merge_0069_heads'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

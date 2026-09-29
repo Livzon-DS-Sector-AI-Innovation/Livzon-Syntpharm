@@ -1,7 +1,7 @@
-"""0067_add_template_markdown_ai
+"""0076_add_template_markdown_ai
 
-Revision ID: 0067_add_template_markdown_ai
-Revises: 0066_align_research_column_comments
+Revision ID: 0076_add_template_markdown_ai
+Revises: 0075_align_research_column_comments
 Create Date: 2026-09-28 22:30:00.000000
 
 交付物模板新增「AI 重组 Markdown」视图缓存两列：
@@ -21,8 +21,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0067_add_template_markdown_ai"
-down_revision: str | Sequence[str] | None = "0066_align_research_column_comments"
+revision: str = "0076_add_template_markdown_ai"
+down_revision: str | Sequence[str] | None = "0075_align_research_column_comments"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

@@ -1,7 +1,7 @@
-"""0068_drop_template_markdown_ai
+"""0077_drop_template_markdown_ai
 
-Revision ID: 0068_drop_template_markdown_ai
-Revises: 0067_add_template_markdown_ai
+Revision ID: 0077_drop_template_markdown_ai
+Revises: 0076_add_template_markdown_ai
 Create Date: 2026-09-28 23:30:00.000000
 
 「AI 重组模板 Markdown」功能下线，删除交付物模板的视图缓存两列：
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0068_drop_template_markdown_ai"
-down_revision: str | Sequence[str] | None = "0067_add_template_markdown_ai"
+revision: str = "0077_drop_template_markdown_ai"
+down_revision: str | Sequence[str] | None = "0076_add_template_markdown_ai"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

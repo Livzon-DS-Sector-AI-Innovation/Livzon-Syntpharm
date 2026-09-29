@@ -1,7 +1,7 @@
-"""0065_align_llm_configs_column_comment
+"""0074_align_llm_configs_column_comment
 
-Revision ID: 0065_align_llm_configs_column_comment
-Revises: 0064_add_kb_chunks_and_facts
+Revision ID: 0074_align_llm_configs_column_comment
+Revises: 0073_add_kb_chunks_and_facts
 Create Date: 2026-09-28 10:10:00.000000
 
 把 ``core.llm_configs.config_type`` 的列注释对齐到 ORM 模型（``app/core/llm/config.py``）。
@@ -23,8 +23,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0065_align_llm_configs_column_comment"
-down_revision: str | Sequence[str] | None = "0064_add_kb_chunks_and_facts"
+revision: str = "0074_align_llm_configs_column_comment"
+down_revision: str | Sequence[str] | None = "0073_add_kb_chunks_and_facts"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
