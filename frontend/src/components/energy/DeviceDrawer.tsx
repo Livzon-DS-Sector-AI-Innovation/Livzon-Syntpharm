@@ -165,7 +165,7 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
       width={480}
       open={deviceDrawerOpen}
       onClose={closeDeviceDrawer}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: {
           borderBottom: '1px solid #e5e3df',

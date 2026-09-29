@@ -218,7 +218,7 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName: _category
       width={860}
       open={open}
       onClose={onClose}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },

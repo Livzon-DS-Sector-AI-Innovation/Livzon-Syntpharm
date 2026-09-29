@@ -538,7 +538,7 @@ export default function EhsChangePage() {
         onOk={handleSave}
         confirmLoading={saving}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Title level={5} className="mb-3">基本信息</Title>

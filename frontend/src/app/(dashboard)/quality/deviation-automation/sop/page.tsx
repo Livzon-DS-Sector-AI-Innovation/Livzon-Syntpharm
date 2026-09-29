@@ -509,7 +509,7 @@ export default function SopManagementPage() {
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={modalForm} layout="vertical">
           <Form.Item

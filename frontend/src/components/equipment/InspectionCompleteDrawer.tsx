@@ -112,7 +112,7 @@ export function InspectionCompleteDrawer({ onRefresh }: InspectionCompleteDrawer
       width={900}
       open={inspectionCompleteDrawerOpen}
       onClose={closeInspectionCompleteDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeInspectionCompleteDrawer}>取消</Button>

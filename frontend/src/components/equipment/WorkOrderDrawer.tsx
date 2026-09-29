@@ -109,7 +109,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
       width={480}
       open={workOrderDrawerOpen}
       onClose={closeWorkOrderDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeWorkOrderDrawer}>取消</Button>

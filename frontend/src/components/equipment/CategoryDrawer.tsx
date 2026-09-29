@@ -92,7 +92,7 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
       width={400}
       open={categoryDrawerOpen}
       onClose={closeCategoryDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeCategoryDrawer}>取消</Button>

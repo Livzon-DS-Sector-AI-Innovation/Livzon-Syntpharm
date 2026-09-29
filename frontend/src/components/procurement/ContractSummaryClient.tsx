@@ -322,7 +322,7 @@ export function ContractSummaryClient({
       </section>
 
       <Drawer
-        destroyOnClose
+        destroyOnHidden
         width={920}
         title={detail?.title || '合同详情'}
         open={drawerOpen}

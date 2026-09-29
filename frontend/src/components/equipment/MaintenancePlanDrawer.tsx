@@ -38,7 +38,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
       }
     }).catch(() => {})
 
-    // 延迟确保 Form 字段在 destroyOnClose 后重新挂载完毕
+    // 延迟确保 Form 字段在 destroyOnHidden 后重新挂载完毕
     const timer = setTimeout(() => {
       if (editingMaintenancePlan) {
         form.setFieldsValue({
@@ -106,7 +106,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
       width={480}
       open={maintenancePlanDrawerOpen}
       onClose={closeMaintenancePlanDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeMaintenancePlanDrawer}>取消</Button>

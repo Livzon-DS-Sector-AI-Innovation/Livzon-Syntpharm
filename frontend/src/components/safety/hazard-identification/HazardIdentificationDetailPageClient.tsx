@@ -448,7 +448,7 @@ export function HazardIdentificationDetailPageClient() {
         okText="确认"
         cancelText="取消"
         width={600}
-        destroyOnClose
+        destroyOnHidden
       >
         {Object.entries(editForm).map(([key, val]) => (
           <div key={key} style={{ marginBottom: 12 }}>

@@ -168,7 +168,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
       width={480}
       open={alertConfigDrawerOpen}
       onClose={closeAlertConfigDrawer}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },

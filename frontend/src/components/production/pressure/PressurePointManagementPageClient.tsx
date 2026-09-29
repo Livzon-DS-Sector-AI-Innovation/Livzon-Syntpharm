@@ -179,7 +179,7 @@ export function PressurePointManagementPageClient() {
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={() => { setModalOpen(false); setEditingId(null); form.resetFields() }}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical">
           <Form.Item

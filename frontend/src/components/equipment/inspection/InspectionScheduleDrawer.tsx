@@ -145,7 +145,7 @@ export function InspectionScheduleDrawer() {
       width={480}
       open={scheduleDrawerOpen}
       onClose={closeScheduleDrawer}
-      destroyOnClose
+      destroyOnHidden
       styles={{ body: { padding: 0, background: C.surface } }}
     >
       {/* HEADER */}

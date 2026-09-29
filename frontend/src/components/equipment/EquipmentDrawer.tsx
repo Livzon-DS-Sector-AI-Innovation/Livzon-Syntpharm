@@ -115,7 +115,7 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
       width={480}
       open={equipmentDrawerOpen}
       onClose={closeEquipmentDrawer}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },
