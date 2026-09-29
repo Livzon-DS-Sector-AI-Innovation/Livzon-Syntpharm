@@ -41,5 +41,5 @@ lint-output.txt
 CONTEXT.md
 .env.local
 
-# ai files
-.codebuddy
+# AI files
+.codebuddy/

@@ -428,7 +428,7 @@ async def chat_stream(
             if system_prompt:
                 all_messages.append({"role": "system", "content": system_prompt})
             all_messages.extend(messages)
-            async for chunk in llm_client.stream_chat(all_messages, temperature=0.1, max_tokens=4096):  # type: ignore[attr-defined]
+            async for chunk in llm_client.stream_chat(all_messages, temperature=0.1, max_tokens=4096):
                 text = chunk.get("text", "") if isinstance(chunk, dict) else str(chunk)
                 payload = json.dumps({"content": text}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"

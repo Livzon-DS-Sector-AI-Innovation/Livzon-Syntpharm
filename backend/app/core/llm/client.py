@@ -6,7 +6,7 @@ from typing import Any
 
 import httpx
 
-from .config import LLMConfigData, get_config
+from .config import LLMConfigData, get_config, get_named_config
 from .exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
 
 
@@ -19,10 +19,15 @@ class LLMClient:
         result = await llm_client.chat([{"role": "user", "content": "Hello"}])
     """
 
-    async def _get_client_and_config(self, config_type: str = "text") -> tuple[httpx.AsyncClient, LLMConfigData]:
-        """Get HTTP client and config."""
-        config = await get_config(config_type)
+    def __init__(self) -> None:
+        # 连接池：按 config.id 缓存 httpx.AsyncClient，避免每次调用都重建 TCP+TLS 连接
+        self._client_pool: dict[str, httpx.AsyncClient] = {}
 
+    def _get_or_create_client(self, config: LLMConfigData) -> httpx.AsyncClient:
+        """复用已有连接或创建新连接。同一 config 的所有调用共享一个 httpx client。"""
+        client = self._client_pool.get(config.id)
+        if client is not None and not client.is_closed:
+            return client
         client = httpx.AsyncClient(
             base_url=config.api_base_url.rstrip("/"),
             headers={
@@ -31,6 +36,27 @@ class LLMClient:
             },
             timeout=config.timeout_seconds,
         )
+        self._client_pool[config.id] = client
+        return client
+
+    async def _get_client_and_config(
+        self, config_type: str = "text", config_name: str | None = None
+    ) -> tuple[httpx.AsyncClient, LLMConfigData]:
+        """Get HTTP client and config.
+
+        Args:
+            config_type: "text" or "vision"
+            config_name: Pin a specific config by name instead of the active one
+                (endpoint and key come from that config too). Missing name falls
+                back to the active config so a stale setting never breaks a flow.
+        """
+        config: LLMConfigData | None = None
+        if config_name and config_name.strip():
+            config = await get_named_config(config_name, config_type)
+        if config is None:
+            config = await get_config(config_type)
+
+        client = self._get_or_create_client(config)
         return client, config
 
     async def chat(
@@ -40,6 +66,8 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int = 16384,
         config_type: str = "text",
+        model_override: str | None = None,
+        config_name: str | None = None,
     ) -> str:
         """Send a chat completion request and return the response text.
 
@@ -49,6 +77,8 @@ class LLMClient:
             temperature: Override config temperature
             max_tokens: Max tokens in response
             config_type: "text" or "vision"
+            model_override: Override model name (for fallback/primary switch)
+            config_name: Pin a specific config (its endpoint, key and model)
 
         Returns:
             Response text from LLM
@@ -57,63 +87,60 @@ class LLMClient:
             LLMProviderError: If provider returns error
             LLMRateLimitError: If rate limit exceeded
         """
-        client, config = await self._get_client_and_config(config_type)
+        client, config = await self._get_client_and_config(config_type, config_name)
 
-        try:
-            # Use config temperature if not overridden
-            temp = temperature if temperature is not None else config.temperature
+        # Use config temperature if not overridden
+        temp = temperature if temperature is not None else config.temperature
 
-            # For json_object format, ensure "json" appears in the prompt
-            msgs = [dict(m) for m in messages]
-            if response_format == "json_object":
-                last = msgs[-1]
-                if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
-                    last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
+        # For json_object format, ensure "json" appears in the prompt
+        msgs = [dict(m) for m in messages]
+        if response_format == "json_object":
+            last = msgs[-1]
+            if isinstance(last.get("content"), str) and "json" not in last["content"].lower():
+                last["content"] = last["content"] + "\n\n请以 JSON 格式返回结果。"
 
-            body = {
-                "model": config.model_name,
-                "messages": msgs,
-                "temperature": temp,
-                "max_tokens": max_tokens,
-            }
-            if response_format:
-                body["response_format"] = {"type": response_format}
+        body = {
+            "model": model_override or config.model_name,
+            "messages": msgs,
+            "temperature": temp,
+            "max_tokens": max_tokens,
+        }
+        if response_format:
+            body["response_format"] = {"type": response_format}
 
-            # Retry logic for transient errors (max 3 retries = 4 total attempts)
-            last_error: Exception | None = None
-            for attempt in range(4):
-                try:
-                    resp = await client.post("/chat/completions", json=body)
+        # Retry logic for transient errors (max 3 retries = 4 total attempts)
+        # 注意：client 来自连接池（按 config 共享），重试后不可 aclose，否则破坏连接复用
+        last_error: Exception | None = None
+        for attempt in range(4):
+            try:
+                resp = await client.post("/chat/completions", json=body)
 
-                    if resp.status_code == 429:
-                        raise LLMRateLimitError("Rate limit exceeded", status_code=429)
+                if resp.status_code == 429:
+                    raise LLMRateLimitError("Rate limit exceeded", status_code=429)
 
-                    if resp.is_error:
-                        error_text = resp.text[:500]
-                        raise LLMProviderError(
-                            f"LLM API error: {resp.status_code} - {error_text}",
-                            status_code=resp.status_code,
-                            raw_response=error_text,
-                        )
+                if resp.is_error:
+                    error_text = resp.text[:500]
+                    raise LLMProviderError(
+                        f"LLM API error: {resp.status_code} - {error_text}",
+                        status_code=resp.status_code,
+                        raw_response=error_text,
+                    )
 
-                    data = resp.json()
-                    return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
+                data = resp.json()
+                return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
-                except (LLMRateLimitError, httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout) as e:
-                    last_error = e
-                    if attempt < 3:
-                        # Exponential backoff: 1s, 2s, 4s
-                        await asyncio.sleep(2**attempt)
-                        continue
-                    raise
+            except (LLMRateLimitError, httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout) as e:
+                last_error = e
+                if attempt < 3:
+                    # Exponential backoff: 1s, 2s, 4s
+                    await asyncio.sleep(2**attempt)
+                    continue
+                raise
 
-            # Should not reach here, but just in case
-            if last_error:
-                raise last_error
-            raise LLMProviderError("LLM request failed after 4 attempts")
-
-        finally:
-            await client.aclose()
+        # Should not reach here, but just in case
+        if last_error:
+            raise last_error
+        raise LLMProviderError("LLM request failed after 4 attempts")
 
     async def chat_json(
         self,
@@ -121,6 +148,8 @@ class LLMClient:
         expected_keys: list[str] | None = None,
         temperature: float | None = None,
         config_type: str = "text",
+        model_override: str | None = None,
+        config_name: str | None = None,
     ) -> dict[str, Any]:
         """Chat + parse JSON response.
 
@@ -129,6 +158,8 @@ class LLMClient:
             expected_keys: Optional list of keys to validate
             temperature: Override config temperature
             config_type: "text" or "vision"
+            model_override: Override model name (for fallback/primary switch)
+            config_name: Pin a specific config (its endpoint, key and model)
 
         Returns:
             Parsed JSON dict
@@ -141,6 +172,8 @@ class LLMClient:
             response_format="json_object",
             temperature=temperature,
             config_type=config_type,
+            model_override=model_override,
+            config_name=config_name,
         )
 
         # Strip markdown code fences if present
@@ -208,38 +241,34 @@ class LLMClient:
         """
         client, config = await self._get_client_and_config("vision")
 
-        try:
-            temp = temperature if temperature is not None else config.temperature
+        temp = temperature if temperature is not None else config.temperature
 
-            content_parts = [{"type": "text", "text": text_prompt}]
-            for url in image_urls:
-                content_parts.append({"type": "image_url", "image_url": {"url": url}})  # type: ignore[dict-item]
+        content_parts = [{"type": "text", "text": text_prompt}]
+        for url in image_urls:
+            content_parts.append({"type": "image_url", "image_url": {"url": url}})  # type: ignore[dict-item]
 
-            body = {
-                "model": config.model_name,
-                "messages": [{"role": "user", "content": content_parts}],
-                "temperature": temp,
-                "max_tokens": max_tokens,
-            }
+        body = {
+            "model": config.model_name,
+            "messages": [{"role": "user", "content": content_parts}],
+            "temperature": temp,
+            "max_tokens": max_tokens,
+        }
 
-            resp = await client.post("/chat/completions", json=body)
+        resp = await client.post("/chat/completions", json=body)
 
-            if resp.status_code == 429:
-                raise LLMRateLimitError("Rate limit exceeded", status_code=429)
+        if resp.status_code == 429:
+            raise LLMRateLimitError("Rate limit exceeded", status_code=429)
 
-            if resp.is_error:
-                error_text = resp.text[:500]
-                raise LLMProviderError(
-                    f"Vision API error: {resp.status_code} - {error_text}",
-                    status_code=resp.status_code,
-                    raw_response=error_text,
-                )
+        if resp.is_error:
+            error_text = resp.text[:500]
+            raise LLMProviderError(
+                f"Vision API error: {resp.status_code} - {error_text}",
+                status_code=resp.status_code,
+                raw_response=error_text,
+            )
 
-            data = resp.json()
-            return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
-
-        finally:
-            await client.aclose()
+        data = resp.json()
+        return data["choices"][0]["message"]["content"]  # type: ignore[no-any-return]
 
     async def chat_vision_json(
         self,
@@ -293,6 +322,66 @@ class LLMClient:
 
         return parsed  # type: ignore[no-any-return]
 
+    async def embed(
+        self,
+        texts: list[str],
+        *,
+        model_override: str | None = None,
+        config_name: str | None = None,
+    ) -> list[list[float]]:
+        """Generate embeddings for a list of texts.
+
+        Uses the OpenAI-compatible ``/embeddings`` endpoint. The embedding model
+        is resolved via ``config_name`` (looking for ``config_type="embedding"``)
+        or falls back to ``model_override`` on the active text config.
+
+        Args:
+            texts: List of strings to embed
+            model_override: Override model name on the active text config
+            config_name: Pin a specific embedding config
+
+        Returns:
+            List of embedding vectors (list of floats)
+
+        Raises:
+            LLMProviderError: If provider returns error
+            LLMRateLimitError: If rate limit exceeded
+        """
+        config = None
+        if config_name and config_name.strip():
+            config = await get_named_config(config_name, "embedding")
+        if config is None:
+            config = await get_config("text")
+
+        client = self._get_or_create_client(config)
+        body: dict[str, Any] = {
+            "model": model_override or config.model_name,
+            "input": texts,
+        }
+        resp = await client.post("/embeddings", json=body)
+
+        if resp.status_code == 429:
+            raise LLMRateLimitError("Embedding rate limit exceeded", status_code=429)
+        if resp.is_error:
+            error_text = resp.text[:500]
+            raise LLMProviderError(
+                f"Embedding API error: {resp.status_code} - {error_text}",
+                status_code=resp.status_code,
+                raw_response=error_text,
+            )
+
+        data = resp.json()
+        # Sort by index to preserve input order
+        items = sorted(data["data"], key=lambda x: x["index"])
+        return [item["embedding"] for item in items]
+
+    async def aclose_all(self) -> None:
+        """关闭连接池中所有缓存的 httpx client。应用关闭时调用。"""
+        for client in self._client_pool.values():
+            if not client.is_closed:
+                await client.aclose()
+        self._client_pool.clear()
+
     async def health_check(self) -> dict[str, Any]:
         """Check LLM connectivity.
 
@@ -317,11 +406,12 @@ class LLMClient:
         except Exception as e:
             return {"status": "error", "detail": str(e)}
 
-    async def _func_l309(
+    async def stream_chat(
         self,
         messages: list[dict[str, Any]],
         temperature: float | None = None,
         max_tokens: int = 4096,
+        model_override: str | None = None,
     ) -> Any:
         """Stream chat completion tokens.
 
@@ -335,7 +425,7 @@ class LLMClient:
         temp = temperature if temperature is not None else config.temperature
 
         body = {
-            "model": config.model_name,
+            "model": model_override or config.model_name,
             "messages": messages,
             "temperature": temp,
             "max_tokens": max_tokens,

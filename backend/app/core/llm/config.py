@@ -40,7 +40,7 @@ class LLMConfigModel(BaseModel):
         default="text",
         server_default="text",
         nullable=False,
-        comment="Config type: text (text model) / vision (vision model)",
+        comment="Config type: text / vision / embedding",
     )
     api_base_url: Mapped[str] = mapped_column(String(500), nullable=False, comment="API base URL")
     encrypted_api_key: Mapped[str] = mapped_column(String(1000), nullable=False, comment="Encrypted API key")
@@ -106,6 +106,17 @@ async def get_active_config(config_type: str = "text") -> LLMConfigData | None:
     return None
 
 
+def _env_int(name: str, default: int) -> int:
+    """Read an int from env, falling back to ``default`` when absent/invalid."""
+    raw = os.getenv(name)
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
 def get_env_config() -> LLMConfigData | None:
     """Get LLM config from environment variables (for local dev).
 
@@ -127,9 +138,44 @@ def get_env_config() -> LLMConfigData | None:
         api_key=api_key,
         model_name=model,
         temperature=0.1,
-        timeout_seconds=120,
+        timeout_seconds=_env_int("LLM_TIMEOUT_SECONDS", 120),
         is_active=True,
     )
+
+
+async def get_named_config(name: str, config_type: str = "text") -> LLMConfigData | None:
+    """Look up a specific (not necessarily active) config by name.
+
+    Used by modules that need a different model than the globally active one
+    (e.g. one model for extraction, another for writing). The name may be either
+    ``config_name`` or ``model_name``; ``config_name`` wins when both match.
+
+    Args:
+        name: Config or model name to look up
+        config_type: "text" or "vision"
+
+    Returns:
+        LLMConfigData, or None when no such config exists
+    """
+    wanted = name.strip()
+    if not wanted:
+        return None
+    try:
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(LLMConfigModel).where(
+                    LLMConfigModel.config_type == config_type,
+                    LLMConfigModel.is_deleted.is_(False),
+                    (LLMConfigModel.config_name == wanted) | (LLMConfigModel.model_name == wanted),
+                )
+            )
+            rows = list(result.scalars().all())
+    except Exception:  # noqa: BLE001 - 表不存在等异常按「未找到」处理，由调用方降级
+        return None
+    if not rows:
+        return None
+    exact = [row for row in rows if row.config_name == wanted] or rows
+    return exact[0].to_config_data()
 
 
 async def get_config(config_type: str = "text") -> LLMConfigData:

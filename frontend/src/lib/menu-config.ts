@@ -354,6 +354,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "registration-filing", label: "申报资料", path: "/research/registration-filing" },
       { key: "research-tracks", label: "研究项", path: "/research/research-tracks" },
       { key: "deliverable-templates", label: "交付物模板", path: "/research/deliverable-templates" },
+      { key: "knowledge-bases", label: "项目知识库", path: "/research/knowledge-bases" },
       { key: "bayesian", label: "贝叶斯优化", path: "/research/bayesian" },
       { key: "ich-analysis", label: "ICH分析", path: "/research/ich-analysis" },
       { key: "reports", label: "研发报告", path: "/research/reports" },

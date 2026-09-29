@@ -5,11 +5,14 @@
 #   docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
 #   docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
 
+# 容器名可通过 .env.local 覆盖（LOCAL_BACKEND_NAME / LOCAL_FRONTEND_NAME）：
+# 当 docker daemon 名称索引残留脏记录（报 "container name already in use" 但容器实际不存在）时，
+# 无需 sudo 重启 daemon，改个名字即可绕过。
 services:
   backend:
     build:
       context: ./backend
-    container_name: local-backend
+    container_name: ${LOCAL_BACKEND_NAME:-local-backend}
     restart: unless-stopped
     env_file:
       - .env.local
@@ -42,11 +45,19 @@ services:
     build:
       context: ./frontend
       target: dev
-    container_name: local-frontend
+    container_name: ${LOCAL_FRONTEND_NAME:-local-frontend}
     restart: unless-stopped
     environment:
       - API_BASE_URL=http://backend:8000
       - NEXT_TELEMETRY_DISABLED=1
+      # 限制 next dev 的 V8 堆上限（本机 14G 无 swap，dev 编译期堆可无限增长，
+      # 曾触发整机 OOM 重启）。2048MB 对按需编译足够，超出会触发 GC 而非吃满物理内存。
+      - NODE_OPTIONS=--max-old-space-size=2048
+      # Next.js dev 跨站保护白名单（next.config.ts → allowedDevOrigins）。
+      # 未配置时默认只允许 localhost/127.0.0.1；通过局域网 IP 等其他主机名访问 dev server 时，
+      # 带 Origin 的 /_next 内部请求（HMR WebSocket 等）会被 403。
+      # 在本机 .env.local 中设置 ALLOWED_DEV_ORIGINS=<访问用主机名/IP,逗号分隔> 即可放开。
+      - ALLOWED_DEV_ORIGINS=${ALLOWED_DEV_ORIGINS:-localhost,127.0.0.1}
     volumes:
       - ./frontend:/app
       - /app/node_modules
