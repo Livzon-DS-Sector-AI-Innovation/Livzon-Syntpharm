@@ -521,7 +521,7 @@ class BatchApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: BatchResponse
+    data: BatchResponse | None = None
 
 
 class BatchMaterialListApiResponse(BaseModel):
@@ -537,7 +537,7 @@ class BatchMaterialApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: BatchMaterialResponse
+    data: BatchMaterialResponse | None = None
 
 
 class ProductionPlanListApiResponse(BaseModel):
@@ -554,7 +554,7 @@ class ProductionPlanApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: ProductionPlanResponse
+    data: ProductionPlanResponse | None = None
 
 
 class PlanTaskListApiResponse(BaseModel):
@@ -570,7 +570,7 @@ class PlanTaskApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: PlanTaskResponse
+    data: PlanTaskResponse | None = None
 
 
 class ProcessSpecListApiResponse(BaseModel):
@@ -587,7 +587,7 @@ class ProcessSpecApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: ProcessSpecResponse
+    data: ProcessSpecResponse | None = None
 
 
 class ProcessStepListApiResponse(BaseModel):
@@ -603,7 +603,7 @@ class ProcessStepApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: ProcessStepResponse
+    data: ProcessStepResponse | None = None
 
 
 class ProcessParameterListApiResponse(BaseModel):
@@ -619,7 +619,7 @@ class ProcessParameterApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: ProcessParameterResponse
+    data: ProcessParameterResponse | None = None
 
 
 class ProductionRecordListApiResponse(BaseModel):
@@ -635,7 +635,7 @@ class ProductionRecordApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: ProductionRecordResponse
+    data: ProductionRecordResponse | None = None
 
 
 class MaterialBalanceApiResponse(BaseModel):
