@@ -16,7 +16,6 @@ from app.core.deps import RequiredUser
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
-    ProductOutputListApiResponse,
     AnnualReviewResponse,
     DataApiResponse,
     ImportResponse,
@@ -24,6 +23,7 @@ from app.modules.production.product.output_schemas import (
     PreviewImportResponse,
     ProductOutputApiResponse,
     ProductOutputCreate,
+    ProductOutputListApiResponse,
     ProductOutputResponse,
     ProductOutputUpdate,
     SummaryApiResponse,
