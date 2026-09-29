@@ -14,7 +14,6 @@ import subprocess
 import sys
 import tempfile
 import threading
-import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -36,7 +35,7 @@ class SubprocessOCRService:
     """
 
     def __init__(self) -> None:
-        self._proc: subprocess.Popen | None = None
+        self._proc: subprocess.Popen[bytes] | None = None
         self._lock = threading.Lock()
         self._start_worker()
 
@@ -110,12 +109,14 @@ class SubprocessOCRService:
         """Send a request to the worker and wait for response."""
         with self._lock:
             request_id = str(uuid.uuid4())
-            request = json.dumps({
-                "id": request_id,
-                "input_path": input_path,
-                "engine": engine,
-                "method": method,
-            })
+            request = json.dumps(
+                {
+                    "id": request_id,
+                    "input_path": input_path,
+                    "engine": engine,
+                    "method": method,
+                }
+            )
 
             try:
                 assert self._proc is not None and self._proc.stdin is not None
@@ -127,7 +128,7 @@ class SubprocessOCRService:
                 raise RuntimeError("OCR worker crashed (broken pipe), restarted") from e
 
             # Read response with timeout using a thread
-            result: list[str | None] = [None]
+            result: list[bytes | None] = [None]
             error: list[BaseException | None] = [None]
 
             def _reader() -> None:
@@ -189,7 +190,7 @@ class SubprocessOCRService:
             return tmp.name
         elif isinstance(image_input, Path):
             return str(image_input)
-        return image_input  # type: ignore[return-value]
+        return image_input
 
     def _is_pdf(self, image_input: str | Path | Image.Image) -> bool:
         if isinstance(image_input, (str, Path)):
@@ -201,21 +202,19 @@ class SubprocessOCRService:
 
     def extract_text(self, image_input: str | Path | Image.Image) -> str:
         path = self._to_path(image_input)
-        return self._send_request(path, "pp_ocr", "extract_text")  # type: ignore[return-value]
+        return self._send_request(path, "pp_ocr", "extract_text")  # type: ignore[no-any-return]
 
-    def extract_with_positions(
-        self, image_input: str | Path | Image.Image
-    ) -> list[dict[str, Any]]:
+    def extract_with_positions(self, image_input: str | Path | Image.Image) -> list[dict[str, Any]]:
         path = self._to_path(image_input)
-        return self._send_request(path, "pp_ocr", "extract_with_positions")  # type: ignore[return-value]
+        return self._send_request(path, "pp_ocr", "extract_with_positions")  # type: ignore[no-any-return]
 
     def extract_structure(self, image_input: str | Path | Image.Image) -> dict[str, Any]:
         path = self._to_path(image_input)
-        return self._send_request(path, "pp_structure", "extract_structure")  # type: ignore[return-value]
+        return self._send_request(path, "pp_structure", "extract_structure")  # type: ignore[no-any-return]
 
     def extract_markdown(self, image_input: str | Path | Image.Image) -> str:
         path = self._to_path(image_input)
-        return self._send_request(path, "pp_structure", "extract_markdown")  # type: ignore[return-value]
+        return self._send_request(path, "pp_structure", "extract_markdown")  # type: ignore[no-any-return]
 
     def extract(
         self,
@@ -236,7 +235,7 @@ class SubprocessOCRService:
                 return self.extract_markdown(image_input)
             elif output_format == "json":
                 result = self.extract_structure(image_input)
-                return result.get("json", {})  # type: ignore[return-value]
+                return result.get("json", {})  # type: ignore[no-any-return]
             elif output_format == "structure":
                 return self.extract_structure(image_input)
             else:  # text → return markdown from structure

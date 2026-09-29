@@ -95,14 +95,18 @@ def test_structure_round_trip() -> None:
     assert spec_source.spec_from_structure(None) is None
 
 
-def test_spec_from_code_priority() -> None:
-    """代码内置规格优先于落库结构。"""
+def test_structure_priority_over_code() -> None:
+    """合法落库结构优先于代码内置规格（脱钩编辑生效）；非法/空结构回退代码内置。"""
     from app.modules.research.doc_gen.templates import get_template_spec
 
     spec = get_template_spec("tech_research_report")
-    bogus = spec.model_copy(update={"name": "被篡改的名字"}).model_dump(mode="json")
-    resolved = spec_source.resolve_spec("tech_research_report", bogus)
-    assert resolved.name == spec.name
+    # 合法但被改名的 structure：structure 优先，应取到改后的名字（脱钩编辑生效）
+    edited = spec.model_copy(update={"name": "人工编辑后的名字"}).model_dump(mode="json")
+    assert spec_source.resolve_spec("tech_research_report", edited).name == "人工编辑后的名字"
+    # 非法 structure（无 slots）：spec_from_structure 返回 None，回退代码内置
+    assert spec_source.resolve_spec("tech_research_report", {"slots": []}).name == spec.name
+    # 空 structure：回退代码内置
+    assert spec_source.resolve_spec("tech_research_report", None).name == spec.name
 
 
 def test_drafted_spec_renders_document() -> None:
@@ -110,9 +114,7 @@ def test_drafted_spec_renders_document() -> None:
     from app.modules.research.doc_gen.renderer import SlotValue, render_document
 
     data, spec = _draft()
-    values = {
-        slot.key: SlotValue(text="[待补充：自动识别自检]", rows=[], state="pending") for slot in spec.slots
-    }
+    values = {slot.key: SlotValue(text="[待补充：自动识别自检]", rows=[], state="pending") for slot in spec.slots}
     docx_bytes, report = render_document(data, spec, values)
     assert docx_bytes[:2] == b"PK"  # zip 容器头，确认是可用的 docx
     assert report.written > 0

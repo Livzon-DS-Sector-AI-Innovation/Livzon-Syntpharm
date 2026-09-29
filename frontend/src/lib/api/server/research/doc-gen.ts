@@ -146,3 +146,44 @@ export async function deleteDeliverableTemplateVersion(templateId: string, versi
     { method: 'DELETE' },
   )
 }
+
+type DocGenEnrichSemanticsData = components['schemas']['DocGenEnrichSemanticsData']
+
+/**
+ * AI 增强模板填充项语义（检索词 / 期望 / 必填 / 置信度），结果回写 template_structure，
+ * 该模板以后每次生成都受益（越用越准）。
+ *
+ * 只改语义字段、绝不动锚点与类型（渲染安全）；低置信槽位会被标「需人工核对」。
+ * 同步执行，槽位多时可能耗时数十秒，调用方需给足 loading 反馈。
+ */
+export async function enrichDeliverableTemplateSemantics(templateId: string): Promise<DocGenEnrichSemanticsData> {
+  const result = await apiFetch<components['schemas']['DocGenEnrichSemanticsResponse']>(
+    `${getApiBaseUrl()}${DOC_GEN_BASE}/deliverable-templates/${templateId}/enrich-semantics`,
+    { method: 'POST' },
+  )
+  return result.data
+}
+
+/** 人工新增填写项的请求体：anchor/kind 由候选原样回传，label 与检索语义由用户补 */
+export type DocGenAddSlotRequest = components['schemas']['DocGenAddSlotRequest']
+type DocGenAddSlotData = components['schemas']['DocGenAddSlotData']
+
+/**
+ * 人工从候选锚点位置新增一个「填写项」（槽位），回写模板结构、之后每次生成都受益。
+ *
+ * 定位由规则产出（候选 anchor 原样回传），AI/人工都不手写锚点——渲染安全铁律。
+ * 名称为空、表格类、位置已被占用或 key 冲突时后端返回 400，apiFetch 会把 message
+ * 原样抛出（如「该位置已被现有填写项占用」），交由调用方提示用户。
+ */
+export async function addDeliverableTemplateSlot(
+  templateId: string,
+  payload: DocGenAddSlotRequest,
+): Promise<DocGenAddSlotData> {
+  const result = await apiFetch<components['schemas']['DocGenAddSlotResponse']>(
+    `${getApiBaseUrl()}${DOC_GEN_BASE}/deliverable-templates/${templateId}/slots`,
+    { method: 'POST', body: JSON.stringify(payload) },
+  )
+  return result.data
+}
+
+

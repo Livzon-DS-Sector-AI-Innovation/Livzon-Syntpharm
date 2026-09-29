@@ -1109,7 +1109,7 @@ async def get_deliverable_templates(  # type: ignore[no-untyped-def]
 
 
 def _ensure_template_enableable(  # type: ignore[no-untyped-def]
-    template, update_data: dict | None = None
+    template, update_data: dict[str, Any] | None = None
 ) -> None:
     """启用前的校验：必须有 Word 母本，且槽位定义可解析。
 
@@ -1125,8 +1125,9 @@ def _ensure_template_enableable(  # type: ignore[no-untyped-def]
 
     template_code = patch.get("template_code") or getattr(template, "template_code", None) or ""
     template_structure = patch.get("template_structure", getattr(template, "template_structure", None))
-    spec = spec_source.spec_from_code(template_code) or spec_source.spec_from_structure(
-        template_structure, code_hint=template_code
+    # structure 优先：与 spec_source.resolve_spec 一致，人工编辑/脱钩结构生效，其次代码内置
+    spec = spec_source.spec_from_structure(template_structure, code_hint=template_code) or spec_source.spec_from_code(
+        template_code
     )
     if spec is None:
         raise BadRequestException("该模板的填充项配置无法识别，请重新上传 Word 母本后再启用")

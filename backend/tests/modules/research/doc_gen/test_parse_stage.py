@@ -16,6 +16,7 @@ import pytest
 from app.modules.research.doc_gen import pipeline
 from app.modules.research.doc_gen import repository as docgen_repo
 from app.modules.research.doc_gen.cancellation import AbortHandle
+from app.modules.research.doc_gen.models import DocGenJob
 
 
 def _record(name: str) -> Any:
@@ -35,7 +36,10 @@ def _record(name: str) -> Any:
 
 
 def _ctx() -> Any:
-    job = SimpleNamespace(id="job-1", status="pending", step="排队中", progress=0)
+    # meta 是解析阶段写文件级进度的落点（前端轮询 meta.parse_progress），替身必须带。
+    # job 用真 DocGenJob 实例：_stage_status 走条件 UPDATE + set_committed_value 同步
+    # 内存值，后者只接受 ORM 对象，SimpleNamespace 会直接抛错。
+    job = DocGenJob(id=uuid.uuid4(), status="queued", step="排队中", progress=0, meta={})
     return SimpleNamespace(job=job, files=[_record("bad.pdf"), _record("good.pdf")], blocks=[], warnings=[])
 
 
@@ -45,7 +49,8 @@ def _patch(monkeypatch: pytest.MonkeyPatch, parse_one: Any) -> None:
 
 
 def _session_and_config() -> tuple[Any, Any]:
-    session = SimpleNamespace(commit=AsyncMock())
+    # execute 服务 _stage_status 的条件 UPDATE：rowcount=1 表示行未被外部置取消
+    session = SimpleNamespace(commit=AsyncMock(), execute=AsyncMock(return_value=SimpleNamespace(rowcount=1)))
     config = SimpleNamespace(
         max_total_pages=100,
         parse_timeout_seconds=30,
@@ -123,6 +128,3 @@ async def test_step_truncated_to_column_width(monkeypatch: pytest.MonkeyPatch) -
 
     assert ctx.job.step.startswith("解析资料 1/1：")
     assert len(ctx.job.step) <= 64
-
-
-

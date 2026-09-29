@@ -26,6 +26,22 @@ AnchorType = Literal[
 
 SourceRole = Literal["material", "literature"]
 
+# ---------------------------------------------------------------------------
+# 需求描述（template_structure v2）
+#
+# 槽位从「一个可填位置」升级为「一个带需求描述的可填位置」：除定位与篇幅外，
+# 还声明期望的类型/量纲/允许取值/基数/取值范围。需求描述由模板分析阶段按模板语义
+# 生成并回写到本次任务的 spec 实例（不回写模板库）；保守默认值与 v1 行为完全一致，
+# 因此旧结构（JSON）反序列化后仍是有效 v2。
+# ---------------------------------------------------------------------------
+Cardinality = Literal["single", "one_or_more"]
+SourceScope = Literal["any", "project_kb"]
+# 槽位语义复核状态：
+# - auto：内置手工标定或规则草拟，默认可信；
+# - needs_review：AI 增强但低置信，待人工补充检索词/期望值；
+# - confirmed：人工已确认（修正后的语义随 structure 落库，后续生成持续受益）。
+ReviewState = Literal["auto", "needs_review", "confirmed"]
+
 
 class Anchor(BaseModel):
     """一个槽位在母本中的定位规则。解析失败必须显式报错，不允许退化为「猜位置」。"""
@@ -85,12 +101,19 @@ class Slot(BaseModel):
     from_meta: bool = False  # 值取自任务元数据（受控编码/版本号等），不问模型也不标待补充
     draft_allowed: bool = False  # 允许 AI 出草稿（正文加【AI草稿，需确认】前缀）
     manual_only: bool = False  # 完全不问模型，直接标待补充
+    # 语义复核状态：AI 增强低置信槽位标 needs_review，人工确认后转 confirmed（见 ReviewState）
+    review_state: ReviewState = "auto"
     max_chars: int = 600
     source_roles: list[SourceRole] = Field(default_factory=_default_source_roles)
     query_hint: str = ""
     # 检索同义词/别名（如「登记号」→「受理号」）：并入关键词检索，解决槽位用语与资料用语脱节
     search_terms: list[str] = Field(default_factory=list)
     expects: Literal["text", "number", "date", "percent"] = "text"
+    # --- 需求描述（template_structure v2）：默认值即「不约束」，与 v1 行为一致 ---
+    unit: str = ""  # 期望量纲（如 mg/mL、℃、h），空串表示不约束
+    enum_values: list[str] = Field(default_factory=list)  # 允许取值集合，空表示不约束
+    cardinality: Cardinality = "single"  # single=单值；one_or_more=可多值（多值之间用「；」分隔）
+    source_scope: SourceScope = "any"  # any=不限来源；project_kb=只允许取自项目知识库
     table: TableSpec | None = None
     columns: list[ColumnSpec] = Field(default_factory=list)
     anchors: list[Anchor] = Field(default_factory=list)
@@ -246,9 +269,7 @@ class SectionFragment(BaseModel):
                 )
             for prefix, _arg in _TITLE_VAR_RE.findall(title):
                 if prefix not in _TITLE_VAR_PREFIXES:
-                    raise ValueError(
-                        f"章节片段 {self.key} 的标题变量 {{{prefix}}} 不在白名单 {_TITLE_VAR_PREFIXES} 内"
-                    )
+                    raise ValueError(f"章节片段 {self.key} 的标题变量 {{{prefix}}} 不在白名单 {_TITLE_VAR_PREFIXES} 内")
         if self.repeat_over and not self.repeat_field:
             raise ValueError(f"章节片段 {self.key} 声明了 repeat_over，必须同时声明 repeat_field")
         slot_keys = [s.key for s in self.slots]

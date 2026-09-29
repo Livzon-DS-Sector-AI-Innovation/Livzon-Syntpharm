@@ -80,9 +80,7 @@ def summarize_states(results: Sequence[SlotResult]) -> dict[str, int]:
     return summary
 
 
-def _pending_section(
-    spec: TemplateSpec, results: Mapping[str, SlotResult], render_report: RenderReport
-) -> list[str]:
+def _pending_section(spec: TemplateSpec, results: Mapping[str, SlotResult], render_report: RenderReport) -> list[str]:
     """待人工处理清单。"""
     lines = ["", "## 待人工处理清单", "", "| 填充项 | 名称 | 状态 | 原因 | 所在位置 |", "|---|---|---|---|---|"]
     for slot in spec.slots:

@@ -11,7 +11,7 @@ import json
 import logging
 import re
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -78,9 +78,7 @@ def _build_slot_descriptions(slots: list[Slot]) -> str:
     return "\n".join(lines)
 
 
-def _build_source_text(
-    blocks: list[TextBlock], max_chars: int, file_names: dict[str, str] | None = None
-) -> str:
+def _build_source_text(blocks: list[TextBlock], max_chars: int, file_names: dict[str, str] | None = None) -> str:
     """拼接所有文本块为一份资料来源文本。"""
     parts: list[str] = []
     total = 0
@@ -318,7 +316,7 @@ async def direct_generate(
             timeout=timeout_seconds,
         )
         stats.calls = 1
-    except asyncio.TimeoutError:
+    except TimeoutError:
         logger.warning("直接生成：LLM 调用超时", extra={"timeout": timeout_seconds})
         stats.failures = 1
         return _fallback_results(spec), stats

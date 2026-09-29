@@ -341,9 +341,9 @@ def _resolve_zip_package(path: Path) -> FormatSpec | None:
                 mime = archive.read("mimetype").decode("utf-8", "replace")
             match = _ODF_MIME_RE.match(mime.strip())
             if match:
-                return _format_by_extension({"text": ".odt", "spreadsheet": ".ods", "presentation": ".odp"}.get(
-                    match.group(1), ".odt"
-                ))
+                return _format_by_extension(
+                    {"text": ".odt", "spreadsheet": ".ods", "presentation": ".odp"}.get(match.group(1), ".odt")
+                )
         except Exception:
             logger.exception("ODF mimetype 条目读取失败", extra={"path_name": path.name})
     return None
@@ -556,9 +556,7 @@ def _parse_xls(path: Path, collector: _Collector) -> None:
         sheet = book.sheet_by_index(sheet_no)
         for r in range(sheet.nrows):
             cells = [
-                str(sheet.cell_value(r, c)).strip()
-                for c in range(sheet.ncols)
-                if str(sheet.cell_value(r, c)).strip()
+                str(sheet.cell_value(r, c)).strip() for c in range(sheet.ncols) if str(sheet.cell_value(r, c)).strip()
             ]
             if not collector.add(sheet_no, " | ".join(cells), "sheet_row"):
                 return
@@ -865,8 +863,10 @@ def _convert_doc_to_docx(path: Path, warnings: list[str]) -> Path | None:
             [
                 "libreoffice",
                 "--headless",
-                "--convert-to", "docx",
-                "--outdir", str(temp_dir),
+                "--convert-to",
+                "docx",
+                "--outdir",
+                str(temp_dir),
                 str(path),
             ],
             capture_output=True,
@@ -938,9 +938,7 @@ def _salvage_text(data: bytes, collector: _Collector) -> int:
     return count
 
 
-def _parse_generic_text(
-    path: Path, collector: _Collector, warnings: list[str], *, allow_salvage: bool = True
-) -> None:
+def _parse_generic_text(path: Path, collector: _Collector, warnings: list[str], *, allow_salvage: bool = True) -> None:
     """未知类型的通用回退：先按文本读，读不出再抢救可打印片段。"""
     data = path.read_bytes()
     try:
@@ -1170,8 +1168,10 @@ def parse_file_sync(
 
     if collector.truncated:
         warnings.append("文本超过上限已截断")
-    if not collector.blocks and not aborted and not any(
-        "未能提取" in w or "无法读出" in w or "不支持" in w for w in warnings
+    if (
+        not collector.blocks
+        and not aborted
+        and not any("未能提取" in w or "无法读出" in w or "不支持" in w for w in warnings)
     ):
         warnings.append("未能提取到文字")
     if page_count == 0:
@@ -1227,9 +1227,7 @@ async def parse_file(
         kwargs["deadline"] = time.monotonic() + timeout_seconds
     try:
         if timeout_seconds is not None and timeout_seconds > 0:
-            return await asyncio.wait_for(
-                asyncio.to_thread(parse_file_sync, path, **kwargs), timeout=timeout_seconds
-            )
+            return await asyncio.wait_for(asyncio.to_thread(parse_file_sync, path, **kwargs), timeout=timeout_seconds)
         return await asyncio.to_thread(parse_file_sync, path, **kwargs)
     except TimeoutError:
         event.set()  # 通知线程内守卫在下一个检查点退出，避免线程长期滞留

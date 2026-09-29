@@ -9,6 +9,7 @@
  *    Server Actions 无法返回文件流。
  */
 import { apiGet } from '@/lib/api/client'
+import { saveResponse } from '@/lib/utils/download'
 import type { components } from '@/types/generated/schema'
 
 export type DocGenTemplateSummary = components['schemas']['DocGenTemplateSummary']
@@ -194,19 +195,6 @@ export async function uploadJobFiles(
   return body
 }
 
-/** 触发浏览器保存 blob（沿用 hr.ts 的下载模式） */
-async function saveBlob(res: Response, filename: string): Promise<void> {
-  const blob = await res.blob()
-  const url = window.URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  window.URL.revokeObjectURL(url)
-}
-
 /**
  * 下载文档初版（docx 文件流）。
  *
@@ -216,14 +204,14 @@ async function saveBlob(res: Response, filename: string): Promise<void> {
 export async function downloadDocGenDocument(jobId: string, filename: string): Promise<void> {
   const res = await fetch(`${DOC_GEN_BASE}/jobs/${jobId}/document`, { cache: 'no-store' })
   if (!res.ok) throw new Error('下载文档初版失败')
-  await saveBlob(res, filename)
+  await saveResponse(res, filename)
 }
 
 /** 下载生成说明（md 文件流），同为下载例外，原因同上 */
 export async function downloadDocGenReport(jobId: string, filename: string): Promise<void> {
   const res = await fetch(`${DOC_GEN_BASE}/jobs/${jobId}/report`, { cache: 'no-store' })
   if (!res.ok) throw new Error('下载生成说明失败')
-  await saveBlob(res, filename)
+  await saveResponse(res, filename)
 }
 
 /**
@@ -355,5 +343,62 @@ export async function fetchDocGenSlotProfiles(): Promise<DocGenSlotProfile[]> {
 /** 拉取可用于 AI 生成的模板（必须有 Word 模板原件与合法填充项配置） */
 export async function fetchUsableDocGenTemplates(): Promise<DocGenUsableTemplate[]> {
   const data = await apiGet<DocGenUsableTemplate[]>('/api/v1/research/doc-gen/templates')
+  return data ?? []
+}
+
+/** 知识库覆盖预检结果 —— 逐填充项判断「可填 / 部分可填 / 无资料」 */
+export type DocGenKbCoverage = components['schemas']['DocGenKbCoverage']
+/** 单个填充项的覆盖预检结果 */
+export type DocGenKbCoverageSlot = components['schemas']['DocGenKbCoverageSlot']
+
+/**
+ * 生成前预检：按模板填充项逐项判断项目知识库「有没有料」。
+ *
+ * 只做归类不做抽取（后端不调模型）：优先在本地索引离线匹配，知识库尚无索引时
+ * 才实时检索兜底 —— 后者会压知识库且较慢，故由 live 参数控制（默认开）。
+ */
+export async function fetchDocGenKbCoverage(
+  templateId: string,
+  projectId?: string,
+  options?: { live?: boolean },
+): Promise<DocGenKbCoverage> {
+  const params = new URLSearchParams({ deliverable_template_id: templateId, live: String(options?.live ?? true) })
+  if (projectId) params.set('project_id', projectId)
+  return apiGet<DocGenKbCoverage>(`${DOC_GEN_BASE}/kb-coverage?${params.toString()}`)
+}
+
+/** 单个候选锚点位置（人工新增填写项时点选；定位由规则产出，前端不手写锚点） */
+export type DocGenAnchorCandidate = components['schemas']['DocGenAnchorCandidate']
+
+/**
+ * 模板全内容 Markdown（优先母本规则解析，其次骨架回退）。
+ *
+ * source 为后端新增契约字段：schema.ts 再生成前手工补齐，避免整库重生成引入跨 PR 漂移。
+ */
+export type DocGenTemplateMarkdown = components['schemas']['DocGenTemplateMarkdownData'] & {
+  /** docx=母本全文转换；spec=填写项骨架回退 */
+  source?: 'docx' | 'spec'
+}
+
+/**
+ * 拉取「模板 Markdown」弹窗数据：优先把 Word 母本解析为全内容 Markdown（标题/段落/
+ * 列表/表格按文档流顺序）；母本不可用时回退 template_structure 骨架渲染。只读 GET。
+ */
+export async function fetchDeliverableTemplateMarkdown(templateId: string): Promise<DocGenTemplateMarkdown> {
+  return apiGet<DocGenTemplateMarkdown>(`${DOC_GEN_BASE}/deliverable-templates/${templateId}/markdown`)
+}
+
+/**
+ * 枚举母本里「还能挂」的候选锚点位置（人工新增填写项时点选）。
+ *
+ * 只读 GET：已被现有槽位占用的位置会被过滤；模板尚无规格时枚举全部位置。
+ * 表格类候选（kind==='table'）需另配列定义，「新增填写项」暂不支持，调用方应禁用。
+ */
+export async function fetchDeliverableTemplateAnchorCandidates(
+  templateId: string,
+): Promise<DocGenAnchorCandidate[]> {
+  const data = await apiGet<NonNullable<components['schemas']['DocGenAnchorCandidateListResponse']['data']>>(
+    `${DOC_GEN_BASE}/deliverable-templates/${templateId}/anchor-candidates`,
+  )
   return data ?? []
 }

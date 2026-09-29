@@ -1,10 +1,11 @@
 """槽位定义的解析来源。
 
-优先级：**代码注册表 → 交付物模板行上的 `template_structure`**。
+优先级：**交付物模板行上的 `template_structure`（合法时）→ 代码注册表**。
 
-代码注册表里的定义是被 mypy/单测保护的手工标定结果；`template_structure` 是上传母本时
-由 `spec_draft` 自动识别出来并落库的配置。两者用同一套 `TemplateSpec` 模型，
-因此运行时的 Pydantic 校验、证据回检、算术规则完全一致。
+`template_structure` 是上传母本时由 `spec_draft` 自动识别、或人工编辑内置模板时脱钩
+落库的配置；代码注册表里的定义是被 mypy/单测保护的手工标定结果。structure 优先是为了
+让「人工编辑过的内置模板」生效——内置模板未编辑时 structure 为 NULL，自然回退到代码。
+两者用同一套 `TemplateSpec` 模型，因此运行时的 Pydantic 校验、证据回检、算术规则完全一致。
 """
 
 from __future__ import annotations
@@ -44,11 +45,15 @@ def spec_from_structure(structure: Any, *, code_hint: str = "") -> TemplateSpec 
 
 
 def resolve_spec(code: str, structure: Any = None) -> TemplateSpec:
-    """按优先级取规格；两处都没有则抛 KeyError（调用方转成业务错误）。"""
-    spec = spec_from_code(code)
+    """按优先级取规格：合法 structure 优先，其次代码注册表；两处都没有则抛 KeyError。
+
+    structure 优先保证「人工编辑/脱钩落库」的配置生效；structure 非法或为空时
+    （``spec_from_structure`` 返回 None）自动回退到代码内置规格，行为与旧版一致。
+    """
+    spec = spec_from_structure(structure, code_hint=code)
     if spec is not None:
         return spec
-    spec = spec_from_structure(structure, code_hint=code)
+    spec = spec_from_code(code)
     if spec is not None:
         return spec
     raise KeyError(f"未注册且没有自动识别配置的文档模板: {code}")
@@ -66,26 +71,27 @@ async def _structure_of(session: AsyncSession, code: str, template_id: str | Non
             row = None
     if row is None and code:
         row = (
-            await session.execute(
-                select(RdDeliverableTemplate)
-                .where(
-                    RdDeliverableTemplate.template_code == code,
-                    RdDeliverableTemplate.is_deleted.is_(False),
+            (
+                await session.execute(
+                    select(RdDeliverableTemplate)
+                    .where(
+                        RdDeliverableTemplate.template_code == code,
+                        RdDeliverableTemplate.is_deleted.is_(False),
+                    )
+                    .order_by(RdDeliverableTemplate.created_at.desc())
+                    .limit(1)
                 )
-                .order_by(RdDeliverableTemplate.created_at.desc())
-                .limit(1)
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
     if row is None or row.is_deleted:
         return None
     return row.template_structure
 
 
 async def resolve_by_code(session: AsyncSession, code: str) -> TemplateSpec:
-    """只给 code 时取规格：代码内置优先，其次回库找同 code 的自动识别结构。"""
-    spec = spec_from_code(code)
-    if spec is not None:
-        return spec
+    """只给 code 时取规格：回库找同 code 的落库结构（合法则优先），其次代码内置。"""
     return resolve_spec(code, await _structure_of(session, code, None))
 
 
@@ -98,10 +104,8 @@ async def resolve_for_job(session: AsyncSession, job: Any) -> TemplateSpec:
     """按任务取规格：任务只留了 code，结构需要回模板行取。
 
     优先用任务创建时写入的 `deliverable_template_id`，避免「同 code 多母本」时取错。
+    落库结构合法时优先于代码内置，让人工编辑过的模板对新旧任务一致生效。
     """
-    spec = spec_from_code(job.template_code)
-    if spec is not None:
-        return spec
     template_id = str((job.meta or {}).get("deliverable_template_id") or "") or None
     structure = await _structure_of(session, job.template_code, template_id)
     return resolve_spec(job.template_code, structure)

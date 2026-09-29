@@ -91,7 +91,11 @@ class DocGenInputFile(BaseModel):
     """任务上传的资料文件。"""
 
     __tablename__ = "doc_gen_input_files"
-    __table_args__ = ({"schema": "research"},)
+    __table_args__ = (
+        # 0058 建表时已建此索引，模型此前漏声明（alembic check 会报 removed index）
+        Index("ix_research_doc_gen_input_files_job_id", "job_id"),
+        {"schema": "research"},
+    )
 
     job_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("research.doc_gen_jobs.id"), comment="所属任务"
@@ -115,7 +119,11 @@ class DocGenSlotValue(BaseModel):
     """任务级槽位结果（用于排查与统计，不作为在线编辑入口）。"""
 
     __tablename__ = "doc_gen_slot_values"
-    __table_args__ = ({"schema": "research"},)
+    __table_args__ = (
+        # 建表迁移已建此索引，模型此前漏声明（alembic check 会报 removed index）
+        Index("ix_research_doc_gen_slot_values_job_id", "job_id"),
+        {"schema": "research"},
+    )
 
     job_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("research.doc_gen_jobs.id"), comment="所属任务"
@@ -205,3 +213,33 @@ class DocGenSection(BaseModel):
     source: Mapped[str] = mapped_column(String(16), default="auto", comment="auto/manual")
     state: Mapped[str] = mapped_column(String(16), default="enabled", comment="enabled/disabled")
     trigger_trace: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="触发判定依据")
+
+
+class DocGenCorpusDocument(BaseModel):
+    """doc_gen「项目资料块入库（corpus）」的遗留表 —— 当前无任何业务代码引用。
+
+    它的 ORM 与业务代码已不在任何分支，但 UAT 上仍有 4 行历史数据，且 UAT 的
+    ``alembic_version`` 就停在这张表的迁移（0063）上，因此不能删除：删表会同时破坏
+    版本链与历史数据。这里补一个只读用途的模型，使 metadata 与各环境实测结构一致
+    （``alembic check`` 通过、迁移图完整），避免 Alembic 把它当成「待删除的表」。
+    如后续确认该功能废弃，应按 AGENTS 的 Orphan Table 规则（查引用 → 备份那 4 行 →
+    明确批准）单独提 DROP 迁移，而不是靠 autogenerate。
+    """
+
+    __tablename__ = "doc_gen_corpus_documents"
+    __table_args__ = (
+        UniqueConstraint("project_id", "sha256", name="uq_research_doc_gen_corpus_documents_project_sha256"),
+        Index("ix_research_doc_gen_corpus_documents_project", "project_id"),
+        {"schema": "research"},
+    )
+
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), ForeignKey("research.rd_projects.id"), comment="关联研发项目"
+    )
+    file_id: Mapped[str] = mapped_column(String(64), comment="解析与引用用的稳定标识")
+    sha256: Mapped[str] = mapped_column(String(64), comment="内容哈希")
+    original_filename: Mapped[str] = mapped_column(String(500), comment="原始文件名")
+    role: Mapped[str] = mapped_column(String(32), comment="material/literature")
+    page_count: Mapped[int] = mapped_column(Integer, comment="页数/行数估计")
+    char_count: Mapped[int] = mapped_column(Integer, comment="解析字符数")
+    blocks: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="解析出的文本块")

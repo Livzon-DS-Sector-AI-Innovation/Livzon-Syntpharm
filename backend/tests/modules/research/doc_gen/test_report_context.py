@@ -6,7 +6,7 @@ import uuid
 from types import SimpleNamespace
 from typing import Any
 
-from app.modules.research.doc_gen import service
+from app.modules.research.doc_gen import repository, service, store
 from app.modules.research.doc_gen.extraction import SlotExtractor
 from app.modules.research.doc_gen.parsing import TextBlock
 from app.modules.research.doc_gen.templates import get_template_spec
@@ -57,10 +57,10 @@ async def test_store_report_context_creates_virtual_file(monkeypatch: Any) -> No
     async def fake_add(session: Any, records: list[Any]) -> None:
         captured.extend(records)
 
-    monkeypatch.setattr(service.store, "save_bytes", fake_save)
-    monkeypatch.setattr(service.repo, "add_input_files", fake_add)
+    monkeypatch.setattr(store, "save_bytes", fake_save)
+    monkeypatch.setattr(repository, "add_input_files", fake_add)
 
-    await service._store_report_context(None, SimpleNamespace(id=uuid.uuid4()), _report())
+    await service._store_report_context(None, SimpleNamespace(id=uuid.uuid4()), _report())  # type: ignore[arg-type]
 
     assert len(captured) == 1
     record = captured[0]
@@ -77,8 +77,8 @@ async def test_store_report_context_skips_without_report(monkeypatch: Any) -> No
         nonlocal called
         called = True
 
-    monkeypatch.setattr(service.repo, "add_input_files", fake_add)
-    await service._store_report_context(None, SimpleNamespace(id=uuid.uuid4()), None)
+    monkeypatch.setattr(repository, "add_input_files", fake_add)
+    await service._store_report_context(None, SimpleNamespace(id=uuid.uuid4()), None)  # type: ignore[arg-type]
     assert not called
 
 

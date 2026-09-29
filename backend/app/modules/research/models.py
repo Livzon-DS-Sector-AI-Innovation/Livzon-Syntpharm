@@ -710,7 +710,11 @@ class RdDeliverableTemplate(BaseModel):
     """交付物模板"""
 
     __tablename__ = "rd_deliverable_templates"
-    __table_args__ = {"schema": "research"}
+    __table_args__ = (
+        # 0059 建表时已建此索引，模型此前漏声明（alembic check 会报 removed index）
+        Index("ix_research_rd_deliverable_templates_template_code", "template_code"),
+        {"schema": "research"},
+    )
 
     name: Mapped[str] = mapped_column(String(200), comment="模板名称")
     deliverable_type: Mapped[str] = mapped_column(String(50), comment="交付物类型")
@@ -768,10 +772,11 @@ class RdDeliverableTemplateVersion(BaseModel):
     file_size: Mapped[int | None] = mapped_column(BigInteger, nullable=True, comment="文件字节数")
     # 槽位定义快照：不回滚这两列会造成「旧母本 + 新槽位」错配
     template_code: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="槽位定义 code 快照")
-    template_structure: Mapped[dict[str, Any] | None] = mapped_column(
-        JSON, nullable=True, comment="槽位结构定义快照"
-    )
+    template_structure: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="槽位结构定义快照")
     change_note: Mapped[str | None] = mapped_column(Text, nullable=True, comment="版本说明（变更备注）")
-    is_current: Mapped[bool] = mapped_column(
-        Boolean, default=False, server_default="false", comment="是否当前生效版本"
-    )
+    is_current: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", comment="是否当前生效版本")
+
+
+# 子包 ORM 注册：Alembic 只 import app.modules.<code>.models，
+# 放在文件末尾避免子包反向引用时出现部分初始化
+from app.modules.research.knowledge_base import models as _kb_models  # noqa: E402,F401

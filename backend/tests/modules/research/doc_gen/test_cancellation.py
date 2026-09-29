@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from app.modules.research.doc_gen import cancellation
+from app.modules.research.doc_gen import cancellation, pipeline
 from app.modules.research.doc_gen import worker as worker_module
 from app.modules.research.doc_gen.runtime_config import RuntimeConfig
 
@@ -86,7 +86,7 @@ async def test_user_abort_preempts_a_stuck_execution(monkeypatch: Any, finalize_
         await asyncio.sleep(30)  # 模拟模型调用或解析卡死
         return "ready"
 
-    monkeypatch.setattr(worker_module.pipeline, "execute_job", _stuck)
+    monkeypatch.setattr(pipeline, "execute_job", _stuck)
     result = await asyncio.gather(
         worker_module._execute_guarded(job_id, RuntimeConfig(job_timeout_seconds=30)),
         _abort_after(job_id),
@@ -102,7 +102,7 @@ async def test_job_timeout_forces_failure(monkeypatch: Any, finalize_recorder: A
         await asyncio.sleep(30)
         return "ready"
 
-    monkeypatch.setattr(worker_module.pipeline, "execute_job", _stuck)
+    monkeypatch.setattr(pipeline, "execute_job", _stuck)
     result = await worker_module._execute_guarded(job_id, RuntimeConfig(job_timeout_seconds=0.05))
     assert result == "failed"
     assert finalize_recorder == [("failed", "timeout")]
@@ -116,7 +116,7 @@ async def test_process_shutdown_signal_is_not_swallowed(monkeypatch: Any, finali
         await asyncio.sleep(30)
         return "ready"
 
-    monkeypatch.setattr(worker_module.pipeline, "execute_job", _long)
+    monkeypatch.setattr(pipeline, "execute_job", _long)
     guarded = asyncio.create_task(worker_module._execute_guarded(job_id, RuntimeConfig(job_timeout_seconds=30)))
     await asyncio.sleep(0.05)
     guarded.cancel()

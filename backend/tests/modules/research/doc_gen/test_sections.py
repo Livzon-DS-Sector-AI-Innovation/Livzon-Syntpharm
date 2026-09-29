@@ -288,7 +288,8 @@ def test_render_inserts_headings_with_style() -> None:
     by_text = {p.text.strip(): p for p in doc.paragraphs}
     assert "路线A研究" in by_text and "路线B研究" in by_text
     # 标题必须套用母本标题样式（编号由样式多级列表生成）
-    assert "heading" in (by_text["路线A研究"].style.name or "").lower()
+    style_a = by_text["路线A研究"].style
+    assert style_a is not None and "heading" in (style_a.name or "").lower()
     assert report.sections_added == 2
     # 内容写在本章节标题之后
     texts = [p.text for p in doc.paragraphs]

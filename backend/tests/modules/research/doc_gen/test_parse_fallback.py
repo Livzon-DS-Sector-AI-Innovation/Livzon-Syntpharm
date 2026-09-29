@@ -110,9 +110,7 @@ async def test_library_success_skips_vision(monkeypatch: pytest.MonkeyPatch, vis
     assert vision_spy.await_count == 0
 
 
-async def test_office_container_never_sent_to_model(
-    monkeypatch: pytest.MonkeyPatch, vision_spy: AsyncMock
-) -> None:
+async def test_office_container_never_sent_to_model(monkeypatch: pytest.MonkeyPatch, vision_spy: AsyncMock) -> None:
     """Office/OLE 容器解析不出文字时**不**走视觉兜底——模型读不懂 zip/OLE。
 
     这是旧实现（base64 塞 prompt）失败的根因，用这条测试锁死回归。

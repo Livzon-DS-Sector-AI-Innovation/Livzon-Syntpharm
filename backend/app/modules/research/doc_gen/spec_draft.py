@@ -277,8 +277,7 @@ def draft_spec_from_bytes(
         description="由上传的 Word 母本自动识别填充项生成",
         hint_colors=list(colors),
         unfilled_notes=[
-            "填充项由母本结构自动识别，语义为保守默认：不引用文献、不做表格计算、"
-            "取不到依据一律标 [待补充]",
+            "填充项由母本结构自动识别，语义为保守默认：不引用文献、不做表格计算、取不到依据一律标 [待补充]",
         ],
         slots=deduped,
     )

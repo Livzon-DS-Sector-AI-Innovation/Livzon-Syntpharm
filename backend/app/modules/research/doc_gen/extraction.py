@@ -20,7 +20,8 @@ from pydantic import BaseModel, Field, ValidationError
 
 from app.core.llm import llm_client
 from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLimitError
-from app.modules.research.doc_gen import calc, status
+from app.modules.research.doc_gen import calc, gap, status
+from app.modules.research.doc_gen.kb_retrieval import KB_FILE_PREFIX, KB_POOL_PRIORITY
 from app.modules.research.doc_gen.parsing import TextBlock
 from app.modules.research.doc_gen.prompts import build_extract_prompt, build_table_prompt
 from app.modules.research.doc_gen.retrieval import BlockRetriever, score_text
@@ -50,6 +51,12 @@ SUPPLEMENT_FILE_ID = "supplement"
 SUPPLEMENT_ROLE = "supplement"
 # 上一版报告正文（报告草稿）角色
 DRAFT_ROLE = "report_draft"
+# 项目知识库召回片段（file_id 带 kb: 前缀）角色：项目沉淀的权威资料，对所有槽位可见
+KNOWLEDGE_ROLE = "knowledge"
+# 检索口径：默认口径以槽位关键词为主、宽检索仅在前者 0 命中时兜底；
+# 缺口重试口径把宽检索词（长词拆成的二字片段）当主口径，换一套词重新召回一轮。
+RETRIEVAL_DEFAULT = "default"
+RETRIEVAL_RECALL = "recall"
 
 
 def _normalize_text(text: str) -> str:
@@ -135,6 +142,9 @@ class SlotResult:
     evidence: list[EvidenceModel] = field(default_factory=list)
     candidates: list[str] = field(default_factory=list)
     confidence: float | None = None
+    # 未填上时的结构化归因（``gap.GAP_*``）：空字符串表示已填充或未归因。
+    # 产出结果时当场标注，供缺口闭环决定是否值得重试——不靠猜 reason 文案。
+    gap_reason: str = ""
 
 
 @dataclass(slots=True)
@@ -150,7 +160,28 @@ class ExtractStats:
     low_confidence: int = 0
     # 辅助模型兜底成功的次数
     fallback_used: int = 0
+    # 项目知识库贡献的候选片段数（0 表示未接入知识库或全部未命中）
+    kb_hits: int = 0
+    # 取值与槽位需求描述（量纲/允许取值）不符、被降级为需人工核对的槽位数
+    requirement_mismatches: int = 0
     warnings: list[str] = field(default_factory=list)
+
+
+def merge_stats(target: ExtractStats, source: ExtractStats) -> None:
+    """把一次附加抽取（缺口重试）的统计并入主统计对象。
+
+    重试是额外发生的模型调用与知识库召回，账必须记在全量上，否则 ``job.stats``
+    里的失败率与召回缺口会低于实际值。
+    """
+    target.calls += source.calls
+    target.retries += source.retries
+    target.failures += source.failures
+    target.retrieval_misses += source.retrieval_misses
+    target.low_confidence += source.low_confidence
+    target.fallback_used += source.fallback_used
+    target.kb_hits += source.kb_hits
+    target.requirement_mismatches += source.requirement_mismatches
+    target.warnings.extend(source.warnings)
 
 
 class SlotExtractor:
@@ -181,6 +212,9 @@ class SlotExtractor:
         fallback_model_override: str | None = None,
         fallback_config_name: str | None = None,
         file_analysis_context: Mapping[str, Sequence[Mapping[str, Any]]] | None = None,
+        kb_retriever: Any = None,
+        fact_retriever: Any = None,
+        retrieval_profile: str = RETRIEVAL_DEFAULT,
     ) -> None:
         self._spec = spec
         self._blocks = list(blocks)
@@ -215,6 +249,15 @@ class SlotExtractor:
         self._file_analysis_context: dict[str, list[dict[str, Any]]] = {
             k: [dict(item) for item in v] for k, v in (file_analysis_context or {}).items()
         }
+        # 项目知识库召回器（可选）：按槽位即时召回，命中片段作为虚拟资料参与 prompt 与回检
+        self._kb_retriever = kb_retriever
+        # 本地事实库召回器（可选）：知识库候选的第一级来源，零外部调用；无命中时回落实时检索
+        self._fact_retriever = fact_retriever
+        # 检索口径：缺口重试轮用 recall（宽检索词当主口径），常规轮用默认口径
+        self._retrieval_profile = retrieval_profile
+        # 知识库命中片段的原文：file_id → [片段文本]，供证据回检按文件取语料
+        self._kb_raw: dict[str, list[str]] = {}
+        self._kb_files: set[str] = set()
 
     def _check_cancelled(self) -> None:
         """取消探针：在每个批次与每次模型调用的边界上检查。"""
@@ -312,7 +355,10 @@ class SlotExtractor:
         extras = [
             fid for fid, roles in self._roles.items() if {DRAFT_ROLE, DATABASE_ROLE, SUPPLEMENT_ROLE} & set(roles)
         ]
-        return allowed + [fid for fid in extras if fid not in allowed]
+        # 知识库命中片段不参与本地检索（不在 self._blocks 里），但必须放行白名单，
+        # 否则受限来源的槽位会在合并候选时被过滤掉知识库贡献
+        merged = allowed + [fid for fid in extras if fid not in allowed]
+        return merged + [fid for fid in sorted(self._kb_files) if fid not in merged]
 
     def _slot_keywords(self, slot: Slot) -> list[str]:
         """槽位检索词：label/key/query_hint 分词/别名/表格列名。"""
@@ -326,19 +372,85 @@ class SlotExtractor:
     def _chunk_payload(self, chunks: Sequence[TextBlock]) -> list[dict[str, Any]]:
         return [{"file_id": c.file_id, "page": c.page, "text": c.text} for c in chunks]
 
+    async def _kb_candidates(self, keywords: Sequence[str]) -> list[TextBlock]:
+        """项目知识库候选（可选来源）：本地事实库优先，RAGFlow 实时召回兜底。
+
+        两级来源的产出同构（都是 ``file_id = "kb:..."`` 的虚拟资料），这里统一登记进
+        ``_kb_raw``：证据回检按 file_id 取语料，必须能查到这些片段，否则模型引用知识库
+        内容会被判成「无依据」而误降级。
+
+        事实库是「先榨一遍全库」的产物，零外部调用、覆盖不受查询词限制；它在某个槽位上
+        无命中时才回落到按槽位实时检索（远端更贵，只作兜底）。
+        """
+        blocks = await self._fact_candidates(keywords)
+        if not blocks:
+            blocks = await self._live_kb_candidates(keywords)
+        for block in blocks:
+            self._kb_raw.setdefault(block.file_id, []).append(block.text)
+            self._kb_files.add(block.file_id)
+        self.stats.kb_hits += len(blocks)
+        return list(blocks)
+
+    async def _fact_candidates(self, keywords: Sequence[str]) -> list[TextBlock]:
+        """本地事实库召回（零外部调用）；未接入事实库时返回空列表。"""
+        if self._fact_retriever is None:
+            return []
+        try:
+            return list(await self._fact_retriever.retrieve(keywords))
+        except Exception:  # noqa: BLE001 - 事实库不可用只降级，绝不影响提取
+            logger.exception("事实库召回异常，回落到实时知识库检索")
+            return []
+
+    async def _live_kb_candidates(self, keywords: Sequence[str]) -> list[TextBlock]:
+        """RAGFlow 实时召回（兜底）；未接入或服务异常时返回空列表。"""
+        if self._kb_retriever is None:
+            return []
+        try:
+            return list(await self._kb_retriever.retrieve(keywords))
+        except Exception:  # noqa: BLE001 - 外部服务异常面广，统一降级为「本次无知识库资料」
+            logger.exception("知识库召回异常，本次仅用本地资料")
+            return []
+
+    def _merge_candidates(self, kb_chunks: Sequence[TextBlock], local_chunks: Sequence[TextBlock]) -> list[TextBlock]:
+        """知识库命中在前、本地检索补足；按 (文件, 内容前缀) 去重。
+
+        知识库片段是外部检索服务按语义挑出的 top-k，数量可控；
+        本地候选仍按原有 limit 竞争，两者不互相挤占名额。
+        """
+        merged: list[TextBlock] = []
+        seen: set[tuple[str, str]] = set()
+        for block in list(kb_chunks) + list(local_chunks):
+            key = (block.file_id, block.text[:80])
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(block)
+        return merged
+
     async def _candidates(self, slot: Slot) -> tuple[list[TextBlock], list[dict[str, Any]], bool]:
         """检索候选块，返回 (块, prompt 载荷, 是否走了宽检索兜底)。
 
+        候选有两路来源：项目知识库（按槽位即时召回）与本地资料（关键词 / 向量双路召回）。
         当向量索引可用时执行双路召回（关键词 + 向量融合），否则退化为纯关键词检索。
         主关键词 0 命中时不直接放弃：把中文长词拆成二字片段再检索一轮（宽检索），
         槽位用语与资料用语脱节时仍有机会召回；两轮都空才判定检索未命中。
         """
         keywords = self._slot_keywords(slot)
+        if self._retrieval_profile == RETRIEVAL_RECALL:
+            # 缺口重试口径：主口径已经试过且失败了，再用同一套词只会拿到同一批结果
+            # （知识库召回器按查询词缓存，更是原样返回）。把长词拆成二字片段当主口径，
+            # 本地检索与知识库召回都变成「另一次查询」，才有机会捞到措辞不同的资料。
+            keywords = _widen_keywords(keywords) or keywords
         allow_file_ids = self._allowed_files(slot)
         roles = self._roles or None
+        kb_chunks = await self._kb_candidates(keywords)
+        # 需求描述声明「取值来源只允许项目知识库」时，本地资料与登记数据不得进入候选
+        kb_only = slot.source_scope == "project_kb"
 
         # 向量索引可用时走双路召回
-        if self._vector_index is not None and self._vector_index.is_built:
+        if kb_only:
+            chunks: list[TextBlock] = []
+        elif self._vector_index is not None and self._vector_index.is_built:
             query_text = " ".join(keywords)
             embed_fn = self._make_embed_fn()
             chunks = await self._retriever.candidates_with_vector(
@@ -349,15 +461,17 @@ class SlotExtractor:
                 allow_file_ids=allow_file_ids,
                 roles=roles,
             )
-            if chunks:
-                return chunks, self._chunk_payload(chunks), False
         else:
             # 纯关键词检索
             chunks = self._retriever.candidates(
                 keywords, limit=self._candidate_limit, allow_file_ids=allow_file_ids, roles=roles
             )
-            if chunks:
-                return chunks, self._chunk_payload(chunks), False
+        merged = self._merge_candidates(kb_chunks, chunks)
+        if merged:
+            return merged, self._chunk_payload(merged), False
+        if kb_only:
+            # 来源受限的槽位不做宽检索兜底：兜底会引入项目材料，违背 source_scope
+            return [], [], False
 
         # 宽检索兜底
         wide = _widen_keywords(keywords)
@@ -380,8 +494,9 @@ class SlotExtractor:
                     allow_file_ids=allow_file_ids,
                     roles=roles,
                 )
-            if chunks:
-                return chunks, self._chunk_payload(chunks), True
+            merged = self._merge_candidates(kb_chunks, chunks)
+            if merged:
+                return merged, self._chunk_payload(merged), True
         return [], [], False
 
     def _make_embed_fn(self) -> Callable[[list[str]], Awaitable[list[list[float]]]]:
@@ -417,7 +532,10 @@ class SlotExtractor:
         for slot in slots:
             if slot.manual_only:
                 skipped[slot.key] = SlotResult(
-                    key=slot.key, text=status.pending("需人工填写"), state=status.STATUS_MANUAL
+                    key=slot.key,
+                    text=status.pending("需人工填写"),
+                    state=status.STATUS_MANUAL,
+                    gap_reason=gap.GAP_MANUAL,
                 )
                 continue
             need_retrieval.append(slot)
@@ -430,7 +548,10 @@ class SlotExtractor:
                 if not chunks:
                     self.stats.retrieval_misses += 1
                     skipped[slot.key] = SlotResult(
-                        key=slot.key, text=status.pending("资料中未找到相关内容"), state=status.STATUS_PENDING
+                        key=slot.key,
+                        text=status.pending("资料中未找到相关内容"),
+                        state=status.STATUS_PENDING,
+                        gap_reason=gap.GAP_NO_MATERIAL,
                     )
                     continue
                 # 缓存检查：内容未变的槽位直接复用上次结果
@@ -451,7 +572,13 @@ class SlotExtractor:
         # 上下文预算内贪心挑选：按本批槽位关键词并集给候选块打分，高分块优先进入 prompt
         batch_keywords = sorted({kw for slot in active for kw in self._slot_keywords(slot)})
         pattern_cache: dict[str, re.Pattern[str]] = {}
-        pool_scores = [score_text(str(item["text"]), batch_keywords, pattern_cache) for item in pool]
+        # 知识库命中片段加固定权重：它们是外部检索服务按语义精选出的结果，
+        # 应按召回顺序优先进入上下文；本地「多次关键词命中」的强相关块仍可排在前面
+        pool_scores = [
+            score_text(str(item["text"]), batch_keywords, pattern_cache)
+            + (KB_POOL_PRIORITY if str(item.get("file_id", "")).startswith(KB_FILE_PREFIX) else 0.0)
+            for item in pool
+        ]
         # 构建文件分析预提取提示：为每个槽位提供预提取内容参考
         file_analysis_hints: dict[str, str] = {}
         for slot in active:
@@ -463,7 +590,10 @@ class SlotExtractor:
                     file_analysis_hints[slot.key] = "；".join(hints)
         outputs = await self._call_json(
             build_extract_prompt(
-                payload_slots, pool, self._max_context_chars, pool_scores,
+                payload_slots,
+                pool,
+                self._max_context_chars,
+                pool_scores,
                 file_analysis_hints=file_analysis_hints or None,
             ),
             expected_keys=["slots"],
@@ -513,11 +643,19 @@ class SlotExtractor:
         """
         if out is None:
             return SlotResult(
-                key=slot.key, text=status.pending("AI 未返回该填充项结果"), state=status.STATUS_FAILED
+                key=slot.key,
+                text=status.pending("AI 未返回该填充项结果"),
+                state=status.STATUS_FAILED,
+                gap_reason=gap.GAP_MODEL_FAILED,
             )
         value = str(out.value or "").strip()
         if not out.found or not value:
-            return SlotResult(key=slot.key, text=status.pending("资料中未找到依据"), state=status.STATUS_PENDING)
+            return SlotResult(
+                key=slot.key,
+                text=status.pending("资料中未找到依据"),
+                state=status.STATUS_PENDING,
+                gap_reason=gap.GAP_NOT_FOUND,
+            )
         exact, fuzzy = self._split_evidence(out.evidence)
         if not exact and not fuzzy:
             if slot.draft_allowed:
@@ -528,6 +666,7 @@ class SlotExtractor:
                     reason="引用未能核对，需人工确认",
                     candidates=[str(c) for c in out.candidates],
                     confidence=out.confidence,
+                    gap_reason=gap.GAP_EVIDENCE_REJECTED,
                 )
             alternatives = [value, *[str(c) for c in out.candidates]]
             return SlotResult(
@@ -538,6 +677,7 @@ class SlotExtractor:
                 candidates=[c for c in alternatives if c.strip()],
                 evidence=list(out.evidence),
                 confidence=out.confidence,
+                gap_reason=gap.GAP_EVIDENCE_REJECTED,
             )
         if fuzzy and not exact:
             return SlotResult(
@@ -547,6 +687,7 @@ class SlotExtractor:
                 reason="引用经模糊匹配核对（存在排版/识别差异），请人工确认",
                 evidence=fuzzy,
                 confidence=out.confidence,
+                gap_reason=gap.GAP_FUZZY_EVIDENCE,
             )
         candidates = [str(c) for c in out.candidates if str(c).strip() and str(c).strip() != value]
         if candidates:
@@ -558,13 +699,20 @@ class SlotExtractor:
                 evidence=[*exact, *fuzzy],
                 candidates=[value, *candidates],
                 confidence=out.confidence,
+                gap_reason=gap.GAP_CONFLICT,
             )
         format_error = _format_error(slot, value)
         if format_error:
-            return SlotResult(key=slot.key, text=status.pending(format_error), state=status.STATUS_PENDING)
+            return SlotResult(
+                key=slot.key,
+                text=status.pending(format_error),
+                state=status.STATUS_PENDING,
+                gap_reason=gap.GAP_FORMAT_ERROR,
+            )
         return self._grade_confidence(
-            SlotResult(
-                key=slot.key, text=value, state=status.STATUS_OK, evidence=exact, confidence=out.confidence
+            self._check_requirement(
+                slot,
+                SlotResult(key=slot.key, text=value, state=status.STATUS_OK, evidence=exact, confidence=out.confidence),
             )
         )
 
@@ -580,16 +728,42 @@ class SlotExtractor:
         if result.confidence < self._confidence_mid:
             result.state = status.STATUS_NEEDS_VERIFY
             result.reason = f"模型置信度较低（{result.confidence:.0%}），请人工确认"
+            result.gap_reason = gap.GAP_LOW_CONFIDENCE
             return result
         if result.confidence < self._confidence_high:
             self.stats.low_confidence += 1
         return result
 
+    def _check_requirement(self, slot: Slot, result: SlotResult) -> SlotResult:
+        """按需求描述校验取值（template_structure v2）。
+
+        需求描述是模板分析给出的「期望」而非硬约束：不符时值照常写入正文，
+        只降级为需人工核对并写明不符项，避免把有效内容整条丢掉。
+        """
+        mismatches = _requirement_mismatch(slot, result.text)
+        if not mismatches:
+            return result
+        result.state = status.STATUS_NEEDS_VERIFY
+        result.reason = "；".join(mismatches) + "，请人工确认"
+        result.gap_reason = gap.GAP_REQUIREMENT
+        self.stats.requirement_mismatches += 1
+        return result
+
     def _corpus_of(self, file_id: str) -> str:
-        """取某份资料的归一化语料；file_id 未知时退回全部语料拼接。"""
+        """取某份资料的归一化语料；file_id 未知时退回全部语料拼接。
+
+        知识库命中片段不在 ``_by_file``（它们不参与本地检索），必须单独查 ``_kb_raw``，
+        否则模型引用知识库内容会被判成无依据。
+        """
         haystack = self._by_file.get(file_id)
+        if haystack is None and file_id.startswith(KB_FILE_PREFIX):
+            raw = self._kb_raw.get(file_id)
+            if raw:
+                return _normalize_text("".join(raw))
         if haystack is None:
             haystack = "".join(self._by_file.values())
+            if self._kb_raw:
+                haystack += "".join(_normalize_text("".join(parts)) for parts in self._kb_raw.values())
         return haystack
 
     def _verify_quote(self, evidence: EvidenceModel) -> tuple[bool, bool]:
@@ -629,7 +803,7 @@ class SlotExtractor:
             starts.append(pos - (length - _FUZZY_ANCHOR_LEN))
         if not starts and length >= 2 * _FUZZY_ANCHOR_LEN:
             mid_start = length // 2 - _FUZZY_ANCHOR_LEN // 2
-            pos = haystack.find(needle[mid_start:][: _FUZZY_ANCHOR_LEN])
+            pos = haystack.find(needle[mid_start:][:_FUZZY_ANCHOR_LEN])
             if pos >= 0:
                 starts.append(pos - mid_start)
         if not starts:
@@ -652,14 +826,21 @@ class SlotExtractor:
     async def _extract_table(self, slot: Slot) -> SlotResult:
         """表格槽位：逐行抽取，计算列与序号交给程序。"""
         if slot.manual_only:
-            return SlotResult(key=slot.key, state=status.STATUS_MANUAL, reason="需人工填写")
+            return SlotResult(key=slot.key, state=status.STATUS_MANUAL, reason="需人工填写", gap_reason=gap.GAP_MANUAL)
         chunks, pool, _wide = await self._candidates(slot)
         if not chunks:
-            return SlotResult(key=slot.key, state=status.STATUS_PENDING, reason="资料中未找到相关表格数据")
+            return SlotResult(
+                key=slot.key,
+                state=status.STATUS_PENDING,
+                reason="资料中未找到相关表格数据",
+                gap_reason=gap.GAP_NO_MATERIAL,
+            )
         payload = _slot_payload(slot)
         writable = [c for c in payload["columns"] if c.get("writable")]
         if not writable:
-            return SlotResult(key=slot.key, state=status.STATUS_MANUAL, reason="该表所有列均为程序计算")
+            return SlotResult(
+                key=slot.key, state=status.STATUS_MANUAL, reason="该表所有列均为程序计算", gap_reason=gap.GAP_MANUAL
+            )
         # 上下文预算内贪心挑选：按本槽位关键词给候选块打分
         pattern_cache: dict[str, re.Pattern[str]] = {}
         chunk_scores = [score_text(c.text, self._slot_keywords(slot), pattern_cache) for c in chunks]
@@ -700,7 +881,11 @@ class SlotExtractor:
         rows = rows[:limit]
         if not rows:
             return SlotResult(
-                key=slot.key, state=status.STATUS_PENDING, reason="资料中未找到表格数据", evidence=evidence
+                key=slot.key,
+                state=status.STATUS_PENDING,
+                reason="资料中未找到表格数据",
+                evidence=evidence,
+                gap_reason=gap.GAP_NO_MATERIAL,
             )
         state = status.STATUS_OVERFLOW if truncated else status.STATUS_OK
         reason = f"行数超过模板原件可承载上限 {limit}，已截断" if truncated else ""
@@ -819,7 +1004,7 @@ class SlotExtractor:
 
 
 def _slot_payload(slot: Slot) -> dict[str, Any]:
-    """把槽位定义转成 prompt 可用的字典。"""
+    """把槽位定义转成 prompt 可用的字典（含需求描述）。"""
     sequence_key = slot.table.sequence_column if slot.table else None
     return {
         "key": slot.key,
@@ -829,6 +1014,11 @@ def _slot_payload(slot: Slot) -> dict[str, Any]:
         "required": slot.required,
         "draft_allowed": slot.draft_allowed,
         "query_hint": slot.query_hint,
+        # 需求描述（template_structure v2）：让模型知道该槽位期望的量纲/枚举/基数/来源
+        "unit": slot.unit,
+        "enum_values": list(slot.enum_values),
+        "cardinality": slot.cardinality,
+        "source_scope": slot.source_scope,
         "columns": [
             {
                 "key": c.key,
@@ -862,3 +1052,19 @@ def _format_error(slot: Slot, value: str) -> str:
     if slot.expects == "percent" and not _PERCENT_RE.match(value):
         return "百分比格式不符"
     return ""
+
+
+def _requirement_mismatch(slot: Slot, value: str) -> list[str]:
+    """按需求描述（量纲/允许取值）核对取值，返回不符项描述。
+
+    量纲与枚举都是「必须出现」的下限约束（NFKC + 去空白后包含即算命中）：资料里的
+    写法很杂（``mg/ml`` / ``毫克/毫升`` / ``片剂（规格 0.5g）``），过严的正则会误伤正确输出。
+    """
+    haystack = _normalize_text(value)
+    mismatches: list[str] = []
+    if slot.unit and _normalize_text(slot.unit) not in haystack:
+        mismatches.append(f"量纲不符（要求 {slot.unit}）")
+    options = [item for item in slot.enum_values if item.strip()]
+    if options and not any(_normalize_text(item) in haystack for item in options):
+        mismatches.append(f"取值不在允许范围（{'、'.join(options[:5])}）")
+    return mismatches

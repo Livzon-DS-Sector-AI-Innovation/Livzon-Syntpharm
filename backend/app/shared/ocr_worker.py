@@ -13,10 +13,12 @@ OCR Worker Process - 独立子进程运行 PaddleOCR
 import json
 import sys
 import traceback
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 
-def process_request(request: dict, pp_ocr, get_pp_structure) -> dict:
+def process_request(request: dict[str, Any], pp_ocr: Any, get_pp_structure: Callable[[], Any]) -> dict[str, Any]:
     """处理单个 OCR 请求"""
     request_id = request.get("id")
     input_path = request.get("input_path")
@@ -45,16 +47,18 @@ def process_request(request: dict, pp_ocr, get_pp_structure) -> dict:
                             ):
                                 x_coords = [p[0] for p in poly]
                                 y_coords = [p[1] for p in poly]
-                                blocks.append({
-                                    "text": text,
-                                    "bbox": [
-                                        int(min(x_coords)),
-                                        int(min(y_coords)),
-                                        int(max(x_coords)),
-                                        int(max(y_coords)),
-                                    ],
-                                    "confidence": float(score),
-                                })
+                                blocks.append(
+                                    {
+                                        "text": text,
+                                        "bbox": [
+                                            int(min(x_coords)),
+                                            int(min(y_coords)),
+                                            int(max(x_coords)),
+                                            int(max(y_coords)),
+                                        ],
+                                        "confidence": float(score),
+                                    }
+                                )
                 return {"id": request_id, "status": "ok", "data": blocks}
 
         elif engine == "pp_structure":
@@ -77,7 +81,7 @@ def process_request(request: dict, pp_ocr, get_pp_structure) -> dict:
             elif method == "extract_structure":
                 import tempfile
 
-                output = {"markdown": "", "json": {}, "layout": [], "tables": []}
+                output: dict[str, Any] = {"markdown": "", "json": {}, "layout": [], "tables": []}
                 for res in result:
                     if hasattr(res, "save_to_markdown"):
                         with tempfile.TemporaryDirectory() as tmpdir:
@@ -115,10 +119,11 @@ def process_request(request: dict, pp_ocr, get_pp_structure) -> dict:
         }
 
 
-def main():
+def main() -> None:
     """主循环：加载模型，处理请求"""
     # 将 PaddleOCR/Paddle 的日志重定向到 stderr，保持 stdout 干净
     import logging
+
     logging.getLogger("paddle").setLevel(logging.WARNING)
     logging.getLogger("paddleocr").setLevel(logging.WARNING)
     logging.getLogger("ppocr").setLevel(logging.WARNING)
@@ -126,9 +131,10 @@ def main():
     # 重定向 stdout 为 stderr（PaddleOCR 内部 print 到 stdout 的内容）
     # 我们自己的 JSON 通信使用 fd 1 的原始副本
     import os
+
     _json_out = os.fdopen(os.dup(1), "w", buffering=1)  # 复制 stdout fd
 
-    def _emit(msg: dict) -> None:
+    def _emit(msg: dict[str, Any]) -> None:
         _json_out.write(json.dumps(msg, ensure_ascii=False) + "\n")
         _json_out.flush()
 
@@ -155,11 +161,12 @@ def main():
     # PP-StructureV3 懒加载
     pp_structure = None
 
-    def get_pp_structure():
+    def get_pp_structure() -> Any:
         nonlocal pp_structure
         if pp_structure is None:
             _emit({"status": "initializing", "message": "Loading PP-StructureV3 on first use..."})
             from paddleocr import PPStructureV3
+
             pp_structure = PPStructureV3(
                 use_doc_orientation_classify=False,
                 use_doc_unwarping=False,

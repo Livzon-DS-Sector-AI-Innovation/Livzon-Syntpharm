@@ -98,18 +98,22 @@ async def load_master_by_code(template_code: str) -> bytes | None:
 
     async with async_session_factory() as session:
         row = (
-            await session.execute(
-                select(RdDeliverableTemplate)
-                .where(
-                    RdDeliverableTemplate.template_code == template_code,
-                    RdDeliverableTemplate.is_active.is_(True),
-                    ~RdDeliverableTemplate.is_deleted,
-                    RdDeliverableTemplate.file_object_key.isnot(None),
+            (
+                await session.execute(
+                    select(RdDeliverableTemplate)
+                    .where(
+                        RdDeliverableTemplate.template_code == template_code,
+                        RdDeliverableTemplate.is_active.is_(True),
+                        ~RdDeliverableTemplate.is_deleted,
+                        RdDeliverableTemplate.file_object_key.isnot(None),
+                    )
+                    .order_by(RdDeliverableTemplate.created_at.desc())
+                    .limit(1)
                 )
-                .order_by(RdDeliverableTemplate.created_at.desc())
-                .limit(1)
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if row is None or not row.file_object_key:
             return None
         return load_bytes(row.file_object_key)

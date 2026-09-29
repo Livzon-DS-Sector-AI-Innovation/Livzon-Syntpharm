@@ -92,9 +92,7 @@ async def load_slot_rows(session: AsyncSession, job_id: UUID) -> dict[str, DocGe
     return {row.slot_key: row for row in result.scalars()}
 
 
-def _bucket_rows(
-    spec: TemplateSpec, rows: dict[str, DocGenSlotValue]
-) -> tuple[list[Slot], list[Slot], list[Slot]]:
+def _bucket_rows(spec: TemplateSpec, rows: dict[str, DocGenSlotValue]) -> tuple[list[Slot], list[Slot], list[Slot]]:
     """按「待补必填 / 待补选填 / 需人工核对」给槽位分组（顺序保持模板声明序）。"""
     missing_required: list[Slot] = []
     missing_optional: list[Slot] = []
@@ -113,9 +111,7 @@ def build_checklist(spec: TemplateSpec, rows: dict[str, DocGenSlotValue]) -> str
     """生成首轮盘点卡（Markdown）：让用户一眼看到还缺什么、怎么补。"""
     missing_required, missing_optional, need_review = _bucket_rows(spec, rows)
     filled = sum(
-        1
-        for slot in _fillable_slots(spec)
-        if (row := rows.get(slot.key)) is not None and row.state == status.STATUS_OK
+        1 for slot in _fillable_slots(spec) if (row := rows.get(slot.key)) is not None and row.state == status.STATUS_OK
     )
     lines = [
         "【资料盘点】",
@@ -272,9 +268,7 @@ def _history_messages(messages: list[DocGenMessage]) -> list[dict[str, str]]:
     return [{"role": m.role, "content": m.content[:2000]} for m in recent]
 
 
-def _validate_fills(
-    fills: Any, allowed_keys: set[str], spec: TemplateSpec
-) -> tuple[list[SlotFill], list[str]]:
+def _validate_fills(fills: Any, allowed_keys: set[str], spec: TemplateSpec) -> tuple[list[SlotFill], list[str]]:
     """校验模型声明的填充项：key 合法性、槽位类型、长度截断。"""
     slot_by_key = {slot.key: slot for slot in spec.slots}
     accepted: list[SlotFill] = []
@@ -302,9 +296,7 @@ def _validate_fills(
     return accepted, rejected
 
 
-async def _call_model(
-    payload_messages: list[dict[str, Any]], config: RuntimeConfig, llm: Any = None
-) -> dict[str, Any]:
+async def _call_model(payload_messages: list[dict[str, Any]], config: RuntimeConfig, llm: Any = None) -> dict[str, Any]:
     """主模型重试 + 备用模型兜底，全部失败抛 LLMError。``llm`` 供测试注入。"""
     client = llm if llm is not None else llm_client
     attempts = max(1, config.max_attempts)
@@ -419,9 +411,7 @@ async def _apply_fills(
     return applied
 
 
-def _compose_reply(
-    answer: str, applied: list[SlotFill], rejected: list[str], conversation: DocGenConversation
-) -> str:
+def _compose_reply(answer: str, applied: list[SlotFill], rejected: list[str], conversation: DocGenConversation) -> str:
     """助手回复 = LLM 回答 + 写入清单 +（可选）轮数提示。"""
     parts: list[str] = []
     if applied:

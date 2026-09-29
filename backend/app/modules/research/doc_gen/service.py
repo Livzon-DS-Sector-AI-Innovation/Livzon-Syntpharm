@@ -18,8 +18,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.research import models as rd_models
-from app.modules.research.doc_gen import cancellation, parsing, spec_source, status, store
+from app.modules.research.doc_gen import cancellation, kb_coverage, parsing, spec_source, status, store
 from app.modules.research.doc_gen import repository as repo
+from app.modules.research.doc_gen.docx_markdown import render_docx_markdown
+from app.modules.research.doc_gen.extraction import DB_FILE_PREFIX, SUPPLEMENT_FILE_ID
+from app.modules.research.doc_gen.kb_retrieval import KB_FILE_PREFIX
 from app.modules.research.doc_gen.models import (
     EDITABLE_INPUT_STATUSES,
     RUNNING_STATUSES,
@@ -27,8 +30,10 @@ from app.modules.research.doc_gen.models import (
     DocGenJob,
     DocGenSlotValue,
 )
-from app.modules.research.doc_gen.runtime_config import load_runtime_config
+from app.modules.research.doc_gen.runtime_config import load_runtime_config, resolve_model
 from app.modules.research.doc_gen.schemas import (
+    DocGenAddSlotRequest,
+    DocGenEvidenceItem,
     DocGenInputFileResponse,
     DocGenJobDetail,
     DocGenJobResponse,
@@ -39,8 +44,11 @@ from app.modules.research.doc_gen.schemas import (
     DocGenTemplateSummary,
 )
 from app.modules.research.doc_gen.sections import recompose_title
+from app.modules.research.doc_gen.spec_ai_draft import enrich_spec_semantics
+from app.modules.research.doc_gen.spec_candidates import add_slot_to_spec, list_anchor_candidates
 from app.modules.research.doc_gen.spec_draft import draft_spec_from_bytes
-from app.modules.research.doc_gen.template_spec import SECTION_INSTANCE_SEP, TemplateSpec, split_slot_key
+from app.modules.research.doc_gen.spec_markdown import render_spec_markdown
+from app.modules.research.doc_gen.template_spec import SECTION_INSTANCE_SEP, TemplateSpec, master_path, split_slot_key
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +121,60 @@ def _extension(filename: str) -> str:
     return lowered[dot:] if dot >= 0 else ""
 
 
+async def probe_kb_coverage(
+    session: AsyncSession,
+    deliverable_template_id: uuid.UUID,
+    project_id: uuid.UUID | None,
+    *,
+    live: bool = True,
+) -> kb_coverage.KbCoverage:
+    """知识库覆盖预检（A2）：建任务前先算清「这些填充项库里有没有料」。
+
+    只做归类不做抽取：优先在本地索引（切片 + 事实）里离线匹配，快而不压知识库；
+    知识库尚无索引时才退化到实时检索兜底（``live=False`` 可关掉，接口会更快但更保守）。
+    这里不建任务、不落库，结果由调用方决定怎么用（前端确认弹窗 / 流水线写进 job.stats）。
+    """
+    from app.modules.research.knowledge_base.service import get_project_knowledge_base
+
+    config = await load_runtime_config()
+    template = await session.get(rd_models.RdDeliverableTemplate, deliverable_template_id)
+    if template is None or template.is_deleted:
+        raise NotFoundException("交付物模板不存在")
+    if not template.template_code:
+        raise BadRequestException("该模板未关联填充项配置，无法预检")
+    try:
+        spec = await spec_source.resolve_for_template(session, template)
+    except KeyError as exc:
+        raise BadRequestException("该模板的填充项配置缺失，请重新上传 Word 母本以自动识别") from exc
+
+    kb = await get_project_knowledge_base(session, project_id) if project_id is not None else None
+    if kb is not None and (kb.status != "active" or not kb.ragflow_dataset_id):
+        kb = None
+
+    live_retriever = None
+    if live and kb is not None and config.kb_enabled:
+        from app.modules.research.doc_gen.kb_retrieval import KnowledgeBaseRetriever
+
+        candidate = KnowledgeBaseRetriever(
+            [kb.ragflow_dataset_id],
+            top_k=config.kb_top_k,
+            similarity_threshold=config.kb_similarity_threshold,
+            vector_similarity_weight=config.kb_vector_weight,
+            timeout_seconds=config.kb_timeout_seconds,
+        )
+        live_retriever = candidate if candidate.enabled else None
+
+    return await kb_coverage.evaluate_coverage(
+        session,
+        spec,
+        kb=kb,
+        live_retriever=live_retriever,
+        max_chunks=config.kb_coverage_max_chunks,
+        max_slots=config.kb_coverage_max_slots,
+        live_fallback=live,
+        documents=int(kb.document_count or 0) if kb is not None else 0,
+    )
+
 
 async def create_job_from_template(
     session: AsyncSession,
@@ -148,7 +210,7 @@ async def create_job_from_template(
     if not template.template_code:
         raise BadRequestException("该模板未关联填充项配置，无法用于 AI 生成")
 
-    # 槽位定义：代码内置优先，其次母本上传时自动识别并落库的配置
+    # 槽位定义：落库 structure（人工编辑/自动识别）优先，其次代码内置规格
     try:
         spec = await spec_source.resolve_for_template(session, template)
     except KeyError as exc:
@@ -455,15 +517,68 @@ async def get_job(session: AsyncSession, job_id: uuid.UUID) -> DocGenJob:
     return job
 
 
+def _evidence_source(file_id: str, file_map: Mapping[str, str]) -> tuple[str, str]:
+    """把证据的 file_id 解析为 (file_name, source_label)。
+
+    真实资料文件（含上一版报告上下文）从 file_map 取原始文件名；知识库/登记数据/
+    补充说明/人工填写等伪 file_id 给出可读名称与来源类型标签，前端直接展示无需 join。
+    """
+    if not file_id:
+        return "", ""
+    if file_id.startswith(KB_FILE_PREFIX):
+        return file_id[len(KB_FILE_PREFIX) :] or "项目知识库", "项目知识库"
+    if file_id.startswith(DB_FILE_PREFIX):
+        return "项目登记数据", "项目登记数据"
+    if file_id == SUPPLEMENT_FILE_ID:
+        return "人工补充说明", "补充说明"
+    if file_id == "human":
+        return "人工填写", "人工填写"
+    name = file_map.get(file_id)
+    if name:
+        return name, "上一版报告" if file_id.startswith("report-") else "资料文件"
+    return file_id, "其他来源"
+
+
+def _resolve_evidence(raw: Any, file_map: Mapping[str, str]) -> list[DocGenEvidenceItem] | None:
+    """把 ORM 里的原始依据 JSON 解析为带文件名/来源标签的强类型列表。"""
+    if not raw:
+        return None
+    items: list[DocGenEvidenceItem] = []
+    for entry in raw:
+        if not isinstance(entry, Mapping):
+            continue
+        file_id = str(entry.get("file_id") or "")
+        file_name, source_label = _evidence_source(file_id, file_map)
+        page = entry.get("page")
+        items.append(
+            DocGenEvidenceItem(
+                file_id=file_id,
+                file_name=file_name,
+                source_label=source_label,
+                page=page if isinstance(page, int) and not isinstance(page, bool) else None,
+                quote=str(entry.get("quote") or ""),
+            )
+        )
+    return items or None
+
+
+def _slot_response(row: DocGenSlotValue, file_map: Mapping[str, str]) -> DocGenSlotValueResponse:
+    """槽位 ORM → 响应：model_validate 后覆盖 evidence，补上解析后的来源文件名/标签。"""
+    resp = DocGenSlotValueResponse.model_validate(row)
+    resp.evidence = _resolve_evidence(row.evidence, file_map)
+    return resp
+
+
 async def job_detail(session: AsyncSession, job_id: uuid.UUID) -> DocGenJobDetail:
     """任务详情（含大纲）。"""
     job = await get_job(session, job_id)
     files = await repo.list_input_files(session, job.id)
     slots = await repo.list_slot_values(session, job.id)
+    file_map = {f.file_id: f.original_filename for f in files}
     return DocGenJobDetail(
         job=_to_job_response(job),
         files=[DocGenInputFileResponse.model_validate(f) for f in files],
-        slots=[DocGenSlotValueResponse.model_validate(s) for s in slots],
+        slots=[_slot_response(s, file_map) for s in slots],
         sections=await _section_responses(session, job),
     )
 
@@ -893,9 +1008,7 @@ async def download_artifact(session: AsyncSession, job_id: uuid.UUID, kind: str)
     return data, name, mime
 
 
-async def download_input_file(
-    session: AsyncSession, job_id: uuid.UUID, file_id: uuid.UUID
-) -> tuple[bytes, str, str]:
+async def download_input_file(session: AsyncSession, job_id: uuid.UUID, file_id: uuid.UUID) -> tuple[bytes, str, str]:
     """下载任务的资料文件，返回 (字节, 文件名, MIME)。"""
     await get_job(session, job_id)  # 校验任务存在
     file_record = await repo.get_input_file(session, job_id, file_id)
@@ -906,7 +1019,6 @@ async def download_input_file(
         raise NotFoundException("文件读取失败（存储不可用或已被清理）")
     mime = file_record.mime_type or "application/octet-stream"
     return data, file_record.original_filename, mime
-
 
 
 # ===== 交付物模板：Word 母本管理 =====
@@ -968,13 +1080,17 @@ async def _known_specs(session: AsyncSession) -> list[TemplateSpec]:
 
     specs: dict[str, TemplateSpec] = {spec.code: spec for spec in list_templates()}
     rows = (
-        await session.execute(
-            select(RdDeliverableTemplate).where(
-                RdDeliverableTemplate.is_deleted.is_(False),
-                RdDeliverableTemplate.template_structure.isnot(None),
+        (
+            await session.execute(
+                select(RdDeliverableTemplate).where(
+                    RdDeliverableTemplate.is_deleted.is_(False),
+                    RdDeliverableTemplate.template_structure.isnot(None),
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     for row in rows:
         spec = spec_source.spec_from_structure(row.template_structure, code_hint=row.template_code or "")
         if spec is not None:
@@ -998,21 +1114,26 @@ async def usable_templates(session: AsyncSession) -> list[dict[str, Any]]:
     from app.modules.research.models import RdDeliverableTemplate
 
     rows = (
-        await session.execute(
-            select(RdDeliverableTemplate)
-            .where(
-                RdDeliverableTemplate.is_deleted.is_(False),
-                RdDeliverableTemplate.is_active.is_(True),
-                RdDeliverableTemplate.file_object_key.isnot(None),
+        (
+            await session.execute(
+                select(RdDeliverableTemplate)
+                .where(
+                    RdDeliverableTemplate.is_deleted.is_(False),
+                    RdDeliverableTemplate.is_active.is_(True),
+                    RdDeliverableTemplate.file_object_key.isnot(None),
+                )
+                .order_by(RdDeliverableTemplate.created_at.desc())
             )
-            .order_by(RdDeliverableTemplate.created_at.desc())
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     result: list[dict[str, Any]] = []
     for row in rows:
-        spec = spec_source.spec_from_code(row.template_code or "") or spec_source.spec_from_structure(
+        # structure 优先：人工编辑/脱钩落库的配置生效，其次回退代码内置规格
+        spec = spec_source.spec_from_structure(
             row.template_structure, code_hint=row.template_code or ""
-        )
+        ) or spec_source.spec_from_code(row.template_code or "")
         if spec is None:
             continue  # 既无代码配置也无可解析结构：不暴露给生成入口，避免选了必失败
         profile = _spec_summary(spec)
@@ -1053,9 +1174,10 @@ async def attach_template_file(
     刻意不碰 ``is_active``：上传 ≠ 启用，母本与槽位需人工核对后才手动开启。
     """
     ext = sniff_word_ext(filename, data)
-    existing = spec_source.spec_from_code(template.template_code or "") or spec_source.spec_from_structure(
+    # structure 优先：已有人工编辑/脱钩结构时 existing 非空，跳过重新匹配/草拟，保留编辑成果
+    existing = spec_source.spec_from_structure(
         template.template_structure, code_hint=template.template_code or ""
-    )
+    ) or spec_source.spec_from_code(template.template_code or "")
     if existing is None:
         probe = probe_template_match(data, await _known_specs(session))
         if probe["matched"] is not None:
@@ -1193,18 +1315,20 @@ async def batch_upload_templates(
         hit_text = f"{best.get('hit', 0)}/{best.get('total', 0)}"
         name = Path(filename).stem[:200]
         existing = (
-            await session.execute(
-                select(RdDeliverableTemplate).where(
-                    RdDeliverableTemplate.name == name,
-                    RdDeliverableTemplate.is_deleted.is_(False),
+            (
+                await session.execute(
+                    select(RdDeliverableTemplate).where(
+                        RdDeliverableTemplate.name == name,
+                        RdDeliverableTemplate.is_deleted.is_(False),
+                    )
                 )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if existing is not None:
             # 同名即该模板的新版本：母本换代，旧版本留在版本表里可回滚
-            await attach_template_file(
-                session, existing, filename, data, user_id, change_note="批量上传新版本"
-            )
+            await attach_template_file(session, existing, filename, data, user_id, change_note="批量上传新版本")
             current = await _current_template_version(session, existing.id)
             versioned.append(
                 {
@@ -1275,14 +1399,18 @@ async def _current_template_version(session: AsyncSession, template_id: uuid.UUI
     from app.modules.research.models import RdDeliverableTemplateVersion
 
     return (
-        await session.execute(
-            select(RdDeliverableTemplateVersion).where(
-                RdDeliverableTemplateVersion.template_id == template_id,
-                RdDeliverableTemplateVersion.is_current.is_(True),
-                RdDeliverableTemplateVersion.is_deleted.is_(False),
+        (
+            await session.execute(
+                select(RdDeliverableTemplateVersion).where(
+                    RdDeliverableTemplateVersion.template_id == template_id,
+                    RdDeliverableTemplateVersion.is_current.is_(True),
+                    RdDeliverableTemplateVersion.is_deleted.is_(False),
+                )
             )
         )
-    ).scalars().first()
+        .scalars()
+        .first()
+    )
 
 
 async def template_download_payload(session: AsyncSession, template_id: uuid.UUID) -> tuple[bytes, str, str]:
@@ -1295,6 +1423,201 @@ async def template_download_payload(session: AsyncSession, template_id: uuid.UUI
         raise NotFoundException("模板文件读取失败（存储不可用或文件已被清理）")
     ext = template.file_ext or ".docx"
     return data, f"{template.name}{ext}", _template_mime(ext)
+
+
+async def _template_master_bytes(template: Any, spec: TemplateSpec | None) -> bytes:
+    """取模板母本 docx 字节：上传模板走对象存储，内置模板回退仓库资产。"""
+    if template.file_object_key:
+        data = store.load_bytes(template.file_object_key)
+        if data is not None:
+            return data
+    if spec is not None:
+        path = master_path(spec)
+        if path.exists():
+            return path.read_bytes()
+    raise NotFoundException("模板母本不可用（对象存储与仓库资产均未找到），无法枚举候选位置")
+
+
+async def template_anchor_candidates(session: AsyncSession, template_id: uuid.UUID) -> list[dict[str, Any]]:
+    """枚举母本里尚未被现有槽位占用的可锚定位置，供人工「新增填写项」时点选。
+
+    纯规则扫描（不调模型、快）；每个候选的 ``anchor`` 可被前端原样回传建槽位，
+    避免用户手写锚点出错。模板尚无规格时（existing=None）母本全部位置皆候选。
+    """
+    template = await _load_template_or_404(session, template_id)
+    try:
+        spec: TemplateSpec | None = await spec_source.resolve_for_template(session, template)
+    except KeyError:
+        spec = None
+    data = await _template_master_bytes(template, spec)
+    candidates = list_anchor_candidates(data, spec)
+    return [candidate.model_dump(mode="json") for candidate in candidates]
+
+
+async def template_markdown(session: AsyncSession, template_id: uuid.UUID) -> dict[str, Any]:
+    """把 Word 母本解析为**全内容 Markdown**（「模板 Markdown」弹窗数据源）。
+
+    两级数据源，优先级从高到低：
+    1. ``source="docx"``：规则实时转换母本 docx 全文（标题/段落/列表/表格按文档流顺序）；
+    2. ``source="spec"``：母本不可用时回退 ``template_structure`` 骨架渲染。
+    两者都拿不到才报错。渲染只读、不参与 docx 成文（成文仍走锚点回填母本）。
+    """
+    template = await _load_template_or_404(session, template_id)
+    try:
+        spec = await spec_source.resolve_for_template(session, template)
+    except KeyError:
+        spec = None
+
+    markdown = ""
+    source = "spec"
+    data: bytes | None = None
+    try:
+        data = await _template_master_bytes(template, spec)
+    except NotFoundException:
+        data = None
+    except Exception:
+        logger.warning("模板母本读取失败，回退填写项骨架渲染", extra={"template_id": str(template_id)}, exc_info=True)
+        data = None
+    if data is not None:
+        try:
+            markdown = render_docx_markdown(data)
+            source = "docx"
+        except Exception:
+            logger.warning(
+                "模板母本转 Markdown 失败，回退填写项骨架渲染",
+                extra={"template_id": str(template_id)},
+                exc_info=True,
+            )
+
+    if not markdown:
+        if spec is None:
+            raise BadRequestException("模板母本与填写项定义均不可用，无法生成 Markdown；请先上传 Word 母本或配置填写项")
+        markdown = render_spec_markdown(spec)
+
+    slots = spec.slots if spec is not None else []
+    return {
+        "template_id": str(template.id),
+        "name": template.name,
+        "code": spec.code if spec is not None else (template.template_code or ""),
+        "markdown": markdown,
+        "source": source,
+        "slot_count": len(slots),
+        "needs_review": sum(1 for slot in slots if slot.review_state == "needs_review"),
+        # 语义清单：AI 增强/人工维护的检索词、期望、核对状态在此可见
+        "slots": [
+            {
+                "key": slot.key,
+                "label": slot.label,
+                "kind": slot.kind,
+                "required": slot.required,
+                "expects": slot.expects,
+                "unit": slot.unit,
+                "enum_values": list(slot.enum_values),
+                "cardinality": slot.cardinality,
+                "source_scope": slot.source_scope,
+                "query_hint": slot.query_hint,
+                "search_terms": list(slot.search_terms),
+                "review_state": slot.review_state,
+            }
+            for slot in slots
+        ],
+    }
+
+
+async def enrich_template_semantics(session: AsyncSession, template_id: uuid.UUID) -> dict[str, Any]:
+    """AI 增强模板槽位语义并回写 ``template_structure``（模板期、持久化）。
+
+    用 ``DOC_GEN_TEMPLATE_MODEL`` 跑完整语义增强（label/检索词/期望/必填/置信度），
+    低置信槽位标 ``needs_review``。增强结果落库后，该模板以后每次生成都受益
+    （越用越准的正循环）。**只改语义字段，绝不动 anchors/kind**（渲染安全铁律）。
+
+    与任务期的 ``spec_enrich``（只补检索词、不回写）互补。内置模板增强即「脱钩」：
+    落库结构此后优先于代码注册表。
+    """
+    template = await _load_template_or_404(session, template_id)
+    try:
+        spec = await spec_source.resolve_for_template(session, template)
+    except KeyError:
+        raise BadRequestException("模板尚无槽位定义，无法增强语义；请先上传母本自动识别或人工新增填写项") from None
+    config = await load_runtime_config()
+    choice = await resolve_model(config.template_model_name, "text")
+    before_review = sum(1 for slot in spec.slots if slot.review_state == "needs_review")
+    # 增强前逐槽快照：enrich_spec_semantics 原地修改且失败静默降级（返回原 spec），
+    # 只有前后对比才能得出「真实变更槽位数」，避免把总数谎报成增强数
+    before_dump = [slot.model_dump() for slot in spec.slots]
+    enriched = await enrich_spec_semantics(
+        spec,
+        timeout_seconds=float(config.llm_call_timeout_seconds),
+        llm_kwargs={"model_override": choice.model_override, "config_name": choice.config_name},
+        needs_review_threshold=config.confidence_mid,
+    )
+    changed = sum(1 for old, slot in zip(before_dump, enriched.slots) if old != slot.model_dump())
+    template.template_structure = enriched.model_dump(mode="json")
+    needs_review = sum(1 for slot in enriched.slots if slot.review_state == "needs_review")
+    logger.info(
+        "模板槽位语义 AI 增强完成",
+        extra={
+            "template_id": str(template.id),
+            "total_slots": len(enriched.slots),
+            "enriched_slots": changed,
+            "needs_review": needs_review,
+        },
+    )
+    return {
+        "template_id": str(template.id),
+        "total_slots": len(enriched.slots),
+        "enriched_slots": changed,
+        "needs_review": needs_review,
+        "needs_review_added": max(0, needs_review - before_review),
+    }
+
+
+async def add_template_slot(
+    session: AsyncSession, template_id: uuid.UUID, payload: DocGenAddSlotRequest
+) -> dict[str, Any]:
+    """人工从候选锚点位置新增一个「填写项」（槽位），回写 ``template_structure``。
+
+    定位由规则扫描器产出（候选 ``anchor`` 原样回传），AI/人工都不手写锚点——这是
+    渲染安全铁律（锚点错则渲染失败）；人工只补「叫什么、要什么类型」的语义。结果
+    落库持久化，该模板以后每次生成都受益。与语义增强一致：**不留版本记录**（只有
+    母本文件变更才算版本）。
+
+    模板尚无可用规格时（如自动识别为空、未注册代码规格）：若已上传母本，则按母本
+    重新草拟一套规格再追加，避免「有母本却加不了填写项」；未上传母本则拒绝（无处
+    定位）。任何槽位级约束（名称空/表格类/位置重复/key 冲突）由 :func:`add_slot_to_spec`
+    抛 ``ValueError``，这里统一转 400。
+    """
+    template = await _load_template_or_404(session, template_id)
+    try:
+        spec = await spec_source.resolve_for_template(session, template)
+    except KeyError:
+        if not template.file_object_key:
+            raise BadRequestException("模板尚未上传 Word 母本，无法定位填写项；请先上传母本") from None
+        data = await _template_master_bytes(template, None)
+        spec = _auto_draft(data, template.name)
+    try:
+        new_slot = add_slot_to_spec(
+            spec,
+            anchor=payload.anchor,
+            label=payload.label,
+            kind=payload.kind,
+            expects=payload.expects,
+            required=payload.required,
+            query_hint=payload.query_hint,
+            search_terms=payload.search_terms,
+        )
+    except ValueError as exc:
+        raise BadRequestException(str(exc)) from exc
+    template.template_structure = spec.model_dump(mode="json")
+    logger.info(
+        "模板人工新增填写项",
+        extra={"template_id": str(template.id), "slot_key": new_slot.key, "total_slots": len(spec.slots)},
+    )
+    return {
+        "template_id": str(template.id),
+        "slot_key": new_slot.key,
+        "total_slots": len(spec.slots),
+    }
 
 
 async def _get_template_version(
@@ -1334,15 +1657,19 @@ async def list_template_versions(session: AsyncSession, template_id: uuid.UUID) 
 
     template = await _load_template_or_404(session, template_id)
     rows = (
-        await session.execute(
-            select(RdDeliverableTemplateVersion)
-            .where(
-                RdDeliverableTemplateVersion.template_id == template.id,
-                RdDeliverableTemplateVersion.is_deleted.is_(False),
+        (
+            await session.execute(
+                select(RdDeliverableTemplateVersion)
+                .where(
+                    RdDeliverableTemplateVersion.template_id == template.id,
+                    RdDeliverableTemplateVersion.is_deleted.is_(False),
+                )
+                .order_by(RdDeliverableTemplateVersion.version_no.desc())
             )
-            .order_by(RdDeliverableTemplateVersion.version_no.desc())
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     # 上传人姓名一次性批量取，避免逐行查询
     uploader_ids = {row.created_by for row in rows if row.created_by is not None}
@@ -1484,11 +1811,8 @@ def probe_template_match(data: bytes, specs: list[TemplateSpec] | None = None) -
             except AnchorUnresolvedError:
                 continue
         total = len(spec.slots) or 1
-        candidates.append(
-            {"code": spec.code, "name": spec.name, "stage": spec.stage, "hit": hit, "total": total}
-        )
+        candidates.append({"code": spec.code, "name": spec.name, "stage": spec.stage, "hit": hit, "total": total})
     candidates.sort(key=lambda c: c["hit"] / c["total"], reverse=True)
     best = candidates[0] if candidates else None
     matched = best["code"] if best and best["hit"] / best["total"] >= MIN_ANCHOR_HIT_RATIO else None
     return {"matched": matched, "candidates": candidates, "best": best}
-

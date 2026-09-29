@@ -66,9 +66,7 @@ async def list_sections(session: AsyncSession, job_id: uuid.UUID) -> Sequence[Do
 
 async def get_job(session: AsyncSession, job_id: uuid.UUID) -> DocGenJob | None:
     """按 ID 取任务。"""
-    result = await session.execute(
-        select(DocGenJob).where(DocGenJob.id == job_id, DocGenJob.is_deleted.is_(False))
-    )
+    result = await session.execute(select(DocGenJob).where(DocGenJob.id == job_id, DocGenJob.is_deleted.is_(False)))
     return result.scalar_one_or_none()
 
 
@@ -82,9 +80,7 @@ async def list_jobs_by_report(session: AsyncSession, report_id: uuid.UUID) -> Se
     return result.scalars().all()
 
 
-async def latest_jobs_by_reports(
-    session: AsyncSession, report_ids: Sequence[uuid.UUID]
-) -> dict[uuid.UUID, DocGenJob]:
+async def latest_jobs_by_reports(session: AsyncSession, report_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, DocGenJob]:
     """批量取每个报告的最新一次生成任务，避免列表页 N+1 查询。"""
     if not report_ids:
         return {}
@@ -118,9 +114,7 @@ async def list_input_files(session: AsyncSession, job_id: uuid.UUID) -> Sequence
     return result.scalars().all()
 
 
-async def get_input_file(
-    session: AsyncSession, job_id: uuid.UUID, file_id: uuid.UUID
-) -> DocGenInputFile | None:
+async def get_input_file(session: AsyncSession, job_id: uuid.UUID, file_id: uuid.UUID) -> DocGenInputFile | None:
     """按 ID 取单条资料文件记录。"""
     result = await session.execute(
         select(DocGenInputFile).where(

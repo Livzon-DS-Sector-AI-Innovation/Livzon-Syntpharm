@@ -12,6 +12,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.modules.research.doc_gen.template_spec import Anchor
+
 FileRole = Literal["material", "literature", "report_draft", "supplement"]
 
 
@@ -170,6 +172,127 @@ class DocGenOperationResponse(BaseModel):
     message: str = "success"
 
 
+class DocGenAnchorCandidate(BaseModel):
+    """母本里一个尚未被占用、可锚定的候选位置（人工「新增填写项」时点选）。
+
+    ``anchor`` 可被前端原样回传用于建槽位，无需用户手写锚点；``context`` 给出
+    章节/表头/段落标签等线索帮助用户辨认。
+    """
+
+    label: str
+    kind: Literal["field", "paragraph", "table", "image"]
+    context: str = ""
+    anchor: Anchor
+
+
+class DocGenAnchorCandidateListResponse(BaseModel):
+    """GET /doc-gen/deliverable-templates/{id}/anchor-candidates 响应。"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[DocGenAnchorCandidate] = Field(default_factory=list)
+
+
+class DocGenEnrichSemanticsData(BaseModel):
+    """AI 语义增强结果摘要。
+
+    ``enriched_slots`` 是**实际发生字段变更**的槽位数（增强前后逐槽对比得出），
+    与 ``total_slots``（槽位总数）区分：AI 无新增语义或调用降级时为 0，
+    前端据此如实反馈，不再把"总数"谎报成"已增强数"。
+    """
+
+    template_id: str
+    total_slots: int = 0
+    enriched_slots: int = 0
+    needs_review: int = 0
+    needs_review_added: int = 0
+
+
+class DocGenEnrichSemanticsResponse(BaseModel):
+    """POST /doc-gen/deliverable-templates/{id}/enrich-semantics 响应。"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocGenEnrichSemanticsData
+
+
+class DocGenAddSlotRequest(BaseModel):
+    """POST /doc-gen/deliverable-templates/{id}/slots 请求体（人工新增填写项）。
+
+    ``anchor``/``kind`` 由候选位置原样回传——定位是安全敏感操作，由规则扫描器产出，
+    前端不手写锚点；用户只补 ``label`` 与检索语义（``query_hint``/``search_terms``/
+    ``expects``/``required``）。``kind="table"`` 会被服务层拒绝（表格槽位需列定义）。
+    """
+
+    anchor: Anchor
+    label: str = Field(min_length=1, max_length=120)
+    kind: Literal["field", "paragraph", "table", "image"] = "field"
+    expects: Literal["text", "number", "date", "percent"] = "text"
+    required: bool = False
+    query_hint: str = Field(default="", max_length=500)
+    search_terms: list[str] = Field(default_factory=list)
+
+
+class DocGenAddSlotData(BaseModel):
+    """人工新增填写项结果摘要。"""
+
+    template_id: str
+    slot_key: str
+    total_slots: int = 0
+
+
+class DocGenAddSlotResponse(BaseModel):
+    """POST /doc-gen/deliverable-templates/{id}/slots 响应。"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocGenAddSlotData
+
+
+class DocGenTemplateSlotSemantics(BaseModel):
+    """填写项语义摘要（「模板 Markdown」弹窗「填写项语义」视图数据源）。
+
+    只读展示 template_structure 里的语义字段——AI 增强/人工维护的成果在此肉眼
+    可见；渲染安全字段（anchors/kind 定位）不展示定位细节。
+    """
+
+    key: str
+    label: str
+    kind: str = "field"
+    required: bool = False
+    expects: str = "text"
+    unit: str = ""
+    enum_values: list[str] = Field(default_factory=list)
+    cardinality: str = "single"
+    source_scope: str = "any"
+    query_hint: str = ""
+    search_terms: list[str] = Field(default_factory=list)
+    review_state: str = "auto"
+
+
+class DocGenTemplateMarkdownData(BaseModel):
+    """模板全内容 Markdown（优先母本规则解析，其次骨架回退）。"""
+
+    template_id: str
+    name: str = ""
+    code: str = ""
+    markdown: str
+    # docx=母本全文规则解析；spec=填写项骨架回退
+    source: str = "spec"
+    slot_count: int = 0
+    needs_review: int = 0
+    # 填写项语义清单（检索词/期望/必填/核对状态），供「填写项语义」视图展示
+    slots: list[DocGenTemplateSlotSemantics] = Field(default_factory=list)
+
+
+class DocGenTemplateMarkdownResponse(BaseModel):
+    """GET /doc-gen/deliverable-templates/{id}/markdown 响应。"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocGenTemplateMarkdownData
+
+
 class DocGenBatchUploadResult(BaseModel):
     """批量上传结果。
 
@@ -197,6 +320,49 @@ class DocGenLimitsResponse(BaseModel):
     data: DocGenLimits
 
 
+class DocGenKbCoverageSlot(BaseModel):
+    """单个填充项的知识库覆盖预检结果。"""
+
+    key: str
+    label: str = ""
+    kind: str = "field"
+    required: bool = False
+    status: str = "no_material"  # fillable / partial / no_material / skipped
+    status_label: str = ""
+    matched_terms: int = 0
+
+
+class DocGenKbCoverage(BaseModel):
+    """知识库覆盖预检结果：生成前先算清「这些填充项库里有没有料」。"""
+
+    source: str = "none"  # index=本地索引离线匹配 / live=实时检索兜底 / none=无可用资料
+    source_label: str = ""
+    kb_id: str = ""
+    kb_name: str = ""
+    documents: int = 0
+    chunks: int = 0
+    facts: int = 0
+    truncated: bool = False
+    warnings: list[str] = Field(default_factory=list)
+    total: int = 0
+    checked: int = 0
+    fillable: int = 0
+    partial: int = 0
+    missing: int = 0
+    skipped: int = 0
+    fillable_ratio: float = 0.0
+    weighted_ratio: float = 0.0
+    slots: list[DocGenKbCoverageSlot] = Field(default_factory=list)
+
+
+class DocGenKbCoverageResponse(BaseModel):
+    """GET /doc-gen/kb-coverage 响应。"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocGenKbCoverage
+
+
 class DocGenInputFileResponse(BaseModel):
     """资料文件条目。"""
 
@@ -211,6 +377,21 @@ class DocGenInputFileResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class DocGenEvidenceItem(BaseModel):
+    """单条提取依据：标记填充值来自哪份资料的哪一页、哪句原文。
+
+    ``file_id`` 是内部稳定标识；``file_name``/``source_label`` 由后端解析后直接展示，
+    前端无需自行 join 资料清单。伪 file_id（知识库/登记数据/补充说明/人工填写）用
+    ``source_label`` 说明来源类型，``file_name`` 给出可读名称。
+    """
+
+    file_id: str = ""
+    file_name: str = ""
+    source_label: str = ""
+    page: int | None = None
+    quote: str = ""
+
+
 class DocGenSlotValueResponse(BaseModel):
     """填充项结果条目。"""
 
@@ -222,7 +403,7 @@ class DocGenSlotValueResponse(BaseModel):
     state: str
     reason: str | None = None
     confidence: float | None = None
-    evidence: list[Any] | None = None
+    evidence: list[DocGenEvidenceItem] | None = None
     candidates: list[Any] | None = None
     section_key: str | None = None
     instance_index: int | None = None
@@ -439,6 +620,7 @@ __all__ = [
     "DocGenJobDetailResponse",
     "DocGenJobListResponse",
     "DocGenJobResponse",
+    "DocGenEvidenceItem",
     "DocGenJobUpdateRequest",
     "DocGenLimits",
     "DocGenLimitsResponse",

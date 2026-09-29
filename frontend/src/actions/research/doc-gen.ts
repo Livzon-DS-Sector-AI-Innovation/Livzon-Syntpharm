@@ -3,10 +3,12 @@
 import { revalidatePath } from 'next/cache'
 import type { components } from '@/types/generated/schema'
 import {
+  addDeliverableTemplateSlot as addDeliverableTemplateSlotApi,
   cancelDocGenJob as cancelDocGenJobApi,
   completeDocGenConversation as completeDocGenConversationApi,
   confirmDocGenJob as confirmDocGenJobApi,
   deleteDeliverableTemplateVersion as deleteDeliverableTemplateVersionApi,
+  enrichDeliverableTemplateSemantics as enrichDeliverableTemplateSemanticsApi,
   extractDocGenJob as extractDocGenJobApi,
   restoreDeliverableTemplateVersion as restoreDeliverableTemplateVersionApi,
   sendDocGenMessage as sendDocGenMessageApi,
@@ -17,6 +19,9 @@ import {
 type DocGenJobResponse = components['schemas']['DocGenJobResponse']
 type DocGenConversationData = components['schemas']['DocGenConversationData']
 type DocGenTemplateVersionRestoreData = components['schemas']['DocGenTemplateVersionRestoreData']
+type DocGenEnrichSemanticsData = components['schemas']['DocGenEnrichSemanticsData']
+type DocGenAddSlotRequest = components['schemas']['DocGenAddSlotRequest']
+type DocGenAddSlotData = components['schemas']['DocGenAddSlotData']
 
 /** 交付物模板页路由，写操作后据此失效缓存 */
 const DELIVERABLE_TEMPLATES_PATH = '/research/deliverable-templates'
@@ -98,4 +103,34 @@ export async function restoreDeliverableTemplateVersion(
 export async function deleteDeliverableTemplateVersion(templateId: string, versionId: string): Promise<void> {
   await deleteDeliverableTemplateVersionApi(templateId, versionId)
   revalidatePath(DELIVERABLE_TEMPLATES_PATH)
+}
+
+/**
+ * AI 增强模板填充项语义并回写 template_structure（越用越准）。
+ *
+ * 同步执行、槽位多时耗时数十秒；返回增强统计供前端提示
+ * （总槽位 / 需人工核对 / 本次新增需核对）。
+ */
+export async function enrichDeliverableTemplateSemantics(
+  templateId: string,
+): Promise<DocGenEnrichSemanticsData> {
+  const data = await enrichDeliverableTemplateSemanticsApi(templateId)
+  revalidatePath(DELIVERABLE_TEMPLATES_PATH)
+  return data
+}
+
+/**
+ * 人工新增一个「填写项」（槽位）：从候选锚点位置点选，补名称与检索语义后回写模板结构。
+ *
+ * 定位由规则产出（候选 anchor 原样回传），AI/人工都不手写锚点——渲染安全铁律。
+ * 名称为空、表格类、位置已被占用或 key 冲突时后端返回 400 并抛出，由调用方捕获提示；
+ * 成功后失效模板列表页缓存（新槽位会影响该模板之后每次生成的填充项清单）。
+ */
+export async function addDeliverableTemplateSlot(
+  templateId: string,
+  payload: DocGenAddSlotRequest,
+): Promise<DocGenAddSlotData> {
+  const data = await addDeliverableTemplateSlotApi(templateId, payload)
+  revalidatePath(DELIVERABLE_TEMPLATES_PATH)
+  return data
 }

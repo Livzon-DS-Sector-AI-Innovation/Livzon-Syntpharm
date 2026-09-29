@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.modules.research.doc_gen import status
-from app.modules.research.doc_gen.extraction import SlotExtractor
+from app.modules.research.doc_gen import gap, status
+from app.modules.research.doc_gen.extraction import RETRIEVAL_DEFAULT, RETRIEVAL_RECALL, SlotExtractor
 from app.modules.research.doc_gen.parsing import TextBlock
 from app.modules.research.doc_gen.prompts import build_extract_prompt
 from app.modules.research.doc_gen.templates import get_template_spec
@@ -25,6 +25,12 @@ BLOCKS = [
 ]
 
 ALL_SLOTS = {s.key: s for s in get_template_spec("tech_research_report").slots}
+
+# 需求描述（template_structure v2）校验专用语料：覆盖量纲与枚举两类取值
+REQ_BLOCKS = [
+    TextBlock(file_id="m1", page=1, index=0, text="含量：20 mg/mL", kind="paragraph"),
+    TextBlock(file_id="m1", page=1, index=1, text="剂型：肠溶胶囊", kind="paragraph"),
+]
 
 
 class FakeLLM:
@@ -355,9 +361,164 @@ def test_context_prefers_high_score_chunks_within_budget() -> None:
         {"file_id": "f3", "page": 1, "text": "另一个低相关块"},
     ]
     slot_payload = {"key": "k", "label": "测试槽位"}
-    prompt = build_extract_prompt(
-        [slot_payload], chunks, max_context_chars=120, scores=[0.0, 9.0, 1.0]
-    )
+    prompt = build_extract_prompt([slot_payload], chunks, max_context_chars=120, scores=[0.0, 9.0, 1.0])
     content = prompt[1]["content"]
     assert "高相关块" in content
     assert "低相关短块" not in content
+
+
+def _single_slot_extractor(llm: Any, **slot_update: Any) -> Any:
+    """只取一个自造槽位、并按需求描述覆写的抽取器（用于 template_structure v2 校验）。
+
+    槽位的检索词固定为「含量」，与 ``REQ_BLOCKS`` 对齐，保证候选块能召回。
+    """
+    slot = ALL_SLOTS["originator"].model_copy(
+        update={"key": "custom", "label": "含量", "required": False, "search_terms": ["含量"]}
+    )
+    slot = slot.model_copy(update=slot_update)
+    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [slot]})
+    return SlotExtractor(spec, REQ_BLOCKS, roles_by_file={"m1": ["material"], "l1": ["literature"]}, llm=llm)
+
+
+def _single_slot_response(value: str, quote: str) -> dict[str, Any]:
+    return {
+        "slots": [
+            {
+                "key": "custom",
+                "value": value,
+                "found": True,
+                "confidence": 0.95,
+                "evidence": [{"file_id": "m1", "page": 1, "quote": quote}],
+            }
+        ]
+    }
+
+
+async def test_requirement_unit_mismatch_downgrades_to_needs_verify() -> None:
+    """需求描述声明量纲：取值缺量纲时值照写，但降级为需人工核对并计入统计。"""
+    llm = FakeLLM([_single_slot_response("肠溶胶囊", "剂型：肠溶胶囊")])
+    extractor = _single_slot_extractor(llm, unit="mg")
+    results = await extractor.run()
+    result = results["custom"]
+    assert result.state == status.STATUS_NEEDS_VERIFY
+    assert result.text == "肠溶胶囊"
+    assert "量纲" in (result.reason or "")
+    assert extractor.stats.requirement_mismatches == 1
+
+
+async def test_requirement_unit_accepts_equivalent_writing() -> None:
+    """量纲按归一化核对：``mg/ml`` 与 ``mg/mL`` 视为一致，不误判。"""
+    llm = FakeLLM([_single_slot_response("20 mg/mL", "含量：20 mg/mL")])
+    results = await _single_slot_extractor(llm, unit="mg/ml").run()
+    assert results["custom"].state == status.STATUS_OK
+
+
+async def test_requirement_enum_outside_range_downgrades() -> None:
+    """需求描述声明允许取值：取值不在集合内时降级为需人工核对。"""
+    llm = FakeLLM([_single_slot_response("20 mg/mL", "含量：20 mg/mL")])
+    results = await _single_slot_extractor(llm, enum_values=["肠溶胶囊"]).run()
+    result = results["custom"]
+    assert result.state == status.STATUS_NEEDS_VERIFY
+    assert "允许范围" in (result.reason or "")
+
+
+async def test_requirement_prompt_exposes_unit_and_scope() -> None:
+    """需求描述必须进入提取 prompt，否则模型无从遵守。"""
+    llm = FakeLLM([_single_slot_response("20 mg/mL", "含量：20 mg/mL")])
+    results = await _single_slot_extractor(llm, unit="mg", enum_values=["肠溶胶囊"], cardinality="one_or_more").run()
+    assert results
+    prompt = llm.prompts[0]
+    assert "量纲要求：mg" in prompt
+    assert "允许取值：肠溶胶囊" in prompt
+    assert "允许多个值" in prompt
+
+
+async def test_project_kb_scope_excludes_local_material() -> None:
+    """source_scope=project_kb：本地项目材料不进候选，未配知识库时直接判待补充。"""
+    llm = FakeLLM([{"slots": []}])
+    extractor = _single_slot_extractor(llm, source_scope="project_kb")
+    results = await extractor.run()
+    assert llm.calls == 0
+    assert extractor.stats.retrieval_misses == 1
+    assert status.is_pending(results["custom"].text)
+
+
+# ---- 缺口重试口径：换的是「问法」而不是「更多预算」 ------------------------------
+
+RECALL_KB_FILE = "kb:工艺调研报告.docx"
+RECALL_KB_QUOTE = "催化体系筛选以 Pd/C 为催化剂，收率提升至 88%"
+
+
+class FragmentKbRetriever:
+    """只认指定二字片段的假知识库：模拟「同一套槽位用词查不到、换个问法就查得到」。"""
+
+    marker = "筛选"
+
+    def __init__(self) -> None:
+        self.queries: list[list[str]] = []
+
+    async def retrieve(self, keywords: list[str]) -> list[TextBlock]:
+        self.queries.append(list(keywords))
+        if self.marker not in keywords:
+            return []
+        return [TextBlock(file_id=RECALL_KB_FILE, page=1, index=0, text=RECALL_KB_QUOTE, kind="paragraph")]
+
+
+def _recall_extractor(profile: str, kb: Any, llm: Any) -> SlotExtractor:
+    """同一槽位、同一份本地资料与知识库，只有检索口径不同。"""
+    base = ALL_SLOTS["originator"].model_copy(
+        update={"key": "custom", "label": "催化体系筛选数据", "required": False, "search_terms": []}
+    )
+    spec = get_template_spec("tech_research_report").model_copy(update={"slots": [base]})
+    return SlotExtractor(
+        spec,
+        BLOCKS,
+        roles_by_file={"m1": ["material"], "l1": ["literature"]},
+        llm=llm,
+        kb_retriever=kb,
+        retrieval_profile=profile,
+    )
+
+
+async def test_default_profile_misses_kb_with_slot_wording() -> None:
+    """默认口径：知识库与本地资料都按槽位用词检索、双双 0 命中 → 判待补充且不调模型。"""
+    llm = FakeLLM([{"slots": []}])
+    kb = FragmentKbRetriever()
+    extractor = _recall_extractor(RETRIEVAL_DEFAULT, kb, llm)
+
+    results = await extractor.run()
+
+    assert "催化体系筛选数据" in kb.queries[0]
+    assert llm.calls == 0
+    assert extractor.stats.retrieval_misses == 1
+    assert results["custom"].gap_reason == gap.GAP_NO_MATERIAL
+
+
+async def test_recall_profile_queries_kb_with_widened_terms() -> None:
+    """重试口径：把二字片段当主口径，知识库收到的是另一套词，于是捞到措辞不同的片段并填上。"""
+    llm = FakeLLM(
+        [
+            {
+                "slots": [
+                    {
+                        "key": "custom",
+                        "value": "Pd/C",
+                        "found": True,
+                        "confidence": 0.95,
+                        "evidence": [{"file_id": RECALL_KB_FILE, "page": 1, "quote": RECALL_KB_QUOTE}],
+                    }
+                ]
+            }
+        ]
+    )
+    kb = FragmentKbRetriever()
+    extractor = _recall_extractor(RETRIEVAL_RECALL, kb, llm)
+
+    results = await extractor.run()
+
+    assert "催化体系筛选数据" not in kb.queries[0]
+    assert FragmentKbRetriever.marker in kb.queries[0]
+    assert results["custom"].state == status.STATUS_OK
+    assert results["custom"].text == "Pd/C"
+    assert extractor.stats.kb_hits == 1
+    assert llm.calls == 1

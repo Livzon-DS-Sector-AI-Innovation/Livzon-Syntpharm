@@ -56,10 +56,7 @@ def enrich_targets(spec: TemplateSpec) -> list[Slot]:
     return [
         slot
         for slot in spec.slots
-        if slot.kind in _ENRICHABLE_KINDS
-        and not slot.from_meta
-        and not slot.manual_only
-        and not slot.search_terms
+        if slot.kind in _ENRICHABLE_KINDS and not slot.from_meta and not slot.manual_only and not slot.search_terms
     ]
 
 

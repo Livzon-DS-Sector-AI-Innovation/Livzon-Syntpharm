@@ -29,24 +29,28 @@ import logging
 import os
 import tempfile
 import uuid
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import delete
+from sqlalchemy import delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import set_committed_value
 
 from app.core.database import async_session_factory
 from app.modules.research import models as rd_models
-from app.modules.research.doc_gen import cancellation, compose, conversation, status, store
+from app.modules.research.doc_gen import cancellation, compose, conversation, gap, kb_coverage, status, store
 from app.modules.research.doc_gen import repository as repo
 from app.modules.research.doc_gen.cancellation import AbortHandle
 from app.modules.research.doc_gen.content_validator import ValidationResult, validate_extraction
+from app.modules.research.doc_gen.direct_generator import direct_generate
 from app.modules.research.doc_gen.extraction import (
     DATABASE_ROLE,
     DB_FILE_PREFIX,
+    RETRIEVAL_DEFAULT,
+    RETRIEVAL_RECALL,
     SUPPLEMENT_FILE_ID,
     SUPPLEMENT_ROLE,
     EvidenceModel,
@@ -54,8 +58,8 @@ from app.modules.research.doc_gen.extraction import (
     ExtractStats,
     SlotExtractor,
     SlotResult,
+    merge_stats,
 )
-from app.modules.research.doc_gen.direct_generator import DirectGenStats, direct_generate
 from app.modules.research.doc_gen.file_analyzer import (
     FileAnalysisBatchResult,
     analyze_files,
@@ -65,7 +69,7 @@ from app.modules.research.doc_gen.models import DocGenInputFile, DocGenJob, DocG
 from app.modules.research.doc_gen.parsing import IMAGE_EXTENSIONS, TextBlock, parse_file
 from app.modules.research.doc_gen.renderer import RenderReport, SectionPlan, SlotValue, render_document
 from app.modules.research.doc_gen.report import build_report_markdown, summarize_states
-from app.modules.research.doc_gen.runtime_config import RuntimeConfig, load_runtime_config, resolve_model
+from app.modules.research.doc_gen.runtime_config import ModelChoice, RuntimeConfig, load_runtime_config, resolve_model
 from app.modules.research.doc_gen.sections import SectionInstance, build_trigger_context, instantiate
 from app.modules.research.doc_gen.spec_enrich import enrich_search_terms
 from app.modules.research.doc_gen.spec_source import resolve_for_job
@@ -73,6 +77,7 @@ from app.modules.research.doc_gen.template_analyzer import (
     TemplateAnalysisResult,
     analyze_template,
     apply_analysis_to_spec,
+    apply_requirements_to_spec,
 )
 from app.modules.research.doc_gen.template_spec import (
     SECTION_INSTANCE_SEP,
@@ -136,6 +141,24 @@ class JobContext:
     file_analysis: FileAnalysisBatchResult | None = None
     # 交叉校验产物（文件分析 vs 槽位提取的一致性检查）
     cross_validation: ValidationResult | None = None
+    # 项目知识库召回器（可选）：同任务复用，缓存命中过的检索词，故挂在 ctx 上
+    kb_retriever: Any = None
+    # 项目知识库文档盘点快照（生成时刻）：total/parsed/pending/failed + kb_id/kb_name，
+    # 随 stats 落库，完成页据此说明「本次仅基于 M 份已解析资料」
+    kb_snapshot: dict[str, Any] = field(default_factory=dict)
+    # 项目知识库行缓存：摸底、事实抽取与召回共用，避免同一任务重复查询
+    kb_row: Any = None
+    # 知识库摸底 / 事实抽取统计（生成时刻），未启用或失败时为空
+    kb_index_stats: Any = None
+    fact_stats: Any = None
+    # 本地事实库召回器（可选）：与 kb_retriever 同层，构造一次即缓存并跨两轮提取复用
+    fact_retriever: Any = None
+    # 向量索引（可选）：提取阶段构建一次，缺口重试轮复用，避免重复 embedding
+    vector_index: Any = None
+    # 缺口闭环统计（填充完整性改造 · B4），未开启或无需重试时为空
+    gap_stats: gap.GapStats | None = None
+    # 知识库覆盖预检（填充完整性改造 · A2），未开启或未挂库时为空
+    kb_coverage_stats: kb_coverage.KbCoverage | None = None
 
 
 def _now() -> datetime:
@@ -230,6 +253,27 @@ async def _safe_rollback(session: AsyncSession) -> None:
         logger.exception("文档生成任务回滚失败")
 
 
+async def _degrade_rollback(session: AsyncSession, *objects: Any) -> None:
+    """降级回滚：收拾 aborted 事务，并刷新仍需继续使用的 ORM 对象。
+
+    背景：PostgreSQL 里一条语句报错后整个事务就进入 aborted 状态，此后任何语句都会被
+    拒绝（``InFailedSQLTransactionError``）。而本模块多个阶段的设计是「失败只降级、
+    绝不拖垮任务」，若降级分支只记日志不回滚，一个局部失败（例如某张表不存在）会连锁
+    毒化整个 session，把后续所有阶段一起打挂。所以降级分支必须先 rollback 再继续。
+
+    ``objects`` 里的 ORM 对象在回滚后可能已过期，后面还要继续改它，故统一刷新一次，
+    避免在异步上下文里访问过期属性触发隐式 IO。
+    """
+    await _safe_rollback(session)
+    for obj in objects:
+        if obj is None:
+            continue
+        try:
+            await session.refresh(obj)
+        except Exception:  # noqa: BLE001 - 刷新失败不能阻塞降级流程
+            logger.exception("文档生成任务降级后刷新对象失败")
+
+
 async def _commit_quietly(session: AsyncSession) -> None:
     """收尾提交：失败只记日志，绝不在后台任务里抛出。"""
     try:
@@ -305,6 +349,47 @@ async def _check_cancelled(session: AsyncSession, job: DocGenJob, handle: AbortH
         raise JobAbortedError("cancelled", "任务已取消")
 
 
+async def _stage_status(
+    session: AsyncSession,
+    job: DocGenJob,
+    handle: AbortHandle | None,
+    status_value: str,
+    *,
+    step: str | None = None,
+    progress: int | None = None,
+) -> None:
+    """阶段状态落库：先双通道查取消，再用条件 UPDATE 保证绝不覆盖外部已生效的取消。
+
+    背景（取消竞态）：执行 session 是 ``expire_on_commit=False``，内存里的 ``job``
+    永远看不见别的事务把 status 置成 ``cancelled``；若照常 ORM 写运行中状态并 commit，
+    会把「已取消」覆盖回去，取消监视轮询从此查不到标记——任务白跑到底，终态还被错标
+    成 failed。条件 UPDATE（``WHERE status != 'cancelled'``）把复查与写入之间残余的
+    毫秒级窗口也原子地封死：行已被外部置取消时 rowcount 为 0，立即抛取消异常。
+
+    内存值用 ``set_committed_value`` 同步：只改属性值、不标脏，后续提交其他字段时
+    ORM 不会再把 status 写回去；若取消已生效则把内存同步成 cancelled 供上层返回。
+    """
+    await _check_cancelled(session, job, handle)
+    values: dict[str, Any] = {"status": status_value}
+    if step is not None:
+        values["step"] = step
+    if progress is not None:
+        values["progress"] = progress
+    result = await session.execute(
+        update(DocGenJob).where(DocGenJob.id == job.id, DocGenJob.status != "cancelled").values(**values)
+    )
+    rowcount = int(result.rowcount)  # type: ignore[attr-defined]
+    if rowcount == 0:
+        set_committed_value(job, "status", "cancelled")
+        raise JobAbortedError("cancelled", "任务已取消")
+    set_committed_value(job, "status", status_value)
+    if step is not None:
+        set_committed_value(job, "step", step)
+    if progress is not None:
+        set_committed_value(job, "progress", progress)
+    await session.commit()
+
+
 async def run_job(
     session: AsyncSession, job: DocGenJob, config: RuntimeConfig, handle: AbortHandle | None = None
 ) -> None:
@@ -319,8 +404,7 @@ async def run_job(
     except KeyError as exc:
         raise JobAbortedError("template_missing", str(exc)) from exc
     files = list(await repo.list_input_files(session, job.id))
-    if not files:
-        raise JobAbortedError("no_files", "任务没有可解析的资料文件")
+    _ensure_source_available(job, files)
     ctx = JobContext(job=job, spec=spec, files=files)
     reviewed = list(await repo.list_slot_values(session, job.id))
     if reviewed:
@@ -364,6 +448,12 @@ async def run_job(
     await _enrich_spec(ctx, config)
     # 文件分析：异步逐文件读取，用 LLM 提取与模板匹配的结构化摘要（失败静默降级）
     await _file_analysis_stage(session, ctx, config, handle)
+    # 知识库摸底 + 事实抽取：先把全库切片榨成结构化事实，填充项优先从这里匹配
+    # （增量、可跨任务复用；未挂知识库或服务不可用时静默降级，退回实时检索）
+    await _kb_survey_stage(session, ctx, config, handle)
+    await _fact_extract_stage(session, ctx, config, handle)
+    # 覆盖预检：索引/事实刷到最新后立刻算「哪些填充项库里根本没料」，随 stats 落库
+    await _kb_coverage_stage(session, ctx, config, handle)
     chat_mode = config.chat_enabled
     # 直达生成模式要在提取后继续成文+渲染，把「等待确认」的进度带让给成文阶段
     first_to = 70 if chat_mode else 55
@@ -388,6 +478,14 @@ async def run_job(
         await _extract_stage(
             session, ctx, config, handle, progress_from=20, progress_to=second_to, step_label="AI 提取信息"
         )
+    # 缺口闭环：对没填上的填充项换一套检索口径再取一次（失败静默降级，不拖垮任务）
+    try:
+        await _gap_closure_stage(session, ctx, config, handle)
+    except JobAbortedError:
+        raise
+    except Exception:  # noqa: BLE001 - 缺口补齐属增益环节，异常只记日志后继续
+        logger.exception("缺口闭环失败，跳过", extra={"job_id": str(job.id)})
+        await _degrade_rollback(session, ctx.job)
     # 交叉校验：对比文件分析摘要与槽位提取结果，标记不一致（失败静默降级）
     await _cross_validation_stage(session, ctx, config, handle)
     await _review_stage(session, ctx, config, handle, stop_for_review=chat_mode)
@@ -424,14 +522,13 @@ async def _review_stage(
             await conversation.ensure_conversation(session, job.id, ctx.spec, rows, config=config)
         except Exception:  # noqa: BLE001 - 会话是增强能力，失败不能拖垮任务
             logger.exception("对话会话创建失败（任务继续）", extra={"job_id": str(job.id)})
-    job.status = "awaiting_review"
-    job.step = "等待人工确认"
-    job.progress = 90
+            await _degrade_rollback(session, job)
     job.lease_expires_at = None
     # 提取统计：供前端 review 阶段展示总述
     state_counts = summarize_states(list(ctx.results.values()))
     # 计算提取耗时
     import time
+
     extract_duration = None
     if ctx.extract_start_time:
         extract_duration = round(time.time() - ctx.extract_start_time, 1)
@@ -446,12 +543,27 @@ async def _review_stage(
         "needs_verify": state_counts.get(status.STATUS_NEEDS_VERIFY, 0),
         "low_confidence": ctx.extract_stats.low_confidence if ctx.extract_stats else 0,
         "retrieval_misses": ctx.extract_stats.retrieval_misses if ctx.extract_stats else 0,
+        # 需求描述校验：取值量纲/允许取值不符而降级为需人工核对的槽位数
+        "requirement_mismatches": ctx.extract_stats.requirement_mismatches if ctx.extract_stats else 0,
+        # 缺口闭环：可重试缺口数 / 直接交人工数 / 实际轮数 / 补齐数 / 首轮归因分布
+        **(ctx.gap_stats.as_job_stats() if ctx.gap_stats else {}),
+        # 知识库覆盖预检：可填/部分可填/无资料 + 加权覆盖率 + 无资料槽位名
+        **(ctx.kb_coverage_stats.as_job_stats() if ctx.kb_coverage_stats else {}),
+        # 知识库贡献：命中片段数、涉及的文档名、召回失败次数（失败即当次退回本地资料）
+        "kb_hits": ctx.extract_stats.kb_hits if ctx.extract_stats else 0,
+        "kb_sources": _kb_sources(ctx),
+        "kb_failures": ctx.kb_retriever.stats.failures if ctx.kb_retriever else 0,
+        # 知识库文档盘点快照：完成页据此说明「本次仅基于 M 份已解析资料」
+        **ctx.kb_snapshot,
+        # 知识库摸底 / 事实抽取留痕：本次镜像多少切片、抽出多少事实
+        **(ctx.kb_index_stats.describe() if ctx.kb_index_stats else {}),
+        **(ctx.fact_stats.describe() if ctx.fact_stats else {}),
         "total_slots": len(ctx.results),
         "slot_states": state_counts,
         "warnings": list(ctx.warnings),
         "extract_duration_seconds": extract_duration,
     }
-    await session.commit()
+    await _stage_status(session, job, handle, "awaiting_review", step="等待人工确认", progress=90)
 
 
 def _supplement_block(text: str | None) -> TextBlock | None:
@@ -478,10 +590,9 @@ async def _compose_stage(
     slots: list[Slot] = list(ctx.spec.slots) + [slot for instance in ctx.sections for slot in instance.slots]
     if not any(r.state in compose.COMPOSABLE_STATES for r in ctx.results.values()):
         return
-    job.status = "composing"
-    job.step = "AI 撰写报告正文"
-    job.progress = 78 if config.chat_enabled else 68
-    await session.commit()
+    await _stage_status(
+        session, job, handle, "composing", step="AI 撰写报告正文", progress=78 if config.chat_enabled else 68
+    )
     choice = await resolve_model(config.write_model_name)
     try:
         outcome = await compose.compose_results(
@@ -611,13 +722,9 @@ async def _parse_stage(
     （纯文本/PDF 文字层）混合场景下显著提速。进度更新与取消检查通过锁保护。
     """
     job = ctx.job
-    job.status = "parsing"
-    job.step = "解析资料"
-    job.progress = 5
+    await _stage_status(session, job, handle, "parsing", step="解析资料", progress=5)
     # 初始化文件解析进度列表（存入 meta.parse_progress 供前端展示）
-    parse_progress: list[dict[str, str]] = [
-        {"name": f.original_filename, "status": "pending"} for f in ctx.files
-    ]
+    parse_progress: list[dict[str, str]] = [{"name": f.original_filename, "status": "pending"} for f in ctx.files]
     meta = dict(job.meta or {})
     meta["parse_progress"] = parse_progress
     job.meta = meta
@@ -651,6 +758,7 @@ async def _parse_stage(
                 file_status = "done"
             except Exception as exc:  # noqa: BLE001 - 单个文件解析异常不能拖垮整个任务
                 logger.exception("资料解析异常", extra={"job_id": str(job.id), "file_id": record.file_id})
+                await _degrade_rollback(session, record)
                 record.parse_status = "failed"
                 record.warnings = [f"解析异常：{type(exc).__name__}: {exc}"[:300]]
                 blocks, warnings, pages = [], [f"{record.original_filename}：解析异常（{type(exc).__name__}）"], 0
@@ -797,6 +905,13 @@ async def _template_analysis_stage(
         logger.info(
             "模板分析增强检索词",
             extra={"job_id": str(job.id), "enhanced_slots": applied},
+        )
+    # 需求描述回写（template_structure v2）：只补保守默认值，不覆盖人工声明
+    applied_requirements = apply_requirements_to_spec(ctx.spec, analysis)
+    if applied_requirements:
+        logger.info(
+            "模板分析补全槽位需求描述",
+            extra={"job_id": str(job.id), "req_slots": applied_requirements},
         )
     job.step = "模板分析完成"
     await session.commit()
@@ -1199,6 +1314,477 @@ async def _parse_one(
     return blocks, prefixed_warnings, page_count
 
 
+def _ensure_source_available(job: Any, files: Sequence[Any]) -> None:
+    """资料源守卫：至少有一个来源，否则生成出来的报告会全是「待补充」。
+
+    三类来源：①任务级上传文件（旧流程）②项目（项目登记数据 + 项目知识库）
+    ③人工补充信息。资料统一进知识库后 ① 通常为空，因此这里不再把「没有文件」当失败。
+    """
+    if files:
+        return
+    if (getattr(job, "supplement_text", "") or "").strip():
+        return
+    if getattr(job, "project_id", None) is not None:
+        return
+    raise JobAbortedError(
+        "no_source",
+        "任务没有可用资料：请先上传资料到项目知识库，或在补充信息中填写内容",
+    )
+
+
+async def _project_kb_row(session: AsyncSession, ctx: JobContext) -> Any:
+    """项目知识库行（可选）：摸底、事实抽取与召回共用，未挂库/未激活返回 None。
+
+    只查一次并缓存在 ctx 上，避免同一任务里摸底与召回各查一遍。
+    """
+    if ctx.kb_row is not None:
+        return ctx.kb_row
+    if ctx.job.project_id is None:
+        return None
+    from app.modules.research.knowledge_base.service import get_project_knowledge_base
+
+    kb = await get_project_knowledge_base(session, ctx.job.project_id)
+    if kb is None or kb.status != "active" or not kb.ragflow_dataset_id:
+        return None
+    ctx.kb_row = kb
+    return kb
+
+
+async def _project_kb_retriever(session: AsyncSession, ctx: JobContext, config: RuntimeConfig) -> Any:
+    """项目知识库召回器（可选）：项目挂了知识库且开关开启时才构造。
+
+    构造一次即缓存在 ctx 上，骨架槽位与章节槽位两轮提取共用同一份检索缓存。
+    RAGFlow 未配置时返回 None 并记 warning，提取退回「仅用本地资料」。
+    """
+    if ctx.kb_retriever is not None:
+        return ctx.kb_retriever
+    if not config.kb_enabled:
+        return None
+    from app.modules.research.doc_gen.kb_retrieval import KnowledgeBaseRetriever
+
+    kb = await _project_kb_row(session, ctx)
+    if kb is None:
+        return None
+    retriever = KnowledgeBaseRetriever(
+        [kb.ragflow_dataset_id],
+        top_k=config.kb_top_k,
+        similarity_threshold=config.kb_similarity_threshold,
+        vector_similarity_weight=config.kb_vector_weight,
+        timeout_seconds=config.kb_timeout_seconds,
+    )
+    if not retriever.enabled:
+        logger.warning(
+            "项目已关联知识库但服务未配置，本次提取仅用本地资料",
+            extra={"job_id": str(ctx.job.id), "kb_id": str(kb.id), "module_name": "research"},
+        )
+        return None
+    ctx.kb_snapshot = await _kb_document_snapshot(session, kb)
+    logger.info(
+        "项目知识库已接入提取",
+        extra={
+            "job_id": str(ctx.job.id),
+            "kb_id": str(kb.id),
+            "dataset_id": kb.ragflow_dataset_id,
+            "kb_documents_parsed": ctx.kb_snapshot.get("kb_documents_parsed", 0),
+            "module_name": "research",
+        },
+    )
+    ctx.kb_retriever = retriever
+    return retriever
+
+
+async def _project_fact_retriever(session: AsyncSession, ctx: JobContext, config: RuntimeConfig) -> Any:
+    """本地事实库召回器（可选）：库里有可用事实才构造。
+
+    事实是「先榨一遍全库」的产物，与模板解耦，因此模板没问到的信息也在；填充项
+    优先从这里匹配（零外部调用），无命中再由 ``_kb_candidates`` 回落实时检索。
+    """
+    if ctx.fact_retriever is not None:
+        return ctx.fact_retriever
+    if not config.fact_retrieval_enabled:
+        return None
+    kb = await _project_kb_row(session, ctx)
+    if kb is None:
+        return None
+    from app.modules.research.doc_gen.fact_retrieval import FactRetriever
+    from app.modules.research.knowledge_base.facts import load_facts
+
+    facts = await load_facts(session, kb.id, min_confidence=config.fact_min_confidence)
+    if not facts:
+        return None
+    retriever = FactRetriever(facts, top_k=config.fact_top_k)
+    ctx.fact_retriever = retriever
+    logger.info(
+        "启用本地事实库召回",
+        extra={
+            "job_id": str(ctx.job.id),
+            "kb_id": str(kb.id),
+            "facts": retriever.fact_count,
+            "module_name": "research",
+        },
+    )
+    return retriever
+
+
+async def _kb_survey_stage(
+    session: AsyncSession,
+    ctx: JobContext,
+    config: RuntimeConfig,
+    handle: AbortHandle | None = None,
+) -> None:
+    """知识库摸底：把全库已解析切片镜像到本地索引（增量，失败静默降级）。
+
+    索引挂在知识库维度、可跨任务复用，是事实抽取的底座。大库首次会慢一点，故对
+    单次处理量设硬上限（超出部分留待下一任务继续），任务不会被拖垮。外部服务或模型
+    不可用时只记 warning，绝不因此让任务失败。
+    """
+    if not config.kb_survey_enabled:
+        return
+    kb = await _project_kb_row(session, ctx)
+    if kb is None:
+        return
+    from app.modules.research.knowledge_base import facts as facts_mod
+    from app.modules.research.knowledge_base.ragflow import RagflowClient
+
+    client = RagflowClient()
+    if not client.configured:
+        logger.warning(
+            "知识库服务未配置，跳过摸底",
+            extra={"job_id": str(ctx.job.id), "kb_id": str(kb.id), "module_name": "research"},
+        )
+        return
+    job = ctx.job
+    job.step = "AI 盘点知识库资料"
+    await session.commit()
+    try:
+        stats = await facts_mod.index_chunks(
+            session,
+            kb,
+            client=client,
+            max_chunks=config.kb_survey_max_chunks,
+            should_cancel=handle.should_cancel if handle is not None else None,
+        )
+    except Exception:  # noqa: BLE001 - 摸底失败只降级，绝不拖垮任务
+        logger.exception("知识库摸底失败，跳过", extra={"job_id": str(ctx.job.id), "module_name": "research"})
+        # kb 缓存在 ctx.kb_row，回滚会使其过期；不刷新则后续阶段访问其属性触发隐式 IO（MissingGreenlet）
+        await _degrade_rollback(session, ctx.job, kb)
+        return
+    ctx.kb_index_stats = stats
+    ctx.warnings.extend(stats.warnings)
+    await session.commit()
+
+
+async def _fact_extract_stage(
+    session: AsyncSession,
+    ctx: JobContext,
+    config: RuntimeConfig,
+    handle: AbortHandle | None = None,
+) -> None:
+    """事实抽取：对「未抽过或内容已变」的切片批量抽结构化事实（增量，失败静默降级）。
+
+    使用提取模型（快模型）跑量，单批送入若干切片；单次处理量设硬上限，增量累计，
+    多跑几轮即可覆盖全库。任一批失败只记 warning 并继续下一批。
+    """
+    if not config.fact_extract_enabled:
+        return
+    kb = await _project_kb_row(session, ctx)
+    if kb is None:
+        return
+    from app.modules.research.knowledge_base import facts as facts_mod
+
+    job = ctx.job
+    choice = await resolve_model(config.extract_model_name)
+    job.step = "AI 提取知识库事实"
+    await session.commit()
+
+    async def _on_progress(done: int, total: int) -> None:
+        if handle is not None and handle.should_cancel():
+            return
+        job.step = f"AI 提取知识库事实（{done}/{total}）"
+        await session.commit()
+
+    try:
+        stats = await facts_mod.extract_facts(
+            session,
+            kb,
+            model_override=choice.model_override,
+            config_name=choice.config_name,
+            batch_size=config.fact_extract_batch_size,
+            max_chunks=config.fact_extract_max_chunks,
+            timeout_seconds=config.llm_call_timeout_seconds,
+            should_cancel=handle.should_cancel if handle is not None else None,
+            on_progress=_on_progress,
+        )
+    except Exception:  # noqa: BLE001 - 事实抽取失败只降级，绝不拖垮任务
+        logger.exception("知识库事实抽取失败，跳过", extra={"job_id": str(ctx.job.id), "module_name": "research"})
+        # 同摸底阶段：回滚后刷新缓存 kb，避免覆盖预检/提取阶段访问过期属性触发 MissingGreenlet
+        await _degrade_rollback(session, ctx.job, kb)
+        return
+    ctx.fact_stats = stats
+    ctx.warnings.extend(stats.warnings)
+    await session.commit()
+
+
+def _kb_sources(ctx: JobContext) -> list[str]:
+    """本稿参考过的知识库文档名：实时召回 + 本地事实库两级来源合并去重。"""
+    names: set[str] = set()
+    if ctx.kb_retriever is not None:
+        names.update(ctx.kb_retriever.stats.sources.values())
+    if ctx.fact_retriever is not None:
+        names.update(ctx.fact_retriever.stats.sources.values())
+    return sorted(names)
+
+
+async def _kb_document_snapshot(session: AsyncSession, kb: Any) -> dict[str, Any]:
+    """生成时刻的知识库文档盘点：只有 DONE 的文档进了向量库，才可能被检索到。
+
+    快照随 stats 落库，用于在完成页/生成说明里如实交代「这一稿基于几份已解析资料」，
+    避免用户以为上传了 10 份就用了 10 份。
+    """
+    from sqlalchemy import func, select
+
+    from app.modules.research.knowledge_base.models import RdKbDocument
+
+    rows = await session.execute(
+        select(RdKbDocument.run_status, func.count())
+        .where(RdKbDocument.kb_id == kb.id, RdKbDocument.is_deleted.is_(False))
+        .group_by(RdKbDocument.run_status)
+    )
+    counts = {str(state): int(total) for state, total in rows.all()}
+    return {
+        "kb_id": str(kb.id),
+        "kb_name": kb.name,
+        "kb_documents_total": sum(counts.values()),
+        "kb_documents_parsed": counts.get("DONE", 0),
+        "kb_documents_pending": counts.get("UNSTART", 0) + counts.get("RUNNING", 0),
+        "kb_documents_failed": counts.get("FAIL", 0) + counts.get("CANCEL", 0),
+    }
+
+
+def _new_extractor(
+    ctx: JobContext,
+    config: RuntimeConfig,
+    *,
+    roles: dict[str, list[str]],
+    choice: ModelChoice,
+    fallback_choice: ModelChoice | None,
+    should_cancel: Callable[[], bool] | None = None,
+    kb_retriever: Any = None,
+    fact_retriever: Any = None,
+    vector_index: Any = None,
+    embedding_model: str | None = None,
+    file_analysis_context: dict[str, list[dict[str, Any]]] | None = None,
+    candidate_limit: int | None = None,
+    max_context_chars: int | None = None,
+    retrieval_profile: str = RETRIEVAL_DEFAULT,
+) -> SlotExtractor:
+    """构造槽位提取器（常规提取与缺口重试共用一份构造参数）。
+
+    放在一处是为了防参数漂移：缺口重试轮会传更大的候选/上下文预算与
+    ``RETRIEVAL_RECALL`` 口径，一旦两边的其它参数长歪，重试就会比首轮更弱，
+    那重试就成了纯浪费。
+    """
+    return SlotExtractor(
+        ctx.spec,
+        ctx.blocks,
+        roles_by_file=roles,
+        batch_size=config.batch_size,
+        candidate_limit=candidate_limit if candidate_limit is not None else config.candidate_limit,
+        max_context_chars=max_context_chars if max_context_chars is not None else config.context_chars,
+        confidence_high=config.confidence_high,
+        confidence_mid=config.confidence_mid,
+        max_retries=max(1, config.max_attempts),
+        should_cancel=should_cancel,
+        call_timeout_seconds=config.llm_call_timeout_seconds,
+        model_override=choice.model_override,
+        config_name=choice.config_name,
+        max_concurrent_batches=config.extract_concurrency,
+        enable_cache=config.extract_cache_enabled,
+        vector_index=vector_index,
+        vector_alpha=config.vector_alpha,
+        embedding_model=embedding_model,
+        fallback_model_override=fallback_choice.model_override if fallback_choice else None,
+        fallback_config_name=fallback_choice.config_name if fallback_choice else None,
+        file_analysis_context=file_analysis_context or None,
+        kb_retriever=kb_retriever,
+        fact_retriever=fact_retriever,
+        retrieval_profile=retrieval_profile,
+    )
+
+
+def _all_input_slots(ctx: JobContext) -> list[Slot]:
+    """本次任务实际存在实例的全部槽位：模板骨架 + 动态章节实例的局部槽位。
+
+    章节槽位在实例化之前不存在，所以缺口闭环必须在实例化之后才可能覆盖到它们。
+    """
+    return [*ctx.spec.slots, *(slot for instance in ctx.sections for slot in instance.slots)]
+
+
+def _file_analysis_ctx_for(ctx: JobContext, slots: Sequence[Slot]) -> dict[str, list[dict[str, Any]]] | None:
+    """按给定槽位重建文件分析参考（与提取阶段同源，纯函数，无需缓存）。"""
+    if ctx.file_analysis is None:
+        return None
+    context: dict[str, list[dict[str, Any]]] = {}
+    for slot in slots:
+        if slot.from_meta or slot.manual_only:
+            continue
+        items = build_file_analysis_context(ctx.file_analysis, slot.key, max_files=2)
+        if items:
+            context[slot.key] = items
+    return context or None
+
+
+async def _kb_coverage_stage(
+    session: AsyncSession,
+    ctx: JobContext,
+    config: RuntimeConfig,
+    handle: AbortHandle | None = None,
+) -> None:
+    """知识库覆盖预检（填充完整性改造 · A2）：生成前先算清「这些填充项库里有没有料」。
+
+    摸底与事实抽取刚把索引刷到最新，所以这里只做**离线词面匹配**（不调模型、不压知识库），
+    把每个填充项归到「可填 / 部分可填 / 无资料」，随 ``job.stats`` 落库——完成页与指标看板
+    据此解释「这一份为什么有 N 项没填上」，而不是只留一句「资料不足」。
+    未挂知识库时整个阶段跳过；任何异常只降级，绝不拖垮任务。
+    """
+    if not config.kb_coverage_enabled:
+        return
+    kb = await _project_kb_row(session, ctx)
+    if kb is None:
+        return
+    job = ctx.job
+    job.step = "评估知识库覆盖"
+    await session.commit()
+    try:
+        coverage = await kb_coverage.evaluate_coverage(
+            session,
+            ctx.spec,
+            kb=kb,
+            max_chunks=config.kb_coverage_max_chunks,
+            max_slots=config.kb_coverage_max_slots,
+            # 索引刚在这里建过：查不到就是真没有，不必再压一轮知识库
+            live_fallback=False,
+            documents=int(getattr(kb, "document_count", 0) or 0),
+        )
+    except Exception:  # noqa: BLE001 - 预检失败只降级，绝不拖垮任务
+        logger.exception("知识库覆盖预检失败，跳过", extra={"job_id": str(job.id), "module_name": "research"})
+        # 回滚后刷新缓存 kb，提取阶段构造召回器仍会访问 kb.ragflow_dataset_id / kb.id
+        await _degrade_rollback(session, job, kb)
+        return
+    ctx.kb_coverage_stats = coverage
+    if coverage.warnings:
+        ctx.warnings.extend(coverage.warnings)
+    await session.commit()
+
+
+async def _gap_closure_stage(
+    session: AsyncSession,
+    ctx: JobContext,
+    config: RuntimeConfig,
+    handle: AbortHandle | None = None,
+) -> None:
+    """缺口闭环：对没填上的填充项换一套检索口径再取一次（填充完整性改造 · B4）。
+
+    - **只做定向重试**：``run(slots=...)`` 只跑缺口槽位，不重跑已填好的槽位——全量重跑
+      是拿最贵的资源（模型 + 知识库）换最小的收益；
+    - **只对「换口径还有救」的缺口动手**（:data:`gap.RETRYABLE_GAPS`）：把宽检索词当
+      主口径、放宽候选上限、加大上下文预算，让本地检索与知识库召回都变成「另一次查询」；
+    - **只接受确有提升的结果**（``gap.is_improvement``）：重试是补缺口，不是刷新内容，
+      不能让一轮重试把已经核对过的值换成更弱的结果；
+    - **一轮无提升立即收手**：换了口径还是零提升，说明问题不在检索口径，继续试是重复劳动。
+
+    材料冲突（需人工裁决）与不符合需求描述的取值（资料本身的性质）不在这里处理，
+    只记数交人工——重试它们必然空转。
+    """
+    stats = gap.GapStats()
+    ctx.gap_stats = stats
+    if not ctx.results:
+        return
+    allowed = {slot.key for slot in _all_input_slots(ctx)}
+    stats.reasons = {gap.reason_label(reason): count for reason, count in gap.gap_reasons(ctx.results).items()}
+    targets = gap.retryable_keys(ctx.results, allowed=allowed)
+    stats.targets = len(targets)
+    stats.blocked = len(gap.blocked_keys(ctx.results, allowed=allowed))
+    job = ctx.job
+    if not config.gap_retry_enabled or config.gap_retry_rounds <= 0 or not targets:
+        if stats.targets or stats.blocked:
+            logger.info(
+                "缺口闭环：无需重试",
+                extra={"job_id": str(job.id), "targets": stats.targets, "blocked": stats.blocked},
+            )
+        return
+    slot_by_key = {slot.key: slot for slot in _all_input_slots(ctx)}
+    retry_slots = [slot_by_key[key] for key in targets]
+    # 重试用同一个提取模型（含兜底模型）：要换的是检索口径，不是换更贵的模型
+    choice = await resolve_model(config.extract_model_name)
+    fallback_choice = await resolve_model(config.fallback_model_name) if config.fallback_model_name else None
+    extractor = _new_extractor(
+        ctx,
+        config,
+        roles=_roles_of(ctx),
+        choice=choice,
+        fallback_choice=fallback_choice,
+        should_cancel=handle.should_cancel if handle is not None else None,
+        kb_retriever=await _project_kb_retriever(session, ctx, config),
+        fact_retriever=await _project_fact_retriever(session, ctx, config),
+        vector_index=ctx.vector_index,
+        embedding_model=config.embedding_model_name if config.vector_retrieval_enabled else None,
+        file_analysis_context=_file_analysis_ctx_for(ctx, retry_slots),
+        candidate_limit=max(1, config.candidate_limit) * max(1, config.gap_retry_candidate_multiplier),
+        max_context_chars=int(config.context_chars * max(1.0, config.gap_retry_context_multiplier)),
+        retrieval_profile=RETRIEVAL_RECALL,
+    )
+    logger.info(
+        "缺口闭环开始",
+        extra={"job_id": str(job.id), "targets": stats.targets, "blocked": stats.blocked, "reasons": stats.reasons},
+    )
+    pending = set(targets)
+    for round_no in range(1, config.gap_retry_rounds + 1):
+        if not pending:
+            break
+        batch = [slot for slot in retry_slots if slot.key in pending]
+        stats.rounds = round_no
+        job.step = f"缺口补齐 第{round_no}/{config.gap_retry_rounds}轮（{len(batch)}项）"
+        await session.commit()
+        try:
+            retried = await extractor.run(slots=batch)
+        except ExtractionAbortError as exc:
+            raise JobAbortedError(exc.reason or "cancelled", "缺口补齐已终止") from exc
+        improved = 0
+        for key, result in retried.items():
+            previous = ctx.results.get(key)
+            if previous is None or not gap.is_improvement(previous.state, result.state):
+                continue
+            ctx.results[key] = result
+            improved += 1
+            pending.discard(key)
+        stats.recovered += improved
+        logger.info(
+            "缺口闭环轮次完成",
+            extra={
+                "job_id": str(job.id),
+                "round": round_no,
+                "improved": improved,
+                "remaining": len(pending),
+            },
+        )
+        if not improved:
+            break
+    merge_stats(ctx.extract_stats, extractor.stats)
+    if extractor.stats.warnings:
+        ctx.warnings.extend(extractor.stats.warnings)
+    await session.commit()
+    logger.info(
+        "缺口闭环结束",
+        extra={
+            "job_id": str(job.id),
+            "rounds": stats.rounds,
+            "targets": stats.targets,
+            "recovered": stats.recovered,
+        },
+    )
+
+
 async def _extract_stage(
     session: AsyncSession,
     ctx: JobContext,
@@ -1219,12 +1805,11 @@ async def _extract_stage(
     """
     job = ctx.job
     incremental = slots is not None
-    job.status = "extracting"
-    job.step = step_label
     # 记录提取开始时间
     import time
+
     ctx.extract_start_time = time.time()
-    await session.commit()
+    await _stage_status(session, job, handle, "extracting", step=step_label)
     roles = _roles_of(ctx)
     # 提取阶段用「提取模型」：命中登记的 LLM 配置则整份切换（端点+密钥），否则按同名覆盖
     choice = await resolve_model(config.extract_model_name)
@@ -1244,13 +1829,13 @@ async def _extract_stage(
             return await llm_client.embed(texts, model_override=config.embedding_model_name)
 
         vector_index = VectorIndex(ctx.blocks, embed_fn=_embed_fn)
+        # 缺口重试轮复用同一份索引：重建 embedding 的代价远高于多一次召回
+        ctx.vector_index = vector_index
 
         async def _build_vector_index() -> None:
             try:
-                await vector_index.build(batch_size=32)  # type: ignore[union-attr]
-                logger.info(
-                    "向量索引构建完成", extra={"blocks": len(ctx.blocks), "model": config.embedding_model_name}
-                )
+                await vector_index.build(batch_size=32)
+                logger.info("向量索引构建完成", extra={"blocks": len(ctx.blocks), "model": config.embedding_model_name})
             except Exception:
                 logger.exception("向量索引构建失败，退化为纯关键词检索")
 
@@ -1267,28 +1852,18 @@ async def _extract_stage(
             if items:
                 file_analysis_context[slot.key] = items
 
-    extractor = SlotExtractor(
-        ctx.spec,
-        ctx.blocks,
-        roles_by_file=roles,
-        batch_size=config.batch_size,
-        candidate_limit=config.candidate_limit,
-        max_context_chars=config.context_chars,
-        confidence_high=config.confidence_high,
-        confidence_mid=config.confidence_mid,
-        max_retries=max(1, config.max_attempts),
+    extractor = _new_extractor(
+        ctx,
+        config,
+        roles=roles,
+        choice=choice,
+        fallback_choice=fallback_choice,
         should_cancel=handle.should_cancel if handle is not None else None,
-        call_timeout_seconds=config.llm_call_timeout_seconds,
-        model_override=choice.model_override,
-        config_name=choice.config_name,
-        max_concurrent_batches=config.extract_concurrency,
-        enable_cache=config.extract_cache_enabled,
         vector_index=vector_index,
-        vector_alpha=config.vector_alpha,
         embedding_model=embedding_model,
-        fallback_model_override=fallback_choice.model_override if fallback_choice else None,
-        fallback_config_name=fallback_choice.config_name if fallback_choice else None,
-        file_analysis_context=file_analysis_context or None,
+        file_analysis_context=file_analysis_context,
+        kb_retriever=await _project_kb_retriever(session, ctx, config),
+        fact_retriever=await _project_fact_retriever(session, ctx, config),
     )
     # 提取器的进度基数固定按整份模板算，这里换算到本次调用的进度带
     band = max(1, progress_to - progress_from)
@@ -1358,13 +1933,10 @@ async def _direct_generate_stage(
     适用于对速度要求高于对逐槽位证据追溯要求的场景。
     """
     job = ctx.job
-    await _check_cancelled(session, job, handle)
-    job.status = "extracting"
-    job.step = "AI 一次性生成报告内容"
-    job.progress = 20
-    await session.commit()
+    await _stage_status(session, job, handle, "extracting", step="AI 一次性生成报告内容", progress=20)
 
     import time
+
     ctx.extract_start_time = time.time()
 
     # 解析模型选择
@@ -1480,10 +2052,7 @@ def _meta_values(job: DocGenJob, ctx: JobContext) -> dict[str, str]:
 async def _render_stage(session: AsyncSession, ctx: JobContext, handle: AbortHandle | None = None) -> None:
     """渲染 docx 与生成说明，写回任务行。"""
     job = ctx.job
-    await _check_cancelled(session, job, handle)
-    job.status = "rendering"
-    job.step = "填充模板"
-    await session.commit()
+    await _stage_status(session, job, handle, "rendering", step="填充模板")
     # 母本优先级：任务指定的交付物模板 → 同槽位定义下最近的母本 → 代码内置母本
     meta = dict(ctx.job.meta or {})
     master = await store.load_master_by_id(str(meta.get("deliverable_template_id") or ""))
@@ -1532,6 +2101,21 @@ async def _render_stage(session: AsyncSession, ctx: JobContext, handle: AbortHan
         "needs_verify": state_counts.get(status.STATUS_NEEDS_VERIFY, 0),
         "retrieval_misses": ctx.extract_stats.retrieval_misses,
         "low_confidence": ctx.extract_stats.low_confidence,
+        # 需求描述校验：取值量纲/允许取值不符而降级为需人工核对的槽位数
+        "requirement_mismatches": ctx.extract_stats.requirement_mismatches,
+        # 缺口闭环：可重试缺口数 / 直接交人工数 / 实际轮数 / 补齐数 / 首轮归因分布
+        **(ctx.gap_stats.as_job_stats() if ctx.gap_stats else {}),
+        # 知识库覆盖预检：可填/部分可填/无资料 + 加权覆盖率 + 无资料槽位名
+        **(ctx.kb_coverage_stats.as_job_stats() if ctx.kb_coverage_stats else {}),
+        # 知识库贡献留痕：这一稿用过哪些知识库文档、命中多少片段、召回失败几次
+        "kb_hits": ctx.extract_stats.kb_hits,
+        "kb_sources": _kb_sources(ctx),
+        "kb_failures": ctx.kb_retriever.stats.failures if ctx.kb_retriever else 0,
+        # 知识库文档盘点快照：完成页据此说明「本次仅基于 M 份已解析资料」
+        **ctx.kb_snapshot,
+        # 知识库摸底 / 事实抽取留痕：本次镜像多少切片、抽出多少事实
+        **(ctx.kb_index_stats.describe() if ctx.kb_index_stats else {}),
+        **(ctx.fact_stats.describe() if ctx.fact_stats else {}),
         "composed": ctx.compose_stats.composed if ctx.compose_stats else 0,
         "compose_rejected": ctx.compose_stats.rejected if ctx.compose_stats else 0,
         "unresolved": len(report.unresolved),
@@ -1546,10 +2130,8 @@ async def _render_stage(session: AsyncSession, ctx: JobContext, handle: AbortHan
         "warnings": ctx.warnings,
     }
     ctx.render_report = report
-    job.status = "completed"
-    job.step = "完成"
-    job.progress = 100
     job.finished_at = _now()
+    await _stage_status(session, job, handle, "completed", step="完成", progress=100)
 
 
 async def _persist_slot_values(session: AsyncSession, job: DocGenJob, ctx: JobContext) -> None:

@@ -1622,10 +1622,19 @@ async def update_optimization(
     # 更新字段
 
     _opt_updatable = {
-        "source_route_id", "source_route_name", "name", "description",
-        "status", "current_module", "doe_experiment", "impurity_study",
-        "crystal_form_study", "quality_standard_set", "scale_up_study",
-        "start_date", "end_date",
+        "source_route_id",
+        "source_route_name",
+        "name",
+        "description",
+        "status",
+        "current_module",
+        "doe_experiment",
+        "impurity_study",
+        "crystal_form_study",
+        "quality_standard_set",
+        "scale_up_study",
+        "start_date",
+        "end_date",
     }
     for key, value in data.items():
         if key in _opt_updatable:
@@ -3474,3 +3483,9 @@ async def generate_report(
 from app.modules.research.doc_gen.api import router as doc_gen_router  # noqa: E402
 
 router.include_router(doc_gen_router, prefix="/doc-gen", tags=["研发管理-文档生成"])
+
+# ===== 项目知识库（资料入库 → RAGFlow 解析 → 供文档生成检索）=====
+
+from app.modules.research.knowledge_base.api import router as knowledge_base_router  # noqa: E402
+
+router.include_router(knowledge_base_router, prefix="/knowledge-bases", tags=["研发管理-项目知识库"])

@@ -22,16 +22,21 @@ from app.core.response import build_response
 from app.modules.research.doc_gen import conversation as conversation_mod
 from app.modules.research.doc_gen import service, spec_source
 from app.modules.research.doc_gen.schemas import (
+    DocGenAddSlotRequest,
+    DocGenAddSlotResponse,
+    DocGenAnchorCandidateListResponse,
     DocGenBatchUploadResponse,
     DocGenConfirmRequest,
     DocGenConversationData,
     DocGenConversationDataResponse,
     DocGenConversationResponse,
+    DocGenEnrichSemanticsResponse,
     DocGenExtractedInfoResponse,
     DocGenJobDataResponse,
     DocGenJobDetailResponse,
     DocGenJobListResponse,
     DocGenJobUpdateRequest,
+    DocGenKbCoverageResponse,
     DocGenLimitsResponse,
     DocGenMessageResponse,
     DocGenOperationResponse,
@@ -43,6 +48,7 @@ from app.modules.research.doc_gen.schemas import (
     DocGenSupersededResponse,
     DocGenTemplateFileResponse,
     DocGenTemplateListResponse,
+    DocGenTemplateMarkdownResponse,
     DocGenTemplateVersionListResponse,
     DocGenTemplateVersionRestoreResponse,
     DocGenUsableTemplateListResponse,
@@ -58,6 +64,27 @@ async def read_limits(current_user: RequiredUser) -> Any:
     """前端提交前据此校验文件数量与大小。"""
     limits = await service.limits()
     return build_response(data=limits)
+
+
+@router.get(
+    "/kb-coverage",
+    summary="知识库覆盖预检（生成前预估可填项）",
+    response_model=DocGenKbCoverageResponse,
+)
+async def read_kb_coverage(
+    current_user: RequiredUser,
+    deliverable_template_id: UUID = Query(..., description="交付物模板 ID"),
+    project_id: UUID | None = Query(None, description="研发项目 ID（决定用哪个知识库）"),
+    live: bool = Query(True, description="知识库尚无本地索引时是否实时检索兜底（会压知识库，较慢）"),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """生成前预检：按模板填充项逐项判断知识库「可填 / 部分可填 / 无资料」。
+
+    只做归类不做抽取（不调模型）；离线优先，索引为空时才实时检索兜底。
+    结果用于「新建报告」确认弹窗提前说明预计缺口，并解释生成后为什么有 N 项没填上。
+    """
+    coverage = await service.probe_kb_coverage(db, deliverable_template_id, project_id, live=live)
+    return build_response(data=coverage.as_payload())
 
 
 @router.post("/jobs", summary="新建报告（任务 + 资料一次提交）", response_model=DocGenJobDataResponse, status_code=201)
@@ -142,6 +169,7 @@ async def update_job(
             # 尝试解析为 UUID
             template_uuid = UUID(template_value)
             from app.modules.research.models import RdDeliverableTemplate
+
             template = await db.get(RdDeliverableTemplate, template_uuid)
             if template and template.template_code:
                 job.template_code = template.template_code
@@ -348,9 +376,7 @@ async def send_message(
     return build_response(data=await _conversation_data(db, conversation), message="已回复")
 
 
-@router.post(
-    "/jobs/{job_id}/conversation/complete", summary="完成对话", response_model=DocGenConversationDataResponse
-)
+@router.post("/jobs/{job_id}/conversation/complete", summary="完成对话", response_model=DocGenConversationDataResponse)
 async def complete_conversation(
     job_id: UUID,
     current_user: RequiredUser,
@@ -550,6 +576,91 @@ async def delete_template_version(
     return build_response(message="已删除该版本")
 
 
+@router.get(
+    "/deliverable-templates/{template_id}/anchor-candidates",
+    summary="枚举母本可锚定位置（人工新增填写项）",
+    response_model=DocGenAnchorCandidateListResponse,
+)
+async def list_template_anchor_candidates(
+    template_id: UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """列出母本里尚未被现有槽位占用的可锚定位置，供人工「新增填写项」时点选。
+
+    纯规则扫描（不调模型、快）；每个候选的 anchor 可原样回传用于建槽位，
+    避免用户手写锚点出错。AI 不参与定位（锚点错则渲染失败），只由规则产出。
+    """
+    return build_response(data=await service.template_anchor_candidates(db, template_id))
+
+
+@router.get(
+    "/deliverable-templates/{template_id}/markdown",
+    summary="模板全内容 Markdown（Word 母本解析）",
+    response_model=DocGenTemplateMarkdownResponse,
+)
+async def read_template_markdown(
+    template_id: UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """把 Word 模板母本解析为全内容 Markdown，供交付物模板页「模板 Markdown」弹窗展示。
+
+    视图就是模板内容本身（标题/段落/列表/表格按文档流顺序）；母本不可用时回退
+    template_structure 骨架渲染（source=spec）。不参与 docx 成文（成文仍走锚点回填母本）。
+    """
+    return build_response(data=await service.template_markdown(db, template_id))
+
+
+@router.post(
+    "/deliverable-templates/{template_id}/enrich-semantics",
+    summary="AI 增强槽位语义",
+    response_model=DocGenEnrichSemanticsResponse,
+)
+async def enrich_template_semantics(
+    template_id: UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """用 AI 为模板槽位补全「可被检索/提取命中」的语义（label/检索词/期望/必填/置信度）。
+
+    结果回写 template_structure，该模板以后每次生成都受益（越用越准）。只改语义字段，
+    绝不动锚点/类型（渲染安全）；低置信槽位标「需人工核对」。同步执行，槽位多时可能
+    耗时数十秒（与覆盖预检同档）。
+    """
+    result = await service.enrich_template_semantics(db, template_id)
+    await db.commit()
+    return build_response(
+        data=result,
+        message=(
+            f"AI 语义增强完成：{result['enriched_slots']}/{result['total_slots']} 个槽位更新了语义，"
+            f"{result['needs_review_added']} 个新增需人工核对"
+        ),
+    )
+
+
+@router.post(
+    "/deliverable-templates/{template_id}/slots",
+    summary="人工新增填写项（从候选位置点选）",
+    response_model=DocGenAddSlotResponse,
+)
+async def add_template_slot(
+    template_id: UUID,
+    payload: DocGenAddSlotRequest,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """从候选锚点位置人工新增一个「填写项」（槽位），回写 template_structure 持久化。
+
+    定位由规则产出的候选 anchor 原样回传（AI/人工都不手写锚点，渲染安全）；用户只补
+    名称与检索语义。名称为空、表格类、位置已被占用或 key 冲突均返回 400。与语义增强
+    一致：不留版本记录（只有母本文件变更才算版本）。
+    """
+    result = await service.add_template_slot(db, template_id, payload)
+    await db.commit()
+    return build_response(data=result, message=f"已新增填写项（共 {result['total_slots']} 个）")
+
+
 @router.post("/jobs/{job_id}/extract", summary="AI 提取信息", response_model=DocGenJobDataResponse)
 async def extract_job(
     job_id: UUID,
@@ -604,9 +715,7 @@ async def regenerate_job(
     return build_response(data=await service.job_response(job), message="已创建新一轮生成")
 
 
-@router.get(
-    "/jobs/{job_id}/superseded", summary="查询被本轮取代的历史任务", response_model=DocGenSupersededResponse
-)
+@router.get("/jobs/{job_id}/superseded", summary="查询被本轮取代的历史任务", response_model=DocGenSupersededResponse)
 async def read_superseded(
     job_id: UUID,
     current_user: RequiredUser,

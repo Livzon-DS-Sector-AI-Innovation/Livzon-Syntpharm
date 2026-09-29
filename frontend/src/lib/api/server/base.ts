@@ -93,11 +93,20 @@ export async function safeApiFetch<T>(
 ): Promise<{ code: number; message: string; data: T; meta?: { page?: number; page_size?: number; total?: number } }> {
   const authHeaders = await getAuthHeaders()
 
+  // 与 apiFetch 保持一致：非 FormData 的请求体必须显式声明 application/json。
+  // 缺了它 FastAPI 会拿到 bytes 而非 dict，直接 422「Input should be a valid dictionary」。
+  const isFormData =
+    options?.body instanceof FormData ||
+    (options?.body && typeof FormData !== 'undefined' && options?.body.constructor?.name === 'FormData')
+  const shouldSetJsonType = Boolean(options?.body) && !isFormData
+
   let response: Response
   try {
     response = await fetchWithRetry(`${getApiBaseUrl()}${endpoint}`, {
       ...options,
       headers: {
+        // options.headers 在后，调用方显式指定的 Content-Type 仍可覆盖此处默认值
+        ...(shouldSetJsonType ? { 'Content-Type': 'application/json' } : {}),
         ...authHeaders,
         ...options?.headers,
       },

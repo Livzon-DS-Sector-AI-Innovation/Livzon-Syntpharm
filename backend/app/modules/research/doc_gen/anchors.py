@@ -346,9 +346,7 @@ def resolve_anchor(doc: DocxDocument, slot: Slot, anchor: Anchor) -> Target:
             paras = header_paragraphs(doc, anchor.header_contains or slot.label)
             if not paras:
                 raise LookupError(f"页眉未找到 {anchor.header_contains!r}")
-            return ParagraphTarget(
-                paragraph=paras[0], mode="after_label", label=anchor.header_contains or slot.label
-            )
+            return ParagraphTarget(paragraph=paras[0], mode="after_label", label=anchor.header_contains or slot.label)
         raise LookupError(f"未知锚点类型 {anchor.type}")
     except LookupError as exc:
         raise AnchorUnresolvedError(slot_key, str(exc)) from exc

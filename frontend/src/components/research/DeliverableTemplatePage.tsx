@@ -26,12 +26,15 @@ import {
   DownloadOutlined,
   EditOutlined,
   EyeOutlined,
+  FileTextOutlined,
   HistoryOutlined,
   InboxOutlined,
   PlusOutlined,
+  ThunderboltOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
 import { renderAsync } from 'docx-preview'
+import { saveBlob } from '@/lib/utils/download'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
 import {
   downloadDeliverableTemplate,
@@ -52,7 +55,10 @@ import {
   deleteDeliverableTemplate,
   updateDeliverableTemplate,
 } from '@/actions/research/rd-project'
+import { enrichDeliverableTemplateSemantics } from '@/actions/research/doc-gen'
+import { DeliverableTemplateAddSlotDrawer } from './DeliverableTemplateAddSlotDrawer'
 import { DeliverableTemplateVersionDrawer } from './DeliverableTemplateVersionDrawer'
+import { SlotMarkdownModal } from './SlotMarkdownModal'
 
 const { TextArea } = Input
 
@@ -107,6 +113,8 @@ export function DeliverableTemplatePage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [batchUploading, setBatchUploading] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  /** 正在执行 AI 语义增强的模板 ID（同步耗时数十秒，用于按钮 loading 与防重复点击） */
+  const [enrichingId, setEnrichingId] = useState<string | null>(null)
 
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewSource, setPreviewSource] = useState<PreviewSource | null>(null)
@@ -116,6 +124,12 @@ export function DeliverableTemplatePage() {
 
   /** 版本历史抽屉的目标模板 */
   const [versionDrawer, setVersionDrawer] = useState<RdDeliverableTemplate | null>(null)
+
+  /** 「新增填写项」抽屉的目标模板 */
+  const [addSlotDrawer, setAddSlotDrawer] = useState<RdDeliverableTemplate | null>(null)
+
+  /** 「填充识别项」Markdown 弹窗的目标模板 */
+  const [slotMdTemplate, setSlotMdTemplate] = useState<RdDeliverableTemplate | null>(null)
 
   /** 替换母本前收集版本说明（仅已有母本的模板需要，首次上传无需说明） */
   const [pendingNote, setPendingNote] = useState<{ record: RdDeliverableTemplate; file: File } | null>(null)
@@ -173,17 +187,6 @@ export function DeliverableTemplatePage() {
       ext: version.file_ext ?? '.docx',
       fileName: version.file_name ?? `${versionDrawer.name}-v${version.version_no}`,
     })
-  }
-
-  const saveBlob = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
   }
 
   const stageOptions = Object.keys(STAGE_LABELS).map((s) => ({ value: s, label: STAGE_LABELS[s as RdProjectStage] }))
@@ -314,6 +317,41 @@ export function DeliverableTemplatePage() {
     }
   }
 
+  /**
+   * AI 增强填充项语义：补全检索词 / 期望 / 必填 / 置信度并回写模板，越用越准。
+   *
+   * 同步执行、槽位多时耗时数十秒，期间按钮 loading + 常驻提示；只改语义不动锚点，
+   * 因此增强后母本渲染不受影响。反馈用后端逐槽对比得出的**真实变更数**（enriched_slots），
+   * 不再把槽位总数谎报成增强数；0 变更时明确提示去「模板 Markdown → 填写项语义」核对。
+   * 增强成功后作废该模板的 Markdown 查询缓存，弹窗再开即见最新语义。
+   */
+  const handleEnrich = async (record: RdDeliverableTemplate) => {
+    setEnrichingId(record.id)
+    const hide = msgApi.loading('正在用 AI 增强填充项语义，槽位较多时可能需要数十秒…', 0)
+    try {
+      const result = await enrichDeliverableTemplateSemantics(record.id)
+      const changed = result.enriched_slots ?? 0
+      const added = result.needs_review_added ?? 0
+      if (changed === 0) {
+        msgApi.warning(
+          `AI 本次未更新任何填充项语义（共 ${result.total_slots} 个，可能已达当前最佳或模型降级）；可在「模板 Markdown → 填写项语义」人工补充`,
+        )
+      } else {
+        msgApi.success(
+          added > 0
+            ? `已更新 ${changed}/${result.total_slots} 个填充项语义，其中 ${added} 个新增「需人工核对」`
+            : `已更新 ${changed}/${result.total_slots} 个填充项的检索语义`,
+        )
+      }
+      void queryClient.invalidateQueries({ queryKey: ['deliverable-template-markdown', record.id] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : 'AI 增强失败')
+    } finally {
+      hide()
+      setEnrichingId(null)
+    }
+  }
+
   /** 下载版本历史里的指定版本 */
   const handleVersionDownload = async (version: DocGenTemplateVersion) => {
     if (!versionDrawer) return
@@ -339,8 +377,51 @@ export function DeliverableTemplatePage() {
     }
   }
 
+  /**
+   * 「AI 增强」按钮：补全填充项语义并回写模板。
+   * 同一时刻只允许一个模板增强（其余禁用），避免并发重请求压垮模型网关。
+   */
+  const renderEnrichButton = (record: RdDeliverableTemplate) => (
+    <Tooltip title="用 AI 补全填充项的检索词、期望与必填等语义并回写模板，之后每次生成都更准（只改语义、不动锚点，渲染安全）；结果可在「模板 Markdown → 填写项语义」视图核对">
+      <Button
+        type="link"
+        size="small"
+        icon={<ThunderboltOutlined />}
+        loading={enrichingId === record.id}
+        disabled={enrichingId !== null && enrichingId !== record.id}
+        onClick={() => void handleEnrich(record)}
+      >
+        AI 增强
+      </Button>
+    </Tooltip>
+  )
+
+  /**
+   * 「新增填写项」按钮：打开候选点选抽屉。
+   * 只有已上传母本的模板才有候选位置（列表由母本扫描产出），两个分支都已保证有母本。
+   */
+  const renderAddSlotButton = (record: RdDeliverableTemplate) => (
+    <Tooltip title="从母本中点选一个尚未占用的位置，人工新增填写项（锚点由规则生成，无需手写）">
+      <Button type="link" size="small" icon={<PlusOutlined />} onClick={() => setAddSlotDrawer(record)}>
+        新增填写项
+      </Button>
+    </Tooltip>
+  )
+
+  /**
+   * 「填充识别项」按钮：打开 Markdown 内容页弹窗，展示识别到的填写项、检索语义与核对状态。
+   * 母本识别 / AI 增强 / 人工新增的成果在此肉眼可见（视图由后端现渲染，不落库）。
+   */
+  const renderSlotMarkdownButton = (record: RdDeliverableTemplate) => (
+    <Tooltip title="查看模板的 Markdown 识别版：按母本结构展示章节与填写项待填内容">
+      <Button type="link" size="small" icon={<FileTextOutlined />} onClick={() => setSlotMdTemplate(record)}>
+        模板 Markdown
+      </Button>
+    </Tooltip>
+  )
+
   const columns = [
-    { title: '模板名称', dataIndex: 'name', key: 'name', width: 220 },
+    { title: '模板名称', dataIndex: 'name', key: 'name', width: 200 },
     {
       title: '阶段',
       dataIndex: 'stage',
@@ -352,7 +433,7 @@ export function DeliverableTemplatePage() {
     {
       title: '填充项识别',
       key: 'profile',
-      width: 220,
+      width: 400,
       render: (_: unknown, record: RdDeliverableTemplate) => {
         if (!record.file_object_key) return <Tag color="orange">待上传 Word 母本</Tag>
         const profile = profiles.find((p) => p.code === record.template_code)
@@ -361,6 +442,9 @@ export function DeliverableTemplatePage() {
             <Space size={4} wrap>
               <Tag color="blue">{profile.name}</Tag>
               <span style={{ color: '#999', fontSize: 12 }}>{profile.slot_count} 个填充项</span>
+              {renderSlotMarkdownButton(record)}
+              {renderEnrichButton(record)}
+              {renderAddSlotButton(record)}
             </Space>
           )
         }
@@ -371,6 +455,9 @@ export function DeliverableTemplatePage() {
             <Tooltip title={record.description ?? ''}>
               <span style={{ color: '#999', fontSize: 12 }}>可直接用于 AI 生成</span>
             </Tooltip>
+            {renderSlotMarkdownButton(record)}
+            {renderEnrichButton(record)}
+            {renderAddSlotButton(record)}
           </Space>
         )
       },
@@ -499,7 +586,7 @@ export function DeliverableTemplatePage() {
           loading={loading}
           size="small"
           pagination={{ pageSize: 20 }}
-          scroll={{ x: 1290 }}
+          scroll={{ x: 1490 }}
         />
       </Card>
 
@@ -623,6 +710,26 @@ export function DeliverableTemplatePage() {
         onChanged={invalidateTemplates}
         onPreview={openVersionPreview}
         onDownload={(version) => void handleVersionDownload(version)}
+      />
+
+      <DeliverableTemplateAddSlotDrawer
+        key={`addslot-${addSlotDrawer?.id ?? 'none'}`}
+        open={addSlotDrawer !== null}
+        templateId={addSlotDrawer?.id ?? null}
+        templateName={addSlotDrawer?.name ?? ''}
+        onClose={() => setAddSlotDrawer(null)}
+        onChanged={() => {
+          invalidateTemplates()
+          void queryClient.invalidateQueries({ queryKey: ['doc-gen-slot-profiles'] })
+        }}
+      />
+
+      <SlotMarkdownModal
+        key={`slotmd-${slotMdTemplate?.id ?? 'none'}`}
+        open={slotMdTemplate !== null}
+        templateId={slotMdTemplate?.id ?? null}
+        templateName={slotMdTemplate?.name ?? ''}
+        onClose={() => setSlotMdTemplate(null)}
       />
 
       <Modal

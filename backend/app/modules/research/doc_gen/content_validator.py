@@ -15,10 +15,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.modules.research.doc_gen import status
 from app.modules.research.doc_gen.extraction import SlotResult
 from app.modules.research.doc_gen.file_analyzer import FileAnalysisBatchResult
 from app.modules.research.doc_gen.prompts import build_cross_validation_prompt
-from app.modules.research.doc_gen import status
 
 logger = logging.getLogger(__name__)
 
@@ -69,12 +69,14 @@ def _build_file_summaries(
                     "relevance": extraction.relevance,
                 }
         if slot_data:
-            summaries.append({
-                "file_id": file_id,
-                "file_name": result.file_name,
-                "summary": result.summary,
-                "slot_content": slot_data,
-            })
+            summaries.append(
+                {
+                    "file_id": file_id,
+                    "file_name": result.file_name,
+                    "summary": result.summary,
+                    "slot_content": slot_data,
+                }
+            )
     return summaries
 
 
@@ -88,12 +90,14 @@ def _build_slot_results_for_validation(
         result = results.get(key)
         if result is None:
             continue
-        items.append({
-            "key": key,
-            "text": result.text[:200] if result.text else "",
-            "state": result.state,
-            "has_evidence": len(result.evidence) > 0,
-        })
+        items.append(
+            {
+                "key": key,
+                "text": result.text[:200] if result.text else "",
+                "state": result.state,
+                "has_evidence": len(result.evidence) > 0,
+            }
+        )
     return items
 
 

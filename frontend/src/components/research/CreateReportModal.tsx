@@ -1,11 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
   App,
   Button,
-  Collapse,
   Form,
   Input,
   Modal,
@@ -15,13 +15,11 @@ import {
   Spin,
   Tag,
   Typography,
-  Upload,
 } from 'antd'
-import type { UploadFile } from 'antd'
 import {
   CheckCircleOutlined,
+  CloudUploadOutlined,
   CloseCircleOutlined,
-  DeleteOutlined,
   DownloadOutlined,
   EyeOutlined,
   FileTextOutlined,
@@ -30,7 +28,6 @@ import {
   ReloadOutlined,
   ThunderboltOutlined,
   UndoOutlined,
-  UploadOutlined,
 } from '@ant-design/icons'
 import { renderAsync } from 'docx-preview'
 import {
@@ -39,35 +36,31 @@ import {
   downloadDocGenDocument,
   fetchDocGenDocumentBlob,
   fetchDocGenExtractedInfo,
-  fetchDocGenInputFileBlob,
   fetchDocGenJob,
   fetchDocGenJobsForReport,
+  fetchDocGenKbCoverage,
   fetchUsableDocGenTemplates,
-  fetchDocGenLimits,
-  uploadJobFiles,
   type DocGenExtractedSlot,
-  type DocGenFileRole,
-  type DocGenInputFileResponse,
   type DocGenJobResponse,
-  type DocGenLimits,
+  type DocGenKbCoverage,
   type DocGenUsableTemplate,
 } from '@/lib/api/client/research/doc-gen'
-import { fetchDeliverableTemplates, updateReport } from '@/lib/api/client/research/rd-project'
+import { updateReport } from '@/lib/api/client/research/rd-project'
 import { cancelDocGenJob, confirmDocGenJob, extractDocGenJob, updateDocGenJob } from '@/actions/research/doc-gen'
 import {
   DOC_GEN_STATUS_COLORS,
   DOC_GEN_STATUS_LABELS,
   isDocGenCompleted,
   isDocGenTerminal,
-  type DocGenFormItem,
 } from '@/types/research/doc-gen'
 import {
   REPORT_TYPE_LABELS,
   STAGE_LABELS,
-  type RdDeliverableTemplate,
 } from '@/types/research/rd-project'
-import { DocGenFilePreview } from './DocGenFilePreview'
 import { DocGenSlotEditor } from './DocGenSlotEditor'
+import { KnowledgeBaseModal } from './KnowledgeBaseModal'
+import { summarizeKb, useKbDocuments, useKnowledgeBase } from './useKnowledgeBase'
+import { fetchKbDocuments, fetchKnowledgeBasesByProject } from '@/lib/api/client/research/knowledge-base'
 
 const { Text } = Typography
 
@@ -91,97 +84,7 @@ interface Props {
   } | null
 }
 
-/** 单文件上限 20 MB（Qwen3.8-27B 可接受的最大输入大小） */
-const MAX_FILE_MB = 20
-const MAX_FILES = 20
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function normalizeExt(name: string): string {
-  const idx = name.lastIndexOf('.')
-  return idx >= 0 ? name.slice(idx + 1).toLowerCase() : ''
-}
-
-/** 文件解析状态摘要：显示哪些文件解析成功、哪些走了 AI 回退、哪些失败 */
-function FileParseStatusSummary({ files }: { files: DocGenInputFileResponse[] }) {
-  const done = files.filter((f) => f.parse_status === 'done')
-  const aiFallback = files.filter((f) => f.parse_status === 'ai_fallback')
-  const failed = files.filter((f) => f.parse_status === 'failed')
-  const pending = files.filter((f) => f.parse_status === 'pending' || !f.parse_status)
-
-  // 始终显示文件解析状态，让用户在 review 阶段就能看到文件解析情况
-
-  const statusConfig: Record<string, { color: string; label: string; icon: string }> = {
-    done: { color: 'success', label: '解析成功', icon: '✓' },
-    ai_fallback: { color: 'warning', label: 'AI 解析', icon: '🤖' },
-    failed: { color: 'error', label: '解析失败', icon: '✗' },
-    pending: { color: 'default', label: '待解析', icon: '○' },
-  }
-
-  // 计算总字符数
-  const totalChars = files.reduce((sum, f) => sum + (f.char_count || 0), 0)
-
-  const items = [
-    {
-      key: 'parse-status',
-      label: (
-        <span>
-          文件解析结果：
-          {done.length > 0 && <Tag color="success">{done.length} 个成功</Tag>}
-          {aiFallback.length > 0 && <Tag color="warning">{aiFallback.length} 个 AI 解析</Tag>}
-          {failed.length > 0 && <Tag color="error">{failed.length} 个失败</Tag>}
-          {pending.length > 0 && <Tag>{pending.length} 个待解析</Tag>}
-          {totalChars > 0 && <Tag color="blue" style={{ marginLeft: 8 }}>共 {totalChars.toLocaleString()} 字</Tag>}
-        </span>
-      ),
-      children: (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {files.map((file) => {
-            const cfg = statusConfig[file.parse_status] || statusConfig.pending
-            return (
-              <div key={file.id} style={{ 
-                display: 'flex', 
-                alignItems: 'flex-start', 
-                gap: 10, 
-                padding: '8px 12px', 
-                background: file.parse_status === 'failed' ? '#fff2f0' : file.parse_status === 'ai_fallback' ? '#fffbe6' : '#fafafa',
-                borderRadius: 4,
-                border: `1px solid ${file.parse_status === 'failed' ? '#ffccc7' : file.parse_status === 'ai_fallback' ? '#ffe58f' : '#f0f0f0'}`
-              }}>
-                <Tag color={cfg.color} style={{ flexShrink: 0, margin: 0 }}>{cfg.icon} {cfg.label}</Tag>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 2 }}>{file.original_filename}</div>
-                  <div style={{ fontSize: 12, color: '#8c8c8c', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                    {file.page_count ? <span>{file.page_count} 页</span> : null}
-                    {file.char_count ? <span>{file.char_count.toLocaleString()} 字</span> : null}
-                  </div>
-                  {file.warnings && file.warnings.length > 0 && (
-                    <div style={{ fontSize: 12, color: file.parse_status === 'failed' ? '#cf1322' : '#faad14', marginTop: 4 }}>
-                      ⚠ {file.warnings.join('；')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ),
-    },
-  ]
-
-  return (
-    <Collapse
-      items={items}
-      defaultActiveKey={['parse-status']}
-      style={{ marginBottom: 16 }}
-      size="small"
-    />
-  )
-}
 
 export function CreateReportModal({ open, projectId, onCancel, onCreated, editingReport }: Props) {
   const { message: msgApi } = App.useApp()
@@ -190,14 +93,13 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   const [phase, setPhase] = useState<Phase>('form')
   const [templates, setTemplates] = useState<DocGenUsableTemplate[]>([])
-  const [tplMeta, setTplMeta] = useState<Record<string, RdDeliverableTemplate>>({})
-  const [limits, setLimits] = useState<DocGenLimits | null>(null)
-  const [items, setItems] = useState<DocGenFormItem[]>([])
-  // 已保存到服务端的文件（编辑模式从后端加载）
-  const [serverFiles, setServerFiles] = useState<DocGenInputFileResponse[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [job, setJob] = useState<DocGenJobResponse | null>(null)
   const jobIdRef = useRef<string | null>(null)
+  // 嵌套「项目知识库」弹窗：建库/上传/看进度都在弹窗内完成，不跳页面
+  const [kbModalOpen, setKbModalOpen] = useState(false)
+  // 在生成前预检里点过「查看知识库」：关闭弹窗后自动重新预检，用户不必再点一次生成
+  const resumeAfterKbRef = useRef(false)
 
   // 提取结果
   const [extractedSlots, setExtractedSlots] = useState<DocGenExtractedSlot[]>([])
@@ -217,8 +119,134 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     return counts
   }, [extractedSlots])
 
-  // 文件预览（由 DocGenFilePreview 组件管理）
-  const [previewFile, setPreviewFile] = useState<File | null>(null)
+  // ─── 项目知识库：生成报告的资料来源 ───
+  const queryClient = useQueryClient()
+  const { data: knowledgeBases = [] } = useKnowledgeBase(projectId, open)
+  const kb = useMemo(() => knowledgeBases[0], [knowledgeBases])
+  const { data: kbDocuments = [] } = useKbDocuments(kb?.id)
+  const kbSummary = useMemo(() => summarizeKb(kbDocuments), [kbDocuments])
+
+  const refreshKb = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['knowledge-bases', projectId] })
+    queryClient.invalidateQueries({ queryKey: ['kb-documents', kb?.id] })
+  }, [queryClient, projectId, kb?.id])
+
+  // 任务统计里的知识库快照：完成后如实交代「本次基于几份已解析资料」
+  const kbStats = (job?.stats ?? {}) as Record<string, unknown>
+  const kbStatsParsed = Number(kbStats.kb_documents_parsed ?? 0)
+  const kbStatsTotal = Number(kbStats.kb_documents_total ?? 0)
+  const kbStatsName = typeof kbStats.kb_name === 'string' ? kbStats.kb_name : ''
+
+  // 覆盖预检快照（A2）：生成前逐项算过「库里有没有料」，完成后据此解释哪些项天生就缺
+  const coverageChecked = Number(kbStats.kb_coverage_checked ?? 0)
+  const coverageFillable = Number(kbStats.kb_coverage_fillable ?? 0)
+  const coveragePartial = Number(kbStats.kb_coverage_partial ?? 0)
+  const coverageMissing = Number(kbStats.kb_coverage_missing ?? 0)
+  const coverageRatio = Number(kbStats.kb_coverage_ratio ?? 0)
+  const coverageMissingLabels = Array.isArray(kbStats.kb_coverage_missing_labels)
+    ? kbStats.kb_coverage_missing_labels.filter((label): label is string => typeof label === 'string')
+    : []
+
+  /**
+   * 生成前预检：知识库缺失、文档未解析、填充项覆盖不足时，让用户明确知情后再继续。
+   *
+   * 覆盖预检（A2）只做归类不做抽取，回答「这些填充项库里有没有料」：资料齐全且没有
+   * 无资料项时直接放行，否则把预计缺口写进确认框——让用户在等十几分钟之前就知道大概
+   * 会缺什么。预检本身失败不阻塞生成（它只是提示）。点「查看知识库」会打开嵌套弹窗，
+   * 并在关闭后自动重新预检，避免"确认框内容已过期"的误导。
+   */
+  const confirmBeforeGenerate = async (templateId: string): Promise<boolean> => {
+    // 预检必须读实时数据：知识库与文档状态可能刚在弹窗里变过，React Query 缓存未必是最新
+    let freshKb = kb
+    let docSummary = kbSummary
+    try {
+      const list = await fetchKnowledgeBasesByProject(projectId)
+      freshKb = list[0]
+      if (freshKb) docSummary = summarizeKb(await fetchKbDocuments(freshKb.id))
+    } catch {
+      // 取不到就退回缓存值：后端仍按真实状态执行，这里不阻塞用户
+    }
+    const supplement = String(form.getFieldValue('supplement') || '').trim()
+    const { parsed, pending, failed } = docSummary
+
+    // 有已解析资料时才值得逐项预检（一份都没有时下面的提示更直接）
+    let coverage: DocGenKbCoverage | null = null
+    if (freshKb && parsed > 0) {
+      const hideLoading = msgApi.loading('正在预检知识库覆盖情况…', 0)
+      try {
+        coverage = await fetchDocGenKbCoverage(templateId, projectId)
+      } catch {
+        coverage = null // 预检失败只丢提示，生成照常进行
+      } finally {
+        hideLoading()
+      }
+    }
+
+    if (freshKb && parsed > 0 && pending === 0 && failed === 0 && (!coverage || coverage.missing === 0)) return true
+
+    const lines: string[] = []
+    if (!freshKb) {
+      lines.push(
+        supplement
+          ? '该项目还没有项目知识库，AI 将仅使用项目登记数据与补充信息生成报告。'
+          : '该项目还没有项目知识库，且未填写补充信息，生成结果可能大量为「待补充」。',
+      )
+    } else if (parsed === 0) {
+      lines.push('知识库中还没有解析完成的资料，生成结果可能大量为「待补充」。')
+    }
+    if (pending > 0) {
+      lines.push(`还有 ${pending} 份资料正在解析（或排队中），报告只能使用已解析完成的 ${parsed} 份。`)
+    }
+    if (failed > 0) {
+      lines.push(`另有 ${failed} 份资料解析失败，建议先在知识库中重新解析。`)
+    }
+    if (coverage) {
+      if (coverage.missing > 0) {
+        lines.push(
+          `按模板逐项预检：预计可填 ${coverage.fillable} 项、部分可填 ${coverage.partial} 项、无资料 ${coverage.missing} 项。`,
+        )
+        const labels = (coverage.slots ?? [])
+          .filter((slot) => slot.status === 'no_material')
+          .map((slot) => slot.label || slot.key)
+        if (labels.length > 0) {
+          lines.push(`无资料项：${labels.slice(0, 8).join('、')}${labels.length > 8 ? ' 等' : ''}`)
+        }
+      } else if (!(coverage.warnings ?? []).length) {
+        lines.push(`按模板逐项预检：${coverage.checked} 个填充项都有可参考资料。`)
+      }
+      // 预检自己的告警（如「尚未建立索引」）：直接呈现，别让用户以为覆盖预检失效了
+      lines.push(...(coverage.warnings ?? []))
+    }
+    return new Promise<boolean>((resolve) => {
+      Modal.confirm({
+        title: '生成前请确认',
+        width: 520,
+        content: (
+          <div>
+            <div style={{ whiteSpace: 'pre-line' }}>{`${lines.join('\n')}\n\n是否继续生成？`}</div>
+            <Button
+              type="link"
+              size="small"
+              style={{ paddingLeft: 0, marginTop: 4 }}
+              icon={<CloudUploadOutlined />}
+              onClick={() => {
+                resumeAfterKbRef.current = true
+                Modal.destroyAll()
+                setKbModalOpen(true)
+                resolve(false)
+              }}
+            >
+              {freshKb ? '查看知识库' : '创建知识库并上传资料'}
+            </Button>
+          </div>
+        ),
+        okText: '继续生成',
+        cancelText: '取消',
+        onOk: () => resolve(true),
+        onCancel: () => resolve(false),
+      })
+    })
+  }
 
   // 报告预览
   const reportPreviewRef = useRef<HTMLDivElement | null>(null)
@@ -240,17 +268,9 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     let cancelled = false
     ;(async () => {
       try {
-        const [tpl, lim, rawTpl] = await Promise.all([
-          fetchUsableDocGenTemplates(),
-          fetchDocGenLimits(),
-          fetchDeliverableTemplates({}),
-        ])
+        const tpl = await fetchUsableDocGenTemplates()
         if (cancelled) return
         setTemplates(tpl)
-        setLimits(lim)
-        const meta: Record<string, RdDeliverableTemplate> = {}
-        rawTpl.forEach((t) => { meta[t.id] = t })
-        setTplMeta(meta)
         // 编辑模式：预填充表单 + 加载关联的 DocGenJob
         if (editingReport) {
           form.setFieldsValue({
@@ -273,10 +293,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             const jobData = jobDetailResp.job
             setJob(jobData)
             jobIdRef.current = jobData.id
-            // 加载已保存的资料文件（供显示与预览）
-            if (jobDetailResp.files?.length) {
-              setServerFiles(jobDetailResp.files)
-            }
             // 预填充 job 中的字段
             form.setFieldsValue({
               doc_code: jobData.meta?.doc_code || editingReport.doc_code || '',
@@ -334,12 +350,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     if (job?.status === 'awaiting_review') {
       setPhase('review')
       loadExtractedInfo()
-      // 加载文件解析状态（新建任务时 serverFiles 可能为空）
-      if (serverFiles.length === 0 && jobIdRef.current) {
-        fetchDocGenJob(jobIdRef.current).then((detail) => {
-          if (detail.files?.length) setServerFiles(detail.files)
-        }).catch(() => { /* 忽略 */ })
-      }
     }
   }, [job?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -365,8 +375,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     try {
       const res = await fetchDocGenExtractedInfo(jobIdRef.current)
       setExtractedSlots(res.slots)
-    } catch (e: any) {
-      msgApi.error('加载提取信息失败：' + (e.message || ''))
+    } catch (e: unknown) {
+      msgApi.error('加载提取信息失败：' + (e instanceof Error ? e.message : ''))
     } finally {
       setExtracting(false)
     }
@@ -393,41 +403,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     return () => { cancelled = true }
   }, [job?.id, job?.status, job?.has_document]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── 文件处理 ───
-  const handleAddFile = useCallback(
-    (file: File): boolean => {
-      const ext = normalizeExt(file.name)
-      const allowed = (limits?.allowed_extensions ?? []).map((e) => e.replace(/^\./, '').toLowerCase())
-      if (allowed.length > 0 && !allowed.includes(ext)) {
-        msgApi.warning(`文件「${file.name}」类型不支持`)
-        return false
-      }
-      if (file.size > MAX_FILE_MB * 1024 * 1024) {
-        msgApi.warning(`文件「${file.name}」超过单文件 ${MAX_FILE_MB}MB 上限`)
-        return false
-      }
-      if (items.length >= MAX_FILES) {
-        msgApi.warning(`最多 ${MAX_FILES} 个文件`)
-        return false
-      }
-      setItems((prev) => {
-        if (prev.some((p) => p.file.name === file.name && p.file.size === file.size)) {
-          msgApi.warning(`文件「${file.name}」已在列表中`)
-          return prev
-        }
-        return [...prev, { file, role: 'material' }]
-      })
-      return false
-    },
-    [limits, items, msgApi],
-  )
-
-  const removeFile = (index: number) => setItems((prev) => prev.filter((_, i) => i !== index))
-
-  // ─── 文件预览（委托给 DocGenFilePreview 组件） ───
-  const openFilePreview = (file: File) => setPreviewFile(file)
-  const closeFilePreview = () => setPreviewFile(null)
-
   // ─── 模板预览 ───
   const openTplPreview = async (tplId: string) => {
     setTplPreviewOpen(true)
@@ -448,28 +423,26 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     if (tplPreviewUrlRef.current) { URL.revokeObjectURL(tplPreviewUrlRef.current); tplPreviewUrlRef.current = null }
   }
 
-  // ─── AI 创建报告（编辑模式：开始提取信息） ───
-  const handleCreateAndExtract = async () => {
-    // 校验模板选择
+  /**
+   * AI 生成报告（新流程）：资料来自项目知识库，不再上传任务级文件、不再有人工提取步骤。
+   *
+   * 直达生成模式（DOC_GEN_CHAT_ENABLED=false）下任务创建即 pending，worker 一次跑完
+   * 「模板分析 → 知识库逐填充项检索取值 → 证据回检 → 成文 → 渲染」；
+   * 若运行时仍开着对话复核，则显式触发一次提取以保持兼容。
+   */
+  const handleCreateAndGenerate = async () => {
     const templateId = form.getFieldValue('template_id')
     if (!templateId) {
       msgApi.warning('请先选择模板')
       return
     }
-    // 校验文件上传（本地 + 服务端已保存文件）
-    if (totalFileCount === 0) {
-      msgApi.warning('请先上传至少一个参考文件')
-      return
-    }
+    const proceed = await confirmBeforeGenerate(templateId)
+    if (!proceed) return
 
-    // 立即切换到提取中界面，job 创建在后台进行
-    console.log('[CreateReportModal] 开始创建提取任务, editingReport:', editingReport?.id, 'job:', job?.id, 'templateId:', templateId, 'files:', totalFileCount)
     setPhase('extracting')
-    console.log('[CreateReportModal] phase 已设为 extracting')
     setSubmitting(true)
     try {
       let currentJob = job
-
       // 已终止/已完成的任务无法续跑，必须新建
       const needsNewJob = !currentJob || currentJob.status === 'cancelled' || currentJob.status === 'completed'
 
@@ -481,8 +454,9 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           docVersion: values.version || 'v1.0',
           drugName: values.drug_name || values.title,
           supplementText: values.supplement?.trim() || undefined,
-          fileRoles: items.map((it) => it.role),
-          files: items.map((it) => it.file),
+          // 资料统一进项目知识库：新流程不再携带任务级文件
+          files: [],
+          fileRoles: [],
           projectId,
           reportId: editingReport?.id,
           reportTitle: values.title,
@@ -497,14 +471,12 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
       if (!currentJob) return
 
-      // 显式调用 extract：draft/failed/awaiting_review 可提取
-      // cancelled 已在上方新建分支处理；直达模式（chat_enabled=false）创建即 pending，worker 自动执行
-      if (currentJob.status === 'draft' || currentJob.status === 'failed' || currentJob.status === 'awaiting_review') {
+      if (['draft', 'failed', 'awaiting_review'].includes(currentJob.status)) {
         try {
           const started = await extractDocGenJob(currentJob.id)
           setJob(started)
         } catch (extractErr) {
-          // extract 失败时刷新 job 状态，给用户准确提示而非空白页
+          // 触发失败时刷新 job 状态，给用户准确提示而非空白页
           try {
             const fresh = await fetchDocGenJob(currentJob.id)
             setJob(fresh.job)
@@ -514,14 +486,13 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
       }
 
       onCreated?.()
-      msgApi.success('正在提取信息')
+      msgApi.success('已开始生成报告')
     } catch (e) {
-      console.error('[CreateReportModal] 创建提取任务失败:', e)
-      msgApi.error(e instanceof Error ? e.message : '提取信息失败')
-      // 不自动切回表单，保留在提取视图让用户看到错误状态并自行操作
+      console.error('[CreateReportModal] 生成报告失败:', e)
+      msgApi.error(e instanceof Error ? e.message : '生成报告失败')
+      // 不自动切回表单，保留在进度视图让用户看到错误状态并自行操作
     } finally {
       setSubmitting(false)
-      console.log('[CreateReportModal] handleCreateAndExtract 完成, phase 应保持 extracting')
     }
   }
 
@@ -555,20 +526,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           supplement_text: values.supplement || null,
           template_code: values.template_id || null,
         })
-        // 如果有新上传的文件，追加到任务
-        if (items.length > 0) {
-          const detail = await uploadJobFiles(
-            job.id,
-            items.map((it) => it.file),
-            items.map((it) => it.role),
-          )
-          // 更新服务端文件列表
-          if (detail.data?.files) {
-            setServerFiles(detail.data.files)
-          }
-        }
-        // 清空本地文件列表（已上传到服务端）
-        setItems([])
         msgApi.success('已保存')
         onCreated?.() // 刷新列表
         handleClose() // 关闭弹窗
@@ -581,8 +538,9 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             docVersion: values.version || 'v1.0',
             drugName: values.drug_name || values.title,
             supplementText: values.supplement?.trim() || undefined,
-            fileRoles: items.map((it) => it.role),
-            files: items.map((it) => it.file),
+            // 资料统一进项目知识库：不再携带任务级文件
+            files: [],
+            fileRoles: [],
             projectId,
             reportId: editingReport.id, // 关联已有报告
             reportTitle: values.title,
@@ -604,8 +562,9 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           docVersion: values.version || 'v1.0',
           drugName: values.drug_name || values.title,
           supplementText: values.supplement?.trim() || undefined,
-          fileRoles: items.map((it) => it.role),
-          files: items.map((it) => it.file),
+          // 资料统一进项目知识库：不再携带任务级文件
+          files: [],
+          fileRoles: [],
           projectId,
           reportTitle: values.title,
           reportType: values.report_type,
@@ -660,7 +619,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const handleBackToForm = () => {
     setJob(null); jobIdRef.current = null
     setExtractedSlots([]); setEditedSlots({})
-    setServerFiles([]); setReportPreviewError(null)
+    setReportPreviewError(null)
     setPhase('form')
   }
 
@@ -719,154 +678,16 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   // ─── 关闭弹窗 ───
   const handleClose = () => {
-    form.resetFields(); setItems([]); setServerFiles([]); setJob(null); jobIdRef.current = null
+    form.resetFields(); setJob(null); jobIdRef.current = null
     setPhase('form'); setExtractedSlots([]); setEditedSlots({})
     setReportPreviewError(null); setFormReady(!editingReport)
     onCancel()
   }
 
-  // 图片文件缩略图 URL（memo 避免每次渲染创建新 blob URL）
-  const thumbUrls = useMemo(() => {
-    const map = new Map<string, string>()
-    items.forEach((it) => {
-      const ext = normalizeExt(it.file.name)
-      if (['png', 'jpg', 'jpeg', 'bmp', 'webp'].includes(ext)) {
-        map.set('local:' + it.file.name + it.file.size, URL.createObjectURL(it.file))
-      }
-    })
-    return map
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items.map((it) => it.file.name + it.file.size).join(',')])
-
-  // 清理缩略图 URL
-  useEffect(() => {
-    return () => { thumbUrls.forEach((url) => URL.revokeObjectURL(url)) }
-  }, [thumbUrls])
-
-  // 总文件数（本地 + 服务端）
-  const totalFileCount = items.length + serverFiles.length
-
-  // 转换为 antd Upload fileList（合并本地文件与服务端已保存文件）
-  const uploadFileList = useMemo<UploadFile[]>(() => {
-    const localFiles = items.map((it, idx) => ({
-      uid: `local-${idx}`,
-      name: it.file.name,
-      status: 'done' as const,
-      size: it.file.size,
-      originFileObj: it.file as any,
-      thumbUrl: thumbUrls.get('local:' + it.file.name + it.file.size),
-    }))
-    const remoteFiles = serverFiles.map((sf, idx) => ({
-      uid: `remote-${idx}`,
-      name: sf.original_filename,
-      status: 'done' as const,
-      size: sf.size_bytes,
-      // 标记为服务端文件，供 onPreview/onRemove 识别
-      _serverFile: sf,
-    }))
-    return [...localFiles, ...remoteFiles]
-  }, [items, serverFiles, thumbUrls])
-
-  // 预览文件（支持本地文件与服务端文件）
-  const handlePreviewFile = async (file: UploadFile) => {
-    const sf = (file as any)._serverFile as DocGenInputFileResponse | undefined
-    if (sf) {
-      // 服务端文件：需要 jobId 才能下载
-      if (!jobIdRef.current) {
-        msgApi.warning('请先创建任务后再预览文件')
-        return
-      }
-      try {
-        const blob = await fetchDocGenInputFileBlob(jobIdRef.current, sf.id)
-        const previewFile = new File([blob], sf.original_filename, { type: blob.type })
-        setPreviewFile(previewFile)
-      } catch (e) {
-        msgApi.error(e instanceof Error ? e.message : '加载文件失败，请稍后重试')
-      }
-    } else {
-      // 本地文件
-      const f = file.originFileObj ?? items[Number(file.uid?.replace('local-', ''))]?.file
-      if (f) {
-        openFilePreview(f)
-      } else {
-        msgApi.warning('文件不存在或已过期')
-      }
-    }
-  }
-
-  // 下载文件（直接保存到本地）
-  const handleDownloadFile = async (file: UploadFile) => {
-    const sf = (file as any)._serverFile as DocGenInputFileResponse | undefined
-    if (sf) {
-      // 服务端文件：需要 jobId 才能下载
-      if (!jobIdRef.current) {
-        msgApi.warning('请先创建任务后再下载文件')
-        return
-      }
-      try {
-        const blob = await fetchDocGenInputFileBlob(jobIdRef.current, sf.id)
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = sf.original_filename
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        window.URL.revokeObjectURL(url)
-      } catch (e) {
-        msgApi.error(e instanceof Error ? e.message : '下载文件失败，请稍后重试')
-      }
-    } else {
-      // 本地文件：直接保存
-      const f = file.originFileObj ?? items[Number(file.uid?.replace('local-', ''))]?.file
-      if (f) {
-        const url = window.URL.createObjectURL(f)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = f.name
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        window.URL.revokeObjectURL(url)
-      } else {
-        msgApi.warning('文件不存在或已过期')
-      }
-    }
-  }
-
-  // 删除文件（支持本地文件与服务端文件）
-  const handleRemoveFile = async (file: UploadFile): Promise<boolean> => {
-    const sf = (file as any)._serverFile as DocGenInputFileResponse | undefined
-    if (sf) {
-      // 服务端文件
-      if (jobIdRef.current) {
-        // 有 job：尝试调用后端删除
-        try {
-          const res = await fetch(
-            `/api/v1/research/doc-gen/jobs/${jobIdRef.current}/input-files/${sf.id}`,
-            { method: 'DELETE', credentials: 'include' },
-          )
-          if (res.ok) {
-            msgApi.success(`已删除「${sf.original_filename}」`)
-          }
-          // 无论后端是否成功，都从本地状态移除（后端可能因 job 状态拒绝，但用户仍可从 UI 移除）
-        } catch {
-          // 网络错误等，仍然从本地移除
-        }
-      }
-      // 从本地状态移除
-      setServerFiles((prev) => prev.filter((f) => f.id !== sf.id))
-    } else {
-      // 本地文件
-      const idx = Number(file.uid?.replace('local-', ''))
-      if (!isNaN(idx)) removeFile(idx)
-    }
-    return true
-  }
+  // 注：任务级资料上传已随新流程移除，资料统一在项目知识库里管理（KnowledgeBaseModal）
 
   const selectedTplId = Form.useWatch('template_id', form) as string | undefined
   const selectedTpl = templates.find((t) => t.id === selectedTplId)
-  const allowedExts = (limits?.allowed_extensions ?? []).map((e) => e.replace(/^\./, '').toLowerCase())
 
   // ─── 弹窗底部按钮 ───
   const renderFooter = () => {
@@ -881,10 +702,10 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
               key="generate"
               type="primary"
               icon={<ThunderboltOutlined />}
-              onClick={handleCreateAndExtract}
+              onClick={handleCreateAndGenerate}
               loading={submitting}
             >
-              AI 创建报告
+              AI 生成报告
             </Button>,
           ]
         }
@@ -893,13 +714,13 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           <Button key="cancel" onClick={handleClose}>取消</Button>,
           <Button key="create" onClick={handleSave} loading={saving}>创建</Button>,
           <Button
-            key="ai-extract"
+            key="ai-generate"
             type="primary"
             icon={<ThunderboltOutlined />}
-            onClick={handleCreateAndExtract}
+            onClick={handleCreateAndGenerate}
             loading={submitting}
           >
-            AI 创建报告
+            AI 生成报告
           </Button>,
         ]
       case 'extracting': {
@@ -1061,145 +882,38 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             </div>
           )}
 
-          {/* 第四行：参考文件上传 */}
-          <Form.Item
-            label={`参考文件上传（最多 ${MAX_FILES} 个，单文件 ≤ ${MAX_FILE_MB}MB）`}
-          >
-            <div style={{ display: 'flex', gap: 16 }}>
-              {/* 左侧：上传区域 + 文件列表 */}
-              <div style={{ flex: 1 }}>
-                {/* 上传按钮 */}
-                <Upload
-                  multiple
-                  fileList={uploadFileList}
-                  beforeUpload={handleAddFile}
-                  accept={allowedExts.length > 0 ? allowedExts.map((e) => `.${e}`).join(',') : undefined}
-                  disabled={totalFileCount >= MAX_FILES}
-                  showUploadList={false}
-                >
-                  <Button icon={<UploadOutlined />} disabled={totalFileCount >= MAX_FILES}>
-                    选择文件
-                  </Button>
-                </Upload>
-                {/* 文件列表区域：固定高度，超出滚动 */}
-                {uploadFileList.length > 0 && (
-                  <div
-                    style={{
-                      maxHeight: 200,
-                      overflowY: 'auto',
-                      marginTop: 8,
-                      padding: '0 4px',
-                    }}
-                  >
-                    {uploadFileList.map((file) => {
-                      const sf = (file as any)._serverFile as DocGenInputFileResponse | undefined
-                      const parseStatus = sf?.parse_status
-                      const parseFailed = parseStatus === 'failed'
-                      const parseWarnings = sf?.warnings || []
-                      return (
-                        <div
-                          key={file.uid}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            justifyContent: 'space-between',
-                            padding: '8px 12px',
-                            marginBottom: 8,
-                            backgroundColor: parseFailed ? '#fff2f0' : '#fafafa',
-                            border: `1px solid ${parseFailed ? '#ffccc7' : '#d9d9d9'}`,
-                            borderRadius: 6,
-                          }}
-                        >
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <span
-                                style={{
-                                  fontSize: 14,
-                                  color: parseFailed ? '#cf1322' : '#262626',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                }}
-                                title={file.name}
-                              >
-                                {file.name}
-                              </span>
-                              {sf && (
-                                <Tag
-                                  color={
-                                    parseStatus === 'failed' ? 'error' :
-                                    parseStatus === 'ai_fallback' ? 'warning' :
-                                    parseStatus === 'done' ? 'success' : 'default'
-                                  }
-                                  style={{ margin: 0, fontSize: 11 }}
-                                >
-                                  {parseStatus === 'failed' ? '解析失败' :
-                                   parseStatus === 'ai_fallback' ? 'AI 解析' :
-                                   parseStatus === 'done' ? '已解析' : '待解析'}
-                                </Tag>
-                              )}
-                            </div>
-                            <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
-                              {file.size ? `${(file.size / 1024).toFixed(1)} KB` : ''}
-                              {sf?.char_count ? ` · ${sf.char_count} 字` : ''}
-                            </div>
-                            {parseFailed && parseWarnings.length > 0 && (
-                              <div style={{ fontSize: 12, color: '#cf1322', marginTop: 4 }}>
-                                {parseWarnings[0]}
-                              </div>
-                            )}
-                          </div>
-                          <Space size={4}>
-                            <Button
-                              type="link"
-                              size="small"
-                              icon={<EyeOutlined />}
-                              onClick={() => handlePreviewFile(file)}
-                            >
-                              预览
-                            </Button>
-                            <Button
-                              type="link"
-                              size="small"
-                              icon={<DownloadOutlined />}
-                              onClick={() => handleDownloadFile(file)}
-                            >
-                              下载
-                            </Button>
-                            <Button
-                              type="link"
-                              size="small"
-                              danger
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleRemoveFile(file)}
-                            >
-                              删除
-                            </Button>
-                          </Space>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-                {totalFileCount === 0 && (
-                  <div style={{ padding: '8px 0', color: '#999' }}>
-                    点击按钮选择参考文件，支持图片、PDF、Word、Excel、Markdown 等格式
-                  </div>
+          {/* 第四行：项目知识库（AI 生成报告的资料源；建库/上传/看进度都在弹窗内完成，不跳页面） */}
+          <Form.Item label="项目知识库">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                padding: '10px 12px',
+                border: '1px solid #d9d9d9',
+                borderRadius: 6,
+                background: '#fafafa',
+              }}
+            >
+              <div style={{ fontSize: 13, color: '#595959' }}>
+                {kb ? (
+                  <Space size={8} wrap>
+                    <span>
+                      已关联知识库 <b>{kb.name}</b>
+                    </span>
+                    <Tag color="success">已解析 {kbSummary.parsed}</Tag>
+                    {kbSummary.pending > 0 ? <Tag color="processing">解析中 {kbSummary.pending}</Tag> : null}
+                    {kbSummary.failed > 0 ? <Tag color="error">失败 {kbSummary.failed}</Tag> : null}
+                    <span style={{ color: '#8c8c8c' }}>共 {kbSummary.total || kb.document_count} 份资料</span>
+                  </Space>
+                ) : (
+                  '该项目还没有项目知识库。AI 将仅使用项目登记数据与补充信息生成报告；建议先上传项目资料到知识库。'
                 )}
               </div>
-              {/* 右侧：AI 提取文档信息按钮 */}
-              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <Button
-                  type="primary"
-                  htmlType="button"
-                  icon={<ThunderboltOutlined />}
-                  onClick={handleCreateAndExtract}
-                  loading={submitting}
-                  size="large"
-                >
-                  AI 提取文档信息
-                </Button>
-              </div>
+              <Button htmlType="button" icon={<CloudUploadOutlined />} onClick={() => setKbModalOpen(true)}>
+                {kb ? '上传 / 管理资料' : '创建知识库并上传资料'}
+              </Button>
             </div>
           </Form.Item>
 
@@ -1215,9 +929,12 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         </Form>
       )}
 
-      {/* ═══ Phase 2: 信息提取中 ═══ */}
+      {/* ═══ Phase 2: AI 生成中（从项目知识库检索并按模板填充）═══ */}
       {phase === 'extracting' && (
         <div style={{ padding: '40px 24px' }}>
+          <div style={{ textAlign: 'center', marginBottom: 16, color: '#595959' }}>
+            AI 正在从项目知识库检索资料并填充模板，请稍候…
+          </div>
           {/* 进度条 */}
           <div style={{ marginBottom: 24 }}>
             <Progress
@@ -1464,9 +1181,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             </div>
           )}
           {/* 文件解析状态摘要 */}
-          {serverFiles.length > 0 && (
-            <FileParseStatusSummary files={serverFiles} />
-          )}
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
             <Button icon={<ReloadOutlined />} onClick={handleReExtract} loading={extracting}>
               重新提取
@@ -1519,6 +1233,40 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
             title="报告已生成"
             description="AI 生成内容需人工审核确认后方可使用。"
           />
+          {/* 资料来源：知识库里未解析完的资料检索不到，这里如实说明参与了哪些 */}
+          <div style={{ marginBottom: 16, fontSize: 13, color: '#595959' }}>
+            {kbStatsTotal > 0 ? (
+              <Space size={8} wrap>
+                <span>
+                  本次基于项目知识库{kbStatsName ? `「${kbStatsName}」` : ''}中 <b>{kbStatsParsed}</b> 份已解析资料生成
+                  {kbStatsTotal > kbStatsParsed ? `（共 ${kbStatsTotal} 份，其余解析中或失败，未参与）` : ''}
+                </span>
+                <Button type="link" size="small" onClick={() => setKbModalOpen(true)}>
+                  查看知识库
+                </Button>
+              </Space>
+            ) : (
+              '本次未关联项目知识库：内容来自项目登记数据与补充信息。'
+            )}
+          </div>
+          {/* 覆盖预检：把「哪些项本来就没有资料」说清楚，避免用户以为 AI 漏填了 */}
+          {coverageChecked > 0 && (
+            <div style={{ marginBottom: 16, fontSize: 13, color: '#595959' }}>
+              <div>
+                生成前逐项预检：<b>{coverageChecked}</b> 个填充项中，可填 {coverageFillable} 项、部分可填{' '}
+                {coveragePartial} 项
+                {coverageMissing > 0 ? `、知识库中无资料 ${coverageMissing} 项` : ''}
+                （加权覆盖率 {Math.round(coverageRatio * 100)}%）。
+              </div>
+              {coverageMissingLabels.length > 0 && (
+                <div style={{ marginTop: 4 }}>
+                  无资料项：{coverageMissingLabels.join('、')}
+                  {coverageMissing > coverageMissingLabels.length ? ' 等' : ''}
+                  ——生成时无资料可引，报告中以「待补充」呈现，需人工填写。
+                </div>
+              )}
+            </div>
+          )}
           {/* 操作按钮 */}
           {job && (
             <div style={{ marginBottom: 16 }}>
@@ -1563,7 +1311,20 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
       )}
 
       {/* ─── 文件预览弹窗 ─── */}
-      <DocGenFilePreview file={previewFile} onClose={closeFilePreview} />
+      <KnowledgeBaseModal
+        open={kbModalOpen}
+        projectId={projectId}
+        onChanged={refreshKb}
+        onClose={() => {
+          setKbModalOpen(false)
+          refreshKb()
+          // 是从「生成前确认」里点进来的：关闭后自动重跑预检，用户不必再点一次生成
+          if (resumeAfterKbRef.current) {
+            resumeAfterKbRef.current = false
+            void handleCreateAndGenerate()
+          }
+        }}
+      />
 
       {/* ─── 模板预览弹窗 ─── */}
       <Modal

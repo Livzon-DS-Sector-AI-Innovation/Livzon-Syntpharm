@@ -81,13 +81,15 @@ def _build_slot_guides(
         if guide is None:
             result.append({"key": key, "label": key})
         else:
-            result.append({
-                "key": guide.key,
-                "label": guide.key,
-                "key_indicators": guide.key_indicators,
-                "content_pattern": guide.content_pattern,
-                "common_locations": guide.common_locations,
-            })
+            result.append(
+                {
+                    "key": guide.key,
+                    "label": guide.key,
+                    "key_indicators": guide.key_indicators,
+                    "content_pattern": guide.content_pattern,
+                    "common_locations": guide.common_locations,
+                }
+            )
     return result
 
 
@@ -275,12 +277,14 @@ def build_file_analysis_context(
             continue
         extraction = result.slot_extractions.get(slot_key)
         if extraction is not None and extraction.found and extraction.extracted_content:
-            context_items.append({
-                "file_id": file_id,
-                "file_name": result.file_name,
-                "content": extraction.extracted_content,
-                "relevance": extraction.relevance,
-            })
+            context_items.append(
+                {
+                    "file_id": file_id,
+                    "file_name": result.file_name,
+                    "content": extraction.extracted_content,
+                    "relevance": extraction.relevance,
+                }
+            )
     return context_items
 
 

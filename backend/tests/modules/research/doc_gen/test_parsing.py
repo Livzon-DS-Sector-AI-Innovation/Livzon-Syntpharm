@@ -134,9 +134,30 @@ async def test_empty_file_is_reported(tmp_path: Path) -> None:
 # ─────────────────── 类型清单 / 专用库 / 动态判定 ───────────────────
 
 EXPECTED_EXTENSIONS = {
-    ".pdf", ".docx", ".dotx", ".doc", ".wps", ".xlsx", ".xlsm", ".xls", ".et",
-    ".pptx", ".odt", ".ods", ".odp", ".csv", ".tsv", ".json", ".xml", ".html",
-    ".htm", ".rtf", ".txt", ".md", ".png", ".jpg",
+    ".pdf",
+    ".docx",
+    ".dotx",
+    ".doc",
+    ".wps",
+    ".xlsx",
+    ".xlsm",
+    ".xls",
+    ".et",
+    ".pptx",
+    ".odt",
+    ".ods",
+    ".odp",
+    ".csv",
+    ".tsv",
+    ".json",
+    ".xml",
+    ".html",
+    ".htm",
+    ".rtf",
+    ".txt",
+    ".md",
+    ".png",
+    ".jpg",
 }
 
 

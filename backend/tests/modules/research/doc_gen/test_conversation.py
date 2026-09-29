@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 from uuid import uuid4
 
@@ -54,7 +55,7 @@ class FakeResult:
     def all(self) -> list[Any]:
         return self._items
 
-    def __iter__(self):  # noqa: D105
+    def __iter__(self) -> Iterator[Any]:  # noqa: D105
         return iter(self._items)
 
 
@@ -145,8 +146,9 @@ async def test_checklist_buckets_pending_and_review() -> None:
     spec = _spec()
     job_id = uuid4()
     rows = _rows(spec, job_id)
-    ok_key, verify_key = next(k for k, v in rows.items() if v.state == status.STATUS_OK), next(
-        k for k, v in rows.items() if v.state == status.STATUS_NEEDS_VERIFY
+    ok_key, verify_key = (
+        next(k for k, v in rows.items() if v.state == status.STATUS_OK),
+        next(k for k, v in rows.items() if v.state == status.STATUS_NEEDS_VERIFY),
     )
     conflict_key = next(k for k, v in rows.items() if v.state == status.STATUS_CONFLICT)
     label = {s.key: s.label for s in spec.slots}
@@ -187,7 +189,7 @@ async def test_send_message_applies_fills() -> None:
     conv = _conversation()
     rows = _rows(spec, conv.job_id)
     target_key = next(k for k, v in rows.items() if v.state == status.STATUS_CONFLICT)
-    session = FakeSession(conv, rows, messages=[])
+    session: Any = FakeSession(conv, rows, messages=[])
     llm = FakeLLM({"fills": [{"key": target_key, "text": "CXHB2400123"}], "answer": "已记录，请问申请日期？"})
     _, assistant = await send_user_message(
         session, conv.job_id, spec, f"{target_key} 是 CXHB2400123", config=_config(), llm=llm
@@ -207,7 +209,7 @@ async def test_send_message_rejects_invented_key() -> None:
     spec = _spec()
     conv = _conversation()
     rows = _rows(spec, conv.job_id)
-    session = FakeSession(conv, rows, messages=[])
+    session: Any = FakeSession(conv, rows, messages=[])
     llm = FakeLLM({"fills": [{"key": "made_up_xxx", "text": "x"}], "answer": "好的"})
     _, assistant = await send_user_message(session, conv.job_id, spec, "随便说点什么", config=_config(), llm=llm)
     assert "made_up_xxx" not in rows  # 没有发明新槽位行
@@ -223,7 +225,7 @@ async def test_send_message_degrades_when_model_down() -> None:
     rows = _rows(spec, conv.job_id)
     target_key = next(k for k, v in rows.items() if v.state == status.STATUS_CONFLICT)
     original_text = rows[target_key].text
-    session = FakeSession(conv, rows, messages=[])
+    session: Any = FakeSession(conv, rows, messages=[])
     llm = FakeLLM(LLMProviderError("网关不可用"))
     _, assistant = await send_user_message(session, conv.job_id, spec, "补充信息", config=_config(), llm=llm)
     assert llm.calls == 1
@@ -236,7 +238,7 @@ async def test_send_message_fallback_model_used() -> None:
     spec = _spec()
     conv = _conversation()
     rows = _rows(spec, conv.job_id)
-    session = FakeSession(conv, rows, messages=[])
+    session: Any = FakeSession(conv, rows, messages=[])
 
     class FallbackLLM:
         def __init__(self) -> None:
@@ -259,7 +261,7 @@ async def test_send_message_round_limit() -> None:
     """轮数用尽后拒绝继续对话。"""
     spec = _spec()
     conv = _conversation(round_count=3, max_rounds=3)
-    session = FakeSession(conv, _rows(spec, conv.job_id), messages=[])
+    session: Any = FakeSession(conv, _rows(spec, conv.job_id), messages=[])
     try:
         await send_user_message(
             session, conv.job_id, spec, "继续", config=_config(), llm=FakeLLM({"fills": [], "answer": ""})
@@ -279,13 +281,13 @@ async def test_ensure_conversation_creates_checklist_once() -> None:
     """首建写入盘点卡消息；已存在会话时幂等返回。"""
     spec = _spec()
     rows = _rows(spec, uuid4())
-    session = FakeSession(None, rows, messages=[])
+    session: Any = FakeSession(None, rows, messages=[])
     conv = await ensure_conversation(session, uuid4(), spec, rows, config=_config())
     assert session.flushed == 1
     cards = [o for o in session.added if isinstance(o, DocGenMessage)]
     assert len(cards) == 1 and cards[0].content.startswith("【资料盘点】")
     # 幂等：会话已存在则不再生成
-    session2 = FakeSession(conv, rows, messages=[])
+    session2: Any = FakeSession(conv, rows, messages=[])
     again = await ensure_conversation(session2, conv.job_id, spec, rows, config=_config())
     assert again is conv
     assert session2.flushed == 0
@@ -295,7 +297,7 @@ async def test_complete_conversation_sets_status() -> None:
     """完成对话：状态置 completed，已补值不受影响。"""
     spec = _spec()
     conv = _conversation()
-    session = FakeSession(conv, _rows(spec, conv.job_id), messages=[])
+    session: Any = FakeSession(conv, _rows(spec, conv.job_id), messages=[])
     result = await complete_conversation(session, conv.job_id)
     assert result.status == conversation_mod.CONVERSATION_COMPLETED
 

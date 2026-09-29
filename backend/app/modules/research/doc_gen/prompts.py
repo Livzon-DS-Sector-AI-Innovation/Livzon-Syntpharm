@@ -21,7 +21,9 @@ SYSTEM_RULES = (
     "不要翻译成中文、不要改写上下标格式、不要省略；资料中同时出现中英文名称时，两者都要提取。"
 )
 
-_TEMPLATE_HINT_WARNING = "注意：资料片段中若出现「XXX」「[待补充」「【AI草稿」等占位文本，那是模板残留，不是事实，不得作为取值。"
+_TEMPLATE_HINT_WARNING = (
+    "注意：资料片段中若出现「XXX」「[待补充」「【AI草稿」等占位文本，那是模板残留，不是事实，不得作为取值。"
+)
 
 
 def _slot_brief(slot: dict[str, Any]) -> str:
@@ -31,6 +33,14 @@ def _slot_brief(slot: dict[str, Any]) -> str:
     ]
     if slot.get("query_hint"):
         lines.append(f"  取值说明：{slot['query_hint']}")
+    if slot.get("unit"):
+        lines.append(f"  量纲要求：{slot['unit']}（值必须带上该量纲）")
+    if slot.get("enum_values"):
+        lines.append(f"  允许取值：{'、'.join(slot['enum_values'])}（只能取其中之一）")
+    if slot.get("cardinality") == "one_or_more":
+        lines.append("  本槽位允许多个值：多个值之间用「；」分隔，写在同一字段内。")
+    if slot.get("source_scope") == "project_kb":
+        lines.append("  取值来源受限：本槽位只允许取自【项目知识库】资料片段，其他来源不得作为取值。")
     if slot.get("search_terms"):
         lines.append(f"  资料中的同义/近义表述：{'、'.join(slot['search_terms'])}")
     if slot.get("draft_allowed"):
@@ -117,12 +127,15 @@ def build_extract_prompt(
 
 _TEMPLATE_ANALYSIS_SYSTEM = (
     "你是制药研发文档的模板分析专家。你的任务是阅读一份技术研究报告模板的结构定义，"
-    "理解每个槽位（可填充位置）需要什么样的内容，并为后续的信息抽取提供精准指引。"
+    "理解每个槽位（可填充位置）需要什么样的内容，并为后续的信息抽取提供精准指引，"
+    "同时补全每个槽位的「需求描述」。"
     "规则："
     "1) 只能基于模板定义本身进行分析，不要编造模板中不存在的字段或要求；"
     "2) 对每个槽位，给出资料中应关注的关键信息类型、常见表述方式和可能的数据来源；"
     "3) 特别注意制药行业的专业术语：化学式、CAS号、INN名称、剂型规格等必须准确；"
-    "4) 输出纯 JSON，不要包含任何解释或额外文字。"
+    "4) 需求描述只写模板语义能支撑的结论；拿不准一律用保守默认值"
+    "（unit 空字符串、enum_values 空数组、cardinality=single、source_scope=any），禁止编造；"
+    "5) 输出纯 JSON，不要包含任何解释或额外文字。"
 )
 
 
@@ -130,13 +143,19 @@ def build_template_analysis_prompt(
     slots: list[dict[str, Any]],
     template_name: str = "",
 ) -> list[dict[str, str]]:
-    """构造模板分析 prompt：让模型理解模板结构并输出每槽位的抽取指引。
+    """构造模板分析 prompt：让模型理解模板结构并输出每槽位的抽取指引与需求描述。
 
     指引内容包括：
     - key_indicators：资料中表明该槽位有内容可抽的关键信号词
     - content_pattern：期望的内容的结构化描述
     - common_locations：该类信息在研究资料中通常出现的位置
     - quality_criteria：判断抽取内容质量的标准
+
+    需求描述（template_structure v2）：
+    - unit：期望量纲，如 mg/mL、℃、h
+    - enum_values：允许取值集合（仅当取值是有限集合时填写，如「是/否」「片剂/胶囊」）
+    - cardinality：single（单值）或 one_or_more（可多值）
+    - source_scope：any（不限）或 project_kb（只允许取自项目知识库）
     """
     slot_block = "\n".join(
         f"- key={s['key']} 名称={s['label']} 类型={s.get('expects', 'text')} "
@@ -153,13 +172,19 @@ def build_template_analysis_prompt(
                 "content_pattern": "期望内容的简要描述，如'原料药品种的全称、CAS号和分子式'",
                 "common_locations": ["该类信息在研究资料中通常出现的位置，如'文献综述部分'"],
                 "quality_criteria": "判断抽取内容是否合格的标准",
+                "unit": "期望量纲，如 mg/mL、℃；不确定填空字符串",
+                "enum_values": ["允许取值；取值不受限时给空数组"],
+                "cardinality": "single 或 one_or_more",
+                "source_scope": "any 或 project_kb（仅当该槽位必须来自项目知识库时才填 project_kb）",
             }
         ]
     }
     user = (
         f"请分析以下制药研发技术研究报告模板「{template_name}」的槽位定义，"
-        "为每个槽位输出抽取指引：\n\n"
+        "为每个槽位输出抽取指引与需求描述：\n\n"
         f"【模板槽位】\n{slot_block}\n\n"
+        "需求描述字段若无法从模板语义判断，必须给保守默认值"
+        "（unit 为空字符串、enum_values 为空数组、cardinality=single、source_scope=any）。\n"
         "输出结构示例：\n"
         f"{json.dumps(schema, ensure_ascii=False)}"
     )
@@ -273,7 +298,9 @@ def build_table_prompt(
 ) -> list[dict[str, str]]:
     """构造表格行抽取 prompt。"""
     columns = slot.get("columns", [])
-    col_desc = "、".join(f"{c['key']}（{c['label']}，上限 {c.get('max_chars', 80)} 字）" for c in columns if c.get("writable", True))
+    col_desc = "、".join(
+        f"{c['key']}（{c['label']}，上限 {c.get('max_chars', 80)} 字）" for c in columns if c.get("writable", True)
+    )
     schema = {
         "rows": [
             {

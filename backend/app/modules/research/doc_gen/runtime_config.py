@@ -69,11 +69,12 @@ class RuntimeConfig:
     # 稳定性护栏：解析/模型调用/整任务三级硬超时 + 租约心跳，卡住能被强制终止
     parse_timeout_seconds: int = 180
     llm_call_timeout_seconds: int = 180
-    job_timeout_seconds: int = 2400
+    job_timeout_seconds: float = 2400
     heartbeat_seconds: int = 60
     # 对话补全：初抽完成后与用户多轮对话补值（工具调用走 JSON 模拟模式）
-    # 默认开启：提取完成后停在 review 阶段，等用户点击「AI 创建报告」按钮才生成报告
-    chat_enabled: bool = True
+    # 默认关闭 = 直达生成：新建报告即排队，一次跑完「提取 → 成文 → 渲染」，
+    # 中间不停「等待人工确认」、不建对话会话（人工修正走「重新生成」开新任务）
+    chat_enabled: bool = False
     chat_max_rounds: int = 3
     # 主模型重试仍失败后的备用模型名（同一网关下的备模型）；为空则不启用备模型
     fallback_model_name: str = ""
@@ -104,7 +105,48 @@ class RuntimeConfig:
     output_reserve_tokens: int = 2048
     char_per_token: float = 1.6
     context_water_level: float = 0.6
-
+    # 项目知识库（RAGFlow）：按槽位召回片段作为虚拟资料参与提取与证据回检
+    # 开关默认开启；项目未挂知识库或知识库服务不可用时自动退回「仅用本地资料」
+    kb_enabled: bool = True
+    # 单槽位从知识库召回的片段数（top_k）
+    kb_top_k: int = 6
+    # 召回相似度下限：低于该值的片段不进入 prompt
+    kb_similarity_threshold: float = 0.2
+    # 混合检索里向量路权重（0=纯关键词，1=纯向量），RAGFlow 侧同名参数
+    kb_vector_weight: float = 0.3
+    # 单槽位知识库召回超时（秒），超时即降级为「本次无知识库资料」
+    kb_timeout_seconds: int = 30
+    # 知识库摸底与事实抽取：把整个知识库先「榨」成结构化事实，填充更完整
+    # （实现见 knowledge_base.facts）。索引与事实都挂在知识库维度、可跨任务复用，
+    # 因此除首次外每次任务只做增量；失败一律静默降级，不影响成文
+    kb_survey_enabled: bool = True
+    # 单次任务镜像的切片数硬上限（0=不限）：大库首次会慢一点，但任务不会被拖垮
+    kb_survey_max_chunks: int = 2000
+    fact_extract_enabled: bool = True
+    # 单次任务抽事实的切片数硬上限（0=不限）：增量累计，多跑几轮即可覆盖全库
+    fact_extract_max_chunks: int = 200
+    # 事实抽取每批送入模型的切片数
+    fact_extract_batch_size: int = 4
+    # 事实召回开关：填充项优先从本地事实库匹配，无命中再回落实时检索
+    fact_retrieval_enabled: bool = True
+    fact_top_k: int = 8
+    # 事实召回置信度下限：低于该值的事实不参与匹配
+    fact_min_confidence: float = 0.4
+    # 缺口闭环（B4）：对「资料没命中/模型没返回/依据没核对上」的填充项换一套检索口径再试。
+    # 每轮只跑缺口槽位、且只接受确有提升的结果；轮数设 0 即关闭（回到「跑一轮就结束」）
+    gap_retry_enabled: bool = True
+    gap_retry_rounds: int = 2
+    # 重试轮的候选块上限倍数：默认口径 0 命中的槽位，放宽候选数才有机会捞到
+    gap_retry_candidate_multiplier: int = 2
+    # 重试轮的上下文预算倍数：缺口槽位数量少，预算给足才能让模型看到新捞到的候选
+    gap_retry_context_multiplier: float = 1.5
+    # 知识库覆盖预检（A2）：索引刷到最新后算「哪些填充项库里根本没料」。
+    # 只做离线词面匹配（不调模型、不压知识库），结果随 job.stats 落库，供完成页与看板解释缺口
+    kb_coverage_enabled: bool = True
+    # 参与离线匹配的索引文本条数上限（事实 + 切片）
+    kb_coverage_max_chunks: int = 3000
+    # 无本地索引时实时检索兜底的槽位上限（预检接口用；流水线内已建过索引故不走兜底）
+    kb_coverage_max_slots: int = 60
 
     @property
     def context_chars(self) -> int:
@@ -188,7 +230,7 @@ async def load_runtime_config() -> RuntimeConfig:
         llm_call_timeout_seconds=await get(MODULE, "DOC_GEN_LLM_CALL_TIMEOUT_SECONDS", 180),
         job_timeout_seconds=await get(MODULE, "DOC_GEN_JOB_TIMEOUT_SECONDS", 2400),
         heartbeat_seconds=await get(MODULE, "DOC_GEN_HEARTBEAT_SECONDS", 60),
-        chat_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_CHAT_ENABLED", True),
+        chat_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_CHAT_ENABLED", False),
         chat_max_rounds=await get(MODULE, "DOC_GEN_CHAT_MAX_ROUNDS", 3),
         fallback_model_name=await get_module_setting(MODULE, "DOC_GEN_FALLBACK_MODEL", ""),
         template_model_name=await get_module_setting(MODULE, "DOC_GEN_TEMPLATE_MODEL", ""),
@@ -205,4 +247,26 @@ async def load_runtime_config() -> RuntimeConfig:
         output_reserve_tokens=await get(MODULE, "DOC_GEN_OUTPUT_RESERVE_TOKENS", 2048),
         char_per_token=await get_module_setting_float(MODULE, "DOC_GEN_CHAR_PER_TOKEN", 1.6),
         context_water_level=await get_module_setting_float(MODULE, "DOC_GEN_CONTEXT_WATER_LEVEL", 0.6),
+        kb_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_ENABLED", True),
+        kb_top_k=await get(MODULE, "DOC_GEN_KB_TOP_K", 6),
+        kb_similarity_threshold=await get_module_setting_float(MODULE, "DOC_GEN_KB_SIMILARITY_THRESHOLD", 0.2),
+        kb_vector_weight=await get_module_setting_float(MODULE, "DOC_GEN_KB_VECTOR_WEIGHT", 0.3),
+        kb_timeout_seconds=await get(MODULE, "DOC_GEN_KB_TIMEOUT_SECONDS", 30),
+        kb_survey_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_SURVEY_ENABLED", True),
+        kb_survey_max_chunks=await get(MODULE, "DOC_GEN_KB_SURVEY_MAX_CHUNKS", 2000),
+        fact_extract_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FACT_EXTRACT_ENABLED", True),
+        fact_extract_max_chunks=await get(MODULE, "DOC_GEN_FACT_EXTRACT_MAX_CHUNKS", 200),
+        fact_extract_batch_size=await get(MODULE, "DOC_GEN_FACT_EXTRACT_BATCH_SIZE", 4),
+        fact_retrieval_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FACT_RETRIEVAL_ENABLED", True),
+        fact_top_k=await get(MODULE, "DOC_GEN_FACT_TOP_K", 8),
+        fact_min_confidence=await get_module_setting_float(MODULE, "DOC_GEN_FACT_MIN_CONFIDENCE", 0.4),
+        gap_retry_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_GAP_RETRY_ENABLED", True),
+        gap_retry_rounds=await get(MODULE, "DOC_GEN_GAP_RETRY_ROUNDS", 2),
+        gap_retry_candidate_multiplier=await get(MODULE, "DOC_GEN_GAP_RETRY_CANDIDATE_MULTIPLIER", 2),
+        gap_retry_context_multiplier=await get_module_setting_float(
+            MODULE, "DOC_GEN_GAP_RETRY_CONTEXT_MULTIPLIER", 1.5
+        ),
+        kb_coverage_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_COVERAGE_ENABLED", True),
+        kb_coverage_max_chunks=await get(MODULE, "DOC_GEN_KB_COVERAGE_MAX_CHUNKS", 3000),
+        kb_coverage_max_slots=await get(MODULE, "DOC_GEN_KB_COVERAGE_MAX_SLOTS", 60),
     )

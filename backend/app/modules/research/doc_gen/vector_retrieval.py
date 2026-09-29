@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 
@@ -153,7 +153,7 @@ async def embed_texts(texts: list[str], *, llm_client: Any, model_name: str | No
     if not texts:
         return []
     try:
-        return await llm_client.embed(texts, model_override=model_name)
+        return cast(list[list[float]], await llm_client.embed(texts, model_override=model_name))
     except Exception:
         logger.exception("embedding 调用失败", extra={"text_count": len(texts)})
         return []
