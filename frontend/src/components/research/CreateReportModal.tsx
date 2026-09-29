@@ -66,6 +66,19 @@ const { Text } = Typography
 
 type Phase = 'form' | 'extracting' | 'review' | 'generating' | 'completed'
 
+/** 报告新建/编辑表单值（validateFields 返回值） */
+interface ReportFormValues {
+  title: string
+  report_type: string
+  stage?: string
+  version: string
+  doc_code?: string
+  drug_name?: string
+  summary?: string
+  supplement?: string
+  template_id: string
+}
+
 interface Props {
   open: boolean
   projectId: string
@@ -109,6 +122,12 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const [saving, setSaving] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [formReady, setFormReady] = useState(!editingReport) // 编辑模式下等数据加载完再显示表单
+  // 弹窗开关时重置表单可见性（官方「渲染期调整状态」模式，避免 effect 内同步 setState）
+  const [prevOpen, setPrevOpen] = useState(open)
+  if (open !== prevOpen) {
+    setPrevOpen(open)
+    setFormReady(!isEditMode)
+  }
 
   // 提取结果统计（从 extractedSlots 计算）
   const extractStats = useMemo(() => {
@@ -250,8 +269,14 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   // 报告预览
   const reportPreviewRef = useRef<HTMLDivElement | null>(null)
-  const [reportPreviewLoading, setReportPreviewLoading] = useState(false)
-  const [reportPreviewError, setReportPreviewError] = useState<string | null>(null)
+  // 预览加载/错误为派生值：previewState 只在异步回调里写入，effect 体不做同步 setState
+  const [previewState, setPreviewState] = useState<{ jobId: string; error?: string } | null>(null)
+  const activePreviewJobId = job && isDocGenCompleted(job.status) && job.has_document ? job.id : null
+  const reportPreviewLoading = activePreviewJobId !== null && previewState?.jobId !== activePreviewJobId
+  const reportPreviewError =
+    activePreviewJobId !== null && previewState?.jobId === activePreviewJobId && previewState.error
+      ? previewState.error
+      : null
 
   // 模板预览
   const [tplPreviewOpen, setTplPreviewOpen] = useState(false)
@@ -262,9 +287,6 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   // ─── 加载模板与限制 ───
   useEffect(() => {
     if (!open) return
-    // 编辑模式下，先隐藏表单，等数据加载完再显示
-    if (editingReport) setFormReady(false)
-    else setFormReady(true)
     let cancelled = false
     ;(async () => {
       try {
@@ -345,18 +367,18 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     return () => clearInterval(timer)
   }, [job?.status])
 
-  // 进入待确认 → review 阶段
-  useEffect(() => {
-    if (job?.status === 'awaiting_review') {
-      setPhase('review')
-      loadExtractedInfo()
-    }
-  }, [job?.status]) // eslint-disable-line react-hooks/exhaustive-deps
+  // job 状态 → phase 迁移（渲染期调整状态，避免 effect 内同步 setState 触发级联渲染）
+  const [prevJobStatus, setPrevJobStatus] = useState(job?.status)
+  if (job?.status !== prevJobStatus) {
+    setPrevJobStatus(job?.status)
+    if (job?.status === 'awaiting_review') setPhase('review')
+    else if (job && isDocGenCompleted(job.status)) setPhase('completed')
+  }
 
-  // 生成完成 → completed 阶段
+  // 进入待确认 → 加载提取结果（数据加载副作用，状态迁移见上方渲染期调整）
   useEffect(() => {
-    if (job && isDocGenCompleted(job.status)) setPhase('completed')
-  }, [job?.status])
+    if (job?.status === 'awaiting_review') loadExtractedInfo()
+  }, [job?.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 提取失败/取消 → 显示错误提示
   useEffect(() => {
@@ -384,24 +406,22 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   // 加载报告预览
   useEffect(() => {
-    if (!job || !isDocGenCompleted(job.status) || !job.has_document) return
+    if (!job || !activePreviewJobId) return
+    const jobId = job.id
     let cancelled = false
-    setReportPreviewLoading(true)
-    setReportPreviewError(null)
     ;(async () => {
       try {
-        const blob = await fetchDocGenDocumentBlob(job.id)
+        const blob = await fetchDocGenDocumentBlob(jobId)
         if (cancelled || !reportPreviewRef.current) return
         reportPreviewRef.current.innerHTML = ''
         await renderAsync(blob, reportPreviewRef.current, undefined, { inWrapper: true, ignoreWidth: true })
+        if (!cancelled) setPreviewState({ jobId })
       } catch (e) {
-        if (!cancelled) setReportPreviewError(e instanceof Error ? e.message : '预览失败')
-      } finally {
-        if (!cancelled) setReportPreviewLoading(false)
+        if (!cancelled) setPreviewState({ jobId, error: e instanceof Error ? e.message : '预览失败' })
       }
     })()
     return () => { cancelled = true }
-  }, [job?.id, job?.status, job?.has_document]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activePreviewJobId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── 模板预览 ───
   const openTplPreview = async (tplId: string) => {
@@ -498,7 +518,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   // ─── 保存/创建（新建报告时创建 job + RdReport，编辑报告时更新 job + RdReport） ───
   const handleSave = async () => {
-    let values: Record<string, any>
+    let values: ReportFormValues
     try {
       values = await form.validateFields()
     } catch {
@@ -619,7 +639,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const handleBackToForm = () => {
     setJob(null); jobIdRef.current = null
     setExtractedSlots([]); setEditedSlots({})
-    setReportPreviewError(null)
+    setPreviewState(null)
     setPhase('form')
   }
 
@@ -654,7 +674,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const handleRegenerate = () => {
     setJob(null); jobIdRef.current = null
     setExtractedSlots([]); setEditedSlots({})
-    setReportPreviewError(null)
+    setPreviewState(null)
     setPhase('form')
   }
 
@@ -680,7 +700,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const handleClose = () => {
     form.resetFields(); setJob(null); jobIdRef.current = null
     setPhase('form'); setExtractedSlots([]); setEditedSlots({})
-    setReportPreviewError(null); setFormReady(!editingReport)
+    setPreviewState(null); setFormReady(!editingReport)
     onCancel()
   }
 
