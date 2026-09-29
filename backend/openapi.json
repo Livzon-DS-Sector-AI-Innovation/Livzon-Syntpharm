@@ -51491,6 +51491,100 @@
         }
       }
     },
+    "/api/v1/research/doc-gen/kb-coverage": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u77e5\u8bc6\u5e93\u8986\u76d6\u9884\u68c0\uff08\u751f\u6210\u524d\u9884\u4f30\u53ef\u586b\u9879\uff09",
+        "description": "\u751f\u6210\u524d\u9884\u68c0\uff1a\u6309\u6a21\u677f\u586b\u5145\u9879\u9010\u9879\u5224\u65ad\u77e5\u8bc6\u5e93\u300c\u53ef\u586b / \u90e8\u5206\u53ef\u586b / \u65e0\u8d44\u6599\u300d\u3002\n\n\u53ea\u505a\u5f52\u7c7b\u4e0d\u505a\u62bd\u53d6\uff08\u4e0d\u8c03\u6a21\u578b\uff09\uff1b\u79bb\u7ebf\u4f18\u5148\uff0c\u7d22\u5f15\u4e3a\u7a7a\u65f6\u624d\u5b9e\u65f6\u68c0\u7d22\u515c\u5e95\u3002\n\u7ed3\u679c\u7528\u4e8e\u300c\u65b0\u5efa\u62a5\u544a\u300d\u786e\u8ba4\u5f39\u7a97\u63d0\u524d\u8bf4\u660e\u9884\u8ba1\u7f3a\u53e3\uff0c\u5e76\u89e3\u91ca\u751f\u6210\u540e\u4e3a\u4ec0\u4e48\u6709 N \u9879\u6ca1\u586b\u4e0a\u3002",
+        "operationId": "read_kb_coverage_api_v1_research_doc_gen_kb_coverage_get",
+        "parameters": [
+          {
+            "name": "deliverable_template_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "\u4ea4\u4ed8\u7269\u6a21\u677f ID",
+              "title": "Deliverable Template Id"
+            },
+            "description": "\u4ea4\u4ed8\u7269\u6a21\u677f ID"
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u7814\u53d1\u9879\u76ee ID\uff08\u51b3\u5b9a\u7528\u54ea\u4e2a\u77e5\u8bc6\u5e93\uff09",
+              "title": "Project Id"
+            },
+            "description": "\u7814\u53d1\u9879\u76ee ID\uff08\u51b3\u5b9a\u7528\u54ea\u4e2a\u77e5\u8bc6\u5e93\uff09"
+          },
+          {
+            "name": "live",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u77e5\u8bc6\u5e93\u5c1a\u65e0\u672c\u5730\u7d22\u5f15\u65f6\u662f\u5426\u5b9e\u65f6\u68c0\u7d22\u515c\u5e95\uff08\u4f1a\u538b\u77e5\u8bc6\u5e93\uff0c\u8f83\u6162\uff09",
+              "default": true,
+              "title": "Live"
+            },
+            "description": "\u77e5\u8bc6\u5e93\u5c1a\u65e0\u672c\u5730\u7d22\u5f15\u65f6\u662f\u5426\u5b9e\u65f6\u68c0\u7d22\u515c\u5e95\uff08\u4f1a\u538b\u77e5\u8bc6\u5e93\uff0c\u8f83\u6162\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenKbCoverageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/doc-gen/jobs": {
       "post": {
         "tags": [
@@ -53200,6 +53294,260 @@
         }
       }
     },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/anchor-candidates": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u679a\u4e3e\u6bcd\u672c\u53ef\u951a\u5b9a\u4f4d\u7f6e\uff08\u4eba\u5de5\u65b0\u589e\u586b\u5199\u9879\uff09",
+        "description": "\u5217\u51fa\u6bcd\u672c\u91cc\u5c1a\u672a\u88ab\u73b0\u6709\u69fd\u4f4d\u5360\u7528\u7684\u53ef\u951a\u5b9a\u4f4d\u7f6e\uff0c\u4f9b\u4eba\u5de5\u300c\u65b0\u589e\u586b\u5199\u9879\u300d\u65f6\u70b9\u9009\u3002\n\n\u7eaf\u89c4\u5219\u626b\u63cf\uff08\u4e0d\u8c03\u6a21\u578b\u3001\u5feb\uff09\uff1b\u6bcf\u4e2a\u5019\u9009\u7684 anchor \u53ef\u539f\u6837\u56de\u4f20\u7528\u4e8e\u5efa\u69fd\u4f4d\uff0c\n\u907f\u514d\u7528\u6237\u624b\u5199\u951a\u70b9\u51fa\u9519\u3002AI \u4e0d\u53c2\u4e0e\u5b9a\u4f4d\uff08\u951a\u70b9\u9519\u5219\u6e32\u67d3\u5931\u8d25\uff09\uff0c\u53ea\u7531\u89c4\u5219\u4ea7\u51fa\u3002",
+        "operationId": "list_template_anchor_candidates_api_v1_research_doc_gen_deliverable_templates__template_id__anchor_candidates_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenAnchorCandidateListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/markdown": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u6a21\u677f\u5168\u5185\u5bb9 Markdown\uff08Word \u6bcd\u672c\u89e3\u6790\uff09",
+        "description": "\u628a Word \u6a21\u677f\u6bcd\u672c\u89e3\u6790\u4e3a\u5168\u5185\u5bb9 Markdown\uff0c\u4f9b\u4ea4\u4ed8\u7269\u6a21\u677f\u9875\u300c\u6a21\u677f Markdown\u300d\u5f39\u7a97\u5c55\u793a\u3002\n\n\u89c6\u56fe\u5c31\u662f\u6a21\u677f\u5185\u5bb9\u672c\u8eab\uff08\u6807\u9898/\u6bb5\u843d/\u5217\u8868/\u8868\u683c\u6309\u6587\u6863\u6d41\u987a\u5e8f\uff09\uff1b\u6bcd\u672c\u4e0d\u53ef\u7528\u65f6\u56de\u9000\ntemplate_structure \u9aa8\u67b6\u6e32\u67d3\uff08source=spec\uff09\u3002\u4e0d\u53c2\u4e0e docx \u6210\u6587\uff08\u6210\u6587\u4ecd\u8d70\u951a\u70b9\u56de\u586b\u6bcd\u672c\uff09\u3002",
+        "operationId": "read_template_markdown_api_v1_research_doc_gen_deliverable_templates__template_id__markdown_get",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenTemplateMarkdownResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/enrich-semantics": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "AI \u589e\u5f3a\u69fd\u4f4d\u8bed\u4e49",
+        "description": "\u7528 AI \u4e3a\u6a21\u677f\u69fd\u4f4d\u8865\u5168\u300c\u53ef\u88ab\u68c0\u7d22/\u63d0\u53d6\u547d\u4e2d\u300d\u7684\u8bed\u4e49\uff08label/\u68c0\u7d22\u8bcd/\u671f\u671b/\u5fc5\u586b/\u7f6e\u4fe1\u5ea6\uff09\u3002\n\n\u7ed3\u679c\u56de\u5199 template_structure\uff0c\u8be5\u6a21\u677f\u4ee5\u540e\u6bcf\u6b21\u751f\u6210\u90fd\u53d7\u76ca\uff08\u8d8a\u7528\u8d8a\u51c6\uff09\u3002\u53ea\u6539\u8bed\u4e49\u5b57\u6bb5\uff0c\n\u7edd\u4e0d\u52a8\u951a\u70b9/\u7c7b\u578b\uff08\u6e32\u67d3\u5b89\u5168\uff09\uff1b\u4f4e\u7f6e\u4fe1\u69fd\u4f4d\u6807\u300c\u9700\u4eba\u5de5\u6838\u5bf9\u300d\u3002\u540c\u6b65\u6267\u884c\uff0c\u69fd\u4f4d\u591a\u65f6\u53ef\u80fd\n\u8017\u65f6\u6570\u5341\u79d2\uff08\u4e0e\u8986\u76d6\u9884\u68c0\u540c\u6863\uff09\u3002",
+        "operationId": "enrich_template_semantics_api_v1_research_doc_gen_deliverable_templates__template_id__enrich_semantics_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenEnrichSemanticsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u6587\u6863\u751f\u6210"
+        ],
+        "summary": "\u4eba\u5de5\u65b0\u589e\u586b\u5199\u9879\uff08\u4ece\u5019\u9009\u4f4d\u7f6e\u70b9\u9009\uff09",
+        "description": "\u4ece\u5019\u9009\u951a\u70b9\u4f4d\u7f6e\u4eba\u5de5\u65b0\u589e\u4e00\u4e2a\u300c\u586b\u5199\u9879\u300d\uff08\u69fd\u4f4d\uff09\uff0c\u56de\u5199 template_structure \u6301\u4e45\u5316\u3002\n\n\u5b9a\u4f4d\u7531\u89c4\u5219\u4ea7\u51fa\u7684\u5019\u9009 anchor \u539f\u6837\u56de\u4f20\uff08AI/\u4eba\u5de5\u90fd\u4e0d\u624b\u5199\u951a\u70b9\uff0c\u6e32\u67d3\u5b89\u5168\uff09\uff1b\u7528\u6237\u53ea\u8865\n\u540d\u79f0\u4e0e\u68c0\u7d22\u8bed\u4e49\u3002\u540d\u79f0\u4e3a\u7a7a\u3001\u8868\u683c\u7c7b\u3001\u4f4d\u7f6e\u5df2\u88ab\u5360\u7528\u6216 key \u51b2\u7a81\u5747\u8fd4\u56de 400\u3002\u4e0e\u8bed\u4e49\u589e\u5f3a\n\u4e00\u81f4\uff1a\u4e0d\u7559\u7248\u672c\u8bb0\u5f55\uff08\u53ea\u6709\u6bcd\u672c\u6587\u4ef6\u53d8\u66f4\u624d\u7b97\u7248\u672c\uff09\u3002",
+        "operationId": "add_template_slot_api_v1_research_doc_gen_deliverable_templates__template_id__slots_post",
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocGenAddSlotRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocGenAddSlotResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/research/doc-gen/jobs/{job_id}/extract": {
       "post": {
         "tags": [
@@ -53556,6 +53904,853 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/limits": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u77e5\u8bc6\u5e93\u4e0a\u4f20\u9650\u5236",
+        "description": "\u524d\u7aef\u636e\u6b64\u505a\u63d0\u4ea4\u524d\u6821\u9a8c\uff0c\u5e76\u53ef\u63d0\u524d\u63d0\u793a\u300c\u77e5\u8bc6\u5e93\u670d\u52a1\u672a\u914d\u7f6e\u300d\u3002",
+        "operationId": "read_limits_api_v1_research_knowledge_bases_limits_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbLimitsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u77e5\u8bc6\u5e93\u5217\u8868",
+        "description": "\u4f20 project_id \u65f6\u901a\u5e38\u8fd4\u56de 0 \u6216 1 \u6761\uff1a\u7528\u4e8e\u65b0\u5efa\u62a5\u544a\u9875\u5224\u65ad\u9879\u76ee\u662f\u5426\u5df2\u6302\u77e5\u8bc6\u5e93\u3002",
+        "operationId": "list_knowledge_bases_api_v1_research_knowledge_bases_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6309\u7814\u53d1\u9879\u76ee\u8fc7\u6ee4",
+              "title": "Project Id"
+            },
+            "description": "\u6309\u7814\u53d1\u9879\u76ee\u8fc7\u6ee4"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u4e3a\u9879\u76ee\u65b0\u5efa\u77e5\u8bc6\u5e93",
+        "description": "\u5728 RAGFlow \u5efa\u6570\u636e\u96c6\u5e76\u843d\u672c\u5730\u6620\u5c04\uff1b\u4e00\u4e2a\u9879\u76ee\u81f3\u591a\u4e00\u4e2a\u6709\u6548\u77e5\u8bc6\u5e93\u3002",
+        "operationId": "create_knowledge_base_api_v1_research_knowledge_bases_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeBaseCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u77e5\u8bc6\u5e93\u8be6\u60c5",
+        "description": "\u8be6\u60c5\u542b\u6587\u6863\u8ba1\u6570\uff1b\u6587\u6863\u5217\u8868\u53e6\u8d70 /documents\u3002",
+        "operationId": "read_knowledge_base_api_v1_research_knowledge_bases__kb_id__get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseDataResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u5220\u9664\u77e5\u8bc6\u5e93",
+        "description": "\u540c\u65f6\u5220\u9664\u8fdc\u7aef\u6570\u636e\u96c6\uff1b\u8fdc\u7aef\u5931\u8d25\u4e0d\u963b\u65ad\u672c\u5730\u6e05\u7406\u3002",
+        "operationId": "delete_knowledge_base_api_v1_research_knowledge_bases__kb_id__delete",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeBaseOperationResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}/documents": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u6587\u6863\u5217\u8868\uff08\u542b\u89e3\u6790\u8fdb\u5ea6\uff09",
+        "description": "\u524d\u7aef\u8f6e\u8be2\u6b64\u7aef\u70b9\u5c55\u793a\u89e3\u6790\u8fdb\u5ea6\uff1brefresh=false \u65f6\u53ea\u8bfb\u672c\u5730\u955c\u50cf\uff08\u79bb\u7ebf\u4e5f\u4e0d\u62a5\u9519\uff09\u3002",
+        "operationId": "list_documents_api_v1_research_knowledge_bases__kb_id__documents_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u662f\u5426\u56de\u6e90 RAGFlow \u5237\u65b0\u89e3\u6790\u8fdb\u5ea6",
+              "default": true,
+              "title": "Refresh"
+            },
+            "description": "\u662f\u5426\u56de\u6e90 RAGFlow \u5237\u65b0\u89e3\u6790\u8fdb\u5ea6"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbDocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u4e0a\u4f20\u8d44\u6599\u5e76\u89e6\u53d1\u89e3\u6790",
+        "description": "\u4e0a\u4f20\u540e\u7acb\u5373\u89e6\u53d1 RAGFlow \u89e3\u6790\uff1b\u5355\u4efd\u5931\u8d25\u4e0d\u5f71\u54cd\u5176\u4f59\u6587\u4ef6\uff0c\u8df3\u8fc7\u539f\u56e0\u9010\u6761\u8fd4\u56de\u3002",
+        "operationId": "upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}": {
+      "delete": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u5220\u9664\u6587\u6863",
+        "description": "\u4ece\u77e5\u8bc6\u5e93\u79fb\u9664\u4e00\u4efd\u6587\u6863\uff08\u8fdc\u7aef\u5220\u9664\u6210\u529f\u540e\u624d\u5220\u672c\u5730\u8bb0\u5f55\uff09\u3002",
+        "operationId": "delete_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__delete",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "document_row_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Row Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbDocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/reparse": {
+      "post": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u91cd\u65b0\u89e3\u6790\u6587\u6863",
+        "description": "\u6e05\u7a7a\u65e7\u5207\u7247\u540e\u91cd\u8dd1\u89e3\u6790\uff0c\u7528\u4e8e\u89e3\u6790\u5931\u8d25\u6216\u8d44\u6599\u5df2\u66f4\u65b0\u7684\u573a\u666f\u3002",
+        "operationId": "reparse_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__reparse_post",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "document_row_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Row Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbDocumentListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/download": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u4e0b\u8f7d\u8d44\u6599\u539f\u4ef6",
+        "description": "\u6d41\u5f0f\u56de\u6e90 RAGFlow \u7684\u8d44\u6599\u539f\u4ef6\uff08\u4e0b\u8f7d\u7528\u539f\u4ef6\u5b57\u8282\uff1b\u9884\u89c8\u53ef\u8981\u6c42\u8f6c PDF\uff09\u3002\n\n\u6587\u4ef6\u672c\u4f53\u53ea\u5b58\u5728\u77e5\u8bc6\u5e93\u670d\u52a1\uff0c\u672c\u5730\u4e0d\u843d\u526f\u672c\uff0c\u6545\u6bcf\u6b21\u5b9e\u65f6\u53d6\uff1b\n\u56e0\u6b64\u672c\u7aef\u70b9\u4e0d\u5957\u7edf\u4e00\u54cd\u5e94\u4fe1\u5c01\uff0c\u76f4\u63a5\u8fd4\u56de\u5b57\u8282\u6d41\uff08\u4e0e\u5176\u5b83\u6a21\u5757\u7684\u6587\u4ef6\u4e0b\u8f7d\u4e00\u81f4\uff09\u3002",
+        "operationId": "download_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__download_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "document_row_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Row Id"
+            }
+          },
+          {
+            "name": "inline",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true \u65f6\u4ee5 inline \u8fd4\u56de\uff0c\u4f9b\u6d4f\u89c8\u5668\u5185\u76f4\u63a5\u6253\u5f00\u9884\u89c8",
+              "default": false,
+              "title": "Inline"
+            },
+            "description": "true \u65f6\u4ee5 inline \u8fd4\u56de\uff0c\u4f9b\u6d4f\u89c8\u5668\u5185\u76f4\u63a5\u6253\u5f00\u9884\u89c8"
+          },
+          {
+            "name": "as_pdf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "true \u65f6\u628a Office \u6587\u6863\u8f6c\u6210 PDF \u8fd4\u56de\uff08\u6d4f\u89c8\u5668\u65e0\u6cd5\u539f\u751f\u6e32\u67d3 .doc/.xls/.ppt\uff09",
+              "default": false,
+              "title": "As Pdf"
+            },
+            "description": "true \u65f6\u628a Office \u6587\u6863\u8f6c\u6210 PDF \u8fd4\u56de\uff08\u6d4f\u89c8\u5668\u65e0\u6cd5\u539f\u751f\u6e32\u67d3 .doc/.xls/.ppt\uff09"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Download Document Api V1 Research Knowledge Bases  Kb Id  Documents  Document Row Id  Download Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}/images/{image_id}": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u5207\u7247\u5173\u8054\u56fe\u7247",
+        "description": "\u4ee3\u7406\u77e5\u8bc6\u5e93\u670d\u52a1\u91cc\u7684\u5207\u7247\u56fe\u7247\uff08PDF \u9875\u56fe / \u56fe\u6ce8\u914d\u56fe\uff09\u3002\n\n\u524d\u7aef\u7528 ``<img>`` \u76f4\u63a5\u5f15\u7528\u672c\u5730\u5740\uff1a\u540c\u6e90\u8bf7\u6c42\u4f1a\u5e26\u4e0a auth_token Cookie\uff0c\n\u540e\u7aef\u9274\u6743\u672c\u8eab\u5c31\u652f\u6301 Cookie\uff0c\u56e0\u6b64\u4e0d\u9700\u8981\u524d\u7aef\u518d\u8f6c\u6210 blob\u3002",
+        "operationId": "read_document_image_api_v1_research_knowledge_bases__kb_id__images__image_id__get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "image_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Image Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Read Document Image Api V1 Research Knowledge Bases  Kb Id  Images  Image Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/chunks": {
+      "get": {
+        "tags": [
+          "\u7814\u53d1\u7ba1\u7406",
+          "\u7814\u53d1\u7ba1\u7406-\u9879\u76ee\u77e5\u8bc6\u5e93"
+        ],
+        "summary": "\u89e3\u6790\u5207\u7247\uff08\u9884\u89c8\u89e3\u6790\u5185\u5bb9\uff09",
+        "description": "docx / xls \u7b49\u6d4f\u89c8\u5668\u65e0\u6cd5\u76f4\u63a5\u6e32\u67d3\uff0c\u9884\u89c8\u65f6\u7528\u5207\u7247\u770b\u89e3\u6790\u7ed3\u679c\u3002",
+        "operationId": "list_document_chunks_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__chunks_get",
+        "parameters": [
+          {
+            "name": "kb_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Kb Id"
+            }
+          },
+          {
+            "name": "document_row_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Document Row Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801\uff0c\u4ece 1 \u5f00\u59cb",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801\uff0c\u4ece 1 \u5f00\u59cb"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u5207\u7247\u6570",
+              "default": 50,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u5207\u7247\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KbChunkListResponse"
+                }
               }
             }
           },
@@ -86428,6 +87623,183 @@
         ],
         "title": "AlertRecordProcessRequest"
       },
+      "Anchor": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "global_variable",
+              "table_cell",
+              "table_rows",
+              "paragraph_after_label",
+              "replace_paragraph",
+              "section_body",
+              "section_relative",
+              "header_field",
+              "image_placeholder"
+            ],
+            "title": "Type"
+          },
+          "table_header": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Table Header"
+          },
+          "row_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Label"
+          },
+          "row_match": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "contains"
+            ],
+            "title": "Row Match",
+            "default": "contains"
+          },
+          "column_header": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Column Header"
+          },
+          "row_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Row Index"
+          },
+          "col_index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Col Index"
+          },
+          "guard": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guard"
+          },
+          "paragraph_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paragraph Label"
+          },
+          "paragraph_match": {
+            "type": "string",
+            "enum": [
+              "exact",
+              "prefix",
+              "contains"
+            ],
+            "title": "Paragraph Match",
+            "default": "exact"
+          },
+          "heading": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading"
+          },
+          "heading_level": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading Level"
+          },
+          "after_heading": {
+            "type": "integer",
+            "title": "After Heading",
+            "default": 0
+          },
+          "keyword": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keyword"
+          },
+          "header_contains": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Header Contains"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "Anchor",
+        "description": "\u4e00\u4e2a\u69fd\u4f4d\u5728\u6bcd\u672c\u4e2d\u7684\u5b9a\u4f4d\u89c4\u5219\u3002\u89e3\u6790\u5931\u8d25\u5fc5\u987b\u663e\u5f0f\u62a5\u9519\uff0c\u4e0d\u5141\u8bb8\u9000\u5316\u4e3a\u300c\u731c\u4f4d\u7f6e\u300d\u3002"
+      },
       "AnnualOverview": {
         "properties": {
           "total_weight": {
@@ -89506,6 +90878,24 @@
           "file"
         ],
         "title": "Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post"
+      },
+      "Body_upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "description": "\u8d44\u6599\u6587\u4ef6\uff08\u53ef\u591a\u4e2a\uff09"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post"
       },
       "Body_upload_equipment_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__photos_post": {
         "properties": {
@@ -96615,6 +98005,171 @@
         "title": "DocCheckUpdate",
         "description": "\u66f4\u65b0\u6821\u9a8c\u4efb\u52a1"
       },
+      "DocGenAddSlotData": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "title": "Template Id"
+          },
+          "slot_key": {
+            "type": "string",
+            "title": "Slot Key"
+          },
+          "total_slots": {
+            "type": "integer",
+            "title": "Total Slots",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "slot_key"
+        ],
+        "title": "DocGenAddSlotData",
+        "description": "\u4eba\u5de5\u65b0\u589e\u586b\u5199\u9879\u7ed3\u679c\u6458\u8981\u3002"
+      },
+      "DocGenAddSlotRequest": {
+        "properties": {
+          "anchor": {
+            "$ref": "#/components/schemas/Anchor"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "field",
+              "paragraph",
+              "table",
+              "image"
+            ],
+            "title": "Kind",
+            "default": "field"
+          },
+          "expects": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "date",
+              "percent"
+            ],
+            "title": "Expects",
+            "default": "text"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "query_hint": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Query Hint",
+            "default": ""
+          },
+          "search_terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Search Terms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "anchor",
+          "label"
+        ],
+        "title": "DocGenAddSlotRequest",
+        "description": "POST /doc-gen/deliverable-templates/{id}/slots \u8bf7\u6c42\u4f53\uff08\u4eba\u5de5\u65b0\u589e\u586b\u5199\u9879\uff09\u3002\n\n``anchor``/``kind`` \u7531\u5019\u9009\u4f4d\u7f6e\u539f\u6837\u56de\u4f20\u2014\u2014\u5b9a\u4f4d\u662f\u5b89\u5168\u654f\u611f\u64cd\u4f5c\uff0c\u7531\u89c4\u5219\u626b\u63cf\u5668\u4ea7\u51fa\uff0c\n\u524d\u7aef\u4e0d\u624b\u5199\u951a\u70b9\uff1b\u7528\u6237\u53ea\u8865 ``label`` \u4e0e\u68c0\u7d22\u8bed\u4e49\uff08``query_hint``/``search_terms``/\n``expects``/``required``\uff09\u3002``kind=\"table\"`` \u4f1a\u88ab\u670d\u52a1\u5c42\u62d2\u7edd\uff08\u8868\u683c\u69fd\u4f4d\u9700\u5217\u5b9a\u4e49\uff09\u3002"
+      },
+      "DocGenAddSlotResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenAddSlotData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenAddSlotResponse",
+        "description": "POST /doc-gen/deliverable-templates/{id}/slots \u54cd\u5e94\u3002"
+      },
+      "DocGenAnchorCandidate": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "field",
+              "paragraph",
+              "table",
+              "image"
+            ],
+            "title": "Kind"
+          },
+          "context": {
+            "type": "string",
+            "title": "Context",
+            "default": ""
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/Anchor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "kind",
+          "anchor"
+        ],
+        "title": "DocGenAnchorCandidate",
+        "description": "\u6bcd\u672c\u91cc\u4e00\u4e2a\u5c1a\u672a\u88ab\u5360\u7528\u3001\u53ef\u951a\u5b9a\u7684\u5019\u9009\u4f4d\u7f6e\uff08\u4eba\u5de5\u300c\u65b0\u589e\u586b\u5199\u9879\u300d\u65f6\u70b9\u9009\uff09\u3002\n\n``anchor`` \u53ef\u88ab\u524d\u7aef\u539f\u6837\u56de\u4f20\u7528\u4e8e\u5efa\u69fd\u4f4d\uff0c\u65e0\u9700\u7528\u6237\u624b\u5199\u951a\u70b9\uff1b``context`` \u7ed9\u51fa\n\u7ae0\u8282/\u8868\u5934/\u6bb5\u843d\u6807\u7b7e\u7b49\u7ebf\u7d22\u5e2e\u52a9\u7528\u6237\u8fa8\u8ba4\u3002"
+      },
+      "DocGenAnchorCandidateListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenAnchorCandidate"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "DocGenAnchorCandidateListResponse",
+        "description": "GET /doc-gen/deliverable-templates/{id}/anchor-candidates \u54cd\u5e94\u3002"
+      },
       "DocGenBatchUploadResponse": {
         "properties": {
           "code": {
@@ -96783,6 +98338,101 @@
         ],
         "title": "DocGenConversationResponse",
         "description": "\u4efb\u52a1\u5bf9\u8bdd\u4f1a\u8bdd\u72b6\u6001\u3002"
+      },
+      "DocGenEnrichSemanticsData": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "title": "Template Id"
+          },
+          "total_slots": {
+            "type": "integer",
+            "title": "Total Slots",
+            "default": 0
+          },
+          "enriched_slots": {
+            "type": "integer",
+            "title": "Enriched Slots",
+            "default": 0
+          },
+          "needs_review": {
+            "type": "integer",
+            "title": "Needs Review",
+            "default": 0
+          },
+          "needs_review_added": {
+            "type": "integer",
+            "title": "Needs Review Added",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id"
+        ],
+        "title": "DocGenEnrichSemanticsData",
+        "description": "AI \u8bed\u4e49\u589e\u5f3a\u7ed3\u679c\u6458\u8981\u3002\n\n``enriched_slots`` \u662f**\u5b9e\u9645\u53d1\u751f\u5b57\u6bb5\u53d8\u66f4**\u7684\u69fd\u4f4d\u6570\uff08\u589e\u5f3a\u524d\u540e\u9010\u69fd\u5bf9\u6bd4\u5f97\u51fa\uff09\uff0c\n\u4e0e ``total_slots``\uff08\u69fd\u4f4d\u603b\u6570\uff09\u533a\u5206\uff1aAI \u65e0\u65b0\u589e\u8bed\u4e49\u6216\u8c03\u7528\u964d\u7ea7\u65f6\u4e3a 0\uff0c\n\u524d\u7aef\u636e\u6b64\u5982\u5b9e\u53cd\u9988\uff0c\u4e0d\u518d\u628a\"\u603b\u6570\"\u8c0e\u62a5\u6210\"\u5df2\u589e\u5f3a\u6570\"\u3002"
+      },
+      "DocGenEnrichSemanticsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenEnrichSemanticsData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenEnrichSemanticsResponse",
+        "description": "POST /doc-gen/deliverable-templates/{id}/enrich-semantics \u54cd\u5e94\u3002"
+      },
+      "DocGenEvidenceItem": {
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "title": "File Id",
+            "default": ""
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name",
+            "default": ""
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label",
+            "default": ""
+          },
+          "page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page"
+          },
+          "quote": {
+            "type": "string",
+            "title": "Quote",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "title": "DocGenEvidenceItem",
+        "description": "\u5355\u6761\u63d0\u53d6\u4f9d\u636e\uff1a\u6807\u8bb0\u586b\u5145\u503c\u6765\u81ea\u54ea\u4efd\u8d44\u6599\u7684\u54ea\u4e00\u9875\u3001\u54ea\u53e5\u539f\u6587\u3002\n\n``file_id`` \u662f\u5185\u90e8\u7a33\u5b9a\u6807\u8bc6\uff1b``file_name``/``source_label`` \u7531\u540e\u7aef\u89e3\u6790\u540e\u76f4\u63a5\u5c55\u793a\uff0c\n\u524d\u7aef\u65e0\u9700\u81ea\u884c join \u8d44\u6599\u6e05\u5355\u3002\u4f2a file_id\uff08\u77e5\u8bc6\u5e93/\u767b\u8bb0\u6570\u636e/\u8865\u5145\u8bf4\u660e/\u4eba\u5de5\u586b\u5199\uff09\u7528\n``source_label`` \u8bf4\u660e\u6765\u6e90\u7c7b\u578b\uff0c``file_name`` \u7ed9\u51fa\u53ef\u8bfb\u540d\u79f0\u3002"
       },
       "DocGenExtractedInfoResponse": {
         "properties": {
@@ -97210,6 +98860,174 @@
         "type": "object",
         "title": "DocGenJobUpdateRequest",
         "description": "PATCH /jobs/{id} \u8bf7\u6c42\u4f53\uff1a\u4fee\u6539\u57fa\u672c\u4fe1\u606f\u4e0e\u8865\u5145\u8bf4\u660e\uff08\u4ec5\u8349\u7a3f/\u590d\u6838/\u5931\u8d25\u72b6\u6001\u53ef\u6539\uff09\u3002"
+      },
+      "DocGenKbCoverage": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "none"
+          },
+          "source_label": {
+            "type": "string",
+            "title": "Source Label",
+            "default": ""
+          },
+          "kb_id": {
+            "type": "string",
+            "title": "Kb Id",
+            "default": ""
+          },
+          "kb_name": {
+            "type": "string",
+            "title": "Kb Name",
+            "default": ""
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents",
+            "default": 0
+          },
+          "chunks": {
+            "type": "integer",
+            "title": "Chunks",
+            "default": 0
+          },
+          "facts": {
+            "type": "integer",
+            "title": "Facts",
+            "default": 0
+          },
+          "truncated": {
+            "type": "boolean",
+            "title": "Truncated",
+            "default": false
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "checked": {
+            "type": "integer",
+            "title": "Checked",
+            "default": 0
+          },
+          "fillable": {
+            "type": "integer",
+            "title": "Fillable",
+            "default": 0
+          },
+          "partial": {
+            "type": "integer",
+            "title": "Partial",
+            "default": 0
+          },
+          "missing": {
+            "type": "integer",
+            "title": "Missing",
+            "default": 0
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "default": 0
+          },
+          "fillable_ratio": {
+            "type": "number",
+            "title": "Fillable Ratio",
+            "default": 0.0
+          },
+          "weighted_ratio": {
+            "type": "number",
+            "title": "Weighted Ratio",
+            "default": 0.0
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenKbCoverageSlot"
+            },
+            "type": "array",
+            "title": "Slots"
+          }
+        },
+        "type": "object",
+        "title": "DocGenKbCoverage",
+        "description": "\u77e5\u8bc6\u5e93\u8986\u76d6\u9884\u68c0\u7ed3\u679c\uff1a\u751f\u6210\u524d\u5148\u7b97\u6e05\u300c\u8fd9\u4e9b\u586b\u5145\u9879\u5e93\u91cc\u6709\u6ca1\u6709\u6599\u300d\u3002"
+      },
+      "DocGenKbCoverageResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenKbCoverage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenKbCoverageResponse",
+        "description": "GET /doc-gen/kb-coverage \u54cd\u5e94\u3002"
+      },
+      "DocGenKbCoverageSlot": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "default": ""
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "field"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "no_material"
+          },
+          "status_label": {
+            "type": "string",
+            "title": "Status Label",
+            "default": ""
+          },
+          "matched_terms": {
+            "type": "integer",
+            "title": "Matched Terms",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "title": "DocGenKbCoverageSlot",
+        "description": "\u5355\u4e2a\u586b\u5145\u9879\u7684\u77e5\u8bc6\u5e93\u8986\u76d6\u9884\u68c0\u7ed3\u679c\u3002"
       },
       "DocGenLimits": {
         "properties": {
@@ -97681,7 +99499,9 @@
           "evidence": {
             "anyOf": [
               {
-                "items": {},
+                "items": {
+                  "$ref": "#/components/schemas/DocGenEvidenceItem"
+                },
                 "type": "array"
               },
               {
@@ -97949,6 +99769,153 @@
         "type": "object",
         "title": "DocGenTemplateListResponse",
         "description": "GET /doc-gen/builtin-templates \u54cd\u5e94\uff08\u5185\u7f6e\u6a21\u677f\uff0c\u6392\u9519\u7528\uff09\u3002"
+      },
+      "DocGenTemplateMarkdownData": {
+        "properties": {
+          "template_id": {
+            "type": "string",
+            "title": "Template Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "default": ""
+          },
+          "code": {
+            "type": "string",
+            "title": "Code",
+            "default": ""
+          },
+          "markdown": {
+            "type": "string",
+            "title": "Markdown"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source",
+            "default": "spec"
+          },
+          "slot_count": {
+            "type": "integer",
+            "title": "Slot Count",
+            "default": 0
+          },
+          "needs_review": {
+            "type": "integer",
+            "title": "Needs Review",
+            "default": 0
+          },
+          "slots": {
+            "items": {
+              "$ref": "#/components/schemas/DocGenTemplateSlotSemantics"
+            },
+            "type": "array",
+            "title": "Slots"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_id",
+          "markdown"
+        ],
+        "title": "DocGenTemplateMarkdownData",
+        "description": "\u6a21\u677f\u5168\u5185\u5bb9 Markdown\uff08\u4f18\u5148\u6bcd\u672c\u89c4\u5219\u89e3\u6790\uff0c\u5176\u6b21\u9aa8\u67b6\u56de\u9000\uff09\u3002"
+      },
+      "DocGenTemplateMarkdownResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocGenTemplateMarkdownData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocGenTemplateMarkdownResponse",
+        "description": "GET /doc-gen/deliverable-templates/{id}/markdown \u54cd\u5e94\u3002"
+      },
+      "DocGenTemplateSlotSemantics": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "default": "field"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required",
+            "default": false
+          },
+          "expects": {
+            "type": "string",
+            "title": "Expects",
+            "default": "text"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit",
+            "default": ""
+          },
+          "enum_values": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Enum Values"
+          },
+          "cardinality": {
+            "type": "string",
+            "title": "Cardinality",
+            "default": "single"
+          },
+          "source_scope": {
+            "type": "string",
+            "title": "Source Scope",
+            "default": "any"
+          },
+          "query_hint": {
+            "type": "string",
+            "title": "Query Hint",
+            "default": ""
+          },
+          "search_terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Search Terms"
+          },
+          "review_state": {
+            "type": "string",
+            "title": "Review State",
+            "default": "auto"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "DocGenTemplateSlotSemantics",
+        "description": "\u586b\u5199\u9879\u8bed\u4e49\u6458\u8981\uff08\u300c\u6a21\u677f Markdown\u300d\u5f39\u7a97\u300c\u586b\u5199\u9879\u8bed\u4e49\u300d\u89c6\u56fe\u6570\u636e\u6e90\uff09\u3002\n\n\u53ea\u8bfb\u5c55\u793a template_structure \u91cc\u7684\u8bed\u4e49\u5b57\u6bb5\u2014\u2014AI \u589e\u5f3a/\u4eba\u5de5\u7ef4\u62a4\u7684\u6210\u679c\u5728\u6b64\u8089\u773c\n\u53ef\u89c1\uff1b\u6e32\u67d3\u5b89\u5168\u5b57\u6bb5\uff08anchors/kind \u5b9a\u4f4d\uff09\u4e0d\u5c55\u793a\u5b9a\u4f4d\u7ec6\u8282\u3002"
       },
       "DocGenTemplateSummary": {
         "properties": {
@@ -111759,6 +113726,346 @@
         "title": "ItemResult",
         "description": "\u5355\u9879\u5224\u5b9a"
       },
+      "KbChunkItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "default": ""
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "default": ""
+          },
+          "positions": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Positions"
+          },
+          "document_keyword": {
+            "type": "string",
+            "title": "Document Keyword",
+            "default": ""
+          },
+          "image_id": {
+            "type": "string",
+            "title": "Image Id",
+            "default": ""
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "KbChunkItem",
+        "description": "\u4e00\u6761\u89e3\u6790\u5207\u7247\uff08\u9884\u89c8\u300c\u89e3\u6790\u5185\u5bb9\u300d\u7528\uff09\u3002"
+      },
+      "KbChunkList": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "default": 1
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size",
+            "default": 50
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KbChunkItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "KbChunkList",
+        "description": "\u5207\u7247\u5206\u9875\u7ed3\u679c\u3002"
+      },
+      "KbChunkListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/KbChunkList"
+          }
+        },
+        "type": "object",
+        "title": "KbChunkListResponse",
+        "description": "GET /research/knowledge-bases/{id}/documents/{doc_id}/chunks \u54cd\u5e94\u3002"
+      },
+      "KbDocumentItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "ragflow_document_id": {
+            "type": "string",
+            "title": "Ragflow Document Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_ext": {
+            "type": "string",
+            "title": "File Ext",
+            "default": ""
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes",
+            "default": 0
+          },
+          "run": {
+            "type": "string",
+            "title": "Run",
+            "default": "UNSTART"
+          },
+          "progress": {
+            "type": "number",
+            "title": "Progress",
+            "default": 0.0
+          },
+          "progress_msg": {
+            "type": "string",
+            "title": "Progress Msg",
+            "default": ""
+          },
+          "chunk_count": {
+            "type": "integer",
+            "title": "Chunk Count",
+            "default": 0
+          },
+          "token_count": {
+            "type": "integer",
+            "title": "Token Count",
+            "default": 0
+          },
+          "last_error": {
+            "type": "string",
+            "title": "Last Error",
+            "default": ""
+          },
+          "parse_started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Started At"
+          },
+          "parsed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parsed At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ragflow_document_id",
+          "file_name"
+        ],
+        "title": "KbDocumentItem",
+        "description": "\u77e5\u8bc6\u5e93\u4e2d\u7684\u4e00\u4efd\u6587\u6863\u53ca\u5176\u89e3\u6790\u72b6\u6001\u3002"
+      },
+      "KbDocumentListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/KbDocumentItem"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "KbDocumentListResponse",
+        "description": "GET /research/knowledge-bases/{id}/documents \u54cd\u5e94\u3002"
+      },
+      "KbLimits": {
+        "properties": {
+          "max_files": {
+            "type": "integer",
+            "title": "Max Files",
+            "default": 10
+          },
+          "max_file_mb": {
+            "type": "integer",
+            "title": "Max File Mb",
+            "default": 100
+          },
+          "allowed_extensions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Extensions"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured",
+            "default": false
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "ragflow"
+          }
+        },
+        "type": "object",
+        "title": "KbLimits",
+        "description": "\u77e5\u8bc6\u5e93\u4e0a\u4f20\u9650\u5236\uff08\u524d\u7aef\u636e\u6b64\u505a\u63d0\u4ea4\u524d\u6821\u9a8c\uff09\u3002"
+      },
+      "KbLimitsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/KbLimits"
+          }
+        },
+        "type": "object",
+        "title": "KbLimitsResponse",
+        "description": "\u4e0a\u4f20\u524d\u6821\u9a8c\u7528\u7684\u89c4\u6a21\u4e0e\u683c\u5f0f\u9650\u5236\u3002"
+      },
+      "KbUploadResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/KbUploadResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "KbUploadResponse",
+        "description": "POST /research/knowledge-bases/{id}/documents \u54cd\u5e94\u3002"
+      },
+      "KbUploadResult": {
+        "properties": {
+          "uploaded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Uploaded"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/KbUploadSkipped"
+            },
+            "type": "array",
+            "title": "Skipped"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/KbDocumentItem"
+            },
+            "type": "array",
+            "title": "Documents"
+          }
+        },
+        "type": "object",
+        "title": "KbUploadResult",
+        "description": "\u4e0a\u4f20\u7ed3\u679c\uff1a\u6210\u529f\u5165\u961f\u89e3\u6790\u7684\u6587\u4ef6\u3001\u88ab\u8df3\u8fc7\u7684\u6587\u4ef6\u4e0e\u5237\u65b0\u540e\u7684\u6587\u6863\u5217\u8868\u3002"
+      },
+      "KbUploadSkipped": {
+        "properties": {
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_name",
+          "reason"
+        ],
+        "title": "KbUploadSkipped",
+        "description": "\u88ab\u8df3\u8fc7\u7684\u6587\u4ef6\u53ca\u539f\u56e0\uff08\u683c\u5f0f\u4e0d\u652f\u6301 / \u8d85\u9650 / RAGFlow \u62d2\u7edd\uff09\u3002"
+      },
       "KnowledgeAttachmentRequest": {
         "properties": {
           "knowledge_ids": {
@@ -111776,6 +114083,236 @@
         ],
         "title": "KnowledgeAttachmentRequest",
         "description": "\u4ece\u77e5\u8bc6\u5e93\u521b\u5efa\u9644\u4ef6\u8bf7\u6c42"
+      },
+      "KnowledgeBaseCreateRequest": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Name",
+            "default": ""
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Description",
+            "default": ""
+          },
+          "embedding_model": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Embedding Model",
+            "default": ""
+          },
+          "chunk_method": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Chunk Method",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "KnowledgeBaseCreateRequest",
+        "description": "\u65b0\u5efa\u77e5\u8bc6\u5e93\u8bf7\u6c42\uff1a\u540d\u79f0\u7559\u7a7a\u65f6\u7531\u7cfb\u7edf\u6309\u9879\u76ee\u540d\u751f\u6210\u3002"
+      },
+      "KnowledgeBaseDataResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/KnowledgeBaseItem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "KnowledgeBaseDataResponse",
+        "description": "\u5355\u6761\u77e5\u8bc6\u5e93\u54cd\u5e94\uff08\u521b\u5efa / \u8be6\u60c5 / \u91cd\u8bd5\uff09\u3002"
+      },
+      "KnowledgeBaseItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name",
+            "default": ""
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "ragflow"
+          },
+          "ragflow_dataset_id": {
+            "type": "string",
+            "title": "Ragflow Dataset Id",
+            "default": ""
+          },
+          "embedding_model": {
+            "type": "string",
+            "title": "Embedding Model",
+            "default": ""
+          },
+          "chunk_method": {
+            "type": "string",
+            "title": "Chunk Method",
+            "default": "naive"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "creating"
+          },
+          "last_error": {
+            "type": "string",
+            "title": "Last Error",
+            "default": ""
+          },
+          "document_count": {
+            "type": "integer",
+            "title": "Document Count",
+            "default": 0
+          },
+          "chunk_count": {
+            "type": "integer",
+            "title": "Chunk Count",
+            "default": 0
+          },
+          "token_count": {
+            "type": "integer",
+            "title": "Token Count",
+            "default": 0
+          },
+          "parsed_count": {
+            "type": "integer",
+            "title": "Parsed Count",
+            "default": 0
+          },
+          "parsing_count": {
+            "type": "integer",
+            "title": "Parsing Count",
+            "default": 0
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count",
+            "default": 0
+          },
+          "last_synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Synced At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "name"
+        ],
+        "title": "KnowledgeBaseItem",
+        "description": "\u77e5\u8bc6\u5e93\u6982\u8981\uff08\u5217\u8868\u4e0e\u8be6\u60c5\u5171\u7528\uff09\u3002"
+      },
+      "KnowledgeBaseListResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeBaseItem"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "KnowledgeBaseListResponse",
+        "description": "GET /research/knowledge-bases \u54cd\u5e94\u3002"
+      },
+      "KnowledgeBaseOperationResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "KnowledgeBaseOperationResponse",
+        "description": "\u65e0\u6570\u636e\u4f53\u7684\u64cd\u4f5c\u54cd\u5e94\uff08\u5220\u9664\u7b49\uff09\u3002"
       },
       "KnowledgeCategory": {
         "type": "string",

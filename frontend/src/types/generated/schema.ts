@@ -10292,6 +10292,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/doc-gen/kb-coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 知识库覆盖预检（生成前预估可填项）
+         * @description 生成前预检：按模板填充项逐项判断知识库「可填 / 部分可填 / 无资料」。
+         *
+         *     只做归类不做抽取（不调模型）；离线优先，索引为空时才实时检索兜底。
+         *     结果用于「新建报告」确认弹窗提前说明预计缺口，并解释生成后为什么有 N 项没填上。
+         */
+        get: operations["read_kb_coverage_api_v1_research_doc_gen_kb_coverage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/research/doc-gen/jobs": {
         parameters: {
             query?: never;
@@ -10813,6 +10836,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/anchor-candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 枚举母本可锚定位置（人工新增填写项）
+         * @description 列出母本里尚未被现有槽位占用的可锚定位置，供人工「新增填写项」时点选。
+         *
+         *     纯规则扫描（不调模型、快）；每个候选的 anchor 可原样回传用于建槽位，
+         *     避免用户手写锚点出错。AI 不参与定位（锚点错则渲染失败），只由规则产出。
+         */
+        get: operations["list_template_anchor_candidates_api_v1_research_doc_gen_deliverable_templates__template_id__anchor_candidates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/markdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 模板全内容 Markdown（Word 母本解析）
+         * @description 把 Word 模板母本解析为全内容 Markdown，供交付物模板页「模板 Markdown」弹窗展示。
+         *
+         *     视图就是模板内容本身（标题/段落/列表/表格按文档流顺序）；母本不可用时回退
+         *     template_structure 骨架渲染（source=spec）。不参与 docx 成文（成文仍走锚点回填母本）。
+         */
+        get: operations["read_template_markdown_api_v1_research_doc_gen_deliverable_templates__template_id__markdown_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/enrich-semantics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * AI 增强槽位语义
+         * @description 用 AI 为模板槽位补全「可被检索/提取命中」的语义（label/检索词/期望/必填/置信度）。
+         *
+         *     结果回写 template_structure，该模板以后每次生成都受益（越用越准）。只改语义字段，
+         *     绝不动锚点/类型（渲染安全）；低置信槽位标「需人工核对」。同步执行，槽位多时可能
+         *     耗时数十秒（与覆盖预检同档）。
+         */
+        post: operations["enrich_template_semantics_api_v1_research_doc_gen_deliverable_templates__template_id__enrich_semantics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 人工新增填写项（从候选位置点选）
+         * @description 从候选锚点位置人工新增一个「填写项」（槽位），回写 template_structure 持久化。
+         *
+         *     定位由规则产出的候选 anchor 原样回传（AI/人工都不手写锚点，渲染安全）；用户只补
+         *     名称与检索语义。名称为空、表格类、位置已被占用或 key 冲突均返回 400。与语义增强
+         *     一致：不留版本记录（只有母本文件变更才算版本）。
+         */
+        post: operations["add_template_slot_api_v1_research_doc_gen_deliverable_templates__template_id__slots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/research/doc-gen/jobs/{job_id}/extract": {
         parameters: {
             query?: never;
@@ -10934,6 +11051,204 @@ export interface paths {
          * @description 下载记录取值来源与待人工清单的生成说明。
          */
         get: operations["download_report_api_v1_research_doc_gen_jobs__job_id__report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 知识库上传限制
+         * @description 前端据此做提交前校验，并可提前提示「知识库服务未配置」。
+         */
+        get: operations["read_limits_api_v1_research_knowledge_bases_limits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 知识库列表
+         * @description 传 project_id 时通常返回 0 或 1 条：用于新建报告页判断项目是否已挂知识库。
+         */
+        get: operations["list_knowledge_bases_api_v1_research_knowledge_bases_get"];
+        put?: never;
+        /**
+         * 为项目新建知识库
+         * @description 在 RAGFlow 建数据集并落本地映射；一个项目至多一个有效知识库。
+         */
+        post: operations["create_knowledge_base_api_v1_research_knowledge_bases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 知识库详情
+         * @description 详情含文档计数；文档列表另走 /documents。
+         */
+        get: operations["read_knowledge_base_api_v1_research_knowledge_bases__kb_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * 删除知识库
+         * @description 同时删除远端数据集；远端失败不阻断本地清理。
+         */
+        delete: operations["delete_knowledge_base_api_v1_research_knowledge_bases__kb_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 文档列表（含解析进度）
+         * @description 前端轮询此端点展示解析进度；refresh=false 时只读本地镜像（离线也不报错）。
+         */
+        get: operations["list_documents_api_v1_research_knowledge_bases__kb_id__documents_get"];
+        put?: never;
+        /**
+         * 上传资料并触发解析
+         * @description 上传后立即触发 RAGFlow 解析；单份失败不影响其余文件，跳过原因逐条返回。
+         */
+        post: operations["upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 删除文档
+         * @description 从知识库移除一份文档（远端删除成功后才删本地记录）。
+         */
+        delete: operations["delete_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/reparse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重新解析文档
+         * @description 清空旧切片后重跑解析，用于解析失败或资料已更新的场景。
+         */
+        post: operations["reparse_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__reparse_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 下载资料原件
+         * @description 流式回源 RAGFlow 的资料原件（下载用原件字节；预览可要求转 PDF）。
+         *
+         *     文件本体只存在知识库服务，本地不落副本，故每次实时取；
+         *     因此本端点不套统一响应信封，直接返回字节流（与其它模块的文件下载一致）。
+         */
+        get: operations["download_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}/images/{image_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 切片关联图片
+         * @description 代理知识库服务里的切片图片（PDF 页图 / 图注配图）。
+         *
+         *     前端用 ``<img>`` 直接引用本地址：同源请求会带上 auth_token Cookie，
+         *     后端鉴权本身就支持 Cookie，因此不需要前端再转成 blob。
+         */
+        get: operations["read_document_image_api_v1_research_knowledge_bases__kb_id__images__image_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/chunks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 解析切片（预览解析内容）
+         * @description docx / xls 等浏览器无法直接渲染，预览时用切片看解析结果。
+         */
+        get: operations["list_document_chunks_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__chunks_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -17827,6 +18142,20 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AIAnalysisApiResponse */
+        AIAnalysisApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AIAnalysisResponse"];
+        };
         /**
          * AIAnalysisRequest
          * @description AI 能耗分析请求（V2 - 支持单耗分析）
@@ -17855,6 +18184,36 @@ export interface components {
              * @default true
              */
             include_ai_suggestion: boolean;
+        };
+        /**
+         * AIAnalysisResponse
+         * @description AI 能耗分析响应（支持多产品）
+         */
+        AIAnalysisResponse: {
+            /** Workshop Id */
+            workshop_id: string;
+            /** Workshop Name */
+            workshop_name: string;
+            /** Analysis Month */
+            analysis_month: string;
+            /** Total Energy Kwh */
+            total_energy_kwh: number;
+            /** Production Items */
+            production_items: components["schemas"]["ProductionItemDetail"][];
+            /** Converted Production */
+            converted_production: number;
+            /** Actual Unit Consumption */
+            actual_unit_consumption: number;
+            /** Target Unit Consumption */
+            target_unit_consumption?: number | null;
+            /** Deviation Rate */
+            deviation_rate?: number | null;
+            /**
+             * Deviation Status
+             * @enum {string}
+             */
+            deviation_status: "normal" | "warning" | "critical" | "unknown";
+            ai_suggestion?: components["schemas"]["AISuggestion"] | null;
         };
         /**
          * AIConfirmData
@@ -17900,6 +18259,38 @@ export interface components {
             status: string;
             /** Message */
             message: string;
+        };
+        /**
+         * AISuggestion
+         * @description AI 建议对象
+         */
+        AISuggestion: {
+            /**
+             * Status
+             * @description 状态：normal/warning/critical/info/unknown
+             */
+            status: string;
+            /**
+             * Summary
+             * @description 一句话总结
+             */
+            summary: string;
+            /**
+             * Detailed Analysis
+             * @description 详细分析
+             */
+            detailed_analysis: string;
+            /**
+             * Recommendations
+             * @description 建议列表
+             */
+            recommendations: string[];
+            /**
+             * Confidence Level
+             * @description 置信度
+             * @enum {string}
+             */
+            confidence_level: "high" | "medium" | "low";
         };
         /**
          * AIWorkflowConfigCreate
@@ -18308,6 +18699,58 @@ export interface components {
              * @description 处理备注
              */
             process_note?: string | null;
+        };
+        /**
+         * Anchor
+         * @description 一个槽位在母本中的定位规则。解析失败必须显式报错，不允许退化为「猜位置」。
+         */
+        Anchor: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "global_variable" | "table_cell" | "table_rows" | "paragraph_after_label" | "replace_paragraph" | "section_body" | "section_relative" | "header_field" | "image_placeholder";
+            /** Table Header */
+            table_header?: string[];
+            /** Row Label */
+            row_label?: string | null;
+            /**
+             * Row Match
+             * @default contains
+             * @enum {string}
+             */
+            row_match: "exact" | "contains";
+            /** Column Header */
+            column_header?: string | null;
+            /** Row Index */
+            row_index?: number | null;
+            /** Col Index */
+            col_index?: number | null;
+            /** Guard */
+            guard?: string | null;
+            /** Paragraph Label */
+            paragraph_label?: string | null;
+            /**
+             * Paragraph Match
+             * @default exact
+             * @enum {string}
+             */
+            paragraph_match: "exact" | "prefix" | "contains";
+            /** Heading */
+            heading?: string | null;
+            /** Heading Level */
+            heading_level?: number | null;
+            /**
+             * After Heading
+             * @default 0
+             */
+            after_heading: number;
+            /** Keyword */
+            keyword?: string | null;
+            /** Header Contains */
+            header_contains?: string | null;
+            /** Color */
+            color?: string | null;
         };
         /**
          * AnnualOverview
@@ -19819,6 +20262,14 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post */
+        Body_upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post: {
+            /**
+             * Files
+             * @description 资料文件（可多个）
+             */
+            files: string[];
+        };
         /** Body_upload_equipment_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__photos_post */
         Body_upload_equipment_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__photos_post: {
             /**
@@ -20452,6 +20903,161 @@ export interface components {
             conclusion?: string | null;
             /** Attachments */
             attachments?: unknown[] | null;
+        };
+        /** CollectLogDetailApiResponse */
+        CollectLogDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["CollectLogDetailResponse"];
+        };
+        /**
+         * CollectLogDetailResponse
+         * @description 采集日志详情响应
+         */
+        CollectLogDetailResponse: {
+            /** Id */
+            id: string;
+            /** Platform Code */
+            platform_code: string;
+            /**
+             * Collect Time
+             * Format: date-time
+             */
+            collect_time: string;
+            /** Status */
+            status: string;
+            /** Device Count */
+            device_count: number;
+            /** Success Count */
+            success_count: number;
+            /** Error Message */
+            error_message: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Devices
+             * @description 设备数据详情列表
+             */
+            devices?: components["schemas"]["CollectLogDeviceDetail"][];
+            /**
+             * Time Range Start
+             * @description 数据覆盖起始时间
+             */
+            time_range_start?: string | null;
+            /**
+             * Time Range End
+             * @description 数据覆盖结束时间
+             */
+            time_range_end?: string | null;
+        };
+        /**
+         * CollectLogDeviceDetail
+         * @description 采集日志中单个设备的数据详情
+         */
+        CollectLogDeviceDetail: {
+            /**
+             * Device Name
+             * @description 设备名称
+             */
+            device_name: string;
+            /**
+             * Platform Device Code
+             * @description 平台设备编码
+             */
+            platform_device_code: string;
+            /**
+             * Energy Type
+             * @description 能源类型
+             */
+            energy_type: string;
+            /**
+             * Value
+             * @description 采集值
+             */
+            value: number;
+            /**
+             * Unit
+             * @description 计量单位
+             */
+            unit: string;
+            /**
+             * Data Timestamp
+             * Format: date-time
+             * @description 数据时间点
+             */
+            data_timestamp: string;
+        };
+        /** CollectLogListApiResponse */
+        CollectLogListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["CollectLogResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** CollectLogResponse */
+        CollectLogResponse: {
+            /** Id */
+            id: string;
+            /** Platform Code */
+            platform_code: string;
+            /**
+             * Collect Time
+             * Format: date-time
+             */
+            collect_time: string;
+            /** Status */
+            status: string;
+            /** Device Count */
+            device_count: number;
+            /** Success Count */
+            success_count: number;
+            /** Error Message */
+            error_message: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CollectTriggerApiResponse */
+        CollectTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
         };
         /** CollectTriggerRequest */
         CollectTriggerRequest: {
@@ -22566,6 +23172,115 @@ export interface components {
             status?: string | null;
         };
         /**
+         * DocGenAddSlotData
+         * @description 人工新增填写项结果摘要。
+         */
+        DocGenAddSlotData: {
+            /** Template Id */
+            template_id: string;
+            /** Slot Key */
+            slot_key: string;
+            /**
+             * Total Slots
+             * @default 0
+             */
+            total_slots: number;
+        };
+        /**
+         * DocGenAddSlotRequest
+         * @description POST /doc-gen/deliverable-templates/{id}/slots 请求体（人工新增填写项）。
+         *
+         *     ``anchor``/``kind`` 由候选位置原样回传——定位是安全敏感操作，由规则扫描器产出，
+         *     前端不手写锚点；用户只补 ``label`` 与检索语义（``query_hint``/``search_terms``/
+         *     ``expects``/``required``）。``kind="table"`` 会被服务层拒绝（表格槽位需列定义）。
+         */
+        DocGenAddSlotRequest: {
+            anchor: components["schemas"]["Anchor"];
+            /** Label */
+            label: string;
+            /**
+             * Kind
+             * @default field
+             * @enum {string}
+             */
+            kind: "field" | "paragraph" | "table" | "image";
+            /**
+             * Expects
+             * @default text
+             * @enum {string}
+             */
+            expects: "text" | "number" | "date" | "percent";
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Query Hint
+             * @default
+             */
+            query_hint: string;
+            /** Search Terms */
+            search_terms?: string[];
+        };
+        /**
+         * DocGenAddSlotResponse
+         * @description POST /doc-gen/deliverable-templates/{id}/slots 响应。
+         */
+        DocGenAddSlotResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenAddSlotData"];
+        };
+        /**
+         * DocGenAnchorCandidate
+         * @description 母本里一个尚未被占用、可锚定的候选位置（人工「新增填写项」时点选）。
+         *
+         *     ``anchor`` 可被前端原样回传用于建槽位，无需用户手写锚点；``context`` 给出
+         *     章节/表头/段落标签等线索帮助用户辨认。
+         */
+        DocGenAnchorCandidate: {
+            /** Label */
+            label: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "field" | "paragraph" | "table" | "image";
+            /**
+             * Context
+             * @default
+             */
+            context: string;
+            anchor: components["schemas"]["Anchor"];
+        };
+        /**
+         * DocGenAnchorCandidateListResponse
+         * @description GET /doc-gen/deliverable-templates/{id}/anchor-candidates 响应。
+         */
+        DocGenAnchorCandidateListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["DocGenAnchorCandidate"][];
+        };
+        /**
          * DocGenBatchUploadResponse
          * @description POST /doc-gen/deliverable-templates/batch-upload 响应。
          */
@@ -22670,6 +23385,87 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /**
+         * DocGenEnrichSemanticsData
+         * @description AI 语义增强结果摘要。
+         *
+         *     ``enriched_slots`` 是**实际发生字段变更**的槽位数（增强前后逐槽对比得出），
+         *     与 ``total_slots``（槽位总数）区分：AI 无新增语义或调用降级时为 0，
+         *     前端据此如实反馈，不再把"总数"谎报成"已增强数"。
+         */
+        DocGenEnrichSemanticsData: {
+            /** Template Id */
+            template_id: string;
+            /**
+             * Total Slots
+             * @default 0
+             */
+            total_slots: number;
+            /**
+             * Enriched Slots
+             * @default 0
+             */
+            enriched_slots: number;
+            /**
+             * Needs Review
+             * @default 0
+             */
+            needs_review: number;
+            /**
+             * Needs Review Added
+             * @default 0
+             */
+            needs_review_added: number;
+        };
+        /**
+         * DocGenEnrichSemanticsResponse
+         * @description POST /doc-gen/deliverable-templates/{id}/enrich-semantics 响应。
+         */
+        DocGenEnrichSemanticsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenEnrichSemanticsData"];
+        };
+        /**
+         * DocGenEvidenceItem
+         * @description 单条提取依据：标记填充值来自哪份资料的哪一页、哪句原文。
+         *
+         *     ``file_id`` 是内部稳定标识；``file_name``/``source_label`` 由后端解析后直接展示，
+         *     前端无需自行 join 资料清单。伪 file_id（知识库/登记数据/补充说明/人工填写）用
+         *     ``source_label`` 说明来源类型，``file_name`` 给出可读名称。
+         */
+        DocGenEvidenceItem: {
+            /**
+             * File Id
+             * @default
+             */
+            file_id: string;
+            /**
+             * File Name
+             * @default
+             */
+            file_name: string;
+            /**
+             * Source Label
+             * @default
+             */
+            source_label: string;
+            /** Page */
+            page?: number | null;
+            /**
+             * Quote
+             * @default
+             */
+            quote: string;
         };
         /**
          * DocGenExtractedInfoResponse
@@ -22878,6 +23674,151 @@ export interface components {
              * @description 模板ID（变更模板）
              */
             template_code?: string | null;
+        };
+        /**
+         * DocGenKbCoverage
+         * @description 知识库覆盖预检结果：生成前先算清「这些填充项库里有没有料」。
+         */
+        DocGenKbCoverage: {
+            /**
+             * Source
+             * @default none
+             */
+            source: string;
+            /**
+             * Source Label
+             * @default
+             */
+            source_label: string;
+            /**
+             * Kb Id
+             * @default
+             */
+            kb_id: string;
+            /**
+             * Kb Name
+             * @default
+             */
+            kb_name: string;
+            /**
+             * Documents
+             * @default 0
+             */
+            documents: number;
+            /**
+             * Chunks
+             * @default 0
+             */
+            chunks: number;
+            /**
+             * Facts
+             * @default 0
+             */
+            facts: number;
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+            /** Warnings */
+            warnings?: string[];
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Checked
+             * @default 0
+             */
+            checked: number;
+            /**
+             * Fillable
+             * @default 0
+             */
+            fillable: number;
+            /**
+             * Partial
+             * @default 0
+             */
+            partial: number;
+            /**
+             * Missing
+             * @default 0
+             */
+            missing: number;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /**
+             * Fillable Ratio
+             * @default 0
+             */
+            fillable_ratio: number;
+            /**
+             * Weighted Ratio
+             * @default 0
+             */
+            weighted_ratio: number;
+            /** Slots */
+            slots?: components["schemas"]["DocGenKbCoverageSlot"][];
+        };
+        /**
+         * DocGenKbCoverageResponse
+         * @description GET /doc-gen/kb-coverage 响应。
+         */
+        DocGenKbCoverageResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenKbCoverage"];
+        };
+        /**
+         * DocGenKbCoverageSlot
+         * @description 单个填充项的知识库覆盖预检结果。
+         */
+        DocGenKbCoverageSlot: {
+            /** Key */
+            key: string;
+            /**
+             * Label
+             * @default
+             */
+            label: string;
+            /**
+             * Kind
+             * @default field
+             */
+            kind: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Status
+             * @default no_material
+             */
+            status: string;
+            /**
+             * Status Label
+             * @default
+             */
+            status_label: string;
+            /**
+             * Matched Terms
+             * @default 0
+             */
+            matched_terms: number;
         };
         /**
          * DocGenLimits
@@ -23136,7 +24077,7 @@ export interface components {
             /** Confidence */
             confidence?: number | null;
             /** Evidence */
-            evidence?: unknown[] | null;
+            evidence?: components["schemas"]["DocGenEvidenceItem"][] | null;
             /** Candidates */
             candidates?: unknown[] | null;
             /** Section Key */
@@ -23265,6 +24206,117 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["DocGenTemplateSummary"][];
+        };
+        /**
+         * DocGenTemplateMarkdownData
+         * @description 模板全内容 Markdown（优先母本规则解析，其次骨架回退）。
+         */
+        DocGenTemplateMarkdownData: {
+            /** Template Id */
+            template_id: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Code
+             * @default
+             */
+            code: string;
+            /** Markdown */
+            markdown: string;
+            /**
+             * Source
+             * @default spec
+             */
+            source: string;
+            /**
+             * Slot Count
+             * @default 0
+             */
+            slot_count: number;
+            /**
+             * Needs Review
+             * @default 0
+             */
+            needs_review: number;
+            /** Slots */
+            slots?: components["schemas"]["DocGenTemplateSlotSemantics"][];
+        };
+        /**
+         * DocGenTemplateMarkdownResponse
+         * @description GET /doc-gen/deliverable-templates/{id}/markdown 响应。
+         */
+        DocGenTemplateMarkdownResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocGenTemplateMarkdownData"];
+        };
+        /**
+         * DocGenTemplateSlotSemantics
+         * @description 填写项语义摘要（「模板 Markdown」弹窗「填写项语义」视图数据源）。
+         *
+         *     只读展示 template_structure 里的语义字段——AI 增强/人工维护的成果在此肉眼
+         *     可见；渲染安全字段（anchors/kind 定位）不展示定位细节。
+         */
+        DocGenTemplateSlotSemantics: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /**
+             * Kind
+             * @default field
+             */
+            kind: string;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /**
+             * Expects
+             * @default text
+             */
+            expects: string;
+            /**
+             * Unit
+             * @default
+             */
+            unit: string;
+            /** Enum Values */
+            enum_values?: string[];
+            /**
+             * Cardinality
+             * @default single
+             */
+            cardinality: string;
+            /**
+             * Source Scope
+             * @default any
+             */
+            source_scope: string;
+            /**
+             * Query Hint
+             * @default
+             */
+            query_hint: string;
+            /** Search Terms */
+            search_terms?: string[];
+            /**
+             * Review State
+             * @default auto
+             */
+            review_state: string;
         };
         /**
          * DocGenTemplateSummary
@@ -24241,6 +25293,90 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** EnergyAlertRecordApiResponse */
+        EnergyAlertRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyAlertRecordResponse"];
+        };
+        /** EnergyAlertRecordListApiResponse */
+        EnergyAlertRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyAlertRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyAlertRecordResponse */
+        EnergyAlertRecordResponse: {
+            /** Id */
+            id: string;
+            /** Rule Id */
+            rule_id: string;
+            /** Device Config Id */
+            device_config_id: string | null;
+            /** Energy Type */
+            energy_type: string;
+            /** Alert Level */
+            alert_level: string;
+            /** Trigger Value */
+            trigger_value: number;
+            /** Threshold Value */
+            threshold_value: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Alert Time
+             * Format: date-time
+             */
+            alert_time: string;
+            /** Status */
+            status: string;
+            /** Processed By */
+            processed_by: string | null;
+            /** Processed At */
+            processed_at: string | null;
+            /** Process Note */
+            process_note: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** EnergyAlertRuleApiResponse */
+        EnergyAlertRuleApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyAlertRuleResponse"];
+        };
         /** EnergyAlertRuleCreate */
         EnergyAlertRuleCreate: {
             /**
@@ -24328,6 +25464,70 @@ export interface components {
              */
             is_enabled: boolean;
         };
+        /** EnergyAlertRuleListApiResponse */
+        EnergyAlertRuleListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyAlertRuleResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyAlertRuleResponse */
+        EnergyAlertRuleResponse: {
+            /** Id */
+            id: string;
+            /** Rule Name */
+            rule_name: string;
+            /** Rule Description */
+            rule_description: string | null;
+            /** Energy Type */
+            energy_type: string;
+            /** Monitor Metric */
+            monitor_metric: string;
+            /** Threshold Type */
+            threshold_type: string;
+            /** Threshold Value */
+            threshold_value: number;
+            /** Unit */
+            unit: string;
+            /** Alert Level */
+            alert_level: string;
+            /** Notify Method */
+            notify_method: string[];
+            /** Notify Users */
+            notify_users: string[];
+            /** Notify Frequency */
+            notify_frequency: string;
+            /** Effective Time */
+            effective_time: string;
+            /** Custom Time Start */
+            custom_time_start: string | null;
+            /** Custom Time End */
+            custom_time_end: string | null;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** EnergyAlertRuleUpdate */
         EnergyAlertRuleUpdate: {
             /** Rule Name */
@@ -24360,6 +25560,78 @@ export interface components {
             custom_time_end?: string | null;
             /** Is Enabled */
             is_enabled?: boolean | null;
+        };
+        /** EnergyDataListApiResponse */
+        EnergyDataListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyDataResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyDataResponse */
+        EnergyDataResponse: {
+            /** Id */
+            id: string;
+            /** Device Config Id */
+            device_config_id: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Collected At
+             * Format: date-time
+             */
+            collected_at: string;
+        };
+        /**
+         * EnergyDeleteResponse
+         * @description 通用删除响应
+         */
+        EnergyDeleteResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default 删除成功
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /** EnergyDeviceConfigApiResponse */
+        EnergyDeviceConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyDeviceConfigResponse"];
         };
         /** EnergyDeviceConfigCreate */
         EnergyDeviceConfigCreate: {
@@ -24430,6 +25702,64 @@ export interface components {
              */
             remark?: string | null;
         };
+        /** EnergyDeviceConfigListApiResponse */
+        EnergyDeviceConfigListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyDeviceConfigResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyDeviceConfigResponse */
+        EnergyDeviceConfigResponse: {
+            /** Id */
+            id: string;
+            /** Platform Code */
+            platform_code: string;
+            /** Platform Device Code */
+            platform_device_code: string;
+            /** Device Name */
+            device_name: string;
+            /** Energy Type */
+            energy_type: string;
+            /** Api Endpoint */
+            api_endpoint: string;
+            /** Workshop */
+            workshop: string;
+            /** Production Line */
+            production_line: string | null;
+            /** Monitor Level */
+            monitor_level: string;
+            /** Unit */
+            unit: string;
+            /** Collection Interval */
+            collection_interval: number;
+            /** Is Enabled */
+            is_enabled: boolean;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
         /** EnergyDeviceConfigUpdate */
         EnergyDeviceConfigUpdate: {
             /** Platform Code */
@@ -24459,6 +25789,37 @@ export interface components {
             is_enabled?: boolean | null;
             /** Remark */
             remark?: string | null;
+        };
+        /** EnergyMonthlyBatchCreateApiResponse */
+        EnergyMonthlyBatchCreateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** EnergyMonthlyRecordApiResponse */
+        EnergyMonthlyRecordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyMonthlyRecordResponse"];
         };
         /**
          * EnergyMonthlyRecordBatchCreate
@@ -24517,6 +25878,76 @@ export interface components {
              */
             remark?: string | null;
         };
+        /** EnergyMonthlyRecordListApiResponse */
+        EnergyMonthlyRecordListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyMonthlyRecordResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyMonthlyRecordResponse */
+        EnergyMonthlyRecordResponse: {
+            /** Id */
+            id: string;
+            /** Workshop Id */
+            workshop_id: string;
+            /** Energy Type */
+            energy_type: string;
+            /**
+             * Record Date
+             * Format: date
+             */
+            record_date: string;
+            /** Date Range End */
+            date_range_end: string | null;
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /** Source */
+            source: string;
+            /** Remark */
+            remark: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** EnergyOverviewApiResponse */
+        EnergyOverviewApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
         /** EnergyPlatformListApiResponse */
         EnergyPlatformListApiResponse: {
             /**
@@ -24538,6 +25969,57 @@ export interface components {
             code: string;
             /** Name */
             name: string;
+        };
+        /** EnergyStatisticsApiResponse */
+        EnergyStatisticsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyStatisticsResponse"];
+        };
+        /** EnergyStatisticsResponse */
+        EnergyStatisticsResponse: {
+            /**
+             * Group Key
+             * @description 分组键(车间/产线/设备名)
+             */
+            group_key: string;
+            /**
+             * Total Value
+             * @description 能耗合计
+             */
+            total_value: number;
+            /**
+             * Unit
+             * @description 计量单位
+             */
+            unit: string;
+            /**
+             * Data Count
+             * @description 数据条数
+             */
+            data_count: number;
+        };
+        /** EnergyWorkshopApiResponse */
+        EnergyWorkshopApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["EnergyWorkshopResponse"];
         };
         /** EnergyWorkshopCreate */
         EnergyWorkshopCreate: {
@@ -24574,6 +26056,52 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+        };
+        /** EnergyWorkshopListApiResponse */
+        EnergyWorkshopListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["EnergyWorkshopResponse"][];
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** EnergyWorkshopResponse */
+        EnergyWorkshopResponse: {
+            /** Id */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Parent Id */
+            parent_id: string | null;
+            /** Sort Order */
+            sort_order: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** EnergyWorkshopUpdate */
         EnergyWorkshopUpdate: {
@@ -25730,6 +27258,48 @@ export interface components {
              * @default false
              */
             dry_run: boolean;
+        };
+        /**
+         * FeishuEnergyImportResponse
+         * @description 飞书表格导入结果
+         */
+        FeishuEnergyImportResponse: {
+            /**
+             * Workshops Created
+             * @default 0
+             */
+            workshops_created: number;
+            /**
+             * Workshops Existing
+             * @default 0
+             */
+            workshops_existing: number;
+            /**
+             * Records Created
+             * @default 0
+             */
+            records_created: number;
+            /**
+             * Records Skipped
+             * @default 0
+             */
+            records_skipped: number;
+            /** Errors */
+            errors?: string[];
+        };
+        /** FeishuImportApiResponse */
+        FeishuImportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["FeishuEnergyImportResponse"];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -28031,6 +29601,242 @@ export interface components {
          */
         ItemResult: "pass" | "fail" | "na";
         /**
+         * KbChunkItem
+         * @description 一条解析切片（预览「解析内容」用）。
+         */
+        KbChunkItem: {
+            /**
+             * Id
+             * @default
+             */
+            id: string;
+            /**
+             * Content
+             * @default
+             */
+            content: string;
+            /** Positions */
+            positions?: number[][];
+            /**
+             * Document Keyword
+             * @default
+             */
+            document_keyword: string;
+            /**
+             * Image Id
+             * @default
+             */
+            image_id: string;
+            /**
+             * Available
+             * @default true
+             */
+            available: boolean;
+        };
+        /**
+         * KbChunkList
+         * @description 切片分页结果。
+         */
+        KbChunkList: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 50
+             */
+            page_size: number;
+            /** Items */
+            items?: components["schemas"]["KbChunkItem"][];
+        };
+        /**
+         * KbChunkListResponse
+         * @description GET /research/knowledge-bases/{id}/documents/{doc_id}/chunks 响应。
+         */
+        KbChunkListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["KbChunkList"];
+        };
+        /**
+         * KbDocumentItem
+         * @description 知识库中的一份文档及其解析状态。
+         */
+        KbDocumentItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ragflow Document Id */
+            ragflow_document_id: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * File Ext
+             * @default
+             */
+            file_ext: string;
+            /**
+             * Size Bytes
+             * @default 0
+             */
+            size_bytes: number;
+            /**
+             * Run
+             * @default UNSTART
+             */
+            run: string;
+            /**
+             * Progress
+             * @default 0
+             */
+            progress: number;
+            /**
+             * Progress Msg
+             * @default
+             */
+            progress_msg: string;
+            /**
+             * Chunk Count
+             * @default 0
+             */
+            chunk_count: number;
+            /**
+             * Token Count
+             * @default 0
+             */
+            token_count: number;
+            /**
+             * Last Error
+             * @default
+             */
+            last_error: string;
+            /** Parse Started At */
+            parse_started_at?: string | null;
+            /** Parsed At */
+            parsed_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
+         * KbDocumentListResponse
+         * @description GET /research/knowledge-bases/{id}/documents 响应。
+         */
+        KbDocumentListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["KbDocumentItem"][];
+        };
+        /**
+         * KbLimits
+         * @description 知识库上传限制（前端据此做提交前校验）。
+         */
+        KbLimits: {
+            /**
+             * Max Files
+             * @default 10
+             */
+            max_files: number;
+            /**
+             * Max File Mb
+             * @default 100
+             */
+            max_file_mb: number;
+            /** Allowed Extensions */
+            allowed_extensions?: string[];
+            /**
+             * Configured
+             * @default false
+             */
+            configured: boolean;
+            /**
+             * Provider
+             * @default ragflow
+             */
+            provider: string;
+        };
+        /**
+         * KbLimitsResponse
+         * @description 上传前校验用的规模与格式限制。
+         */
+        KbLimitsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["KbLimits"];
+        };
+        /**
+         * KbUploadResponse
+         * @description POST /research/knowledge-bases/{id}/documents 响应。
+         */
+        KbUploadResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["KbUploadResult"];
+        };
+        /**
+         * KbUploadResult
+         * @description 上传结果：成功入队解析的文件、被跳过的文件与刷新后的文档列表。
+         */
+        KbUploadResult: {
+            /** Uploaded */
+            uploaded?: string[];
+            /** Skipped */
+            skipped?: components["schemas"]["KbUploadSkipped"][];
+            /** Documents */
+            documents?: components["schemas"]["KbDocumentItem"][];
+        };
+        /**
+         * KbUploadSkipped
+         * @description 被跳过的文件及原因（格式不支持 / 超限 / RAGFlow 拒绝）。
+         */
+        KbUploadSkipped: {
+            /** File Name */
+            file_name: string;
+            /** Reason */
+            reason: string;
+        };
+        /**
          * KnowledgeAttachmentRequest
          * @description 从知识库创建附件请求
          */
@@ -28040,6 +29846,184 @@ export interface components {
              * @description 知识库文章 ID 列表
              */
             knowledge_ids: string[];
+        };
+        /**
+         * KnowledgeBaseCreateRequest
+         * @description 新建知识库请求：名称留空时由系统按项目名生成。
+         */
+        KnowledgeBaseCreateRequest: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Name
+             * @default
+             */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Embedding Model
+             * @default
+             */
+            embedding_model: string;
+            /**
+             * Chunk Method
+             * @default
+             */
+            chunk_method: string;
+        };
+        /**
+         * KnowledgeBaseDataResponse
+         * @description 单条知识库响应（创建 / 详情 / 重试）。
+         */
+        KnowledgeBaseDataResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["KnowledgeBaseItem"];
+        };
+        /**
+         * KnowledgeBaseItem
+         * @description 知识库概要（列表与详情共用）。
+         */
+        KnowledgeBaseItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Project Name
+             * @default
+             */
+            project_name: string;
+            /** Name */
+            name: string;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Provider
+             * @default ragflow
+             */
+            provider: string;
+            /**
+             * Ragflow Dataset Id
+             * @default
+             */
+            ragflow_dataset_id: string;
+            /**
+             * Embedding Model
+             * @default
+             */
+            embedding_model: string;
+            /**
+             * Chunk Method
+             * @default naive
+             */
+            chunk_method: string;
+            /**
+             * Status
+             * @default creating
+             */
+            status: string;
+            /**
+             * Last Error
+             * @default
+             */
+            last_error: string;
+            /**
+             * Document Count
+             * @default 0
+             */
+            document_count: number;
+            /**
+             * Chunk Count
+             * @default 0
+             */
+            chunk_count: number;
+            /**
+             * Token Count
+             * @default 0
+             */
+            token_count: number;
+            /**
+             * Parsed Count
+             * @default 0
+             */
+            parsed_count: number;
+            /**
+             * Parsing Count
+             * @default 0
+             */
+            parsing_count: number;
+            /**
+             * Failed Count
+             * @default 0
+             */
+            failed_count: number;
+            /** Last Synced At */
+            last_synced_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /**
+         * KnowledgeBaseListResponse
+         * @description GET /research/knowledge-bases 响应。
+         */
+        KnowledgeBaseListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["KnowledgeBaseItem"][];
+        };
+        /**
+         * KnowledgeBaseOperationResponse
+         * @description 无数据体的操作响应（删除等）。
+         */
+        KnowledgeBaseOperationResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: string;
+            };
         };
         /**
          * KnowledgeCategory
@@ -30511,6 +32495,20 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ProductionItemDetail
+         * @description 产品产量明细
+         */
+        ProductionItemDetail: {
+            /** Product Name */
+            product_name: string;
+            /** Quantity */
+            quantity: number;
+            /** Conversion Factor */
+            conversion_factor: number;
+            /** Converted Quantity */
+            converted_quantity: number;
         };
         /**
          * ProductionPlanCreate
@@ -35896,6 +37894,23 @@ export interface components {
              */
             updated_at?: string | null;
         };
+        /** SyncJobApiResponse */
+        SyncJobApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
         /** SyncTriggerRequest */
         SyncTriggerRequest: {
             /**
@@ -36953,6 +38968,20 @@ export interface components {
              */
             answer: string;
         };
+        /** UnitConsumptionTargetApiResponse */
+        UnitConsumptionTargetApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UnitConsumptionTargetResponse"];
+        };
         /**
          * UnitConsumptionTargetCreate
          * @description 创建单耗目标请求
@@ -36973,6 +39002,27 @@ export interface components {
              * @description 目标单耗（kWh/kg）
              */
             target_unit_consumption: number;
+        };
+        /**
+         * UnitConsumptionTargetResponse
+         * @description 单耗目标响应
+         */
+        UnitConsumptionTargetResponse: {
+            /** Id */
+            id: string;
+            /** Workshop Id */
+            workshop_id: string;
+            /** Workshop Name */
+            workshop_name?: string | null;
+            /** Target Month */
+            target_month: string;
+            /** Target Unit Consumption */
+            target_unit_consumption: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /**
          * UnitConsumptionTargetUpdate
@@ -38312,7 +40362,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -38325,6 +40377,15 @@ export interface operations {
                     "application/json": components["schemas"]["FeishuConfigApiResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     save_feishu_config_api_v1_identity_feishu_config_put: {
@@ -38332,7 +40393,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -38365,7 +40428,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: {
             content: {
@@ -53624,7 +55689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyOverviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53670,7 +55735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53705,7 +55770,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53738,7 +55803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53775,7 +55840,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53808,7 +55873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53852,7 +55917,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDataListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53892,7 +55957,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyStatisticsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53927,7 +55992,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CollectTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53965,7 +56030,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CollectLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53998,7 +56063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["CollectLogDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54040,7 +56105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54075,7 +56140,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54108,7 +56173,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54145,7 +56210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54178,7 +56243,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54224,7 +56289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54261,7 +56326,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyAlertRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54301,7 +56366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54336,7 +56401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54369,7 +56434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54406,7 +56471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54439,7 +56504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54483,7 +56548,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54518,7 +56583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54553,7 +56618,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyBatchCreateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54626,7 +56691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyMonthlyRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54659,7 +56724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54694,7 +56759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["FeishuImportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54725,7 +56790,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54756,7 +56821,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54787,7 +56852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54822,7 +56887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54853,7 +56918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54886,7 +56951,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54921,7 +56986,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54955,7 +57020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54992,7 +57057,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55027,7 +57092,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64034,6 +66099,44 @@ export interface operations {
             };
         };
     };
+    read_kb_coverage_api_v1_research_doc_gen_kb_coverage_get: {
+        parameters: {
+            query: {
+                /** @description 交付物模板 ID */
+                deliverable_template_id: string;
+                /** @description 研发项目 ID（决定用哪个知识库） */
+                project_id?: string | null;
+                /** @description 知识库尚无本地索引时是否实时检索兜底（会压知识库，较慢） */
+                live?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenKbCoverageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_jobs_for_project_api_v1_research_doc_gen_jobs_get: {
         parameters: {
             query: {
@@ -64949,6 +67052,142 @@ export interface operations {
             };
         };
     };
+    list_template_anchor_candidates_api_v1_research_doc_gen_deliverable_templates__template_id__anchor_candidates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenAnchorCandidateListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_template_markdown_api_v1_research_doc_gen_deliverable_templates__template_id__markdown_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenTemplateMarkdownResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enrich_template_semantics_api_v1_research_doc_gen_deliverable_templates__template_id__enrich_semantics_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenEnrichSemanticsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_template_slot_api_v1_research_doc_gen_deliverable_templates__template_id__slots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                template_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocGenAddSlotRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocGenAddSlotResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     extract_job_api_v1_research_doc_gen_jobs__job_id__extract_post: {
         parameters: {
             query?: never;
@@ -65138,6 +67377,425 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_limits_api_v1_research_knowledge_bases_limits_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KbLimitsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_knowledge_bases_api_v1_research_knowledge_bases_get: {
+        parameters: {
+            query?: {
+                /** @description 按研发项目过滤 */
+                project_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeBaseListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_knowledge_base_api_v1_research_knowledge_bases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeBaseCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeBaseDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_knowledge_base_api_v1_research_knowledge_bases__kb_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeBaseDataResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_knowledge_base_api_v1_research_knowledge_bases__kb_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeBaseOperationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_research_knowledge_bases__kb_id__documents_get: {
+        parameters: {
+            query?: {
+                /** @description 是否回源 RAGFlow 刷新解析进度 */
+                refresh?: boolean;
+            };
+            header?: never;
+            path: {
+                kb_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KbDocumentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_documents_api_v1_research_knowledge_bases__kb_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KbUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+                document_row_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KbDocumentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reparse_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__reparse_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+                document_row_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KbDocumentListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_document_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__download_get: {
+        parameters: {
+            query?: {
+                /** @description true 时以 inline 返回，供浏览器内直接打开预览 */
+                inline?: boolean;
+                /** @description true 时把 Office 文档转成 PDF 返回（浏览器无法原生渲染 .doc/.xls/.ppt） */
+                as_pdf?: boolean;
+            };
+            header?: never;
+            path: {
+                kb_id: string;
+                document_row_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_document_image_api_v1_research_knowledge_bases__kb_id__images__image_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                kb_id: string;
+                image_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_document_chunks_api_v1_research_knowledge_bases__kb_id__documents__document_row_id__chunks_get: {
+        parameters: {
+            query?: {
+                /** @description 页码，从 1 开始 */
+                page?: number;
+                /** @description 每页切片数 */
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                kb_id: string;
+                document_row_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KbChunkListResponse"];
                 };
             };
             /** @description Validation Error */
