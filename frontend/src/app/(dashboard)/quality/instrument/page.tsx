@@ -357,7 +357,7 @@ export default function InstrumentDashboardPage() {
         ) : (
           <>
             <div style={{ marginBottom: 16 }}>
-              <Space direction={isMobile ? 'vertical' : 'horizontal'} size={8} wrap>
+              <Space orientation={isMobile ? 'vertical' : 'horizontal'} size={8} wrap>
                 <span>使用配置：</span>
                 <Select value={selectedConfigId} onChange={setSelectedConfigId} style={{ width: isMobile ? '100%' : 200 }}>
                   {reminderConfigs.map((config) => (
@@ -373,7 +373,7 @@ export default function InstrumentDashboardPage() {
             </div>
 
             <div style={{ marginBottom: 16 }}>
-              <Space direction={isMobile ? 'vertical' : 'horizontal'} size={8} wrap>
+              <Space orientation={isMobile ? 'vertical' : 'horizontal'} size={8} wrap>
                 <span>提前提醒天数：</span>
                 <Select
                   value={remindDays}

@@ -565,7 +565,7 @@ export default function SopManagementPage() {
         <Divider titlePlacement="left">SOP文件管理</Divider>
 
         <div style={{ marginBottom: 16 }}>
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space orientation="vertical" style={{ width: '100%' }}>
             <Space>
               <Upload {...uploadProps}>
                 <Button icon={<UploadOutlined />} loading={uploading}>

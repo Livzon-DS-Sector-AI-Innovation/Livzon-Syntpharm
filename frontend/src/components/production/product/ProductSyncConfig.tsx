@@ -200,7 +200,7 @@ export default function ProductSyncConfig({ productId, onSynced }: ProductSyncCo
 
         {config && (
           <Card size="small" style={{ marginTop: 16 }}>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
               <div>
                 <Tag color="blue">当前配置</Tag>
               </div>

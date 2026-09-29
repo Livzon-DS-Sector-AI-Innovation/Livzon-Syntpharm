@@ -92,5 +92,5 @@ export function ComplianceAlert({
     )
   }
 
-  return <Space direction="vertical" style={{ width: '100%', marginBottom: 16 }}>{alerts}</Space>
+  return <Space orientation="vertical" style={{ width: '100%', marginBottom: 16 }}>{alerts}</Space>
 }

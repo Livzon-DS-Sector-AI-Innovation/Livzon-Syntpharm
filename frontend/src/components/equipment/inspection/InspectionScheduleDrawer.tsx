@@ -275,7 +275,7 @@ export function InspectionScheduleDrawer() {
           </div>
         )}
 
-        <Space direction="vertical" size={12} style={{ width: '100%' }}>
+        <Space orientation="vertical" size={12} style={{ width: '100%' }}>
           {schedules.map(s => (
             <div key={s.id} style={{
               padding: '16px 18px', background: C.canvas,
