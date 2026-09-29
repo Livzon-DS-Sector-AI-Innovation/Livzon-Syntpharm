@@ -103,7 +103,7 @@ async def get(  # noqa: F811
     """获取稳定性试验方案详情"""
     try:
         study = await service.get_study(study_id)
-        return StabilityInspectionApiResponse(data=StabilityStudyResponse.model_validate(study))
+        return StabilityStudyApiResponse(data=StabilityStudyResponse.model_validate(study))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 

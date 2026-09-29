@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.modules.production.product.output_schemas import UndoSyncResponse
 from app.modules.production.product.sync_config_schemas import (
-    MessageApiResponse,
+    DataApiResponse,
     ProductSyncConfigApiResponse,
     ProductSyncConfigCreate,
     ProductSyncConfigResponse,
@@ -31,7 +31,7 @@ async def get_sync_config(
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
     if not config:
-        return MessageApiResponse(data=None, message="未找到同步配置")
+        return DataApiResponse(data=None, message="未找到同步配置")
     return ProductSyncConfigApiResponse(data=ProductSyncConfigResponse.model_validate(config))
 
 
@@ -44,7 +44,7 @@ async def create_sync_config(
     service = ProductSyncConfigService(db)
     existing = await service.get_config(data.product_id)
     if existing:
-        return MessageApiResponse(code=400, message="该产品已有同步配置，请使用更新接口", data=None)
+        return DataApiResponse(code=400, message="该产品已有同步配置，请使用更新接口", data=None)
     config = await service.create_config(data)
     return ProductSyncConfigApiResponse(data=ProductSyncConfigResponse.model_validate(config))
 
@@ -59,7 +59,7 @@ async def update_sync_config(
     service = ProductSyncConfigService(db)
     config = await service.update_config(config_id, data)
     if not config:
-        return MessageApiResponse(code=404, message="配置不存在", data=None)
+        return DataApiResponse(code=404, message="配置不存在", data=None)
     return ProductSyncConfigApiResponse(data=ProductSyncConfigResponse.model_validate(config))
 
 
@@ -72,8 +72,8 @@ async def delete_sync_config(
     service = ProductSyncConfigService(db)
     success = await service.delete_config(config_id)
     if not success:
-        return MessageApiResponse(code=404, message="配置不存在", data=None)
-    return MessageApiResponse(message="删除成功", data=None)
+        return DataApiResponse(code=404, message="配置不存在", data=None)
+    return DataApiResponse(message="删除成功", data=None)
 
 
 @router.post("/product-sync-config/{product_id}/push", summary="推送到飞书")
@@ -119,7 +119,7 @@ async def preview_push(
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
     if not config:
-        return MessageApiResponse(code=404, message="未找到同步配置", data=None)
+        return DataApiResponse(code=404, message="未找到同步配置", data=None)
 
     import json
 
@@ -142,7 +142,7 @@ async def preview_pull(
     service = ProductSyncConfigService(db)
     config = await service.get_config(product_id)
     if not config:
-        return MessageApiResponse(code=404, message="未找到同步配置", data=None)
+        return DataApiResponse(code=404, message="未找到同步配置", data=None)
 
     import json
 
@@ -168,7 +168,7 @@ async def undo_last_sync(
     # 获取最新操作日志
     log = await SyncOperationLog.get_latest_operation(db, str(product_id))
     if not log:
-        return MessageApiResponse(code=404, message="未找到同步操作记录", data=None)
+        return DataApiResponse(code=404, message="未找到同步操作记录", data=None)
 
     operation_type = log["operation_type"]
     records = log["records"]
@@ -176,7 +176,7 @@ async def undo_last_sync(
     if operation_type == "push":
         # 撤销推送：删除新增的飞书记录，恢复更新的记录
         # 这里简化处理，只记录日志，实际删除需要飞书删除权限
-        return MessageApiResponse(
+        return DataApiResponse(
             data=UndoSyncResponse(deleted=0),
             message=f"撤销推送操作已记录，共 {len(records)} 条记录需要处理",
         )
@@ -202,4 +202,4 @@ async def undo_last_sync(
                 deleted += 1
 
         await db.commit()
-        return ProductSyncConfigApiResponse(data=UndoSyncResponse(deleted=deleted))
+        return DataApiResponse(data=UndoSyncResponse(deleted=deleted))

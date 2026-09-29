@@ -122,7 +122,7 @@ async def get_product_outputs_batch_count(
         start_date=start_date,
         end_date=end_date,
     )
-    return SummaryApiResponse(data=batch_counts)
+    return DataApiResponse(data={"batch_counts": batch_counts})
 
 
 @router.get("/product-output/export", summary="导出产量记录")

@@ -16,10 +16,10 @@ from app.modules.quality.qms.fqc_schemas import (
     FQCInspectionApiResponse,
     FQCInspectionCreate,
     FQCInspectionFilter,
-    FQCInspectionListApiResponse,
-    FQCInspectionListResponse,
     FQCInspectionResponse,
     FQCInspectionUpdate,
+    FQCPaginatedListApiResponse,
+    FQCPaginatedListResponse,
 )
 from app.modules.quality.qms.fqc_service import FQCInspectionService
 
@@ -48,7 +48,7 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/inspections", response_model=FQCInspectionListApiResponse)
+@router.get("/inspections", response_model=FQCPaginatedListApiResponse)
 async def get(
     inspection_no: str | None = Query(None, description="检验单号"),
     batch_no: str | None = Query(None, description="成品生产批号"),
@@ -81,8 +81,8 @@ async def get(
         end_date=datetime.fromisoformat(end_date) if end_date else None,
     )
     items, total = await service.get_inspection_list(filters, (page - 1) * page_size, page_size)
-    return FQCInspectionListApiResponse(
-        data=FQCInspectionListResponse(
+    return FQCPaginatedListApiResponse(
+        data=FQCPaginatedListResponse(
             items=[FQCInspectionResponse.model_validate(item) for item in items],
             total=total,
             page=page,

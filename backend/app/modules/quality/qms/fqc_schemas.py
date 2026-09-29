@@ -311,3 +311,20 @@ class FQCApprovalRecordListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[FQCApprovalRecordResponse] | None = None
+
+
+class FQCPaginatedListResponse(BaseModel):
+    """FQC paginated list response"""
+
+    items: list[FQCInspectionResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class FQCPaginatedListApiResponse(BaseModel):
+    """FQC paginated list API response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: FQCPaginatedListResponse | None = None
