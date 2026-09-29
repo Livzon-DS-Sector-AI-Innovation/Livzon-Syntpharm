@@ -19,8 +19,19 @@ from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.schemas import (
+    ChromColumnApiResponse,
+    ChromColumnListApiResponse,
+    DataApiResponse,
+    HplcReferenceApiResponse,
+    HplcReferenceListApiResponse,
+    MediumApiResponse,
+    MediumListApiResponse,
     MessageApiResponse,
+    StandardApiResponse,
+    StandardListApiResponse,
+    StorageConditionApiResponse,
     StorageConditionListApiResponse,
+    UnitApiResponse,
     UnitListApiResponse,
 )
 from app.modules.quality.qms.static_data.service import StaticDataService
@@ -132,7 +143,7 @@ DICT_OPTIONS = {
 async def get_dict_options(dict_type: str) -> Any:
     """Get dictionary options - returns hardcoded options for various dict types"""
     if dict_type in DICT_OPTIONS:
-        return MessageApiResponse(data=DICT_OPTIONS[dict_type])
+        return DataApiResponse(data=DICT_OPTIONS[dict_type])
     return MessageApiResponse(code=404, message=f"Dictionary type '{dict_type}' not found", data=None)
 
 
@@ -357,7 +368,7 @@ async def handler(
         if errors:
             message += f"\nErrors: {'; '.join(errors[:5])}"
 
-        return MessageApiResponse(message=message, data={"success": success_count, "failed": error_count})
+        return DataApiResponse(message=message, data={"success": success_count, "failed": error_count})
     except Exception as e:
         return MessageApiResponse(code=500, message=f"Import failed: {str(e)}", data=None)
 
@@ -386,7 +397,7 @@ async def get(
         ref_status=ref_status,
         has_coa=has_coa,
     )
-    return MessageApiResponse(
+    return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -398,7 +409,7 @@ async def get(  # noqa: F811
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
     items = await service.get_hplc_references_need_recal()
-    return MessageApiResponse(
+    return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
         meta={"count": len(items)},
     )
@@ -412,7 +423,7 @@ async def get(  # noqa: F811
     obj = await service.get_hplc_reference(id)
     if not obj:
         return MessageApiResponse(code=404, message="Record not found", data=None)
-    return MessageApiResponse(data=s.HplcReferenceResponse.model_validate(obj))
+    return HplcReferenceApiResponse(data=s.HplcReferenceResponse.model_validate(obj))
 
 
 @router.post("/hplc-reference", summary="Create HPLC reference substance")
@@ -423,7 +434,7 @@ async def post(
 ) -> Any:
     try:
         obj = await service.create_hplc_reference(data, user_id)
-        return MessageApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Created successfully",
         )
@@ -440,7 +451,7 @@ async def put(
 ) -> Any:
     try:
         obj = await service.update_hplc_reference(id, data, user_id)  # type: ignore[attr-defined]
-        return MessageApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Updated successfully",
         )
@@ -472,7 +483,7 @@ async def handler(  # noqa: F811
     try:
         user_id = current_user.id
         obj = await service.adjust_hplc_reference_quantity(id, quantity_change, user_id)  # type: ignore[attr-defined]
-        return MessageApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Quantity adjusted",
         )
@@ -503,7 +514,7 @@ async def post(  # noqa: F811
             remark,
             user_id,
         )
-        return MessageApiResponse(
+        return ChromColumnApiResponse(
             data={
                 "reference": s.HplcReferenceResponse.model_validate(obj),
                 "usage": s.HplcReferenceUsageResponse.model_validate(usage_log),
@@ -524,7 +535,7 @@ async def get(  # noqa: F811
     """查询指定对照品的领用历史记录"""
     skip = (page - 1) * page_size
     items, total = await service.list_hplc_reference_usage(ref_id=id, skip=skip, limit=page_size)
-    return MessageApiResponse(
+    return UnitApiResponse(
         data=[s.HplcReferenceUsageResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -556,7 +567,7 @@ async def get(  # noqa: F811
         col_status=col_status,
         column_category=column_category,
     )
-    return MessageApiResponse(
+    return ChromColumnListApiResponse(
         data=[s.ChromColumnResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -873,7 +884,7 @@ async def handler(  # noqa: F811
             if len(errors) > 10:
                 message += f" ...等共{len(errors)}条错误"
 
-        return MessageApiResponse(
+        return DataApiResponse(
             message=message,
             data={"success": success_count, "failed": error_count, "errors": errors},
         )
@@ -889,7 +900,7 @@ async def get(  # noqa: F811
     obj = await service.get_chrom_column(id)
     if not obj:
         return MessageApiResponse(code=404, message="Record not found", data=None)
-    return MessageApiResponse(data=s.ChromColumnResponse.model_validate(obj))
+    return ChromColumnApiResponse(data=s.ChromColumnResponse.model_validate(obj))
 
 
 @router.post("/chrom-column", summary="Create chromatography column")  # type: ignore[no-redef]
@@ -900,7 +911,7 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_chrom_column(data, user_id)
-        return MessageApiResponse(
+        return ChromColumnApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Created successfully",
         )
@@ -917,7 +928,7 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_chrom_column(id, data, user_id)  # type: ignore[attr-defined]
-        return MessageApiResponse(
+        return ChromColumnApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Updated successfully",
         )
@@ -947,7 +958,7 @@ async def handler(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.increment_chrom_column_usage(id, user_id)
-        return MessageApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
+        return ChromColumnApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -978,7 +989,7 @@ async def get(  # noqa: F811
         verify_status=verify_status,
         status=status,
     )
-    return MessageApiResponse(
+    return MediumListApiResponse(
         data=[s.MediumResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -992,7 +1003,7 @@ async def get(  # noqa: F811
     obj = await service.get_medium(id)
     if not obj:
         return MessageApiResponse(code=404, message="Medium not found", data=None)
-    return MessageApiResponse(data=s.MediumResponse.model_validate(obj))
+    return MediumApiResponse(data=s.MediumResponse.model_validate(obj))
 
 
 @router.post("/medium", summary="Create medium")  # type: ignore[no-redef]
@@ -1003,7 +1014,7 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_medium(data, user_id)
-        return MessageApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -1017,7 +1028,7 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_medium(id, data, user_id)
-        return MessageApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -1044,7 +1055,7 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.adjust_medium_stock(id, quantity, user_id)
-        return MessageApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -1073,7 +1084,7 @@ async def get(  # noqa: F811
         manufacturer=manufacturer,
         std_status=std_status,
     )
-    return MessageApiResponse(
+    return StandardListApiResponse(
         data=[s.StandardResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -1087,7 +1098,7 @@ async def get(  # noqa: F811
     obj = await service.get_standard(id)
     if not obj:
         return MessageApiResponse(code=404, message="Standard not found", data=None)
-    return MessageApiResponse(data=s.StandardResponse.model_validate(obj))
+    return StandardApiResponse(data=s.StandardResponse.model_validate(obj))
 
 
 @router.post("/standard", summary="Create standard")  # type: ignore[no-redef]
@@ -1098,7 +1109,7 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_standard(data, user_id)
-        return MessageApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -1112,7 +1123,7 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_standard(id, data, user_id)
-        return MessageApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -1139,7 +1150,7 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.adjust_standard_quantity(id, quantity, user_id)
-        return MessageApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
     except ValueError as e:
         return MessageApiResponse(code=400, message=str(e), data=None)
 
@@ -1164,7 +1175,7 @@ async def get(  # noqa: F811
         cond_name=cond_name,
         status=status,
     )
-    return MessageApiResponse(
+    return StorageConditionListApiResponse(
         data=[s.StorageConditionResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -1178,7 +1189,7 @@ async def get(  # noqa: F811
     obj = await service.get_storage_condition(id)
     if not obj:
         return MessageApiResponse(code=404, message="Storage condition not found", data=None)
-    return MessageApiResponse(data=s.StorageConditionResponse.model_validate(obj))
+    return StorageConditionApiResponse(data=s.StorageConditionResponse.model_validate(obj))
 
 
 @router.post("/storage-condition", summary="Create storage condition")  # type: ignore[no-redef]
@@ -1189,7 +1200,7 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_storage_condition(data, user_id)  # type: ignore[attr-defined]
-        return MessageApiResponse(
+        return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition created",
         )
@@ -1206,7 +1217,7 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_storage_condition(id, data, user_id)  # type: ignore[attr-defined]
-        return MessageApiResponse(
+        return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition updated",
         )
