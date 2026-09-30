@@ -4002,3 +4002,671 @@ _None._
 | 本审查使用 `origin/main` 作为基准（非本地 `main`），因为本地 `main` 落后于 `origin/main`。使用错误基准会导致已合并的 commits 被错误计入 PR 范围。 | 审查程序 | — |
 | Safety API 文件缺少 `logger = logging.getLogger(__name__)` 是 origin/main 已存在的技术债务，建议后续专项修复。 | 日志规范 | 6 |
 | 38 处 `as unknown as` 类型转换表明 OpenAPI spec 可能未完整覆盖后端响应结构，建议在 `scripts/ci/export_openapi.py` 中检查 `ApiResponse` 信封的生成。 | 前端/API 类型来源 | 10 |
+
+---
+
+### PR #85: feat: replace generic ApiResponse with concrete response models (第二次审查) (base: main, head: pr-85, date: 2026-09-30)
+
+**变更规模**: 146 files changed, 12264 insertions(+), 3047 deletions(-), 21 commits
+
+**自上次审查后的新增 commits (3):**
+1. `89673995` — fix: resolve Pydantic type mismatches in API response models
+2. `42caa4d2` — fix: format fqc_schemas.py to pass ruff format check
+3. `97a8361d` — fix: replace deprecated Space direction with orientation
+
+**主要变更主题**:
+- 后端：将 `response_model=ApiResponse` 替换为具体的 Pydantic 响应模型（production, quality/qms, research, safety 模块）
+- 后端：新增大量 `*ApiResponse` 包装类型到各模块的 `schemas.py`
+- 后端：修复 Pydantic 类型不匹配问题（`data: Any = None`、新增分页响应类型）
+- 前端：将 antd 废弃的 `destroyOnClose` 替换为 `destroyOnHidden`（Modal/Drawer 组件）
+- 前端：将 antd 废弃的 `Space direction` 替换为 `Space orientation`
+- 前端：`ApiResponse` 类型整合 — 从 `types/production.ts` 迁移到 `types/common.ts`
+- 前端：`doc-check.ts` 使用 OpenAPI 生成类型替代手写 API 响应类型
+- 文档：`AGENTS.md` 和 `docs/agents/issue-tracker.md` 更新为使用 GitHub Issues
+- 清理：删除 `.scratch/api-type-compliance/` 跟踪文件
+- OpenAPI spec 和前端生成类型重新生成
+
+**Affected categories:** 3, 4, 6, 10, 13, 16
+
+---
+
+#### 上次审查问题修复状态
+
+| # | 文件 | 问题 | 状态 |
+|---|------|------|------|
+| 1 | `inspection_table_api.py` | `InspectionStandardApiResponse` 被错误用作通用响应包装 | ❌ **未修复** |
+| 2 | `deviation_automation_api.py` | `DeviationApiResponse` 传入 dict | ✅ **已修复**（`data: Any = None`） |
+| 3 | `deviation_api.py` | `DeviationApiResponse` 传入仅含 `id` 的 dict | ✅ **已修复**（`data: Any = None`） |
+| 4 | `fqc_api.py` | `FQCInspectionListResponse` 被错误构造为分页响应 | ✅ **已修复**（新增 `FQCPaginatedListResponse`） |
+| 5 | `stability_api.py:106` | `response_model` 与实际返回类型不匹配 | ✅ **已修复** |
+| 5b | `stability_api.py:331` | trend endpoint 传入 dict 而非 `StabilityInspectionResponse` | ❌ **未修复** |
+| 6 | `sync_config_api.py` | `MessageApiResponse` 传入 `UndoSyncResponse` 对象 | ❌ **未修复**（改用 `DataApiResponse` 但仍有类型不匹配） |
+| 7 | `output_api.py` | `SummaryApiResponse` 传入 `list[dict]` | ✅ **已修复**（改为 `DataApiResponse(data={"batch_counts": ...})`） |
+
+---
+
+#### Category 3: Backend Module Boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~40 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。
+
+---
+
+#### Category 4: API and Authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~30 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 4 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/quality/qms/inspection_table_api.py:49-55,90,109,138,155,174,195,213,232,267,363,488,555,589` — API 规范/禁止 response_model=dict 或 ApiResponse — `InspectionStandardApiResponse` 的 `data` 字段类型为 `InspectionStandardResponse`（必需，非可选），但代码多处传入不匹配的数据类型：
+  - Line 49-55: `data={"items": tables, "total": total, ...}`（dict）
+  - Line 155: `data=None`
+  - Line 90, 109, 138, 174, 195, 213, 232, 267, 363, 488, 555, 589: 传入 table 对象、row 对象、dict、None
+  
+  Pydantic v2 会尝试将 dict 验证为 `InspectionStandardResponse`，由于缺少 `id`、`standard_no`、`status` 等必需字段，会在运行时抛出 ValidationError。应创建专用的响应类型（如 `InspectionTableApiResponse`、`InspectionRowApiResponse`）或将 `data` 改为 `Any = None`。
+
+- [ ] `backend/app/modules/quality/qms/stability_api.py:331` — API 规范/禁止 response_model=dict 或 ApiResponse — trend endpoint 声明 `response_model=StabilityStudyApiResponse` 但返回 `StabilityInspectionApiResponse(data=trend_data)`。`trend_data` 是 `dict[str, Any]`，但 `StabilityInspectionApiResponse.data` 类型为 `StabilityInspectionResponse | None = None`。Pydantic v2 会抛出 ValidationError。应使用已定义的 `StabilityTrendApiResponse` 或创建 `StabilityTrendDictApiResponse`（`data: dict[str, Any] | None = None`）。
+
+- [ ] `backend/app/modules/production/product/sync_config_api.py:179,204` — API 规范/禁止 response_model=dict 或 ApiResponse — `DataApiResponse(data=UndoSyncResponse(deleted=0))` 和 `DataApiResponse(data=UndoSyncResponse(deleted=deleted))`。`DataApiResponse.data` 类型为 `dict[str, Any] | None = None`，但传入 `UndoSyncResponse`（BaseModel 实例）。Pydantic v2 会抛出 ValidationError（已通过实际测试验证）。应使用 `.model_dump()`: `DataApiResponse(data=UndoSyncResponse(deleted=0).model_dump())` 或创建 `UndoSyncApiResponse`（`data: UndoSyncResponse | None = None`）。
+
+- [ ] `backend/app/modules/safety/api/oh_hazard_monitors.py:77,78,93,95,112,130,132,147,149` — API 规范/禁止 response_model=dict 或 ApiResponse — 多个 endpoint 声明 `response_model=OhHazardMonitorApiResponse` 但返回 `build_response(...)`（返回 `ApiResponse` 类型）。虽然两者结构相同，FastAPI 能序列化，但 OpenAPI spec 会不一致，前端生成类型可能与实际响应不匹配。应统一使用 `OhHazardMonitorApiResponse`。
+
+**Uncertain:**
+
+无。
+
+---
+
+#### Category 6: Configuration and Logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~40 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。无敏感信息泄露，无 `os.getenv()` 滥用，无 `.env` 文件变更。
+
+---
+
+#### Category 10: Frontend API and Generated Types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~50 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+无。客户端 API 使用相对路径，服务端使用 `API_BASE_URL`，写操作在 Server Actions 中。`doc-check.ts` 成功使用生成类型替代手写 API 响应类型。`ApiResponse` 整合到 `types/common.ts`。
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/static_data/schemas.py`、`backend/app/modules/production/product/output_schemas.py`、`backend/app/modules/production/product/schemas.py`、`backend/app/modules/production/product/sync_config_schemas.py`、`backend/app/modules/quality/qms/doc_check/schemas.py` — 前端/API 类型来源 — 多个模块定义了相同的 `MessageApiResponse` 和 `DataApiResponse` 类型（结构完全相同）。这导致代码重复，且 OpenAPI spec 中会出现多个同名但不同 schema 的类型。建议提取到 `app/shared/schemas.py` 或 `app/core/response.py` 中统一使用。
+
+---
+
+#### Category 13: Docker and Deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 0 |
+| Files not inspected | 0 |
+| Rules evaluated | 0 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。本 PR 无 Docker 相关文件变更。
+
+---
+
+#### Category 16: React Hooks & React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~60 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。本 PR 的 `destroyOnClose` → `destroyOnHidden` 和 `Space direction` → `Space orientation` 迁移是 antd v6 废弃 API 的正确替换，不涉及 React Hooks 违规。
+
+---
+
+#### Categories not affected
+1, 2, 5, 7, 8, 9, 11, 12, 14, 15 — no relevant files changed or no violations found.
+
+---
+
+#### PR #85 Summary (第二次审查)
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 4 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 1 |
+| 13. Docker and deployment | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **4** | **1** |
+
+**对比第一次审查**: 从 8 个确认违规减少到 4 个（修复了 4 个）。
+
+---
+
+#### PR #85 Overall Assessment (第二次审查)
+
+**Overall assessment:** PR #85 仍存在 **4 个确认违规**，其中 3 个会导致运行时 ValidationError（500 错误）。
+
+**关键未修复问题：**
+
+| # | 文件 | 严重程度 | 问题 |
+|---|------|----------|------|
+| 1 | `inspection_table_api.py` | 🔴 严重 | `InspectionStandardApiResponse` 被错误用作通用响应包装，多处传入 dict/None/table/row |
+| 2 | `sync_config_api.py:179,204` | 🔴 严重 | `DataApiResponse(data=UndoSyncResponse(...))` — BaseModel 无法验证为 `dict[str, Any]` |
+| 3 | `stability_api.py:331` | 🟡 中等 | trend endpoint 传入 dict 而非 `StabilityInspectionResponse`，且 response_model 不匹配 |
+| 4 | `oh_hazard_monitors.py` | 🟢 低 | `build_response()` 与 `response_model` 不一致（OpenAPI spec 问题，无运行时错误） |
+
+**已修复问题 (4/8):**
+
+1. ✅ `deviation_schemas.py` — `data: Any = None`
+2. ✅ `fqc_api.py` — 新增 `FQCPaginatedListResponse`
+3. ✅ `output_api.py` — 改为 `DataApiResponse(data={"batch_counts": ...})`
+4. ✅ `stability_api.py:106` — 使用正确的 `StabilityStudyApiResponse`
+
+**新增正面改进：**
+
+- ✅ `Space direction` → `Space orientation` 迁移符合 antd v6 规范
+
+**建议**：**不应合并**，需先修复剩余 3 个严重/中等问题：
+
+1. **`inspection_table_api.py`** — 将 `InspectionStandardApiResponse.data` 改为 `Any = None`，或创建专用响应类型
+2. **`sync_config_api.py`** — 使用 `.model_dump()` 或创建 `UndoSyncApiResponse`
+3. **`stability_api.py:331`** — 使用 `StabilityTrendApiResponse` 或创建 `StabilityTrendDictApiResponse`
+
+修复后，PR #85 可以合并。
+
+---
+
+#### Notes/observations
+
+| Note | Rule | Categories |
+|------|------|------------|
+| 多个模块定义了相同的 `MessageApiResponse` 和 `DataApiResponse`，导致 OpenAPI spec 中出现多个同名但不同 schema 的类型。建议提取到 `app/shared/schemas.py` 统一使用。 | 前端/API 类型来源 | 10 |
+| `AGENTS.md` 和 `docs/agents/issue-tracker.md` 从本地 `.scratch/` 迁移到 GitHub Issues，这是工作流变更，需确认团队共识。 | 仓库通用规则 | 1 |
+| Pydantic v2 对类型验证非常严格，BaseModel 实例无法自动转换为 dict，即使字段完全匹配。必须显式调用 `.model_dump()` 或使用兼容的类型定义（如 `Any`）。 | Pydantic v2 行为 | 4 |
+
+---
+
+### PR #85: feat: replace generic ApiResponse with concrete response models (第三次审查) (base: main, head: pr-85, date: 2026-09-30)
+
+**变更规模**: 147 files changed, 12278 insertions(+), 3061 deletions(-), 22 commits
+
+**自上次审查后的新增 commits (1):**
+1. `30cf5f07` — fix: resolve remaining Pydantic type mismatches in API responses
+
+**主要变更主题**:
+- 后端：修复剩余的 Pydantic 类型不匹配问题
+  - `InspectionStandardApiResponse.data` 改为 `Any = None`
+  - `sync_config_api.py` 使用 `.model_dump()` 转换 BaseModel
+  - `stability_api.py` 使用正确的 `StabilityTrendApiResponse`
+  - `oh_hazard_monitors.py` 统一使用 `OhHazardMonitorApiResponse`
+
+**Affected categories:** 3, 4, 6, 10, 13, 16
+
+---
+
+#### 上次审查问题修复状态
+
+| # | 文件 | 问题 | 状态 |
+|---|------|------|------|
+| 1 | `inspection_table_api.py` | `InspectionStandardApiResponse` 被错误用作通用响应包装 | ✅ **已修复**（`data: Any = None`） |
+| 2 | `sync_config_api.py:179,204` | `DataApiResponse(data=UndoSyncResponse(...))` 类型不匹配 | ✅ **已修复**（使用 `.model_dump()`） |
+| 3 | `stability_api.py:331` | trend endpoint 传入 dict 而非 `StabilityTrendResponse` | ❌ **未完全修复**（类型仍不匹配） |
+| 4 | `oh_hazard_monitors.py` | `build_response()` 与 `response_model` 不一致 | ✅ **已修复**（统一使用 `OhHazardMonitorApiResponse`） |
+
+---
+
+#### Category 3: Backend Module Boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~40 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。
+
+---
+
+#### Category 4: API and Authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~30 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/quality/qms/stability_api.py:331` — API 规范/禁止 response_model=dict 或 ApiResponse — trend endpoint 声明 `response_model=StabilityTrendApiResponse` 并返回 `StabilityTrendApiResponse(data=trend_data)`。`StabilityTrendApiResponse.data` 类型为 `StabilityTrendResponse | None = None`，但 `service.get_trend_data(study_id)` 返回的 dict 结构与 `StabilityTrendResponse` 不匹配。
+
+  `get_trend_data` 返回：
+  ```python
+  {
+      "study_no": str,
+      "product_code": str,
+      "product_name": str,
+      "batch_no": str,
+      "study_type": str,
+      "trend_data": dict  # 按检验项目分组的数据
+  }
+  ```
+
+  `StabilityTrendResponse` 需要：
+  ```python
+  {
+      "product_code": str,
+      "product_name": str | None,
+      "batch_no": str,
+      "study_type": StabilityStudyType,
+      "inspection_items": list[str],  # 缺失
+      "data_points": dict[int, list[StabilityTrendDataPoint]]  # 缺失
+  }
+  ```
+
+  Pydantic v2 会抛出 ValidationError（已通过实际测试验证）。
+
+  **修复方案**：
+  1. 修改 `get_trend_data` 返回符合 `StabilityTrendResponse` 结构的数据
+  2. 或将 `StabilityTrendApiResponse.data` 改为 `dict[str, Any] | None = None`
+  3. 或创建 `StabilityTrendDictApiResponse`（`data: dict[str, Any] | None = None`）
+
+**Uncertain:**
+
+无。
+
+---
+
+#### Category 6: Configuration and Logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~40 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。无敏感信息泄露，无 `os.getenv()` 滥用，无 `.env` 文件变更。
+
+---
+
+#### Category 10: Frontend API and Generated Types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~50 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+无。客户端 API 使用相对路径，服务端使用 `API_BASE_URL`，写操作在 Server Actions 中。`doc-check.ts` 成功使用生成类型替代手写 API 响应类型。`ApiResponse` 整合到 `types/common.ts`。
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/static_data/schemas.py`、`backend/app/modules/production/product/output_schemas.py`、`backend/app/modules/production/product/schemas.py`、`backend/app/modules/production/product/sync_config_schemas.py`、`backend/app/modules/quality/qms/doc_check/schemas.py` — 前端/API 类型来源 — 多个模块定义了相同的 `MessageApiResponse` 和 `DataApiResponse` 类型（结构完全相同）。这导致代码重复，且 OpenAPI spec 中会出现多个同名但不同 schema 的类型。建议提取到 `app/shared/schemas.py` 或 `app/core/response.py` 中统一使用。
+
+---
+
+#### Category 13: Docker and Deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 0 |
+| Files not inspected | 0 |
+| Rules evaluated | 0 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。本 PR 无 Docker 相关文件变更。
+
+---
+
+#### Category 16: React Hooks & React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~60 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。本 PR 的 `destroyOnClose` → `destroyOnHidden` 和 `Space direction` → `Space orientation` 迁移是 antd v6 废弃 API 的正确替换，不涉及 React Hooks 违规。
+
+---
+
+#### Categories not affected
+1, 2, 5, 7, 8, 9, 11, 12, 14, 15 — no relevant files changed or no violations found.
+
+---
+
+#### PR #85 Summary (第三次审查)
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 1 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 1 |
+| 13. Docker and deployment | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **1** | **1** |
+
+**对比第二次审查**: 从 4 个确认违规减少到 1 个（修复了 3 个）。
+
+---
+
+#### PR #85 Overall Assessment (第三次审查)
+
+**Overall assessment:** PR #85 仍存在 **1 个确认违规**，会导致运行时 ValidationError（500 错误）。
+
+**关键未修复问题：**
+
+| # | 文件 | 严重程度 | 问题 |
+|---|------|----------|------|
+| 1 | `stability_api.py:331` | 🟡 中等 | `get_trend_data` 返回的 dict 结构与 `StabilityTrendResponse` 不匹配 |
+
+**已修复问题 (7/8):**
+
+1. ✅ `deviation_schemas.py` — `data: Any = None`
+2. ✅ `fqc_api.py` — 新增 `FQCPaginatedListResponse`
+3. ✅ `output_api.py` — 改为 `DataApiResponse(data={"batch_counts": ...})`
+4. ✅ `stability_api.py:106` — 使用正确的 `StabilityStudyApiResponse`
+5. ✅ `inspection_table_api.py` — `data: Any = None`
+6. ✅ `sync_config_api.py` — 使用 `.model_dump()`
+7. ✅ `oh_hazard_monitors.py` — 统一使用 `OhHazardMonitorApiResponse`
+
+**正面改进：**
+
+- ✅ `destroyOnClose` → `destroyOnHidden` 迁移符合 antd v6 规范
+- ✅ `Space direction` → `Space orientation` 迁移符合 antd v6 规范
+
+**建议**：**不应合并**，需先修复剩余 1 个中等问题：
+
+**`stability_api.py:331`** — 三种修复方案：
+1. 修改 `get_trend_data` 返回符合 `StabilityTrendResponse` 结构的数据（推荐，保持类型安全）
+2. 将 `StabilityTrendApiResponse.data` 改为 `dict[str, Any] | None = None`（快速修复，但失去类型安全）
+3. 创建 `StabilityTrendDictApiResponse`（`data: dict[str, Any] | None = None`）（折中方案）
+
+修复后，PR #85 可以合并。
+
+---
+
+#### Notes/observations
+
+| Note | Rule | Categories |
+|------|------|------------|
+| 多个模块定义了相同的 `MessageApiResponse` 和 `DataApiResponse`，导致 OpenAPI spec 中出现多个同名但不同 schema 的类型。建议提取到 `app/shared/schemas.py` 统一使用。 | 前端/API 类型来源 | 10 |
+| `AGENTS.md` 和 `docs/agents/issue-tracker.md` 从本地 `.scratch/` 迁移到 GitHub Issues，这是工作流变更，需确认团队共识。 | 仓库通用规则 | 1 |
+| Pydantic v2 对类型验证非常严格，BaseModel 实例无法自动转换为 dict，即使字段完全匹配。必须显式调用 `.model_dump()` 或使用兼容的类型定义（如 `Any`）。 | Pydantic v2 行为 | 4 |
+| `get_trend_data` 返回的数据结构与 `StabilityTrendResponse` 不匹配，说明 service 层和 schema 层的设计不一致。建议统一数据结构设计。 | 架构一致性 | 4 |
+
+---
+
+### PR #85: feat: replace generic ApiResponse with concrete response models (第四次审查) (base: main, head: pr-85, date: 2026-09-30)
+
+**变更规模**: 149 files changed, 12260 insertions(+), 3071 deletions(-), 24 commits
+
+**自上次审查后的新增 commits (2):**
+1. `eaf18638` — fix: align stability trend data structure with StabilityTrendResponse schema
+2. `e48ada91` — refactor: consolidate duplicate MessageApiResponse and DataApiResponse definitions
+
+**主要变更主题**:
+- 后端：修复 stability trend endpoint 类型不匹配问题
+  - `stability_service.py` 更新 `get_trend_data()` 返回符合 `StabilityTrendResponse` 结构的数据
+  - `stability_api.py` 使用 `StabilityTrendResponse.model_validate()` 验证数据
+- 后端：整合重复的 `MessageApiResponse` 和 `DataApiResponse` 定义
+  - 添加到 `app/shared/schemas.py`
+  - 从 `production/product/schemas.py`、`production/product/output_schemas.py`、`production/product/sync_config_schemas.py`、`quality/qms/static_data/schemas.py` 移除重复定义
+  - 更新 API 文件从 `app/shared/schemas.py` 导入
+
+**Affected categories:** 3, 4, 6, 10, 13, 16
+
+---
+
+#### 上次审查问题修复状态
+
+| # | 文件 | 问题 | 状态 |
+|---|------|------|------|
+| 1 | `stability_api.py:331` | trend endpoint 类型不匹配 | ✅ **已修复** |
+| 2 | 多个模块 | 重复定义 `MessageApiResponse` 和 `DataApiResponse` | ⚠️ **部分修复** |
+
+---
+
+#### Category 3: Backend Module Boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~40 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。
+
+---
+
+#### Category 4: API and Authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~30 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+无。
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/production/schemas.py:649`、`backend/app/modules/quality/qms/deviation_schemas.py:491` — 代码整洁/重复定义 — 这两个文件仍然定义了 `MessageApiResponse`，与 `app/shared/schemas.py` 中的定义完全相同。`production/api.py` 和 `deviation_api.py` 仍然从各自的 schemas 导入 `MessageApiResponse`，而不是从 `app/shared/schemas.py` 导入。虽然不会导致运行时错误，但违反了代码整洁原则，增加了维护成本。建议移除这两个重复定义，更新导入语句。
+
+---
+
+#### Category 6: Configuration and Logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~40 |
+| Files not inspected | 0 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。无敏感信息泄露，无 `os.getenv()` 滥用，无 `.env` 文件变更。
+
+---
+
+#### Category 10: Frontend API and Generated Types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~50 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。客户端 API 使用相对路径，服务端使用 `API_BASE_URL`，写操作在 Server Actions 中。`doc-check.ts` 成功使用生成类型替代手写 API 响应类型。`ApiResponse` 整合到 `types/common.ts`。
+
+**Uncertain:**
+
+无。之前的不确定项（多个模块定义了相同的 `MessageApiResponse` 和 `DataApiResponse`）已部分修复。
+
+---
+
+#### Category 13: Docker and Deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 0 |
+| Files not inspected | 0 |
+| Rules evaluated | 0 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。本 PR 无 Docker 相关文件变更。
+
+---
+
+#### Category 16: React Hooks & React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | ~60 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+无。本 PR 的 `destroyOnClose` → `destroyOnHidden` 和 `Space direction` → `Space orientation` 迁移是 antd v6 废弃 API 的正确替换，不涉及 React Hooks 违规。
+
+---
+
+#### Categories not affected
+1, 2, 5, 7, 8, 9, 11, 12, 14, 15 — no relevant files changed or no violations found.
+
+---
+
+#### PR #85 Summary (第四次审查)
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 1 |
+| 6. Configuration and logging | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 16. React Hooks | 0 | 0 |
+| **Total** | **0** | **1** |
+
+**对比第三次审查**: 从 1 个确认违规减少到 0 个（修复了 1 个）。
+
+---
+
+#### PR #85 Overall Assessment (第四次审查)
+
+**Overall assessment:** PR #85 **无确认违规**，存在 1 个不确定项（代码整洁问题，不会导致运行时错误）。
+
+**已修复问题 (8/8):**
+
+1. ✅ `deviation_schemas.py` — `data: Any = None`
+2. ✅ `fqc_api.py` — 新增 `FQCPaginatedListResponse`
+3. ✅ `output_api.py` — 改为 `DataApiResponse(data={"batch_counts": ...})`
+4. ✅ `stability_api.py:106` — 使用正确的 `StabilityStudyApiResponse`
+5. ✅ `inspection_table_api.py` — `data: Any = None`
+6. ✅ `sync_config_api.py` — 使用 `.model_dump()`
+7. ✅ `oh_hazard_monitors.py` — 统一使用 `OhHazardMonitorApiResponse`
+8. ✅ `stability_api.py:331` — 更新 `get_trend_data()` 返回符合 `StabilityTrendResponse` 结构的数据
+
+**部分修复的问题:**
+
+- ⚠️ 多个模块的 `MessageApiResponse` 和 `DataApiResponse` 已整合到 `app/shared/schemas.py`，但 `production/schemas.py` 和 `deviation_schemas.py` 仍然保留了重复定义。这是一个低优先级的代码整洁问题，不会阻止合并。
+
+**正面改进：**
+
+- ✅ `destroyOnClose` → `destroyOnHidden` 迁移符合 antd v6 规范
+- ✅ `Space direction` → `Space orientation` 迁移符合 antd v6 规范
+- ✅ `MessageApiResponse` 和 `DataApiResponse` 整合到 `app/shared/schemas.py`，减少代码重复
+
+**建议**：**可以合并**。无确认违规，所有严重和中等问题已修复。剩余 1 个不确定项（代码整洁问题）可以作为后续改进项跟踪，不阻塞合并。
+
+**后续改进建议（非阻塞）：**
+1. 移除 `production/schemas.py:649` 和 `deviation_schemas.py:491` 中的重复 `MessageApiResponse` 定义
+2. 更新 `production/api.py` 和 `deviation_api.py` 从 `app/shared/schemas.py` 导入 `MessageApiResponse`
+
+---
+
+#### Notes/observations
+
+| Note | Rule | Categories |
+|------|------|------------|
+| `stability_service.py` 的 `get_trend_data()` 方法返回的数据结构已更新为符合 `StabilityTrendResponse` schema，包括 `inspection_items` 和 `data_points` 字段。这是一个良好的改进，确保了 service 层和 schema 层的一致性。 | 架构一致性 | 4 |
+| `MessageApiResponse` 和 `DataApiResponse` 的整合是一个渐进式的改进。虽然还有两个模块保留了重复定义，但大部分模块已经使用 `app/shared/schemas.py` 中的定义。这是一个积极的趋势。 | 代码整洁 | 10 |
+| 经过四轮审查，PR #85 从最初的 8 个确认违规减少到 0 个，所有严重和中等问题已修复。这表明开发团队对代码质量的重视和快速响应能力。 | 代码质量 | — |
