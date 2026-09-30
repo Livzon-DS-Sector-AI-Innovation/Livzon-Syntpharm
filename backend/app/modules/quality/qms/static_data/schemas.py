@@ -509,19 +509,3 @@ class StandardListApiResponse(BaseModel):
     message: str = "success"
     data: list[StandardResponse]
     meta: dict[str, Any] | None = None
-
-
-class MessageApiResponse(BaseModel):
-    """Message response wrapper"""
-
-    code: int = 200
-    message: str = "success"
-    data: None = None
-
-
-class DataApiResponse(BaseModel):
-    """Generic data response wrapper"""
-
-    code: int = 200
-    message: str = "success"
-    data: dict[str, Any] | None = None

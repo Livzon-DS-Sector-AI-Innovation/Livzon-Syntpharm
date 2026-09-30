@@ -48,11 +48,3 @@ class ProductListApiResponse(BaseModel):
     message: str = "success"
     data: list[ProductResponse]
     meta: dict[str, Any] | None = None
-
-
-class MessageApiResponse(BaseModel):
-    """Message response wrapper"""
-
-    code: int = 200
-    message: str = "success"
-    data: None = None

@@ -11,13 +11,13 @@ from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.modules.production.product.output_schemas import UndoSyncResponse
 from app.modules.production.product.sync_config_schemas import (
-    DataApiResponse,
     ProductSyncConfigApiResponse,
     ProductSyncConfigCreate,
     ProductSyncConfigResponse,
     ProductSyncConfigUpdate,
 )
 from app.modules.production.product.sync_config_service import ProductSyncConfigService
+from app.shared.schemas import DataApiResponse
 
 router = APIRouter()
 

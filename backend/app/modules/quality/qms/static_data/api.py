@@ -19,14 +19,13 @@ from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.schemas import (
+    # Import shared response wrappers from app.shared.schemas
     ChromColumnApiResponse,
     ChromColumnListApiResponse,
-    DataApiResponse,
     HplcReferenceApiResponse,
     HplcReferenceListApiResponse,
     MediumApiResponse,
     MediumListApiResponse,
-    MessageApiResponse,
     StandardApiResponse,
     StandardListApiResponse,
     StorageConditionApiResponse,
@@ -35,6 +34,7 @@ from app.modules.quality.qms.static_data.schemas import (
     UnitListApiResponse,
 )
 from app.modules.quality.qms.static_data.service import StaticDataService
+from app.shared.schemas import DataApiResponse, MessageApiResponse
 
 router = APIRouter(prefix="/static-data", tags=["Static Data"])
 

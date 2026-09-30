@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.deps import RequiredUser
 from app.modules.production.product.schemas import (
-    MessageApiResponse,
     ProductApiResponse,
     ProductCreate,
     ProductListApiResponse,
@@ -17,6 +16,7 @@ from app.modules.production.product.schemas import (
     ProductUpdate,
 )
 from app.modules.production.product.service import ProductService
+from app.shared.schemas import MessageApiResponse
 
 router = APIRouter()
 

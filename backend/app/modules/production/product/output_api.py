@@ -17,9 +17,7 @@ from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
     AnnualReviewResponse,
-    DataApiResponse,
     ImportResponse,
-    MessageApiResponse,
     PreviewImportResponse,
     ProductOutputApiResponse,
     ProductOutputCreate,
@@ -31,6 +29,7 @@ from app.modules.production.product.output_schemas import (
 )
 from app.modules.production.product.output_service import ProductOutputService
 from app.platform.integrations.feishu.bitable import BitableClient
+from app.shared.schemas import DataApiResponse, MessageApiResponse
 
 router = APIRouter()
 
