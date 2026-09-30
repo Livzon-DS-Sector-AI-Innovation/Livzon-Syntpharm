@@ -27,6 +27,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityStudyResponse,
     StabilityStudyUpdate,
     StabilityTrendApiResponse,
+    StabilityTrendResponse,
 )
 from app.modules.quality.qms.stability_service import StabilityStudyService
 
@@ -332,6 +333,8 @@ async def get(  # noqa: F811
     """获取稳定性试验趋势数据"""
     try:
         trend_data = await service.get_trend_data(study_id)
-        return StabilityTrendApiResponse(data=trend_data)
+        # Validate and convert to StabilityTrendResponse
+        trend_response = StabilityTrendResponse.model_validate(trend_data)
+        return StabilityTrendApiResponse(data=trend_response)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
