@@ -177,7 +177,7 @@ async def undo_last_sync(
         # 撤销推送：删除新增的飞书记录，恢复更新的记录
         # 这里简化处理，只记录日志，实际删除需要飞书删除权限
         return DataApiResponse(
-            data=UndoSyncResponse(deleted=0),
+            data=UndoSyncResponse(deleted=0).model_dump(),
             message=f"撤销推送操作已记录，共 {len(records)} 条记录需要处理",
         )
     else:
@@ -202,4 +202,4 @@ async def undo_last_sync(
                 deleted += 1
 
         await db.commit()
-        return DataApiResponse(data=UndoSyncResponse(deleted=deleted))
+        return DataApiResponse(data=UndoSyncResponse(deleted=deleted).model_dump())

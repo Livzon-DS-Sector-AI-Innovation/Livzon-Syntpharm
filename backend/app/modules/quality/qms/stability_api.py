@@ -26,6 +26,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityStudyListResponse,
     StabilityStudyResponse,
     StabilityStudyUpdate,
+    StabilityTrendApiResponse,
 )
 from app.modules.quality.qms.stability_service import StabilityStudyService
 
@@ -322,7 +323,7 @@ async def post(  # noqa: F811
 # ========== Trend Analysis Routes ==========
 
 
-@router.get("/studies/{study_id}/trend", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
+@router.get("/studies/{study_id}/trend", response_model=StabilityTrendApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     study_id: UUID,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -331,6 +332,6 @@ async def get(  # noqa: F811
     """获取稳定性试验趋势数据"""
     try:
         trend_data = await service.get_trend_data(study_id)
-        return StabilityInspectionApiResponse(data=trend_data)
+        return StabilityTrendApiResponse(data=trend_data)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

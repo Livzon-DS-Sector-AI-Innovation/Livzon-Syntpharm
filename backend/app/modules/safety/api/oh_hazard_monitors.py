@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import build_response
 from app.modules.safety.schemas import (
     OhHazardMonitorApiResponse,
     OhHazardMonitorCreate,
@@ -74,7 +73,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.get_monitor(monitor_id)
     if not item:
-        return build_response(code=404, message="监测记录不存在")
+        return OhHazardMonitorApiResponse(code=404, message="监测记录不存在", data=None)
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
 
@@ -90,7 +89,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.update_monitor(monitor_id, data)
     if not item:
-        return build_response(code=404, message="监测记录不存在")
+        return OhHazardMonitorApiResponse(code=404, message="监测记录不存在", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -107,9 +106,9 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     ok = await service.delete_monitor(monitor_id)
     if not ok:
-        return build_response(code=404, message="监测记录不存在")
+        return OhHazardMonitorApiResponse(code=404, message="监测记录不存在", data=None)
     await db.commit()
-    return build_response(message="删除成功")
+    return OhHazardMonitorApiResponse(message="删除成功", data=None)
 
 
 # ── Monitor Workflow ──
@@ -127,7 +126,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.start_monitoring(monitor_id)
     if not item:
-        return build_response(code=400, message="无法开始监测，当前状态不允许")
+        return OhHazardMonitorApiResponse(code=400, message="无法开始监测，当前状态不允许", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -144,7 +143,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.complete_monitoring(monitor_id)
     if not item:
-        return build_response(code=400, message="无法完成监测，当前状态不允许")
+        return OhHazardMonitorApiResponse(code=400, message="无法完成监测，当前状态不允许", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -161,7 +160,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.verify_monitoring(monitor_id, data.verified_by, data.comments)
     if not item:
-        return build_response(code=400, message="无法验证，当前状态不允许")
+        return OhHazardMonitorApiResponse(code=400, message="无法验证，当前状态不允许", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -181,7 +180,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.add_detection_result(monitor_id, data)
     if not item:
-        return build_response(code=404, message="监测记录不存在")
+        return OhHazardMonitorApiResponse(code=404, message="监测记录不存在", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -202,7 +201,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.update_detection_result(monitor_id, index, data)
     if not item:
-        return build_response(code=400, message="无法更新，监测记录不存在或索引无效")
+        return OhHazardMonitorApiResponse(code=400, message="无法更新，监测记录不存在或索引无效", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -219,7 +218,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.remove_detection_result(monitor_id, index)
     if not item:
-        return build_response(code=400, message="无法删除，监测记录不存在或索引无效")
+        return OhHazardMonitorApiResponse(code=400, message="无法删除，监测记录不存在或索引无效", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -236,7 +235,7 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.add_abnormality_record(monitor_id, data)
     if not item:
-        return build_response(code=404, message="监测记录不存在")
+        return OhHazardMonitorApiResponse(code=404, message="监测记录不存在", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
 
@@ -257,6 +256,6 @@ async def handler(  # noqa: F811
     service = OhHazardMonitorService(db)
     item = await service.update_abnormality_record_status(monitor_id, index, status)
     if not item:
-        return build_response(code=400, message="无法更新，监测记录不存在或索引无效")
+        return OhHazardMonitorApiResponse(code=400, message="无法更新，监测记录不存在或索引无效", data=None)
     await db.commit()
     return OhHazardMonitorApiResponse(data=OhHazardMonitorResponse.model_validate(item))
