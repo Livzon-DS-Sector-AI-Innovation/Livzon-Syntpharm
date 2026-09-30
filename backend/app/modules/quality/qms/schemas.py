@@ -235,7 +235,7 @@ class InspectionStandardApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: InspectionStandardResponse
+    data: Any = None
 
 
 class InspectionStandardListApiResponse(BaseModel):

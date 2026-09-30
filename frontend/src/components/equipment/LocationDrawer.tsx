@@ -91,7 +91,7 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
       width={400}
       open={locationDrawerOpen}
       onClose={closeLocationDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeLocationDrawer}>取消</Button>

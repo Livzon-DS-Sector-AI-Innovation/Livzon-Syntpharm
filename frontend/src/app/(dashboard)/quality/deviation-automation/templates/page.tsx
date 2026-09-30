@@ -328,7 +328,7 @@ export default function TemplateManagementPage() {
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={500}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={modalForm} layout="vertical">
           <Form.Item

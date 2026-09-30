@@ -1,6 +1,6 @@
 import { apiFetch } from '@/lib/api/server/base'
+import type { ApiResponse } from "@/types/common"
 import type {
-  ApiResponse,
   AuditStats,
   BatchManualEntryRequest,
   BatchManualEntryResponse,

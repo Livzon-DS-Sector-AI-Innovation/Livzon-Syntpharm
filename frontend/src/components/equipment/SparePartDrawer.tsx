@@ -78,7 +78,7 @@ export function SparePartDrawer({ onRefresh }: SparePartDrawerProps) {
       width={480}
       open={sparePartDrawerOpen}
       onClose={closeSparePartDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeSparePartDrawer}>取消</Button>

@@ -59,7 +59,7 @@ export function MaterialConsumeDrawer({ workOrderId, spareParts, onRefresh }: Ma
         width={480}
         open={open}
         onClose={() => setOpen(false)}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setOpen(false)}>取消</Button>

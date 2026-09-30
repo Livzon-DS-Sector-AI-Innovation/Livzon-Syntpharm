@@ -975,7 +975,7 @@ export default function RegulationPage() {
         open={regDrawerOpen}
         onClose={() => setRegDrawerOpen(false)}
         width={480}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setRegDrawerOpen(false)}>取消</Button>
@@ -1030,7 +1030,7 @@ export default function RegulationPage() {
         open={revDrawerOpen}
         onClose={() => setRevDrawerOpen(false)}
         width={480}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setRevDrawerOpen(false)}>取消</Button>

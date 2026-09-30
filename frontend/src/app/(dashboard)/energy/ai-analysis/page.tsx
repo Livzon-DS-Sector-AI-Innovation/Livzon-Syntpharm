@@ -171,7 +171,7 @@ const handleAnalyze = async () => {
             onChange={(date) => setAnalysisMonth(date ? date.format('YYYY-MM') : null)} 
           />
           
-          <Space direction="vertical" style={{ width: '100%' }}>
+          <Space orientation="vertical" style={{ width: '100%' }}>
             <Button 
               type="primary" 
               icon={<SyncOutlined spin={syncing} />} 

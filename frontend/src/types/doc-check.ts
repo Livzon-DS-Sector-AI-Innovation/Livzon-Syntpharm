@@ -3,6 +3,10 @@
  * 文件合规校验模块的类型声明
  */
 
+import type { ApiResponse } from './common'
+
+export type { ApiResponse }
+
 // ============ 枚举类型 ============
 
 export type CheckStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
@@ -150,62 +154,16 @@ export interface QueryCheckRecordsRequest {
 
 // ============ 响应类型 ============
 
-export interface UploadFileResponse {
-  file_id: string
-  file_name: string
-  file_path: string
-  file_size: number
-  file_ext: string
-}
+import type { components } from '@/types/generated/schema'
 
-export interface StartCheckResponse {
-  task_id: string
-  status: CheckStatus
-  message?: string
-}
-
-export interface CheckProgressResponse {
-  task_id: string
-  status: CheckStatus
-  progress: number
-  current_step: string
-  message?: string
-  result?: {
-    total_problems: number
-    risk_high: number
-    risk_medium: number
-    risk_low: number
-    problems: CheckProblem[]
-  }
-}
-
-export interface CheckRecordResponse {
-  items: CheckMain[]
-  total: number
-  page: number
-  page_size: number
-}
-
-export type CheckRecordDetailResponse = CheckMainDetail
-
-export interface ExportReportResponse {
-  download_url: string
-  file_name: string
-}
-
-export interface HandleProblemResponse {
-  id: string
-  handle_status: HandleStatus
-  ignore_reason?: string
-}
-
-// ============ API 通用响应 ============
-
-export interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-}
+// Use generated types for API responses
+export type UploadFileResponse = components['schemas']['DocCheckUploadApiResponse']['data']
+export type StartCheckResponse = components['schemas']['DocCheckTaskApiResponse']['data']
+export type CheckProgressResponse = components['schemas']['DocCheckProgressApiResponse']['data']
+export type CheckRecordResponse = components['schemas']['DocCheckRecordsApiResponse']['data']
+export type CheckRecordDetailResponse = components['schemas']['DocCheckRecordsApiResponse']['data']
+export type ExportReportResponse = components['schemas']['DocCheckExportApiResponse']['data']
+export type HandleProblemResponse = components['schemas']['DocCheckProblemUpdateApiResponse']['data']
 
 // ============ 选项配置 ============
 

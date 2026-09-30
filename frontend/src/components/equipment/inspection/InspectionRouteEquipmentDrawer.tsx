@@ -157,7 +157,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
       width={840}
       open={routeEquipmentDrawerOpen}
       onClose={closeRouteEquipmentDrawer}
-      destroyOnClose
+      destroyOnHidden
       styles={{ body: { padding: 0, background: C.surface } }}
     >
       {/* ═══ HEADER ═══ */}

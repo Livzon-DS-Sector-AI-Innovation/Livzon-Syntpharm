@@ -479,7 +479,7 @@ export default function RiskReportPanel() {
         width={800}
         okText="确认保存"
         cancelText="取消"
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={editingRecord ? editForm : form} layout="vertical">
           {renderForm(!!editingRecord)}

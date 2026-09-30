@@ -602,7 +602,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 ### Issue tracker
 
-Issues and specs live as local markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

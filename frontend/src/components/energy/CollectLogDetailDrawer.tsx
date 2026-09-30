@@ -272,7 +272,7 @@ export function CollectLogDetailDrawer({
       width={640}
       open={open}
       onClose={onClose}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: {
           borderBottom: '1px solid #e5e3df',

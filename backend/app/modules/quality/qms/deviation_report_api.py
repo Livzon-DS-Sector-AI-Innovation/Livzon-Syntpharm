@@ -8,8 +8,8 @@ from typing import Any
 from fastapi import APIRouter, File, UploadFile
 
 from app.core.exceptions import AppException, NotFoundException
-from app.core.response import ApiResponse
 from app.modules.quality.qms.deviation_report_schemas import OptimizeTextRequest
+from app.modules.quality.qms.deviation_schemas import DeviationApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +53,7 @@ async def post(
         # 处理警告
         messages = [msg.message for msg in result.messages]
 
-        return ApiResponse(
+        return DeviationApiResponse(
             message="文档解析成功",
             data={
                 "file_id": saved_filename,
@@ -239,7 +239,7 @@ async def post(  # noqa: F811
         elif result.startswith("简化结果："):
             result = result[5:]
 
-        return ApiResponse(message="优化成功", data={"optimized_text": result})
+        return DeviationApiResponse(message="优化成功", data={"optimized_text": result})
     except Exception as e:
         logger.error(f"AI优化失败: {e}")
         raise AppException(status_code=500, message=f"AI优化失败: {str(e)}")

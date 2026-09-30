@@ -411,7 +411,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
         width={720}
-        destroyOnClose
+        destroyOnHidden
         onOk={handleCreateSubmit}
         confirmLoading={submitLoading}
         okText="创建"

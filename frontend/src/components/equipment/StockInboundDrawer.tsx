@@ -47,7 +47,7 @@ export function StockInboundDrawer({ onRefresh }: StockInboundDrawerProps) {
       width={480}
       open={stockInboundDrawerOpen}
       onClose={closeStockInboundDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeStockInboundDrawer}>取消</Button>

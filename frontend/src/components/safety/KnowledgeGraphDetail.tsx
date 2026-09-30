@@ -77,7 +77,7 @@ export default function KnowledgeGraphDetail({
       <div style={{ padding: '14px 16px' }}>
         {/* Node detail */}
         {node && (
-          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Space orientation="vertical" size={12} style={{ width: '100%' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{node.name}</div>
               <Space size={4} wrap>
@@ -158,7 +158,7 @@ export default function KnowledgeGraphDetail({
 
         {/* Edge detail */}
         {edge && (
-          <Space direction="vertical" size={12} style={{ width: '100%' }}>
+          <Space orientation="vertical" size={12} style={{ width: '100%' }}>
             <div>
               <Tag color={edgeStyle?.color} style={{ margin: 0, marginBottom: 8 }}>
                 {edgeStyle?.label || edge.relation_type}

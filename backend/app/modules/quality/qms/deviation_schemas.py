@@ -428,7 +428,7 @@ class DeviationApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: DeviationResponse
+    data: Any = None
 
 
 class DeviationListApiResponse(BaseModel):
@@ -453,7 +453,7 @@ class InvestigationApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: InvestigationResponse
+    data: InvestigationResponse | None = None
 
 
 class InvestigationListApiResponse(BaseModel):
@@ -469,7 +469,7 @@ class CorrectionApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: CorrectionResponse
+    data: CorrectionResponse | None = None
 
 
 class ClosingApiResponse(BaseModel):
@@ -477,7 +477,7 @@ class ClosingApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: ClosingResponse
+    data: ClosingResponse | None = None
 
 
 class AIAnalysisApiResponse(BaseModel):

@@ -81,7 +81,7 @@ export function CalibrationRecordDrawer({ calibrationPlans, onRefresh }: Calibra
       width={480}
       open={calibrationRecordDrawerOpen}
       onClose={closeCalibrationRecordDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeCalibrationRecordDrawer}>取消</Button>

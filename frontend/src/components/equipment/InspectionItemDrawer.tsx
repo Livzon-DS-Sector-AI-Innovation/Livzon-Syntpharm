@@ -117,7 +117,7 @@ export function InspectionItemDrawer() {
   ]
 
   return (
-    <Drawer title={null} open={inspectionItemDrawerOpen} onClose={close} destroyOnClose
+    <Drawer title={null} open={inspectionItemDrawerOpen} onClose={close} destroyOnHidden
       styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 780 } }}>
       <div style={{ background: C.navy, padding: '16px 28px', borderBottom: `3px solid ${C.purple}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
