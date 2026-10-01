@@ -1,60 +1,44 @@
-# 设备批量导入功能 v2 - 上下文文档
+# Livzon-Syntpharm
 
-## 📅 创建时间
-2026-08-17
+Livzon-Syntpharm 是一个模块化单体（modular monolith）应用：后端 FastAPI 按业务模块划分，前端 Next.js 通过 OpenAPI 契约与后端交互。
 
-## 🎯 需求背景
-用户需要批量导入 3000+ 条设备数据（来源：`202606sbgz.xls`）。现有导入功能存在路径错误、部门映射缺失以及模型冲突问题，导致全部 2970 条数据无法导入。
+## Language
 
-## 🔍 现状分析
-1.  **数据源**：Excel 表头位于第 5 行，包含 38 个唯一部门名称。
-2.  **核心痛点**：
-    *   **Schema 冲突**：`identity.models.Department` 与 `hr.models.HrDepartment` 并存，导致查询混乱。
-    *   **路径不匹配**：前端请求 `/equipment/import/...`，后端注册在 `/equipment/equipments/import/...`。
-    *   **映射不全**：大量车间别名（如“头孢合成一车间”）未在系统中定义。
+### API 契约 (API Contract)
 
-## 💡 技术方案 (v2)
-1.  **唯一真理来源**：强制所有部门查询指向 `hr.departments` (Schema: `hr`)。
-2.  **严格映射引擎**：建立完整的 `DEPT_MAPPING_V2`，取消不可控的模糊匹配。
-3.  **部分成功机制**：支持行级事务，导入成功后返回详细的错误报告。
+**API Response Envelope** (API 响应信封):
+所有后端 API 成功响应遵循的统一结构 `{ code, message, data, meta? }`，由 `ApiResponse` 模型定义；`meta` 承载分页等附加信息。
+_Avoid_: API 包装器, response wrapper, 响应壳
 
-## ⚠️ 注意事项
-*   **磁盘空间**：服务器磁盘紧张，需定期执行 `docker system prune`。
-*   **热重载**：开发环境下修改 Python 代码后，Uvicorn 会自动重启，无需重建镜像。
+**Generated Types** (生成类型):
+由后端 OpenAPI 规范自动生成的 TypeScript 类型，是前后端 API 契约的唯一真实来源，位于 `frontend/src/types/generated/schema.ts`。
+_Avoid_: 手写 API 类型, OpenAPI 类型, schema 类型
 
-## 🔄 v3 重构决策（基于 /grill-with-docs）
+### 模块边界 (Module Boundaries)
 
-### 核心变更
-1. **混合导入模式**：前端解析 → 预览确认 → 批量入库。
-2. **智能推断逻辑**：
-   - `equipment_class`：根据"资产类别说明"自动映射（电子设备/机器设备 → C类）。
-   - `importance`：根据"当前成本"自动分级（>10万=高，5-10万=中，<5万=低）。
-   - `status`："未报废" → "在用"。
-3. **部门映射增强**：补充溶剂回收车间各岗位映射，未匹配部门设为 NULL 但不跳过数据。
-4. **数量字段处理**：存入 `technical_params`，前端表格增加显示列。
-5. **资产类别说明**：直接存入 `category_description` 字段。
+**Public API**:
+模块对外暴露的唯一入口 `public_api.py`；跨模块调用必须经由它，禁止直接引用其他模块的 `repository.py`、`service.py` 或 `models.py`。
+_Avoid_: 内部接口, 跨模块导入
 
-### 待办事项
-- [ ] 更新 `batch_import.py` 的映射算法
-- [ ] 扩展 `DEPT_MAPPING_V2`
-- [ ] 修改前端 `EquipmentTable.tsx` 显示数量
-- [ ] 编写 ADR 文档
+**模块注册表** (Module Registry):
+记录模块与其数据库 schema 对应关系的注册表 `app/shared/module_registry.py`；新增模块时必须同步更新。
+_Avoid_: 模块清单, 模块列表
 
-## 📚 术语表 (Glossary)
+### 数据与认证 (Data and Auth)
 
-### API Response Envelope (API 响应信封)
-所有后端 API 响应遵循的标准结构：`{code: number, data: T, message: string, meta?: object}`。这个结构由 `ApiResponse` 模型定义，确保前后端交互的一致性。
+**软删除** (Soft Delete):
+删除业务数据的默认方式，通过 `is_deleted` 标记而非物理删除；仅当需求明确要求时才做物理删除。
+_Avoid_: 逻辑删除, 标记删除
 
-- `code`: HTTP 状态码或业务状态码（200 表示成功）
-- `data`: 实际的业务数据
-- `message`: 响应消息（成功或错误信息）
-- `meta`: 可选的元数据（如分页信息）
+**RequiredUser**:
+必须登录的接口所使用的依赖注入参数；未登录返回 401，是所有业务 API 的默认选择。
+_Avoid_: CurrentUser, 必选用户
 
-### Generated Types (生成类型)
-从后端 OpenAPI 规范自动生成的 TypeScript 类型。这些类型是前后端 API 契约的唯一真实来源。
+**OptionalUser**:
+允许未登录访问的接口所使用的依赖注入参数；仍会解析 JWT/cookie，端点可据其做条件逻辑。
+_Avoid_: 可选用户, 匿名用户
 
-生成流程：
-1. 后端导出 OpenAPI 规范：`uv run python scripts/ci/export_openapi.py`
-2. 前端生成 TypeScript 类型：`BACKEND_SPEC_PATH=../backend/openapi.json node scripts/generate-api.mjs`
+## Relationships
 
-生成的类型位于 `frontend/src/types/generated/schema.ts`，包含所有 API 请求和响应的类型定义。
+- **Backend → Frontend**: 后端导出 OpenAPI 规范；前端据此生成 `Generated Types`。契约变更先于前端消费。
+- **Module → Module**: 模块之间只经 `Public API` 协作；`API Response Envelope` 是所有模块对外的统一响应形状。
