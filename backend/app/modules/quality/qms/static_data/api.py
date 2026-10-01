@@ -409,9 +409,10 @@ async def get(  # noqa: F811
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
     items = await service.get_hplc_references_need_recal()
+    # `count` is payload, not pagination — `meta` is reserved for PaginationMeta.
+    # The list length is already the count, so it needs no separate field.
     return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
-        meta={"count": len(items)},
     )
 
 

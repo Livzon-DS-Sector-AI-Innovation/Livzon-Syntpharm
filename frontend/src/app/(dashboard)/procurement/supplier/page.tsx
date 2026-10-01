@@ -5,8 +5,9 @@ export const dynamic = 'force-dynamic'
 
 const DEFAULT_PAGE_SIZE = 20
 
-function getColumnsFromMeta(meta: Record<string, unknown> | null | undefined) {
-  const columns = meta?.columns
+function getColumnsFromData(data: unknown) {
+  // `columns` moved from meta to data: it is column metadata, not pagination.
+  const columns = (data as { columns?: unknown } | null | undefined)?.columns
   if (!Array.isArray(columns)) return []
   return columns.filter((column): column is string => typeof column === 'string')
 }
@@ -40,7 +41,7 @@ export default async function SupplierManagementPage() {
     <SupplierManagementClient
       initialRecords={response.data}
       initialTotal={Number.isFinite(initialTotal) ? initialTotal : response.data.length}
-      initialColumns={getColumnsFromMeta(response.meta)}
+      initialColumns={getColumnsFromData(response.data)}
       initialLoadFailed={initialLoadFailed}
     />
   )

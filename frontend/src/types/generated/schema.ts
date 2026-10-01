@@ -18440,10 +18440,7 @@ export interface components {
             message: string;
             /** Data */
             data?: unknown;
-            /** Meta */
-            meta?: {
-                [key: string]: unknown;
-            } | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /**
          * ApprovalRecordListApiResponse
@@ -18730,7 +18727,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["BatchResponse"];
+            data?: components["schemas"]["BatchResponse"] | null;
         };
         /** BatchAuditRequest */
         BatchAuditRequest: {
@@ -18923,7 +18920,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["BatchMaterialResponse"];
+            data?: components["schemas"]["BatchMaterialResponse"] | null;
         };
         /**
          * BatchMaterialCreate
@@ -20255,7 +20252,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["CapaResponse"];
+            data?: components["schemas"]["CapaResponse"] | null;
         };
         /**
          * CapaCategory
@@ -20838,7 +20835,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ClosingResponse"];
+            data?: components["schemas"]["ClosingResponse"] | null;
         };
         /**
          * ClosingCreate
@@ -22293,7 +22290,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["CorrectionResponse"];
+            data?: components["schemas"]["CorrectionResponse"] | null;
         };
         /**
          * CorrectionCreate
@@ -23296,7 +23293,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["DepartmentLeaderResponse"];
+            data?: components["schemas"]["DepartmentLeaderResponse"] | null;
         };
         /**
          * DepartmentLeaderResponse
@@ -23334,7 +23331,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["DepartmentSafetyOfficerResponse"];
+            data?: components["schemas"]["DepartmentSafetyOfficerResponse"] | null;
         };
         /**
          * DepartmentSafetyOfficerResponse
@@ -23649,7 +23646,8 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["DeviationResponse"];
+            /** Data */
+            data?: unknown;
         };
         /**
          * DeviationCreate
@@ -27284,65 +27282,6 @@ export interface components {
             updated_by?: string | null;
         };
         /**
-         * FQCInspectionListApiResponse
-         * @description FQC检验单列表响应包装
-         */
-        FQCInspectionListApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["FQCInspectionListResponse"] | null;
-        };
-        /**
-         * FQCInspectionListResponse
-         * @description FQC检验单列表响应
-         */
-        FQCInspectionListResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inspection No */
-            inspection_no: string;
-            /** Batch No */
-            batch_no?: string | null;
-            /** Product Code */
-            product_code: string;
-            /** Product Name */
-            product_name?: string | null;
-            /** Production Workshop */
-            production_workshop?: string | null;
-            /** Batch Quantity */
-            batch_quantity?: string | null;
-            /** Manufacturing Date */
-            manufacturing_date?: string | null;
-            /** Inspector Name */
-            inspector_name?: string | null;
-            /** Inspection Date */
-            inspection_date?: string | null;
-            status: components["schemas"]["FQCInspectionStatus"];
-            inspection_conclusion?: components["schemas"]["FQCInspectionConclusion"] | null;
-            release_status?: components["schemas"]["FQCReleaseStatus"] | null;
-            /**
-             * Batch Locked
-             * @default false
-             */
-            batch_locked: boolean;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /**
          * FQCInspectionResponse
          * @description FQC检验单响应
          */
@@ -27602,6 +27541,37 @@ export interface components {
          * @enum {string}
          */
         FQCItemResult: "pass" | "fail" | "na";
+        /**
+         * FQCPaginatedListApiResponse
+         * @description FQC paginated list API response wrapper
+         */
+        FQCPaginatedListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["FQCPaginatedListResponse"] | null;
+        };
+        /**
+         * FQCPaginatedListResponse
+         * @description FQC paginated list response
+         */
+        FQCPaginatedListResponse: {
+            /** Items */
+            items: components["schemas"]["FQCInspectionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /**
          * FQCReleaseStatus
          * @description FQC放行状态
@@ -28074,7 +28044,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["HazardIdentificationResponse"];
+            data?: components["schemas"]["HazardIdentificationResponse"] | null;
         };
         /**
          * HazardIdentificationBatchApiResponse
@@ -30580,7 +30550,8 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["InspectionStandardResponse"];
+            /** Data */
+            data?: unknown;
         };
         /**
          * InspectionStandardCopy
@@ -31595,7 +31566,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["InvestigationResponse"];
+            data?: components["schemas"]["InvestigationResponse"] | null;
         };
         /**
          * InvestigationCreate
@@ -32950,7 +32921,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["OhHazardMonitorResponse"];
+            data?: components["schemas"]["OhHazardMonitorResponse"] | null;
         };
         /**
          * OhHazardMonitorCreate
@@ -33980,6 +33951,21 @@ export interface components {
             appendix_slot?: string | null;
         };
         /**
+         * PaginationMeta
+         * @description Pagination envelope carried in ApiResponse.meta.
+         *
+         *     Mirrors what app/core/response.py:paginated_response() emits, so the
+         *     OpenAPI contract names these fields instead of leaving meta an opaque dict.
+         */
+        PaginationMeta: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /**
          * PartComplete
          * @description 完成部分
          */
@@ -34134,7 +34120,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["PlanTaskResponse"];
+            data?: components["schemas"]["PlanTaskResponse"] | null;
         };
         /**
          * PlanTaskCreate
@@ -34540,7 +34526,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProcessParameterResponse"];
+            data?: components["schemas"]["ProcessParameterResponse"] | null;
         };
         /**
          * ProcessParameterCreate
@@ -34704,7 +34690,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProcessSpecResponse"];
+            data?: components["schemas"]["ProcessSpecResponse"] | null;
         };
         /**
          * ProcessSpecCreate
@@ -34923,7 +34909,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProcessStepResponse"];
+            data?: components["schemas"]["ProcessStepResponse"] | null;
         };
         /**
          * ProcessStepCreate
@@ -35434,7 +35420,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProductionPlanResponse"];
+            data?: components["schemas"]["ProductionPlanResponse"] | null;
         };
         /**
          * ProductionPlanCreate
@@ -35588,7 +35574,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProductionRecordResponse"];
+            data?: components["schemas"]["ProductionRecordResponse"] | null;
         };
         /**
          * ProductionRecordCreate
@@ -38085,7 +38071,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["RegulationStagesResponse"];
+            data?: components["schemas"]["RegulationStagesResponse"] | null;
         };
         /**
          * RegulationStagesResponse
@@ -42420,6 +42406,57 @@ export interface components {
             attachments?: string | null;
             /** Sample Nodes */
             sample_nodes?: components["schemas"]["StabilitySampleNodeCreate"][] | null;
+        };
+        /**
+         * StabilityTrendApiResponse
+         * @description 稳定性趋势响应包装
+         */
+        StabilityTrendApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["StabilityTrendResponse"] | null;
+        };
+        /**
+         * StabilityTrendDataPoint
+         * @description 趋势分析数据点
+         */
+        StabilityTrendDataPoint: {
+            /** Inspection Item */
+            inspection_item: string;
+            /** Node Month */
+            node_month: number;
+            /** Measured Value */
+            measured_value?: string | null;
+            result?: components["schemas"]["StabilityItemResult"] | null;
+            /** Inspection Date */
+            inspection_date?: string | null;
+        };
+        /**
+         * StabilityTrendResponse
+         * @description 趋势分析响应
+         */
+        StabilityTrendResponse: {
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no: string;
+            study_type: components["schemas"]["StabilityStudyType"];
+            /** Inspection Items */
+            inspection_items: string[];
+            /** Data Points */
+            data_points: {
+                [key: string]: components["schemas"]["StabilityTrendDataPoint"][];
+            };
         };
         /**
          * StandardCreate
@@ -67323,7 +67360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67358,7 +67395,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67391,7 +67428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67428,7 +67465,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67461,7 +67498,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67499,7 +67536,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67539,7 +67576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67573,7 +67610,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67606,7 +67643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67639,7 +67676,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67747,7 +67784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67782,7 +67819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67815,7 +67852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67848,7 +67885,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67881,7 +67918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67914,7 +67951,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67948,7 +67985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67985,7 +68022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68057,7 +68094,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68094,7 +68131,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68127,7 +68164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68166,7 +68203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68199,7 +68236,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68238,7 +68275,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68277,7 +68314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68310,7 +68347,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68347,7 +68384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68384,7 +68421,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68417,7 +68454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68456,7 +68493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68489,7 +68526,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69137,7 +69174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69172,7 +69209,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69205,7 +69242,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69242,7 +69279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69275,7 +69312,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69314,7 +69351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69350,7 +69387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69384,7 +69421,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69419,7 +69456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69456,7 +69493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69490,7 +69527,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69525,7 +69562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69562,7 +69599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69596,7 +69633,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69631,7 +69668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69668,7 +69705,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70380,7 +70417,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70415,7 +70452,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70452,7 +70489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70521,7 +70558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70556,7 +70593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70593,7 +70630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70662,7 +70699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70697,7 +70734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70734,7 +70771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70802,7 +70839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70835,7 +70872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70872,7 +70909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71002,7 +71039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71033,7 +71070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71071,7 +71108,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71106,7 +71143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71143,7 +71180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71213,7 +71250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75514,7 +75551,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionListApiResponse"];
+                    "application/json": components["schemas"]["FQCPaginatedListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76451,7 +76488,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json": components["schemas"]["StabilityTrendApiResponse"];
                 };
             };
             /** @description Validation Error */

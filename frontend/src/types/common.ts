@@ -1,25 +1,25 @@
+import type { components } from '@/types/generated/schema'
+
 export interface ModuleInfo {
   code: string
   name: string
   description: string
 }
 
-// Generic API response wrapper matching backend's ApiResponse structure
-export interface ApiResponse<T> {
-  code: number
-  message: string
+/**
+ * The backend's response envelope, taken from the OpenAPI contract rather than
+ * restated here. `Omit`/`&` re-add the type parameter so call sites keep
+ * `ApiResponse<Foo>` while every field shape stays owned by the generated schema.
+ */
+export type ApiResponse<T> = Omit<components['schemas']['ApiResponse'], 'data'> & {
   data: T
-  meta?: {
-    total?: number
-    page?: number
-    page_size?: number
-  }
 }
 
-// Generic paginated response wrapper
-export interface PaginatedResponse<T> {
+/**
+ * A page of results, projected from the contract rather than declared here:
+ * the list lives in `data`, the pagination numbers in `meta`. Both shapes come
+ * from the generated schema, so this cannot drift from the backend.
+ */
+export type PaginatedResponse<T> = {
   items: T[]
-  total: number
-  page: number
-  page_size: number
-}
+} & components['schemas']['PaginationMeta']

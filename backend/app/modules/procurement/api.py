@@ -157,14 +157,15 @@ async def list_supplier_records(  # type: ignore[no-untyped-def]
         page=page,
         page_size=page_size,
     )
-    data = [supplier.model_dump(mode="json") for supplier in suppliers]
+    # `columns` is column metadata, not pagination — it belongs in `data`.
+    # `meta` is reserved for PaginationMeta so the contract can type it.
+    data = {"items": [supplier.model_dump(mode="json") for supplier in suppliers], "columns": columns}
     return success_response(
         data=data,
         meta={
             "page": page,
             "page_size": page_size,
             "total": total,
-            "columns": columns,
         },
     )
 
