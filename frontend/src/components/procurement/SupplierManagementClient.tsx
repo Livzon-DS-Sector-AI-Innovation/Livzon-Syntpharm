@@ -61,8 +61,7 @@ function isSupportedSupplierFile(fileName: string) {
 }
 
 function getResponseColumns(response: SupplierListResponse) {
-  // `columns` moved from meta to data: it is column metadata, not pagination.
-  const columns = (response.data as { columns?: unknown } | null | undefined)?.columns
+  const columns = response.meta?.columns
   if (!Array.isArray(columns)) return []
   return columns.filter((column): column is string => typeof column === 'string')
 }

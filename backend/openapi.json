@@ -123531,7 +123531,7 @@
           "total"
         ],
         "title": "PaginationMeta",
-        "description": "Pagination envelope carried in ApiResponse.meta.\n\nMirrors what app/core/response.py:paginated_response() emits, so the\nOpenAPI contract names these fields instead of leaving meta an opaque dict."
+        "description": "Pagination envelope carried in ApiResponse.meta.\n\nMirrors what app/core/response.py:paginated_response() emits, so the\nOpenAPI contract names these fields instead of leaving meta an opaque dict.\n\nDeliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta\ninto a model instance, and the ~73 module envelopes that declare\n`meta: dict[...]` would then fail `response_model` validation with\n\"Input should be a valid dictionary\". A TypedDict keeps meta a plain dict\nwhile still generating a named schema for the frontend."
       },
       "PartComplete": {
         "properties": {

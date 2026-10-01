@@ -1,13 +1,19 @@
-from typing import Any
+from typing import Any, TypedDict
 
 from pydantic import BaseModel, Field
 
 
-class PaginationMeta(BaseModel):
+class PaginationMeta(TypedDict):
     """Pagination envelope carried in ApiResponse.meta.
 
     Mirrors what app/core/response.py:paginated_response() emits, so the
     OpenAPI contract names these fields instead of leaving meta an opaque dict.
+
+    Deliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta
+    into a model instance, and the ~73 module envelopes that declare
+    `meta: dict[...]` would then fail `response_model` validation with
+    "Input should be a valid dictionary". A TypedDict keeps meta a plain dict
+    while still generating a named schema for the frontend.
     """
 
     page: int
