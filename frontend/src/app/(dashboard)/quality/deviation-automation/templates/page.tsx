@@ -41,7 +41,6 @@ interface Template {
 
 
 export default function TemplateManagementPage() {
-  const [_form] = Form.useForm()
   const [modalForm] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
