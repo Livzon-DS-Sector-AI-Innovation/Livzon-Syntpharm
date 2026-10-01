@@ -89,7 +89,7 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <Drawer
       title={editingCategory ? '编辑分类' : '新增分类'}
-      width={400}
+      size={400}
       open={categoryDrawerOpen}
       onClose={closeCategoryDrawer}
       destroyOnHidden

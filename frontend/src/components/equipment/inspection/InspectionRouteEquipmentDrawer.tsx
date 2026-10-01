@@ -154,7 +154,7 @@ export function InspectionRouteEquipmentDrawer({ equipments, locations, template
   return (
     <Drawer
       title={null}
-      width={840}
+      size={840}
       open={routeEquipmentDrawerOpen}
       onClose={closeRouteEquipmentDrawer}
       destroyOnHidden

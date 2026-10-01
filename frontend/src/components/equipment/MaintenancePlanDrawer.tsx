@@ -103,7 +103,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
   return (
     <Drawer
       title={editingMaintenancePlan ? '编辑维护计划' : '新建维护计划'}
-      width={480}
+      size={480}
       open={maintenancePlanDrawerOpen}
       onClose={closeMaintenancePlanDrawer}
       destroyOnHidden

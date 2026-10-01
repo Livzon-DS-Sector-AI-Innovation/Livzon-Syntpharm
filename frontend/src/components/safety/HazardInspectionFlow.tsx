@@ -547,7 +547,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
         styles={{ body: { padding: '16px 24px' } }}
-        width={420}
+        size={420}
       >
         {draftsLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>

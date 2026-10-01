@@ -323,7 +323,7 @@ export function ContractSummaryClient({
 
       <Drawer
         destroyOnHidden
-        width={920}
+        size={920}
         title={detail?.title || '合同详情'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}

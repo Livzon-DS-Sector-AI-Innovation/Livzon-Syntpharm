@@ -56,7 +56,7 @@ export function MaterialConsumeDrawer({ workOrderId, spareParts, onRefresh }: Ma
       </Button>
       <Drawer
         title="工单领料"
-        width={480}
+        size={480}
         open={open}
         onClose={() => setOpen(false)}
         destroyOnHidden

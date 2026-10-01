@@ -631,7 +631,7 @@ export default function ChromColumnPage() {
       <Drawer
         title={isNew ? '新建色谱柱' : '编辑色谱柱'}
         placement="right"
-        width={560}
+        size={560}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
