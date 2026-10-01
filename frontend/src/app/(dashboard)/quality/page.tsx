@@ -382,7 +382,12 @@ export default function QualityDashboardPage() {
       </Spin>
 
       {/* 页面样式 */}
-      <style jsx global>{`
+      {/* Plain <style>, not <style jsx>: this sheet is entirely global (no
+          scoped selectors), so styled-jsx adds a scope class the server render
+          applies to every element but the client render omits. That difference
+          hydrated as a mismatch on every node. A plain <style> emits the same
+          CSS with no scope class and no mismatch. */}
+      <style>{`
         .quality-dashboard {
           padding: 12px;
           min-height: 100%;
