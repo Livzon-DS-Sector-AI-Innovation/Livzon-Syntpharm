@@ -6,16 +6,8 @@
 
 ﻿// safety module TypeScript types
 
-export interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-  meta?: {
-    page?: number
-    page_size?: number
-    total?: number
-  }
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { ApiResponse } from '@/types/common'
 
 export interface SafetyDashboardStats {
   total_checks: number

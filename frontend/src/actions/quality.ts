@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { components } from '@/types/generated/schema'
+import type { ApiResponse } from '@/types/common'
 import type {
   InspectionStandard,
   InspectionStandardItem,
@@ -23,16 +24,6 @@ type DeviationUpdate = components['schemas']['DeviationUpdate']
 type CapaCreate = components['schemas']['CapaCreate']
 type CapaUpdate = components['schemas']['CapaUpdate']
 
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-  meta?: {
-    total?: number
-    page?: number
-    page_size?: number
-  }
-}
 import type {
   SamplingOrder,
   SamplingOrderCreate,

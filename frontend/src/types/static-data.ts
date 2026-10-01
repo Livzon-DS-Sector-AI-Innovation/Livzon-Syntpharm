@@ -22,17 +22,8 @@ export type YesNo = 0 | 1
 
 // ============ 通用响应结构 ============
 
-export interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-  meta?: {
-    page?: number
-    page_size?: number
-    total?: number
-    [key: string]: unknown
-  }
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { ApiResponse } from '@/types/common'
 
 export interface PageParams {
   page?: number
