@@ -87,7 +87,7 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
   const parentOptions = flattenTree(categories, editingCategory?.id)
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingCategory ? '编辑分类' : '新增分类'}
       size={400}
       open={categoryDrawerOpen}

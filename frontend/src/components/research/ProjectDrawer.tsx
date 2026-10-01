@@ -82,7 +82,7 @@ export function ProjectDrawer({ onRefresh }: ProjectDrawerProps) {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingProject ? '编辑研发项目' : '新建研发项目'}
       size={480}
       open={drawerOpen}

@@ -466,7 +466,7 @@ export default function SpecialOpsReportPanel() {
       </Card>
 
       {/* ── Report Drawer (create/edit) ── */}
-      <Drawer
+      <Drawer forceRender
         title={
           <Space>
             <SafetyCertificateOutlined style={{ color: T.primary }} />

@@ -58,7 +58,7 @@ export function InspectionRouteDrawer() {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={null}
       size={460}
       open={routeDrawerOpen}

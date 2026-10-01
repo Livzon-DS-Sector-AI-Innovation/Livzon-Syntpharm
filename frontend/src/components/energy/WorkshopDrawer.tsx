@@ -73,7 +73,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEdit ? '编辑车间' : '新增车间'}
       open={open}
       onClose={onClose}

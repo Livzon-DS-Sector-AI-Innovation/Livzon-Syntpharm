@@ -163,7 +163,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEdit ? '编辑预警规则' : '新建预警规则'}
       size={480}
       open={alertConfigDrawerOpen}

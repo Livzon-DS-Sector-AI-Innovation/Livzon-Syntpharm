@@ -73,7 +73,7 @@ export function SparePartDrawer({ onRefresh }: SparePartDrawerProps) {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingSparePart ? '编辑备件' : '新建备件'}
       size={480}
       open={sparePartDrawerOpen}

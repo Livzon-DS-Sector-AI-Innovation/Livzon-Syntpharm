@@ -104,7 +104,7 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEditing ? '编辑维修工单' : '新建维修工单'}
       size={480}
       open={workOrderDrawerOpen}

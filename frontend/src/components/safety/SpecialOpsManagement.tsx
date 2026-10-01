@@ -701,7 +701,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
       </Card>
 
       {/* ── Detail Drawer (read-only) ── */}
-      <Drawer
+      <Drawer forceRender
         title={<Space><SafetyCertificateOutlined style={{ color: T.primary }} /><span>详情</span></Space>}
         placement="right"
         size="large"
@@ -756,7 +756,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
       </Drawer>
 
       {/* ── Report Drawer (create/edit) ── */}
-      <Drawer
+      <Drawer forceRender
         title={
           <Space>
             <SafetyCertificateOutlined style={{ color: T.primary }} />
