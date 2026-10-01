@@ -800,7 +800,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
       </Drawer>
 
       {/* ── Reject Modal ── */}
-      <Modal
+      <Modal forceRender
         title="驳回原因"
         open={rejectVisible}
         onOk={handleReject}
@@ -822,7 +822,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
       </Modal>
 
       {/* ── AI Export Modal ── */}
-      <Modal
+      <Modal forceRender
         title={
           <Space>
             <RobotOutlined style={{ color: T.primary }} />
