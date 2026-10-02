@@ -291,7 +291,6 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
           processed[f] = (processed[f] as { format: (f: string) => string }).format('YYYY-MM-DD')
         }
       })
-      processed.create_by = 1
       // 质量标准附带 items
       if (isStdWithItems) {
         processed.items = items.map(it => {

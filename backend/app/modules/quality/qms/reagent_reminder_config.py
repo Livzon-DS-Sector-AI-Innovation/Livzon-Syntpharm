@@ -1,16 +1,17 @@
 """试剂提醒配置数据模型
 
 用于存储试剂库存不足时的飞书提醒配置
+
+继承共享 `app.shared.base_model.BaseModel`，标准契约由基类提供：
+UUID `id`、`created_at`、`updated_at`、`created_by`、`updated_by`、`is_deleted`。
 """
 
-import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Integer, String, Text
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.modules.quality.qms.static_data.models import BaseModel
+from app.shared.base_model import BaseModel
 
 
 class ReagentReminderConfig(BaseModel):
@@ -18,8 +19,6 @@ class ReagentReminderConfig(BaseModel):
 
     __tablename__ = "qms_reagent_reminder_config"
     __table_args__ = {"schema": "qms", "comment": "试剂提醒配置表"}
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # 飞书配置
     feishu_app_id: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="飞书应用 AppID")
@@ -33,12 +32,3 @@ class ReagentReminderConfig(BaseModel):
     # 提醒历史
     last_remind_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, comment="上次提醒时间")
     last_remind_content: Mapped[str | None] = mapped_column(Text, nullable=True, comment="上次提醒内容")
-
-    # 状态
-    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="创建人")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, comment="创建时间")
-    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, comment="更新人")
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime, nullable=True, onupdate=datetime.utcnow, comment="更新时间"
-    )
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否删除")

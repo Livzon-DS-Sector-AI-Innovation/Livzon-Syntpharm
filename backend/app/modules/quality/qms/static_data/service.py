@@ -4,6 +4,7 @@ Business logic layer for static data operations.
 """
 
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,16 +28,16 @@ class StaticDataService:
         """Get single HPLC reference substance"""
         return await self.repo.get_hplc_reference(id)
 
-    async def create_hplc_reference(self, data: s.HplcReferenceCreate, user_id: int) -> Any:
+    async def create_hplc_reference(self, data: s.HplcReferenceCreate, user_id: UUID) -> Any:
         """Create HPLC reference substance"""
         existing = await self.repo.get_hplc_reference_by_code(data.ref_code)
         if existing:
             raise ValueError(f"Reference code {data.ref_code} already exists")
 
-        obj = await self.repo.create_hplc_reference({**data.model_dump(), "create_by": user_id})
+        obj = await self.repo.create_hplc_reference({**data.model_dump(), "created_by": user_id})
         return obj
 
-    async def _func_l41(self, id: int, data: s.HplcReferenceUpdate, user_id: int) -> Any:
+    async def _func_l41(self, id: int, data: s.HplcReferenceUpdate, user_id: UUID) -> Any:
         """Update HPLC reference substance"""
         existing = await self.repo.get_hplc_reference(id)
         if not existing:
@@ -44,7 +45,7 @@ class StaticDataService:
 
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data["update_by"] = user_id
+            update_data["updated_by"] = user_id
 
         obj = await self.repo.update_hplc_reference(id, update_data)
         return obj
@@ -53,13 +54,13 @@ class StaticDataService:
         """Delete HPLC reference substance"""
         return await self.repo.delete_hplc_reference(id)
 
-    async def _func_l59(self, id: int, quantity_change: int, user_id: int) -> Any:
+    async def _func_l59(self, id: int, quantity_change: int, user_id: UUID) -> Any:
         """Adjust HPLC reference quantity"""
         try:
             obj = await self.repo.adjust_hplc_reference_quantity(id, quantity_change)
             if not obj:
                 raise ValueError(f"HPLC reference {id} not found")
-            obj.update_by = user_id
+            obj.updated_by = user_id
             return obj
         except ValueError as e:
             raise e
@@ -72,7 +73,7 @@ class StaticDataService:
         usage_person: str | None,
         usage_purpose: str | None,
         remark: str | None,
-        user_id: int,
+        user_id: UUID,
     ) -> Any:
         """Use HPLC reference substance"""
         try:
@@ -107,16 +108,16 @@ class StaticDataService:
         """Get single chromatography column"""
         return await self.repo.get_chrom_column(id)
 
-    async def create_chrom_column(self, data: s.ChromColumnCreate, user_id: int) -> Any:
+    async def create_chrom_column(self, data: s.ChromColumnCreate, user_id: UUID) -> Any:
         """Create chromatography column"""
         existing = await self.repo.get_chrom_column_by_code(data.col_code)
         if existing:
             raise ValueError(f"Column code {data.col_code} already exists")
 
-        obj = await self.repo.create_chrom_column({**data.model_dump(), "create_by": user_id})
+        obj = await self.repo.create_chrom_column({**data.model_dump(), "created_by": user_id})
         return obj
 
-    async def _func_l125(self, id: int, data: s.ChromColumnUpdate, user_id: int) -> Any:
+    async def _func_l125(self, id: int, data: s.ChromColumnUpdate, user_id: UUID) -> Any:
         """Update chromatography column"""
         existing = await self.repo.get_chrom_column(id)
         if not existing:
@@ -124,7 +125,7 @@ class StaticDataService:
 
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data["update_by"] = user_id
+            update_data["updated_by"] = user_id
 
         obj = await self.repo.update_chrom_column(id, update_data)
         return obj
@@ -133,7 +134,7 @@ class StaticDataService:
         """Delete chromatography column"""
         return await self.repo.delete_chrom_column(id)
 
-    async def increment_chrom_column_usage(self, id: int, user_id: int) -> Any:
+    async def increment_chrom_column_usage(self, id: int, user_id: UUID) -> Any:
         """Increment usage count of a chromatography column"""
         obj = await self.repo.increment_chrom_column_usage(id)
         if not obj:
@@ -150,16 +151,16 @@ class StaticDataService:
         """Get single medium"""
         return await self.repo.get_medium(id)
 
-    async def create_medium(self, data: s.MediumCreate, user_id: int) -> Any:
+    async def create_medium(self, data: s.MediumCreate, user_id: UUID) -> Any:
         """Create medium"""
         existing = await self.repo.get_medium_by_code(data.medium_code)
         if existing:
             raise ValueError(f"Medium code {data.medium_code} already exists")
 
-        obj = await self.repo.create_medium({**data.model_dump(), "create_by": user_id})
+        obj = await self.repo.create_medium({**data.model_dump(), "created_by": user_id})
         return obj
 
-    async def update_medium(self, id: int, data: s.MediumUpdate, user_id: int) -> Any:
+    async def update_medium(self, id: int, data: s.MediumUpdate, user_id: UUID) -> Any:
         """Update medium"""
         existing = await self.repo.get_medium(id)
         if not existing:
@@ -167,7 +168,7 @@ class StaticDataService:
 
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data["update_by"] = user_id
+            update_data["updated_by"] = user_id
 
         obj = await self.repo.update_medium(id, update_data)
         return obj
@@ -176,12 +177,12 @@ class StaticDataService:
         """Delete medium"""
         return await self.repo.delete_medium(id)
 
-    async def adjust_medium_stock(self, id: int, quantity: int, user_id: int) -> Any:
+    async def adjust_medium_stock(self, id: int, quantity: int, user_id: UUID) -> Any:
         """Adjust medium stock quantity"""
         obj = await self.repo.adjust_medium_stock(id, quantity)
         if not obj:
             raise ValueError(f"Medium {id} not found")
-        obj.update_by = user_id
+        obj.updated_by = user_id
         return obj
 
     # ========== Standard (标准品) ==========
@@ -194,22 +195,22 @@ class StaticDataService:
         """Get single standard"""
         return await self.repo.get_standard(id)
 
-    async def create_standard(self, data: s.StandardCreate, user_id: int) -> Any:
+    async def create_standard(self, data: s.StandardCreate, user_id: UUID) -> Any:
         """Create standard"""
         existing = await self.repo.get_standard_by_code(data.std_code)
         if existing:
             raise ValueError(f"Standard code {data.std_code} already exists")
-        obj = await self.repo.create_standard({**data.model_dump(), "create_by": user_id})
+        obj = await self.repo.create_standard({**data.model_dump(), "created_by": user_id})
         return obj
 
-    async def update_standard(self, id: int, data: s.StandardUpdate, user_id: int) -> Any:
+    async def update_standard(self, id: int, data: s.StandardUpdate, user_id: UUID) -> Any:
         """Update standard"""
         existing = await self.repo.get_standard(id)
         if not existing:
             raise ValueError(f"Standard {id} not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data["update_by"] = user_id
+            update_data["updated_by"] = user_id
         obj = await self.repo.update_standard(id, update_data)
         return obj
 
@@ -217,12 +218,12 @@ class StaticDataService:
         """Delete standard"""
         return await self.repo.delete_standard(id)
 
-    async def adjust_standard_quantity(self, id: int, quantity: int, user_id: int) -> Any:
+    async def adjust_standard_quantity(self, id: int, quantity: int, user_id: UUID) -> Any:
         """Adjust standard quantity"""
         obj = await self.repo.adjust_standard_quantity(id, quantity)
         if not obj:
             raise ValueError(f"Standard {id} not found")
-        obj.update_by = user_id
+        obj.updated_by = user_id
         return obj
 
     # ========== Storage Condition (贮存条件) ==========
@@ -235,22 +236,22 @@ class StaticDataService:
         """Get single storage condition"""
         return await self.repo.get_storage_condition(id)
 
-    async def _func_l247(self, data: s.StorageConditionCreate, user_id: int) -> Any:
+    async def _func_l247(self, data: s.StorageConditionCreate, user_id: UUID) -> Any:
         """Create storage condition"""
         existing = await self.repo.get_storage_condition_by_code(data.cond_code)
         if existing:
             raise ValueError(f"Storage condition code {data.cond_code} already exists")
-        obj = await self.repo.create_storage_condition({**data.model_dump(), "create_by": user_id})
+        obj = await self.repo.create_storage_condition({**data.model_dump(), "created_by": user_id})
         return obj
 
-    async def _func_l258(self, id: int, data: s.StorageConditionUpdate, user_id: int) -> Any:
+    async def _func_l258(self, id: int, data: s.StorageConditionUpdate, user_id: UUID) -> Any:
         """Update storage condition"""
         existing = await self.repo.get_storage_condition(id)
         if not existing:
             raise ValueError(f"Storage condition {id} not found")
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         if update_data:
-            update_data["update_by"] = user_id
+            update_data["updated_by"] = user_id
         obj = await self.repo.update_storage_condition(id, update_data)
         return obj
 

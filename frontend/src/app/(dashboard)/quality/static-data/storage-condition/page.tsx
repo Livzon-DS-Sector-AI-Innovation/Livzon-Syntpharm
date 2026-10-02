@@ -149,7 +149,7 @@ export default function StorageConditionPage() {
       const values = await form.validateFields()
       setDrawerLoading(true)
       if (isNew) {
-        await createStorageCondition({ ...values, create_by: 0 })
+        await createStorageCondition(values)
         message.success('创建成功')
       } else if (editingRecord) {
         await updateStorageCondition(editingRecord.id, values)

@@ -112257,12 +112257,6 @@
             ],
             "title": "Attach File",
             "description": "Attachments"
-          },
-          "create_by": {
-            "type": "integer",
-            "title": "Create By",
-            "description": "Creator",
-            "default": 0
           }
         },
         "type": "object",
@@ -144057,18 +144051,12 @@
             "title": "Status",
             "description": "0-enabled 1-disabled",
             "default": 0
-          },
-          "create_by": {
-            "type": "integer",
-            "title": "Create By",
-            "description": "Creator"
           }
         },
         "type": "object",
         "required": [
           "cond_code",
-          "cond_name",
-          "create_by"
+          "cond_name"
         ],
         "title": "StorageConditionCreate",
         "description": "Create Storage Condition"

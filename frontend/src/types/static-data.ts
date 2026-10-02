@@ -43,11 +43,11 @@ export interface StorageCondition {
   humidity: string | null
   remark: string | null
   status: Status0Or1
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export interface StorageConditionCreate {
@@ -58,7 +58,6 @@ export interface StorageConditionCreate {
   humidity?: string | null
   remark?: string | null
   status?: Status0Or1
-  create_by: number
 }
 
 export interface StorageConditionUpdate {
@@ -79,11 +78,11 @@ export interface Unit {
   base_value: number | null
   remark: string | null
   status: Status0Or1
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export type UnitType = '质量' | '体积' | '浓度' | '微生物' | '比率'
@@ -95,7 +94,6 @@ export interface UnitCreate {
   base_value?: number | null
   remark?: string | null
   status?: Status0Or1
-  create_by: number
 }
 
 export interface UnitUpdate {
@@ -116,11 +114,11 @@ export interface TestItem {
   method_desc: string | null
   sort_num: number | null
   status: Status0Or1
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export type TestItemCategory = '理化' | '仪器分析' | '微生物'
@@ -133,7 +131,6 @@ export interface TestItemCreate {
   method_desc?: string | null
   sort_num?: number | null
   status?: Status0Or1
-  create_by: number
 }
 
 export interface TestItemUpdate {
@@ -166,11 +163,11 @@ export interface Equipment {
   manager_id: number
   attach_file: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export type EquipmentCategory = '色谱类' | '称量类' | '灭菌类' | '微生物类'
@@ -193,7 +190,6 @@ export interface EquipmentCreate {
   manager_id: number
   attach_file?: string | null
   remark?: string | null
-  create_by: number
 }
 
 export interface EquipmentUpdate {
@@ -233,11 +229,11 @@ export interface ChromColumn {
   apply_method: string | null
   attach_file: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export type ChromColumnStatus = 0 | 1 | 2 | 3  // 0在用 1待清洗 2封存 3报废
@@ -265,7 +261,6 @@ export interface ChromColumnCreate {
   apply_method?: string | null
   attach_file?: string | null
   remark?: string | null
-  create_by: number
 }
 
 export interface ChromColumnUpdate {
@@ -304,11 +299,11 @@ export interface Medium {
   status: Status0Or1
   attach_file: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export interface MediumCreate {
@@ -328,7 +323,6 @@ export interface MediumCreate {
   status?: Status0Or1
   attach_file?: string | null
   remark?: string | null
-  create_by: number
 }
 
 export interface MediumUpdate {
@@ -386,10 +380,9 @@ export interface Standard {
   std_status: StandardStatus
   attach_file: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
 }
 
 export const STANDARD_STATUS_OPTIONS = [
@@ -425,7 +418,6 @@ export interface StandardCreate {
   test_item?: string
   std_status?: StandardStatus
   remark?: string | null
-  create_by: number
 }
 
 export interface StandardUpdate {
@@ -469,11 +461,11 @@ export interface Reagent {
   attach_file: string | null
   status: Status0Or1
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export interface ReagentCreate {
@@ -494,7 +486,6 @@ export interface ReagentCreate {
   attach_file?: string | null
   status?: Status0Or1
   remark?: string | null
-  create_by: number
 }
 
 export interface ReagentUpdate {
@@ -538,11 +529,11 @@ export interface StandardMaterial {
   attach_file: string | null
   status: StandardMaterialStatus
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export type StdType = '法定' | '工作' | '自制'
@@ -568,7 +559,6 @@ export interface StandardMaterialCreate {
   attach_file?: string | null
   status?: StandardMaterialStatus
   remark?: string | null
-  create_by: number
 }
 
 export interface StandardMaterialUpdate {
@@ -613,11 +603,11 @@ export interface MaterialStandard {
   invalid_date: string | null
   attach_file: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
   items?: MaterialStandardItem[]
 }
 
@@ -672,9 +662,9 @@ export interface MaterialStandardItem {
   limit_max: number | null
   is_release_item: YesNo
   sort_num: number | null
-  create_by: number
-  create_time: string
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  is_deleted: boolean
 }
 
 export interface MaterialStandardItemCreate {
@@ -709,11 +699,11 @@ export interface ProductStandard {
   invalid_date: string | null
   attach_file: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
   items?: ProductStandardItem[]
 }
 
@@ -770,9 +760,9 @@ export interface ProductStandardItem {
   inner_limit_max: number | null
   is_release_item: YesNo
   sort_num: number | null
-  create_by: number
-  create_time: string
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  is_deleted: boolean
 }
 
 export interface ProductStandardItemCreate {
@@ -925,11 +915,11 @@ export interface HplcReference {
   ref_status: number
   remark: string | null
   attach_file: string | null
-  create_by: number
-  create_time: string
-  update_by: number | null
-  update_time: string | null
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  updated_by: string | null
+  updated_at: string | null
+  is_deleted: boolean
 }
 
 export interface HplcReferenceCreate {
@@ -965,7 +955,6 @@ export interface HplcReferenceCreate {
   ref_status?: number
   remark?: string | null
   attach_file?: string | null
-  create_by: number
 }
 
 export interface HplcReferenceUpdate {
@@ -1028,9 +1017,9 @@ export interface HplcReferenceUsage {
   usage_purpose: string | null
   usage_date: string | null
   remark: string | null
-  create_by: number
-  create_time: string
-  del_flag: number
+  created_by: string | null
+  created_at: string
+  is_deleted: boolean
 }
 
 export interface HplcReferenceUsageCreate {

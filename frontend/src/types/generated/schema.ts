@@ -29261,12 +29261,6 @@ export interface components {
              * @description Attachments
              */
             attach_file?: string | null;
-            /**
-             * Create By
-             * @description Creator
-             * @default 0
-             */
-            create_by: number;
         };
         /**
          * HplcReferenceUpdate
@@ -42701,11 +42695,6 @@ export interface components {
              * @default 0
              */
             status: number;
-            /**
-             * Create By
-             * @description Creator
-             */
-            create_by: number;
         };
         /**
          * StorageConditionUpdate
