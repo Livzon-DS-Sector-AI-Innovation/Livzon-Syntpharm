@@ -912,14 +912,22 @@ Full audit
   - **dev** — 开发阶段：复制源代码，运行 `pnpm dev`，支持热更新
   - **builder** — 生产构建阶段：运行 `pnpm build`
   - **runtime** — 生产运行阶段：仅包含 standalone 输出，运行 `node server.js`
-- 三种 docker-compose 配置：
-  - `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
-  - `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新）
-  - `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
-- 开发时必须使用：
-  ```bash
-  docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
-  ```
+- 六种 docker-compose 配置：
+  - `docker-compose.yml` — 基础栈：PostgreSQL/Redis/MinIO 与应用服务；生产环境与本地全栈共用，无热更新
+  - `docker-compose.dev.yml` — 覆盖文件：叠加在 `docker-compose.yml` 之上，开启前后端热更新
+  - `docker-compose.local-dev.yml` — 独立文件：只启动前后端，数据库/Redis/MinIO 连接 UAT；有热更新
+  - `docker-compose.ci.yml` — CI 环境：CI 流水线专用（E2E 测试、前端构建等），`target: runtime`
+  - `docker-compose.uat-infra.yml` — UAT 基础设施层：独立 `uat-data/` 数据目录与 `uat-net` 网络
+  - `docker-compose.uat.yml` — UAT 应用层：必须与 `uat-infra.yml` 一起传入
+- 开发有两种模式，任选其一：
+  - 全栈本地（基础设施也跑在本地）：
+    ```bash
+    docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+    ```
+  - 连接 UAT 基础设施（本地只跑前后端，共用 UAT 数据库/Redis/MinIO）：
+    ```bash
+    docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
+    ```
 
 **基础设施文件审批**（见 AGENTS.md "仓库通用规则" 章节）:
 - 以下文件修改前**必须**获得批准：
@@ -927,14 +935,20 @@ Full audit
   - `backend/Dockerfile`
   - `docker-compose.yml`
   - `docker-compose.dev.yml`
+  - `docker-compose.local-dev.yml`
   - `docker-compose.ci.yml`
+  - `docker-compose.uat-infra.yml`
+  - `docker-compose.uat.yml`
 
 ### Directories to inspect
 - `frontend/Dockerfile`
 - `backend/Dockerfile`
 - `docker-compose.yml`
 - `docker-compose.dev.yml`
+- `docker-compose.local-dev.yml`
 - `docker-compose.ci.yml`
+- `docker-compose.uat-infra.yml`
+- `docker-compose.uat.yml`
 - `nginx/`
 
 ### Questions
