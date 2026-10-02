@@ -16,6 +16,10 @@ _Avoid_: 手写 API 类型, OpenAPI 类型, schema 类型
 
 ### 模块边界 (Module Boundaries)
 
+**模块** (Module):
+按业务域划分的后端单元，注册于模块注册表，拥有一个 code 与一个同名主 schema。一个模块可以拥有多个 schema——例如 `quality` 模块同时拥有 `quality` 与 `qms`。迁移的「单模块原则」按模块判定，不是按 schema。
+_Avoid_: schema（当指代模块时）, 服务, 子系统
+
 **Public API**:
 模块对外暴露的唯一入口 `public_api.py`；跨模块调用必须经由它，禁止直接引用其他模块的 `repository.py`、`service.py` 或 `models.py`。
 _Avoid_: 内部接口, 跨模块导入
