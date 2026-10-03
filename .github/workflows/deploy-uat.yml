@@ -21,6 +21,9 @@ jobs:
           host: ${{ secrets.UAT_SERVER_HOST }}
           username: ${{ secrets.UAT_SERVER_USER }}
           key: ${{ secrets.UAT_SERVER_SSH_KEY }}
+          # ssh-action 默认 command_timeout=10m，UAT 首次构建需下载 torch(~882MB，
+          # 服务器带宽~400KB/s)远超 10 分钟，超时会误杀仍在正常推进的远程构建。
+          command_timeout: 2h
           script: |
             set -e
 
