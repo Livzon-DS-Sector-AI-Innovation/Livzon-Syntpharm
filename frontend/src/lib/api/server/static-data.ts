@@ -507,25 +507,6 @@ export async function getWarnings(days: number = 30) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/warnings?days=${days}`)
 }
 
-// ===== 审计日志 =====
-
-export async function listAuditLogs(params: Record<string, unknown> = {}) {
-  const qs = new URLSearchParams()
-  if (params.page) qs.set('page', String(params.page))
-  if (params.page_size) qs.set('page_size', String(params.page_size))
-  if (params.module_type) qs.set('module_type', String(params.module_type))
-  if (params.record_id !== undefined) qs.set('record_id', String(params.record_id))
-  if (params.operate_by !== undefined) qs.set('operate_by', String(params.operate_by))
-  if (params.operate_type) qs.set('operate_type', String(params.operate_type))
-  if (params.start_date) qs.set('start_date', String(params.start_date))
-  if (params.end_date) qs.set('end_date', String(params.end_date))
-  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/audit?${qs}`)
-}
-
-export async function getAuditModules() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/audit/modules`)
-}
-
 // ===== 文件上传下载 =====
 
 export async function uploadFile(formData: FormData) {

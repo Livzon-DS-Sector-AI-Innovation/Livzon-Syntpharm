@@ -863,22 +863,6 @@ export const STD_TYPE_OPTIONS = [
   { label: '自制', value: '自制' },
 ]
 
-// ============ 审计日志类型 ============
-
-export interface AuditLogItem {
-  id: number
-  module_type: string
-  record_id: number
-  record_code: string | null
-  operate_type: string
-  operate_by: number
-  operate_by_name?: string
-  operate_time: string
-  old_value: string | null
-  new_value: string | null
-  change_summary: string | null
-}
-
 // ============ 11. 液相色谱对照品 ==========
 
 export interface HplcReference {

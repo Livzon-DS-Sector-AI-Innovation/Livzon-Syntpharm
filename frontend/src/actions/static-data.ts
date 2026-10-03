@@ -4,7 +4,6 @@ import type {
   ApiResponse,
   PageParams,
   WarningsResponse,
-  AuditLogItem,
   UploadResponse,
 } from '@/types/static-data'
 import {
@@ -82,8 +81,6 @@ import {
   updateHplcReference as updateHplcReferenceServer,
   deleteHplcReference as deleteHplcReferenceServer,
   getWarnings as getWarningsServer,
-  listAuditLogs as listAuditLogsServer,
-  getAuditModules as getAuditModulesServer,
   uploadFile as uploadFileServer,
   getDownloadUrl as getDownloadUrlServer,
   downloadExcelTemplate as downloadExcelTemplateServer,
@@ -350,25 +347,6 @@ export async function deleteHplcReference(id: number) {
 
 export async function getWarnings(days = 30): Promise<ApiResponse<WarningsResponse>> {
   return getWarningsServer(days)
-}
-
-// ========== 审计日志 ==========
-
-export async function listAuditLogs(params: {
-  page?: number
-  page_size?: number
-  module_type?: string
-  record_id?: number
-  operate_by?: number
-  operate_type?: string
-  start_date?: string
-  end_date?: string
-}): Promise<ApiResponse<AuditLogItem[]>> {
-  return listAuditLogsServer(params as Record<string, unknown>)
-}
-
-export async function getAuditModules(): Promise<ApiResponse<{ module_type: string; module_label: string }[]>> {
-  return getAuditModulesServer()
 }
 
 // ========== 文件上传下载 ==========
