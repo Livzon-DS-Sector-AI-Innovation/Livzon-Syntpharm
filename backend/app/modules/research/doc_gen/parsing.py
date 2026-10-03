@@ -46,7 +46,7 @@ import tempfile
 import threading
 import time
 import zipfile
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
@@ -515,8 +515,30 @@ def _ocr_pdf_pages(
     return True
 
 
+# 长表每 N 行重复一次表头：上下文预算有限，表格后段脱离表头后读不出列含义
+_TABLE_HEADER_REPEAT_ROWS = 50
+
+
+def _join_row(cells: Sequence[str]) -> str:
+    """把一行单元格拼成文本：保留中间空列占位、裁掉尾部空列，整行空返回空串。
+
+    过滤式拼接（只留非空格）会让「中间列留空」的行整体左移，下游按列定义抽取时
+    把第 3 列的值当成第 2 列的——表格类填充项的错值大多来自这里。
+    """
+    values = [str(cell).strip() for cell in cells]
+    while values and not values[-1]:
+        values.pop()
+    if not values or not any(values):
+        return ""
+    return " | ".join(values)
+
+
 def _parse_docx(path: Path, collector: _Collector) -> None:
-    """解析 docx/dotx：段落（Heading 样式标 heading）+ 表格行（单元格用 " | " 连接）。"""
+    """解析 docx/dotx：段落（Heading 样式标 heading）+ 表格行（单元格用 " | " 连接）。
+
+    表格行保留中间空列占位、长表周期性重复表头：空单元格被过滤会让后面的列整体前移，
+    下游按列定义抽取时就会张冠李戴；长表后段脱离了表头也读不出列含义。
+    """
     from docx import Document
 
     doc = Document(str(path))
@@ -526,39 +548,69 @@ def _parse_docx(path: Path, collector: _Collector) -> None:
         if not collector.add(1, para.text, kind):
             return
     for table in doc.tables:
-        for row in table.rows:
-            cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
-            if not collector.add(1, " | ".join(cells), "table_row"):
+        header = ""
+        for index, row in enumerate(table.rows):
+            line = _join_row([cell.text for cell in row.cells])
+            if not line:
+                continue
+            if not header:
+                header = line  # 首个非空行视作表头，供长表周期重复
+            elif index % _TABLE_HEADER_REPEAT_ROWS == 0:
+                if not collector.add(1, f"[表头] {header}", "table_row"):
+                    return
+            if not collector.add(1, line, "table_row"):
                 return
 
 
 def _parse_xlsx(path: Path, collector: _Collector) -> None:
-    """解析 xlsx：openpyxl 逐行，page 为 sheet 序号（从 1 开始）。"""
+    """解析 xlsx：openpyxl 逐行，page 为 sheet 序号（从 1 开始）。
+
+    每个 sheet 先落一行「工作表名」标题；数据行保留中间空列、长表周期重复表头
+    （口径与 docx 表格一致，理由见 ``_parse_docx``）。
+    """
     import openpyxl
 
     wb = openpyxl.load_workbook(str(path), data_only=True, read_only=True)
     try:
         for sheet_no, ws in enumerate(wb.worksheets, start=1):
-            for row in ws.iter_rows(values_only=True):
-                cells = [str(cell).strip() for cell in row if cell is not None and str(cell).strip()]
-                if not collector.add(sheet_no, " | ".join(cells), "sheet_row"):
+            if not collector.add(sheet_no, f"【工作表：{ws.title}】", "heading"):
+                return
+            header = ""
+            for index, row in enumerate(ws.iter_rows(values_only=True)):
+                line = _join_row(["" if cell is None else str(cell) for cell in row])
+                if not line:
+                    continue
+                if not header:
+                    header = line
+                elif index % _TABLE_HEADER_REPEAT_ROWS == 0:
+                    if not collector.add(sheet_no, f"[表头] {header}", "table_row"):
+                        return
+                if not collector.add(sheet_no, line, "sheet_row"):
                     return
     finally:
         wb.close()
 
 
 def _parse_xls(path: Path, collector: _Collector) -> None:
-    """解析 xls（旧格式）：xlrd 逐行，page 为 sheet 序号。"""
+    """解析 xls（旧格式）：xlrd 逐行，page 为 sheet 序号（口径同 xlsx）。"""
     import xlrd  # xlrd 未提供类型存根
 
     book = xlrd.open_workbook(str(path))
     for sheet_no in range(book.nsheets):
         sheet = book.sheet_by_index(sheet_no)
+        if not collector.add(sheet_no + 1, f"【工作表：{sheet.name}】", "heading"):
+            return
+        header = ""
         for r in range(sheet.nrows):
-            cells = [
-                str(sheet.cell_value(r, c)).strip() for c in range(sheet.ncols) if str(sheet.cell_value(r, c)).strip()
-            ]
-            if not collector.add(sheet_no, " | ".join(cells), "sheet_row"):
+            line = _join_row([str(sheet.cell_value(r, c)) for c in range(sheet.ncols)])
+            if not line:
+                continue
+            if not header:
+                header = line
+            elif r % _TABLE_HEADER_REPEAT_ROWS == 0:
+                if not collector.add(sheet_no + 1, f"[表头] {header}", "table_row"):
+                    return
+            if not collector.add(sheet_no + 1, line, "sheet_row"):
                 return
 
 

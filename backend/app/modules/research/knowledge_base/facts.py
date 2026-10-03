@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -43,6 +43,9 @@ MAX_CHUNK_CHARS = 4000
 MAX_QUOTE_CHARS = 300
 # 单切片事实数上限：模型跑飞时兜底，防止一张表被抽出几百条噪声事实
 MAX_FACTS_PER_CHUNK = 20
+# 并发硬顶：配置写飞（如 1000）也不允许把网关/GPU 打爆
+MAX_FACT_CONCURRENCY = 32
+MAX_SURVEY_CONCURRENCY = 32
 
 CancelProbe = Callable[[], bool]
 ProgressCallback = Callable[[int, int], Awaitable[None]]
@@ -113,9 +116,16 @@ class FactStats:
 
 
 class FactItem(BaseModel):
-    """单条事实：chunk 是批内序号（从 1 起），quote 必须一字不差来自该切片。"""
+    """单条事实：chunk 是批内序号（从 1 起），quote 必须一字不差来自该切片。
 
-    chunk: int
+    模型输出是「尽力而为」的 JSON：字段可能缺失、给 null（如没有单位的数值）或
+    直接给数字（如金额）。这些都不该废掉整批抽取，统一在这里收口：
+    null → 空串、数字 → 字符串、chunk 缺失 → 0（0 不在批内序号里，会被自然丢弃）。
+    """
+
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    chunk: int = 0
     subject: str = ""
     predicate: str = ""
     value: str = ""
@@ -123,11 +133,49 @@ class FactItem(BaseModel):
     quote: str = ""
     confidence: float = 0.7
 
+    @field_validator("subject", "predicate", "value", "unit", "quote", mode="before")
+    @classmethod
+    def _none_to_empty(cls, value: Any) -> Any:
+        return "" if value is None else value
+
+    @field_validator("chunk", mode="before")
+    @classmethod
+    def _chunk_default(cls, value: Any) -> Any:
+        return 0 if value is None else value
+
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def _confidence_default(cls, value: Any) -> Any:
+        return 0.7 if value is None else value
+
 
 class FactOut(BaseModel):
     """一次批量抽取的响应。"""
 
     facts: list[FactItem] = Field(default_factory=list)
+
+
+def parse_facts(raw: Any) -> list[FactItem]:
+    """宽松解析模型返回：整批校验失败时逐条挑出能用的。
+
+    个别条目连容错字段也修不好（如 chunk 给成非数字）时，只丢这一条，不废整批——
+    与「无依据不写」同一条底线：坏条目丢掉，好条目照常入库。
+    """
+    try:
+        return FactOut.model_validate(raw).facts
+    except ValidationError:
+        facts_raw = raw.get("facts") if isinstance(raw, dict) else None
+        if not isinstance(facts_raw, list):
+            raise
+        items: list[FactItem] = []
+        for item in facts_raw:
+            if not isinstance(item, dict):
+                continue
+            try:
+                items.append(FactItem.model_validate(item))
+            except ValidationError:
+                continue
+        return items
 
 
 _FACT_SYSTEM_RULES = (
@@ -176,9 +224,13 @@ async def index_chunks(
     client: Any = None,
     page_size: int = 100,
     max_chunks: int = 2000,
+    concurrency: int = 1,
     should_cancel: CancelProbe | None = None,
 ) -> IndexStats:
     """遍历知识库已解析文档的切片并镜像到本地索引（增量，不重复写）。
+
+    远端读取按 ``concurrency`` 并发放到多个文档上；本地写库仍串行执行
+    （``AsyncSession`` 不允许并发使用），因此并发只加速网络往返。
 
     ``max_chunks`` > 0 时对单次任务处理量设硬上限（0=不限），超出部分留待下次
     任务继续——大库第一次会慢一点，但任务不会被拖垮。远端已删除的切片在本地
@@ -208,45 +260,91 @@ async def index_chunks(
         if row.run_status == "DONE" and row.ragflow_document_id
     ]
 
-    for document in documents:
-        if _cancelled(should_cancel):
-            break
-        stats.documents += 1
-        remote_ids: set[str] = set()
-        page = 1
-        # 远端切片是否「完整枚举」：只有完整枚举才允许 prune（软删本地多余切片），
-        # 截断/取消/读取失败都会留下没列到的远端切片，误 prune 等于丢数据
+    concurrency = max(1, min(concurrency, MAX_SURVEY_CONCURRENCY))
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _fetch_document(document: RdKbDocument) -> tuple[list[Mapping[str, Any]], bool, list[str]]:
+        """按文档枚举远端切片（纯网络阶段，不触库）。
+
+        返回 (切片, 是否完整枚举, 告警)。「完整枚举」是 prune 的前置条件：只有把远端
+        切片全部列出来，才敢把本地未列到的切片判为「远端已删除」。
+        """
+        chunks: list[Mapping[str, Any]] = []
+        warnings: list[str] = []
         listed_complete = False
-        while True:
-            if _cancelled(should_cancel):
+        page = 1
+        async with sem:
+            while True:
+                if _cancelled(should_cancel):
+                    break
+                try:
+                    total, page_chunks = await client.list_document_chunks(
+                        dataset_id, document.ragflow_document_id, page=page, page_size=page_size
+                    )
+                except RagflowError as exc:
+                    warnings.append(f"{document.file_name}：解析切片读取失败（{exc.message}）")
+                    logger.warning(
+                        "知识库切片读取失败",
+                        extra={"kb_id": str(kb.id), "document": document.file_name, "error": exc.message},
+                    )
+                    break
+                if not page_chunks:
+                    listed_complete = True
+                    break
+                chunks.extend(page_chunks)
+                if page * page_size >= max(total, len(page_chunks)):
+                    listed_complete = True
+                    break
+                page += 1
+        return chunks, listed_complete, warnings
+
+    # 远端读取并发、本地写库串行（AsyncSession 不允许并发使用）
+    tasks: dict[asyncio.Task[Any], tuple[int, RdKbDocument]] = {
+        asyncio.create_task(_fetch_document(document)): (index, document) for index, document in enumerate(documents)
+    }
+    try:
+        while tasks:
+            if _cancelled(should_cancel) or stats.truncated:
                 break
-            try:
-                total, chunks = await client.list_document_chunks(
-                    dataset_id, document.ragflow_document_id, page=page, page_size=page_size
-                )
-            except RagflowError as exc:
-                stats.warnings.append(f"{document.file_name}：解析切片读取失败（{exc.message}）")
-                logger.warning(
-                    "知识库切片读取失败",
-                    extra={"kb_id": str(kb.id), "document": document.file_name, "error": exc.message},
-                )
-                break
-            if not chunks:
-                listed_complete = True
-                break
-            await _upsert_document_chunks(session, kb, document, chunks, remote_ids, stats)
-            await session.flush()
-            if max_chunks > 0 and stats.chunks_seen >= max_chunks:
-                stats.truncated = True
-                break
-            if page * page_size >= max(total, len(chunks)):
-                listed_complete = True
-                break
-            page += 1
-        if listed_complete:
-            await _prune_missing_chunks(session, kb, document, remote_ids, stats)
-        if stats.truncated:
-            break
+            done, _ = await asyncio.wait(set(tasks), return_when=asyncio.FIRST_COMPLETED)
+            # 按文档原顺序处理本批完成项：截断后剩余完成项一律丢弃，与串行实现
+            # 「处理到限额即停」的语义一致，也让结果可复现
+            for task in sorted(done, key=lambda item: tasks[item][0]):
+                if stats.truncated:
+                    break
+                _, document = tasks.pop(task)
+                stats.documents += 1
+                if task.cancelled():
+                    continue
+                error = task.exception()
+                if error is not None:
+                    stats.warnings.append(f"{document.file_name}：解析切片读取异常（{type(error).__name__}）")
+                    logger.warning(
+                        "知识库切片读取异常",
+                        extra={"kb_id": str(kb.id), "document": document.file_name, "error": type(error).__name__},
+                    )
+                    continue
+                chunks, listed_complete, warnings = task.result()
+                stats.warnings.extend(warnings)
+                remote_ids: set[str] = set()
+                write_truncated = False
+                for start in range(0, len(chunks), page_size):
+                    await _upsert_document_chunks(
+                        session, kb, document, chunks[start : start + page_size], remote_ids, stats
+                    )
+                    await session.flush()
+                    if max_chunks > 0 and stats.chunks_seen >= max_chunks:
+                        stats.truncated = True
+                        write_truncated = True
+                        break
+                # 截断时 remote_ids 不完整，未写入的切片不代表远端删了，照常 prune 会误删
+                if listed_complete and not write_truncated:
+                    await _prune_missing_chunks(session, kb, document, remote_ids, stats)
+    finally:
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     if stats.chunks_added or stats.chunks_updated or stats.pending_facts:
         logger.info(
@@ -383,11 +481,21 @@ async def extract_facts(
     config_name: str | None = None,
     batch_size: int = 4,
     max_chunks: int = 200,
+    concurrency: int = 1,
     timeout_seconds: float | None = 120.0,
+    commit_per_batch: bool = False,
     should_cancel: CancelProbe | None = None,
     on_progress: ProgressCallback | None = None,
 ) -> FactStats:
-    """对「待抽」切片批量抽事实（模型失败只降级，已成功的切片照常落库）。"""
+    """对「待抽」切片批量抽事实（模型失败只降级，已成功的切片照常落库）。
+
+    模型调用按 ``concurrency`` 并发（有硬顶保护）；数据库写入集中在主协程串行完成
+    ——``AsyncSession`` 不允许并发使用，并发只提升模型吞吐、不改变落库语义。
+
+    ``commit_per_batch``：每批落库一次。后台长轮次（一次几百片、可能十几分钟）用它，
+    进度可见、中途重启不丢已完成批次（按切片标记，重跑幂等）；任务链路保持默认
+    ``False``，全程只 flush，结束时由调用方统一提交。
+    """
     from app.core.llm import llm_client
 
     stats = FactStats()
@@ -416,11 +524,16 @@ async def extract_facts(
     stats.chunks_targeted = len(rows)
     batch_size = max(1, batch_size)
     batches = [list(rows[i : i + batch_size]) for i in range(0, len(rows), batch_size)]
+    concurrency = max(1, min(concurrency, MAX_FACT_CONCURRENCY))
+    sem = asyncio.Semaphore(concurrency)
+    total_batches = len(batches)
+    done_batches = 0
 
-    for done, batch in enumerate(batches, start=1):
-        if _cancelled(should_cancel):
-            break
-        try:
+    async def _call_batch(batch: list[RdKbChunk]) -> list[FactItem] | None:
+        """单批模型调用（纯 LLM，不碰 session）；已被取消时返回 None 表示跳过。"""
+        async with sem:
+            if _cancelled(should_cancel):
+                return None
             call = client.chat_json(
                 build_fact_prompt(batch),
                 expected_keys=["facts"],
@@ -429,30 +542,53 @@ async def extract_facts(
                 config_name=config_name,
             )
             raw = await asyncio.wait_for(call, timeout=timeout_seconds) if timeout_seconds else await call
-            parsed = FactOut.model_validate(raw)
-        except asyncio.CancelledError:
-            raise
-        except Exception as exc:  # noqa: BLE001 - 模型/格式异常统一降级，下一批继续
-            stats.failures += 1
-            stats.warnings.append(f"事实抽取降级 {len(batch)} 片：{type(exc).__name__}")
-            logger.warning(
-                "知识库事实抽取失败，跳过本批",
-                extra={"kb_id": str(kb.id), "error": type(exc).__name__, "module_name": "research"},
-            )
-            continue
+            return parse_facts(raw)
 
-        by_position: dict[int, list[FactItem]] = {}
-        for item in parsed.facts:
-            by_position.setdefault(int(item.chunk), []).append(item)
-        for position, chunk in enumerate(batch, start=1):
-            await _replace_chunk_facts(session, kb, chunk, by_position.get(position, []), stats)
-            chunk.facts_extracted_at = datetime.now(UTC)
-        await session.flush()
-        if on_progress is not None:
-            try:
-                await on_progress(done, len(batches))
-            except Exception:  # noqa: BLE001 - 进度回调失败不影响抽取
-                logger.warning("事实抽取进度回调失败", extra={"kb_id": str(kb.id)})
+    tasks: dict[asyncio.Task[list[FactItem] | None], list[RdKbChunk]] = {
+        asyncio.create_task(_call_batch(batch)): batch for batch in batches
+    }
+    try:
+        while tasks:
+            if _cancelled(should_cancel):
+                break
+            done, _ = await asyncio.wait(set(tasks), return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                batch = tasks.pop(task)
+                if task.cancelled():
+                    continue
+                error = task.exception()
+                if error is not None:  # 模型/格式异常统一降级，下一批继续
+                    stats.failures += 1
+                    stats.warnings.append(f"事实抽取降级 {len(batch)} 片：{type(error).__name__}")
+                    logger.warning(
+                        "知识库事实抽取失败，跳过本批",
+                        extra={"kb_id": str(kb.id), "error": type(error).__name__, "module_name": "research"},
+                    )
+                    continue
+                facts = task.result()
+                if facts is None:
+                    continue
+                by_position: dict[int, list[FactItem]] = {}
+                for item in facts:
+                    by_position.setdefault(int(item.chunk), []).append(item)
+                for position, chunk in enumerate(batch, start=1):
+                    await _replace_chunk_facts(session, kb, chunk, by_position.get(position, []), stats)
+                    chunk.facts_extracted_at = datetime.now(UTC)
+                await session.flush()
+                if commit_per_batch:
+                    await session.commit()
+                done_batches += 1
+                if on_progress is not None:
+                    try:
+                        await on_progress(done_batches, total_batches)
+                    except Exception:  # noqa: BLE001 - 进度回调失败不影响抽取
+                        logger.warning("事实抽取进度回调失败", extra={"kb_id": str(kb.id)})
+    finally:
+        # 无论正常结束、取消还是异常，都不允许留下在跑的模型调用
+        for task in tasks:
+            task.cancel()
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
 
     if stats.facts_added or stats.failures:
         logger.info(
@@ -555,6 +691,7 @@ __all__ = [
     "build_fact_prompt",
     "drop_chunk_facts",
     "extract_facts",
+    "parse_facts",
     "index_chunks",
     "load_facts",
 ]

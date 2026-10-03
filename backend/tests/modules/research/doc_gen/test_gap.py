@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from app.modules.research.doc_gen import gap, pipeline, status
+from app.modules.research.doc_gen import gap, kb_coverage, pipeline, status
 from app.modules.research.doc_gen.extraction import ExtractionAbortError, ExtractStats, SlotResult
 from app.modules.research.doc_gen.models import DocGenJob
 from app.modules.research.doc_gen.runtime_config import ModelChoice, RuntimeConfig
@@ -27,7 +27,9 @@ def _result(key: str, state: str, reason: str = "", text: str = "") -> SlotResul
 
 
 def _pending(key: str) -> SlotResult:
-    return _result(key, status.STATUS_PENDING, gap.GAP_NO_MATERIAL)
+    # 用「依据未核对上」做「典型可重试缺口」：资料未命中（no_material）默认不重试，
+    # 只在覆盖预检判「库里有料」时才放行（见 test_no_material_...）
+    return _result(key, status.STATUS_PENDING, gap.GAP_EVIDENCE_REJECTED)
 
 
 class StubExtractor:
@@ -103,7 +105,10 @@ def test_every_gap_code_has_a_label() -> None:
 
 
 def test_retryable_keys_and_blocked_keys_are_disjoint() -> None:
-    """可重试缺口与「交人工」缺口必须互斥且互不遗漏：每条有归因的结果落一边。"""
+    """可重试缺口与「交人工」缺口必须互斥且互不遗漏：每条有归因的结果落一边。
+
+    资料未命中默认归入「交人工」：首轮主口径与宽检索兜底都已试过，同一套词重试是空转。
+    """
     results = {
         "a": _result("a", status.STATUS_PENDING, gap.GAP_NO_MATERIAL),
         "b": _result("b", status.STATUS_OK, ""),
@@ -111,9 +116,22 @@ def test_retryable_keys_and_blocked_keys_are_disjoint() -> None:
         "d": _result("d", status.STATUS_MANUAL, gap.GAP_MANUAL),
         "e": _result("e", status.STATUS_FAILED, gap.GAP_MODEL_FAILED),
         "f": _result("f", status.STATUS_NEEDS_VERIFY, gap.GAP_REQUIREMENT),
+        "g": _result("g", status.STATUS_PENDING, gap.GAP_EVIDENCE_REJECTED),
     }
-    assert gap.retryable_keys(results) == ["a", "e"]
-    assert gap.blocked_keys(results) == ["c", "d", "f"]
+    assert gap.retryable_keys(results) == ["e", "g"]
+    assert gap.blocked_keys(results) == ["a", "c", "d", "f"]
+
+
+def test_no_material_is_retryable_only_when_coverage_allows() -> None:
+    """资料未命中默认不重试；只有覆盖预检判「库里有料」时才由 extra 单独放行。
+
+    放行只针对 no_material——冲突/需求不符等本就不可重试的归因不受影响。
+    """
+    results = {"a": _result("a", status.STATUS_PENDING, gap.GAP_NO_MATERIAL)}
+    assert gap.retryable_keys(results) == []
+    assert gap.retryable_keys(results, extra_no_material={"a"}) == ["a"]
+    blocked = {"c": _result("c", status.STATUS_CONFLICT, gap.GAP_CONFLICT)}
+    assert gap.retryable_keys(blocked, extra_no_material={"c"}) == []
 
 
 def test_retryable_keys_respect_allowed_scope() -> None:
@@ -149,10 +167,49 @@ def test_gap_reasons_counts_by_label() -> None:
         "c": _result("c", status.STATUS_CONFLICT, gap.GAP_CONFLICT),
         "d": _result("d", status.STATUS_OK, ""),
     }
-    assert gap.gap_reasons(results) == {gap.GAP_NO_MATERIAL: 2, gap.GAP_CONFLICT: 1}
-    stats = gap.GapStats(targets=2, blocked=1, rounds=1, recovered=1, reasons={"资料未命中": 2})
+    assert gap.gap_reasons(results) == {gap.GAP_EVIDENCE_REJECTED: 2, gap.GAP_CONFLICT: 1}
+    stats = gap.GapStats(targets=2, blocked=1, rounds=1, recovered=1, reasons={"依据未核对上": 2})
     assert stats.as_job_stats()["gap_recovered"] == 1
-    assert stats.as_job_stats()["gap_reasons"] == {"资料未命中": 2}
+    assert stats.as_job_stats()["gap_reasons"] == {"依据未核对上": 2}
+
+
+def test_coverage_fillable_keys_feed_no_material_retry() -> None:
+    """覆盖预检判「有料」的槽位（可填/部分可填）是资料未命中槽位的唯一放行来源。"""
+    coverage = kb_coverage.KbCoverage(
+        entries=[
+            kb_coverage.SlotCoverage(
+                key="a", label="甲", kind="field", required=True, status=kb_coverage.COVERAGE_FILLABLE
+            ),
+            kb_coverage.SlotCoverage(
+                key="b", label="乙", kind="field", required=False, status=kb_coverage.COVERAGE_PARTIAL
+            ),
+            kb_coverage.SlotCoverage(
+                key="c", label="丙", kind="field", required=False, status=kb_coverage.COVERAGE_NO_MATERIAL
+            ),
+            kb_coverage.SlotCoverage(
+                key="d", label="丁", kind="field", required=False, status=kb_coverage.COVERAGE_SKIPPED
+            ),
+        ]
+    )
+    assert coverage.retryable_keys() == {"a", "b"}
+    results = {
+        "a": _result("a", status.STATUS_PENDING, gap.GAP_NO_MATERIAL),
+        "c": _result("c", status.STATUS_PENDING, gap.GAP_NO_MATERIAL),
+    }
+    assert gap.retryable_keys(results, extra_no_material=coverage.retryable_keys()) == ["a"]
+
+
+def test_probe_keys_only_target_gaps_with_candidates() -> None:
+    """定向补问只挑「有候选却没填上」的归因；资料未命中与冲突不在其中（问了也是空转）。"""
+    results = {
+        "a": _result("a", status.STATUS_PENDING, gap.GAP_NOT_FOUND),
+        "b": _result("b", status.STATUS_PENDING, gap.GAP_NO_MATERIAL),
+        "c": _result("c", status.STATUS_CONFLICT, gap.GAP_CONFLICT),
+        "d": _result("d", status.STATUS_NEEDS_VERIFY, gap.GAP_FUZZY_EVIDENCE),
+        "e": _result("e", status.STATUS_OK, ""),
+    }
+    assert gap.probe_keys(results) == ["a", "d"]
+    assert gap.probe_keys(results, allowed={"a"}) == ["a"]
 
 
 # ---- 闭环阶段：跑哪些槽位 / 收什么结果 / 什么时候收手 ----------------------------
@@ -178,7 +235,7 @@ async def test_stage_retries_gap_slots_and_keeps_improvements(monkeypatch: pytes
     assert ctx.gap_stats is not None
     assert (ctx.gap_stats.targets, ctx.gap_stats.blocked, ctx.gap_stats.rounds) == (1, 1, 1)
     assert ctx.gap_stats.recovered == 1
-    assert ctx.gap_stats.reasons == {"资料未命中": 1, "材料冲突": 1}
+    assert ctx.gap_stats.reasons == {"依据未核对上": 1, "材料冲突": 1}
     assert "缺口补齐" in ctx.job.step
     assert session.commits >= 2
 

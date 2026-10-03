@@ -120,6 +120,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
   const [extracting, setExtracting] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [reExtracting, setReExtracting] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [formReady, setFormReady] = useState(!editingReport) // 编辑模式下等数据加载完再显示表单
   // 弹窗开关时重置表单可见性（官方「渲染期调整状态」模式，避免 effect 内同步 setState）
@@ -451,16 +452,22 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
    * 若运行时仍开着对话复核，则显式触发一次提取以保持兼容。
    */
   const handleCreateAndGenerate = async () => {
+    if (submitting) return
     const templateId = form.getFieldValue('template_id')
     if (!templateId) {
       msgApi.warning('请先选择模板')
       return
     }
+    // 先置 submitting 再走覆盖预检：confirmBeforeGenerate 含多次网络请求与确认弹窗，
+    // 若期间按钮仍可点，会并发触发多个创建任务
+    setSubmitting(true)
     const proceed = await confirmBeforeGenerate(templateId)
-    if (!proceed) return
+    if (!proceed) {
+      setSubmitting(false)
+      return
+    }
 
     setPhase('extracting')
-    setSubmitting(true)
     try {
       let currentJob = job
       // 已终止/已完成的任务无法续跑，必须新建
@@ -518,6 +525,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   // ─── 保存/创建（新建报告时创建 job + RdReport，编辑报告时更新 job + RdReport） ───
   const handleSave = async () => {
+    if (saving) return
     let values: ReportFormValues
     try {
       values = await form.validateFields()
@@ -621,7 +629,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
 
   // ─── 重新提取 ───
   const handleReExtract = async () => {
-    if (!job) return
+    if (!job || reExtracting) return
+    setReExtracting(true)
     try {
       // 直接调用后端原地重新提取，保留已上传的文件
       const started = await extractDocGenJob(job.id)
@@ -632,6 +641,8 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
     } catch (e) {
       console.error('[CreateReportModal] 重新提取失败:', e)
       msgApi.error(e instanceof Error ? e.message : '重新提取失败')
+    } finally {
+      setReExtracting(false)
     }
   }
 
@@ -757,7 +768,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
         // 失败时显示重新提取
         if (job?.status === 'failed') {
           buttons.push(
-            <Button key="retry" type="primary" icon={<ReloadOutlined />} onClick={handleReExtract}>
+            <Button key="retry" type="primary" icon={<ReloadOutlined />} onClick={handleReExtract} loading={reExtracting}>
               重新提取
             </Button>
           )
@@ -1085,6 +1096,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
                   type="primary"
                   icon={<ReloadOutlined />}
                   onClick={handleReExtract}
+                  loading={reExtracting}
                   size="large"
                 >
                   重新提取
@@ -1202,7 +1214,7 @@ export function CreateReportModal({ open, projectId, onCancel, onCreated, editin
           )}
           {/* 文件解析状态摘要 */}
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button icon={<ReloadOutlined />} onClick={handleReExtract} loading={extracting}>
+            <Button icon={<ReloadOutlined />} onClick={handleReExtract} loading={extracting || reExtracting}>
               重新提取
             </Button>
           </div>

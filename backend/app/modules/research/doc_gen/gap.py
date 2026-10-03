@@ -57,10 +57,12 @@ GAP_LABELS: dict[str, str] = {
     GAP_MANUAL: "需人工填写",
 }
 
-# 换一套检索口径再找一遍有可能变好的缺口（其余缺口重试即空转）
+# 换一套检索口径再找一遍有可能变好的缺口（其余缺口重试即空转）。
+# GAP_NO_MATERIAL（资料未命中）默认不在其中：首轮主口径与宽检索兜底都已试过，
+# 同一套词重试只会拿到同一批结果；只有覆盖预检（A2）判「库里确实有料」时才例外，
+# 由调用方通过 ``extra_no_material`` 单独放行。
 RETRYABLE_GAPS: frozenset[str] = frozenset(
     {
-        GAP_NO_MATERIAL,
         GAP_MODEL_FAILED,
         GAP_NOT_FOUND,
         GAP_EVIDENCE_REJECTED,
@@ -69,6 +71,31 @@ RETRYABLE_GAPS: frozenset[str] = frozenset(
         GAP_FORMAT_ERROR,
     }
 )
+
+# 定向补问的目标：有候选资料但没填上（模型在批量 prompt 里可能漏看）。
+# 与 RETRYABLE_GAPS 的区别：补问不换检索口径，而是把「槽位 + 它自己的候选」单独再问一次，
+# 所以只挑「当时确实有候选」的归因；资料里真没有（no_material）问了也白问。
+PROBE_GAPS: frozenset[str] = frozenset(
+    {
+        GAP_NOT_FOUND,
+        GAP_EVIDENCE_REJECTED,
+        GAP_FUZZY_EVIDENCE,
+        GAP_LOW_CONFIDENCE,
+        GAP_FORMAT_ERROR,
+    }
+)
+
+
+def probe_keys(results: Mapping[str, SlotResult], *, allowed: Collection[str] | None = None) -> list[str]:
+    """定向补问的目标槽位 key（保持 ``results`` 原有顺序）。"""
+    keys: list[str] = []
+    for key, result in results.items():
+        if allowed is not None and key not in allowed:
+            continue
+        if result.gap_reason in PROBE_GAPS:
+            keys.append(key)
+    return keys
+
 
 # 状态高低：只用于判断「重试后的新结果是否真的比原来好」。
 # 注意 DRAFT（有值无依据）低于 NEEDS_VERIFY（有值待核对），CONFLICT 与 NEEDS_VERIFY 同级
@@ -113,23 +140,35 @@ def gap_reasons(results: Mapping[str, SlotResult]) -> dict[str, int]:
     return counted
 
 
-def retryable_keys(results: Mapping[str, SlotResult], *, allowed: Collection[str] | None = None) -> list[str]:
+def retryable_keys(
+    results: Mapping[str, SlotResult],
+    *,
+    allowed: Collection[str] | None = None,
+    extra_no_material: Collection[str] | None = None,
+) -> list[str]:
     """可重试的缺口槽位 key，保持 ``results`` 的原有顺序。
 
     ``allowed`` 用于把候选限定在本次确有实例的槽位集合内（动态章节的槽位只在实例化
     之后才存在），避免对不上模板的陈旧结果发起重试。
+
+    ``extra_no_material`` 是覆盖预检判「库里有料」（可填/部分可填）的槽位 key：
+    「资料未命中」默认不重试，但这些槽位例外——首轮零命中更可能是检索的临时问题，
+    而不是资料里真的没有。
     """
     keys: list[str] = []
     for key, result in results.items():
         if allowed is not None and key not in allowed:
             continue
-        if result.gap_reason in RETRYABLE_GAPS:
+        reason = result.gap_reason
+        if reason in RETRYABLE_GAPS:
+            keys.append(key)
+        elif reason == GAP_NO_MATERIAL and extra_no_material is not None and key in extra_no_material:
             keys.append(key)
     return keys
 
 
 def blocked_keys(results: Mapping[str, SlotResult], *, allowed: Collection[str] | None = None) -> list[str]:
-    """有归因但**故意不重试**的缺口槽位 key（冲突/需求不符/人工填写）。
+    """有归因但**故意不重试**的缺口槽位 key（冲突/需求不符/人工填写/资料未命中）。
 
     单独记一笔而不是静默跳过：这些缺口只能靠人工收口，数量本身就是需要暴露的信号。
     """

@@ -31,7 +31,9 @@ class RuntimeConfig:
     max_total_mb: int = 150
     max_pages_per_file: int = 80
     max_ocr_pages_per_file: int = 30
-    batch_size: int = 3
+    # 单批槽位数：私有化部署下加大批次可显著减少模型调用次数（同批共享一份上下文，
+    # 上下文预算由 prompts._context 贪心控制，不会因为槽位多而撑爆 prompt）
+    batch_size: int = 6
     candidate_limit: int = 10
     max_context_chars: int = 12000
     # 置信度分级：模型自报 confidence < mid 的已填充槽位降级为「需人工核对」，
@@ -44,8 +46,10 @@ class RuntimeConfig:
     compose_concurrency: int = 1
     # 解析阶段文件并发数（>1 时多文件同时解析，OCR 场景提速明显）
     parse_concurrency: int = 1
-    # 提取结果缓存：重跑时内容未变的槽位直接复用，跳过 LLM 调用
-    extract_cache_enabled: bool = False
+    # 提取结果缓存：重跑/换任务时内容未变的槽位直接复用（进程内 + DB 两级），跳过 LLM 调用
+    extract_cache_enabled: bool = True
+    # 解析结果缓存：同一份文件（内容哈希相同）跨任务复用解析产物，扫描件不再重复 OCR
+    parse_cache_enabled: bool = True
     # 解析兜底链第二级：快速 OCR（PP-OCR）无结果时，改用 PP-StructureV3 输出 Markdown
     # （保留表格/标题层级/阅读顺序），比 PP-OCR 慢数倍，按需开启
     ocr_structured_enabled: bool = False
@@ -61,8 +65,10 @@ class RuntimeConfig:
     embedding_model_name: str = ""
     # 向量检索融合权重：0.0=纯向量，1.0=纯关键词，0.6=关键词为主+向量辅助
     vector_alpha: float = 0.6
-    # 向量检索开关（即使配了 embedding_model_name，也可临时关闭）
-    vector_retrieval_enabled: bool = False
+    # 向量检索开关：默认打开，但需同时配置 embedding 模型名才实际生效
+    # （embedding_model_name 为空时不会发起 embedding 调用）；本地资料很少的
+    # 知识库模式下收益有限，主要服务于任务级上传资料与补充信息的双路召回
+    vector_retrieval_enabled: bool = True
     lease_seconds: int = 1800
     max_attempts: int = 3
     scan_interval_seconds: int = 30
@@ -122,16 +128,32 @@ class RuntimeConfig:
     kb_survey_enabled: bool = True
     # 单次任务镜像的切片数硬上限（0=不限）：大库首次会慢一点，但任务不会被拖垮
     kb_survey_max_chunks: int = 2000
+    # 摸底并发数：>1 时多文档同时拉取远端切片（写库仍串行）
+    kb_survey_concurrency: int = 4
+    # 后台富化 worker：把「摸底 + 事实抽取」从任务链路移到后台持续增量。
+    # 任务内只做小额增量（保证本稿数据尽可能新），大库全量由后台在空闲时补齐
+    kb_background_enrich_enabled: bool = True
+    kb_background_enrich_interval_seconds: int = 30
+    # 后台单轮抽事实的切片数上限（多轮累计覆盖全库；0=不限，不建议）
+    kb_background_enrich_max_chunks: int = 200
     fact_extract_enabled: bool = True
     # 单次任务抽事实的切片数硬上限（0=不限）：增量累计，多跑几轮即可覆盖全库
     fact_extract_max_chunks: int = 200
     # 事实抽取每批送入模型的切片数
     fact_extract_batch_size: int = 4
+    # 事实抽取并发批次数：>1 时多批同时调模型（写库仍串行）；有代码硬顶保护
+    fact_extract_concurrency: int = 4
+    # 后台富化启用时，任务内单次抽事实的切片数上限：后台会持续补齐全库，
+    # 任务内只做小额增量，把时间让给生成；后台关闭时按完整额度跑
+    inline_fact_max_chunks: int = 60
     # 事实召回开关：填充项优先从本地事实库匹配，无命中再回落实时检索
     fact_retrieval_enabled: bool = True
     fact_top_k: int = 8
     # 事实召回置信度下限：低于该值的事实不参与匹配
     fact_min_confidence: float = 0.4
+    # 定向补问：对「有候选却没填上」的缺口，把槽位与它自己的候选资料单独再问一次
+    # （一次调用处理全部目标；只接受确有提升的结果）
+    probe_enabled: bool = True
     # 缺口闭环（B4）：对「资料没命中/模型没返回/依据没核对上」的填充项换一套检索口径再试。
     # 每轮只跑缺口槽位、且只接受确有提升的结果；轮数设 0 即关闭（回到「跑一轮就结束」）
     gap_retry_enabled: bool = True
@@ -205,7 +227,7 @@ async def load_runtime_config() -> RuntimeConfig:
         max_total_mb=await get(MODULE, "DOC_GEN_MAX_TOTAL_MB", 150),
         max_pages_per_file=await get(MODULE, "DOC_GEN_MAX_PAGES_PER_FILE", 80),
         max_ocr_pages_per_file=await get(MODULE, "DOC_GEN_MAX_OCR_PAGES_PER_FILE", 30),
-        batch_size=await get(MODULE, "DOC_GEN_BATCH_SIZE", 3),
+        batch_size=await get(MODULE, "DOC_GEN_BATCH_SIZE", 6),
         candidate_limit=await get(MODULE, "DOC_GEN_CANDIDATE_LIMIT", 10),
         max_context_chars=await get(MODULE, "DOC_GEN_MAX_CONTEXT_CHARS", 12000),
         confidence_high=await get_module_setting_float(MODULE, "DOC_GEN_CONFIDENCE_HIGH", 0.85),
@@ -214,7 +236,8 @@ async def load_runtime_config() -> RuntimeConfig:
         extract_concurrency=await get(MODULE, "DOC_GEN_EXTRACT_CONCURRENCY", 1),
         compose_concurrency=await get(MODULE, "DOC_GEN_COMPOSE_CONCURRENCY", 1),
         parse_concurrency=await get(MODULE, "DOC_GEN_PARSE_CONCURRENCY", 1),
-        extract_cache_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_EXTRACT_CACHE_ENABLED", False),
+        extract_cache_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_EXTRACT_CACHE_ENABLED", True),
+        parse_cache_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_PARSE_CACHE_ENABLED", True),
         ocr_structured_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_OCR_STRUCTURED_ENABLED", False),
         vision_fallback_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_VISION_FALLBACK_ENABLED", True),
         vision_max_pages=await get(MODULE, "DOC_GEN_VISION_MAX_PAGES", 5),
@@ -222,7 +245,7 @@ async def load_runtime_config() -> RuntimeConfig:
         vision_max_width=await get(MODULE, "DOC_GEN_VISION_MAX_WIDTH", 1600),
         embedding_model_name=await get_module_setting(MODULE, "DOC_GEN_EMBEDDING_MODEL", ""),
         vector_alpha=await get_module_setting_float(MODULE, "DOC_GEN_VECTOR_ALPHA", 0.6),
-        vector_retrieval_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_VECTOR_RETRIEVAL_ENABLED", False),
+        vector_retrieval_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_VECTOR_RETRIEVAL_ENABLED", True),
         lease_seconds=await get(MODULE, "DOC_GEN_LEASE_SECONDS", 1800),
         max_attempts=await get(MODULE, "DOC_GEN_MAX_ATTEMPTS", 3),
         scan_interval_seconds=await get(MODULE, "DOC_GEN_SCAN_INTERVAL_SECONDS", 30),
@@ -254,12 +277,21 @@ async def load_runtime_config() -> RuntimeConfig:
         kb_timeout_seconds=await get(MODULE, "DOC_GEN_KB_TIMEOUT_SECONDS", 30),
         kb_survey_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_SURVEY_ENABLED", True),
         kb_survey_max_chunks=await get(MODULE, "DOC_GEN_KB_SURVEY_MAX_CHUNKS", 2000),
+        kb_survey_concurrency=await get(MODULE, "DOC_GEN_KB_SURVEY_CONCURRENCY", 4),
+        kb_background_enrich_enabled=await get_module_setting_bool(
+            MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_ENABLED", True
+        ),
+        kb_background_enrich_interval_seconds=await get(MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_INTERVAL_SECONDS", 30),
+        kb_background_enrich_max_chunks=await get(MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_MAX_CHUNKS", 200),
         fact_extract_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FACT_EXTRACT_ENABLED", True),
         fact_extract_max_chunks=await get(MODULE, "DOC_GEN_FACT_EXTRACT_MAX_CHUNKS", 200),
         fact_extract_batch_size=await get(MODULE, "DOC_GEN_FACT_EXTRACT_BATCH_SIZE", 4),
+        fact_extract_concurrency=await get(MODULE, "DOC_GEN_FACT_EXTRACT_CONCURRENCY", 4),
+        inline_fact_max_chunks=await get(MODULE, "DOC_GEN_INLINE_FACT_MAX_CHUNKS", 60),
         fact_retrieval_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FACT_RETRIEVAL_ENABLED", True),
         fact_top_k=await get(MODULE, "DOC_GEN_FACT_TOP_K", 8),
         fact_min_confidence=await get_module_setting_float(MODULE, "DOC_GEN_FACT_MIN_CONFIDENCE", 0.4),
+        probe_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_PROBE_ENABLED", True),
         gap_retry_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_GAP_RETRY_ENABLED", True),
         gap_retry_rounds=await get(MODULE, "DOC_GEN_GAP_RETRY_ROUNDS", 2),
         gap_retry_candidate_multiplier=await get(MODULE, "DOC_GEN_GAP_RETRY_CANDIDATE_MULTIPLIER", 2),

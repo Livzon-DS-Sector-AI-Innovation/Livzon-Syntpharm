@@ -1012,7 +1012,19 @@ async def update_report(  # type: ignore[no-untyped-def]
 
 
 async def delete_report(db: AsyncSession, report_id: uuid.UUID, user_id: uuid.UUID | None = None) -> None:
-    """删除研发报告"""
+    """删除研发报告（软删），并联动终止其下未结束的文档生成任务。
+
+    不联动取消时，已排队的任务会在报告删除后继续消耗模型资源，产物也无人可见。
+    """
+    # 延迟导入：doc_gen 依赖 research.models，模块级导入会形成循环
+    from app.modules.research.doc_gen import service as doc_gen_service
+
+    cancelled = await doc_gen_service.cancel_jobs_of_report(db, report_id)
+    if cancelled:
+        logger.info(
+            "删除报告联动终止生成任务",
+            extra={"report_id": str(report_id), "cancelled_jobs": cancelled, "module_name": "research"},
+        )
     await repo.delete_report(db, report_id, user_id)
     await db.commit()
 

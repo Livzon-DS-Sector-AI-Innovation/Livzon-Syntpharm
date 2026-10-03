@@ -55,6 +55,8 @@ class SlotGuide(BaseModel):
     content_pattern: str = ""
     common_locations: list[str] = Field(default_factory=list)
     quality_criteria: str = ""
+    # 所属报告章节（如「工艺研究」）：提取阶段据此做章节对齐切批；判断不了就给空串
+    section: str = ""
     # --- 需求描述（template_structure v2）：缺省即保守默认 ---
     unit: str = ""
     enum_values: list[str] = Field(default_factory=list)
@@ -110,6 +112,8 @@ class TemplateAnalysisResult:
     enriched_terms: dict[str, list[str]] = field(default_factory=dict)
     # 分析得到的槽位需求描述（key → {unit, enum_values, cardinality, source_scope}）
     requirements: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # 槽位所属报告章节（key → 章节名）：提取阶段据此做章节对齐切批
+    sections: dict[str, str] = field(default_factory=dict)
     analyzed_count: int = 0
     failed: bool = False
 
@@ -172,6 +176,7 @@ async def analyze_template(
     guides: dict[str, SlotGuide] = {}
     enriched_terms: dict[str, list[str]] = {}
     requirements: dict[str, dict[str, Any]] = {}
+    sections: dict[str, str] = {}
     for guide in out.slots:
         guides[guide.key] = guide
         # 如果 key_indicators 非空且该槽位 search_terms 为空，用 indicators 补检索词
@@ -183,6 +188,9 @@ async def analyze_template(
             "cardinality": guide.cardinality,
             "source_scope": guide.source_scope,
         }
+        section = (guide.section or "").strip()
+        if section:
+            sections[guide.key] = section[:80]
 
     logger.info(
         "模板分析完成",
@@ -197,6 +205,7 @@ async def analyze_template(
         guides=guides,
         enriched_terms=enriched_terms,
         requirements=requirements,
+        sections=sections,
         analyzed_count=len(guides),
     )
 
@@ -258,10 +267,28 @@ def apply_requirements_to_spec(spec: TemplateSpec, analysis: TemplateAnalysisRes
     return applied
 
 
+def apply_sections_to_spec(spec: TemplateSpec, analysis: TemplateAnalysisResult) -> int:
+    """把模板分析得到的「所属章节」回写到 spec 实例（只补空值，返回写入的槽位数）。
+
+    章节只服务于任务内的「章节对齐切批」与 prompt 提示，不回写模板库：
+    模板库里已有的 section（人工维护或识别流程写入）不被 AI 结果覆盖。
+    """
+    by_key = {slot.key: slot for slot in spec.slots}
+    applied = 0
+    for key, section in analysis.sections.items():
+        slot = by_key.get(key)
+        if slot is None or slot.section or not section:
+            continue
+        slot.section = section[:80]
+        applied += 1
+    return applied
+
+
 __all__ = [
     "analyze_template",
     "apply_analysis_to_spec",
     "apply_requirements_to_spec",
+    "apply_sections_to_spec",
     "TemplateAnalysisResult",
     "SlotGuide",
 ]

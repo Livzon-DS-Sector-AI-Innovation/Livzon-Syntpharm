@@ -58,6 +58,7 @@ const SLOT_KEY = '[A-Za-z0-9_.\\-]+'
  * - 落单的 `<!--slot:key-->` → 无标题卡片
  * - `<!--/slot-->` → 卡片收尾
  * - `{{待填}}` → 高亮 chip
+ * - 整格只有 XXX 这类待填记号（母本全文视图常见）→ 浅色 chip，一眼看出哪些格子会被填
  */
 function decorateMarkdown(md: string): string {
   return md
@@ -67,14 +68,39 @@ function decorateMarkdown(md: string): string {
     .replace(new RegExp(`<!--slot:(${SLOT_KEY})-->`, 'g'), (_m, key: string) => `<div class="tpl-slot" data-slot="${key}">`)
     .replace(/<!--\/slot-->/g, '</div>')
     .replace(/\{\{待填\}\}/g, '<span class="tpl-slot-todo">待填</span>')
+    // 前瞻保留收尾竖线，否则 `| XXX | XXX |` 里第二个格子会因竖线被吃掉而漏标
+    .replace(/\|[ \t]*([Xx×＊]{2,})[ \t]*(?=\|)/g, (_m, mark: string) => `| <span class="tpl-todo-mark">${mark}</span>`)
 }
 
-/** 视图美化样式：作用域限定在 .tpl-md 容器内 */
+/**
+ * 视图美化样式：作用域限定在 .tpl-md 容器内。
+ *
+ * 这里**不挂** `.agent-markdown`：那套规则是给 AI 报告表调的（``min-width: 760px``
+ * + ``table-layout: fixed`` + 第 1/2/3 列写死 76/148/280px + ``th`` sticky），
+ * 套到母本预览上会把 4 列签署表、宽表全部撑破弹窗、列宽错位。模板预览要的是
+ * 「像 Word 一样顺读」：表格按内容自适应、正文不限宽。
+ */
 const SLOT_MD_CSS = `
-.tpl-md { font-size: 14px; line-height: 1.75; color: #1f2937; }
-.tpl-md h1 { font-size: 18px; font-weight: 600; text-align: center; margin: 4px 0 18px; color: #111827; }
-.tpl-md h2 { font-size: 15px; font-weight: 600; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #eef2f7; color: #111827; }
+.tpl-md { font-size: 14px; line-height: 1.75; color: #1f2937; overflow-wrap: break-word; }
+.tpl-md > :first-child { margin-top: 0; }
+.tpl-md h1 { font-size: 19px; font-weight: 600; text-align: center; margin: 4px 0 18px; color: #111827; }
+.tpl-md h2 { font-size: 16px; font-weight: 600; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #eef2f7; color: #111827; }
+.tpl-md h3 { font-size: 15px; font-weight: 600; margin: 16px 0 8px; color: #111827; }
+.tpl-md h4, .tpl-md h5, .tpl-md h6 { font-size: 14px; font-weight: 600; margin: 14px 0 6px; color: #344054; }
 .tpl-md p { margin: 6px 0; }
+.tpl-md ul, .tpl-md ol { margin: 6px 0; padding-left: 22px; }
+.tpl-md li { margin: 2px 0; }
+.tpl-md li::marker { color: #98a2b3; }
+.tpl-md blockquote { margin: 8px 0; padding: 6px 12px; border-left: 3px solid #dbe4f0; background: #f9fafb; color: #667085; }
+.tpl-md hr { border: 0; border-top: 1px solid #eef2f7; margin: 14px 0; }
+.tpl-md code { background: #f2f4f7; border-radius: 4px; padding: 1px 5px; font-size: 12.5px; }
+.tpl-md pre { background: #f9fafb; border: 1px solid #eef2f7; border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
+.tpl-md table { width: 100%; table-layout: auto; border-collapse: collapse; background: #fff; font-size: 13px; margin: 10px 0; }
+.tpl-md th { white-space: normal; vertical-align: middle; }
+.tpl-md td:empty { background: #fcfcfd; min-width: 48px; }
+.tpl-md tbody tr:nth-child(even) td { background: #fbfcfe; }
+.tpl-md tbody tr:nth-child(even) td:empty { background: #f6f8fb; }
+.tpl-todo-mark { display: inline-block; padding: 0 6px; border-radius: 4px; background: #fff7e6; border: 1px dashed #ffd591; color: #d46b08; font-size: 12px; }
 .tpl-slot { border: 1px solid #e6ecf5; border-left: 3px solid #1677ff; border-radius: 8px; padding: 10px 14px; margin: 10px 0 16px; background: #fafcff; transition: border-color .2s; }
 .tpl-slot:hover { border-color: #91caff; border-left-color: #1677ff; }
 .tpl-slot-label { font-weight: 600; color: #1f2937; margin-bottom: 6px; }
@@ -84,6 +110,7 @@ const SLOT_MD_CSS = `
 .tpl-slot th, .tpl-slot td, .tpl-md table th, .tpl-md table td { border: 1px solid #e6ecf5; padding: 6px 10px; text-align: left; }
 .tpl-slot th, .tpl-md table th { background: #f0f5ff; font-weight: 600; }
 .tpl-slot-todo { display: inline-block; padding: 0 10px; border-radius: 999px; background: #fff7e6; border: 1px dashed #ffd591; color: #d46b08; font-size: 12px; line-height: 20px; }
+.tpl-todo-mark { display: inline-block; padding: 0 6px; border-radius: 4px; background: #fff7e6; border: 1px dashed #ffd591; color: #d46b08; font-size: 12px; }
 `
 
 /** 「填写项语义」表格列：AI 增强/人工维护的检索词、期望取值与核对状态在此肉眼可验 */
@@ -255,7 +282,7 @@ export function SlotMarkdownModal({ open, templateId, templateName, onClose }: S
                 <Empty description="该模板暂无填写项定义（请先上传母本自动识别或人工新增填写项）" />
               )
             ) : mode === '渲染视图' ? (
-              <div className="tpl-md agent-markdown" style={{ maxHeight: 560, overflow: 'auto', padding: '4px 12px' }}>
+              <div className="tpl-md" style={{ maxHeight: 560, overflow: 'auto', padding: '4px 12px' }}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
                   {decorated}
                 </ReactMarkdown>

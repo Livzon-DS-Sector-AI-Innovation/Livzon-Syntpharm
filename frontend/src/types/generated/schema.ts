@@ -10849,6 +10849,8 @@ export interface paths {
          *
          *     纯规则扫描（不调模型、快）；每个候选的 anchor 可原样回传用于建槽位，
          *     避免用户手写锚点出错。AI 不参与定位（锚点错则渲染失败），只由规则产出。
+         *     草拟丢弃的待填表格会补扫成整表候选（带 columns/header_rows，回传即可整表
+         *     成槽）与占位符单元格候选，漏识别的位置从此有的人工补录出口。
          */
         get: operations["list_template_anchor_candidates_api_v1_research_doc_gen_deliverable_templates__template_id__anchor_candidates_get"];
         put?: never;
@@ -24962,7 +24964,8 @@ export interface components {
          *
          *     ``anchor``/``kind`` 由候选位置原样回传——定位是安全敏感操作，由规则扫描器产出，
          *     前端不手写锚点；用户只补 ``label`` 与检索语义（``query_hint``/``search_terms``/
-         *     ``expects``/``required``）。``kind="table"`` 会被服务层拒绝（表格槽位需列定义）。
+         *     ``expects``/``required``）。``kind="table"`` 需同时回传整表候选携带的 ``columns``
+         *     （表头列名）与 ``header_rows``（双行表头=2），列定义由服务端按顺序生成。
          */
         DocGenAddSlotRequest: {
             anchor: components["schemas"]["Anchor"];
@@ -24992,6 +24995,13 @@ export interface components {
             query_hint: string;
             /** Search Terms */
             search_terms?: string[];
+            /** Columns */
+            columns?: string[];
+            /**
+             * Header Rows
+             * @default 1
+             */
+            header_rows: number;
         };
         /**
          * DocGenAddSlotResponse
@@ -25015,7 +25025,8 @@ export interface components {
          * @description 母本里一个尚未被占用、可锚定的候选位置（人工「新增填写项」时点选）。
          *
          *     ``anchor`` 可被前端原样回传用于建槽位，无需用户手写锚点；``context`` 给出
-         *     章节/表头/段落标签等线索帮助用户辨认。
+         *     章节/表头/段落标签等线索帮助用户辨认。``kind="table"`` 的整表候选额外携带
+         *     ``columns``（表头列名）与 ``header_rows``（双行表头=2），回传即可整表成槽。
          */
         DocGenAnchorCandidate: {
             /** Label */
@@ -25031,6 +25042,13 @@ export interface components {
              */
             context: string;
             anchor: components["schemas"]["Anchor"];
+            /** Columns */
+            columns?: string[];
+            /**
+             * Header Rows
+             * @default 1
+             */
+            header_rows: number;
         };
         /**
          * DocGenAnchorCandidateListResponse

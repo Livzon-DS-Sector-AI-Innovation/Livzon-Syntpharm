@@ -23,7 +23,7 @@ from app.core.llm.exceptions import LLMOutputError, LLMProviderError, LLMRateLim
 from app.modules.research.doc_gen import calc, gap, status
 from app.modules.research.doc_gen.kb_retrieval import KB_FILE_PREFIX, KB_POOL_PRIORITY
 from app.modules.research.doc_gen.parsing import TextBlock
-from app.modules.research.doc_gen.prompts import build_extract_prompt, build_table_prompt
+from app.modules.research.doc_gen.prompts import build_extract_prompt, build_probe_prompt, build_table_prompt
 from app.modules.research.doc_gen.retrieval import BlockRetriever, score_text
 from app.modules.research.doc_gen.template_spec import Slot, TemplateSpec
 
@@ -34,6 +34,8 @@ CancelProbe = Callable[[], bool]
 _RETRY_CODES = (LLMProviderError, LLMRateLimitError, LLMOutputError)
 _DATE_RE = re.compile(r"\d{4}\s*[-/年.]\s*\d{1,2}\s*[-/月.]\s*\d{1,2}")
 _PERCENT_RE = re.compile(r"^\s*\d+(\.\d+)?\s*%\s*$")
+# 引用编号复核用：数字片段（含小数），单字符噪声太大在调用处过滤
+_NUMBER_RE = re.compile(r"\d+(?:\.\d+)?")
 
 # 证据回检：归一化后精确匹配失败时，允许按相似度模糊核对（容忍 OCR/排版差异）
 _FUZZY_THRESHOLD = 0.9
@@ -111,6 +113,8 @@ class SlotOut(BaseModel):
     value: Any = None
     found: bool = True
     confidence: float | None = None
+    # 模型自报的引用编号：对应 prompt 里 [资料 N]，指向候选数组下标 + 1
+    refs: list[int] = Field(default_factory=list)
     evidence: list[EvidenceModel] = Field(default_factory=list)
     candidates: list[Any] = Field(default_factory=list)
 
@@ -164,6 +168,10 @@ class ExtractStats:
     kb_hits: int = 0
     # 取值与槽位需求描述（量纲/允许取值）不符、被降级为需人工核对的槽位数
     requirement_mismatches: int = 0
+    # 引用文本未能核对、但按模型自报的资料编号可定位取值而被保留的槽位数
+    refs_rescued: int = 0
+    # 表格槽位里没有任何可核对依据的数据行数（行照写但整表降级为需人工核对）
+    table_rows_unverified: int = 0
     warnings: list[str] = field(default_factory=list)
 
 
@@ -181,6 +189,8 @@ def merge_stats(target: ExtractStats, source: ExtractStats) -> None:
     target.fallback_used += source.fallback_used
     target.kb_hits += source.kb_hits
     target.requirement_mismatches += source.requirement_mismatches
+    target.refs_rescued += source.refs_rescued
+    target.table_rows_unverified += source.table_rows_unverified
     target.warnings.extend(source.warnings)
 
 
@@ -206,6 +216,7 @@ class SlotExtractor:
         config_name: str | None = None,
         max_concurrent_batches: int = 1,
         enable_cache: bool = False,
+        persist_cache: Any = None,
         vector_index: Any = None,
         vector_alpha: float = 0.6,
         embedding_model: str | None = None,
@@ -244,6 +255,8 @@ class SlotExtractor:
         self.stats = ExtractStats()
         # LLM 结果缓存：(slot_key, content_hash) → SlotResult，重跑时内容未变的槽位直接命中
         self._cache: dict[tuple[str, str], SlotResult] = {} if enable_cache else None  # type: ignore[assignment]
+        # 跨任务持久缓存（DB 版，鸭子类型：key()/get()/put()）：为空则只用进程内缓存
+        self._persist_cache = persist_cache
         self._cache_hits: int = 0
         # 文件分析预提取上下文：slot_key → [{file_id, file_name, content, relevance}]
         self._file_analysis_context: dict[str, list[dict[str, Any]]] = {
@@ -508,15 +521,71 @@ class SlotExtractor:
         return _embed
 
     def _batches(self, slots: Sequence[Slot]) -> list[list[Slot]]:
-        """按来源范围分组切批：不同 source_roles 的槽位不共享上下文，防止文献污染材料槽位。"""
+        """按来源范围分组、再按章节对齐切批。
+
+        分组防污染：不同 source_roles 的槽位不共享上下文，防止文献污染材料槽位。
+        章节对齐：模板分析给出的 ``Slot.section`` 让同章槽位尽量留在同一批（共享上下文、
+        行文衔接），但不强制在章节边界切分——只有当前批已够大（≥ 批大小的一半）时才在
+        章节变化处收口，避免「一章只有一两个槽位」把批切碎反而增加调用次数。
+        """
         groups: dict[tuple[str, ...], list[Slot]] = {}
         for slot in slots:
             groups.setdefault(tuple(sorted(slot.source_roles)), []).append(slot)
         batches: list[list[Slot]] = []
         for group in groups.values():
-            for start in range(0, len(group), self._batch_size):
-                batches.append(group[start : start + self._batch_size])
+            batches.extend(self._section_batches(group))
         return batches
+
+    def _section_batches(self, group: Sequence[Slot]) -> list[list[Slot]]:
+        """章节对齐的分批；无章节信息（旧模板/分析未产出）时退回原顺序切批。"""
+        size = max(1, self._batch_size)
+        if not any(slot.section for slot in group):
+            return [list(group[start : start + size]) for start in range(0, len(group), size)]
+        batches: list[list[Slot]] = []
+        batch: list[Slot] = []
+        for slot in group:
+            if batch and (len(batch) >= size or (slot.section != batch[0].section and len(batch) >= max(1, size // 2))):
+                batches.append(batch)
+                batch = []
+            batch.append(slot)
+        if batch:
+            batches.append(batch)
+        return batches
+
+    async def probe(self, slots: Sequence[Slot]) -> dict[str, SlotResult]:
+        """定向补问：对「有候选却没填上」的缺口槽位做一次聚焦问询（一次调用处理全部目标）。
+
+        与批量抽取的区别：目标少、每个槽位只带自己的候选资料（编号 [资料 N] 与批量口径
+        一致）、指令收窄到「只判断这些槽位」——用于找回在批量 prompt 里被漏看的取值。
+        这里只负责产出候选结果，优劣由调用方判定（同缺口闭环的纪律：只接受确有提升的结果）。
+        """
+        # 护栏：表格槽位有专门的行抽取路径（_extract_table，返回值在 rows 里），
+        # 绝不能走「批量/定向补问」的文本通道——否则会产出字符串值并可能覆盖行数据
+        targets: list[Slot] = [slot for slot in slots if not slot.manual_only and slot.kind != "table"]
+        if not targets:
+            return {}
+        fetched = await asyncio.gather(*(self._candidates(slot) for slot in targets))
+        prompt_slots: list[dict[str, Any]] = []
+        pools: dict[str, list[dict[str, Any]]] = {}
+        for slot, (chunks, payload, _wide) in zip(targets, fetched):
+            if not chunks:
+                continue
+            prompt_slots.append(_slot_payload(slot))
+            pools[slot.key] = list(payload)
+        if not prompt_slots:
+            return {}
+        outputs = await self._call_json(
+            build_probe_prompt(prompt_slots, pools, self._max_context_chars),
+            expected_keys=["slots"],
+        )
+        by_key = {out.key: out for out in outputs.slots} if outputs else {}
+        results: dict[str, SlotResult] = {}
+        for slot in targets:
+            out = by_key.get(slot.key)
+            if out is None:
+                continue
+            results[slot.key] = self._finalize_slot(slot, out, pools.get(slot.key))
+        return results
 
     async def _extract_batch(self, slots: Sequence[Slot]) -> dict[str, SlotResult]:
         """一次调用抽取多个简单槽位。"""
@@ -554,14 +623,12 @@ class SlotExtractor:
                         gap_reason=gap.GAP_NO_MATERIAL,
                     )
                     continue
-                # 缓存检查：内容未变的槽位直接复用上次结果
-                if self._cache is not None:
-                    content_hash = self._content_hash(chunks)
-                    cached = self._cache.get((slot.key, content_hash))
-                    if cached is not None:
-                        cached_results[slot.key] = cached
-                        self._cache_hits += 1
-                        continue
+                # 缓存检查：内容未变的槽位直接复用上次结果（进程内 → 跨任务两级）
+                cached = await self._cache_lookup(slot, chunks)
+                if cached is not None:
+                    cached_results[slot.key] = cached
+                    self._cache_hits += 1
+                    continue
                 payload_slots.append(_slot_payload(slot))
                 active.append(slot)
                 for item in chunk_payload:
@@ -603,16 +670,43 @@ class SlotExtractor:
         for slot in slots:
             if slot.key in results:
                 continue
-            result = self._finalize_slot(slot, by_key.get(slot.key))
+            result = self._finalize_slot(slot, by_key.get(slot.key), pool)
             results[slot.key] = result
             # 缓存存储：只缓存有明确结果（OK/NEEDS_VERIFY）的槽位
-            if self._cache is not None and result.state in (status.STATUS_OK, status.STATUS_NEEDS_VERIFY):
-                cached_data = slot_chunks.get(slot.key)
-                if cached_data:
-                    chunks = cached_data[0]
-                    content_hash = self._content_hash(chunks)
-                    self._cache[(slot.key, content_hash)] = result
+            cached_data = slot_chunks.get(slot.key)
+            if cached_data:
+                await self._cache_store(slot, cached_data[0], result)
         return results
+
+    async def _cache_lookup(self, slot: Slot, chunks: Sequence[TextBlock]) -> SlotResult | None:
+        """两级缓存读取：进程内（任务内命中）→ 跨任务持久缓存（DB）。"""
+        if self._cache is None and self._persist_cache is None:
+            return None
+        content_hash = self._content_hash(chunks)
+        if self._cache is not None:
+            cached = self._cache.get((slot.key, content_hash))
+            if cached is not None:
+                return cached
+        if self._persist_cache is not None:
+            cached = await self._persist_cache.get(self._persist_cache.key(slot.key, content_hash))
+            restored: SlotResult | None = cached if isinstance(cached, SlotResult) else None
+            if restored is not None and self._cache is not None:
+                self._cache[(slot.key, content_hash)] = restored  # 回填进程内，避免同任务重复查询
+            return restored
+        return None
+
+    async def _cache_store(self, slot: Slot, chunks: Sequence[TextBlock], result: SlotResult) -> None:
+        """两级缓存写入：只写「明确结果」（OK / 需人工核对），失败不缓存（否则固化失败）。"""
+        if result.state not in (status.STATUS_OK, status.STATUS_NEEDS_VERIFY):
+            return
+        content_hash = self._content_hash(chunks)
+        if self._cache is not None:
+            self._cache[(slot.key, content_hash)] = result
+        if self._persist_cache is not None:
+            try:
+                await self._persist_cache.put(self._persist_cache.key(slot.key, content_hash), result)
+            except Exception:  # noqa: BLE001 - 缓存是旁路，异常不影响提取
+                logger.exception("提取结果写入持久缓存失败（忽略）")
 
     @staticmethod
     def _content_hash(chunks: Sequence[TextBlock]) -> str:
@@ -633,13 +727,17 @@ class SlotExtractor:
             (fuzzy if is_fuzzy else exact).append(item)
         return exact, fuzzy
 
-    def _finalize_slot(self, slot: Slot, out: SlotOut | None) -> SlotResult:
+    def _finalize_slot(
+        self, slot: Slot, out: SlotOut | None, pool: Sequence[dict[str, Any]] | None = None
+    ) -> SlotResult:
         """校验单个填充项输出。
 
         依据核对分级处理：
         - 精确命中 → 正常落地；
         - 仅模糊命中 → 值照常写入，但标 needs_verify 提示人工核对（大概率只是排版/OCR 差异）；
-        - 完全无法核对 → 正文不写入（占位待补充），但把 AI 给出的值与候选保留下来供人工参考，不再丢弃。
+        - 引用文本完全无法核对 → 先按模型自报的资料编号（refs）在被引片段内复核取值，
+          能定位则保留取值并标 needs_verify；再退到全语料精确命中；都不行才占位待补充
+          （AI 给出的值与候选始终保留，不再丢弃）。
         """
         if out is None:
             return SlotResult(
@@ -658,6 +756,32 @@ class SlotExtractor:
             )
         exact, fuzzy = self._split_evidence(out.evidence)
         if not exact and not fuzzy:
+            # 引用文本没核对上，不等于引用本身无据：先按模型自报的资料编号（refs）复核——
+            # 编号指向的片段里有完整取值或全部数字，说明确有依据，只是引用抄写不可靠
+            if self._value_in_refs(pool, out.refs, value):
+                self.stats.refs_rescued += 1
+                return SlotResult(
+                    key=slot.key,
+                    text=value,
+                    state=status.STATUS_NEEDS_VERIFY,
+                    reason="引用文本未能核对，但取值可在所引资料中定位，请人工确认",
+                    evidence=list(out.evidence),
+                    confidence=out.confidence,
+                    gap_reason=gap.GAP_EVIDENCE_REJECTED,
+                )
+            if self._value_locatable(value):
+                # 引用没核对上，但取值本身能在原文中定位：内容大概率真实、只是引用不可靠
+                # （模型改写/漏抄了引用片段）。保留取值并降级为需人工核对，比整条打回
+                # 「待补充」少丢信息；注意这不是「已验证」，仍要人工确认。
+                return SlotResult(
+                    key=slot.key,
+                    text=value,
+                    state=status.STATUS_NEEDS_VERIFY,
+                    reason="引用未能核对，但取值可在原文中定位，请人工确认",
+                    evidence=list(out.evidence),
+                    confidence=out.confidence,
+                    gap_reason=gap.GAP_EVIDENCE_REJECTED,
+                )
             if slot.draft_allowed:
                 return SlotResult(
                     key=slot.key,
@@ -766,6 +890,58 @@ class SlotExtractor:
                 haystack += "".join(_normalize_text("".join(parts)) for parts in self._kb_raw.values())
         return haystack
 
+    def _all_corpus(self) -> str:
+        """全部语料的归一化拼接（不缓存：``_kb_raw`` 随召回增量，缓存会漏掉新片段）。
+
+        只在引用核对全失败、需要做取值定位兜底时调用，频率低。
+        """
+        parts = list(self._by_file.values())
+        parts.extend(_normalize_text("".join(raw)) for raw in self._kb_raw.values())
+        return "".join(parts)
+
+    def _value_locatable(self, value: str) -> bool:
+        """取值本身能否在语料中定位（不依赖模型给出的引用）。
+
+        引用没核对上，不等于值不真实——模型抄引用时可能改写了措辞或漏抄了片段。
+        这里做一次保守兜底：归一化后的**完整取值**必须是语料的精确子串才算「可定位」，
+        长度 <4 不判（避免「是」「无」这类短词任意命中），也不接受「只有数字命中」的
+        弱证据（一个裸数字出现在语料里，不代表它属于这个填充项）。
+        命中只是把结果降级为 needs_verify 交人工，不会直接判为已验证。
+        """
+        needle = _normalize_text(value)
+        if len(needle) < 4:
+            return False
+        return needle in self._all_corpus()
+
+    def _value_in_refs(self, pool: Sequence[dict[str, Any]] | None, refs: Sequence[Any], value: str) -> bool:
+        """按模型自报的资料编号复核取值（不依赖它抄写的引用文本）。
+
+        编号无效（越界/非数字）直接判否；编号有效时要求「完整取值命中」或「取值里所有
+        长度 ≥2 的数字都能在被引资料中找到」。限定在被引片段内比全语料命中可信得多
+        ——模型明确指向了它依据的资料，数字全对基本可排除凭空生成。
+        命中只是把结果降级为 needs_verify 交人工，不会判为已验证。
+        """
+        if not pool or not refs:
+            return False
+        parts: list[str] = []
+        for ref in refs:
+            try:
+                pos = int(ref) - 1
+            except (TypeError, ValueError):
+                continue
+            if 0 <= pos < len(pool):
+                parts.append(str(pool[pos].get("text") or ""))
+        haystack = _normalize_text("".join(parts))
+        if not haystack:
+            return False
+        needle = _normalize_text(value)
+        if len(needle) >= 4 and needle in haystack:
+            return True
+        numbers = [token for token in _NUMBER_RE.findall(value) if len(token) >= 2]
+        if not numbers:
+            return False
+        return all(_normalize_text(token) in haystack for token in numbers)
+
     def _verify_quote(self, evidence: EvidenceModel) -> tuple[bool, bool]:
         """证据回检，返回 (是否核对通过, 是否模糊命中)。
 
@@ -823,6 +999,26 @@ class SlotExtractor:
                     return True, True
         return False, False
 
+    def _table_row_verified(
+        self, item: Mapping[str, Any], record: Mapping[str, str], pool: Sequence[dict[str, Any]] | None
+    ) -> bool:
+        """表格行是否有可核对的依据。
+
+        两级：带引用（evidence）的走字符串回检；只带资料编号（refs）的按「所引片段内能否
+        定位行值」复核（拼接行内各列，完整命中或全部数字命中即算）。都没有则判为未核对——
+        表格是「模型最容易顺手补全」的位置，行数据必须能追回到原文才算可信。
+        """
+        for raw in item.get("evidence") or []:
+            model = _to_evidence(raw)
+            if model is not None and self._verify_quote(model)[0]:
+                return True
+        refs = list(item.get("refs") or [])
+        if refs:
+            joined = " ".join(value for value in record.values() if value)
+            if joined and self._value_in_refs(pool, refs, joined):
+                return True
+        return False
+
     async def _extract_table(self, slot: Slot) -> SlotResult:
         """表格槽位：逐行抽取，计算列与序号交给程序。"""
         if slot.manual_only:
@@ -851,6 +1047,7 @@ class SlotExtractor:
         )
         rows: list[dict[str, str]] = []
         evidence: list[EvidenceModel] = []
+        unverified_rows = 0
         raw_rows = outputs.rows if outputs else []
         for item in raw_rows:
             values = item.get("values") if isinstance(item, dict) else None
@@ -870,8 +1067,11 @@ class SlotExtractor:
                 if len(text) > column.max_chars:
                     text = text[: column.max_chars]
                 record[column.key] = text
-            if record and any(v for v in record.values()):
-                rows.append(record)
+            if not record or not any(record.values()):
+                continue
+            if not self._table_row_verified(item, record, pool):
+                unverified_rows += 1
+            rows.append(record)
             for raw_evidence in item.get("evidence", []) if isinstance(item, dict) else []:
                 model = _to_evidence(raw_evidence)
                 if model and self._verify_quote(model)[0]:
@@ -886,6 +1086,30 @@ class SlotExtractor:
                 reason="资料中未找到表格数据",
                 evidence=evidence,
                 gap_reason=gap.GAP_NO_MATERIAL,
+            )
+        # 有未核对行时不丢数据，但整表降级为「需人工核对」——表格行是最容易被顺手补全的位置，
+        # 可信度不足必须让人看见，而不是混在 OK 里
+        if unverified_rows:
+            self.stats.table_rows_unverified += unverified_rows
+            reason = f"{unverified_rows}/{len(rows)} 行引用未能核对，请人工确认"
+            if truncated:
+                return SlotResult(
+                    key=slot.key,
+                    rows=rows,
+                    state=status.STATUS_OVERFLOW,
+                    reason=f"行数超过模板原件可承载上限 {limit}，已截断；{reason}",
+                    evidence=evidence,
+                    gap_reason=gap.GAP_EVIDENCE_REJECTED,
+                )
+            return SlotResult(
+                key=slot.key,
+                rows=rows,
+                state=status.STATUS_NEEDS_VERIFY,
+                reason=reason,
+                evidence=evidence,
+                # 归因「依据未核对上」：缺口闭环会对它换口径重试（只接受更好的结果，
+                # 例如重试后抽到带可核对引用的行）；定向补问不会碰它（probe 跳过表格）
+                gap_reason=gap.GAP_EVIDENCE_REJECTED,
             )
         state = status.STATUS_OVERFLOW if truncated else status.STATUS_OK
         reason = f"行数超过模板原件可承载上限 {limit}，已截断" if truncated else ""
@@ -1014,6 +1238,7 @@ def _slot_payload(slot: Slot) -> dict[str, Any]:
         "required": slot.required,
         "draft_allowed": slot.draft_allowed,
         "query_hint": slot.query_hint,
+        "section": slot.section,
         # 需求描述（template_structure v2）：让模型知道该槽位期望的量纲/枚举/基数/来源
         "unit": slot.unit,
         "enum_values": list(slot.enum_values),
