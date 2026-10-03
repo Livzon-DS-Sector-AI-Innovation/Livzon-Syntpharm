@@ -44119,7 +44119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44261,7 +44261,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44320,7 +44320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44387,7 +44387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44444,7 +44444,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44515,7 +44515,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44598,7 +44598,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44670,7 +44670,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44729,7 +44729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44786,7 +44786,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44963,7 +44963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45069,7 +45069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45128,7 +45128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45185,7 +45185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45244,7 +45244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45303,7 +45303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45372,7 +45372,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45441,7 +45441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45619,7 +45619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45678,7 +45678,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45736,7 +45736,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45804,7 +45804,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45860,7 +45860,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45930,7 +45930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46000,7 +46000,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46056,7 +46056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46176,7 +46176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46235,7 +46235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46293,7 +46293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46361,7 +46361,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46417,7 +46417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47687,7 +47687,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47744,7 +47744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47803,7 +47803,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47870,7 +47870,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47927,7 +47927,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47998,7 +47998,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48068,7 +48068,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48129,7 +48129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48186,7 +48186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48255,7 +48255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48316,7 +48316,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48373,7 +48373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48442,7 +48442,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48503,7 +48503,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48560,7 +48560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48629,7 +48629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -49944,7 +49944,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50001,7 +50001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50070,7 +50070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50190,7 +50190,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50247,7 +50247,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50316,7 +50316,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50436,7 +50436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50493,7 +50493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50562,7 +50562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50681,7 +50681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50751,7 +50751,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50809,7 +50809,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51027,7 +51027,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51077,7 +51077,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51180,7 +51180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51237,7 +51237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51306,7 +51306,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51424,7 +51424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -60079,7 +60079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FQCInspectionListApiResponse"
+                  "$ref": "#/components/schemas/FQCPaginatedListApiResponse"
                 }
               }
             }
@@ -62007,7 +62007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StabilityStudyApiResponse"
+                  "$ref": "#/components/schemas/StabilityTrendApiResponse"
                 }
               }
             }
@@ -86645,14 +86645,12 @@
           "meta": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/PaginationMeta"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Meta"
+            ]
           }
         },
         "type": "object",
@@ -87177,13 +87175,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/BatchResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "BatchApiResponse",
         "description": "\u6279\u6b21\u54cd\u5e94\u5305\u88c5"
       },
@@ -87563,13 +87565,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/BatchMaterialResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchMaterialResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "BatchMaterialApiResponse",
         "description": "\u6279\u6b21\u7269\u6599\u54cd\u5e94\u5305\u88c5"
       },
@@ -90637,13 +90643,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/CapaResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CapaResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "CapaApiResponse",
         "description": "Single CAPA response wrapper"
       },
@@ -92371,13 +92381,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ClosingResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClosingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ClosingApiResponse",
         "description": "Closing response wrapper"
       },
@@ -95315,13 +95329,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/CorrectionResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CorrectionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "CorrectionApiResponse",
         "description": "Correction response wrapper"
       },
@@ -97512,13 +97530,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/DepartmentLeaderResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentLeaderResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "DepartmentLeaderApiResponse",
         "description": "Department leader response wrapper"
       },
@@ -97574,13 +97596,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/DepartmentSafetyOfficerResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentSafetyOfficerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "DepartmentSafetyOfficerApiResponse",
         "description": "Department safety officer response wrapper"
       },
@@ -98549,13 +98575,10 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/DeviationResponse"
+            "title": "Data"
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "DeviationApiResponse",
         "description": "Single deviation response wrapper"
       },
@@ -107295,173 +107318,6 @@
         "title": "FQCInspectionItemResponse",
         "description": "FQC\u68c0\u9a8c\u660e\u7ec6\u54cd\u5e94"
       },
-      "FQCInspectionListApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FQCInspectionListResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "FQCInspectionListApiResponse",
-        "description": "FQC\u68c0\u9a8c\u5355\u5217\u8868\u54cd\u5e94\u5305\u88c5"
-      },
-      "FQCInspectionListResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "inspection_no": {
-            "type": "string",
-            "title": "Inspection No"
-          },
-          "batch_no": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Batch No"
-          },
-          "product_code": {
-            "type": "string",
-            "title": "Product Code"
-          },
-          "product_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Product Name"
-          },
-          "production_workshop": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Production Workshop"
-          },
-          "batch_quantity": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Batch Quantity"
-          },
-          "manufacturing_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Manufacturing Date"
-          },
-          "inspector_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Inspector Name"
-          },
-          "inspection_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Inspection Date"
-          },
-          "status": {
-            "$ref": "#/components/schemas/FQCInspectionStatus"
-          },
-          "inspection_conclusion": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FQCInspectionConclusion"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "release_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FQCReleaseStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "batch_locked": {
-            "type": "boolean",
-            "title": "Batch Locked",
-            "default": false
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "inspection_no",
-          "product_code",
-          "status",
-          "created_at"
-        ],
-        "title": "FQCInspectionListResponse",
-        "description": "FQC\u68c0\u9a8c\u5355\u5217\u8868\u54cd\u5e94"
-      },
       "FQCInspectionResponse": {
         "properties": {
           "batch_record_id": {
@@ -108278,6 +108134,65 @@
         ],
         "title": "FQCItemResult",
         "description": "FQC\u5355\u9879\u5224\u5b9a"
+      },
+      "FQCPaginatedListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FQCPaginatedListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "FQCPaginatedListApiResponse",
+        "description": "FQC paginated list API response wrapper"
+      },
+      "FQCPaginatedListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FQCInspectionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "FQCPaginatedListResponse",
+        "description": "FQC paginated list response"
       },
       "FQCReleaseStatus": {
         "type": "string",
@@ -109173,13 +109088,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/HazardIdentificationResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardIdentificationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "HazardIdentificationApiResponse",
         "description": "Single hazard identification response wrapper"
       },
@@ -112338,12 +112257,6 @@
             ],
             "title": "Attach File",
             "description": "Attachments"
-          },
-          "create_by": {
-            "type": "integer",
-            "title": "Create By",
-            "description": "Creator",
-            "default": 0
           }
         },
         "type": "object",
@@ -115764,13 +115677,10 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/InspectionStandardResponse"
+            "title": "Data"
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "InspectionStandardApiResponse",
         "description": "Single inspection standard response wrapper"
       },
@@ -117979,13 +117889,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/InvestigationResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvestigationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "InvestigationApiResponse",
         "description": "Investigation response wrapper"
       },
@@ -121104,13 +121018,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/OhHazardMonitorResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OhHazardMonitorResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "OhHazardMonitorApiResponse",
         "description": "Single OH hazard monitor response wrapper"
       },
@@ -123585,6 +123503,30 @@
         "title": "PageSplitItem",
         "description": "\u9875\u62c6\u5206\u9879"
       },
+      "PaginationMeta": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "PaginationMeta",
+        "description": "Pagination envelope carried in ApiResponse.meta.\n\nMirrors what app/core/response.py:paginated_response() emits, so the\nOpenAPI contract names these fields instead of leaving meta an opaque dict.\n\nDeliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta\ninto a model instance, and the ~73 module envelopes that declare\n`meta: dict[...]` would then fail `response_model` validation with\n\"Input should be a valid dictionary\". A TypedDict keeps meta a plain dict\nwhile still generating a named schema for the frontend."
+      },
       "PartComplete": {
         "properties": {
           "part": {
@@ -123832,13 +123774,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/PlanTaskResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanTaskResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "PlanTaskApiResponse",
         "description": "\u8ba1\u5212\u4efb\u52a1\u54cd\u5e94\u5305\u88c5"
       },
@@ -124596,13 +124542,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProcessParameterResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessParameterResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProcessParameterApiResponse",
         "description": "\u5de5\u827a\u53c2\u6570\u54cd\u5e94\u5305\u88c5"
       },
@@ -124894,13 +124844,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProcessSpecResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessSpecResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProcessSpecApiResponse",
         "description": "\u5de5\u827a\u89c4\u7a0b\u54cd\u5e94\u5305\u88c5"
       },
@@ -125359,13 +125313,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProcessStepResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessStepResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProcessStepApiResponse",
         "description": "\u5de5\u827a\u6b65\u9aa4\u54cd\u5e94\u5305\u88c5"
       },
@@ -126463,13 +126421,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProductionPlanResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductionPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProductionPlanApiResponse",
         "description": "\u751f\u4ea7\u8ba1\u5212\u54cd\u5e94\u5305\u88c5"
       },
@@ -126785,13 +126747,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProductionRecordResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductionRecordResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProductionRecordApiResponse",
         "description": "\u751f\u4ea7\u8bb0\u5f55\u54cd\u5e94\u5305\u88c5"
       },
@@ -133413,13 +133379,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/RegulationStagesResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulationStagesResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "RegulationStagesApiResponse",
         "description": "Regulation stages response wrapper"
       },
@@ -143360,6 +143330,138 @@
         "title": "StabilityStudyUpdate",
         "description": "\u66f4\u65b0\u7a33\u5b9a\u6027\u8bd5\u9a8c"
       },
+      "StabilityTrendApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StabilityTrendResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "StabilityTrendApiResponse",
+        "description": "\u7a33\u5b9a\u6027\u8d8b\u52bf\u54cd\u5e94\u5305\u88c5"
+      },
+      "StabilityTrendDataPoint": {
+        "properties": {
+          "inspection_item": {
+            "type": "string",
+            "title": "Inspection Item"
+          },
+          "node_month": {
+            "type": "integer",
+            "title": "Node Month"
+          },
+          "measured_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measured Value"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StabilityItemResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inspection_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inspection_item",
+          "node_month"
+        ],
+        "title": "StabilityTrendDataPoint",
+        "description": "\u8d8b\u52bf\u5206\u6790\u6570\u636e\u70b9"
+      },
+      "StabilityTrendResponse": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "batch_no": {
+            "type": "string",
+            "title": "Batch No"
+          },
+          "study_type": {
+            "$ref": "#/components/schemas/StabilityStudyType"
+          },
+          "inspection_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Inspection Items"
+          },
+          "data_points": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/StabilityTrendDataPoint"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Data Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "batch_no",
+          "study_type",
+          "inspection_items",
+          "data_points"
+        ],
+        "title": "StabilityTrendResponse",
+        "description": "\u8d8b\u52bf\u5206\u6790\u54cd\u5e94"
+      },
       "StandardCreate": {
         "properties": {
           "std_code": {
@@ -143949,18 +144051,12 @@
             "title": "Status",
             "description": "0-enabled 1-disabled",
             "default": 0
-          },
-          "create_by": {
-            "type": "integer",
-            "title": "Create By",
-            "description": "Creator"
           }
         },
         "type": "object",
         "required": [
           "cond_code",
-          "cond_name",
-          "create_by"
+          "cond_name"
         ],
         "title": "StorageConditionCreate",
         "description": "Create Storage Condition"

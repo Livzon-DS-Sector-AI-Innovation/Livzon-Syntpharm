@@ -94,10 +94,15 @@ export default function MediumPage() {
     if (statusFilter !== 'all') {
       params.status = statusFilter
     }
-    const adv = advancedForm.getFieldsValue()
-    if (adv.manufacturer) params.manufacturer = adv.manufacturer
+    // Only read the instance while its <Form> is mounted — see chrom-column for
+    // the full explanation. advancedForm lives behind {showAdvanced && ...},
+    // and this useCallback runs on mount, which trips antd's "not connected" warning.
+    if (showAdvanced) {
+      const adv = advancedForm.getFieldsValue()
+      if (adv.manufacturer) params.manufacturer = adv.manufacturer
+    }
     return params
-  }, [page, pageSize, searchText, typeFilter, statusFilter, advancedForm])
+  }, [page, pageSize, searchText, typeFilter, statusFilter, advancedForm, showAdvanced])
 
   const { data: queryResult, isLoading: loading, refetch: fetchData } = useQuery({
     queryKey: ['medium-list', page, pageSize, searchText, typeFilter, statusFilter],
@@ -591,7 +596,7 @@ export default function MediumPage() {
       <Drawer
         title={isNew ? '新建培养基' : '编辑培养基'}
         placement="right"
-        width={560}
+        size={560}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -746,7 +751,7 @@ export default function MediumPage() {
       <Drawer
         title="调整库存"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

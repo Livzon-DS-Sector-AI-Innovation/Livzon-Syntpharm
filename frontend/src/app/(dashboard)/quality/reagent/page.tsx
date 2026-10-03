@@ -800,7 +800,7 @@ export default function QualityReagentPage() {
         title="新建试剂/标准品"
         open={createDrawerVisible}
         onClose={() => setCreateDrawerVisible(false)}
-        width={isMobile ? '100%' : 600}
+        size={isMobile ? '100%' : 600}
         className="form-drawer"
         styles={{ body: { paddingBottom: 80 } }}
       >
@@ -818,7 +818,7 @@ export default function QualityReagentPage() {
         title="编辑试剂/标准品"
         open={editDrawerVisible}
         onClose={() => setEditDrawerVisible(false)}
-        width={isMobile ? '100%' : 600}
+        size={isMobile ? '100%' : 600}
         className="form-drawer"
         styles={{ body: { paddingBottom: 80 } }}
       >
@@ -836,7 +836,7 @@ export default function QualityReagentPage() {
         title="试剂/标准品详情"
         open={viewDrawerVisible}
         onClose={() => setViewDrawerVisible(false)}
-        width={isMobile ? '100%' : 600}
+        size={isMobile ? '100%' : 600}
         className="reagent-drawer"
       >
         {viewRecord && (

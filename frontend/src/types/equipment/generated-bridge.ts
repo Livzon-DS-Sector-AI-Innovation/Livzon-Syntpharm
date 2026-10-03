@@ -297,12 +297,8 @@ export interface InspectionTemplateItemResponse {
 /**
  * Paginated list response
  */
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  page_size: number
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { PaginatedResponse } from '@/types/common'
 
 /**
  * Equipment filters

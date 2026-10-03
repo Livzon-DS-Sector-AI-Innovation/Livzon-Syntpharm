@@ -351,14 +351,14 @@ export default function DailyRiskReportPanel() {
           onChange: (page, pageSize) => setDailyRiskReportQueryParams({ page, page_size: pageSize })
         }} />
 
-      <Modal title={editingRecord ? '编辑每日风险作业报备' : '新建每日风险作业报备'} open={modalVisible}
+      <Modal forceRender title={editingRecord ? '编辑每日风险作业报备' : '新建每日风险作业报备'} open={modalVisible}
         onOk={handleSubmit} onCancel={() => setModalVisible(false)} width={800} okText="确认" cancelText="取消">
         <Form form={editingRecord ? editForm : form} layout="vertical">
           {formContent}
         </Form>
       </Modal>
 
-      <Modal title="驳回原因" open={rejectVisible}
+      <Modal forceRender title="驳回原因" open={rejectVisible}
         onOk={handleRejectConfirm} onCancel={() => setRejectVisible(false)} okText="确认驳回" cancelText="取消">
         <TextArea rows={4} placeholder="请输入驳回原因" value={rejectReason}
           onChange={e => setRejectReason(e.target.value)} />

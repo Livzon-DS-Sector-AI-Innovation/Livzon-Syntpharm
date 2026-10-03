@@ -466,7 +466,7 @@ export default function SpecialOpsReportPanel() {
       </Card>
 
       {/* ── Report Drawer (create/edit) ── */}
-      <Drawer
+      <Drawer forceRender
         title={
           <Space>
             <SafetyCertificateOutlined style={{ color: T.primary }} />
@@ -510,7 +510,7 @@ export default function SpecialOpsReportPanel() {
       </Drawer>
 
       {/* ── Reject Modal ── */}
-      <Modal
+      <Modal forceRender
         title="驳回原因"
         open={rejectVisible}
         onOk={handleReject}

@@ -156,7 +156,7 @@ async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> A
 
     result = await db.execute(
         select(StorageCondition)
-        .where(and_(StorageCondition.del_flag == 0, StorageCondition.status == 0))
+        .where(and_(StorageCondition.is_deleted.is_(False), StorageCondition.status == 0))
         .order_by(StorageCondition.id)
     )
     items = result.scalars().all()
@@ -170,7 +170,7 @@ async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
 
     from app.modules.quality.qms.static_data.models import Unit
 
-    result = await db.execute(select(Unit).where(and_(Unit.del_flag == 0, Unit.status == 0)).order_by(Unit.id))
+    result = await db.execute(select(Unit).where(and_(Unit.is_deleted.is_(False), Unit.status == 0)).order_by(Unit.id))
     items = result.scalars().all()
     return UnitListApiResponse(data=[{"label": x.unit_name, "value": x.unit_code} for x in items])
 
@@ -273,7 +273,7 @@ async def download_hplc_reference_template() -> Any:
 async def handler(
     file: UploadFile = File(...),
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     """Import HPLC reference substances from Excel file"""
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -324,7 +324,7 @@ async def handler(
             if not row[0] or not row[1]:  # Skip empty rows
                 continue
 
-            data = {"create_by": user_id}
+            data: dict[str, object] = {"created_by": user_id}
             for col, header in enumerate(headers):
                 if header in field_map and row[col] is not None:
                     field = field_map[header]
@@ -409,9 +409,10 @@ async def get(  # noqa: F811
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
     items = await service.get_hplc_references_need_recal()
+    # `count` is payload, not pagination — `meta` is reserved for PaginationMeta.
+    # The list length is already the count, so it needs no separate field.
     return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
-        meta={"count": len(items)},
     )
 
 
@@ -430,7 +431,7 @@ async def get(  # noqa: F811
 async def post(
     data: s.HplcReferenceCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_hplc_reference(data, user_id)
@@ -447,7 +448,7 @@ async def put(
     id: int,
     data: s.HplcReferenceUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_hplc_reference(id, data, user_id)  # type: ignore[attr-defined]
@@ -662,7 +663,7 @@ async def download_chrom_column_template() -> Any:
 async def handler(  # noqa: F811
     file: UploadFile = File(...),
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     """Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)"""
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -722,7 +723,7 @@ async def handler(  # noqa: F811
                 if not any(row):
                     continue
 
-                data = {"create_by": user_id}
+                data: dict[str, object] = {"created_by": user_id}
 
                 if "气相" in sheet_name or "GC" in sheet_name.upper():
                     data["column_category"] = 1
@@ -753,67 +754,55 @@ async def handler(  # noqa: F811
                     elif field == "particle_size":
                         spec_parts.append(f" {value}μm")
                     elif field == "col_type":
-                        data["col_type"] = str(value).strip()  # type: ignore[assignment]
+                        data["col_type"] = str(value).strip()
                     elif field == "col_code":
-                        data["col_code"] = str(value).strip()  # type: ignore[assignment]
+                        data["col_code"] = str(value).strip()
                     elif field == "serial_no":
-                        data["serial_no"] = str(value).strip()  # type: ignore[assignment]
+                        data["serial_no"] = str(value).strip()
                     elif field == "location":
-                        data["location"] = str(value).strip()  # type: ignore[assignment]
+                        data["location"] = str(value).strip()
                     elif field == "storage_cond_code":
-                        data["storage_cond_code"] = str(value).strip()  # type: ignore[assignment]
+                        data["storage_cond_code"] = str(value).strip()
                     elif field == "apply_method":
-                        data["apply_method"] = str(value).strip()  # type: ignore[assignment]
+                        data["apply_method"] = str(value).strip()
                     elif field == "purchase_date":
                         if isinstance(value, date):
-                            data["purchase_date"] = value  # type: ignore[assignment]
+                            data["purchase_date"] = value
                         elif isinstance(value, (int, float)):
                             try:
                                 from datetime import timedelta
 
                                 base = date(1899, 12, 30)
-                                data["purchase_date"] = base + timedelta(  # type: ignore[assignment]
-                                    days=int(value)
-                                )
+                                data["purchase_date"] = base + timedelta(days=int(value))
                             except (ValueError, TypeError, OverflowError):
                                 pass
                         elif isinstance(value, str) and value.strip() and value.strip() != "/":
                             try:
                                 v = value.strip()
                                 if len(v) == 8 and v.isdigit():
-                                    data["purchase_date"] = date(  # type: ignore[assignment]
-                                        int(v[:4]), int(v[4:6]), int(v[6:8])
-                                    )
+                                    data["purchase_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
                                 else:
-                                    data["purchase_date"] = date.fromisoformat(  # type: ignore[assignment]
-                                        v.replace("/", "-").split()[0]
-                                    )
+                                    data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
                             except (ValueError, IndexError, AttributeError):
                                 pass
                     elif field == "use_start_date":
                         if isinstance(value, date):
-                            data["use_start_date"] = value  # type: ignore[assignment]
+                            data["use_start_date"] = value
                         elif isinstance(value, (int, float)):
                             try:
                                 from datetime import timedelta
 
                                 base = date(1899, 12, 30)
-                                data["use_start_date"] = base + timedelta(  # type: ignore[assignment]
-                                    days=int(value)
-                                )
+                                data["use_start_date"] = base + timedelta(days=int(value))
                             except (ValueError, TypeError, OverflowError):
                                 pass
                         elif isinstance(value, str) and value.strip() and value.strip() != "/":
                             try:
                                 v = value.strip()
                                 if len(v) == 8 and v.isdigit():
-                                    data["use_start_date"] = date(  # type: ignore[assignment]
-                                        int(v[:4]), int(v[4:6]), int(v[6:8])
-                                    )
+                                    data["use_start_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
                                 else:
-                                    data["use_start_date"] = date.fromisoformat(  # type: ignore[assignment]
-                                        v.replace("/", "-").split()[0]
-                                    )
+                                    data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
                             except (ValueError, IndexError, AttributeError):
                                 pass
                     elif field == "max_use_times":
@@ -832,16 +821,14 @@ async def handler(  # noqa: F811
                         else:
                             data["col_status"] = 0
                     elif field == "remark":
-                        data["remark"] = str(value).strip()  # type: ignore[assignment]
+                        data["remark"] = str(value).strip()
 
                 if manufacturer_parts:
-                    data["manufacturer"] = " ".join(manufacturer_parts)  # type: ignore[assignment]
+                    data["manufacturer"] = " ".join(manufacturer_parts)
                 if spec_parts:
-                    data["spec"] = "".join(spec_parts).replace("*", "×")  # type: ignore[assignment]
+                    data["spec"] = "".join(spec_parts).replace("*", "×")
 
-                if (
-                    "col_code" not in data or not data["col_code"] or data["col_code"] == "/"  # type: ignore[comparison-overlap]
-                ):
+                if "col_code" not in data or not data["col_code"] or data["col_code"] == "/":
                     error_count += 1
                     errors.append(f"Sheet[{sheet_name}] Row {row_num}: 缺少色谱柱编号")
                     continue
@@ -850,15 +837,13 @@ async def handler(  # noqa: F811
                     errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型")
                     continue
                 if "manufacturer" not in data or not data["manufacturer"]:
-                    data["manufacturer"] = "未知"  # type: ignore[assignment]
-                if (
-                    "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/"  # type: ignore[comparison-overlap]
-                ):
+                    data["manufacturer"] = "未知"
+                if "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/":
                     data["serial_no"] = data["col_code"]
                 if "location" not in data or not data["location"]:
-                    data["location"] = "未指定"  # type: ignore[assignment]
+                    data["location"] = "未指定"
                 if "storage_cond_code" not in data or not data["storage_cond_code"]:
-                    data["storage_cond_code"] = "ROOM_TEMP"  # type: ignore[assignment]
+                    data["storage_cond_code"] = "ROOM_TEMP"
                 if "max_use_times" not in data:
                     data["max_use_times"] = 100
                 if "col_status" not in data:
@@ -867,9 +852,9 @@ async def handler(  # noqa: F811
                     if "use_start_date" in data:
                         data["purchase_date"] = data["use_start_date"]
                     else:
-                        data["purchase_date"] = date.today()  # type: ignore[assignment]
+                        data["purchase_date"] = date.today()
                 if "spec" not in data or not data["spec"]:
-                    data["spec"] = "未指定"  # type: ignore[assignment]
+                    data["spec"] = "未指定"
 
                 try:
                     await service.create_chrom_column(s.ChromColumnCreate(**data), user_id)
@@ -907,7 +892,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     data: s.ChromColumnCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_chrom_column(data, user_id)
@@ -924,7 +909,7 @@ async def put(  # noqa: F811
     id: int,
     data: s.ChromColumnUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_chrom_column(id, data, user_id)  # type: ignore[attr-defined]
@@ -954,7 +939,7 @@ async def delete(  # noqa: F811
 async def handler(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.increment_chrom_column_usage(id, user_id)
@@ -1010,7 +995,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     data: s.MediumCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_medium(data, user_id)
@@ -1024,7 +1009,7 @@ async def put(  # noqa: F811
     id: int,
     data: s.MediumUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_medium(id, data, user_id)
@@ -1037,7 +1022,7 @@ async def put(  # noqa: F811
 async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         await service.delete_medium(id)
@@ -1051,7 +1036,7 @@ async def post(  # noqa: F811
     id: int,
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.adjust_medium_stock(id, quantity, user_id)
@@ -1105,7 +1090,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     data: s.StandardCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_standard(data, user_id)
@@ -1119,7 +1104,7 @@ async def put(  # noqa: F811
     id: int,
     data: s.StandardUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_standard(id, data, user_id)
@@ -1132,7 +1117,7 @@ async def put(  # noqa: F811
 async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         await service.delete_standard(id)
@@ -1146,7 +1131,7 @@ async def post(  # noqa: F811
     id: int,
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.adjust_standard_quantity(id, quantity, user_id)
@@ -1196,7 +1181,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     data: s.StorageConditionCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_storage_condition(data, user_id)  # type: ignore[attr-defined]
@@ -1213,7 +1198,7 @@ async def put(  # noqa: F811
     id: int,
     data: s.StorageConditionUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_storage_condition(id, data, user_id)  # type: ignore[attr-defined]
@@ -1229,7 +1214,7 @@ async def put(  # noqa: F811
 async def delete(  # noqa: F811
     id: int,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         await service.delete_storage_condition(id)

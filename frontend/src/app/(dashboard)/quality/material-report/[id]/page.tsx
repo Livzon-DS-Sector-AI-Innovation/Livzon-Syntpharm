@@ -532,7 +532,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       </Card>
 
       {/* 图片预览和AI识别结果弹窗 */}
-      <Modal
+      <Modal forceRender
         title="图片预览"
         open={previewVisible}
         onCancel={() => setPreviewVisible(false)}

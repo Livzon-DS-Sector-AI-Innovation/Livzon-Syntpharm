@@ -534,7 +534,7 @@ export default function StandardPage() {
       <Drawer
         title={isNew ? '新建标准品' : '编辑标准品'}
         placement="right"
-        width={560}
+        size={560}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -666,7 +666,7 @@ export default function StandardPage() {
       <Drawer
         title="调整数量"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

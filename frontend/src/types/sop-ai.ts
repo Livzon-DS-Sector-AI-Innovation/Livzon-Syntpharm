@@ -115,18 +115,11 @@ export interface BatchCheckResult {
   }
 }
 
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  page_size: number
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { PaginatedResponse } from '@/types/common'
 
-export interface ApiResponse<T = unknown> {
-  code: number
-  message: string
-  data: T
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { ApiResponse } from '@/types/common'
 
 // ============ 定时任务类型 ============
 

@@ -170,11 +170,8 @@ export interface PageSplitRecord {
 
 
 // Response wrapper types
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { ApiResponse } from '@/types/common'
 
 export interface UploadResult {
   file_id?: string

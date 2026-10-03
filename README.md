@@ -154,7 +154,7 @@ docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm mi
 # 后端: http://localhost:8000/docs
 ```
 
-**配置文件**：`.env.local.example`（已预设 UAT 内网地址 172.17.62.101）
+**配置文件**：`.env.local.example`（UAT 内网地址为占位符 `<内网IP地址>`，需向团队获取）
 
 ### UAT 启动模式
 
@@ -186,7 +186,7 @@ docker compose --env-file .env.uat -f docker-compose.uat-infra.yml -f docker-com
 ### 开发流程
 
 ```
-main 拉 feature → 修改 → PR → 合并 uat → 测试 →feature →  发布 PR → 合并 main → 新版本生成
+main 拉 feature → 修改 → 合并 uat → 测试 → 创建 PR → 合并 main → 新版本生成
 ```
 
 1. 从 `main` 拉分支开发

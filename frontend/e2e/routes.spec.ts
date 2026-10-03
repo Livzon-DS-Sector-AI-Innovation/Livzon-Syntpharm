@@ -31,9 +31,19 @@ function summarizeErrors(errors: string[], label: string): string {
   return `${errors.length} ${label} errors:\n${lines.join('\n')}`
 }
 
+/**
+ * Console errors that are known noise and would otherwise fail every sweep.
+ * Keep this list short and justified — everything else is a real finding.
+ */
+const IGNORED_CONSOLE_ERRORS = [
+  // React DevTools advertises itself on dev builds; harmless.
+  'Download the React DevTools',
+]
+
 async function checkRoute(page: Page, route: RouteCase) {
   const httpErrors: string[] = []
   const networkFailures: string[] = []
+  const consoleErrors: string[] = []
 
   const isApplicationUrl = (url: string) =>
     (url.startsWith('http://127.0.0.1:13000') ||
@@ -58,8 +68,20 @@ async function checkRoute(page: Page, route: RouteCase) {
     }
   }
 
+  // Console errors are invisible to the status/DOM assertions below, and every
+  // bug reported against these pages so far arrived as one: a styled-jsx hydration
+  // mismatch, an antd deprecation, and antd's useForm "not connected" warning.
+  // A page can render perfectly and still log an error, so nothing else catches it.
+  const onConsole = (msg: { type(): string; text(): string }) => {
+    if (msg.type() !== 'error') return
+    const text = msg.text()
+    if (IGNORED_CONSOLE_ERRORS.some((ignored) => text.includes(ignored))) return
+    consoleErrors.push(text.split('\n')[0] ?? text)
+  }
+
   page.on('response', onResponse)
   page.on('requestfailed', onRequestFailed)
+  page.on('console', onConsole)
 
   try {
     const response = await page.goto(route.path, {
@@ -70,6 +92,7 @@ async function checkRoute(page: Page, route: RouteCase) {
     // Clear any errors from late responses of the previous page
     httpErrors.length = 0
     networkFailures.length = 0
+    consoleErrors.length = 0
 
     if (route.kind === 'redirect') {
       expect(response).not.toBeNull()
@@ -98,9 +121,14 @@ async function checkRoute(page: Page, route: RouteCase) {
 
     expect(httpErrors.length, summarizeErrors(httpErrors, 'HTTP')).toBe(0)
     expect(networkFailures.length, summarizeErrors(networkFailures, 'network')).toBe(0)
+    expect(
+      consoleErrors.length,
+      `${consoleErrors.length} console error(s) on ${route.path}:\n${consoleErrors.join('\n')}`,
+    ).toBe(0)
   } finally {
     page.off('response', onResponse)
     page.off('requestfailed', onRequestFailed)
+    page.off('console', onConsole)
   }
 }
 
@@ -278,7 +306,10 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 方案录入') },
   { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 检测结果') },
   { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据') },
-  { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
+  // Removed: the page was deleted (commit d1a9d2db) — it called
+  // /api/v1/quality/static-data/audit{,/modules}, which the backend never implemented,
+  // so it returned 500 on every load.
+  // { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
   // Disabled: endpoint /api/v1/ai/config not implemented (returns 404)
   // { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
   { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI交互日志') },

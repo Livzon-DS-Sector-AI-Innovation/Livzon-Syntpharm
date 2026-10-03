@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Link from 'next/link'
 import {
@@ -190,13 +190,8 @@ export default function HazardLedgerPage() {
   const filterScrollRef = useRef<HTMLDivElement>(null)
 
   const {
-    hazards,
-    hazardTotal,
     hazardQueryParams,
-    setHazards,
-    setHazardTotal,
     setHazardQueryParams,
-    updateHazard: updateHazardInStore,
   } = useSafetyStore()
 
   // ── 活跃筛选条件 (多维表格 chip 模式) ──
@@ -300,13 +295,26 @@ export default function HazardLedgerPage() {
     },
   })
 
-  // Sync query data to store
-  useEffect(() => {
-    if (queryData) {
-      setHazards(queryData.data)
-      setHazardTotal(queryData.total)
-    }
-  }, [queryData, setHazards, setHazardTotal])
+  // Rows are derived from the query rather than copied into state — React Query
+  // already owns this cache (AGENTS.md React Hooks rule 2). Previously a
+  // useEffect mirrored queryData into Zustand, which duplicated the cache and
+  // re-rendered twice per fetch.
+  const hazards = queryData?.data ?? []
+  const hazardTotal = queryData?.total ?? 0
+
+  // Optimistic row edits write straight into the cache, so the table reflects a
+  // mutation immediately without a round trip. The invalidateQueries calls that
+  // follow each mutation still refetch the authoritative data and overwrite it.
+  const patchHazard = useCallback(
+    (id: string, updates: Partial<HazardReport>) => {
+      queryClient.setQueriesData<{ data: HazardReport[]; total: number }>(
+        { queryKey: ['hazards'] },
+        (old) =>
+          old ? { ...old, data: old.data.map((h) => (h.id === id ? { ...h, ...updates } : h)) } : old
+      )
+    },
+    [queryClient]
+  )
 
   // Use query loading state
   const loading = queryLoading
@@ -358,7 +366,7 @@ export default function HazardLedgerPage() {
       const response = await startRectification(record.id)
       if (response.code === 200) {
         message.success('已开始整改')
-        updateHazardInStore(record.id, response.data as HazardReport)
+        patchHazard(record.id, response.data as HazardReport)
         refreshStats()
       } else {
         message.error(response.message || '开始整改失败')
@@ -383,12 +391,12 @@ export default function HazardLedgerPage() {
 
   // ── Modal 成功回调 ──
   const handleReplySuccess = (updated: HazardReport) => {
-    updateHazardInStore(updated.id, updated)
+    patchHazard(updated.id, updated)
     refreshStats()
   }
 
   const handleVerifySuccess = (updated: HazardReport) => {
-    updateHazardInStore(updated.id, updated)
+    patchHazard(updated.id, updated)
     refreshStats()
   }
 
@@ -451,11 +459,11 @@ export default function HazardLedgerPage() {
         msgApi.error('重新执行 AI 识别失败: ' + (r1.message || ''))
         return
       }
-      updateHazardInStore(record.id, r1.data as HazardReport)
+      patchHazard(record.id, r1.data as HazardReport)
       const r2 = await runHazardAI(record.id, 2)
       if (r2.code === 200) {
         msgApi.success('AI 已重新执行完成')
-        updateHazardInStore(record.id, r2.data as HazardReport)
+        patchHazard(record.id, r2.data as HazardReport)
         refreshStats()
       } else {
         msgApi.warning('AI 识别已完成，整改建议生成失败: ' + (r2.message || ''))
