@@ -16,6 +16,7 @@ from typing import Any
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.exceptions import BadRequestException, NotFoundException
 from app.modules.research import models as rd_models
 from app.modules.research.doc_gen import cancellation, kb_coverage, parsing, spec_source, status, store
@@ -267,6 +268,7 @@ async def create_job_from_template(
         template_code=spec.code,
         template_version=spec.version,
         deliverable_template_version_id=current_version_row.id if current_version_row is not None else None,
+        env=get_settings().doc_gen_worker_env,
         status="draft" if config.chat_enabled else "pending",
         step="草稿" if config.chat_enabled else "排队中",
         progress=0,
@@ -331,6 +333,7 @@ async def create_job(
         project_id=project_id,
         template_code=spec.code,
         template_version=spec.version,
+        env=get_settings().doc_gen_worker_env,
         status="draft" if config.chat_enabled else "pending",
         step="草稿" if config.chat_enabled else "排队中",
         progress=0,
@@ -668,6 +671,37 @@ async def cancel_job(session: AsyncSession, job_id: uuid.UUID) -> DocGenJob:
     return job
 
 
+async def cancel_jobs_of_report(session: AsyncSession, report_id: uuid.UUID) -> int:
+    """终止某报告下全部未结束的生成任务（删除报告时联动调用），返回取消数。
+
+    复用 :func:`cancel_job`：先落库 ``cancelled``（跨进程真相来源，执行中的 worker
+    取消轮询秒级看到），再尽力进程内强杀。``ready`` 等不可取消状态自动跳过。
+    """
+    from sqlalchemy import select
+
+    rows = (
+        (
+            await session.execute(
+                select(DocGenJob).where(
+                    DocGenJob.report_id == report_id,
+                    DocGenJob.is_deleted.is_(False),
+                    DocGenJob.status.not_in(("completed", "failed", "cancelled")),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    cancelled = 0
+    for job in rows:
+        try:
+            await cancel_job(session, job.id)
+        except BadRequestException:
+            continue
+        cancelled += 1
+    return cancelled
+
+
 def _is_table_slot(spec: TemplateSpec, key: str) -> bool:
     """判断（可能带章节前缀的）填充项是否为表格类。"""
     section_key, raw = split_slot_key(key)
@@ -867,6 +901,7 @@ async def regenerate_job(session: AsyncSession, job_id: uuid.UUID, user_id: uuid
         parent_job_id=source.id,
         template_code=source.template_code,
         template_version=source.template_version,
+        env=get_settings().doc_gen_worker_env,
         meta=dict(source.meta or {}),
         supplement_text=source.supplement_text,
         status="pending",
@@ -1443,6 +1478,8 @@ async def template_anchor_candidates(session: AsyncSession, template_id: uuid.UU
 
     纯规则扫描（不调模型、快）；每个候选的 ``anchor`` 可被前端原样回传建槽位，
     避免用户手写锚点出错。模板尚无规格时（existing=None）母本全部位置皆候选。
+    草拟阶段丢弃的表格（双行表头/表头空格/占位符数据行）会补扫成整表与单元格
+    候选，``columns``/``header_rows`` 随候选返回供表格类新增。
     """
     template = await _load_template_or_404(session, template_id)
     try:
@@ -1584,8 +1621,9 @@ async def add_template_slot(
 
     模板尚无可用规格时（如自动识别为空、未注册代码规格）：若已上传母本，则按母本
     重新草拟一套规格再追加，避免「有母本却加不了填写项」；未上传母本则拒绝（无处
-    定位）。任何槽位级约束（名称空/表格类/位置重复/key 冲突）由 :func:`add_slot_to_spec`
-    抛 ``ValueError``，这里统一转 400。
+    定位）。表格类候选可整表成槽（回传候选的 ``columns``/``header_rows`` 即可）。
+    任何槽位级约束（名称空/表格缺列定义/坐标锚点缺 guard/位置重复/key 冲突）由
+    :func:`add_slot_to_spec` 抛 ``ValueError``，这里统一转 400。
     """
     template = await _load_template_or_404(session, template_id)
     try:
@@ -1605,6 +1643,8 @@ async def add_template_slot(
             required=payload.required,
             query_hint=payload.query_hint,
             search_terms=payload.search_terms,
+            columns=payload.columns,
+            header_rows=payload.header_rows,
         )
     except ValueError as exc:
         raise BadRequestException(str(exc)) from exc

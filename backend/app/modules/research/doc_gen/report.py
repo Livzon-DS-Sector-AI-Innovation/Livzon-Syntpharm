@@ -138,6 +138,7 @@ def build_report_markdown(
     project_name: str = "",
     model_note: str = "",
     sections: Sequence[SectionInstance] = (),
+    extra_notes: Sequence[str] = (),
 ) -> str:
     """产出 Markdown 生成说明。"""
     lines: list[str] = [f"# {spec.name} 生成说明", ""]
@@ -156,6 +157,10 @@ def build_report_markdown(
     lines += [
         f"- 填充项总数：{len(spec.slots)}；实质内容：{substantive}；"
         f"待补充：{pending}；需人工：{manual}；AI 草稿：{drafts}；需人工核对：{needs_verify}",
+    ]
+    # 过程留痕：补问/引用编号复核/表格未核对行等「怎么补上的、哪里还不稳」写给使用者看
+    lines += [f"- {note}" for note in extra_notes]
+    lines += [
         "",
         "本文档为初版。未填充或不确定处均以 `[待补充：原因]` 标出；"
         "带 `【AI草稿，需确认】` 前缀的段落由模型归纳，请逐条核对后删除前缀；"

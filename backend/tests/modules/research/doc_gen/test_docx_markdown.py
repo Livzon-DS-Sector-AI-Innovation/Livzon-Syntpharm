@@ -98,6 +98,82 @@ def test_render_escapes_literal_markdown_in_text() -> None:
     assert "****匿名" not in markdown
 
 
+# ---------------------------------------------------------------------------
+# 格式保真调整：run 加粗/斜体、列表缩进、合并单元格去重、空表头占位
+# ---------------------------------------------------------------------------
+
+
+def _build_formatted(doc: DocxDocument) -> None:
+    from docx.oxml.ns import qn
+
+    para = doc.add_paragraph()
+    para.add_run("关键结论").bold = True
+    para.add_run("：见")
+    para.add_run("附录A").italic = True
+
+    sub = doc.add_paragraph("二级列表项", style="List Bullet")
+    ppr = sub._p.get_or_add_pPr()
+    num_pr = ppr.makeelement(qn("w:numPr"), {})
+    num_pr.append(ppr.makeelement(qn("w:ilvl"), {qn("w:val"): "1"}))
+    num_pr.append(ppr.makeelement(qn("w:numId"), {qn("w:val"): "1"}))
+    ppr.append(num_pr)
+
+    table = doc.add_table(rows=3, cols=3)
+    table.rows[0].cells[0].text = "项目"
+    table.rows[0].cells[1].text = "纯度"
+    table.rows[0].cells[2].text = "收率"
+    table.rows[1].cells[0].text = "横向合并"
+    table.rows[1].cells[0].merge(table.rows[1].cells[1])
+    table.rows[1].cells[2].text = "98%"
+    table.rows[2].cells[0].text = "普通行"
+
+
+def test_run_emphasis_and_list_indent_preserved() -> None:
+    """run 级加粗/斜体转 **/*；多级列表按 ilvl 缩进，不再被压平成同级。"""
+    markdown = render_docx_markdown(_docx_bytes(_build_formatted))
+    assert "**关键结论**：见*附录A*" in markdown
+    assert "  - 二级列表项" in markdown
+
+
+def test_merged_cells_not_duplicated_in_table_rows() -> None:
+    """横向合并单元格按去重输出：同一文本不在一行里重复占列。"""
+    markdown = render_docx_markdown(_docx_bytes(_build_formatted))
+    merged_line = next(line for line in markdown.splitlines() if "横向合并" in line)
+    assert merged_line.count("横向合并") == 1
+    assert "| 项目 | 纯度 | 收率 |" in markdown  # 表头列数仍为全表最大值
+
+
+def test_all_blank_header_row_gets_column_placeholders() -> None:
+    """首行全空的表格补「列N」表头占位，保证 GFM 分隔行有对应表头。"""
+
+    def build(doc: DocxDocument) -> None:
+        table = doc.add_table(rows=2, cols=2)
+        table.rows[1].cells[0].text = "数据"
+
+    markdown = render_docx_markdown(_docx_bytes(build))
+    assert "| 列1 | 列2 |" in markdown
+
+
+def _build_toc_and_banner(doc: DocxDocument) -> None:
+    """目录条目（样式名 + 无样式但带「制表符+页码」）与单列标题横幅表。"""
+    doc.styles.add_style("TOC 1", WD_STYLE_TYPE.PARAGRAPH)
+    doc.add_paragraph("第一章 概述\t3", style="TOC 1")
+    doc.add_paragraph("1.1 目的\t4")  # 样式名不规范，靠页码尾缀兜底
+    doc.add_paragraph("真正的正文，结尾数字 25 不该被当成目录")
+    banner = doc.add_table(rows=1, cols=1)
+    banner.rows[0].cells[0].text = "研发总方案"
+
+
+def test_toc_entries_dropped_and_banner_table_becomes_paragraph() -> None:
+    """目录行不进 Markdown（点不动又刷屏）；单列表按段落输出而不是只有一列的表。"""
+    markdown = render_docx_markdown(_docx_bytes(_build_toc_and_banner))
+    assert "第一章 概述" not in markdown
+    assert "1.1 目的" not in markdown
+    assert "真正的正文，结尾数字 25 不该被当成目录" in markdown
+    assert "研发总方案" in markdown
+    assert "| 研发总方案 |" not in markdown  # 不再输出单列 GFM 表
+
+
 # ===== service.template_markdown：母本优先、骨架回退 =====
 
 

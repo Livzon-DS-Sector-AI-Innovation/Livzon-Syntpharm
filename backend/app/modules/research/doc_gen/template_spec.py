@@ -95,6 +95,9 @@ class Slot(BaseModel):
 
     key: str
     label: str
+    # 所属报告章节（来自模板分析，只写在任务内的 spec 实例上，不落模板库、不参与语义指纹）：
+    # 提取阶段按它做「章节对齐」切批，让同章槽位共享一次上下文
+    section: str = ""
     kind: Literal["field", "paragraph", "table", "image"] = "field"
     required: bool = False
     overwrite_cell: bool = False  # 母本该格已有内容时是否允许覆盖（默认不允许）

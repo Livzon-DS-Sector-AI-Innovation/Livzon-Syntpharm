@@ -68,6 +68,9 @@ def _config(**overrides: Any) -> RuntimeConfig:
         ocr_structured_enabled=False,
         vision_fallback_enabled=True,
         vision_max_pages=5,
+        # 单测必须自洽：解析缓存是跨任务共享态，命中后直接返回、不再调用 parse_file，
+        # 会让「是否走了库解析」这类断言失效，也会把测试产物写进共享缓存
+        parse_cache_enabled=False,
     )
     return replace(base, **overrides)
 

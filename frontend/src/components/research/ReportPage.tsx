@@ -44,6 +44,7 @@ export function ReportPage({ projectId }: Props) {
   const queryClient = useQueryClient()
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdReport | null>(null)
+  const [togglingId, setTogglingId] = useState<string>('')
 
   const { data: reports = [], isLoading: loading } = useQuery({
     queryKey: ['reports', projectId],
@@ -113,12 +114,16 @@ export function ReportPage({ projectId }: Props) {
   }
 
   const handleToggleActive = async (id: string, active: boolean) => {
+    if (togglingId) return
+    setTogglingId(id)
     try {
       await updateReport(id, { status: active ? 'approved' : 'draft' })
       msgApi.success(active ? '已启用' : '已停用')
       invalidateReports()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '操作失败')
+    } finally {
+      setTogglingId('')
     }
   }
 
@@ -220,6 +225,7 @@ export function ReportPage({ projectId }: Props) {
               checkedChildren="启用"
               unCheckedChildren="停用"
               defaultChecked={record.status === 'approved'}
+              disabled={togglingId === record.id}
               onChange={(checked) => handleToggleActive(record.id, checked)}
             />
           </Space>

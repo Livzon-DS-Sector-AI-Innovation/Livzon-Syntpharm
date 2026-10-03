@@ -69,6 +69,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
   const [versionDrawerData, setVersionDrawerData] = useState<{stage: string; type: string; title: string; versions: RdStageDeliverable[]} | null>(null)
   const [aiGenerateModalOpen, setAiGenerateModalOpen] = useState(false)
   const [aiGenerating, setAiGenerating] = useState(false)
+  const [savingAi, setSavingAi] = useState(false)
   const [aiGenerateTarget, setAiGenerateTarget] = useState<{stage: string; type: string; title: string} | null>(null)
   const [aiResult, setAiResult] = useState<string>('')
   const [templateFilter, setTemplateFilter] = useState<{stage: string; type: string} | null>(null)
@@ -228,7 +229,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
   }
 
   const handleSaveAsDeliverable = async () => {
-    if (!aiGenerateTarget || !aiResult) return
+    if (!aiGenerateTarget || !aiResult || savingAi) return
+    setSavingAi(true)
     try {
       await createDeliverable({
         project_id: projectId,
@@ -244,6 +246,8 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
       invalidateDeliverables()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSavingAi(false)
     }
   }
 
@@ -515,7 +519,7 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
         footer={[
           <Button key="cancel" onClick={() => setAiGenerateModalOpen(false)}>取消</Button>,
           <Button key="export" disabled={!aiResult} onClick={handleExportAiResult} icon={<DownloadOutlined />}>导出文件</Button>,
-          <Button key="save" disabled={!aiResult} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>,
+          <Button key="save" disabled={!aiResult} loading={savingAi} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>,
           <Button key="generate" type="primary" loading={aiGenerating} onClick={doAiGenerate} icon={<RobotOutlined />}>
             {aiResult ? '重新生成' : '生成报告'}
           </Button>,

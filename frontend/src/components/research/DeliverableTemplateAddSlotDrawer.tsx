@@ -42,8 +42,9 @@ const anchorKey = (candidate: DocGenAnchorCandidate) => JSON.stringify(candidate
  * 人工「新增填写项」：点选母本里一个尚未被占用的候选锚点位置，补名称与检索语义。
  *
  * 渲染安全铁律：锚点由后端规则扫描器产出，前端只把候选的 ``anchor`` 原样回传，
- * 绝不手写或改写——锚点错则渲染失败。表格类候选还需列定义，超出「点选新增」的
- * 范围，在列表里禁用（后端同样会以 400 拒绝）。新增结果回写模板的填充项规格，
+ * 绝不手写或改写——锚点错则渲染失败。表格类候选随响应携带 ``columns``/``header_rows``
+ * （列定义来自真实表头），点选后原样回传即可整表成槽；草拟漏识别的表格与
+ * 占位符单元格都会出现在候选里，不再没有补录出口。新增结果回写模板的填充项规格，
  * 该模板以后每次 AI 生成都包含这个填写项。
  */
 export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateName, onClose, onChanged }: Props) {
@@ -83,7 +84,7 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
   }
 
   const handleSubmit = async () => {
-    if (!templateId || !selected) return
+    if (!templateId || !selected || submitting) return
     let values
     try {
       values = await form.validateFields()
@@ -101,6 +102,10 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
         required: values.required ?? false,
         query_hint: (values.query_hint ?? '').trim(),
         search_terms: values.search_terms?.length ? values.search_terms : undefined,
+        // 表格候选：列定义与表头行数来自后端扫描的真实表头，原样回传整表成槽；
+        // 非表格 kind 后端忽略这两项
+        columns: selected.kind === 'table' ? (selected.columns ?? []) : undefined,
+        header_rows: selected.header_rows ?? 1,
       })
       msgApi.success(`已新增填写项「${values.label}」（${result.slot_key}），当前共 ${result.total_slots} 个填写项`)
       setSelectedKey(null)
@@ -109,7 +114,7 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
       // 刚加的位置已被占用，重拉候选（后端按锚点签名过滤）
       void refetch()
     } catch (e: unknown) {
-      // 后端 400（位置已被占用 / 名称为空 / 表格类）会带具体文案，直接透出
+      // 后端 400（位置已被占用 / 名称为空 / 表格缺列定义）会带具体文案，直接透出
       msgApi.error(e instanceof Error ? e.message : '新增填写项失败')
     } finally {
       setSubmitting(false)
@@ -125,8 +130,8 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
         <Space size={4} wrap>
           <span style={{ fontWeight: 500 }}>{record.label}</span>
           {record.kind === 'table' && (
-            <Tooltip title="表格类填写项需配置列定义，暂不支持在此新增">
-              <Tag color="orange">暂不支持</Tag>
+            <Tooltip title={`列定义来自表头：${(record.columns ?? []).join(' / ') || '（无表头文本）'}`}>
+              <Tag color="orange">{(record.columns ?? []).length} 列</Tag>
             </Tooltip>
           )}
         </Space>
@@ -193,7 +198,7 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
         showIcon
         style={{ marginBottom: 12 }}
         title="从母本中点选位置，人工新增填写项"
-        description="候选位置由规则扫描器产出（锚点保证渲染期可解析），已被现有填写项占用的位置不会列出。只需补「叫什么、要什么值」，新增后该模板以后每次 AI 生成都会包含这个填写项。"
+        description="候选位置由规则扫描器产出（锚点保证渲染期可解析），已被现有填写项占用的位置不会列出。自动识别漏掉的表格与「/」「—」占位单元格也会补扫进候选：整表候选自带列定义，单元格候选自带防错位校验，点选即可补录。只需补「叫什么、要什么值」，新增后该模板以后每次 AI 生成都会包含这个填写项。"
       />
 
       <div style={{ fontWeight: 600, marginBottom: 8 }}>
@@ -217,13 +222,10 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
             const candidate = candidates.find((c) => anchorKey(c) === String(keys[0] ?? ''))
             if (candidate) selectCandidate(candidate)
           },
-          getCheckboxProps: (record) => ({ disabled: record.kind === 'table' }),
         }}
         onRow={(record) => ({
-          onClick: () => {
-            if (record.kind !== 'table') selectCandidate(record)
-          },
-          style: { cursor: record.kind === 'table' ? 'not-allowed' : 'pointer' },
+          onClick: () => selectCandidate(record),
+          style: { cursor: 'pointer' },
         })}
         locale={{ emptyText: '母本中没有可新增的位置：所有可锚定点都已被现有填写项占用' }}
       />
@@ -244,6 +246,12 @@ export function DeliverableTemplateAddSlotDrawer({ open, templateId, templateNam
             <span style={{ fontWeight: 600 }}>{selected.label}</span>
             <Tag color={KIND_META[selected.kind].color}>{KIND_META[selected.kind].label}</Tag>
           </Space>
+          {selected.kind === 'table' && (selected.columns?.length ?? 0) > 0 && (
+            <div style={{ color: '#666', fontSize: 12, marginTop: 4 }}>
+              表格列（来自表头，共 {selected.columns?.length ?? 0} 列
+              {selected.header_rows > 1 ? '，双行表头' : ''}）：{selected.columns?.join(' / ')}
+            </div>
+          )}
           {selected.context && <div style={{ color: '#666', fontSize: 12, marginTop: 4 }}>{selected.context}</div>}
         </div>
       )}

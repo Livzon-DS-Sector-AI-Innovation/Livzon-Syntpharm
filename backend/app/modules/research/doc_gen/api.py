@@ -590,6 +590,8 @@ async def list_template_anchor_candidates(
 
     纯规则扫描（不调模型、快）；每个候选的 anchor 可原样回传用于建槽位，
     避免用户手写锚点出错。AI 不参与定位（锚点错则渲染失败），只由规则产出。
+    草拟丢弃的待填表格会补扫成整表候选（带 columns/header_rows，回传即可整表
+    成槽）与占位符单元格候选，漏识别的位置从此有的人工补录出口。
     """
     return build_response(data=await service.template_anchor_candidates(db, template_id))
 
