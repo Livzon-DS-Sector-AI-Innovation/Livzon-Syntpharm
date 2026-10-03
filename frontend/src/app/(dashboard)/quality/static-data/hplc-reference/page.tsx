@@ -134,12 +134,18 @@ export default function HplcReferencePage() {
     if (statusFilter !== 'all') {
       params.ref_status = statusFilter
     }
-    const adv = advancedForm.getFieldsValue()
-    if (adv.cas_no) params.cas_no = adv.cas_no
-    if (adv.expire_start) params.expire_start = adv.expire_start
-    if (adv.expire_end) params.expire_end = adv.expire_end
+    // Only read the instance while its <Form> is mounted — see chrom-column for the
+    // full explanation. advancedForm lives behind {showAdvanced && ...}, and this
+    // useCallback runs on mount via react-query, which trips antd's
+    // "Instance created by `useForm` is not connected to any Form element" warning.
+    if (showAdvanced) {
+      const adv = advancedForm.getFieldsValue()
+      if (adv.cas_no) params.cas_no = adv.cas_no
+      if (adv.expire_start) params.expire_start = adv.expire_start
+      if (adv.expire_end) params.expire_end = adv.expire_end
+    }
     return params
-  }, [page, pageSize, searchText, statusFilter, advancedForm])
+  }, [page, pageSize, searchText, statusFilter, advancedForm, showAdvanced])
 
   const { data: queryResult, isLoading: loading, refetch: _fetchData } = useQuery({
     queryKey: ['hplc-reference-list', page, pageSize, searchText, statusFilter],
