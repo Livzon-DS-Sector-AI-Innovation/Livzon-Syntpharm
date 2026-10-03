@@ -278,7 +278,10 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 方案录入') },
   { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 检测结果') },
   { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据') },
-  { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
+  // Removed: the page was deleted (commit d1a9d2db) — it called
+  // /api/v1/quality/static-data/audit{,/modules}, which the backend never implemented,
+  // so it returned 500 on every load.
+  // { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
   // Disabled: endpoint /api/v1/ai/config not implemented (returns 404)
   // { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
   { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI交互日志') },
