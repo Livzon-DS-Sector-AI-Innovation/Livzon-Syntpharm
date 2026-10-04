@@ -28,9 +28,18 @@ check_command() {
 run_openapi() {
     log_section "OpenAPI Drift Check"
 
-    # Configure git identity for CI auto-commits
-    git config --global user.name "CI Bot" 2>/dev/null || true
-    git config --global user.email "ci@livzon-syntpharm.com" 2>/dev/null || true
+    # No git identity is configured here. The drift check only READS git state
+    # (git diff) to decide pass/fail — it never commits — so it needs no author.
+    #
+    # These two lines previously set a GLOBAL identity for an auto-commit path:
+    #
+    #     git config --global user.name  "CI Bot"
+    #     git config --global user.email "ci@livzon-syntpharm.com"
+    #
+    # That auto-commit was removed because it could never land (a91fbbdf) — the
+    # check now fails on drift instead of silently discarding the fix. The
+    # identity lines outlived it, and `--global` meant running this script on a
+    # developer machine rewrote their ~/.gitconfig for every repository on it.
 
     # Step 1: Backend — export spec and validate it matches committed openapi.json
     log_info "Exporting backend OpenAPI spec..."
