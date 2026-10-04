@@ -29,7 +29,7 @@ import {
   CaretUpFilled,
   CaretDownFilled,
 } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
+import { useHazardStore } from '@/stores/safety'
 import {
   getHazards,
   fetchHazardStats,
@@ -189,10 +189,8 @@ export default function HazardLedgerPage() {
   // ── 筛选栏滚动容器 ref ──
   const filterScrollRef = useRef<HTMLDivElement>(null)
 
-  const {
-    hazardQueryParams,
-    setHazardQueryParams,
-  } = useSafetyStore()
+  // UI state lives in the per-domain store; list data comes from React Query.
+  const { queryParams: hazardQueryParams, setQueryParams: setHazardQueryParams } = useHazardStore()
 
   // ── 活跃筛选条件 (多维表格 chip 模式) ──
   const activeFilters = useMemo(() => {
