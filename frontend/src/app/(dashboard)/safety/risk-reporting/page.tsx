@@ -1,4 +1,4 @@
-import DailyRiskReportPanelWrapper from '@/components/safety/DailyRiskReportPanelWrapper'
+import DailyRiskReportPanel from '@/components/safety/DailyRiskReportPanel'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -19,7 +19,7 @@ export default function RiskReportingPage() {
         </p>
       </div>
 
-      <DailyRiskReportPanelWrapper />
+      <DailyRiskReportPanel />
     </div>
   )
 }
