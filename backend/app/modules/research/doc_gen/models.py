@@ -42,6 +42,7 @@ class DocGenJob(BaseModel):
     __tablename__ = "doc_gen_jobs"
     __table_args__ = (
         Index("ix_research_doc_gen_jobs_status_created", "status", "created_at"),
+        Index("ix_research_doc_gen_jobs_env_status_created", "env", "status", "created_at"),
         {"schema": "research"},
     )
 
@@ -72,6 +73,11 @@ class DocGenJob(BaseModel):
         comment="所用交付物模板版本",
     )
     status: Mapped[str] = mapped_column(String(32), default="pending", comment="任务状态")
+    # 环境标签：worker 只领同标签的任务，本地与 UAT 共用一个库时互不抢任务。
+    # 取值来自部署配置 DOC_GEN_WORKER_ENV（缺省回退 APP_ENV），旧行默认 'default'。
+    env: Mapped[str] = mapped_column(
+        String(32), default="default", server_default="default", nullable=False, comment="任务环境标签"
+    )
     step: Mapped[str] = mapped_column(String(64), default="排队中", comment="当前步骤说明")
     progress: Mapped[int] = mapped_column(Integer, default=0, comment="进度百分比")
     meta: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="受控编码/版本号/品种名等元数据")
@@ -243,3 +249,52 @@ class DocGenCorpusDocument(BaseModel):
     page_count: Mapped[int] = mapped_column(Integer, comment="页数/行数估计")
     char_count: Mapped[int] = mapped_column(Integer, comment="解析字符数")
     blocks: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="解析出的文本块")
+
+
+class DocGenParseCache(BaseModel):
+    """解析结果缓存：同一份文件（内容哈希相同）跨任务复用解析产物。
+
+    解析（尤其扫描件 OCR / 视觉兜底）是整条链路里最贵的确定性步骤，而同一份资料
+    常被多个任务反复使用。键是「文件内容 SHA-256 + 解析器版本」：文件改了、或解析
+    逻辑升级（``parser_version`` 递增）缓存自然失效。属可清空的旁路数据，
+    表缺失时调用方静默降级为无缓存。
+    """
+
+    __tablename__ = "doc_gen_parse_cache"
+    __table_args__ = (
+        UniqueConstraint("content_hash", "parser_version", name="uq_research_doc_gen_parse_cache_hash_version"),
+        {"schema": "research"},
+    )
+
+    content_hash: Mapped[str] = mapped_column(String(64), comment="文件内容 SHA-256")
+    parser_version: Mapped[str] = mapped_column(
+        String(16), default="1", comment="解析器版本（行为变更时递增，旧缓存作废）"
+    )
+    file_name: Mapped[str] = mapped_column(String(500), default="", comment="原始文件名（诊断用）")
+    page_count: Mapped[int] = mapped_column(Integer, default=0, comment="页数/行数估计")
+    char_count: Mapped[int] = mapped_column(Integer, default=0, comment="解析字符数")
+    blocks: Mapped[list[Any]] = mapped_column(JSON, comment="解析出的文本块（file_id 由调用方回填）")
+    warnings: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="解析时的告警")
+    hits: Mapped[int] = mapped_column(Integer, default=0, comment="命中次数（可观测）")
+
+
+class DocGenExtractCache(BaseModel):
+    """提取结果缓存：同一「模板槽位 + 候选内容 + 提示版本」的抽取结果跨任务复用。
+
+    键 = sha256(模板 code + 槽位 key + 候选内容哈希 + 提示版本 + 模型档位)：
+    资料、模板、提示词、模型任一变化都会换键，旧结果不会被用到新场景。
+    属可清空的旁路数据，表缺失时静默降级为无缓存。
+    """
+
+    __tablename__ = "doc_gen_extract_cache"
+    __table_args__ = (
+        UniqueConstraint("cache_key", name="uq_research_doc_gen_extract_cache_key"),
+        {"schema": "research"},
+    )
+
+    cache_key: Mapped[str] = mapped_column(String(64), comment="缓存键 SHA-256")
+    slot_key: Mapped[str] = mapped_column(String(150), comment="槽位 key（诊断用）")
+    template_code: Mapped[str] = mapped_column(String(100), comment="模板 code（诊断用）")
+    state: Mapped[str] = mapped_column(String(24), comment="结果状态（诊断用）")
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, comment="SlotResult 的可序列化形态")
+    hits: Mapped[int] = mapped_column(Integer, default=0, comment="命中次数（可观测）")

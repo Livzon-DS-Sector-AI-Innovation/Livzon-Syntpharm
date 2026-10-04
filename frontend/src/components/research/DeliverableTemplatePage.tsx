@@ -113,6 +113,7 @@ export function DeliverableTemplatePage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
   const [batchUploading, setBatchUploading] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [saving, setSaving] = useState(false)
   /** 正在执行 AI 语义增强的模板 ID（同步耗时数十秒，用于按钮 loading 与防重复点击） */
   const [enrichingId, setEnrichingId] = useState<string | null>(null)
 
@@ -217,6 +218,8 @@ export function DeliverableTemplatePage() {
   }
 
   const handleSave = async () => {
+    if (saving) return
+    setSaving(true)
     try {
       const values = await form.validateFields()
       if (editingTemplate) {
@@ -235,6 +238,8 @@ export function DeliverableTemplatePage() {
         return
       }
       msgApi.error(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -598,7 +603,7 @@ export function DeliverableTemplatePage() {
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={() => void handleSave()}>
+            <Button type="primary" onClick={() => void handleSave()} loading={saving}>
               保存
             </Button>
           </Space>

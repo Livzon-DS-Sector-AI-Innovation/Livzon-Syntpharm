@@ -176,13 +176,16 @@ class DocGenAnchorCandidate(BaseModel):
     """母本里一个尚未被占用、可锚定的候选位置（人工「新增填写项」时点选）。
 
     ``anchor`` 可被前端原样回传用于建槽位，无需用户手写锚点；``context`` 给出
-    章节/表头/段落标签等线索帮助用户辨认。
+    章节/表头/段落标签等线索帮助用户辨认。``kind="table"`` 的整表候选额外携带
+    ``columns``（表头列名）与 ``header_rows``（双行表头=2），回传即可整表成槽。
     """
 
     label: str
     kind: Literal["field", "paragraph", "table", "image"]
     context: str = ""
     anchor: Anchor
+    columns: list[str] = Field(default_factory=list)
+    header_rows: int = 1
 
 
 class DocGenAnchorCandidateListResponse(BaseModel):
@@ -221,7 +224,8 @@ class DocGenAddSlotRequest(BaseModel):
 
     ``anchor``/``kind`` 由候选位置原样回传——定位是安全敏感操作，由规则扫描器产出，
     前端不手写锚点；用户只补 ``label`` 与检索语义（``query_hint``/``search_terms``/
-    ``expects``/``required``）。``kind="table"`` 会被服务层拒绝（表格槽位需列定义）。
+    ``expects``/``required``）。``kind="table"`` 需同时回传整表候选携带的 ``columns``
+    （表头列名）与 ``header_rows``（双行表头=2），列定义由服务端按顺序生成。
     """
 
     anchor: Anchor
@@ -231,6 +235,8 @@ class DocGenAddSlotRequest(BaseModel):
     required: bool = False
     query_hint: str = Field(default="", max_length=500)
     search_terms: list[str] = Field(default_factory=list)
+    columns: list[str] = Field(default_factory=list, max_length=40)
+    header_rows: int = Field(default=1, ge=1, le=3)
 
 
 class DocGenAddSlotData(BaseModel):

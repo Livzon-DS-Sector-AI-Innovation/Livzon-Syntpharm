@@ -136,13 +136,23 @@ async def list_slot_values(session: AsyncSession, job_id: uuid.UUID) -> Sequence
     return result.scalars().all()
 
 
-async def claim_next_job(session: AsyncSession, lease_seconds: int, max_concurrency: int) -> DocGenJob | None:
-    """按租约领取一个待处理任务；租约过期任务可被重新领取（重启不丢）。"""
+async def claim_next_job(
+    session: AsyncSession, lease_seconds: int, max_concurrency: int, env: str | None = None
+) -> DocGenJob | None:
+    """按租约领取一个待处理任务；租约过期任务可被重新领取（重启不丢）。
+
+    ``env`` 给定时只领同环境标签的任务——本地与 UAT 共用一个库时互不抢任务。
+    """
     now = datetime.now(UTC)
+    env_filter = () if env is None else (DocGenJob.env == env,)
     running = await session.scalar(
         select(func.count())
         .select_from(DocGenJob)
-        .where(DocGenJob.status.in_(RUNNING_STATUSES), DocGenJob.lease_expires_at > now)
+        .where(
+            DocGenJob.status.in_(RUNNING_STATUSES),
+            DocGenJob.lease_expires_at > now,
+            *env_filter,
+        )
     )
     if (running or 0) >= max_concurrency:
         return None
@@ -152,6 +162,7 @@ async def claim_next_job(session: AsyncSession, lease_seconds: int, max_concurre
         .where(
             DocGenJob.is_deleted.is_(False),
             DocGenJob.status.in_(CLAIMABLE_STATUSES) | stale_lease,
+            *env_filter,
         )
         .order_by(DocGenJob.created_at)
         .limit(1)
@@ -167,14 +178,15 @@ async def claim_next_job(session: AsyncSession, lease_seconds: int, max_concurre
     return job
 
 
-async def list_failed_jobs(session: AsyncSession, max_attempts: int) -> Sequence[DocGenJob]:
-    """列出可重试的失败任务。"""
+async def list_failed_jobs(session: AsyncSession, max_attempts: int, env: str | None = None) -> Sequence[DocGenJob]:
+    """列出可重试的失败任务（``env`` 给定时仅限同环境）。"""
     result = await session.execute(
         select(DocGenJob)
         .where(
             DocGenJob.status == "failed",
             DocGenJob.attempts < max_attempts,
             DocGenJob.is_deleted.is_(False),
+            *(() if env is None else (DocGenJob.env == env,)),
         )
         .order_by(DocGenJob.created_at)
     )
@@ -229,11 +241,14 @@ async def release_lease(session: AsyncSession, job_id: uuid.UUID) -> None:
     await session.commit()
 
 
-async def recover_stale_jobs(session: AsyncSession) -> int:
+async def recover_stale_jobs(session: AsyncSession, env: str | None = None) -> int:
     """启动恢复：把租约已失效却仍停在执行中状态的任务判为失败。
 
     worker 被热重载或 OOM 杀掉时，任务会永久停在 parsing/extracting，前端一直显示
     "提取中"，用户既等不到结果也分不清是否还在跑。启动时统一收口成失败（可重试）。
+
+    ``env`` 给定时只收口本环境的中断任务——共用一个库时，本地重启不能把 UAT
+    正在跑的任务误判为失败（反之亦然）。
     """
     now = datetime.now(UTC)
     result = await session.execute(
@@ -241,6 +256,7 @@ async def recover_stale_jobs(session: AsyncSession) -> int:
         .where(
             DocGenJob.status.in_(RUNNING_STATUSES),
             or_(DocGenJob.lease_expires_at.is_(None), DocGenJob.lease_expires_at < now),
+            *(() if env is None else (DocGenJob.env == env,)),
         )
         .values(
             status="failed",

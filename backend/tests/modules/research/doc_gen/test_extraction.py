@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.modules.research.doc_gen import gap, status
-from app.modules.research.doc_gen.extraction import RETRIEVAL_DEFAULT, RETRIEVAL_RECALL, SlotExtractor
+from app.modules.research.doc_gen.extraction import RETRIEVAL_DEFAULT, RETRIEVAL_RECALL, SlotExtractor, SlotResult
 from app.modules.research.doc_gen.parsing import TextBlock
 from app.modules.research.doc_gen.prompts import build_extract_prompt
 from app.modules.research.doc_gen.templates import get_template_spec
@@ -522,3 +522,183 @@ async def test_recall_profile_queries_kb_with_widened_terms() -> None:
     assert results["custom"].text == "Pd/C"
     assert extractor.stats.kb_hits == 1
     assert llm.calls == 1
+
+
+# ---- 引用编号复核（refs）：引用抄写不可靠时，按模型自报的资料编号救回取值 ----------------
+
+
+def test_value_in_refs_requires_valid_index_and_locatable_value() -> None:
+    """编号复核的三个边界：越界不认、空编号不认、值不在被引片段里不认。"""
+    extractor = _extractor(FakeLLM([{"slots": []}]), ["originator"])
+    pool = [{"file_id": "m1", "page": 2, "text": "原研企业：AstraZeneca AB"}]
+    assert extractor._value_in_refs(pool, [1], "AstraZeneca AB") is True
+    assert extractor._value_in_refs(pool, [2], "AstraZeneca AB") is False  # 越界
+    assert extractor._value_in_refs(pool, [], "AstraZeneca AB") is False  # 无编号
+    assert extractor._value_in_refs(pool, [1], "Bristol-Myers") is False  # 值不在被引片段
+    assert extractor._value_in_refs(None, [1], "AstraZeneca AB") is False  # 无候选池
+
+
+async def test_refs_rescue_keeps_value_when_quote_missed() -> None:
+    """引用文本编造（无法核对），但 refs 指向的候选里含该取值：保留取值并标需人工核对。
+
+    引用抄写不可靠 ≠ 值编造：模型明确指向了依据的资料编号，程序在被引片段内复核取值，
+    命中则降级 needs_verify 交人工，而不是整条打回「待补充」。
+    """
+    llm = FakeLLM(
+        [
+            {
+                "slots": [
+                    {
+                        "key": "originator",
+                        "value": "AstraZeneca AB",
+                        "found": True,
+                        "refs": list(range(1, 10)),  # 覆盖全部候选：只看编号有效性，与检索排序无关
+                        "evidence": [{"file_id": "m1", "page": 9, "quote": "原研企业：Bristol-Myers"}],
+                    }
+                ]
+            }
+        ]
+    )
+    extractor = _extractor(llm, ["originator"])
+    results = await extractor.run()
+
+    result = results["originator"]
+    assert result.state == status.STATUS_NEEDS_VERIFY
+    assert result.text == "AstraZeneca AB"
+    assert "所引资料" in result.reason
+    assert extractor.stats.refs_rescued == 1
+
+
+async def test_refs_out_of_range_does_not_rescue_fabricated_value() -> None:
+    """编号越界 + 取值在全语料中也找不到：仍按「无依据」处理，不因 refs 字段松绑。"""
+    llm = FakeLLM(
+        [
+            {
+                "slots": [
+                    {
+                        "key": "originator",
+                        "value": "Bristol-Myers",
+                        "found": True,
+                        "refs": [99],
+                        "evidence": [{"file_id": "m1", "page": 9, "quote": "原研企业：Bristol-Myers"}],
+                    }
+                ]
+            }
+        ]
+    )
+    extractor = _extractor(llm, ["originator"])
+    results = await extractor.run()
+
+    assert results["originator"].state == status.STATUS_PENDING
+    assert extractor.stats.refs_rescued == 0
+
+
+# ---- 跨任务持久缓存（DB 版）：命中即跳过模型调用 --------------------------------------
+
+
+async def test_persist_cache_hit_skips_model_call() -> None:
+    """持久缓存命中：模型一次都不调，结果直接复用（跨任务/重跑提速的关键）。"""
+    cached = SlotResult(key="originator", text="AstraZeneca AB", state=status.STATUS_OK)
+
+    class _StubCache:
+        def __init__(self) -> None:
+            self.puts: list[tuple[str, SlotResult]] = []
+
+        def key(self, slot_key: str, content_hash: str) -> str:
+            return f"{slot_key}:{content_hash}"
+
+        async def get(self, cache_key: str) -> SlotResult | None:
+            return cached
+
+        async def put(self, cache_key: str, result: SlotResult) -> None:
+            self.puts.append((cache_key, result))
+
+    stub = _StubCache()
+    llm = FakeLLM([{"slots": []}])
+    extractor = _extractor(llm, ["originator"], persist_cache=stub)
+    results = await extractor.run()
+
+    assert results["originator"] is cached
+    assert llm.calls == 0
+    assert extractor.stats.calls == 0
+    assert extractor._cache_hits == 1
+
+
+# ---- 定向补问（probe）：把槽位与它自己的候选单独再问一次 ------------------------------
+
+
+async def test_probe_recovers_value_from_own_candidates() -> None:
+    """补问用「槽位 + 自己的候选」单独问一次，模型给出可核对取值即补上。"""
+    llm = FakeLLM(
+        [
+            {
+                "slots": [
+                    {
+                        "key": "originator",
+                        "value": "AstraZeneca AB",
+                        "found": True,
+                        "confidence": 0.95,
+                        "refs": list(range(1, 10)),
+                        "evidence": [{"file_id": "m1", "page": 2, "quote": "原研企业：AstraZeneca AB"}],
+                    }
+                ]
+            }
+        ]
+    )
+    extractor = _extractor(llm, ["originator"])
+    results = await extractor.probe(list(extractor._spec.slots))
+
+    assert results["originator"].state == status.STATUS_OK
+    assert results["originator"].text == "AstraZeneca AB"
+    assert llm.calls == 1
+
+
+async def test_table_rows_without_any_evidence_downgrade_to_needs_verify() -> None:
+    """表格行既无可核对引用也无资料编号：数据照写，但整表降级为需人工核对并计数。"""
+    response = {
+        "rows": [
+            {
+                "values": {"material": "溶剂C", "cas": "999-99-9", "supplier": "某厂"},
+                "evidence": [{"file_id": "m1", "page": 5, "quote": "这段引用并不存在于资料中"}],
+            }
+        ]
+    }
+    llm = FakeLLM([response])
+    extractor = _extractor(llm, ["supplier_rows"])
+    results = await extractor.run()
+
+    result = results["supplier_rows"]
+    assert result.state == status.STATUS_NEEDS_VERIFY
+    assert "未能核对" in result.reason
+    assert result.rows and result.rows[0]["material"] == "溶剂C"  # 行不丢，只是降级
+    assert extractor.stats.table_rows_unverified == 1
+
+
+async def test_table_row_refs_can_verify_row() -> None:
+    """行只带资料编号（refs）：所引片段内能定位行值即算核对通过，保持 OK。"""
+    response = {
+        "rows": [
+            {
+                "values": {"material": "溶剂B", "cas": "110-82-7", "supplier": "某溶剂有限公司"},
+                "refs": list(range(1, 9)),  # 覆盖全部候选：只看编号有效性与定位结果
+            }
+        ]
+    }
+    llm = FakeLLM([response])
+    extractor = _extractor(llm, ["supplier_rows"])
+    results = await extractor.run()
+
+    assert results["supplier_rows"].state == status.STATUS_OK
+    assert extractor.stats.table_rows_unverified == 0
+
+
+async def test_probe_ignores_manual_only_slots() -> None:
+    """人工填写项不进补问：一个模型调用都不该发生。"""
+    llm = FakeLLM([{"slots": []}])
+    spec = get_template_spec("tech_research_report")
+    manual = [slot for slot in spec.slots if slot.manual_only]
+    assert manual  # 模板自带人工填写项，测试前提成立
+    extractor = SlotExtractor(spec.model_copy(update={"slots": manual}), BLOCKS, llm=llm)
+
+    assert await extractor.probe(manual) == {}
+    assert llm.calls == 0

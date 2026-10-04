@@ -182,6 +182,9 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "dazah-backend"
     APP_ENV: str = "development"
+    # 任务队列环境隔离标签（doc_gen_jobs.env）；留空回退 APP_ENV。
+    # 多套部署共用同一数据库时，worker 只领取 env 等于本值创建的任务。
+    DOC_GEN_WORKER_ENV: str = ""
     ENERGY_AUTO_COLLECT_ENABLED: bool = False
     ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
     ENERGY_BITABLE_SYNC_HOUR: int = 17
@@ -303,6 +306,11 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
+
+    @property
+    def doc_gen_worker_env(self) -> str:
+        """任务队列环境标签：显式配置优先，否则回退 APP_ENV。"""
+        return self.DOC_GEN_WORKER_ENV or self.APP_ENV
 
     def check(self) -> None:
         """启动时校验关键配置，避免漏配导致运行时异常。"""

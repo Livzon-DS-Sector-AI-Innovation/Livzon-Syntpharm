@@ -200,6 +200,15 @@ class KbCoverage:
     def missing_labels(self) -> list[str]:
         return [entry.label or entry.key for entry in self.entries if entry.status == COVERAGE_NO_MATERIAL]
 
+    def retryable_keys(self) -> set[str]:
+        """预检判「库里有料」的槽位 key（可填/部分可填）。
+
+        缺口闭环用它做定向：资料未命中的槽位默认不再重试（检索与宽检索兜底都已试过），
+        但预检说库里确实有料时值得再跑一轮——那更可能是首轮检索的临时问题，
+        而不是资料里真的没有。
+        """
+        return {entry.key for entry in self.entries if entry.status in (COVERAGE_FILLABLE, COVERAGE_PARTIAL)}
+
     def as_job_stats(self) -> dict[str, Any]:
         """并进 ``job.stats`` 的扁平字段（完成页/看板直接读，不用再爬嵌套结构）。"""
         return {

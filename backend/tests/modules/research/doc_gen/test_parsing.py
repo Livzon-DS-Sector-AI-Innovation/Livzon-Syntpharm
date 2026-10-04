@@ -88,12 +88,37 @@ async def test_parse_xlsx(tmp_path: Path) -> None:
     result = await parse_file(path, file_id="x1")
 
     assert result.warnings == []
-    assert all(b.kind == "sheet_row" for b in result.blocks)
-    # 空行被跳过：工艺 sheet 2 行 + 设备 sheet 1 行
-    assert [b.text for b in result.blocks] == ["参数 | 数值", "结晶温度 | 60", "设备名"]
+    # 每个 sheet 先落一行「工作表名」标题，再是数据行（全空行被跳过）
+    assert [(b.kind, b.text) for b in result.blocks] == [
+        ("heading", "【工作表：工艺】"),
+        ("sheet_row", "参数 | 数值"),
+        ("sheet_row", "结晶温度 | 60"),
+        ("heading", "【工作表：设备】"),
+        ("sheet_row", "设备名"),
+    ]
     # page 为 sheet 序号，从 1 递增
-    assert [b.page for b in result.blocks] == [1, 1, 2]
+    assert [b.page for b in result.blocks] == [1, 1, 1, 2, 2]
     assert result.page_count == 2
+
+
+async def test_parse_xlsx_keeps_empty_columns(tmp_path: Path) -> None:
+    """中间空单元格必须保留占位：否则后面的列整体前移，按列定义抽取时张冠李戴。"""
+    from openpyxl import Workbook
+
+    path = tmp_path / "gap.xlsx"
+    wb = Workbook()
+    ws = wb.active
+    assert ws is not None
+    ws.title = "处方"
+    ws.append(["名称", "规格", "备注"])
+    ws.append(["阿司匹林", None, "常温储存"])
+    ws.append(["布洛芬", "片剂", None])
+    wb.save(str(path))
+
+    result = await parse_file(path, file_id="g1")
+    rows = [b.text for b in result.blocks if b.kind == "sheet_row"]
+
+    assert rows == ["名称 | 规格 | 备注", "阿司匹林 |  | 常温储存", "布洛芬 | 片剂"]
 
 
 async def test_parse_txt(tmp_path: Path) -> None:

@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import pytest
 
+from app.modules.research.doc_gen.anchors import resolve_slot
+from app.modules.research.doc_gen.renderer import open_document
 from app.modules.research.doc_gen.spec_candidates import (
     add_slot_to_spec,
+    anchor_signature,
     generate_slot_key,
     list_anchor_candidates,
 )
@@ -45,11 +48,18 @@ def test_candidates_cover_all_positions_when_no_existing() -> None:
     assert len(signatures) == len(set(signatures)), "候选锚点不应重复"
 
 
-def test_all_positions_occupied_yields_no_candidate() -> None:
-    """把 draft 自身当作 existing：所有位置都被占用 → 候选为空。"""
+def test_all_positions_occupied_yields_no_duplicate_candidate() -> None:
+    """把 draft 自身当作 existing：草拟已识别的位置不再重复列候选。
+
+    补扫允许出现草拟「宁缺毋滥」丢弃的表格（如表头多格为空的签名表）——这正是
+    漏识别的人工出口；但任何与草拟槽位同签名的候选都是 bug。
+    """
     data = _data()
     draft = draft_spec_from_bytes(data, name="技术调研报告")
-    assert list_anchor_candidates(data, draft) == []
+    candidates = list_anchor_candidates(data, draft)
+    draft_sigs = {anchor_signature(slot.anchors[0]) for slot in draft.slots if slot.anchors}
+    assert all(anchor_signature(c.anchor) not in draft_sigs for c in candidates)
+    assert all(c.kind == "table" for c in candidates), "补扫候选只应是草拟丢弃的整表位置"
 
 
 def test_partially_occupied_filters_only_taken_positions() -> None:
@@ -137,14 +147,84 @@ def test_add_slot_rejects_empty_label() -> None:
         add_slot_to_spec(_spec(), anchor=_anchor(), label="   ")
 
 
-def test_add_slot_rejects_table_kind() -> None:
-    with pytest.raises(ValueError, match="表格类填写项"):
+def test_add_slot_accepts_table_with_columns() -> None:
+    """表格类候选可整表成槽：列定义按顺序生成 c1..cN，table_rows 锚点原样保留。"""
+    spec = _spec()
+    slot = add_slot_to_spec(
+        spec,
+        anchor=Anchor(type="table_rows", table_header=["批号", "数量"]),
+        label="批次表",
+        kind="table",
+        columns=["批号", "数量"],
+    )
+    assert slot.kind == "table"
+    assert [c.key for c in slot.columns] == ["c1", "c2"]
+    assert [c.label for c in slot.columns] == ["批号", "数量"]
+    assert slot.table is not None and slot.table.header_rows == 1
+
+
+def test_add_slot_table_uses_candidate_header_rows() -> None:
+    """双行表头候选透传 header_rows=2，渲染期数据区从第二表头行之后开始。"""
+    spec = _spec()
+    slot = add_slot_to_spec(
+        spec,
+        anchor=Anchor(type="table_rows", table_header=["纯度", "收率"]),
+        label="指标表",
+        kind="table",
+        columns=["纯度", "收率"],
+        header_rows=2,
+    )
+    assert slot.table is not None and slot.table.header_rows == 2
+
+
+def test_add_slot_rejects_table_without_columns() -> None:
+    with pytest.raises(ValueError, match="列定义"):
         add_slot_to_spec(
             _spec(),
             anchor=Anchor(type="table_rows", table_header=["批号"]),
             label="批次表",
             kind="table",
         )
+
+
+def test_add_slot_rejects_table_with_wrong_anchor() -> None:
+    with pytest.raises(ValueError, match="table_rows 锚点"):
+        add_slot_to_spec(
+            _spec(),
+            anchor=Anchor(type="paragraph_after_label", paragraph_label="批次表："),
+            label="批次表",
+            kind="table",
+            columns=["批号"],
+        )
+
+
+def test_add_slot_rejects_cell_anchor_without_guard() -> None:
+    """坐标锚点缺 guard 会被模板增删行错位填格子，必须拒绝。"""
+    with pytest.raises(ValueError, match="guard"):
+        add_slot_to_spec(
+            _spec(),
+            anchor=Anchor(type="table_cell", table_header=["批号"], row_index=1, col_index=0),
+            label="批号格",
+        )
+
+
+def test_missed_table_candidate_round_trips_to_resolvable_slot() -> None:
+    """补扫候选 → 人工成槽 → 渲染期可定位：漏识别的表格经补录后不再是死路。"""
+    data = _data()
+    draft = draft_spec_from_bytes(data, name="技术调研报告")
+    missed = [c for c in list_anchor_candidates(data, draft) if c.kind == "table"]
+    assert missed, "真实母本里草拟丢弃的待填表应被补扫成候选"
+    chosen = missed[0]
+    spec = _spec()
+    slot = add_slot_to_spec(
+        spec,
+        anchor=chosen.anchor,
+        label=chosen.label or "补录表格",
+        kind="table",
+        columns=chosen.columns,
+        header_rows=chosen.header_rows,
+    )
+    resolve_slot(open_document(data), slot)  # 定位失败会抛 AnchorUnresolvedError
 
 
 def test_add_slot_rejects_occupied_anchor() -> None:

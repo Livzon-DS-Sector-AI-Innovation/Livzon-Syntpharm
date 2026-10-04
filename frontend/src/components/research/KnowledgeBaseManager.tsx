@@ -75,6 +75,7 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
   const [creating, setCreating] = useState(false)
   const [previewDoc, setPreviewDoc] = useState<KbDocumentItem | null>(null)
   const [downloadingId, setDownloadingId] = useState<string>('')
+  const [reparsingId, setReparsingId] = useState<string>('')
   const [form] = Form.useForm<{ name?: string; description?: string }>()
 
   const { data: limits } = useQuery({
@@ -160,13 +161,16 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
   }
 
   const handleReparse = async (record: KbDocumentItem) => {
-    if (!kb) return
+    if (!kb || reparsingId) return
+    setReparsingId(record.id)
     try {
       await reparseKbDocument(kb.id, record.id)
       msgApi.success('已重新提交解析')
       invalidate()
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : '重新解析失败')
+    } finally {
+      setReparsingId('')
     }
   }
 
@@ -238,6 +242,7 @@ export function KnowledgeBaseManager({ projectId, variant, onChanged }: Props) {
             size="small"
             icon={<ReloadOutlined />}
             onClick={() => handleReparse(record)}
+            loading={reparsingId === record.id}
             disabled={!['DONE', 'FAIL', 'CANCEL'].includes(record.run)}
           >
             重新解析

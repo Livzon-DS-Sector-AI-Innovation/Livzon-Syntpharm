@@ -392,7 +392,8 @@ export async function fetchDeliverableTemplateMarkdown(templateId: string): Prom
  * 枚举母本里「还能挂」的候选锚点位置（人工新增填写项时点选）。
  *
  * 只读 GET：已被现有槽位占用的位置会被过滤；模板尚无规格时枚举全部位置。
- * 表格类候选（kind==='table'）需另配列定义，「新增填写项」暂不支持，调用方应禁用。
+ * 表格类候选（kind==='table'）自带 ``columns``/``header_rows``（列定义来自真实表头），
+ * 点选后原样回传即可整表成槽；草拟漏识别的表格与占位符单元格也会补扫进候选。
  */
 export async function fetchDeliverableTemplateAnchorCandidates(
   templateId: string,

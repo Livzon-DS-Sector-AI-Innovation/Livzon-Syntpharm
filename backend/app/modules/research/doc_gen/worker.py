@@ -2,7 +2,9 @@
 
 生成一个任务需要几分钟，而 SchedulerEngine 的主循环是串行的（放在引擎里会卡住
 其它模块的定时任务），因此按 AGENTS.md 用 register_background_worker 注册为
-长运行进程：自带轮询循环、一次只处理一个任务、租约超时后可被重新领取。
+长运行进程：自带轮询循环、按 ``DOC_GEN_MAX_CONCURRENCY`` 并发处理任务（默认 1 = 串行）、
+租约超时后可被重新领取。并发闸门在 ``repo.claim_next_job``（数据库按租约统计），
+跨进程共用库时也不会超卖。
 
 四条「卡住也必须能停下来」的保障：
 
@@ -19,7 +21,9 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
+from typing import Any
 
+from app.core.config import get_settings
 from app.modules.research.doc_gen import cancellation, pipeline
 from app.modules.research.doc_gen import repository as repo
 from app.modules.research.doc_gen.runtime_config import RuntimeConfig, load_runtime_config
@@ -31,21 +35,44 @@ WORKER_NAME = "research.doc_gen_worker"
 _stop = asyncio.Event()
 
 
-async def run_once() -> str | None:
-    """领取并执行一个任务；没有可做的任务时返回 None。"""
-    config = await load_runtime_config()
-    if not config.enabled:
-        return None
+async def _claim(config: RuntimeConfig) -> uuid.UUID | None:
+    """领取一个待处理任务，返回任务 id（没有可领的返回 None）。
+
+    并发闸门在 ``repo.claim_next_job`` 里：按「租约未过期的运行中任务数 ≥ max_concurrency」
+    拒绝领取。闸门基于数据库，因此跨进程有效（本地与 UAT 共用一个库时不会超卖模型配额）。
+    """
     from app.core.database import async_session_factory
 
     async with async_session_factory() as session:
-        job = await repo.claim_next_job(session, config.lease_seconds, config.max_concurrency)
+        job = await repo.claim_next_job(
+            session, config.lease_seconds, config.max_concurrency, env=get_settings().doc_gen_worker_env
+        )
         await session.commit()
         if job is None:
             return None
         claimed, template = job.id, job.template_code  # 出 session 后不可再访问 ORM 属性
     logger.info("开始文档生成任务", extra={"job_id": str(claimed), "template": template})
-    return await _execute_guarded(claimed, config)
+    return claimed
+
+
+async def _pump(running: set[asyncio.Task[Any]], config: RuntimeConfig) -> None:
+    """补满并发槽位：领到任务就加入 ``running``，领不到（没任务或已达闸门）就停手。"""
+    while len(running) < max(1, config.max_concurrency):
+        job_id = await _claim(config)
+        if job_id is None:
+            return
+        running.add(asyncio.create_task(_execute_guarded(job_id, config)))
+
+
+async def run_once() -> str | None:
+    """领取并执行一个任务；没有可做的任务时返回 None（单次调用入口，供测试与手动触发）。"""
+    config = await load_runtime_config()
+    if not config.enabled:
+        return None
+    job_id = await _claim(config)
+    if job_id is None:
+        return None
+    return await _execute_guarded(job_id, config)
 
 
 async def _execute_guarded(job_id: uuid.UUID, config: RuntimeConfig) -> str:
@@ -91,29 +118,56 @@ async def _recover_on_startup() -> None:
 
     try:
         async with async_session_factory() as session:
-            count = await repo.recover_stale_jobs(session)
+            count = await repo.recover_stale_jobs(session, env=get_settings().doc_gen_worker_env)
         if count:
             logger.warning("文档生成 worker 启动恢复完成", extra={"recovered": count})
     except Exception:  # noqa: BLE001 - 恢复失败不能阻塞 worker 启动
         logger.exception("文档生成 worker 启动恢复失败")
 
 
+async def _sleep_or_stop(seconds: float) -> None:
+    """睡一会，或提前被停止信号唤醒。"""
+    try:
+        await asyncio.wait_for(_stop.wait(), timeout=seconds)
+    except TimeoutError:
+        pass
+
+
 async def _loop() -> None:
-    """轮询循环（单实例内串行，模型部署吞吐未知，先不做并发）。"""
+    """并发轮询循环：按 ``DOC_GEN_MAX_CONCURRENCY`` 同时处理多个任务（默认 1 = 串行）。
+
+    并发闸门在领取处（``repo.claim_next_job`` 按「租约未过期的运行中任务数」统计），因此
+    单实例内不会超过配置的并发数，多进程/多环境共用库时也由闸门统一裁决、不会重复领取。
+    """
     await _recover_on_startup()
     logger.info("文档生成 worker 已启动")
+    running: set[asyncio.Task[Any]] = set()
     while not _stop.is_set():
         try:
-            handled = await run_once()
+            config = await load_runtime_config()
+            if not config.enabled:
+                await _sleep_or_stop(5)
+                continue
+            await _pump(running, config)
         except Exception:  # noqa: BLE001 - 循环内必须吞异常，否则整个后台任务崩溃
-            handled = None
             logger.exception("文档生成 worker 轮询异常")
-        if handled is None:
-            try:
-                await asyncio.wait_for(_stop.wait(), timeout=5)
-            except TimeoutError:
-                pass
+        if not running:
+            await _sleep_or_stop(5)
             continue
+        done, pending = await asyncio.wait(running, timeout=5, return_when=asyncio.FIRST_COMPLETED)
+        running = pending
+        for task in done:
+            if task.cancelled():
+                continue
+            error = task.exception()
+            if error is not None:  # _execute_guarded 内部已兜底，这里只记录未预期异常
+                logger.error("文档生成任务执行异常", exc_info=error)
+    if running:
+        # 关停：任务体已被 stop() 的 abort_all 通知，这里等它们收尾（超时兜底）
+        try:
+            await asyncio.wait_for(asyncio.gather(*running, return_exceptions=True), timeout=30)
+        except TimeoutError:
+            logger.warning("文档生成 worker 关停等待超时，仍有任务在收尾")
 
 
 async def stop() -> None:
