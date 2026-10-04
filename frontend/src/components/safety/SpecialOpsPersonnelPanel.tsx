@@ -7,7 +7,8 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSpecialOpsPersonnelStore } from '@/stores/safety'
 import { T } from './sharedStyles'
 import { getPersonnelList, createPersonnel, updatePersonnel, deletePersonnel } from '@/actions/safety'
 import type { SpecialOperationPersonnel, SpecialOperationPersonnelFormData } from '@/types/safety'
@@ -23,35 +24,41 @@ export default function SpecialOpsPersonnelPanel() {
   const { message, modal } = App.useApp()
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [editingRecord, setEditingRecord] = useState<SpecialOperationPersonnel | null>(null)
   const [searchText, setSearchText] = useState('')
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [certTypeFilter, setCertTypeFilter] = useState<string | undefined>()
 
+  // UI state lives in the per-domain store; list data comes from React Query.
   const {
-    personnel, personnelTotal, personnelQueryParams,
-    setPersonnel, setPersonnelTotal, setPersonnelQueryParams,
-    addPersonnel, updatePersonnel: updateInStore, removePersonnel,
-  } = useSafetyStore()
+    queryParams: personnelQueryParams,
+    setQueryParams: setPersonnelQueryParams,
+  } = useSpecialOpsPersonnelStore()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const queryClient = useQueryClient()
+
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-special-ops-personnel', personnelQueryParams, statusFilter, certTypeFilter, searchText],
+    queryFn: async () => {
       const response = await getPersonnelList({
         ...personnelQueryParams,
         status: statusFilter, certificate_type: certTypeFilter, keyword: searchText || undefined,
       })
       if (response.code === 200) {
-        setPersonnel(response.data)
-        setPersonnelTotal(response.meta?.total || 0)
+        return { data: (response.data ?? []) as SpecialOperationPersonnel[], total: response.meta?.total || 0 }
       }
-    } catch { message.error('加载人员列表失败') }
-    finally { setLoading(false) }
-  }
+      return { data: [] as SpecialOperationPersonnel[], total: 0 }
+    },
+  })
 
-  const handleSearch = () => { setPersonnelQueryParams({ page: 1 }); loadData() }
+  const personnel = queryData?.data ?? []
+  const personnelTotal = queryData?.total ?? 0
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['safety-special-ops-personnel'] })
+
+  const handleSearch = () => { setPersonnelQueryParams({ page: 1 }); refetch() }
 
   const handleAdd = () => { setEditingRecord(null); form.resetFields(); setModalVisible(true) }
 
@@ -70,7 +77,7 @@ export default function SpecialOpsPersonnelPanel() {
       title: '确认删除', content: '确定要删除该人员记录吗？',
       onOk: async () => {
         const r = await deletePersonnel(id)
-        if (r.code === 200) { message.success('已删除'); removePersonnel(id) }
+        if (r.code === 200) { message.success('已删除'); invalidate() }
         else { message.error(r.message || '删除失败') }
       },
     })
@@ -86,11 +93,11 @@ export default function SpecialOpsPersonnelPanel() {
       }
       if (editingRecord) {
         const r = await updatePersonnel(editingRecord.id, formatted)
-        if (r.code === 200) { message.success('已更新'); updateInStore(editingRecord.id, r.data); setModalVisible(false) }
+        if (r.code === 200) { message.success('已更新'); invalidate(); setModalVisible(false) }
         else { message.error(r.message || '更新失败') }
       } else {
         const r = await createPersonnel(formatted as SpecialOperationPersonnelFormData)
-        if (r.code === 200) { message.success('已创建'); addPersonnel(r.data); setModalVisible(false); form.resetFields() }
+        if (r.code === 200) { message.success('已创建'); invalidate(); setModalVisible(false); form.resetFields() }
         else { message.error(r.message || '创建失败') }
       }
     } catch { /* validation */ }
@@ -166,7 +173,7 @@ export default function SpecialOpsPersonnelPanel() {
         </Row>
 
         <Table<SpecialOperationPersonnel>
-          columns={columns} dataSource={personnel} rowKey="id" loading={loading} scroll={{ x: 1100 }}
+          columns={columns} dataSource={personnel} rowKey="id" loading={isLoading} scroll={{ x: 1100 }}
           pagination={{
             current: personnelQueryParams.page, pageSize: personnelQueryParams.page_size, total: personnelTotal,
             showSizeChanger: true, showTotal: t => `共 ${t} 条`,
