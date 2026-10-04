@@ -25,7 +25,8 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined
 } from '@ant-design/icons'
-import { useSafetyStore } from '@/stores/safety'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useDailyRiskReportStore } from '@/stores/safety'
 import {
   getDailyRiskReports,
   createDailyRiskReport,
@@ -52,7 +53,6 @@ export default function DailyRiskReportPanel() {
   const { message, modal } = App.useApp()
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
-  const [loading, setLoading] = useState(false)
   const [modalVisible, setModalVisible] = useState(false)
   const [rejectVisible, setRejectVisible] = useState(false)
   const [rejectId, setRejectId] = useState<string>('')
@@ -62,21 +62,17 @@ export default function DailyRiskReportPanel() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [deptFilter, setDeptFilter] = useState<string | undefined>()
 
+  // UI state lives in the per-domain store; list data comes from React Query.
   const {
-    dailyRiskReports,
-    dailyRiskReportTotal,
-    dailyRiskReportQueryParams,
-    setDailyRiskReports,
-    setDailyRiskReportTotal,
-    setDailyRiskReportQueryParams,
-    addDailyRiskReport,
-    updateDailyRiskReport: updateInStore,
-    removeDailyRiskReport
-  } = useSafetyStore()
+    queryParams: dailyRiskReportQueryParams,
+    setQueryParams: setDailyRiskReportQueryParams
+  } = useDailyRiskReportStore()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const queryClient = useQueryClient()
+
+  const { data: queryData, isLoading, refetch } = useQuery({
+    queryKey: ['safety-daily-risk-reports', dailyRiskReportQueryParams, statusFilter, deptFilter, searchText],
+    queryFn: async () => {
       const response = await getDailyRiskReports({
         ...dailyRiskReportQueryParams,
         status: statusFilter,
@@ -84,19 +80,21 @@ export default function DailyRiskReportPanel() {
         keyword: searchText || undefined
       })
       if (response.code === 200) {
-        setDailyRiskReports(response.data as DailyRiskReport[])
-        setDailyRiskReportTotal(response.meta?.total || 0)
+        return { data: (response.data ?? []) as DailyRiskReport[], total: response.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载每日风险作业报备列表失败')
-    } finally {
-      setLoading(false)
+      return { data: [] as DailyRiskReport[], total: 0 }
     }
-  }
+  })
+
+  const dailyRiskReports = queryData?.data ?? []
+  const dailyRiskReportTotal = queryData?.total ?? 0
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: ['safety-daily-risk-reports'] })
 
   const handleSearch = () => {
     setDailyRiskReportQueryParams({ page: 1 })
-    loadData()
+    refetch()
   }
 
   const handleAdd = () => {
@@ -128,7 +126,7 @@ export default function DailyRiskReportPanel() {
       content: '确定要删除该每日风险作业报备吗？',
       onOk: async () => {
         const response = await deleteDailyRiskReport(id)
-        if (response.code === 200) { message.success('删除成功'); removeDailyRiskReport(id) }
+        if (response.code === 200) { message.success('删除成功'); invalidate() }
         else { message.error(response.message || '删除失败') }
       }
     })
@@ -147,11 +145,11 @@ export default function DailyRiskReportPanel() {
 
       if (editingRecord) {
         const response = await updateDailyRiskReport(editingRecord.id, formattedValues)
-        if (response.code === 200) { message.success('更新成功'); updateInStore(editingRecord.id, response.data as DailyRiskReport); setModalVisible(false) }
+        if (response.code === 200) { message.success('更新成功'); invalidate(); setModalVisible(false) }
         else { message.error(response.message || '更新失败') }
       } else {
         const response = await createDailyRiskReport(formattedValues as DailyRiskReportFormData)
-        if (response.code === 200) { message.success('创建成功'); addDailyRiskReport(response.data as DailyRiskReport); setModalVisible(false); form.resetFields() }
+        if (response.code === 200) { message.success('创建成功'); invalidate(); setModalVisible(false); form.resetFields() }
         else { message.error(response.message || '创建失败') }
       }
     } catch { message.warning('表单验证失败，请检查填写内容') }
@@ -159,13 +157,13 @@ export default function DailyRiskReportPanel() {
 
   const handleSubmitFlow = async (id: string) => {
     const response = await submitDailyRiskReport(id)
-    if (response.code === 200) { message.success('已提交'); updateInStore(id, response.data as DailyRiskReport) }
+    if (response.code === 200) { message.success('已提交'); invalidate() }
     else { message.error(response.message || '提交失败') }
   }
 
   const handleApprove = async (id: string) => {
     const response = await approveDailyRiskReport(id)
-    if (response.code === 200) { message.success('已审批'); updateInStore(id, response.data as DailyRiskReport) }
+    if (response.code === 200) { message.success('已审批'); invalidate() }
     else { message.error(response.message || '审批失败') }
   }
 
@@ -178,7 +176,7 @@ export default function DailyRiskReportPanel() {
   const handleRejectConfirm = async () => {
     if (!rejectReason.trim()) { message.error('请填写驳回原因'); return }
     const response = await rejectDailyRiskReport(rejectId, rejectReason)
-    if (response.code === 200) { message.success('已驳回'); updateInStore(rejectId, response.data as DailyRiskReport); setRejectVisible(false) }
+    if (response.code === 200) { message.success('已驳回'); invalidate(); setRejectVisible(false) }
     else { message.error(response.message || '驳回失败') }
   }
 
@@ -344,7 +342,7 @@ export default function DailyRiskReportPanel() {
         </Col>
       </Row>
 
-      <Table columns={columns} dataSource={dailyRiskReports} rowKey="id" loading={loading} scroll={{ x: 1100 }}
+      <Table columns={columns} dataSource={dailyRiskReports} rowKey="id" loading={isLoading} scroll={{ x: 1100 }}
         pagination={{
           current: dailyRiskReportQueryParams.page, pageSize: dailyRiskReportQueryParams.page_size, total: dailyRiskReportTotal,
           showSizeChanger: true, showTotal: t => `共 ${t} 条`,
