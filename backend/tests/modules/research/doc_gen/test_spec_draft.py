@@ -11,7 +11,7 @@ from app.modules.research.doc_gen.anchors import AnchorUnresolvedError, resolve_
 from app.modules.research.doc_gen.renderer import open_document
 from app.modules.research.doc_gen.service import MIN_ANCHOR_HIT_RATIO, probe_template_match
 from app.modules.research.doc_gen.spec_draft import draft_spec_from_bytes, summarize_spec
-from app.modules.research.doc_gen.template_spec import TEMPLATE_DIR, TemplateSpec
+from app.modules.research.doc_gen.template_spec import TEMPLATE_DIR, Slot, TemplateSpec
 
 ASSET = TEMPLATE_DIR / "tech_research_report.dotx"
 
@@ -39,7 +39,7 @@ def _table_doc(header_rows: list[list[str]], data_rows: list[list[str]]) -> byte
     return buffer.getvalue()
 
 
-def _tables(spec: TemplateSpec) -> list:
+def _tables(spec: TemplateSpec) -> list[Slot]:
     return [slot for slot in spec.slots if slot.kind == "table"]
 
 

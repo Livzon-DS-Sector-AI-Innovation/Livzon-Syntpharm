@@ -10,9 +10,10 @@ from __future__ import annotations
 import asyncio
 import types
 import uuid
-from typing import Any
+from typing import Any, cast
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.research.doc_gen import pipeline
 from app.modules.research.doc_gen.models import DocGenJob
@@ -29,6 +30,10 @@ class FakeSession:
 
     async def commit(self) -> None:
         self.commits += 1
+
+    def as_session(self) -> AsyncSession:
+        """被测函数签名要求 AsyncSession；这里只用到 commit，类型断言后传入。"""
+        return cast(AsyncSession, self)
 
 
 def _ctx() -> pipeline.JobContext:
@@ -50,7 +55,7 @@ async def test_file_analysis_skipped_without_task_files(monkeypatch: pytest.Monk
     session = FakeSession()
     ctx = _ctx()
 
-    await pipeline._file_analysis_stage(session, ctx, RuntimeConfig(file_analysis_enabled=True))
+    await pipeline._file_analysis_stage(session.as_session(), ctx, RuntimeConfig(file_analysis_enabled=True))
 
     assert called == []
     assert session.commits == 0  # 连状态写都不做
@@ -106,14 +111,14 @@ async def test_fact_extract_limit_follows_background_enrich(monkeypatch: pytest.
     monkeypatch.setattr(pipeline, "resolve_model", _resolve)
 
     await pipeline._fact_extract_stage(
-        FakeSession(),
+        FakeSession().as_session(),
         _ctx(),
         RuntimeConfig(kb_background_enrich_enabled=True, inline_fact_max_chunks=60, fact_extract_max_chunks=200),
     )
     assert captured["max_chunks"] == 60
 
     await pipeline._fact_extract_stage(
-        FakeSession(),
+        FakeSession().as_session(),
         _ctx(),
         RuntimeConfig(kb_background_enrich_enabled=False, inline_fact_max_chunks=60, fact_extract_max_chunks=200),
     )

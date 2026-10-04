@@ -14,6 +14,7 @@ from typing import Any
 import pytest
 
 from app.core.exceptions import BadRequestException
+from app.modules.research import repository as research_repository
 from app.modules.research import service as research_service
 from app.modules.research.doc_gen import repository
 from app.modules.research.doc_gen import service as doc_gen_service
@@ -130,7 +131,7 @@ async def test_delete_report_cascades_cancel(monkeypatch: pytest.MonkeyPatch) ->
 
     db = _CaptureSession([])
     monkeypatch.setattr(doc_gen_service, "cancel_jobs_of_report", _fake_cancel_jobs)
-    monkeypatch.setattr(research_service.repo, "delete_report", _fake_repo_delete)
+    monkeypatch.setattr(research_repository, "delete_report", _fake_repo_delete)
 
     await research_service.delete_report(db, report_id)  # type: ignore[arg-type]
     assert calls == [f"cancel:{report_id}", f"delete:{report_id}"]
