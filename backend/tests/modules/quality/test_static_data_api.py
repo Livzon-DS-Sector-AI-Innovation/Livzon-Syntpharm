@@ -116,6 +116,39 @@ async def test_endpoints_require_auth(anonymous_client: AsyncClient, method: str
     assert response.status_code == 401, f"{method} {path} returned {response.status_code} without a token; expected 401"
 
 
+async def test_unknown_dictionary_returns_404(auth_client: AsyncClient) -> None:
+    """A read for something that does not exist answers 404.
+
+    Deliberately uses the dictionary route rather than a by-id one: the by-id routes
+    declare `id: int` against a uuid primary key, so they fail on a Postgres cast
+    before reaching their not-found branch. That defect is tracked separately; this
+    test pins the status-code contract on a route that can actually reach it.
+
+    Before this, the route returned HTTP 200 carrying `code: 404` in the body, so a
+    client checking the status code saw success.
+    """
+    response = await auth_client.get(f"{BASE}/dict/definitely_not_a_dict_type")
+
+    assert response.status_code == 404, (
+        f"expected 404 for an unknown dictionary type, got {response.status_code}: {response.text}"
+    )
+
+
+async def test_duplicate_create_returns_400(auth_client: AsyncClient) -> None:
+    """A write the service rejects answers 400.
+
+    The service raises `ValueError` for a duplicate reference code. That was caught and
+    returned as `code: 400` inside a 200, so the failure was invisible to the caller.
+    """
+    body = {"ref_code": f"REF-{uuid.uuid4().hex[:8]}", "ref_name": "重复校验"}
+
+    first = await auth_client.post(f"{BASE}/hplc-reference", json=body)
+    assert first.status_code == 200, first.text
+
+    duplicate = await auth_client.post(f"{BASE}/hplc-reference", json=body)
+    assert duplicate.status_code == 400, f"expected 400 for a duplicate, got {duplicate.status_code}: {duplicate.text}"
+
+
 async def _create_hplc_reference(auth_client: AsyncClient, extra: dict | None = None) -> dict:
     code = f"REF-{uuid.uuid4().hex[:8]}"
     body = {"ref_code": code, "ref_name": "对照品测试", **(extra or {})}
