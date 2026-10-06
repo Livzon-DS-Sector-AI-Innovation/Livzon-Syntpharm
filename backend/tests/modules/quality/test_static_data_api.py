@@ -69,6 +69,53 @@ async def test_response_exposes_the_shared_audit_columns(auth_client: AsyncClien
         assert legacy not in data, f"legacy column {legacy} still exposed"
 
 
+# Every route in the module that requires authentication, so a future edit cannot
+# quietly drop the dependency. `AGENTS.md:166` allows a null user only on endpoints
+# explicitly marked public, and none of these are.
+#
+# Nineteen gained `current_user: RequiredUser` in #96. The twentieth,
+# `POST /hplc-reference/{id}/use`, already had it — asserted here too, because the
+# point is the requirement rather than the diff.
+#
+# Routes authenticating via `Depends(_user_id)` are not listed: that helper takes
+# `RequiredUser` itself, so they sit behind the same gate.
+UNAUTHENTICATED_ROUTES = [
+    ("GET", f"{BASE}/dict/nonexistent_dict"),  # /dict/{dict_type}
+    ("GET", f"{BASE}/storage-condition/options"),  # /storage-condition/options
+    ("GET", f"{BASE}/unit/options"),  # /unit/options
+    ("GET", f"{BASE}/hplc-reference/template"),  # /hplc-reference/template
+    ("GET", f"{BASE}/hplc-reference"),  # /hplc-reference
+    ("GET", f"{BASE}/hplc-reference/need-recal"),  # /hplc-reference/need-recal
+    ("GET", f"{BASE}/hplc-reference/1"),  # /hplc-reference/{id}
+    ("DELETE", f"{BASE}/hplc-reference/1"),  # /hplc-reference/{id}
+    ("POST", f"{BASE}/hplc-reference/1/use"),  # /hplc-reference/{id}/use
+    ("GET", f"{BASE}/hplc-reference/1/usage-history"),  # /hplc-reference/{id}/usage-history
+    ("GET", f"{BASE}/chrom-column"),  # /chrom-column
+    ("GET", f"{BASE}/chrom-column/template"),  # /chrom-column/template
+    ("GET", f"{BASE}/chrom-column/1"),  # /chrom-column/{id}
+    ("DELETE", f"{BASE}/chrom-column/1"),  # /chrom-column/{id}
+    ("GET", f"{BASE}/medium"),  # /medium
+    ("GET", f"{BASE}/medium/1"),  # /medium/{id}
+    ("GET", f"{BASE}/standard"),  # /standard
+    ("GET", f"{BASE}/standard/1"),  # /standard/{id}
+    ("GET", f"{BASE}/storage-condition"),  # /storage-condition
+    ("GET", f"{BASE}/storage-condition/1"),  # /storage-condition/{id}
+]
+
+
+@pytest.mark.parametrize(("method", "path"), UNAUTHENTICATED_ROUTES)
+async def test_endpoints_require_auth(anonymous_client: AsyncClient, method: str, path: str) -> None:
+    """A request with no token is rejected, rather than served.
+
+    Before this, these routes declared no user dependency at all, so they were
+    reachable without authenticating — including the DELETE. This asserts the
+    gate exists; it does not care which status the framework picks beyond 401.
+    """
+    response = await anonymous_client.request(method, path)
+
+    assert response.status_code == 401, f"{method} {path} returned {response.status_code} without a token; expected 401"
+
+
 async def _create_hplc_reference(auth_client: AsyncClient, extra: dict | None = None) -> dict:
     code = f"REF-{uuid.uuid4().hex[:8]}"
     body = {"ref_code": code, "ref_name": "对照品测试", **(extra or {})}

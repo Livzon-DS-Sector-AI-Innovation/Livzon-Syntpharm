@@ -68117,6 +68117,22 @@
               "type": "string",
               "title": "Dict Type"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -68152,6 +68168,24 @@
         "summary": "Get storage condition options",
         "description": "Get storage condition options for dropdown selection",
         "operationId": "get_storage_condition_options_api_v1_quality_static_data_storage_condition_options_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68159,6 +68193,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Storage Condition Options Api V1 Quality Static Data Storage Condition Options Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68175,6 +68219,24 @@
         "summary": "Get unit options",
         "description": "Get unit options for dropdown selection",
         "operationId": "get_unit_options_api_v1_quality_static_data_unit_options_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68182,6 +68244,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Unit Options Api V1 Quality Static Data Unit Options Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68198,6 +68270,24 @@
         "summary": "Download HPLC reference template",
         "description": "Download Excel template for HPLC reference substance import",
         "operationId": "download_hplc_reference_template_api_v1_quality_static_data_hplc_reference_template_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68205,6 +68295,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Download Hplc Reference Template Api V1 Quality Static Data Hplc Reference Template Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68394,6 +68494,22 @@
               "title": "Has Coa"
             },
             "description": "Has COA"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -68487,6 +68603,24 @@
         "summary": "\u67e5\u8be2\u9700\u8981\u590d\u6807\u7684\u5bf9\u7167\u54c1",
         "description": "\u67e5\u8be2\u5269\u4f59\u91cf\u4f4e\u4e8e\u590d\u6807\u9608\u503c\u3001\u9700\u8981\u590d\u6807\u7684\u5bf9\u7167\u54c1\u5217\u8868",
         "operationId": "get_api_v1_quality_static_data_hplc_reference_need_recal_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68494,6 +68628,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Quality Static Data Hplc Reference Need Recal Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68517,6 +68661,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -68625,6 +68785,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -68832,6 +69008,22 @@
               "default": 20,
               "title": "Page Size"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -68997,6 +69189,22 @@
               "title": "Column Category"
             },
             "description": "Category: 0-HPLC 1-GC"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69090,6 +69298,24 @@
         "summary": "Download chromatography column template",
         "description": "Download Excel template for chromatography column import",
         "operationId": "download_chrom_column_template_api_v1_quality_static_data_chrom_column_template_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -69097,6 +69323,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Download Chrom Column Template Api V1 Quality Static Data Chrom Column Template Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -69181,6 +69417,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69289,6 +69541,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69514,6 +69782,22 @@
               "title": "Status"
             },
             "description": "Status: 0-active 1-inactive"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69614,6 +69898,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69955,6 +70255,22 @@
               "title": "Std Status"
             },
             "description": "Status: 0-active 1-used_up 2-expired 3-scrapped"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70055,6 +70371,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -70360,6 +70692,22 @@
               "title": "Status"
             },
             "description": "Status: 0-enabled 1-disabled"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70460,6 +70808,22 @@
             "schema": {
               "type": "integer",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],

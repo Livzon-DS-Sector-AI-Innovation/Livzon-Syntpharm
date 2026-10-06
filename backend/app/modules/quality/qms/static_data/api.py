@@ -140,7 +140,7 @@ DICT_OPTIONS = {
 
 
 @router.get("/dict/{dict_type}", summary="Get dictionary options by type")
-async def get_dict_options(dict_type: str) -> Any:
+async def get_dict_options(current_user: RequiredUser, dict_type: str) -> Any:
     """Get dictionary options - returns hardcoded options for various dict types"""
     if dict_type in DICT_OPTIONS:
         return DataApiResponse(data=DICT_OPTIONS[dict_type])
@@ -148,7 +148,7 @@ async def get_dict_options(dict_type: str) -> Any:
 
 
 @router.get("/storage-condition/options", summary="Get storage condition options")
-async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_storage_condition_options(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
     """Get storage condition options for dropdown selection"""
     from sqlalchemy import and_, select
 
@@ -164,7 +164,7 @@ async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> A
 
 
 @router.get("/unit/options", summary="Get unit options")
-async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_unit_options(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
     """Get unit options for dropdown selection"""
     from sqlalchemy import and_, select
 
@@ -179,7 +179,7 @@ async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
 
 
 @router.get("/hplc-reference/template", summary="Download HPLC reference template")
-async def download_hplc_reference_template() -> Any:
+async def download_hplc_reference_template(current_user: RequiredUser) -> Any:
     """Download Excel template for HPLC reference substance import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -378,6 +378,7 @@ async def handler(
 
 @router.get("/hplc-reference", summary="List HPLC reference substances")
 async def get(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     ref_code: str | None = Query(None, description="Reference code"),
@@ -405,6 +406,7 @@ async def get(
 
 @router.get("/hplc-reference/need-recal", summary="查询需要复标的对照品")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
@@ -418,6 +420,7 @@ async def get(  # noqa: F811
 
 @router.get("/hplc-reference/{id}", summary="Get HPLC reference substance by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -462,6 +465,7 @@ async def put(
 
 @router.delete("/hplc-reference/{id}", summary="Delete HPLC reference substance")
 async def delete(
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -528,6 +532,7 @@ async def post(  # noqa: F811
 
 @router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
@@ -547,6 +552,7 @@ async def get(  # noqa: F811
 
 @router.get("/chrom-column", summary="List chromatography columns")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     col_code: str | None = Query(None, description="Column code"),
@@ -575,7 +581,7 @@ async def get(  # noqa: F811
 
 
 @router.get("/chrom-column/template", summary="Download chromatography column template")
-async def download_chrom_column_template() -> Any:
+async def download_chrom_column_template(current_user: RequiredUser) -> Any:
     """Download Excel template for chromatography column import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -879,6 +885,7 @@ async def handler(  # noqa: F811
 
 @router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -923,6 +930,7 @@ async def put(  # noqa: F811
 
 @router.delete("/chrom-column/{id}", summary="Delete chromatography column")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -953,6 +961,7 @@ async def handler(  # noqa: F811
 
 @router.get("/medium", summary="List medium")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     medium_code: str | None = Query(None, description="Medium code"),
@@ -982,6 +991,7 @@ async def get(  # noqa: F811
 
 @router.get("/medium/{id}", summary="Get medium by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -1050,6 +1060,7 @@ async def post(  # noqa: F811
 
 @router.get("/standard", summary="List standards")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     std_code: str | None = Query(None, description="Standard code"),
@@ -1077,6 +1088,7 @@ async def get(  # noqa: F811
 
 @router.get("/standard/{id}", summary="Get standard by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -1145,6 +1157,7 @@ async def post(  # noqa: F811
 
 @router.get("/storage-condition", summary="List storage conditions")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     cond_code: str | None = Query(None, description="Condition code"),
@@ -1168,6 +1181,7 @@ async def get(  # noqa: F811
 
 @router.get("/storage-condition/{id}", summary="Get storage condition by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     id: int,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
