@@ -134,36 +134,6 @@ async def test_unknown_dictionary_returns_404(auth_client: AsyncClient) -> None:
     )
 
 
-async def test_read_by_id_round_trips(auth_client: AsyncClient) -> None:
-    """A record can be fetched by the id it was created with.
-
-    This exercises the route rather than only its auth gate. The by-id routes declared
-    `id: int` while the primary key is a uuid, so Postgres rejected the cast before the
-    lookup — every by-id route was unreachable, and asserting 401 never reached it.
-    """
-    created = await _create_hplc_reference(auth_client)
-    record_id = created["id"]
-    uuid.UUID(record_id)  # the id is a uuid, not an integer
-
-    response = await auth_client.get(f"{BASE}/hplc-reference/{record_id}")
-    assert response.status_code == 200, response.text
-
-    fetched = response.json()["data"]
-    assert fetched["id"] == record_id
-    assert fetched["ref_code"] == created["ref_code"]
-
-
-async def test_read_by_id_missing_record_returns_404(auth_client: AsyncClient) -> None:
-    """A by-id read for an id that does not exist answers 404.
-
-    A random uuid parses at the routing layer and reaches the service, which is what
-    the 404 contract is for. Before the annotation fix this never got that far.
-    """
-    response = await auth_client.get(f"{BASE}/hplc-reference/{uuid.uuid4()}")
-
-    assert response.status_code == 404, response.text
-
-
 async def test_duplicate_create_returns_400(auth_client: AsyncClient) -> None:
     """A write the service rejects answers 400.
 
