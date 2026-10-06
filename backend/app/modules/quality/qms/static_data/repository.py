@@ -68,7 +68,7 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_hplc_reference(self, id: int) -> HplcReference | None:
+    async def get_hplc_reference(self, id: UUID) -> HplcReference | None:
         """Get single HPLC reference substance by ID"""
         result = await self.db.execute(
             select(HplcReference).where(and_(HplcReference.id == id, HplcReference.is_deleted.is_(False)))
@@ -98,7 +98,7 @@ class StaticDataRepository:
         # 阈值 > 0 且剩余量 <= 阈值 时标记需要复标；否则清除标记
         obj.need_recal = threshold > 0 and remaining <= threshold
 
-    async def update_hplc_reference(self, id: int, data: dict[str, Any]) -> HplcReference | None:
+    async def update_hplc_reference(self, id: UUID, data: dict[str, Any]) -> HplcReference | None:
         """Update HPLC reference substance"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -112,7 +112,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_hplc_reference(self, id: int) -> bool:
+    async def delete_hplc_reference(self, id: UUID) -> bool:
         """Soft delete HPLC reference substance"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -121,7 +121,7 @@ class StaticDataRepository:
         await self.db.flush()
         return True
 
-    async def adjust_hplc_reference_quantity(self, id: int, quantity_change: int) -> HplcReference | None:
+    async def adjust_hplc_reference_quantity(self, id: UUID, quantity_change: int) -> HplcReference | None:
         """Adjust HPLC reference quantity (positive = in, negative = out)"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -139,7 +139,7 @@ class StaticDataRepository:
 
     async def use_hplc_reference(
         self,
-        id: int,
+        id: UUID,
         usage_amount: float,
         usage_unit: str,
         usage_person: str | None,
@@ -273,7 +273,7 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_chrom_column(self, id: int) -> ChromColumn | None:
+    async def get_chrom_column(self, id: UUID) -> ChromColumn | None:
         """Get single chromatography column by ID"""
         result = await self.db.execute(
             select(ChromColumn).where(and_(ChromColumn.id == id, ChromColumn.is_deleted.is_(False)))
@@ -295,7 +295,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_chrom_column(self, id: int, data: dict[str, Any]) -> ChromColumn | None:
+    async def update_chrom_column(self, id: UUID, data: dict[str, Any]) -> ChromColumn | None:
         """Update chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
@@ -307,7 +307,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_chrom_column(self, id: int) -> bool:
+    async def delete_chrom_column(self, id: UUID) -> bool:
         """Soft delete chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
@@ -316,7 +316,7 @@ class StaticDataRepository:
         await self.db.flush()
         return True
 
-    async def increment_chrom_column_usage(self, id: int) -> ChromColumn | None:
+    async def increment_chrom_column_usage(self, id: UUID) -> ChromColumn | None:
         """Increment usage count of a chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
@@ -372,7 +372,7 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_medium(self, id: int) -> Medium | None:
+    async def get_medium(self, id: UUID) -> Medium | None:
         """Get single medium by ID"""
         result = await self.db.execute(select(Medium).where(and_(Medium.id == id, Medium.is_deleted.is_(False))))
         return result.scalar_one_or_none()
@@ -392,7 +392,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_medium(self, id: int, data: dict[str, Any]) -> Medium | None:
+    async def update_medium(self, id: UUID, data: dict[str, Any]) -> Medium | None:
         """Update medium"""
         obj = await self.get_medium(id)
         if not obj:
@@ -404,7 +404,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_medium(self, id: int) -> bool:
+    async def delete_medium(self, id: UUID) -> bool:
         """Soft delete medium"""
         obj = await self.get_medium(id)
         if not obj:
@@ -413,7 +413,7 @@ class StaticDataRepository:
         await self.db.flush()
         return True
 
-    async def adjust_medium_stock(self, id: int, quantity: int) -> Medium | None:
+    async def adjust_medium_stock(self, id: UUID, quantity: int) -> Medium | None:
         """Adjust medium stock quantity"""
         obj = await self.get_medium(id)
         if not obj:
@@ -467,7 +467,7 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_standard(self, id: int) -> Standard | None:
+    async def get_standard(self, id: UUID) -> Standard | None:
         """Get single standard by ID"""
         result = await self.db.execute(select(Standard).where(and_(Standard.id == id, Standard.is_deleted.is_(False))))
         return result.scalar_one_or_none()
@@ -487,7 +487,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_standard(self, id: int, data: dict[str, Any]) -> Standard | None:
+    async def update_standard(self, id: UUID, data: dict[str, Any]) -> Standard | None:
         """Update standard"""
         obj = await self.get_standard(id)
         if not obj:
@@ -499,7 +499,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_standard(self, id: int) -> bool:
+    async def delete_standard(self, id: UUID) -> bool:
         """Soft delete standard"""
         obj = await self.get_standard(id)
         if not obj:
@@ -508,7 +508,7 @@ class StaticDataRepository:
         await self.db.flush()
         return True
 
-    async def adjust_standard_quantity(self, id: int, quantity: int) -> Standard | None:
+    async def adjust_standard_quantity(self, id: UUID, quantity: int) -> Standard | None:
         """Adjust standard quantity"""
         obj = await self.get_standard(id)
         if not obj:
@@ -554,7 +554,7 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_storage_condition(self, id: int) -> StorageCondition | None:
+    async def get_storage_condition(self, id: UUID) -> StorageCondition | None:
         """Get single storage condition by ID"""
         result = await self.db.execute(
             select(StorageCondition).where(and_(StorageCondition.id == id, StorageCondition.is_deleted.is_(False)))
@@ -581,7 +581,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_storage_condition(self, id: int, data: dict[str, Any]) -> StorageCondition | None:
+    async def update_storage_condition(self, id: UUID, data: dict[str, Any]) -> StorageCondition | None:
         """Update storage condition"""
         obj = await self.get_storage_condition(id)
         if not obj:
@@ -599,7 +599,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_storage_condition(self, id: int) -> bool:
+    async def delete_storage_condition(self, id: UUID) -> bool:
         """Soft delete storage condition"""
         obj = await self.get_storage_condition(id)
         if not obj:

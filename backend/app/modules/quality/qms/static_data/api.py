@@ -422,7 +422,7 @@ async def get(  # noqa: F811
 @router.get("/hplc-reference/{id}", summary="Get HPLC reference substance by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_hplc_reference(id)
@@ -449,7 +449,7 @@ async def post(
 
 @router.put("/hplc-reference/{id}", summary="Update HPLC reference substance")
 async def put(
-    id: int,
+    id: UUID,
     data: s.HplcReferenceUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -467,7 +467,7 @@ async def put(
 @router.delete("/hplc-reference/{id}", summary="Delete HPLC reference substance")
 async def delete(
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
@@ -481,7 +481,7 @@ async def delete(
     "/hplc-reference/{id}/adjust-quantity", summary="Adjust HPLC reference quantity"
 )
 async def handler(  # noqa: F811
-    id: int,
+    id: UUID,
     current_user: RequiredUser,
     quantity_change: int = Body(..., embed=True, description="Quantity change (positive = in, negative = out)"),
     service: StaticDataService = Depends(_get_service),
@@ -499,7 +499,7 @@ async def handler(  # noqa: F811
 
 @router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    id: int,
+    id: UUID,
     current_user: RequiredUser,
     usage_amount: float = Body(..., embed=True, description="领用量 (mg/g)"),
     usage_unit: str = Body("mg", embed=True, description="领用单位"),
@@ -534,7 +534,7 @@ async def post(  # noqa: F811
 @router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     service: StaticDataService = Depends(_get_service),
@@ -887,7 +887,7 @@ async def handler(  # noqa: F811
 @router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_chrom_column(id)
@@ -914,7 +914,7 @@ async def post(  # noqa: F811
 
 @router.put("/chrom-column/{id}", summary="Update chromatography column")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.ChromColumnUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -932,7 +932,7 @@ async def put(  # noqa: F811
 @router.delete("/chrom-column/{id}", summary="Delete chromatography column")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
@@ -946,7 +946,7 @@ async def delete(  # noqa: F811
     "/chrom-column/{id}/increment-usage", summary="Increment column usage count"
 )
 async def handler(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
@@ -993,7 +993,7 @@ async def get(  # noqa: F811
 @router.get("/medium/{id}", summary="Get medium by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_medium(id)
@@ -1017,7 +1017,7 @@ async def post(  # noqa: F811
 
 @router.put("/medium/{id}", summary="Update medium")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.MediumUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -1031,7 +1031,7 @@ async def put(  # noqa: F811
 
 @router.delete("/medium/{id}", summary="Delete medium")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
@@ -1044,7 +1044,7 @@ async def delete(  # noqa: F811
 
 @router.post("/medium/{id}/adjust-stock", summary="Adjust medium stock quantity")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    id: int,
+    id: UUID,
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -1090,7 +1090,7 @@ async def get(  # noqa: F811
 @router.get("/standard/{id}", summary="Get standard by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_standard(id)
@@ -1114,7 +1114,7 @@ async def post(  # noqa: F811
 
 @router.put("/standard/{id}", summary="Update standard")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.StandardUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -1128,7 +1128,7 @@ async def put(  # noqa: F811
 
 @router.delete("/standard/{id}", summary="Delete standard")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
@@ -1141,7 +1141,7 @@ async def delete(  # noqa: F811
 
 @router.post("/standard/{id}/adjust-quantity", summary="Adjust standard quantity")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    id: int,
+    id: UUID,
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -1183,7 +1183,7 @@ async def get(  # noqa: F811
 @router.get("/storage-condition/{id}", summary="Get storage condition by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_storage_condition(id)
@@ -1210,7 +1210,7 @@ async def post(  # noqa: F811
 
 @router.put("/storage-condition/{id}", summary="Update storage condition")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.StorageConditionUpdate,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
@@ -1227,7 +1227,7 @@ async def put(  # noqa: F811
 
 @router.delete("/storage-condition/{id}", summary="Delete storage condition")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
