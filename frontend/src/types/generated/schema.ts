@@ -79936,7 +79936,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -79969,7 +79969,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80006,7 +80006,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80039,7 +80039,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80076,7 +80076,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80116,7 +80116,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80296,7 +80296,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80329,7 +80329,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80366,7 +80366,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80399,7 +80399,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80513,7 +80513,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80546,7 +80546,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80583,7 +80583,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80616,7 +80616,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80732,7 +80732,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80765,7 +80765,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80802,7 +80802,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80835,7 +80835,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80947,7 +80947,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80980,7 +80980,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -81017,7 +81017,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
