@@ -685,7 +685,7 @@ export default function StaticDataPage() {
   return (
     <div style={{ padding: '0 24px' }}>
       <div style={{ marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>业务静态数据</h2>
+        <h1 style={{ margin: 0 }}>业务静态数据</h1>
       </div>
       <Card styles={{ body: { padding: 0 } }}>
         <Tabs

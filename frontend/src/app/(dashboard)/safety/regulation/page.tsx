@@ -940,7 +940,7 @@ export default function RegulationPage() {
     <div style={{ padding: '24px 28px' }}>
       {/* Page Title Header */}
       <div style={{ marginBottom: 24 }}>
-        <h2
+        <h1
           style={{
             fontSize: 22,
             fontWeight: 600,
@@ -951,7 +951,7 @@ export default function RegulationPage() {
           }}
         >
           安全操规管理
-        </h2>
+        </h1>
         <p style={{ fontSize: 14, color: '#787671', margin: 0, lineHeight: 1.5 }}>
           管理已审核的安全操作规程 · 版本修订 · AI标准化生成入口
         </p>

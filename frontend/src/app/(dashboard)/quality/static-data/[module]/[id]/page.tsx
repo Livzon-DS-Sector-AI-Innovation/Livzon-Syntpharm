@@ -801,7 +801,7 @@ function StaticDataDetailPage({ moduleType, id }: DetailPageProps) {
     <div style={{ padding: '0 24px' }}>
       <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
         <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/quality/static-data')}>返回</Button>
-        <h2 style={{ margin: 0 }}>{isNew ? '新建' : '编辑'} - {MODULE_LABELS[moduleType] || moduleType}</h2>
+        <h1 style={{ margin: 0 }}>{isNew ? '新建' : '编辑'} - {MODULE_LABELS[moduleType] || moduleType}</h1>
       </div>
       <Card>
         <Form form={form} layout="vertical" onFinish={handleSave}>

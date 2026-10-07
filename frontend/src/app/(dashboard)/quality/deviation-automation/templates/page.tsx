@@ -297,7 +297,15 @@ export default function TemplateManagementPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Card title="报告模板管理">
+      {/* The card header doubles as the page's top-level heading (#102). Inline
+          styles reset so the visible title is unchanged. */}
+      <Card
+        title={
+          <h1 style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', lineHeight: 'inherit' }}>
+            报告模板管理
+          </h1>
+        }
+      >
         {/* 操作区 */}
         <div style={{ marginBottom: 16 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
