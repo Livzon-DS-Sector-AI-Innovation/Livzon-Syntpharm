@@ -14131,6 +14131,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/quality/static-data/medium/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Counts for the mediums page
+         * @description Counts the mediums page renders, in one request.
+         *
+         *     The page fetched every row and counted in JavaScript; as the table grew the
+         *     stats got slower with it (#103).
+         */
+        get: operations["get_medium_stats_api_v1_quality_static_data_medium_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/quality/static-data/medium": {
         parameters: {
             query?: never;
@@ -14179,6 +14202,26 @@ export interface paths {
         put?: never;
         /** Adjust medium stock quantity */
         post: operations["post_api_v1_quality_static_data_medium__id__adjust_stock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/static-data/standard/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Counts for the standards page
+         * @description Counts the standards page renders, in one request (see #103).
+         */
+        get: operations["get_standard_stats_api_v1_quality_static_data_standard_stats_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -80532,6 +80575,40 @@ export interface operations {
             };
         };
     };
+    get_medium_stats_api_v1_quality_static_data_medium_stats_get: {
+        parameters: {
+            query?: {
+                /** @description Medium type, when one is chosen */
+                medium_type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_api_v1_quality_static_data_medium_get: {
         parameters: {
             query?: {
@@ -80732,6 +80809,37 @@ export interface operations {
                 "application/json": components["schemas"]["Body_post_api_v1_quality_static_data_medium__id__adjust_stock_post"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_standard_stats_api_v1_quality_static_data_standard_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

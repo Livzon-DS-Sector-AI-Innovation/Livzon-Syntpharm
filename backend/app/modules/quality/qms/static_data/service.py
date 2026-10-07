@@ -194,6 +194,14 @@ class StaticDataService:
         """List standards"""
         return await self.repo.list_standard(skip, limit, **kw)
 
+    async def get_standard_stats(self) -> dict[str, int]:
+        """Counts the standards page renders."""
+        return await self.repo.get_standard_stats()
+
+    async def get_medium_stats(self, medium_type: str | None = None) -> dict[str, int]:
+        """Counts the mediums page renders."""
+        return await self.repo.get_medium_stats(medium_type)
+
     async def get_standard(self, id: int) -> Any:
         """Get single standard"""
         return await self.repo.get_standard(id)

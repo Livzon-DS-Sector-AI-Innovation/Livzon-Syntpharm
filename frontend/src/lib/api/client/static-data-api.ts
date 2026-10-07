@@ -247,6 +247,44 @@ export async function getHplcReferencesNeedRecal() {
   return api(`${PREFIX}/hplc-reference/need-recal`)
 }
 
+// ========== 统计 ==========
+/** Counts the standards page renders. One request — see #103. */
+export async function getStandardStats(): Promise<{
+  all: number
+  active: number
+  expired: number
+  lowStock: number
+  national: number
+}> {
+  const body = await api<{ data: Record<string, number> }>(`${PREFIX}/standard/stats`)
+  return body.data as {
+    all: number
+    active: number
+    expired: number
+    lowStock: number
+    national: number
+  }
+}
+
+/** Counts the mediums page renders, filtered by type when one is chosen. */
+export async function getMediumStats(mediumType?: string): Promise<{
+  all: number
+  verified: number
+  pending: number
+  expired: number
+  lowStock: number
+}> {
+  const qs = mediumType ? `?medium_type=${encodeURIComponent(mediumType)}` : ''
+  const body = await api<{ data: Record<string, number> }>(`${PREFIX}/medium/stats${qs}`)
+  return body.data as {
+    all: number
+    verified: number
+    pending: number
+    expired: number
+    lowStock: number
+  }
+}
+
 // ========== 培养基 ==========
 export async function listMedium(params: {
   page?: number; page_size?: number;

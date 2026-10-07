@@ -116,6 +116,31 @@ async def test_endpoints_require_auth(anonymous_client: AsyncClient, method: str
     assert response.status_code == 401, f"{method} {path} returned {response.status_code} without a token; expected 401"
 
 
+async def test_stats_endpoints_count_in_one_request(auth_client: AsyncClient) -> None:
+    """Both stats endpoints answer with the counts the pages render.
+
+    The pages used to page the whole table and count in JavaScript; these are the
+    contract they now rely on (#103). The assertions are against the response
+    shape and arithmetic, not a fixture count, so they hold on an empty table too.
+    """
+    await _create_hplc_reference(auth_client)
+
+    standard = await auth_client.get(f"{BASE}/standard/stats")
+    assert standard.status_code == 200, standard.text
+    std_counts = standard.json()["data"]
+    assert set(std_counts) == {"all", "active", "expired", "lowStock", "national"}
+    # Each breakdown counts a subset, so none can exceed the total.
+    for key in ("active", "expired", "lowStock", "national"):
+        assert 0 <= std_counts[key] <= std_counts["all"], (key, std_counts)
+
+    medium = await auth_client.get(f"{BASE}/medium/stats")
+    assert medium.status_code == 200, medium.text
+    med_counts = medium.json()["data"]
+    assert set(med_counts) == {"all", "verified", "pending", "expired", "lowStock"}
+    for key in ("verified", "pending", "expired", "lowStock"):
+        assert 0 <= med_counts[key] <= med_counts["all"], (key, med_counts)
+
+
 async def test_unknown_dictionary_returns_404(auth_client: AsyncClient) -> None:
     """A read for something that does not exist answers 404.
 

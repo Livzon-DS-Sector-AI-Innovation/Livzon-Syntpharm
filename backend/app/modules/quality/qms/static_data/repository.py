@@ -470,6 +470,62 @@ class StaticDataRepository:
 
         return items, total
 
+    async def get_standard_stats(self) -> dict[str, int]:
+        """Counts the standards page renders, computed in the database.
+
+        The page fetched every row and counted in JavaScript; these counts let it
+        ask once instead (#103).
+        """
+        today = date.today()
+        active = func.count().filter(Standard.std_status == 0)
+        expired = func.count().filter(and_(Standard.expire_date.is_not(None), Standard.expire_date < today))
+        low_stock = func.count().filter(Standard.quantity <= Standard.min_stock)
+        national = func.count().filter(Standard.std_type == "national")
+
+        stmt = select(
+            func.count().label("total"),
+            active.label("active_count"),
+            expired.label("expired_count"),
+            low_stock.label("low_stock_count"),
+            national.label("national_count"),
+        ).where(Standard.is_deleted.is_(False))
+
+        row = (await self.session.execute(stmt)).one()
+        return {
+            "all": row.total,
+            "active": row.active_count,
+            "expired": row.expired_count,
+            "lowStock": row.low_stock_count,
+            "national": row.national_count,
+        }
+
+    async def get_medium_stats(self, medium_type: str | None = None) -> dict[str, int]:
+        """Counts the mediums page renders, filtered by type when one is chosen."""
+        today = date.today()
+        verified = func.count().filter(Medium.verify_status == "已验证")
+        pending = func.count().filter(Medium.verify_status == "待验证")
+        expired = func.count().filter(Medium.expire_date < today)
+        low_stock = func.count().filter(Medium.stock_num <= Medium.min_stock)
+
+        stmt = select(
+            func.count().label("total"),
+            verified.label("verified_count"),
+            pending.label("pending_count"),
+            expired.label("expired_count"),
+            low_stock.label("low_stock_count"),
+        ).where(Medium.is_deleted.is_(False))
+        if medium_type:
+            stmt = stmt.where(Medium.medium_type == medium_type)
+
+        row = (await self.session.execute(stmt)).one()
+        return {
+            "all": row.total,
+            "verified": row.verified_count,
+            "pending": row.pending_count,
+            "expired": row.expired_count,
+            "lowStock": row.low_stock_count,
+        }
+
     async def get_standard(self, id: int) -> Standard | None:
         """Get single standard by ID"""
         result = await self.db.execute(select(Standard).where(and_(Standard.id == id, Standard.is_deleted.is_(False))))

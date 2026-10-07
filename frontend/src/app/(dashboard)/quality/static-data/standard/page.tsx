@@ -43,6 +43,7 @@ import {
   updateStandard,
   deleteStandard,
   adjustStandardQuantity,
+  getStandardStats,
 } from '@/lib/api/client/static-data-api'
 import './standard-style.css'
 
@@ -105,24 +106,8 @@ export default function StandardPage() {
   const { data: statsData = { all: 0, active: 0, expired: 0, lowStock: 0, national: 0 } } = useQuery({
     queryKey: ['standard-stats'],
     queryFn: async () => {
-      let allData: Standard[] = []
-      let curPage = 1
-      while (true) {
-        const res = await listStandard({ page: curPage, page_size: 200 })
-        const batch = (res?.data ?? []) as Standard[]
-        allData = allData.concat(batch)
-        if (allData.length >= (res?.meta?.total ?? 0) || batch.length === 0) break
-        curPage++
-      }
-      let active = 0, expired = 0, lowStock = 0, national = 0
-      const today = dayjs()
-      allData.forEach(item => {
-        if (item.std_status === 0) active++
-        if (item.expire_date && dayjs(item.expire_date).isBefore(today)) expired++
-        if (item.quantity <= item.min_stock) lowStock++
-        if (item.std_type === 'national') national++
-      })
-      return { all: allData.length, active, expired, lowStock, national }
+      // One request. The previous version paged the whole table and counted here.
+      return await getStandardStats()
     },
   })
 

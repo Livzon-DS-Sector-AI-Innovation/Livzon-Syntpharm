@@ -43,6 +43,7 @@ import {
   updateMedium,
   deleteMedium,
   adjustMediumStock,
+  getMediumStats,
 } from '@/lib/api/client/static-data-api'
 import './medium-style.css'
 
@@ -119,28 +120,8 @@ export default function MediumPage() {
   const { data: statsData = { all: 0, verified: 0, pending: 0, expired: 0, lowStock: 0 }, refetch: fetchStats } = useQuery({
     queryKey: ['medium-stats', typeFilter],
     queryFn: async () => {
-      let allData: Medium[] = []
-      let curPage = 1
-      while (true) {
-        const params: Record<string, unknown> = { page: curPage, page_size: 200 }
-        if (typeFilter !== 'all') {
-          params.medium_type = typeFilter
-        }
-        const res = await listMedium(params)
-        const batch = (res?.data ?? []) as Medium[]
-        allData = allData.concat(batch)
-        if (allData.length >= (res?.meta?.total ?? 0) || batch.length === 0) break
-        curPage++
-      }
-      let verified = 0, pending = 0, expired = 0, lowStock = 0
-      const today = dayjs()
-      allData.forEach(item => {
-        if (item.verify_status === '已验证') verified++
-        if (item.verify_status === '待验证') pending++
-        if (dayjs(item.expire_date).isBefore(today)) expired++
-        if (item.stock_num <= item.min_stock) lowStock++
-      })
-      return { all: allData.length, verified, pending, expired, lowStock }
+      // One request. The previous version paged the whole table and counted here.
+      return await getMediumStats(typeFilter !== 'all' ? typeFilter : undefined)
     },
   })
 

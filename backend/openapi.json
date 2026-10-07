@@ -69703,6 +69703,75 @@
         }
       }
     },
+    "/api/v1/quality/static-data/medium/stats": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u9759\u6001\u6570\u636e",
+          "Static Data"
+        ],
+        "summary": "Counts for the mediums page",
+        "description": "Counts the mediums page renders, in one request.\n\nThe page fetched every row and counted in JavaScript; as the table grew the\nstats got slower with it (#103).",
+        "operationId": "get_medium_stats_api_v1_quality_static_data_medium_stats_get",
+        "parameters": [
+          {
+            "name": "medium_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Medium type, when one is chosen",
+              "title": "Medium Type"
+            },
+            "description": "Medium type, when one is chosen"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Medium Stats Api V1 Quality Static Data Medium Stats Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quality/static-data/medium": {
       "get": {
         "tags": [
@@ -70177,6 +70246,57 @@
               "application/json": {
                 "schema": {
                   "title": "Response Post Api V1 Quality Static Data Medium  Id  Adjust Stock Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/static-data/standard/stats": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u9759\u6001\u6570\u636e",
+          "Static Data"
+        ],
+        "summary": "Counts for the standards page",
+        "description": "Counts the standards page renders, in one request (see #103).",
+        "operationId": "get_standard_stats_api_v1_quality_static_data_standard_stats_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Standard Stats Api V1 Quality Static Data Standard Stats Get"
                 }
               }
             }
