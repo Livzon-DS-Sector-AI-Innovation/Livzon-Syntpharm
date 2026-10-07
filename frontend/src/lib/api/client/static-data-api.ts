@@ -156,16 +156,53 @@ export async function downloadChromColumnTemplate() {
   window.URL.revokeObjectURL(url)
 }
 
-export async function batchImportChromColumn(file: File) {
+/** A batch import runs as a job; the endpoint answers 202 with its id. */
+export interface ImportJobHandle {
+  job_id: string
+  status: 'running' | 'done' | 'failed'
+}
+
+export interface ImportJobResult {
+  success: number
+  failed: number
+  errors?: string[]
+  message?: string
+}
+
+/** Poll a job until it leaves `running`, then return its result. */
+async function waitForImportJob(jobId: string, timeoutMs = 300_000): Promise<ImportJobResult> {
+  const started = Date.now()
+
+  for (;;) {
+    const res = await fetch(`${API_BASE}${PREFIX}/jobs/${jobId}`)
+    const body = await res.json()
+    if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`)
+
+    const data = body.data as ImportJobHandle & { result?: ImportJobResult; error?: string }
+    if (data.status === 'done') return data.result ?? { success: 0, failed: 0 }
+    if (data.status === 'failed') throw new Error(data.error || '导入失败')
+
+    if (Date.now() - started > timeoutMs) {
+      throw new Error('导入超时，请稍后在列表中确认结果')
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+}
+
+async function startImport(path: string, file: File): Promise<ImportJobResult> {
   const formData = new FormData()
   formData.append('file', file)
-  const res = await fetch(`${API_BASE}${PREFIX}/chrom-column/batch-import`, {
-    method: 'POST',
-    body: formData,
-  })
+  const res = await fetch(`${API_BASE}${PREFIX}${path}`, { method: 'POST', body: formData })
   const data = await res.json()
   if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`)
-  return data
+
+  // The import is off the request path now, so the work is not finished when this
+  // returns — poll the job rather than reading counts off this response.
+  return waitForImportJob((data.data as ImportJobHandle).job_id)
+}
+
+export async function batchImportChromColumn(file: File): Promise<ImportJobResult> {
+  return startImport('/chrom-column/batch-import', file)
 }
 
 export async function adjustHplcReferenceQuantity(id: number, quantity_change: number) {
@@ -436,14 +473,6 @@ export async function downloadHplcReferenceTemplate() {
 }
 
 // ========== 液相色谱对照品 - 批量导入 ==========
-export async function batchImportHplcReference(file: File) {
-  const formData = new FormData()
-  formData.append('file', file)
-  const res = await fetch(`${API_BASE}${PREFIX}/hplc-reference/batch-import`, {
-    method: 'POST',
-    body: formData,
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.message || `HTTP ${res.status}`)
-  return data
+export async function batchImportHplcReference(file: File): Promise<ImportJobResult> {
+return startImport('/hplc-reference/batch-import', file)
 }

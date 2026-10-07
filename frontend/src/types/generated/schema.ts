@@ -13883,9 +13883,36 @@ export interface paths {
         put?: never;
         /**
          * Batch import HPLC reference substances
-         * @description Import HPLC reference substances from Excel file
+         * @description Import HPLC reference substances from Excel file.
+         *
+         *     Returns immediately with a job id; the rows are created off the request path —
+         *     `AGENTS.md:310` forbids running an operation over 5 seconds inside a request.
+         *     Poll `GET /jobs/{job_id}` for the counts.
          */
         post: operations["handler_api_v1_quality_static_data_hplc_reference_batch_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/static-data/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Query a batch-import job
+         * @description Poll a batch import started by `batch-import`.
+         *
+         *     `result` is present only once `status` is `done`; `error` only once it is
+         *     `failed`. A job id from a previous process is gone — the store is in memory.
+         */
+        get: operations["get_import_job_api_v1_quality_static_data_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14055,7 +14082,11 @@ export interface paths {
         put?: never;
         /**
          * Batch import chromatography columns
-         * @description Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)
+         * @description Import chromatography columns from Excel (液相 and 气相 sheets).
+         *
+         *     Returns immediately with a job id; the rows are created off the request path —
+         *     `AGENTS.md:310` forbids an operation over 5 seconds inside a request. Poll
+         *     `GET /jobs/{job_id}` for the counts.
          */
         post: operations["handler_api_v1_quality_static_data_chrom_column_batch_import_post"];
         delete?: never;
@@ -18838,6 +18869,43 @@ export interface components {
              * @description 设备ID列表
              */
             ids: string[];
+        };
+        /**
+         * BatchImportJobApiResponse
+         * @description Batch import job response wrapper
+         */
+        BatchImportJobApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["BatchImportJobData"];
+        };
+        /**
+         * BatchImportJobData
+         * @description Handle for a running batch import.
+         *
+         *     `result` is populated only once `status` is `done`; `error` only once it is
+         *     `failed`. Typed deliberately rather than `dict[str, Any]` — an untyped payload
+         *     is what let an earlier caller read fields the response never contained.
+         */
+        BatchImportJobData: {
+            /** Job Id */
+            job_id: string;
+            /** Status */
+            status: string;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
         };
         /**
          * BatchListApiResponse
@@ -79806,12 +79874,45 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_import_job_api_v1_quality_static_data_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80276,12 +80377,12 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
-            200: {
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
                 };
             };
             /** @description Validation Error */

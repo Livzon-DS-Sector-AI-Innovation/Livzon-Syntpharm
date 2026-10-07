@@ -68319,7 +68319,7 @@
           "Static Data"
         ],
         "summary": "Batch import HPLC reference substances",
-        "description": "Import HPLC reference substances from Excel file",
+        "description": "Import HPLC reference substances from Excel file.\n\nReturns immediately with a job id; the rows are created off the request path \u2014\n`AGENTS.md:310` forbids running an operation over 5 seconds inside a request.\nPoll `GET /jobs/{job_id}` for the counts.",
         "operationId": "handler_api_v1_quality_static_data_hplc_reference_batch_import_post",
         "parameters": [
           {
@@ -68350,12 +68350,72 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchImportJobApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/static-data/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u9759\u6001\u6570\u636e",
+          "Static Data"
+        ],
+        "summary": "Query a batch-import job",
+        "description": "Poll a batch import started by `batch-import`.\n\n`result` is present only once `status` is `done`; `error` only once it is\n`failed`. A job id from a previous process is gone \u2014 the store is in memory.",
+        "operationId": "get_import_job_api_v1_quality_static_data_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Handler Api V1 Quality Static Data Hplc Reference Batch Import Post"
+                  "$ref": "#/components/schemas/BatchImportJobApiResponse"
                 }
               }
             }
@@ -69347,7 +69407,7 @@
           "Static Data"
         ],
         "summary": "Batch import chromatography columns",
-        "description": "Import chromatography columns from Excel file (supports both \u6db2\u76f8 and \u6c14\u76f8 sheets)",
+        "description": "Import chromatography columns from Excel (\u6db2\u76f8 and \u6c14\u76f8 sheets).\n\nReturns immediately with a job id; the rows are created off the request path \u2014\n`AGENTS.md:310` forbids an operation over 5 seconds inside a request. Poll\n`GET /jobs/{job_id}` for the counts.",
         "operationId": "handler_api_v1_quality_static_data_chrom_column_batch_import_post",
         "parameters": [
           {
@@ -69378,12 +69438,12 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Handler Api V1 Quality Static Data Chrom Column Batch Import Post"
+                  "$ref": "#/components/schemas/BatchImportJobApiResponse"
                 }
               }
             }
@@ -87733,6 +87793,71 @@
         ],
         "title": "BatchDeleteRequest",
         "description": "\u6279\u91cf\u5220\u9664\u8bf7\u6c42"
+      },
+      "BatchImportJobApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BatchImportJobData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchImportJobApiResponse",
+        "description": "Batch import job response wrapper"
+      },
+      "BatchImportJobData": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "BatchImportJobData",
+        "description": "Handle for a running batch import.\n\n`result` is populated only once `status` is `done`; `error` only once it is\n`failed`. Typed deliberately rather than `dict[str, Any]` \u2014 an untyped payload\nis what let an earlier caller read fields the response never contained."
       },
       "BatchListApiResponse": {
         "properties": {

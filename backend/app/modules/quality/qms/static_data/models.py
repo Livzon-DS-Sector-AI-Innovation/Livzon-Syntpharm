@@ -71,7 +71,10 @@ class HplcReference(BaseModel):
     __tablename__ = "t_qs_hplc_reference"
     __table_args__ = {"schema": "qms"}
 
-    ref_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Reference code (unique)")
+    # Uniqueness is enforced in the service (check-then-insert), NOT by a database
+    # constraint — so two concurrent imports can still create a duplicate. Do not
+    # read this comment as a guarantee the schema provides.
+    ref_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Reference code")
     ref_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="Reference name")
     project_name: Mapped[str | None] = mapped_column(String(100), comment="Associated test project")
     internal_batch: Mapped[str | None] = mapped_column(String(50), comment="Internal batch number")
@@ -132,7 +135,8 @@ class ChromColumn(BaseModel):
     __tablename__ = "t_qs_chrom_column"
     __table_args__ = {"schema": "qms"}
 
-    col_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Column code (unique)")
+    # Same as `ref_code`: uniqueness is a service-level check, not a constraint.
+    col_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Column code")
     col_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="Stationary phase type (C18/C8 etc.)")
     spec: Mapped[str] = mapped_column(String(100), nullable=False, comment="Specification")
     manufacturer: Mapped[str] = mapped_column(String(100), nullable=False, comment="Manufacturer")

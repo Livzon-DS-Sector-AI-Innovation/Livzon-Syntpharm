@@ -16,9 +16,11 @@ from fastapi.responses import StreamingResponse
 from openpyxl.styles import Alignment, Font, PatternFill
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import BadRequestException, NotFoundException
+from app.core.job_store import job_store
+from app.core.jobs import spawn_task
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.schemas import (
     # Import shared response wrappers from app.shared.schemas
@@ -273,111 +275,177 @@ async def download_hplc_reference_template(current_user: RequiredUser) -> Any:
 # ========== Batch Import ==========
 
 
-@router.post("/hplc-reference/batch-import", summary="Batch import HPLC reference substances")
+async def _import_hplc_references(contents: bytes, user_id: UUID, db: AsyncSession) -> dict[str, Any]:
+    """Parse the workbook and create one record per row.
+
+    Takes its session rather than making one: the caller owns the lifecycle, which
+    is what lets a test drive this against its own transaction instead of spawning
+    a detached session it cannot observe. Returns the counts the caller polls for.
+    """
+    wb = openpyxl.load_workbook(io.BytesIO(contents))
+    ws = wb.active
+
+    service = StaticDataService(db)
+
+    # Get headers from first row
+    headers = [cell.value for cell in ws[1]]
+
+    # Field mapping
+    field_map = {
+        "对照品编号(ref_code)*": "ref_code",
+        "对照品名称(ref_name)*": "ref_name",
+        "检测项目(project_name)": "project_name",
+        "厂内批号(internal_batch)": "internal_batch",
+        "CAS号(cas_no)": "cas_no",
+        "供应商货号(cat_no)": "cat_no",
+        "厂家批号(manufacturer_batch)": "manufacturer_batch",
+        "供应商/来源(manufacturer)": "manufacturer",
+        "规格(spec)": "spec",
+        "纯度(purity)": "purity",
+        "含量(content)": "content",
+        "数量(quantity)": "quantity",
+        "库存状态(stock_status)": "stock_status",
+        "到货日期(arrival_date)": "arrival_date",
+        "生产/标定日期(produce_date)": "produce_date",
+        "有效期至(expire_date)": "expire_date",
+        "复标周期天(recal_cycle_days)": "recal_cycle_days",
+        "开瓶日期(open_date)": "open_date",
+        "开瓶有效期天(open_expire_days)": "open_expire_days",
+        "贮存条件编码(storage_cond_code)": "storage_cond_code",
+        "存放位置(location)": "location",
+        "是否有COA(has_coa)": "has_coa",
+        "交接单号(handover_no)": "handover_no",
+        "状态(ref_status:0在用/1用完/2过期/3报废)": "ref_status",
+        "备注(remark)": "remark",
+    }
+
+    success_count = 0
+    error_count = 0
+    errors = []
+
+    for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        if not row[0] or not row[1]:  # Skip empty rows
+            continue
+
+        data: dict[str, object] = {"created_by": user_id}
+        for col, header in enumerate(headers):
+            if header in field_map and row[col] is not None:
+                field = field_map[header]
+                value = row[col]
+                # Convert boolean
+                if field == "has_coa":
+                    value = str(value).upper() in ["TRUE", "是", "YES", "1"]
+                # Convert status
+                elif field == "ref_status":
+                    if isinstance(value, str):
+                        if "用完" in value:
+                            value = 1
+                        elif "过期" in value:
+                            value = 2
+                        elif "报废" in value:
+                            value = 3
+                        else:
+                            value = 0
+                # Convert date strings
+                elif field in [
+                    "arrival_date",
+                    "produce_date",
+                    "expire_date",
+                    "open_date",
+                ]:
+                    if isinstance(value, str):
+                        try:
+                            value = date.fromisoformat(value.split()[0])
+                        except (ValueError, IndexError, AttributeError):
+                            value = None
+                data[field] = value
+
+        try:
+            await service.create_hplc_reference(s.HplcReferenceCreate(**data), user_id)
+            success_count += 1
+        except Exception as e:
+            error_count += 1
+            errors.append(f"Row {row_num}: {str(e)}")
+
+    message = f"Import completed: {success_count} success, {error_count} failed"
+    if errors:
+        message += f"\nErrors: {'; '.join(errors[:5])}"
+
+    return {"success": success_count, "failed": error_count, "message": message}
+
+
+@router.post(
+    "/hplc-reference/batch-import",
+    response_model=s.BatchImportJobApiResponse,
+    status_code=202,
+    summary="Batch import HPLC reference substances",
+)
 async def handler(
     file: UploadFile = File(...),
-    service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
-    """Import HPLC reference substances from Excel file"""
+    """Import HPLC reference substances from Excel file.
+
+    Returns immediately with a job id; the rows are created off the request path —
+    `AGENTS.md:310` forbids running an operation over 5 seconds inside a request.
+    Poll `GET /jobs/{job_id}` for the counts.
+    """
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise BadRequestException(message="Please upload an Excel file (.xlsx or .xls)")
 
-    try:
-        contents = await file.read()
-        wb = openpyxl.load_workbook(io.BytesIO(contents))
-        ws = wb.active
+    # Read here: `UploadFile` is closed when the request ends, so the bytes must be
+    # captured before the background job runs.
+    contents = await file.read()
 
-        # Get headers from first row
-        headers = [cell.value for cell in ws[1]]
+    job_id = job_store.create()
 
-        # Field mapping
-        field_map = {
-            "对照品编号(ref_code)*": "ref_code",
-            "对照品名称(ref_name)*": "ref_name",
-            "检测项目(project_name)": "project_name",
-            "厂内批号(internal_batch)": "internal_batch",
-            "CAS号(cas_no)": "cas_no",
-            "供应商货号(cat_no)": "cat_no",
-            "厂家批号(manufacturer_batch)": "manufacturer_batch",
-            "供应商/来源(manufacturer)": "manufacturer",
-            "规格(spec)": "spec",
-            "纯度(purity)": "purity",
-            "含量(content)": "content",
-            "数量(quantity)": "quantity",
-            "库存状态(stock_status)": "stock_status",
-            "到货日期(arrival_date)": "arrival_date",
-            "生产/标定日期(produce_date)": "produce_date",
-            "有效期至(expire_date)": "expire_date",
-            "复标周期天(recal_cycle_days)": "recal_cycle_days",
-            "开瓶日期(open_date)": "open_date",
-            "开瓶有效期天(open_expire_days)": "open_expire_days",
-            "贮存条件编码(storage_cond_code)": "storage_cond_code",
-            "存放位置(location)": "location",
-            "是否有COA(has_coa)": "has_coa",
-            "交接单号(handover_no)": "handover_no",
-            "状态(ref_status:0在用/1用完/2过期/3报废)": "ref_status",
-            "备注(remark)": "remark",
-        }
+    async def _run() -> None:
+        try:
+            # Own session: the request's is closed by the time this runs. The import
+            # is what takes time, so this is the part that must be off-request.
+            async with async_session_factory() as db:
+                result = await _import_hplc_references(contents, user_id, db)
+            job_store.complete(job_id, result)
+        except Exception as e:
+            # A background failure has no caller to report to, so the traceback is
+            # the only record — and the job status carries the message to the poller.
+            logger.exception("HPLC reference batch import failed")
+            job_store.fail(job_id, str(e))
 
-        success_count = 0
-        error_count = 0
-        errors = []
+    spawn_task(_run(), name=f"static-data-hplc-import-{job_id[:8]}")
 
-        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-            if not row[0] or not row[1]:  # Skip empty rows
-                continue
+    return {
+        "code": 200,
+        "message": "Import started",
+        "data": {"job_id": job_id, "status": "running"},
+    }
 
-            data: dict[str, object] = {"created_by": user_id}
-            for col, header in enumerate(headers):
-                if header in field_map and row[col] is not None:
-                    field = field_map[header]
-                    value = row[col]
-                    # Convert boolean
-                    if field == "has_coa":
-                        value = str(value).upper() in ["TRUE", "是", "YES", "1"]
-                    # Convert status
-                    elif field == "ref_status":
-                        if isinstance(value, str):
-                            if "用完" in value:
-                                value = 1
-                            elif "过期" in value:
-                                value = 2
-                            elif "报废" in value:
-                                value = 3
-                            else:
-                                value = 0
-                    # Convert date strings
-                    elif field in [
-                        "arrival_date",
-                        "produce_date",
-                        "expire_date",
-                        "open_date",
-                    ]:
-                        if isinstance(value, str):
-                            try:
-                                value = date.fromisoformat(value.split()[0])
-                            except (ValueError, IndexError, AttributeError):
-                                value = None
-                    data[field] = value
 
-            try:
-                await service.create_hplc_reference(s.HplcReferenceCreate(**data), user_id)
-                success_count += 1
-            except Exception as e:
-                error_count += 1
-                errors.append(f"Row {row_num}: {str(e)}")
+@router.get(
+    "/jobs/{job_id}",
+    response_model=s.BatchImportJobApiResponse,
+    summary="Query a batch-import job",
+)
+async def get_import_job(job_id: str, current_user: RequiredUser) -> Any:
+    """Poll a batch import started by `batch-import`.
 
-        message = f"Import completed: {success_count} success, {error_count} failed"
-        if errors:
-            message += f"\nErrors: {'; '.join(errors[:5])}"
+    `result` is present only once `status` is `done`; `error` only once it is
+    `failed`. A job id from a previous process is gone — the store is in memory.
+    """
+    record = job_store.get(job_id)
+    if record is None:
+        raise NotFoundException(resource="导入任务", resource_id=job_id)
 
-        return DataApiResponse(message=message, data={"success": success_count, "failed": error_count})
-    except Exception as e:
-        # Without a traceback, a failed import leaves nothing to diagnose from —
-        # the caller sees a message and an operator reading logs sees nothing.
-        logger.exception("HPLC reference batch import failed")
-        return MessageApiResponse(code=500, message=f"Import failed: {str(e)}", data=None)
+    return {
+        "code": 200,
+        "message": "success",
+        "data": {
+            "job_id": job_id,
+            "status": record.state,
+            "result": record.result,
+            "error": record.error,
+        },
+    }
 
 
 # ========== 11. HPLC Reference Substance ==========
@@ -670,225 +738,256 @@ async def download_chrom_column_template(current_user: RequiredUser) -> Any:
     )
 
 
+async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession) -> dict[str, Any]:
+    """Parse every sheet and create one column record per row.
+
+    Takes its session rather than opening one — the caller owns the lifecycle, which
+    is what lets a test drive it against its own transaction. Returns the counts the
+    caller polls for.
+    """
+    wb = openpyxl.load_workbook(io.BytesIO(contents))
+    service = StaticDataService(db)
+    wb = openpyxl.load_workbook(io.BytesIO(contents))
+
+    field_map = {
+        "品牌": "brand",
+        "型号": "model",
+        "色谱柱信息": "col_type",
+        "色谱柱类型*": "col_type",
+        "色谱柱类型": "col_type",
+        "色谱柱内径(mm)": "inner_diameter",
+        "色谱柱内径": "inner_diameter",
+        "柱长(mm)": "column_length",
+        "柱长": "column_length",
+        "填料粒径(μm)": "particle_size",
+        "填料粒径": "particle_size",
+        "验收日期*": "purchase_date",
+        "验收日期": "purchase_date",
+        "色谱柱编号*": "col_code",
+        "色谱柱编号": "col_code",
+        "货号P.N": "cat_no",
+        "序列号S.N*": "serial_no",
+        "序列号S.N": "serial_no",
+        "产品编号": "product_no",
+        "编号C-N0": "product_no",
+        "批次号L.N": "batch_no",
+        "启用日期": "use_start_date",
+        "适用检测项目": "apply_method",
+        "品名/检验项目": "apply_method",
+        "最大使用次数": "max_use_times",
+        "存放位置*": "location",
+        "存放位置": "location",
+        "贮存条件编码*": "storage_cond_code",
+        "贮存条件编码": "storage_cond_code",
+        "状态(0在用/1待清洗/2封存/3报废)": "col_status",
+        "状态": "col_status",
+        "备注": "remark",
+    }
+
+    success_count = 0
+    error_count = 0
+    errors = []
+
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        if ws.max_row < 2:
+            continue
+
+        headers = [cell.value for cell in ws[1]]
+
+        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not any(row):
+                continue
+
+            data: dict[str, object] = {"created_by": user_id}
+
+            if "气相" in sheet_name or "GC" in sheet_name.upper():
+                data["column_category"] = 1
+            else:
+                data["column_category"] = 0
+
+            spec_parts = []
+            manufacturer_parts = []
+
+            for col, header in enumerate(headers):
+                if not header or row[col] is None:
+                    continue
+                header_str = str(header).strip()
+                if header_str not in field_map:
+                    continue
+
+                field = field_map[header_str]
+                value = row[col]
+
+                if field == "brand":
+                    manufacturer_parts.append(str(value))
+                elif field == "model":
+                    manufacturer_parts.append(str(value))
+                elif field == "inner_diameter":
+                    spec_parts.append(f"{value}")
+                elif field == "column_length":
+                    spec_parts.append(f"*{value}mm")
+                elif field == "particle_size":
+                    spec_parts.append(f" {value}μm")
+                elif field == "col_type":
+                    data["col_type"] = str(value).strip()
+                elif field == "col_code":
+                    data["col_code"] = str(value).strip()
+                elif field == "serial_no":
+                    data["serial_no"] = str(value).strip()
+                elif field == "location":
+                    data["location"] = str(value).strip()
+                elif field == "storage_cond_code":
+                    data["storage_cond_code"] = str(value).strip()
+                elif field == "apply_method":
+                    data["apply_method"] = str(value).strip()
+                elif field == "purchase_date":
+                    if isinstance(value, date):
+                        data["purchase_date"] = value
+                    elif isinstance(value, (int, float)):
+                        try:
+                            from datetime import timedelta
+
+                            base = date(1899, 12, 30)
+                            data["purchase_date"] = base + timedelta(days=int(value))
+                        except (ValueError, TypeError, OverflowError):
+                            pass
+                    elif isinstance(value, str) and value.strip() and value.strip() != "/":
+                        try:
+                            v = value.strip()
+                            if len(v) == 8 and v.isdigit():
+                                data["purchase_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
+                            else:
+                                data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
+                        except (ValueError, IndexError, AttributeError):
+                            pass
+                elif field == "use_start_date":
+                    if isinstance(value, date):
+                        data["use_start_date"] = value
+                    elif isinstance(value, (int, float)):
+                        try:
+                            from datetime import timedelta
+
+                            base = date(1899, 12, 30)
+                            data["use_start_date"] = base + timedelta(days=int(value))
+                        except (ValueError, TypeError, OverflowError):
+                            pass
+                    elif isinstance(value, str) and value.strip() and value.strip() != "/":
+                        try:
+                            v = value.strip()
+                            if len(v) == 8 and v.isdigit():
+                                data["use_start_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
+                            else:
+                                data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
+                        except (ValueError, IndexError, AttributeError):
+                            pass
+                elif field == "max_use_times":
+                    try:
+                        data["max_use_times"] = int(float(value))
+                    except (ValueError, TypeError):
+                        data["max_use_times"] = 100
+                elif field == "col_status":
+                    v = str(value).strip()
+                    if "待清洗" in v:
+                        data["col_status"] = 1
+                    elif "封存" in v:
+                        data["col_status"] = 2
+                    elif "报废" in v:
+                        data["col_status"] = 3
+                    else:
+                        data["col_status"] = 0
+                elif field == "remark":
+                    data["remark"] = str(value).strip()
+
+            if manufacturer_parts:
+                data["manufacturer"] = " ".join(manufacturer_parts)
+            if spec_parts:
+                data["spec"] = "".join(spec_parts).replace("*", "×")
+
+            if "col_code" not in data or not data["col_code"] or data["col_code"] == "/":
+                error_count += 1
+                errors.append(f"Sheet[{sheet_name}] Row {row_num}: 缺少色谱柱编号")
+                continue
+            if "col_type" not in data or not data["col_type"]:
+                error_count += 1
+                errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型")
+                continue
+            if "manufacturer" not in data or not data["manufacturer"]:
+                data["manufacturer"] = "未知"
+            if "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/":
+                data["serial_no"] = data["col_code"]
+            if "location" not in data or not data["location"]:
+                data["location"] = "未指定"
+            if "storage_cond_code" not in data or not data["storage_cond_code"]:
+                data["storage_cond_code"] = "ROOM_TEMP"
+            if "max_use_times" not in data:
+                data["max_use_times"] = 100
+            if "col_status" not in data:
+                data["col_status"] = 0
+            if "purchase_date" not in data:
+                if "use_start_date" in data:
+                    data["purchase_date"] = data["use_start_date"]
+                else:
+                    data["purchase_date"] = date.today()
+            if "spec" not in data or not data["spec"]:
+                data["spec"] = "未指定"
+
+            try:
+                await service.create_chrom_column(s.ChromColumnCreate(**data), user_id)
+                success_count += 1
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}")
+
+    message = f"导入完成: 成功 {success_count} 条，失败 {error_count} 条"
+    if errors:
+        message += f"\n错误: {'; '.join(errors[:10])}"
+        if len(errors) > 10:
+            message += f" ...等共{len(errors)}条错误"
+
+    return {"success": success_count, "failed": error_count, "errors": errors, "message": message}
+
+
 @router.post(  # type: ignore[no-redef]
-    "/chrom-column/batch-import", summary="Batch import chromatography columns"
+    "/chrom-column/batch-import",
+    response_model=s.BatchImportJobApiResponse,
+    status_code=202,
+    summary="Batch import chromatography columns",
 )
 async def handler(  # noqa: F811
     file: UploadFile = File(...),
-    service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
-    """Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)"""
+    """Import chromatography columns from Excel (液相 and 气相 sheets).
+
+    Returns immediately with a job id; the rows are created off the request path —
+    `AGENTS.md:310` forbids an operation over 5 seconds inside a request. Poll
+    `GET /jobs/{job_id}` for the counts.
+    """
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise BadRequestException(message="Please upload an Excel file (.xlsx or .xls)")
 
-    try:
-        contents = await file.read()
-        wb = openpyxl.load_workbook(io.BytesIO(contents))
+    # Read here: `UploadFile` is closed when the request ends.
+    contents = await file.read()
 
-        field_map = {
-            "品牌": "brand",
-            "型号": "model",
-            "色谱柱信息": "col_type",
-            "色谱柱类型*": "col_type",
-            "色谱柱类型": "col_type",
-            "色谱柱内径(mm)": "inner_diameter",
-            "色谱柱内径": "inner_diameter",
-            "柱长(mm)": "column_length",
-            "柱长": "column_length",
-            "填料粒径(μm)": "particle_size",
-            "填料粒径": "particle_size",
-            "验收日期*": "purchase_date",
-            "验收日期": "purchase_date",
-            "色谱柱编号*": "col_code",
-            "色谱柱编号": "col_code",
-            "货号P.N": "cat_no",
-            "序列号S.N*": "serial_no",
-            "序列号S.N": "serial_no",
-            "产品编号": "product_no",
-            "编号C-N0": "product_no",
-            "批次号L.N": "batch_no",
-            "启用日期": "use_start_date",
-            "适用检测项目": "apply_method",
-            "品名/检验项目": "apply_method",
-            "最大使用次数": "max_use_times",
-            "存放位置*": "location",
-            "存放位置": "location",
-            "贮存条件编码*": "storage_cond_code",
-            "贮存条件编码": "storage_cond_code",
-            "状态(0在用/1待清洗/2封存/3报废)": "col_status",
-            "状态": "col_status",
-            "备注": "remark",
-        }
+    job_id = job_store.create()
 
-        success_count = 0
-        error_count = 0
-        errors = []
+    async def _run() -> None:
+        try:
+            async with async_session_factory() as db:
+                result = await _import_chrom_columns(contents, user_id, db)
+            job_store.complete(job_id, result)
+        except Exception as e:
+            logger.exception("Chrom-column batch import failed")
+            job_store.fail(job_id, str(e))
 
-        for sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            if ws.max_row < 2:
-                continue
+    spawn_task(_run(), name=f"static-data-chrom-import-{job_id[:8]}")
 
-            headers = [cell.value for cell in ws[1]]
-
-            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-                if not any(row):
-                    continue
-
-                data: dict[str, object] = {"created_by": user_id}
-
-                if "气相" in sheet_name or "GC" in sheet_name.upper():
-                    data["column_category"] = 1
-                else:
-                    data["column_category"] = 0
-
-                spec_parts = []
-                manufacturer_parts = []
-
-                for col, header in enumerate(headers):
-                    if not header or row[col] is None:
-                        continue
-                    header_str = str(header).strip()
-                    if header_str not in field_map:
-                        continue
-
-                    field = field_map[header_str]
-                    value = row[col]
-
-                    if field == "brand":
-                        manufacturer_parts.append(str(value))
-                    elif field == "model":
-                        manufacturer_parts.append(str(value))
-                    elif field == "inner_diameter":
-                        spec_parts.append(f"{value}")
-                    elif field == "column_length":
-                        spec_parts.append(f"*{value}mm")
-                    elif field == "particle_size":
-                        spec_parts.append(f" {value}μm")
-                    elif field == "col_type":
-                        data["col_type"] = str(value).strip()
-                    elif field == "col_code":
-                        data["col_code"] = str(value).strip()
-                    elif field == "serial_no":
-                        data["serial_no"] = str(value).strip()
-                    elif field == "location":
-                        data["location"] = str(value).strip()
-                    elif field == "storage_cond_code":
-                        data["storage_cond_code"] = str(value).strip()
-                    elif field == "apply_method":
-                        data["apply_method"] = str(value).strip()
-                    elif field == "purchase_date":
-                        if isinstance(value, date):
-                            data["purchase_date"] = value
-                        elif isinstance(value, (int, float)):
-                            try:
-                                from datetime import timedelta
-
-                                base = date(1899, 12, 30)
-                                data["purchase_date"] = base + timedelta(days=int(value))
-                            except (ValueError, TypeError, OverflowError):
-                                pass
-                        elif isinstance(value, str) and value.strip() and value.strip() != "/":
-                            try:
-                                v = value.strip()
-                                if len(v) == 8 and v.isdigit():
-                                    data["purchase_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
-                                else:
-                                    data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
-                            except (ValueError, IndexError, AttributeError):
-                                pass
-                    elif field == "use_start_date":
-                        if isinstance(value, date):
-                            data["use_start_date"] = value
-                        elif isinstance(value, (int, float)):
-                            try:
-                                from datetime import timedelta
-
-                                base = date(1899, 12, 30)
-                                data["use_start_date"] = base + timedelta(days=int(value))
-                            except (ValueError, TypeError, OverflowError):
-                                pass
-                        elif isinstance(value, str) and value.strip() and value.strip() != "/":
-                            try:
-                                v = value.strip()
-                                if len(v) == 8 and v.isdigit():
-                                    data["use_start_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
-                                else:
-                                    data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
-                            except (ValueError, IndexError, AttributeError):
-                                pass
-                    elif field == "max_use_times":
-                        try:
-                            data["max_use_times"] = int(float(value))
-                        except (ValueError, TypeError):
-                            data["max_use_times"] = 100
-                    elif field == "col_status":
-                        v = str(value).strip()
-                        if "待清洗" in v:
-                            data["col_status"] = 1
-                        elif "封存" in v:
-                            data["col_status"] = 2
-                        elif "报废" in v:
-                            data["col_status"] = 3
-                        else:
-                            data["col_status"] = 0
-                    elif field == "remark":
-                        data["remark"] = str(value).strip()
-
-                if manufacturer_parts:
-                    data["manufacturer"] = " ".join(manufacturer_parts)
-                if spec_parts:
-                    data["spec"] = "".join(spec_parts).replace("*", "×")
-
-                if "col_code" not in data or not data["col_code"] or data["col_code"] == "/":
-                    error_count += 1
-                    errors.append(f"Sheet[{sheet_name}] Row {row_num}: 缺少色谱柱编号")
-                    continue
-                if "col_type" not in data or not data["col_type"]:
-                    error_count += 1
-                    errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型")
-                    continue
-                if "manufacturer" not in data or not data["manufacturer"]:
-                    data["manufacturer"] = "未知"
-                if "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/":
-                    data["serial_no"] = data["col_code"]
-                if "location" not in data or not data["location"]:
-                    data["location"] = "未指定"
-                if "storage_cond_code" not in data or not data["storage_cond_code"]:
-                    data["storage_cond_code"] = "ROOM_TEMP"
-                if "max_use_times" not in data:
-                    data["max_use_times"] = 100
-                if "col_status" not in data:
-                    data["col_status"] = 0
-                if "purchase_date" not in data:
-                    if "use_start_date" in data:
-                        data["purchase_date"] = data["use_start_date"]
-                    else:
-                        data["purchase_date"] = date.today()
-                if "spec" not in data or not data["spec"]:
-                    data["spec"] = "未指定"
-
-                try:
-                    await service.create_chrom_column(s.ChromColumnCreate(**data), user_id)
-                    success_count += 1
-                except Exception as e:
-                    error_count += 1
-                    errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}")
-
-        message = f"导入完成: 成功 {success_count} 条，失败 {error_count} 条"
-        if errors:
-            message += f"\n错误: {'; '.join(errors[:10])}"
-            if len(errors) > 10:
-                message += f" ...等共{len(errors)}条错误"
-
-        return DataApiResponse(
-            message=message,
-            data={"success": success_count, "failed": error_count, "errors": errors},
-        )
-    except Exception as e:
-        logger.exception("Chrom-column batch import failed")
-        return MessageApiResponse(code=500, message=f"导入失败: {str(e)}")
+    return {
+        "code": 200,
+        "message": "Import started",
+        "data": {"job_id": job_id, "status": "running"},
+    }
 
 
 @router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]

@@ -464,6 +464,28 @@ class HplcReferenceListApiResponse(BaseModel):
     meta: dict[str, Any] | None = None
 
 
+class BatchImportJobData(BaseModel):
+    """Handle for a running batch import.
+
+    `result` is populated only once `status` is `done`; `error` only once it is
+    `failed`. Typed deliberately rather than `dict[str, Any]` — an untyped payload
+    is what let an earlier caller read fields the response never contained.
+    """
+
+    job_id: str
+    status: str  # running | done | failed
+    result: dict[str, Any] | None = None
+    error: str | None = None
+
+
+class BatchImportJobApiResponse(BaseModel):
+    """Batch import job response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: BatchImportJobData
+
+
 class ChromColumnApiResponse(BaseModel):
     """Chromatography column response wrapper"""
 
