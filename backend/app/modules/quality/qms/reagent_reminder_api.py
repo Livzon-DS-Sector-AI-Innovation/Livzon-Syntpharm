@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.response import success_response
+from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.reagent_reminder_schemas import ItemReminderRequest, ReminderConfigRequest
 from app.modules.quality.qms.reagent_reminder_service import ReagentReminderService
 from app.platform.database import get_db_session
@@ -33,7 +34,12 @@ async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
         "message": "success",
         "data": {
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext, and echoing it would hand the
+            # client the encrypted blob. `mask_secret` shows enough to recognise
+            # the value without disclosing it.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "feishu_chat_id": config.feishu_chat_id,
             "low_stock_threshold": config.low_stock_threshold,
             "is_enabled": config.is_enabled,

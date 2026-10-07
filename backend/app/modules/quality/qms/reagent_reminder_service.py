@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.secrets import decrypt_secret, encrypt_secret
 from app.modules.quality.qms.reagent_reminder_config import ReagentReminderConfig
 from app.platform.notification.feishu_client_config import FeishuClient
 
@@ -42,7 +43,8 @@ class ReagentReminderService:
 
         if config:
             config.feishu_app_id = feishu_app_id
-            config.feishu_app_secret = feishu_app_secret
+            # Stored encrypted at rest: a database dump must not disclose it.
+            config.feishu_app_secret = encrypt_secret(feishu_app_secret)
             config.feishu_chat_id = feishu_chat_id
             config.low_stock_threshold = low_stock_threshold
             config.is_enabled = is_enabled
@@ -51,7 +53,7 @@ class ReagentReminderService:
             config = ReagentReminderConfig(
                 id=uuid.uuid4(),
                 feishu_app_id=feishu_app_id,
-                feishu_app_secret=feishu_app_secret,
+                feishu_app_secret=encrypt_secret(feishu_app_secret),
                 feishu_chat_id=feishu_chat_id,
                 low_stock_threshold=low_stock_threshold,
                 is_enabled=is_enabled,
@@ -190,7 +192,8 @@ class ReagentReminderService:
 
         try:
             # 发送飞书提醒
-            client = FeishuClient(config.feishu_app_id, config.feishu_app_secret)
+            # The client needs the plaintext secret, not the stored ciphertext.
+            client = FeishuClient(config.feishu_app_id, decrypt_secret(config.feishu_app_secret))
             await client.send_card_message(
                 receive_id_type="chat_id",
                 receive_id=config.feishu_chat_id,
