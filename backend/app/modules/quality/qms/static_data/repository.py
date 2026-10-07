@@ -490,7 +490,7 @@ class StaticDataRepository:
             national.label("national_count"),
         ).where(Standard.is_deleted.is_(False))
 
-        row = (await self.session.execute(stmt)).one()
+        row = (await self.db.execute(stmt)).one()
         return {
             "all": row.total,
             "active": row.active_count,
@@ -517,7 +517,7 @@ class StaticDataRepository:
         if medium_type:
             stmt = stmt.where(Medium.medium_type == medium_type)
 
-        row = (await self.session.execute(stmt)).one()
+        row = (await self.db.execute(stmt)).one()
         return {
             "all": row.total,
             "verified": row.verified_count,
