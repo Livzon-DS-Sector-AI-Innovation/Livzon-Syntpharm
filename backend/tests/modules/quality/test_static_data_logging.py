@@ -1,0 +1,47 @@
+# mypy: ignore-errors
+"""A failed bulk import records a traceback.
+
+Before this, the import's failure path returned a message to the caller and logged
+nothing, so a failed import left no trace anywhere. The module had no logger at all.
+"""
+
+from __future__ import annotations
+
+import io
+import logging
+
+from httpx import AsyncClient
+
+BASE = "/api/v1/quality/static-data"
+
+# The logger the module is expected to use — `logging.getLogger(__name__)` in
+# `app.modules.quality.qms.static_data.api`.
+MODULE_LOGGER = "app.modules.quality.qms.static_data.api"
+
+
+async def test_failed_import_logs_a_traceback(auth_client: AsyncClient, caplog) -> None:
+    """Malformed workbook: the handler answers, and logs the exception.
+
+    The response alone is not enough to diagnose a failed import — the caller sees
+    a message, but an operator reading logs sees nothing. `exc_info` is the point:
+    a bare message would not carry the stack.
+    """
+    # Valid extension, invalid content: passes the filename guard, then openpyxl
+    # raises when it tries to read the workbook.
+    bad_file = ("ref.xlsx", io.BytesIO(b"this is not a spreadsheet"), "application/vnd.ms-excel")
+
+    with caplog.at_level(logging.ERROR, logger=MODULE_LOGGER):
+        response = await auth_client.post(f"{BASE}/hplc-reference/batch-import", files={"file": bad_file})
+
+    # The handler still answers rather than propagating — that behaviour is unchanged.
+    assert response.status_code in (200, 500), response.text
+
+    records = [r for r in caplog.records if r.name == MODULE_LOGGER]
+    assert records, (
+        f"the failing import logged nothing on {MODULE_LOGGER!r}; captured: {[r.name for r in caplog.records]}"
+    )
+
+    with_traceback = [r for r in records if r.exc_info]
+    assert with_traceback, (
+        f"the import failure was logged without exc_info, so no stack was recorded: {[r.getMessage() for r in records]}"
+    )

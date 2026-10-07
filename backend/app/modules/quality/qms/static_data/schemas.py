@@ -3,11 +3,14 @@
 Pydantic validation schemas for API request/response.
 """
 
+import logging
 from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 # ========== Common Fields ==========
 

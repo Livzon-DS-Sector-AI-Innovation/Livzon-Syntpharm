@@ -7,6 +7,7 @@ the standard contract: UUID `id`, `created_at`, `updated_at`, `created_by`,
 `updated_by` and `is_deleted`.
 """
 
+import logging
 from datetime import date
 from decimal import Decimal
 
@@ -23,6 +24,8 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
+
+logger = logging.getLogger(__name__)
 
 # ========== 1. Storage Condition ==========
 

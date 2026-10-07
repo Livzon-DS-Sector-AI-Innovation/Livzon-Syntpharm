@@ -3,6 +3,7 @@
 Business logic layer for static data operations.
 """
 
+import logging
 from typing import Any
 from uuid import UUID
 
@@ -10,6 +11,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.repository import StaticDataRepository
+
+logger = logging.getLogger(__name__)
 
 
 class StaticDataService:

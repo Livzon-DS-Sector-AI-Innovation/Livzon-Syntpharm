@@ -5,6 +5,7 @@ Prefix: /api/v1/quality/static-data/
 """
 
 import io
+import logging
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -36,6 +37,8 @@ from app.modules.quality.qms.static_data.schemas import (
 )
 from app.modules.quality.qms.static_data.service import StaticDataService
 from app.shared.schemas import DataApiResponse, MessageApiResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/static-data", tags=["Static Data"])
 
@@ -371,6 +374,9 @@ async def handler(
 
         return DataApiResponse(message=message, data={"success": success_count, "failed": error_count})
     except Exception as e:
+        # Without a traceback, a failed import leaves nothing to diagnose from —
+        # the caller sees a message and an operator reading logs sees nothing.
+        logger.exception("HPLC reference batch import failed")
         return MessageApiResponse(code=500, message=f"Import failed: {str(e)}", data=None)
 
 
@@ -881,6 +887,7 @@ async def handler(  # noqa: F811
             data={"success": success_count, "failed": error_count, "errors": errors},
         )
     except Exception as e:
+        logger.exception("Chrom-column batch import failed")
         return MessageApiResponse(code=500, message=f"导入失败: {str(e)}")
 
 

@@ -3,6 +3,7 @@
 Database access layer for static data tables.
 """
 
+import logging
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -18,6 +19,8 @@ from app.modules.quality.qms.static_data.models import (
     Standard,
     StorageCondition,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class StaticDataRepository:
