@@ -7,6 +7,7 @@ nothing, so a failed import left no trace anywhere. The module had no logger at 
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 
@@ -33,8 +34,18 @@ async def test_failed_import_logs_a_traceback(auth_client: AsyncClient, caplog) 
     with caplog.at_level(logging.ERROR, logger=MODULE_LOGGER):
         response = await auth_client.post(f"{BASE}/hplc-reference/batch-import", files={"file": bad_file})
 
-    # The handler still answers rather than propagating — that behaviour is unchanged.
-    assert response.status_code in (200, 500), response.text
+        # The import is a job now (#100), so the handler answers **202 immediately**
+        # and the failure happens off-request. The status assertion moved with it,
+        # and the log only appears once the worker has run — so wait for the job to
+        # leave `running` rather than sampling the log straight away.
+        assert response.status_code == 202, response.text
+        job_id = response.json()["data"]["job_id"]
+
+        for _ in range(50):
+            poll = await auth_client.get(f"{BASE}/jobs/{job_id}")
+            if poll.json()["data"]["status"] != "running":
+                break
+            await asyncio.sleep(0.1)
 
     records = [r for r in caplog.records if r.name == MODULE_LOGGER]
     assert records, (
