@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Static-data API behaviour for the quality module.
 
 Regression cover for the eleven tables migration 0033 dropped. Before the fix
@@ -10,6 +9,7 @@ never from the request body.
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 import pytest
 from httpx import AsyncClient
@@ -149,9 +149,14 @@ async def test_duplicate_create_returns_400(auth_client: AsyncClient) -> None:
     assert duplicate.status_code == 400, f"expected 400 for a duplicate, got {duplicate.status_code}: {duplicate.text}"
 
 
-async def _create_hplc_reference(auth_client: AsyncClient, extra: dict | None = None) -> dict:
+async def _create_hplc_reference(auth_client: AsyncClient, extra: dict[str, object] | None = None) -> dict[str, Any]:
     code = f"REF-{uuid.uuid4().hex[:8]}"
     body = {"ref_code": code, "ref_name": "对照品测试", **(extra or {})}
     response = await auth_client.post(f"{BASE}/hplc-reference", json=body)
     assert response.status_code == 200, response.text
-    return response.json()["data"]
+
+    # `response.json()` is `Any`; narrow it rather than returning it blind, so the
+    # declared return type is actually checked.
+    payload = response.json()["data"]
+    assert isinstance(payload, dict)
+    return payload
