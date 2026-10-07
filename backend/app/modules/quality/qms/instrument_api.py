@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
     # Approval
@@ -103,7 +104,8 @@ async def post(
     try:
         from app.platform.notification.feishu_client_config import FeishuClient
 
-        client = FeishuClient(config.feishu_app_id, config.feishu_app_secret)
+        # The client needs the plaintext secret, not the stored ciphertext.
+        client = FeishuClient(config.feishu_app_id, decrypt_secret(config.feishu_app_secret))
         open_id = await client.get_user_by_mobile_or_email(mobile=mobile, email=email)
         if open_id:
             return InstrumentFeishuUserApiResponse(message="获取成功", data={"open_id": open_id})
@@ -128,7 +130,11 @@ async def get(
             "id": str(config.id),
             "name": config.name,
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext, so echoing it would hand the
+            # client the encrypted blob.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "chat_id": config.chat_id,
             "receive_id_type": config.receive_id_type,
             "remind_30_days": config.remind_30_days,
@@ -163,7 +169,10 @@ async def post(  # noqa: F811
             "id": str(config.id),
             "name": config.name,
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "chat_id": config.chat_id,
             "receive_id_type": config.receive_id_type,
             "remind_30_days": config.remind_30_days,
@@ -190,7 +199,10 @@ async def put(
             "id": str(config.id),
             "name": config.name,
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "chat_id": config.chat_id,
             "receive_id_type": config.receive_id_type,
             "remind_30_days": config.remind_30_days,
@@ -1109,7 +1121,7 @@ async def _send_reminder(records, config, reminder_type, is_overdue=False) -> An
 
     await send_feishu_card_from_config(
         app_id=config.feishu_app_id,
-        app_secret=config.feishu_app_secret,
+        app_secret=decrypt_secret(config.feishu_app_secret),
         receive_id=config.chat_id,
         receive_id_type=config.receive_id_type,
         title=f"🔔 仪器校准{reminder_type}提醒（共 {len(records)} 条）",
