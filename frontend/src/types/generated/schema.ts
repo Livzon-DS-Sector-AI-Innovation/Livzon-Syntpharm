@@ -14800,7 +14800,11 @@ export interface paths {
         put?: never;
         /**
          * Post
-         * @description 发送校准记录到期提醒到飞书
+         * @description 发送校准记录到期提醒到飞书。
+         *
+         *     Credentials come from the selected reminder config, decrypted server-side.
+         *     They are deliberately NOT accepted as parameters: a secret in a query string
+         *     is written to every access log, proxy log and browser history along the way.
          */
         post: operations["post_api_v1_quality_instrument_record_remind_post"];
         delete?: never;
@@ -82242,18 +82246,12 @@ export interface operations {
     post_api_v1_quality_instrument_record_remind_post: {
         parameters: {
             query: {
-                /** @description 飞书群ID或用户ID或open_id */
-                chat_id: string;
-                /** @description 接收者类型: chat_id/user_id/open_id */
-                receive_id_type?: string;
+                /** @description 提醒配置ID */
+                config_id: string;
                 /** @description 提前提醒天数 */
                 days?: number;
                 /** @description 是否包含超期记录 */
                 include_overdue?: boolean;
-                /** @description 飞书应用AppID */
-                feishu_app_id?: string | null;
-                /** @description 飞书应用AppSecret */
-                feishu_app_secret?: string | null;
             };
             header?: never;
             path?: never;

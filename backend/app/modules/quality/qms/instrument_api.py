@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
+from app.core.exceptions import BadRequestException
 from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
@@ -846,15 +847,26 @@ async def get(  # noqa: F811
 
 @router.post("/record/remind", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    chat_id: str = Query(..., description="飞书群ID或用户ID或open_id"),
-    receive_id_type: str = Query("chat_id", description="接收者类型: chat_id/user_id/open_id"),
+    config_id: UUID = Query(..., description="提醒配置ID"),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     include_overdue: bool = Query(True, description="是否包含超期记录"),
-    feishu_app_id: str | None = Query(None, description="飞书应用AppID"),
-    feishu_app_secret: str | None = Query(None, description="飞书应用AppSecret"),
     service: CalibrationRecordService = Depends(get_record_service),
+    config_service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
-    """发送校准记录到期提醒到飞书"""
+    """发送校准记录到期提醒到飞书。
+
+    Credentials come from the selected reminder config, decrypted server-side.
+    They are deliberately NOT accepted as parameters: a secret in a query string
+    is written to every access log, proxy log and browser history along the way.
+    """
+    # Same source as the scheduled reminder — the config, never the caller.
+    config = await config_service.get_config(config_id)
+    chat_id = config.chat_id
+    receive_id_type = config.receive_id_type
+    feishu_app_id = config.feishu_app_id
+    feishu_app_secret = decrypt_secret(config.feishu_app_secret) if config.feishu_app_secret else None
+    if not feishu_app_id or not feishu_app_secret or not chat_id:
+        raise BadRequestException(message="提醒配置缺少飞书应用凭证或群 ID")
     import logging
 
     from app.platform.notification.feishu_client_config import (

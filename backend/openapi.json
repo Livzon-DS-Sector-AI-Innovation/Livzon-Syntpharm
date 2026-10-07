@@ -73131,31 +73131,20 @@
           "\u4eea\u5668\u6821\u51c6\u7ba1\u7406"
         ],
         "summary": "Post",
-        "description": "\u53d1\u9001\u6821\u51c6\u8bb0\u5f55\u5230\u671f\u63d0\u9192\u5230\u98de\u4e66",
+        "description": "\u53d1\u9001\u6821\u51c6\u8bb0\u5f55\u5230\u671f\u63d0\u9192\u5230\u98de\u4e66\u3002\n\nCredentials come from the selected reminder config, decrypted server-side.\nThey are deliberately NOT accepted as parameters: a secret in a query string\nis written to every access log, proxy log and browser history along the way.",
         "operationId": "post_api_v1_quality_instrument_record_remind_post",
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "config_id",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "description": "\u98de\u4e66\u7fa4ID\u6216\u7528\u6237ID\u6216open_id",
-              "title": "Chat Id"
+              "format": "uuid",
+              "description": "\u63d0\u9192\u914d\u7f6eID",
+              "title": "Config Id"
             },
-            "description": "\u98de\u4e66\u7fa4ID\u6216\u7528\u6237ID\u6216open_id"
-          },
-          {
-            "name": "receive_id_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "\u63a5\u6536\u8005\u7c7b\u578b: chat_id/user_id/open_id",
-              "default": "chat_id",
-              "title": "Receive Id Type"
-            },
-            "description": "\u63a5\u6536\u8005\u7c7b\u578b: chat_id/user_id/open_id"
+            "description": "\u63d0\u9192\u914d\u7f6eID"
           },
           {
             "name": "days",
@@ -73182,42 +73171,6 @@
               "title": "Include Overdue"
             },
             "description": "\u662f\u5426\u5305\u542b\u8d85\u671f\u8bb0\u5f55"
-          },
-          {
-            "name": "feishu_app_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u98de\u4e66\u5e94\u7528AppID",
-              "title": "Feishu App Id"
-            },
-            "description": "\u98de\u4e66\u5e94\u7528AppID"
-          },
-          {
-            "name": "feishu_app_secret",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u98de\u4e66\u5e94\u7528AppSecret",
-              "title": "Feishu App Secret"
-            },
-            "description": "\u98de\u4e66\u5e94\u7528AppSecret"
           }
         ],
         "responses": {
