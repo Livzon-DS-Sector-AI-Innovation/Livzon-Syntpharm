@@ -4002,3 +4002,385 @@ _None._
 | 本审查使用 `origin/main` 作为基准（非本地 `main`），因为本地 `main` 落后于 `origin/main`。使用错误基准会导致已合并的 commits 被错误计入 PR 范围。 | 审查程序 | — |
 | Safety API 文件缺少 `logger = logging.getLogger(__name__)` 是 origin/main 已存在的技术债务，建议后续专项修复。 | 日志规范 | 6 |
 | 38 处 `as unknown as` 类型转换表明 OpenAPI spec 可能未完整覆盖后端响应结构，建议在 `scripts/ci/export_openapi.py` 中检查 `ApiResponse` 信封的生成。 | 前端/API 类型来源 | 10 |
+
+### PR #88: quality module hardening, safety React Query migration, frontend lint cleanup (base: main, head: ruanjiaheng-frontend-lint, date: 2026-10-08)
+
+**Changed files (140):** — 47 backend files + 88 frontend files + 5 docs/scripts
+
+**Affected categories:** 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
+
+---
+
+#### Category 2: Secrets and hardcoded values
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 30 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+_None._
+
+**Uncertain:**
+
+_None._
+
+**Notes:**
+- `scripts/ci.sh:51` contains `http://localhost:3000` and `scripts/ci.sh:216-217` contains `http://127.0.0.1:18000` / `http://127.0.0.1:13000` for E2E testing — allowed per CI/test exception.
+- `scripts/ci.sh:172` contains `http://localhost:8000/health/ready` for Docker health check — Docker service discovery, allowed.
+- Feishu secrets (`reagent_reminder_config`, `instrument_api`) are now encrypted at rest via `Fernet` — positive improvement.
+
+---
+
+#### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 16 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:16` — 模块所有权/禁止跨模块直接 import — Imports `get_db_session` from `app.platform.database` instead of `app.core.database.get_db`. Although `get_db_session` is a backward-compatible alias, quality module files should use `app.core.database.get_db` (as `static_data/api.py` correctly does). Direct dependency on `app.platform.database` from a business module violates the module boundary principle.
+
+**Uncertain:**
+
+_None._
+
+---
+
+#### Category 4: API and authentication
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 16 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 12 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:23` — 禁止 response_model=dict 或无 response_model — `GET /config` endpoint has no `response_model`, returns raw dict. All structured JSON endpoints must use concrete Pydantic response models.
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:52` — 禁止 response_model=dict 或无 response_model — `POST /config` endpoint has no `response_model`, returns raw dict.
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:80` — 禁止 response_model=dict 或无 response_model — `POST /check` endpoint has no `response_model`, returns raw dict.
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:88` — 禁止 response_model=dict 或无 response_model — `GET /low-stock` endpoint has no `response_model`, returns raw dict.
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:107` — 禁止 response_model=dict 或无 response_model — `POST /item-reminder` endpoint has no `response_model`, returns raw dict.
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_api.py:118` — 禁止 response_model=dict 或无 response_model — `GET /item-reminder/{reagent_name}` endpoint has no `response_model`, returns raw dict.
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:428` — 禁止 response_model=dict 或无 response_model — `DELETE /rules/{rule_id}` endpoint has no `response_model`, returns `{"message": "删除成功"}`.
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:577` — 禁止 response_model=dict 或无 response_model — `DELETE /records/{record_id}` endpoint has no `response_model`, returns `{"message": "删除成功"}`.
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:665` — 禁止 response_model=dict 或无 response_model — `DELETE /{instrument_id}` endpoint has no `response_model`, returns `{"message": "删除成功"}`.
+- [ ] `backend/app/modules/quality/qms/static_data/api.py:152` — 响应模型类型不匹配 — `DataApiResponse` defines `data: dict[str, Any] | None = None`, but `DICT_OPTIONS[dict_type]` is a list. Type mismatch causes OpenAPI schema inconsistency with actual response.
+- [ ] `backend/app/modules/quality/qms/static_data/api.py:1107` — 响应模型类型不匹配 — `DataApiResponse(data=await service.get_medium_stats(medium_type))` passes `dict[str, int]` but `DataApiResponse.data` type is `dict[str, Any] | None`. Works at runtime but OpenAPI schema is imprecise.
+- [ ] `backend/app/modules/quality/qms/static_data/api.py:1215` — 响应模型类型不匹配 — `DataApiResponse(data=await service.get_standard_stats())` same issue as above.
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:1` — mypy(strict) 要求 — File-level `# mypy: ignore-errors` suppresses all mypy checks. AGENTS.md requires `mypy(strict)`. May be acceptable for legacy code if there is a plan to progressively fix type errors.
+
+---
+
+#### Category 5: Models and migrations
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 16 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `backend/alembic/versions/0067_recreate_quality_legacy_tables.py:23-24` — 单模块原则（跨 schema） — Migration creates tables in both `qms` and `quality` schemas. Migration docstring explains "`qms` and `quality` are schemas of the same `quality` module", and CI script `check_migration_scope.py` was updated to judge by module rather than schema. However, AGENTS.md states "each migration file may only modify one module's schema". `qms` and `quality` are two different schemas within the same module — requires architecture lead approval.
+- [ ] `backend/app/modules/quality/qms/static_data/service.py:43,60,71,96,123` — 方法命名规范 — Multiple methods use meaningless names like `_func_l41`, `_func_l59`, `_func_l71`, `_func_l95`, `_func_l125`. These methods are actually business methods (`update_hplc_reference`, `adjust_hplc_reference_quantity`, etc.) — the `_func_l*` names are legacy obfuscated naming that should be cleaned up.
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/material_report_models.py:107` — 外键约束/CASCADE DELETE — `MaterialReport.template_id` FK points to `quality.report_templates.id` with `ondelete="CASCADE"`. AGENTS.md says "must avoid CASCADE DELETE across modules". This is intra-module CASCADE, but `MaterialReportItem` and `ReportImage` also use `ondelete="CASCADE"`. Needs confirmation against business requirements since soft-delete (`is_deleted`) is the default policy.
+
+---
+
+#### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 16 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 5 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:116` — 日志规范/f-string — `logger.error(f"获取飞书用户失败: {str(e)}")` uses f-string. Should be `logger.error("获取飞书用户失败", extra={"error": str(e)})`.
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:888` — 日志规范/f-string — `logger.error(f"获取校准提醒记录失败: {str(e)}", exc_info=True)` uses f-string. Although `exc_info=True` is present, the message itself should use parameterized format.
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:982` — 日志规范/f-string — `logger.error(f"发送飞书提醒失败: {str(e)}")` uses f-string.
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_service.py:219` — 日志规范/f-string — `logger.error(f"发送飞书提醒失败: {str(e)}")` uses f-string, missing `extra` context.
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:116,888,982` — 日志规范/缺少 extra 上下文 — All three log calls above lack `extra={}` for structured context (e.g., `config_id`, `user_id`), violating AGENTS.md: "always include context: `extra={...}`".
+
+---
+
+#### Category 7: External services and background tasks
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 16 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/quality/qms/static_data/api.py:413-420` — 异步任务规范 — Uses `spawn_task(_run(), name=...)` to start background import tasks. `spawn_task` is from `app/core/jobs.py`, which complies with the rule. However, `job_store` is in-memory storage, lost on restart. Code comments acknowledge this (`job_store.py:9-12`), but business acceptance of task state loss should be confirmed.
+- [ ] `backend/app/core/job_store.py:1-17` — 后台任务持久化 — `JobStore` is pure in-memory storage; all task state is lost on restart. AGENTS.md lists "lost after restart" as a drawback of `asyncio.create_task`. While not a violation (uses `spawn_task` not `asyncio.create_task`), business acceptance of task state loss should be confirmed.
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/instrument_api.py:848-985` — 飞书调用重试策略 — `_send_reminder` calls Feishu API to send card messages, but no retry logic is visible. AGENTS.md requires "external calls (LLM, Feishu, etc.) max 3 retries, exponential backoff (1s, 2s, 4s)". Need to confirm whether `send_feishu_card_from_config` or `FeishuClient` internally implements retry.
+
+---
+
+#### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 18 |
+| Files not inspected | 0 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+_None._ All 18 test files comply with Category 8 rules.
+
+**Notes:**
+- All files in correct directories (`tests/integration/`, `tests/modules/`, `tests/unit/`) ✓
+- No unnecessary `@pytest.mark.asyncio` decorators (uses `asyncio_mode = "auto"`) ✓
+- External services properly mocked ✓
+- Coverage priority respected (service > API > repository) ✓
+- Positive: removes `# mypy: ignore-errors` from 5 existing test files ✓
+
+---
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 57 |
+| Files not inspected (deleted in PR) | 8 |
+| Rules evaluated | 8 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 4 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `frontend/src/app/(dashboard)/quality/page.tsx:3` — Server Component vs Client Component — Line 1 declares `'use client'`, line 3 declares `export const dynamic = 'force-dynamic'`. The `export const dynamic` is a Next.js Server Component directive; it has no effect in a Client Component and is dead code that misleads maintainers.
+- [ ] `frontend/src/app/(dashboard)/quality/deviation-automation/templates/page.tsx:303-306` — 语义 h1 标题 — The page's only `<h1>` is nested inside `<Card title={<h1>报告模板管理</h1>}>`. Per audit rules, h1 should not be provided via Card title; it should be an independent page-level heading element outside the Card.
+- [ ] `frontend/src/app/(dashboard)/quality/material-report/[id]/page.tsx:445-449` — 语义 h1 标题 — Same pattern: `<h1>报告单信息</h1>` nested inside `<Card title={...}>`, not an independent page-level heading.
+- [ ] `frontend/src/app/(dashboard)/quality/deviation-automation/templates/page.tsx:57-58,127-131` — 写操作应使用 Server Actions — Client Component directly uses `fetch()` for POST/PUT requests (line 127-131 `handleModalOk` function), violating "all POST/PUT/DELETE operations must be in `actions/` directory.禁止在 Client 组件里直接 fetch 写接口".
+
+---
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 23 |
+| Files not inspected | 0 |
+| Rules evaluated | 6 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 3 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `frontend/src/lib/api/client/static-data-api.ts:2-7` — 禁止手写 API 类型 — Imports `StorageConditionCreate`, `StorageConditionUpdate`, `MediumCreate`, `MediumUpdate`, `StandardCreate`, `StandardUpdate` from `@/types/static-data` instead of `@/types/generated/schema`. These types exist in the generated schema and must use generated types for API contracts.
+- [ ] `frontend/src/lib/api/client/static-data-api.ts:47,58,310,321,373,384` — 写操作必须通过 Server Actions — File contains `createStorageCondition`, `updateStorageCondition`, `createMedium`, `updateMedium`, `createStandard`, `updateStandard` write-operation functions called directly from client components. Rule requires all POST/PUT/DELETE operations go through Server Actions.
+- [ ] `frontend/src/lib/api/client/static-data-api.ts:160-167,170-176` — 禁止手写 API 类型 — `ImportJobHandle` and `ImportJobResult` are hand-written API response types. Generated schema has `BatchImportJobData` (line 18913-18930); should use generated types with type assertions for more specific typing.
+
+**Uncertain:**
+
+- [ ] `frontend/src/lib/api/client/static-data-api.ts:252-283` — 禁止手写 API 类型 — `getStandardStats()` and `getMediumStats()` return hand-written types. Generated schema has `unknown` response types for these endpoints (backend doesn't declare concrete response models). Hand-written types may be reasonable here, but backend should add response models for accurate type generation.
+
+---
+
+#### Category 11: Proxy and routing
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 1 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+_None._ `proxy.ts` was not modified. `menu-config.ts` only removed the audit log menu item.
+
+---
+
+#### Category 12: Cross-project OpenAPI
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+_None._ `backend/openapi.json` updated with new endpoints. `frontend/src/types/generated/schema.ts` regenerated (88131 lines), in sync with `openapi.json`.
+
+---
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 3 |
+| Files not inspected | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+_None._ Protected deployment files (`Dockerfile`, `docker-compose.yml`, etc.) were not modified. `AGENTS.md` and `README.md` documentation updates only.
+
+---
+
+#### Category 14: E2E
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 2 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+_None._ New regression test `antd-form-connected.spec.ts` and enhanced `routes.spec.ts` are properly placed in `frontend/e2e/`.
+
+---
+
+#### Category 15: SQL 注入与不安全查询
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 16 |
+| Files not inspected | 0 |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+_None._
+
+**Uncertain:**
+
+- [ ] `backend/app/modules/quality/qms/reagent_reminder_service.py:75-85,95-115,125-135` — 原始 SQL 查询 — Uses `text()` for raw SQL queries (e.g., `SELECT ... FROM qms.qms_reagent_item_reminder_config`). All queries use parameterized bindings (`:reagent_name`, `:is_enabled`, etc.), which complies with SQL injection prevention. However, AGENTS.md prefers SQLAlchemy ORM. The `qms_reagent_item_reminder_config` table has no corresponding ORM model — need to confirm whether to create a model or continue with raw SQL.
+
+---
+
+#### Category 16: React Hooks 与 React Compiler
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 57 |
+| Files not inspected (deleted in PR) | 8 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 3 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `frontend/src/components/safety/SpecialOpsReportPanel.tsx:46-89` — 数据获取规则/禁止 useEffect + setState — Uses `useState` for `data`/`total`/`loading` state with `useCallback`-wrapped `fetchData()` manually calling `getSpecialOperationReports()` API and `setData()`/`setTotal()`. Classic manual data fetching pattern; should use `useQuery` + `queryKey` for caching, auto-retry, deduplication, and invalidation.
+- [ ] `frontend/src/components/safety/SpecialOpsManagement.tsx:57-59,131-148` — 数据获取规则/禁止 useEffect + setState — Same pattern as SpecialOpsReportPanel. Although stats use `useQuery` (line 116), main list data still uses `useState` + `useCallback` + `setData()`/`setTotal()`. Mixed data fetching patterns within the same component; should unify to React Query.
+- [ ] `frontend/src/components/equipment/WorkOrderDrawer.tsx:36-46` — 数据获取规则/禁止 useEffect + setState — `useEffect` calls `fetchAllUsersClient()` then `.then()` calls `setMaintainers(list)`. This is useEffect + setState data fetching; should use `useQuery({ queryKey: ['all-users'], queryFn: fetchAllUsersClient, enabled: workOrderDrawerOpen })`.
+
+---
+
+#### Categories not affected
+
+1 — no repository layout changes.
+
+---
+
+#### PR #88 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 1 | 0 |
+| 4. API and authentication | 12 | 1 |
+| 5. Models and migrations | 2 | 1 |
+| 6. Configuration and logging | 5 | 0 |
+| 7. External services and background tasks | 2 | 1 |
+| 8. Backend tests | 0 | 0 |
+| 9. Frontend component boundaries | 4 | 0 |
+| 10. Frontend API and generated types | 3 | 1 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL 注入与不安全查询 | 0 | 1 |
+| 16. React Hooks 与 React Compiler | 3 | 0 |
+| **Total** | **32** | **5** |
+
+---
+
+#### PR #88 Overall Assessment
+
+**Severity breakdown of confirmed findings:**
+
+| Severity | Count | Key issues |
+|----------|-------|------------|
+| **Blocking** | 1 | `deviation-automation/templates/page.tsx` uses direct `fetch()` for POST/PUT in Client Component |
+| **High** | 10 | 9 endpoints missing `response_model` (6 in `reagent_reminder_api.py`, 3 in `instrument_api.py`); 1 client-side write operation in `static-data-api.ts` |
+| **Medium** | 14 | 5 f-string logging issues; 3 hand-written API types; 3 useEffect+setState patterns; 2 h1-in-Card-title; 1 dead `export const dynamic`; 1 cross-module import |
+| **Low** | 7 | 3 `DataApiResponse` type mismatches; 1 migration cross-schema; 1 `_func_l*` naming; 1 CASCADE DELETE uncertain |
+
+**Top 3 priorities for fix:**
+1. **`reagent_reminder_api.py`**: All 6 endpoints need concrete Pydantic response models — this is the most impactful fix for OpenAPI schema quality
+2. **`static-data-api.ts`**: Move write operations to Server Actions; switch type imports to generated schema
+3. **Logging f-strings**: Convert 4 `logger.error(f"...")` calls to `logger.error("...", extra={...})` pattern
+
+**Positive changes:**
+- Feishu secrets encrypted at rest (instrument calibration + reagent reminder)
+- 10 `mypy: ignore-errors` pragmas removed from test files
+- Safety module React Query migration (hazard ledger, daily risk report, special-ops)
+- E2E regression test for antd form connection warnings
+- OpenAPI drift check now fails on drift instead of auto-committing
+- 11 legacy quality tables migrated to shared BaseModel
+
