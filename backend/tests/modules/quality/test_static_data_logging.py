@@ -33,9 +33,7 @@ def _workbook(rows: list[tuple[object, ...]]) -> bytes:
     return buf.getvalue()
 
 
-async def test_failed_import_logs_a_traceback(
-    auth_client: AsyncClient, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_failed_import_logs_a_traceback(auth_client: AsyncClient, caplog: pytest.LogCaptureFixture) -> None:
     """Malformed workbook: the handler answers, and logs the exception.
 
     The response alone is not enough to diagnose a failed import — the caller sees
@@ -73,9 +71,7 @@ async def test_failed_import_logs_a_traceback(
     )
 
 
-async def test_row_level_failure_is_logged(
-    auth_client: AsyncClient, caplog: pytest.LogCaptureFixture
-) -> None:
+async def test_row_level_failure_is_logged(auth_client: AsyncClient, caplog: pytest.LogCaptureFixture) -> None:
     """A single bad row is logged, not only a corrupt whole file.
 
     The corrupt-workbook test above covers the rare case — the file will not open
