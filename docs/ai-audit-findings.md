@@ -335,13 +335,11 @@ CI configuration in place. E2E tests run on push to main via `.github/workflows/
 
 **Confirmed:**
 
-**Confirmed:**
-
-- Category 2: `SOFFICE_FALLBACK_PATHS` hardcoded Windows paths — removed ✓
-- Category 4: Repository `HTTPException` → service `NotFoundException` — fixed ✓  
-- Category 9: `settings/page.tsx` antd Result → NoAccessResult — fixed ✓
-- Category 9: `training/ledger/page.tsx` antd Spin → LoadingSpinner — fixed ✓
-- Category 9: `training/annual-plan/page.tsx` antd Spin → LoadingSpinner — fixed ✓
+- [x] Category 2: `SOFFICE_FALLBACK_PATHS` hardcoded Windows paths — removed ✓
+- [x] Category 4: Repository `HTTPException` → service `NotFoundException` — fixed ✓
+- [x] Category 9: `settings/page.tsx` antd Result → NoAccessResult — fixed ✓
+- [x] Category 9: `training/ledger/page.tsx` antd Spin → LoadingSpinner — fixed ✓
+- [x] Category 9: `training/annual-plan/page.tsx` antd Spin → LoadingSpinner — fixed ✓
 
 #### PR #10 Summary
 
@@ -376,6 +374,13 @@ _None._
 
 **Affected categories:** 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
 
+**Confirmed:**
+
+- Category 9: NoAccessResult barrel — ✓ fixed
+
+#### Categories not affected
+15, 16 — no relevant files changed.
+
 #### PR #11 Summary
 
 | Category | Confirmed | Uncertain |
@@ -395,12 +400,6 @@ _None._
 | 13. Docker | 0 | 0 |
 | 14. E2E | 0 | 0 |
 | **Total** | **0** | **0** |
-
-**Confirmed:**
-
-- Category 9: NoAccessResult barrel — ✓ fixed
-#### Categories not affected
-15, 16 — no relevant files changed.
 
 ### PR #13: lzhc-zhuang — Energy daily data, Equipment module refactor, Safety workflows (base: main, head: lzhc-zhuang, date: 2026-07-29)
 
@@ -441,8 +440,8 @@ _None._
 - [x] `backend/app/modules/equipment/models/personnel.py:18,23` — Duplicate `unique=True` removed from `code` column. (RESOLVED; severity: low)
 
 
-- `backend/alembic/versions/0049_add_equipment_model_changes.py:30,40,71-73` — DROP COLUMN approved by architecture lead. — severity: medium — **ACCEPTED**
-- `backend/app/modules/safety/service/safety.py.bak.indent-fix` — .bak file already removed from repo. — severity: blocking — **RESOLVED**
+- [x] `backend/alembic/versions/0049_add_equipment_model_changes.py:30,40,71-73` — DROP COLUMN approved by architecture lead. — severity: medium — **ACCEPTED**
+- [x] `backend/app/modules/safety/service/safety.py.bak.indent-fix` — .bak file already removed from repo. — severity: blocking — **RESOLVED**
 
 #### PR #13 Summary
 
