@@ -486,6 +486,48 @@ class BatchImportJobApiResponse(BaseModel):
     data: BatchImportJobData
 
 
+class StandardStatsData(BaseModel):
+    """Counts the standards page renders.
+
+    A concrete model rather than `DataApiResponse`'s `data: Any`, so the generated
+    OpenAPI describes the fields the frontend actually reads (`AGENTS.md:133`).
+    """
+
+    all: int
+    active: int
+    expired: int
+    # camelCase because the frontend reads `stats.lowStock` directly — renaming it
+    # would break the page. Same convention as capa_schemas.py uses for its fields.
+    lowStock: int  # noqa: N815
+    national: int
+
+
+class StandardStatsResponse(BaseModel):
+    """Standards stats response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: StandardStatsData
+
+
+class MediumStatsData(BaseModel):
+    """Counts the mediums page renders."""
+
+    all: int
+    verified: int
+    pending: int
+    expired: int
+    lowStock: int  # noqa: N815
+
+
+class MediumStatsResponse(BaseModel):
+    """Mediums stats response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: MediumStatsData
+
+
 class ChromColumnApiResponse(BaseModel):
     """Chromatography column response wrapper"""
 

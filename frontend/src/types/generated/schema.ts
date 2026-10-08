@@ -14411,7 +14411,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 获取单个试剂的提醒配置
+         * 单个试剂提醒配置
          * @description 获取单个试剂的提醒配置
          */
         get: operations["get_api_v1_quality_reagent_reminder_item_reminder__reagent_name__get"];
@@ -31995,6 +31995,35 @@ export interface components {
          */
         ItemCategory: "physical_chemical" | "related_substances" | "residual_solvents" | "microbial";
         /**
+         * ItemReminderConfigResponse
+         * @description `GET /item-reminder/{reagent_name}` — defaults to enabled when unset.
+         */
+        ItemReminderConfigResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ItemReminderData"];
+        };
+        /**
+         * ItemReminderData
+         * @description `POST /item-reminder` returns no `data` key at all — hence the optional.
+         */
+        ItemReminderData: {
+            /** Id */
+            id?: string | null;
+            /** Reagent Name */
+            reagent_name?: string | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /**
          * ItemReminderRequest
          * @description 单个试剂提醒配置请求
          */
@@ -32010,6 +32039,23 @@ export interface components {
              * @default true
              */
             is_enabled: boolean;
+        };
+        /**
+         * ItemReminderResponse
+         * @description `POST /item-reminder`
+         */
+        ItemReminderResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default 设置成功
+             */
+            message: string;
+            data?: components["schemas"]["ItemReminderData"] | null;
         };
         /**
          * ItemResult
@@ -32452,6 +32498,51 @@ export interface components {
              */
             description?: string | null;
         };
+        /** LowStockData */
+        LowStockData: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["LowStockItem"][];
+        };
+        /**
+         * LowStockItem
+         * @description One reagent below the threshold, with its reminder toggle state.
+         */
+        LowStockItem: {
+            /** Reagent Name */
+            reagent_name: string;
+            /** Count */
+            count: number;
+            /** Statuses */
+            statuses?: string | null;
+            /** Units */
+            units?: string | null;
+            /** Latest Arrival */
+            latest_arrival?: string | null;
+            /**
+             * Is Enabled
+             * @default true
+             */
+            is_enabled: boolean;
+        };
+        /**
+         * LowStockResponse
+         * @description `GET /low-stock`
+         */
+        LowStockResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["LowStockData"];
+        };
         /**
          * MaintenancePlanCreate
          * @description 创建维护计划请求
@@ -32791,6 +32882,39 @@ export interface components {
              * @description Remark
              */
             remark?: string | null;
+        };
+        /**
+         * MediumStatsData
+         * @description Counts the mediums page renders.
+         */
+        MediumStatsData: {
+            /** All */
+            all: number;
+            /** Verified */
+            verified: number;
+            /** Pending */
+            pending: number;
+            /** Expired */
+            expired: number;
+            /** Lowstock */
+            lowStock: number;
+        };
+        /**
+         * MediumStatsResponse
+         * @description Mediums stats response wrapper
+         */
+        MediumStatsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["MediumStatsData"];
         };
         /**
          * MediumUpdate
@@ -37806,6 +37930,82 @@ export interface components {
             } | null;
         };
         /**
+         * ReagentReminderConfigData
+         * @description The reminder config as the page reads it.
+         *
+         *     `feishu_app_secret` is masked server-side — the column holds ciphertext, so the
+         *     plaintext is never returned.
+         */
+        ReagentReminderConfigData: {
+            /** Feishu App Id */
+            feishu_app_id?: string | null;
+            /** Feishu App Secret */
+            feishu_app_secret?: string | null;
+            /** Feishu Chat Id */
+            feishu_chat_id?: string | null;
+            /** Low Stock Threshold */
+            low_stock_threshold?: number | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+            /** Last Remind Time */
+            last_remind_time?: string | null;
+            /** Last Remind Content */
+            last_remind_content?: string | null;
+        };
+        /**
+         * ReagentReminderConfigResponse
+         * @description `GET /config` — data is null until a config exists.
+         */
+        ReagentReminderConfigResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentReminderConfigData"] | null;
+        };
+        /**
+         * ReagentReminderSavedData
+         * @description The subset returned after saving — deliberately excludes the secret.
+         */
+        ReagentReminderSavedData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu App Id */
+            feishu_app_id?: string | null;
+            /** Feishu Chat Id */
+            feishu_chat_id?: string | null;
+            /** Low Stock Threshold */
+            low_stock_threshold?: number | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /**
+         * ReagentReminderSavedResponse
+         * @description `POST /config`
+         */
+        ReagentReminderSavedResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default 保存成功
+             */
+            message: string;
+            data: components["schemas"]["ReagentReminderSavedData"];
+        };
+        /**
          * RectificationReplyRequest
          * @description 整改回复请求（合并了原 complete_rectification 步骤）
          */
@@ -38202,6 +38402,38 @@ export interface components {
             regulation_name?: string | null;
             /** Stages */
             stages?: components["schemas"]["RegulationStageInfo"][];
+        };
+        /**
+         * ReminderCheckData
+         * @description `/check` payload — varies by branch, so every field is optional.
+         *
+         *     The service returns `data: null` for the early exits (no config, disabled,
+         *     incomplete Feishu settings) and a count otherwise.
+         */
+        ReminderCheckData: {
+            /** Count */
+            count?: number | null;
+            /** Total */
+            total?: number | null;
+            /** Filtered */
+            filtered?: boolean | null;
+        };
+        /**
+         * ReminderCheckResponse
+         * @description `POST /check`
+         */
+        ReminderCheckResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReminderCheckData"] | null;
         };
         /**
          * ReminderConfigCreate
@@ -42681,6 +42913,42 @@ export interface components {
              * @description Remark
              */
             remark?: string | null;
+        };
+        /**
+         * StandardStatsData
+         * @description Counts the standards page renders.
+         *
+         *     A concrete model rather than `DataApiResponse`'s `data: Any`, so the generated
+         *     OpenAPI describes the fields the frontend actually reads (`AGENTS.md:133`).
+         */
+        StandardStatsData: {
+            /** All */
+            all: number;
+            /** Active */
+            active: number;
+            /** Expired */
+            expired: number;
+            /** Lowstock */
+            lowStock: number;
+            /** National */
+            national: number;
+        };
+        /**
+         * StandardStatsResponse
+         * @description Standards stats response wrapper
+         */
+        StandardStatsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["StandardStatsData"];
         };
         /**
          * StandardStatus
@@ -80595,7 +80863,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["MediumStatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80847,7 +81115,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["StandardStatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81273,7 +81541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReagentReminderConfigResponse"];
                 };
             };
         };
@@ -81297,7 +81565,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReagentReminderSavedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81326,7 +81594,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReminderCheckResponse"];
                 };
             };
         };
@@ -81348,7 +81616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["LowStockResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81381,7 +81649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ItemReminderResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81412,7 +81680,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ItemReminderConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81953,7 +82221,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82169,7 +82437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82341,7 +82609,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */

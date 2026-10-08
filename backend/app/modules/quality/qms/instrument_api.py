@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Instrument Calibration API (仪器校准管理API路由)
 
 仪器设备台账、校准规则配置、校准记录的API接口
@@ -14,7 +13,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import RequiredUser, get_current_user
 from app.core.exceptions import BadRequestException
 from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
@@ -390,9 +389,9 @@ async def get(  # noqa: F811
 
 @router.post("/rules", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     data: CalibrationRuleCreate,
     service: CalibrationRuleService = Depends(get_rule_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """创建校准规则"""
     try:
@@ -408,10 +407,10 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.put("/rules/{rule_id}", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     rule_id: UUID,
     data: CalibrationRuleUpdate,
     service: CalibrationRuleService = Depends(get_rule_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """更新校准规则"""
     try:
@@ -425,7 +424,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/rules/{rule_id}")  # type: ignore[no-redef]
+@router.delete("/rules/{rule_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     rule_id: UUID,
     service: CalibrationRuleService = Depends(get_rule_service),
@@ -539,9 +538,9 @@ async def get(  # noqa: F811
 
 @router.post("/records", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     data: CalibrationRecordCreate,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """创建校准记录"""
     try:
@@ -557,10 +556,10 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.put("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     record_id: UUID,
     data: CalibrationRecordUpdate,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """更新校准记录"""
     try:
@@ -574,7 +573,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/records/{record_id}")  # type: ignore[no-redef]
+@router.delete("/records/{record_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
@@ -645,10 +644,10 @@ async def get(  # noqa: F811
 
 @router.put("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     instrument_id: UUID,
     data: InstrumentUpdate,
     service: InstrumentService = Depends(get_instrument_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """更新仪器设备"""
     try:
@@ -662,7 +661,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{instrument_id}")  # type: ignore[no-redef]
+@router.delete("/{instrument_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),

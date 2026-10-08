@@ -44,8 +44,18 @@ class MessageApiResponse(BaseModel):
 
 
 class DataApiResponse(BaseModel):
-    """Generic data response wrapper"""
+    """Generic data response wrapper.
+
+    `data` accepts a mapping **or a sequence** — some endpoints return a bare list
+    (`DICT_OPTIONS`, `WORKSHOP_CHOICES`). It was `dict[str, Any] | None`, which the
+    declared type could not describe, so those responses generated a misleading
+    OpenAPI schema.
+
+    This is a stop-gap, not the goal: `AGENTS.md:133` requires a concrete response
+    model per endpoint, and `Any` inside `data` still gives the frontend
+    `{type: object}` rather than real fields.
+    """
 
     code: int = 200
     message: str = "success"
-    data: dict[str, Any] | None = None
+    data: dict[str, Any] | list[Any] | None = None

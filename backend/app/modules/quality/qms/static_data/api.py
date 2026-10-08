@@ -1093,7 +1093,11 @@ async def handler(  # noqa: F811
 # ========== 6. Medium (培养基) ==========
 
 
-@router.get("/medium/stats", summary="Counts for the mediums page")
+@router.get(
+    "/medium/stats",
+    response_model=s.MediumStatsResponse,
+    summary="Counts for the mediums page",
+)
 async def get_medium_stats(
     current_user: RequiredUser,
     medium_type: str | None = Query(None, description="Medium type, when one is chosen"),
@@ -1104,7 +1108,7 @@ async def get_medium_stats(
     The page fetched every row and counted in JavaScript; as the table grew the
     stats got slower with it (#103).
     """
-    return DataApiResponse(data=await service.get_medium_stats(medium_type))
+    return {"code": 200, "message": "success", "data": await service.get_medium_stats(medium_type)}
 
 
 @router.get("/medium", summary="List medium")  # type: ignore[no-redef]
@@ -1206,13 +1210,17 @@ async def post(  # noqa: F811
 # ========== 7. Standard (标准品) ==========
 
 
-@router.get("/standard/stats", summary="Counts for the standards page")
+@router.get(
+    "/standard/stats",
+    response_model=s.StandardStatsResponse,
+    summary="Counts for the standards page",
+)
 async def get_standard_stats(
     current_user: RequiredUser,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """Counts the standards page renders, in one request (see #103)."""
-    return DataApiResponse(data=await service.get_standard_stats())
+    return {"code": 200, "message": "success", "data": await service.get_standard_stats()}
 
 
 @router.get("/standard", summary="List standards")  # type: ignore[no-redef]

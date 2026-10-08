@@ -8,9 +8,17 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.response import success_response
 from app.core.secrets import decrypt_secret, mask_secret
-from app.modules.quality.qms.reagent_reminder_schemas import ItemReminderRequest, ReminderConfigRequest
+from app.modules.quality.qms.reagent_reminder_schemas import (
+    ItemReminderConfigResponse,
+    ItemReminderRequest,
+    ItemReminderResponse,
+    LowStockResponse,
+    ReagentReminderConfigResponse,
+    ReagentReminderSavedResponse,
+    ReminderCheckResponse,
+    ReminderConfigRequest,
+)
 from app.modules.quality.qms.reagent_reminder_service import ReagentReminderService
 from app.platform.database import get_db_session
 
@@ -20,14 +28,14 @@ router = APIRouter(prefix="/reagent-reminder", tags=["试剂提醒管理"])
 # ============ API 接口 ============
 
 
-@router.get("/config", summary="获取提醒配置")
+@router.get("/config", response_model=ReagentReminderConfigResponse, summary="获取提醒配置")
 async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
     """获取当前的提醒配置"""
     service = ReagentReminderService(session)
     config = await service.get_config()
 
     if not config:
-        return success_response(message="success", data=None)
+        return {"code": 200, "message": "success", "data": None}
 
     return {
         "code": 200,
@@ -49,7 +57,7 @@ async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
     }
 
 
-@router.post("/config", summary="保存提醒配置")
+@router.post("/config", response_model=ReagentReminderSavedResponse, summary="保存提醒配置")
 async def post(
     request: ReminderConfigRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -77,7 +85,7 @@ async def post(
     }
 
 
-@router.post("/check", summary="手动检查并发送提醒")
+@router.post("/check", response_model=ReminderCheckResponse, summary="手动检查并发送提醒")
 async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> Any:
     """手动触发库存检查和提醒"""
     service = ReagentReminderService(session)
@@ -85,7 +93,7 @@ async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> A
     return result
 
 
-@router.get("/low-stock", summary="获取库存不足的试剂列表")
+@router.get("/low-stock", response_model=LowStockResponse, summary="获取库存不足的试剂列表")
 async def get(
     threshold: int = 2,
     session: AsyncSession = Depends(get_db_session),
@@ -104,7 +112,7 @@ async def get(
     }
 
 
-@router.post("/item-reminder", summary="设置单个试剂的提醒开关")  # type: ignore[no-redef]
+@router.post("/item-reminder", response_model=ItemReminderResponse, summary="设置单个试剂的提醒开关")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: ItemReminderRequest,
     session: AsyncSession = Depends(get_db_session),
@@ -115,7 +123,7 @@ async def post(  # noqa: F811
     return result
 
 
-@router.get("/item-reminder/{reagent_name}", summary="获取单个试剂的提醒配置")  # type: ignore[no-redef]
+@router.get("/item-reminder/{reagent_name}", response_model=ItemReminderConfigResponse, summary="单个试剂提醒配置")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     reagent_name: str,
     session: AsyncSession = Depends(get_db_session),
@@ -125,7 +133,7 @@ async def get(  # noqa: F811
     config = await service.get_item_reminder_config(reagent_name)
 
     if config:
-        return success_response(message="success", data=config)
+        return {"code": 200, "message": "success", "data": config}
     else:
         # 默认返回启用状态
         return {
