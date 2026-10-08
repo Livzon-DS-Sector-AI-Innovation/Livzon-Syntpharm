@@ -4288,8 +4288,6 @@ _None._
   - Line 445: `- \`backend/app/modules/safety/service/safety.py.bak.indent-fix\` — .bak file already removed...`
   
   These should use `- [x]` syntax since they are marked as ACCEPTED/RESOLVED.
-- [ ] `docs/ai-audit-findings.md:3612,3840,4068` — PR section template/section consolidation — PR #85 has three separate sections (第二次审查, 第三次审查, 第四次审查) that were not collapsed into one. The commit message states PR #53's three duplicate sections were collapsed, but PR #85's three sections remain separate. Each section has the same heading `### PR #85: feat: replace generic ApiResponse with concrete response models (base: main, head: pr-85, date: 2026-09-30)`, which creates ambiguity. The `**审查轮次:**` marker was added to distinguish them, but the template does not define this pattern.
-- [ ] `docs/ai-audit-findings.md:449,500,617,678,887,974,1108,1173,1479` — PR section template/summary table format — Nine PR summary tables use the old format `| Category | Blocking | High | Medium | Low | Status/Note |` instead of the template format `| Category | Confirmed | Uncertain |`. The commit message explains this was deliberate for tables that "recorded severity buckets and never a per-row Confirmed/Uncertain split", but this deviates from the canonical template. Affected PRs: #13, #17, #18, #22, #24, #29, #32, #35, #40.
 
 **Uncertain:**
 
