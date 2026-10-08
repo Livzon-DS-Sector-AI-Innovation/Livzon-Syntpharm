@@ -366,6 +366,14 @@ async def _import_hplc_references(contents: bytes, user_id: UUID, db: AsyncSessi
         except Exception as e:
             error_count += 1
             errors.append(f"Row {row_num}: {str(e)}")
+            # The ordinary import failure is one bad row, not a corrupt file.
+            # The counts go back to the caller; the row is logged so an operator
+            # can find it without downloading the workbook again.
+            logger.warning(
+                "HPLC reference import: row failed",
+                extra={"row": row_num, "ref_code": data.get("ref_code")},
+                exc_info=True,
+            )
 
     message = f"Import completed: {success_count} success, {error_count} failed"
     if errors:
@@ -409,7 +417,12 @@ async def handler(
         except Exception as e:
             # A background failure has no caller to report to, so the traceback is
             # the only record — and the job status carries the message to the poller.
-            logger.exception("HPLC reference batch import failed")
+            # `extra` carries the job id so the log can be joined to the poll the
+            # client made (`AGENTS.md:332`: log lines must carry their context).
+            logger.exception(
+                "HPLC reference batch import failed",
+                extra={"job_id": job_id, "user_id": str(user_id)},
+            )
             job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"static-data-hplc-import-{job_id[:8]}")
@@ -747,7 +760,6 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
     """
     wb = openpyxl.load_workbook(io.BytesIO(contents))
     service = StaticDataService(db)
-    wb = openpyxl.load_workbook(io.BytesIO(contents))
 
     field_map = {
         "品牌": "brand",
@@ -938,6 +950,16 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
             except Exception as e:
                 error_count += 1
                 errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}")
+                # See the HPLC handler: a single bad row is the ordinary failure.
+                logger.warning(
+                    "Chrom-column import: row failed",
+                    extra={
+                        "sheet": sheet_name,
+                        "row": row_num,
+                        "col_code": data.get("col_code"),
+                    },
+                    exc_info=True,
+                )
 
     message = f"导入完成: 成功 {success_count} 条，失败 {error_count} 条"
     if errors:
@@ -978,7 +1000,12 @@ async def handler(  # noqa: F811
                 result = await _import_chrom_columns(contents, user_id, db)
             job_store.complete(job_id, result)
         except Exception as e:
-            logger.exception("Chrom-column batch import failed")
+            # `extra` carries the job id so the log can be joined to the poll the
+            # client made (`AGENTS.md:332`).
+            logger.exception(
+                "Chrom-column batch import failed",
+                extra={"job_id": job_id, "user_id": str(user_id)},
+            )
             job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"static-data-chrom-import-{job_id[:8]}")

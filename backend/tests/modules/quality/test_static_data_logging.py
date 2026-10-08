@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """A failed bulk import records a traceback.
 
 Before this, the import's failure path returned a message to the caller and logged
@@ -11,6 +10,8 @@ import asyncio
 import io
 import logging
 
+import openpyxl
+import pytest
 from httpx import AsyncClient
 
 BASE = "/api/v1/quality/static-data"
@@ -20,7 +21,21 @@ BASE = "/api/v1/quality/static-data"
 MODULE_LOGGER = "app.modules.quality.qms.static_data.api"
 
 
-async def test_failed_import_logs_a_traceback(auth_client: AsyncClient, caplog) -> None:
+def _workbook(rows: list[tuple[object, ...]]) -> bytes:
+    """A minimal .xlsx with the headers the importer expects."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["对照品编号(ref_code)*", "对照品名称(ref_name)*", "规格(spec)"])
+    for r in rows:
+        ws.append(list(r))
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+async def test_failed_import_logs_a_traceback(
+    auth_client: AsyncClient, caplog: pytest.LogCaptureFixture
+) -> None:
     """Malformed workbook: the handler answers, and logs the exception.
 
     The response alone is not enough to diagnose a failed import — the caller sees
@@ -56,3 +71,39 @@ async def test_failed_import_logs_a_traceback(auth_client: AsyncClient, caplog) 
     assert with_traceback, (
         f"the import failure was logged without exc_info, so no stack was recorded: {[r.getMessage() for r in records]}"
     )
+
+
+async def test_row_level_failure_is_logged(
+    auth_client: AsyncClient, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A single bad row is logged, not only a corrupt whole file.
+
+    The corrupt-workbook test above covers the rare case — the file will not open
+    at all. The *ordinary* failed import is one row the database rejects while the
+    rest succeed: those are caught per-row and collected into the response, and
+    before this they were logged nowhere. An operator saw "1 failed" and had no way
+    to find which row or why.
+    """
+    # A duplicate ref_code: the first row inserts, the second is refused by the
+    # service's uniqueness check. One success, one failure — the ordinary case.
+    payload = _workbook([("REF-DUP", "对照品甲", "10mg"), ("REF-DUP", "对照品乙", "20mg")])
+    bad_file = ("dup.xlsx", io.BytesIO(payload), "application/vnd.ms-excel")
+
+    with caplog.at_level(logging.WARNING, logger=MODULE_LOGGER):
+        response = await auth_client.post(f"{BASE}/hplc-reference/batch-import", files={"file": bad_file})
+        assert response.status_code == 202, response.text
+        job_id = response.json()["data"]["job_id"]
+
+        for _ in range(50):
+            poll = await auth_client.get(f"{BASE}/jobs/{job_id}")
+            if poll.json()["data"]["status"] != "running":
+                break
+            await asyncio.sleep(0.1)
+
+    row_logs = [r for r in caplog.records if "row failed" in r.getMessage()]
+    assert row_logs, (
+        "a rejected row was never logged; the caller is told a count and nothing more. "
+        f"captured: {[r.getMessage() for r in caplog.records]}"
+    )
+    # The row number is the thing an operator needs to fix the sheet.
+    assert any(getattr(r, "row", None) for r in row_logs), "the log line does not carry the row number"

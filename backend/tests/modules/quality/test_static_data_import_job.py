@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """The batch import runs as a job and reports through a pollable status.
 
 `AGENTS.md:310` forbids an operation over 5 seconds inside an HTTP request; the
@@ -9,15 +8,17 @@ from __future__ import annotations
 
 import asyncio
 import io
+from typing import Any
 
 import openpyxl
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
 BASE = "/api/v1/quality/static-data"
 
 
-def _workbook(rows: list[tuple]) -> bytes:
+def _workbook(rows: list[tuple[object, ...]]) -> bytes:
     """A minimal .xlsx with the headers the importer expects."""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -32,18 +33,18 @@ def _workbook(rows: list[tuple]) -> bytes:
 class _SessionCtx:
     """Hands the test's session to code that would open its own."""
 
-    def __init__(self, session) -> None:
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> AsyncSession:
         return self._session
 
-    async def __aexit__(self, *exc) -> bool:
+    async def __aexit__(self, *exc: object) -> bool:
         return False
 
 
 async def test_import_returns_a_job_and_polls_to_done(
-    auth_client: AsyncClient, db_session, monkeypatch: pytest.MonkeyPatch
+    auth_client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The endpoint answers 202 with a job id, and the job reports its counts.
 
@@ -71,8 +72,8 @@ async def test_import_returns_a_job_and_polls_to_done(
 
     # Poll until the job leaves `running`. Bounded, so a stuck job fails rather
     # than hanging the suite.
-    status = None
-    body = None
+    status: str | None = None
+    body: dict[str, Any] | None = None
     for _ in range(50):
         poll = await auth_client.get(f"{BASE}/jobs/{job_id}")
         assert poll.status_code == 200, poll.text
@@ -83,12 +84,13 @@ async def test_import_returns_a_job_and_polls_to_done(
         await asyncio.sleep(0.2)
 
     assert status == "done", f"job did not finish: {body}"
+    assert body is not None, "no job body was ever returned"
     assert body["result"]["success"] == 2, f"expected both rows imported: {body}"
     assert body["result"]["failed"] == 0
 
 
 async def test_chrom_column_import_is_also_a_job(
-    auth_client: AsyncClient, db_session, monkeypatch: pytest.MonkeyPatch
+    auth_client: AsyncClient, db_session: AsyncSession, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """The chrom-column import follows the same 202-and-poll contract.
 
@@ -113,7 +115,8 @@ async def test_chrom_column_import_is_also_a_job(
     assert response.status_code == 202, response.text
     job_id = response.json()["data"]["job_id"]
 
-    status, body = None, None
+    status: str | None = None
+    body: dict[str, Any] | None = None
     for _ in range(50):
         poll = await auth_client.get(f"{BASE}/jobs/{job_id}")
         body = poll.json()["data"]
@@ -123,6 +126,7 @@ async def test_chrom_column_import_is_also_a_job(
         await asyncio.sleep(0.2)
 
     assert status == "done", f"job did not finish: {body}"
+    assert body is not None, "no job body was ever returned"
     assert body["result"]["success"] == 1, f"expected the row imported: {body}"
 
 
