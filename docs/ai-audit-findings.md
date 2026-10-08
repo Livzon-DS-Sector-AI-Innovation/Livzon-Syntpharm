@@ -4342,3 +4342,119 @@ _None._
 
 #### Categories not affected
 1-16 — no code files changed; this is a documentation-only PR.
+
+### PR #87 (revised): docs: normalize ai-audit-findings PR sections to the audit plan format (base: main, head: findings-formatting, date: 2026-09-30)
+
+**Changed files (1):**
+- `docs/ai-audit-findings.md` — Format normalization of PR review sections to conform to ai-audit-plan.md template
+
+**Affected categories:** None (documentation-only PR, no code changes)
+
+**Review scope:** This PR modifies only the audit findings documentation file. The review checks whether the formatting changes conform to the PR section template defined in `docs/ai-audit-plan.md`.
+
+---
+
+#### Format compliance check
+
+**Confirmed:**
+
+- [ ] `docs/ai-audit-findings.md:336-338` — PR section template/finding format — PR #10 section has two consecutive `**Confirmed:**` headings (lines 336 and 338). The second heading is followed by a list of "Previously resolved" items that are not in checkbox format (`- [ ]` or `- [x]`). Template requires all findings to use checkbox syntax.
+
+- [ ] `docs/ai-audit-findings.md:377` — PR section template/section structure — PR #11 section has `**Confirmed:**` heading appearing after the summary table (line 377), which violates the template order. Template requires `**Confirmed:**` and `**Uncertain:**` blocks to appear within category sections, not after the summary.
+
+- [ ] `docs/ai-audit-findings.md:443-444` — PR section template/finding format — PR #13 section contains two findings that are in checkbox format (`- [x]`) but use inconsistent formatting:
+  - Line 443: `- [x] \`backend/alembic/versions/0049_add_equipment_model_changes.py:30,40,71-73\` — DROP COLUMN approved by architecture lead. — severity: medium — **ACCEPTED**`
+  - Line 444: `- [x] \`backend/app/modules/safety/service/safety.py.bak.indent-fix\` — .bak file already removed from repo. — severity: blocking — **RESOLVED**`
+  
+  These use checkbox syntax but the severity and status are not in the parenthetical resolution detail format as shown in the template. Should be: `(ACCEPTED; severity: medium)` and `(RESOLVED; severity: blocking)`.
+
+- [ ] `docs/ai-audit-findings.md:3611,3839,4067` — PR section template/section consolidation — PR #85 has three separate sections (第二次审查, 第三次审查, 第四次审查) that were not collapsed into one. The commit message states PR #53's three duplicate sections were collapsed, but PR #85's three sections remain separate. Each section has the same heading `### PR #85: feat: replace generic ApiResponse with concrete response models (base: main, head: pr-85, date: 2026-09-30)`, which creates ambiguity. The `**审查轮次:**` marker was added to distinguish them, but the template does not define this pattern.
+
+- [ ] `docs/ai-audit-findings.md:448,499,616,677,886,973,1107,1172,1478` — PR section template/summary table format — Nine PR summary tables use the old format `| Category | Blocking | High | Medium | Low | Status/Note |` instead of the template format `| Category | Confirmed | Uncertain |`. The commit message explains this was deliberate for tables that "recorded severity buckets and never a per-row Confirmed/Uncertain split", but this deviates from the canonical template. Affected PRs: #13, #17, #18, #22, #24, #29, #30, #31, #39.
+
+**Uncertain:**
+
+_None._
+
+---
+
+#### Notes
+
+**Positive changes:**
+- Baseline section (lines 1-321) is byte-identical to the original, as claimed in the commit message ✓
+- All 23 PR headings normalized to the template grammar `### PR #N: <title> (base: <base>, head: <head>, date: <date>)` ✓
+- 54 stats tables now have the canonical `| Stat | Count |` header ✓
+- 87 findings converted to checkbox syntax (`- [ ]` / `- [x]`) ✓
+- 18 missing `**Affected categories:**` / `#### Categories not affected` blocks added ✓
+- Code fences are properly balanced (10 markers = 5 pairs) ✓
+- No Setext heading issues detected ✓
+- PR #53's three duplicate sections properly collapsed into one ✓
+
+**Deliberate limitations (from commit message):**
+- Categories 12/14 keep their CI-check row set, which the canonical six rows do not fit without inventing values
+- Where a section recorded severity buckets and never a per-row Confirmed/Uncertain split, the 3-column form is not produced
+- No value is computed or inferred anywhere
+
+**Recommendations:**
+1. Convert the two findings in PR #13 (lines 443-444) to use parenthetical resolution detail format: `(ACCEPTED; severity: medium)` and `(RESOLVED; severity: blocking)`
+2. Remove the duplicate `**Confirmed:**` heading in PR #10 (line 336) and convert the list to proper format
+3. Move the misplaced `**Confirmed:**` block in PR #11 (line 377) into the appropriate category section or remove it
+4. Consider collapsing PR #85's three sections into one, or add a clarifying comment that multi-round reviews are an exception to the one-section-per-PR rule
+5. Document the severity-bucket summary table format as an accepted variant in `ai-audit-plan.md` if it provides useful information not captured by Confirmed/Uncertain counts
+
+---
+
+#### PR #87 Summary (revised)
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 0 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 0 | 0 |
+| 9. Frontend component boundaries | 0 | 0 |
+| 10. Frontend API and generated types | 0 | 0 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 0 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL 注入与不安全查询 | 0 | 0 |
+| 16. React Hooks 与 React Compiler | 0 | 0 |
+| **Format compliance** | **5** | **0** |
+| **Total** | **5** | **0** |
+
+---
+
+#### Categories not affected
+
+1-16 — no code files changed; this is a documentation-only PR.
+
+---
+
+#### Overall Assessment
+
+**Severity breakdown of confirmed findings:**
+
+| Severity | Count | Key issues |
+|----------|-------|------------|
+| **Medium** | 5 | 2 duplicate/misplaced `**Confirmed:**` headings; 1 inconsistent resolution detail format; 1 PR #85 not consolidated; 9 summary tables use old format |
+
+**Top 3 priorities for fix:**
+1. **PR #10 duplicate heading**: Remove the second `**Confirmed:**` heading (line 336) and convert the list to proper format
+2. **PR #11 misplaced block**: Move the `**Confirmed:**` block (line 377) to the correct location or remove it
+3. **PR #13 resolution format**: Convert lines 443-444 to use parenthetical format `(ACCEPTED; severity: medium)`
+
+**Positive aspects:**
+- Successfully normalized 23 PR headings to template format
+- Added 54 canonical stats table headers
+- Converted 87 findings to checkbox syntax
+- Added 18 missing category sections
+- Fixed code fence and Setext heading issues
+- Baseline section preserved byte-identical
+
+**Recommendation:** PR #87 successfully normalizes most of the document to the template format. The 5 format compliance issues are minor and can be addressed in a follow-up commit. The PR can be merged with the understanding that these formatting inconsistencies will be resolved later.
+
