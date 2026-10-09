@@ -333,11 +333,20 @@ export const DeviationTaskFieldsUpdateSchema = z.object({
 
 export type DeviationTaskFieldsUpdate = z.infer<typeof DeviationTaskFieldsUpdateSchema>
 
-/** 偏差模板创建 */
+/**
+ * 偏差模板创建 — 报告模板（deviation-automation/templates）
+ *
+ * The fields mirror the endpoint's own model, `ReportTemplateCreate`
+ * (`deviation_automation_schemas.py`): `name`, `description`, `is_active`.
+ * The previous shape here — `template_name` + a required `template_content` —
+ * described a different resource entirely, so `parse()` rejected every payload the
+ * templates page sends, and that is why the page called `fetch` directly instead of
+ * using its Server Action. `is_active` is an int on the wire, not a boolean.
+ */
 export const DeviationTemplateCreateSchema = z.object({
-  template_name: z.string(),
+  name: z.string(),
   description: z.string().optional(),
-  template_content: z.record(z.string(), z.unknown()),
+  is_active: z.number().int().min(0).max(1).optional(),
 })
 
 export type DeviationTemplateCreate = z.infer<typeof DeviationTemplateCreateSchema>
