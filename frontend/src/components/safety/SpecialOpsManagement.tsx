@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, DatePicker, Tag, Card,
   Typography, Drawer, Descriptions, Switch, App, Tooltip, Modal,
@@ -54,9 +54,6 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
   const [form] = Form.useForm()
 
   // ── Data State ──
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<SpecialOperationReport[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
@@ -127,11 +124,30 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
   const stats = initialStats?.length ? initialStats : (fetchedStats || [])
 
   // ── Fetch data (all statuses) ──
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await getSpecialOperationReports({
-        page, page_size: pageSize,
+  // `AGENTS.md:549` — 数据获取：使用 React Query，禁止 useEffect + setState.
+  // This component already used `useQuery` for the stats above; the list was still
+  // hand-rolled, so the two idioms sat side by side. The filter state is the cache
+  // key, and the eight mutation sites invalidate instead of calling a refetch by hand.
+  const queryClient = useQueryClient()
+
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: [
+      'special-ops-management',
+      page,
+      pageSize,
+      statusFilter,
+      opType,
+      opLevel,
+      riskLevel,
+      dept,
+      dateRange,
+      debouncedKeyword,
+      isCritical,
+    ],
+    queryFn: () =>
+      getSpecialOperationReports({
+        page,
+        page_size: pageSize,
         status: statusFilter || undefined,
         operation_type: opType,
         operation_level: opLevel,
@@ -141,15 +157,13 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
         date_to: dateRange?.[1]?.format('YYYY-MM-DD'),
         keyword: debouncedKeyword || undefined,
         is_critical: isCritical,
-      })
-      setData(res.data || [])
-      setTotal(res.meta?.total || 0)
-    } catch {
-      message.error('获取数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, statusFilter, opType, opLevel, riskLevel, dept, dateRange, debouncedKeyword, isCritical, message])
+      }),
+  })
+
+  const data = queryResult?.data || []
+  const total = queryResult?.meta?.total || 0
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['special-ops-management'] })
 
   // ── AI Export ──
 
@@ -230,7 +244,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
         if (r.code === 200) {
           message.success('已更新')
           setReportDrawerOpen(false)
-          fetchData()
+          refresh()
         } else {
           message.error(r.message || '更新失败')
         }
@@ -240,7 +254,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
           message.success('已创建')
           setReportDrawerOpen(false)
           form.resetFields()
-          fetchData()
+          refresh()
         } else {
           message.error(r.message || '创建失败')
         }
@@ -257,7 +271,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
       title: '确认删除', content: '确定要删除该报备吗？',
       onOk: async () => {
         const r = await deleteSpecialOperationReport(id)
-        if (r.code === 200) { message.success('已删除'); fetchData() }
+        if (r.code === 200) { message.success('已删除'); refresh() }
         else { message.error(r.message || '删除失败') }
       },
     })
@@ -273,14 +287,14 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
       } else {
         message.success(`已提交${item.is_critical_reason ? ` · ${item.is_critical_reason}` : ''}`)
       }
-      fetchData()
+      refresh()
     }
     else { message.error(r.message || '提交失败') }
   }
 
   const handleApprove = async (id: string) => {
     const r = await approveSpecialOperationReport(id)
-    if (r.code === 200) { message.success('已审批'); fetchData() }
+    if (r.code === 200) { message.success('已审批'); refresh() }
     else { message.error(r.message || '审批失败') }
   }
 
@@ -289,13 +303,16 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
   const handleReject = async () => {
     if (!rejectReason.trim()) { message.error('请填写驳回原因'); return }
     const r = await rejectSpecialOperationReport(rejectId, rejectReason)
-    if (r.code === 200) { message.success('已驳回'); setRejectVisible(false); fetchData() }
+    if (r.code === 200) { message.success('已驳回'); setRejectVisible(false); refresh() }
     else { message.error(r.message || '驳回失败') }
   }
 
   const handleToggleCritical = async (id: string, checked: boolean) => {
     const r = await setSpecialOperationReportCritical(id, checked)
-    if (r.code === 200) { message.success(checked ? '已标记为关键作业' : '已取消关键作业标记'); fetchData() }
+    if (r.code === 200) {
+      message.success(checked ? '已标记为关键作业' : '已取消关键作业标记')
+      refresh()
+    }
     else { message.error(r.message || '操作失败') }
   }
 
@@ -654,7 +671,12 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
             style={{ width: 200, borderRadius: 8 }}
             value={keyword}
             onChange={(e) => handleKeywordChange(e.target.value)}
-            onPressEnter={(e) => { const v = (e.target as HTMLInputElement).value; setKeyword(v); setDebouncedKeyword(v); setPage(1); fetchData() }}
+            onPressEnter={(e) => {
+              const v = (e.target as HTMLInputElement).value
+              setKeyword(v)
+              setDebouncedKeyword(v)
+              setPage(1)
+            }}
             allowClear
           />
           <Space>
@@ -668,7 +690,7 @@ export default function SpecialOpsManagement({ initialStats }: SpecialOpsManagem
           </Space>
           <Button
             icon={<SearchOutlined />}
-            onClick={() => { setPage(1); fetchData() }}
+            onClick={() => setPage(1)}
             style={{ borderRadius: 8 }}
           >
             查询
