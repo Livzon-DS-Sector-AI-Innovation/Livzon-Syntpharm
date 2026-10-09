@@ -191,41 +191,26 @@ export async function getHplcReferencesNeedRecal() {
 }
 
 // ========== 统计 ==========
+//
+// The response shapes come from the generated contract, not from declarations here.
+// The backend declares `StandardStatsResponse` / `MediumStatsResponse`
+// (`static_data/schemas.py`), so repeating the fields in this file — as it did — was
+// two declarations of one contract with nothing keeping them in step
+// (`AGENTS.md:519`, 禁止手写 API 类型).
+type StandardStats = components['schemas']['StandardStatsData']
+type MediumStats = components['schemas']['MediumStatsData']
+
 /** Counts the standards page renders. One request — see #103. */
-export async function getStandardStats(): Promise<{
-  all: number
-  active: number
-  expired: number
-  lowStock: number
-  national: number
-}> {
-  const body = await api<{ data: Record<string, number> }>(`${PREFIX}/standard/stats`)
-  return body.data as {
-    all: number
-    active: number
-    expired: number
-    lowStock: number
-    national: number
-  }
+export async function getStandardStats(): Promise<StandardStats> {
+  const body = await api<{ data: StandardStats }>(`${PREFIX}/standard/stats`)
+  return body.data
 }
 
 /** Counts the mediums page renders, filtered by type when one is chosen. */
-export async function getMediumStats(mediumType?: string): Promise<{
-  all: number
-  verified: number
-  pending: number
-  expired: number
-  lowStock: number
-}> {
+export async function getMediumStats(mediumType?: string): Promise<MediumStats> {
   const qs = mediumType ? `?medium_type=${encodeURIComponent(mediumType)}` : ''
-  const body = await api<{ data: Record<string, number> }>(`${PREFIX}/medium/stats${qs}`)
-  return body.data as {
-    all: number
-    verified: number
-    pending: number
-    expired: number
-    lowStock: number
-  }
+  const body = await api<{ data: MediumStats }>(`${PREFIX}/medium/stats${qs}`)
+  return body.data
 }
 
 // ========== 培养基 ==========
