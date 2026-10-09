@@ -1,16 +1,19 @@
-import type {
-  StorageConditionCreate,
-  StorageConditionUpdate,
-  MediumCreate,
-  MediumUpdate,
-  StandardCreate,
-  StandardUpdate,
-} from '@/types/static-data'
+// Writes do not belong in this file. `AGENTS.md:413` defines `lib/api/client/` as
+// 浏览器只读 API（GET/list/search/detail）and `:443` requires writes to go through a
+// Server Action — so this file keeps reads only. The writes of the same names live in
+// `@/actions/static-data`.
+//
+// The contract types moved with them: `AGENTS.md:519` requires API types to come from
+// `@/types/generated/schema`, and the hand-written request interfaces in
+// `@/types/static-data` were only ever used by the writers removed here.
 /**
  * 业务静态数据模块 — 客户端直连 API 客户端
  * 列表查询走客户端 fetch，避免 Server Action 在 Next.js 服务端的网络隔离问题
  * 新建/编辑/删除/上传等写操作仍通过 Server Action（需要 auth context）
  */
+
+// The job handle is the generated contract's shape (`AGENTS.md:519`).
+import type { components } from '@/types/generated/schema'
 
 const API_BASE = '/api/v1'
 const PREFIX = '/quality/static-data'
@@ -42,37 +45,6 @@ export async function listStorageCondition(params: {
 
 export async function getStorageCondition(id: number) {
   return api(`${PREFIX}/storage-condition/${id}`)
-}
-
-export async function createStorageCondition(data: StorageConditionCreate) {
-  const res = await fetch(`${API_BASE}${PREFIX}/storage-condition`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function updateStorageCondition(id: number, data: StorageConditionUpdate) {
-  const res = await fetch(`${API_BASE}${PREFIX}/storage-condition/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function deleteStorageCondition(id: number) {
-  const res = await fetch(`${API_BASE}${PREFIX}/storage-condition/${id}`, {
-    method: 'DELETE',
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
 }
 
 // ========== 计量单位 ==========
@@ -156,12 +128,12 @@ export async function downloadChromColumnTemplate() {
   window.URL.revokeObjectURL(url)
 }
 
-/** A batch import runs as a job; the endpoint answers 202 with its id. */
-export interface ImportJobHandle {
-  job_id: string
-  status: 'running' | 'done' | 'failed'
-}
+// Derived from the generated contract rather than hand-written (`AGENTS.md:519`).
+// The endpoint's body is `BatchImportJobData`: `job_id`, a plain-`string` `status`,
+// a free-form `result` and a nullable `error`.
+export type ImportJobHandle = components['schemas']['BatchImportJobData']
 
+/** The counts the import writes, which `BatchImportJobData.result` carries opaquely. */
 export interface ImportJobResult {
   success: number
   failed: number
@@ -178,8 +150,10 @@ async function waitForImportJob(jobId: string, timeoutMs = 300_000): Promise<Imp
     const body = await res.json()
     if (!res.ok) throw new Error(body.message || `HTTP ${res.status}`)
 
-    const data = body.data as ImportJobHandle & { result?: ImportJobResult; error?: string }
-    if (data.status === 'done') return data.result ?? { success: 0, failed: 0 }
+    const data = body.data as ImportJobHandle
+    // `status` is a plain string in the contract, so narrow it here — that is the one
+    // place the generated type is deliberately looser than this code needs.
+    if (data.status === 'done') return (data.result as ImportJobResult | null) ?? { success: 0, failed: 0 }
     if (data.status === 'failed') throw new Error(data.error || '导入失败')
 
     if (Date.now() - started > timeoutMs) {
@@ -203,37 +177,6 @@ async function startImport(path: string, file: File): Promise<ImportJobResult> {
 
 export async function batchImportChromColumn(file: File): Promise<ImportJobResult> {
   return startImport('/chrom-column/batch-import', file)
-}
-
-export async function adjustHplcReferenceQuantity(id: number, quantity_change: number) {
-  const res = await fetch(`${API_BASE}${PREFIX}/hplc-reference/${id}/adjust-quantity`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ quantity_change }),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function consumeHplcReference(
-  id: number,
-  data: {
-    usage_amount: number
-    usage_unit?: string
-    usage_person?: string
-    usage_purpose?: string
-    remark?: string
-  },
-) {
-  const res = await fetch(`${API_BASE}${PREFIX}/hplc-reference/${id}/use`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
 }
 
 export async function getHplcReferenceUsageHistory(id: number, page = 1, page_size = 20) {
@@ -307,48 +250,6 @@ export async function getMedium(id: number) {
   return api(`${PREFIX}/medium/${id}`)
 }
 
-export async function createMedium(data: MediumCreate) {
-  const res = await fetch(`${API_BASE}${PREFIX}/medium`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function updateMedium(id: number, data: MediumUpdate) {
-  const res = await fetch(`${API_BASE}${PREFIX}/medium/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function deleteMedium(id: number) {
-  const res = await fetch(`${API_BASE}${PREFIX}/medium/${id}`, {
-    method: 'DELETE',
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function adjustMediumStock(id: number, quantity: number) {
-  const res = await fetch(`${API_BASE}${PREFIX}/medium/${id}/adjust-stock`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ quantity }),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
 // ========== 标准品 ==========
 export async function listStandard(params: {
   page?: number; page_size?: number;
@@ -370,47 +271,6 @@ export async function getStandard(id: number) {
   return api(`${PREFIX}/standard/${id}`)
 }
 
-export async function createStandard(data: StandardCreate) {
-  const res = await fetch(`${API_BASE}${PREFIX}/standard`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function updateStandard(id: number, data: StandardUpdate) {
-  const res = await fetch(`${API_BASE}${PREFIX}/standard/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function deleteStandard(id: number) {
-  const res = await fetch(`${API_BASE}${PREFIX}/standard/${id}`, {
-    method: 'DELETE',
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
-
-export async function adjustStandardQuantity(id: number, quantity: number) {
-  const res = await fetch(`${API_BASE}${PREFIX}/standard/${id}/adjust-quantity`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ quantity }),
-  })
-  const result = await res.json()
-  if (!res.ok) throw new Error(result.message || `HTTP ${res.status}`)
-  return result
-}
 
 // ========== 试剂 ==========
 export async function listReagent(params: {

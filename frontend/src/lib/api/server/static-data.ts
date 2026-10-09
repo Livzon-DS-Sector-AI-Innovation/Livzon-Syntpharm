@@ -123,6 +123,36 @@ export async function deleteStorageCondition(id: number) {
   })
 }
 
+// Adjustments are writes too, and were also living in `lib/api/client/`. They are not
+// named `create/update/delete`, which is why the first pass missed them.
+export async function adjustMediumStock(id: number, quantity: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/medium/${id}/adjust-stock`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity }),
+  })
+}
+
+export async function adjustStandardQuantity(id: number, quantity: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard/${id}/adjust-quantity`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity }),
+  })
+}
+
+export async function adjustHplcReferenceQuantity(id: number, quantity_change: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference/${id}/adjust-quantity`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity_change }),
+  })
+}
+
+export async function consumeHplcReference(id: number, data: Record<string, unknown>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference/${id}/use`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 export async function toggleStorageConditionStatus(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/storage-condition/${id}/toggle-status`, {
     method: 'POST',
@@ -393,6 +423,30 @@ export async function updateStandardMaterial(id: number, data: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard-material/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
+  })
+}
+
+// The plain `standard` resource — distinct from `standard-material` and
+// `material-standard` above. The client had these writes in
+// `lib/api/client/static-data-api.ts`; they belong here (`AGENTS.md:413` reserves
+// `lib/api/client/` for reads).
+export async function createStandard(data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateStandard(id: number, data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteStandard(id: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard/${id}`, {
+    method: 'DELETE',
   })
 }
 

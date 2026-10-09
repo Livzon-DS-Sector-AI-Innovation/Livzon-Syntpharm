@@ -62,11 +62,10 @@ import {
   listHplcReference,
   downloadHplcReferenceTemplate,
   batchImportHplcReference,
-  adjustHplcReferenceQuantity,
-  consumeHplcReference,
   getHplcReferenceUsageHistory,
   getHplcReferencesNeedRecal,
 } from '@/lib/api/client/static-data-api'
+import { adjustHplcReferenceQuantity, consumeHplcReference } from '@/actions/static-data'
 import './hplc-style.css'
 
 const { RangePicker } = DatePicker

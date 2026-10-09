@@ -37,14 +37,15 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Medium, MEDIUM_TYPE_OPTIONS, MEDIUM_VERIFY_STATUS_OPTIONS } from '@/types/static-data'
+// Reads stay on the browser client (`AGENTS.md:413`); writes go through the action
+// (`:443`), where the function names match.
+import { listMedium, getMediumStats } from '@/lib/api/client/static-data-api'
 import {
-  listMedium,
   createMedium,
   updateMedium,
   deleteMedium,
   adjustMediumStock,
-  getMediumStats,
-} from '@/lib/api/client/static-data-api'
+} from '@/actions/static-data'
 import './medium-style.css'
 
 const { Search } = Input

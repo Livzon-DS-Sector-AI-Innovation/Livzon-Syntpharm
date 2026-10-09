@@ -37,14 +37,15 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Standard, STANDARD_STATUS_OPTIONS, STANDARD_TYPE_OPTIONS } from '@/types/static-data'
+// Reads stay on the browser client (`AGENTS.md:413`); writes go through the action
+// (`:443`), where the function names match.
+import { listStandard, getStandardStats } from '@/lib/api/client/static-data-api'
 import {
-  listStandard,
   createStandard,
   updateStandard,
   deleteStandard,
   adjustStandardQuantity,
-  getStandardStats,
-} from '@/lib/api/client/static-data-api'
+} from '@/actions/static-data'
 import './standard-style.css'
 
 const { Search } = Input
