@@ -112,7 +112,10 @@ async def post(
         else:
             return InstrumentFeishuUserApiResponse(message="未找到该用户", data={"open_id": None})
     except Exception as e:
-        logger.error(f"获取飞书用户失败: {str(e)}")
+        # `extra` carries the context (`AGENTS.md:332`). The lookup key is not logged:
+        # `mobile`/`email` are personal data, and the rule reserves `extra` for
+        # identifiers, not for whatever happens to be in scope.
+        logger.error("获取飞书用户失败", extra={"config_id": str(config.id), "error": str(e)})
         return InstrumentFeishuUserApiResponse(message=f"获取用户失败: {str(e)}", data={"open_id": None})
 
 
@@ -884,7 +887,11 @@ async def post(  # noqa: F811
         if include_overdue:
             overdue_records = await service.get_overdue_records()
     except Exception as e:
-        logger.error(f"获取校准提醒记录失败: {str(e)}", exc_info=True)
+        logger.error(
+            "获取校准提醒记录失败",
+            extra={"days": days, "include_overdue": include_overdue, "error": str(e)},
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"获取提醒记录失败: {str(e)}")
 
     if not records and not overdue_records:
@@ -978,7 +985,10 @@ async def post(  # noqa: F811
                 },
             )
         except Exception as e:
-            logger.error(f"发送飞书提醒失败: {str(e)}")
+            logger.error(
+                "发送飞书提醒失败",
+                extra={"chat_id": chat_id, "receive_id_type": receive_id_type, "error": str(e)},
+            )
             raise HTTPException(status_code=500, detail=f"发送失败: {str(e)}")
 
 

@@ -216,7 +216,16 @@ class ReagentReminderService:
                 },
             }
         except Exception as e:
-            logger.error(f"发送飞书提醒失败: {str(e)}")
+            # `extra` carries the context (`AGENTS.md:332`). Counts only — the reagent
+            # names live in the returned payload, and this is a service, not a report.
+            logger.error(
+                "发送飞书提醒失败",
+                extra={
+                    "low_stock_count": len(low_stock_items),
+                    "enabled_count": len(enabled_items),
+                    "error": str(e),
+                },
+            )
             return {"code": 500, "message": f"发送失败: {str(e)}", "data": None}
 
     def _build_reminder_content(
