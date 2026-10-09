@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
 from app.core.exceptions import BadRequestException, NotFoundException
-from app.core.job_store import job_store
+from app.core.job_repository import JobRepository
 from app.core.jobs import spawn_task
 from app.modules.quality.qms.static_data import schemas as s
 from app.modules.quality.qms.static_data.schemas import (
@@ -391,6 +391,7 @@ async def _import_hplc_references(contents: bytes, user_id: UUID, db: AsyncSessi
 async def handler(
     file: UploadFile = File(...),
     user_id: UUID = Depends(_user_id),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Import HPLC reference substances from Excel file.
 
@@ -405,32 +406,33 @@ async def handler(
     # captured before the background job runs.
     contents = await file.read()
 
-    job_id = job_store.create()
+    # The job row is committed before the work starts, so the id is pollable even
+    # if the worker never finishes — a row stuck on `running` is the signal.
+    job_id = await JobRepository(db).create("static-data-hplc-import")
 
     async def _run() -> None:
-        try:
-            # Own session: the request's is closed by the time this runs. The import
-            # is what takes time, so this is the part that must be off-request.
-            async with async_session_factory() as db:
-                result = await _import_hplc_references(contents, user_id, db)
-            job_store.complete(job_id, result)
-        except Exception as e:
-            # A background failure has no caller to report to, so the traceback is
-            # the only record — and the job status carries the message to the poller.
-            # `extra` carries the job id so the log can be joined to the poll the
-            # client made (`AGENTS.md:332`: log lines must carry their context).
-            logger.exception(
-                "HPLC reference batch import failed",
-                extra={"job_id": job_id, "user_id": str(user_id)},
-            )
-            job_store.fail(job_id, str(e))
+        # Own session: the request's is closed by the time this runs.
+        async with async_session_factory() as worker_db:
+            try:
+                result = await _import_hplc_references(contents, user_id, worker_db)
+                await JobRepository(worker_db).complete(job_id, result)
+            except Exception as e:
+                # A background failure has no caller to report to, so the traceback
+                # is the only record — and the job row carries the message to the
+                # poller. `extra` makes the line findable from the job id
+                # (`AGENTS.md:332`: log lines must carry their context).
+                logger.exception(
+                    "HPLC reference batch import failed",
+                    extra={"job_id": str(job_id), "user_id": str(user_id)},
+                )
+                await JobRepository(worker_db).fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"static-data-hplc-import-{job_id[:8]}")
+    spawn_task(_run(), name=f"static-data-hplc-import-{str(job_id)[:8]}")
 
     return {
         "code": 200,
         "message": "Import started",
-        "data": {"job_id": job_id, "status": "running"},
+        "data": {"job_id": str(job_id), "status": "running"},
     }
 
 
@@ -439,24 +441,34 @@ async def handler(
     response_model=s.BatchImportJobApiResponse,
     summary="Query a batch-import job",
 )
-async def get_import_job(job_id: str, current_user: RequiredUser) -> Any:
+async def get_import_job(
+    job_id: str,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
     """Poll a batch import started by `batch-import`.
 
     `result` is present only once `status` is `done`; `error` only once it is
-    `failed`. A job id from a previous process is gone — the store is in memory.
+    `failed`. The job is a row, so this answers **after** a restart — unlike the
+    in-memory store this replaced (`AGENTS.md:308`, 重启后丢失).
     """
-    record = job_store.get(job_id)
-    if record is None:
+    try:
+        job_uuid = UUID(job_id)
+    except ValueError:
+        raise NotFoundException(resource="导入任务", resource_id=job_id) from None
+
+    job = await JobRepository(db).get(job_uuid)
+    if job is None:
         raise NotFoundException(resource="导入任务", resource_id=job_id)
 
     return {
         "code": 200,
         "message": "success",
         "data": {
-            "job_id": job_id,
-            "status": record.state,
-            "result": record.result,
-            "error": record.error,
+            "job_id": str(job.id),
+            "status": job.state,
+            "result": job.result,
+            "error": job.error,
         },
     }
 
@@ -979,6 +991,7 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
 async def handler(  # noqa: F811
     file: UploadFile = File(...),
     user_id: UUID = Depends(_user_id),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Import chromatography columns from Excel (液相 and 气相 sheets).
 
@@ -992,23 +1005,24 @@ async def handler(  # noqa: F811
     # Read here: `UploadFile` is closed when the request ends.
     contents = await file.read()
 
-    job_id = job_store.create()
+    job_id = await JobRepository(db).create("static-data-chrom-import")
 
     async def _run() -> None:
-        try:
-            async with async_session_factory() as db:
-                result = await _import_chrom_columns(contents, user_id, db)
-            job_store.complete(job_id, result)
-        except Exception as e:
-            # `extra` carries the job id so the log can be joined to the poll the
-            # client made (`AGENTS.md:332`).
-            logger.exception(
-                "Chrom-column batch import failed",
-                extra={"job_id": job_id, "user_id": str(user_id)},
-            )
-            job_store.fail(job_id, str(e))
+        # Own session: the request's is closed by the time this runs.
+        async with async_session_factory() as worker_db:
+            try:
+                result = await _import_chrom_columns(contents, user_id, worker_db)
+                await JobRepository(worker_db).complete(job_id, result)
+            except Exception as e:
+                # `extra` carries the job id so the log can be joined to the poll the
+                # client made (`AGENTS.md:332`).
+                logger.exception(
+                    "Chrom-column batch import failed",
+                    extra={"job_id": str(job_id), "user_id": str(user_id)},
+                )
+                await JobRepository(worker_db).fail(job_id, str(e))
 
-    spawn_task(_run(), name=f"static-data-chrom-import-{job_id[:8]}")
+    spawn_task(_run(), name=f"static-data-chrom-import-{str(job_id)[:8]}")
 
     return {
         "code": 200,

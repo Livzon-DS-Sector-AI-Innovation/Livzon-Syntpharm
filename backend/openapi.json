@@ -68380,7 +68380,7 @@
           "Static Data"
         ],
         "summary": "Query a batch-import job",
-        "description": "Poll a batch import started by `batch-import`.\n\n`result` is present only once `status` is `done`; `error` only once it is\n`failed`. A job id from a previous process is gone \u2014 the store is in memory.",
+        "description": "Poll a batch import started by `batch-import`.\n\n`result` is present only once `status` is `done`; `error` only once it is\n`failed`. The job is a row, so this answers **after** a restart \u2014 unlike the\nin-memory store this replaced (`AGENTS.md:308`, \u91cd\u542f\u540e\u4e22\u5931).",
         "operationId": "get_import_job_api_v1_quality_static_data_jobs__job_id__get",
         "parameters": [
           {

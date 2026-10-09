@@ -13908,7 +13908,8 @@ export interface paths {
          * @description Poll a batch import started by `batch-import`.
          *
          *     `result` is present only once `status` is `done`; `error` only once it is
-         *     `failed`. A job id from a previous process is gone — the store is in memory.
+         *     `failed`. The job is a row, so this answers **after** a restart — unlike the
+         *     in-memory store this replaced (`AGENTS.md:308`, 重启后丢失).
          */
         get: operations["get_import_job_api_v1_quality_static_data_jobs__job_id__get"];
         put?: never;
