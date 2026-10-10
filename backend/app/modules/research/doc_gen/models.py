@@ -267,15 +267,13 @@ class DocGenParseCache(BaseModel):
     )
 
     content_hash: Mapped[str] = mapped_column(String(64), comment="文件内容 SHA-256")
-    parser_version: Mapped[str] = mapped_column(
-        String(16), default="1", comment="解析器版本（行为变更时递增，旧缓存作废）"
-    )
-    file_name: Mapped[str] = mapped_column(String(500), default="", comment="原始文件名（诊断用）")
+    parser_version: Mapped[str] = mapped_column(String(16), default="1", comment="解析器版本")
+    file_name: Mapped[str] = mapped_column(String(500), default="", comment="原始文件名")
     page_count: Mapped[int] = mapped_column(Integer, default=0, comment="页数/行数估计")
     char_count: Mapped[int] = mapped_column(Integer, default=0, comment="解析字符数")
-    blocks: Mapped[list[Any]] = mapped_column(JSON, comment="解析出的文本块（file_id 由调用方回填）")
+    blocks: Mapped[list[Any]] = mapped_column(JSON, comment="解析出的文本块")
     warnings: Mapped[list[Any] | None] = mapped_column(JSON, nullable=True, comment="解析时的告警")
-    hits: Mapped[int] = mapped_column(Integer, default=0, comment="命中次数（可观测）")
+    hits: Mapped[int] = mapped_column(Integer, default=0, comment="命中次数")
 
 
 class DocGenExtractCache(BaseModel):
@@ -296,5 +294,5 @@ class DocGenExtractCache(BaseModel):
     slot_key: Mapped[str] = mapped_column(String(150), comment="槽位 key（诊断用）")
     template_code: Mapped[str] = mapped_column(String(100), comment="模板 code（诊断用）")
     state: Mapped[str] = mapped_column(String(24), comment="结果状态（诊断用）")
-    payload: Mapped[dict[str, Any]] = mapped_column(JSON, comment="SlotResult 的可序列化形态")
-    hits: Mapped[int] = mapped_column(Integer, default=0, comment="命中次数（可观测）")
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, comment="SlotResult 可序列化形态")
+    hits: Mapped[int] = mapped_column(Integer, default=0, comment="命中次数")
