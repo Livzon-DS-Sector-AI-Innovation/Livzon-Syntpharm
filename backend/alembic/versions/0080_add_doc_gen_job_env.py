@@ -1,7 +1,7 @@
-"""0078_add_doc_gen_job_env
+"""0080_add_doc_gen_job_env
 
-Revision ID: 0078_add_doc_gen_job_env
-Revises: 0077_drop_template_markdown_ai
+Revision ID: 0080_add_doc_gen_job_env
+Revises: 0079_drop_template_markdown_ai
 Create Date: 2026-09-30 13:00:00.000000
 
 文档生成任务增加环境标签列 ``env``：多套部署（本地/UAT）共用同一库时，
@@ -19,8 +19,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0078_add_doc_gen_job_env"
-down_revision: str | Sequence[str] | None = "0077_drop_template_markdown_ai"
+revision: str = "0080_add_doc_gen_job_env"
+down_revision: str | Sequence[str] | None = "0079_drop_template_markdown_ai"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

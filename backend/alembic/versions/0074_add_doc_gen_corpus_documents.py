@@ -1,16 +1,16 @@
-"""0072_add_doc_gen_corpus_documents
+"""0074_add_doc_gen_corpus_documents
 
-Revision ID: 0072_add_doc_gen_corpus_documents
-Revises: 0071_add_research_knowledge_base
+Revision ID: 0074_add_doc_gen_corpus_documents
+Revises: 0073_add_research_knowledge_base
 Create Date: 2026-09-24 16:50:00.000000
 
 补写「项目资料块入库（doc_gen corpus）」这一版迁移。
 
 **为什么会有这个文件**：UAT 库的 `alembic_version` 停在
-`0072_add_doc_gen_corpus_documents`，表 `research.doc_gen_corpus_documents`
+`0074_add_doc_gen_corpus_documents`，表 `research.doc_gen_corpus_documents`
 也确实存在（含 4 行数据），但对应的迁移文件与 ORM 代码已不在任何分支里——
 属于「影子迁移」。它会让 `alembic upgrade head` 直接报
-`Can't locate revision identified by '0072_add_doc_gen_corpus_documents'`，
+`Can't locate revision identified by '0074_add_doc_gen_corpus_documents'`，
 既挡住新环境初始化，也挡住 UAT 部署（compose 里 backend 依赖 migrate 成功）。
 
 本文件按库中实测结构补写该 revision，使迁移图能走到单一 head：
@@ -33,8 +33,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0072_add_doc_gen_corpus_documents"
-down_revision: str | Sequence[str] | None = "0071_add_research_knowledge_base"
+revision: str = "0074_add_doc_gen_corpus_documents"
+down_revision: str | Sequence[str] | None = "0073_add_research_knowledge_base"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
