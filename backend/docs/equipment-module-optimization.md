@@ -140,9 +140,11 @@ async def test_validate_category_exists_found():
     """验证存在的分类不抛出异常"""
     ...
 
+
 async def test_validate_category_exists_not_found():
     """验证不存在的分类抛出 NotFoundException"""
     ...
+
 
 async def test_validate_unique_category_code_duplicate():
     """验证重复的代码抛出 DuplicateException"""
