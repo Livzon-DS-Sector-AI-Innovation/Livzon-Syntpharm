@@ -35,8 +35,6 @@ interface EquipmentTableProps {
   /** 列配置：从父组件受控，避免工具栏里的按钮与表内 modal 状态分散 */
   visibleColumns: string[]
   onVisibleColumnsChange?: (cols: string[]) => void
-  /** sticky 表头吸顶偏移 = sticky 工具栏实测高度（px），由父组件测量传入 */
-  stickyTop?: number
 }
 
 /** 编号 / 日期 / 金额列共用等宽数字样式，靠数位对齐建立秩序而非加大行高 */
@@ -44,11 +42,11 @@ const monoCell = () => ({ className: 'equipment-cell-mono' })
 
 export function EquipmentTable({
   loading = false, page, pageSize, sortBy, sortOrder, onQueryChange, onRefreshStatistics, onRefresh,
-  visibleColumns, stickyTop = 0,
+  visibleColumns,
 }: EquipmentTableProps) {
   const { message, modal } = App.useApp()
   const {
-    equipments, total,
+    equipments,
     openEquipmentDrawer, openRepairDrawer,
   } = useEquipmentStore()
 
@@ -207,9 +205,11 @@ export function EquipmentTable({
 
   // 换序/翻页时切换淡入相位：animation-name 变化即重启动画，无需重挂载表体（D9）
   const [fadePhase, setFadePhase] = useState(false)
+  /* eslint-disable react-hooks/set-state-in-effect -- Animation phase toggle (restart CSS animation), not state-from-fetch */
   useEffect(() => {
     setFadePhase((prev) => !prev)
   }, [sortBy, sortOrder, page])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="equipment-ledger" data-fade={fadePhase ? 'b' : 'a'} style={{}}>

@@ -2,18 +2,21 @@ import React from 'react';
 import { Table, Tag, Tooltip } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 
-interface HeaderDef {
+export interface HeaderDef {
   key: string;
   title: string;
   width?: number;
 }
 
-// 对应后端 ImportV4PreviewResponse.items 的结构
-interface ImportPreviewItem extends Record<string, any> {
+// 对应后端 ImportV4PreviewResponse.items 的结构：列集合由后端 headers 动态下发，
+// 已知字段单独声明，其余列一律以 unknown 承载，渲染处按需收敛
+export interface ImportPreviewItem extends Record<string, unknown> {
   row_index: number;
   validation_status?: 'pass' | 'duplicate' | 'error';
   error_message?: string | null;
   is_duplicate?: boolean;
+  /** V3 兼容：旧版返回错误数组而非单条消息 */
+  validation_errors?: string[];
 }
 
 interface ImportCockpitProps {
@@ -53,21 +56,21 @@ export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }: I
   const activeHeaders = headers || DEFAULT_HEADERS;
 
   // 动态生成列定义
-  const columns: ColumnsType<any> = [
+  const columns: ColumnsType<ImportPreviewItem> = [
     ...activeHeaders.map(field => ({
       title: field.title,
       dataIndex: field.key,
       key: field.key,
       width: field.width || 120,
       ellipsis: true,
-      render: (text: any) => text !== null && text !== undefined ? String(text) : '-',
+      render: (text: unknown) => text !== null && text !== undefined ? String(text) : '-',
     })),
     {
       title: '错误详情',
       key: 'error_detail',
       width: 200,
       ellipsis: true,
-      render: (_, record: any) => {
+      render: (_, record: ImportPreviewItem) => {
         // V4 格式
         if (record.error_message) {
           return <span style={{ color: '#e03131', fontSize: 12 }}>{record.error_message}</span>;
@@ -88,7 +91,7 @@ export const ImportCockpit: React.FC<ImportCockpitProps> = ({ data, headers }: I
       key: 'validation',
       width: 100,
       fixed: 'right',
-      render: (_, record: any) => {
+      render: (_, record: ImportPreviewItem) => {
         // V4 格式：validation_status 字段
         if (record.validation_status === 'pass') return <Tag color="success">通过</Tag>;
         if (record.validation_status === 'duplicate') return <Tag color="warning">重复</Tag>;

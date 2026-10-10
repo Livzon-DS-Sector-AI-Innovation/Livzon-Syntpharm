@@ -17,9 +17,7 @@ import {
   writeEquipmentUrlQuery,
   type EquipmentUrlState,
 } from '@/lib/api/equipment-query'
-import { message, Upload } from 'antd'
-import type { UploadProps } from 'antd'
-import { CategoryTree, ColumnConfigModal, EquipmentDrawer, EquipmentFilterBar, EquipmentImportModal, EquipmentTable, ExcelSyncButton, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
+import { CategoryTree, ColumnConfigModal, EquipmentDrawer, EquipmentFilterBar, EquipmentImportModal, EquipmentTable, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
 
 interface EquipmentPageProps {
   initialCategories: EquipmentCategory[]
@@ -75,9 +73,6 @@ export function EquipmentPage({
   const [columnConfigOpen, setColumnConfigOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_COLUMNS)
-  const toolbarRef = useRef<HTMLDivElement>(null)
-  // sticky 表头的 top 偏移 = 工具栏实测高度；ResizeObserver 挂载即回调，初值仅为首帧兜底
-  const [toolbarH, setToolbarH] = useState(96)
 
   const router = useRouter()
   const pathname = usePathname()
@@ -90,26 +85,6 @@ export function EquipmentPage({
     router.replace(nextQs ? `${pathname}?${nextQs}` : pathname, { scroll: false })
   }, [pathname, router, searchParams, urlState])
 
-  // 测量 sticky 工具栏高度：数值经 state 传给 Table 的 sticky.offsetHeader，
-  // 同步写 CSS 变量 `--equipment-toolbar-h` 供侧边栏 sticky top 使用，三层粘性叠放整齐。
-  // 仅在挂载时挂一次 observer；卸载时移除 CSS 变量与监听器。
-  useEffect(() => {
-    const el = toolbarRef.current
-    if (!el) return
-    const apply = () => {
-      const h = el.getBoundingClientRect().height
-      setToolbarH(h)
-      document.documentElement.style.setProperty('--equipment-toolbar-h', `${h}px`)
-    }
-    apply()
-    const observer = new ResizeObserver(apply)
-    observer.observe(el)
-    return () => {
-      observer.disconnect()
-      document.documentElement.style.removeProperty('--equipment-toolbar-h')
-    }
-  }, [])
-
   // 列配置：从 localStorage 加载首次挂载时的可见列。EquipmentTable 受控展示。
   useEffect(() => {
     try {
@@ -117,6 +92,7 @@ export function EquipmentPage({
       if (stored) {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed) && parsed.length > 0) {
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage is client-only; reading it in the useState initializer would diverge from the SSR column set (hydration mismatch)
           setVisibleColumns(parsed)
           return
         }
@@ -145,6 +121,7 @@ export function EquipmentPage({
       setEquipments(initialEquipments)
       setTotal(initialTotal)
       setStatistics(initialStatistics)
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-shot hydration of the zustand store from server props; flag must flip after the writes or later re-renders would overwrite user filters/paging
       setInitialized(true)
     }
   }, [initialized, initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
@@ -266,7 +243,6 @@ export function EquipmentPage({
     },
   ]
 
-  const syncButton = <ExcelSyncButton />
   const tabBarExtra = (selectedCategory || selectedLocation) ? (
     <Button
       type="text"
@@ -329,7 +305,6 @@ export function EquipmentPage({
 
         {/* 工具栏：compact 统计 + 筛选条 + inline 摘要标签，三件套合成一条 sticky 块 */}
         <div
-          ref={toolbarRef}
           className="equipment-toolbar"
           style={{
             position: 'sticky',
@@ -426,7 +401,6 @@ export function EquipmentPage({
                 onRefreshStatistics={refreshStatistics}
                 visibleColumns={visibleColumns}
                 onVisibleColumnsChange={setVisibleColumns}
-                stickyTop={0}
               />
             </div>
 

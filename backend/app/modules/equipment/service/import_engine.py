@@ -129,6 +129,13 @@ async def find_existing_equipment(
             )
         )
         if eq := result.scalar_one_or_none():
+            warnings.append(
+                {
+                    "field": "asset_no",
+                    "level": "WARN",
+                    "message": f"未提供资产编号，按 名称+部门+位置 匹配到已有记录 (DB: {eq.asset_no})",
+                }
+            )
             return eq, MatchStrategy.FUZZY, warnings
 
     return None, MatchStrategy.NONE, warnings

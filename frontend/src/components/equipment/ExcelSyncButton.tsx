@@ -43,7 +43,7 @@ export function ExcelSyncButton() {
       if (result.code === 200) {
         const { updated, inserted, migrated, deleted, warnings } = result.data
         
-        let content = (
+        const content = (
           <div style={{ marginTop: 10 }}>
             {dryRun && <p style={{ color: '#1890ff', fontWeight: 'bold' }}>🔍 预览模式（未执行实际变更）:</p>}
             <p>🔄 更新设备: <strong>{updated}</strong> 台</p>
@@ -71,9 +71,10 @@ export function ExcelSyncButton() {
       } else {
         throw new Error(result.message || '同步业务逻辑失败')
       }
-    } catch (e: any) {
-      message.error(e.message || '网络请求失败，请检查连接')
-      onError?.(e)
+    } catch (e: unknown) {
+      const error = e instanceof Error ? e : new Error(String(e))
+      message.error(error.message || '网络请求失败，请检查连接')
+      onError?.(error)
     } finally {
       setLoading(false)
     }

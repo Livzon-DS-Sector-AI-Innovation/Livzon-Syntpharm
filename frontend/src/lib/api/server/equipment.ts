@@ -4,7 +4,9 @@ import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipmen
 
 
 // Equipment import row type (matches backend EquipmentImportRow schema)
+// 列名由 Excel 表头动态决定（后端 import-v4 下发 headers），已知列保留强类型
 export interface EquipmentImportRow {
+  [column: string]: string | number | boolean | null | undefined;
   资产编号?: string | null;
   资产说明?: string | null;
   实物所在部门?: string | null;

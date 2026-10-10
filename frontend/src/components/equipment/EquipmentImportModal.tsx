@@ -5,31 +5,11 @@ import { Modal, Upload, Button, App, Steps } from 'antd'
 import { InboxOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import * as XLSX from 'xlsx'
 import { previewEquipmentImport, batchImportEquipment } from '@/actions/equipment'
+import type { EquipmentImportRow } from '@/lib/api/server/equipment'
 import { ForceOverrideToggle } from './ForceOverrideToggle'
-import { ImportCockpit } from './ImportCockpit'
+import { ImportCockpit, type HeaderDef, type ImportPreviewItem } from './ImportCockpit'
 
 const { Dragger } = Upload
-
-interface ImportPreviewItem {
-  row_index: number
-  asset_no: string
-  label_no?: string
-  name: string
-  equipment_class: string
-  category_description?: string
-  manufacturer?: string
-  model?: string
-  current_cost?: number
-  book_value?: number
-  commissioning_date?: string
-  status?: string
-  responsible_person_name?: string
-  department_name?: string
-  location_text?: string
-  validation_status: 'pass' | 'error' | 'duplicate'
-  error_message?: string
-  is_duplicate?: boolean
-}
 
 interface ImportResult {
   batch_id: string
@@ -47,22 +27,26 @@ interface EquipmentImportModalProps {
   onSuccess: () => void
 }
 
-function normalizeCellValue(value: unknown): unknown {
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+function normalizeCellValue(value: unknown): EquipmentImportRow[string] {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null
     const y = value.getFullYear()
     const m = String(value.getMonth() + 1).padStart(2, '0')
     const d = String(value.getDate()).padStart(2, '0')
     return `${y}-${m}-${d}`
   }
-  return value
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null) {
+    return value
+  }
+  return null
 }
 
 export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImportModalProps) {
   const { message } = App.useApp()
   const [currentStep, setCurrentStep] = useState(0)
-  const [rawData, setRawData] = useState<Record<string, unknown>[]>()
+  const [rawData, setRawData] = useState<EquipmentImportRow[]>([])
   const [previewData, setPreviewData] = useState<ImportPreviewItem[]>([])
-  const [previewHeaders, setPreviewHeaders] = useState<any[]>([])
+  const [previewHeaders, setPreviewHeaders] = useState<HeaderDef[]>([])
   const [importResult, setImportResult] = useState<ImportResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [forceOverride, setForceOverride] = useState(false)
@@ -71,6 +55,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     setCurrentStep(0)
     setRawData([])
     setPreviewData([])
+    setPreviewHeaders([])
     setImportResult(null)
     setLoading(false)
     setForceOverride(false)
@@ -90,8 +75,8 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: null })
         
-        const normalized = jsonData.map(row => {
-          const normalizedRow: any = {}
+        const normalized: EquipmentImportRow[] = jsonData.map(row => {
+          const normalizedRow: EquipmentImportRow = {}
           for (const [key, value] of Object.entries(row as Record<string, unknown>)) {
             normalizedRow[key] = normalizeCellValue(value)
           }
@@ -101,7 +86,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         setRawData(normalized)
         setCurrentStep(1)
         fetchPreview(normalized)
-      } catch (err) {
+      } catch {
         message.error('Excel 解析失败')
         setCurrentStep(0)
       }
@@ -110,7 +95,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
     return false
   }
 
-  const fetchPreview = async (data: any[]) => {
+  const fetchPreview = async (data: EquipmentImportRow[]) => {
     setLoading(true)
     try {
       const result = await previewEquipmentImport(data, forceOverride)
@@ -122,7 +107,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
         message.error(result.message || '预览失败')
         setCurrentStep(0)
       }
-    } catch (err) {
+    } catch {
       message.error('预览请求失败')
       setCurrentStep(0)
     } finally {
@@ -142,7 +127,7 @@ export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImpo
       } else {
         message.error(result.message || '导入失败')
       }
-    } catch (err) {
+    } catch {
       message.error('导入请求失败')
     } finally {
       setLoading(false)
