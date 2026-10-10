@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import Image from 'next/image'
+import { useState, useEffect, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Card,
   Table,
   Button,
   Space,
@@ -15,7 +16,6 @@ import {
   Modal,
   Form,
   DatePicker,
-  Descriptions,
   Typography,
   Row,
   Col,
@@ -47,7 +47,6 @@ import {
   getCalibrationRules,
   getCalibrationRecords,
   createCalibrationRecord,
-  getCalibrationRule,
   createInstrument,
   createCalibrationRule,
   recognizeInstrumentLabel,
@@ -92,6 +91,18 @@ const resultOptions: Record<string, { label: string; color: string }> = {
   limited: { label: '限用', color: 'warning' },
 }
 
+interface CalibrationRecordItem {
+  id?: string | number;
+  calibration_no: string;
+  calibration_date: string;
+  calibration_result: string;
+  valid_until?: string;
+  certificate_no?: string;
+  calibration_method?: string;
+  [key: string]: string | number | undefined;
+}
+
+
 interface ExpandedRecord {
   instrument: InstrumentListItem
   rules: CalibrationRule[]
@@ -99,23 +110,16 @@ interface ExpandedRecord {
 }
 
 function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; onRefresh?: () => void; isMobile?: boolean }) {
-  const [loading, setLoading] = useState(false)
-  const [rules, setRules] = useState<CalibrationRule[]>([])
-  const [recordsMap, setRecordsMap] = useState<Map<string, CalibrationRecordListItem[]>>(new Map())
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [selectedRule, setSelectedRule] = useState<CalibrationRule | null>(null)
   const [createForm] = Form.useForm()
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  useEffect(() => {
-    loadCalibrationData(record.instrument.id)
-  }, [record.instrument.id])
-
-  const loadCalibrationData = async (instrumentId: string) => {
-    setLoading(true)
-    try {
+  const { data: calibrationData, isLoading: loading, refetch: loadCalibrationData } = useQuery({
+    queryKey: ['calibration-data', record.instrument.id],
+    queryFn: async () => {
+      const instrumentId = record.instrument.id
       const rulesData = await getCalibrationRules(instrumentId)
-      setRules(rulesData)
 
       const records = new Map<string, CalibrationRecordListItem[]>()
       const allRecordsData = await getCalibrationRecords({ instrument_id: instrumentId })
@@ -129,13 +133,13 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
       if (ungroupedRecords.length > 0) {
         records.set('ungrouped', ungroupedRecords)
       }
-      setRecordsMap(records)
-    } catch (err) {
-      console.error('加载校准数据失败', err)
-    } finally {
-      setLoading(false)
-    }
-  }
+
+      return { rules: rulesData, recordsMap: records }
+    },
+  })
+
+  const rules = calibrationData?.rules || []
+  const recordsMap = calibrationData?.recordsMap || new Map()
 
   const generateCalibrationNo = () => {
     const now = dayjs()
@@ -182,9 +186,9 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
       await createCalibrationRecord(submitData)
       message.success('创建成功')
       setCreateModalVisible(false)
-      loadCalibrationData(record.instrument.id)
+      loadCalibrationData()
       onRefresh?.()
-    } catch (error) {
+    } catch (_error) {
       message.error('创建失败')
     } finally {
       setSubmitLoading(false)
@@ -309,7 +313,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
               {ruleRecords.length > 0 ? (
                 isMobile ? (
                   <div className="calibration-record-list">
-                    {ruleRecords.map((r) => (
+                    {ruleRecords.map((r: CalibrationRecordItem) => (
                       <div key={r.id || r.calibration_no} className="calibration-record-item">
                         <div className="calibration-record-header">
                           <span className="calibration-record-date">{r.calibration_date ? dayjs(r.calibration_date).format('YYYY-MM-DD') : '-'}</span>
@@ -331,7 +335,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                           )}
                           <div className="calibration-record-row">
                             <span className="calibration-record-label">校准方法</span>
-                            <span className="calibration-record-value">{methodOptions[r.calibration_method] || r.calibration_method}</span>
+                            <span className="calibration-record-value">{methodOptions[r.calibration_method || ""] || r.calibration_method}</span>
                           </div>
                         </div>
                       </div>
@@ -341,7 +345,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                   <Table
                     size="small"
                     pagination={false}
-                    dataSource={ruleRecords.map((r, i) => ({ ...r, key: r.id || i }))}
+                    dataSource={ruleRecords.map((r: CalibrationRecordListItem, i: number) => ({ ...r, key: r.id || i }))}
                     columns={recordColumns}
                     style={{ marginTop: 8 }}
                   />
@@ -362,7 +366,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
             </div>
             {isMobile ? (
               <div className="calibration-record-list">
-                {recordsMap.get('ungrouped')?.map((r) => (
+                {recordsMap.get('ungrouped')?.map((r: CalibrationRecordItem) => (
                   <div key={r.id || r.calibration_no} className="calibration-record-item">
                     <div className="calibration-record-header">
                       <span className="calibration-record-date">{r.calibration_date ? dayjs(r.calibration_date).format('YYYY-MM-DD') : '-'}</span>
@@ -384,7 +388,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
                       )}
                       <div className="calibration-record-row">
                         <span className="calibration-record-label">校准方法</span>
-                        <span className="calibration-record-value">{methodOptions[r.calibration_method] || r.calibration_method}</span>
+                        <span className="calibration-record-value">{methodOptions[r.calibration_method || ""] || r.calibration_method}</span>
                       </div>
                     </div>
                   </div>
@@ -394,7 +398,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
               <Table
                 size="small"
                 pagination={false}
-                dataSource={recordsMap.get('ungrouped')?.map((r, i) => ({ ...r, key: r.id || i }))}
+                dataSource={recordsMap.get('ungrouped')?.map((r: CalibrationRecordListItem, i: number) => ({ ...r, key: r.id || i }))}
                 columns={recordColumns}
               />
             )}
@@ -498,10 +502,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
 
 export default function InstrumentListPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [data, setData] = useState<InstrumentListItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([])
@@ -519,13 +520,14 @@ export default function InstrumentListPage() {
   const [recognizing, setRecognizing] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [recognizedData, setRecognizedData] = useState<AIRecognizedInstrumentInfo | null>(null)
-  const [recognitionError, setRecognitionError] = useState<string | null>(null)
+  const [_recognitionError, setRecognitionError] = useState<string | null>(null)
 
   const [filters, setFilters] = useState<{
     instrument_no?: string
     instrument_name?: string
     category?: string
   }>({})
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)')
@@ -538,37 +540,35 @@ export default function InstrumentListPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const params: InstrumentFilter = {
-        page,
-        page_size: pageSize,
+  const { data: queryResult, isLoading: loading, refetch: loadData } = useQuery({
+    queryKey: ['instruments-list', page, pageSize, filters],
+    queryFn: async () => {
+      setError(null)
+      try {
+        const params: InstrumentFilter = {
+          page,
+          page_size: pageSize,
+        }
+        if (filters.instrument_no) params.instrument_no = filters.instrument_no
+        if (filters.instrument_name) params.instrument_name = filters.instrument_name
+        if (filters.category) params.category = filters.category as InstrumentCategory
+
+        const response = await getInstruments(params)
+        return { items: response.items || [], total: response.total || 0 }
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : '加载数据失败，请检查后端服务'
+        setError(errorMsg)
+        message.error(errorMsg)
+        return { items: [], total: 0 }
       }
-      if (filters.instrument_no) params.instrument_no = filters.instrument_no
-      if (filters.instrument_name) params.instrument_name = filters.instrument_name
-      if (filters.category) params.category = filters.category as InstrumentCategory
+    },
+  })
 
-      const response = await getInstruments(params)
-      setData(response.items || [])
-      setTotal(response.total || 0)
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : '加载数据失败，请检查后端服务'
-      setError(errorMsg)
-      message.error(errorMsg)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, filters])
-
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const data = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   const handleSearch = () => {
     setPage(1)
-    loadData()
   }
 
   const handleReset = () => {
@@ -695,8 +695,8 @@ export default function InstrumentListPage() {
       createForm.resetFields()
       ruleForm.resetFields()
       handleResetRecognition()
-      loadData()
-    } catch (error) {
+      queryClient.invalidateQueries({ queryKey: ['instruments-list'] })
+    } catch (_error) {
       message.error('创建失败')
     } finally {
       setCreateLoading(false)
@@ -917,7 +917,7 @@ export default function InstrumentListPage() {
           )}
           <Button
             icon={<ReloadOutlined />}
-            onClick={loadData}
+            onClick={() => loadData()}
             loading={loading}
             size={isMobile ? 'small' : 'middle'}
           >
@@ -990,7 +990,7 @@ export default function InstrumentListPage() {
             <p style={{ color: '#475569', marginBottom: 8, fontSize: 15, fontWeight: 600 }}>数据加载失败</p>
             <p style={{ color: '#94a3b8', fontSize: 12 }}>{error}</p>
           </div>
-          <Button type="primary" icon={<ReloadOutlined />} onClick={loadData}>
+          <Button type="primary" icon={<ReloadOutlined />} onClick={() => loadData()}>
             重新加载
           </Button>
         </div>
@@ -1123,12 +1123,14 @@ export default function InstrumentListPage() {
                     重新上传
                   </Button>
                 </div>
-                <img
+                <Image
                   src={previewUrl}
                   alt="设备标签预览"
+                  width={300}
+                  height={150}
                   style={{
                     maxWidth: '100%',
-                    maxHeight: 150,
+                    height: 'auto',
                     objectFit: 'contain',
                     display: 'block',
                     margin: '0 auto',

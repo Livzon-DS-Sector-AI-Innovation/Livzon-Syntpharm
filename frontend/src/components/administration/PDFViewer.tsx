@@ -23,7 +23,7 @@ export default function PDFViewer({ base64, fileName, fileType }: PDFViewerProps
   useEffect(() => {
     let disposed = false
     let blobUrl: string | null = null
-    const renderTasks: any[] = []
+    const renderTasks: { promise: Promise<void>; cancel: () => void }[] = []
 
     async function render() {
       try {
@@ -80,7 +80,7 @@ export default function PDFViewer({ base64, fileName, fileType }: PDFViewerProps
         }
 
         if (!disposed) setStatus('done')
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('PDF render error:', err)
         if (!disposed) {
           setStatus('error')

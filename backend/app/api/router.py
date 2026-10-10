@@ -14,6 +14,7 @@ from app.modules.production.product import output_router as product_output_route
 from app.modules.production.product import product_router as workshop_product_router
 from app.modules.production.product.sync_config_api import router as product_sync_config_router
 from app.modules.quality import (
+    capa_router,
     cpv_router,
     deviation_router,
     deviation_settings_router,
@@ -43,6 +44,7 @@ from app.modules.warehouse import router as warehouse_router
 from app.platform.identity.api import (
     auth_router,
     dept_router,
+    feishu_config_router,
     login_log_router,
     personnel_router,
     sync_router,
@@ -57,6 +59,7 @@ api_router.include_router(dept_router, prefix="/identity", tags=["组织架构"]
 api_router.include_router(personnel_router, prefix="/identity", tags=["人员名单"])
 api_router.include_router(auth_router, prefix="/identity", tags=["认证"])
 api_router.include_router(sync_router, prefix="/identity", tags=["飞书同步"])
+api_router.include_router(feishu_config_router, prefix="/identity", tags=["Livzon 飞书配置"])
 api_router.include_router(login_log_router, prefix="/identity", tags=["登录记录"])
 api_router.include_router(system_router, prefix="/system", tags=["系统"])
 api_router.include_router(production_router, prefix="/production", tags=["生产管理"])
@@ -93,6 +96,7 @@ api_router.include_router(doc_check_router, prefix="/quality", tags=["质量管�
 api_router.include_router(static_data_router, prefix="/quality", tags=["质量管理 - 静态数据"])
 api_router.include_router(reagent_reminder_router, prefix="/quality", tags=["质量管理 - 试剂提醒"])
 api_router.include_router(instrument_router, prefix="/quality", tags=["质量管理 - 仪器校准"])
+api_router.include_router(capa_router, prefix="/quality", tags=["质量管理 - CAPA"])
 # CPV router
 api_router.include_router(cpv_router, prefix="/quality", tags=["质量管理 - CPV"])
 api_router.include_router(sop_ai_router, prefix="/quality/sop-ai", tags=["SOP AI"])

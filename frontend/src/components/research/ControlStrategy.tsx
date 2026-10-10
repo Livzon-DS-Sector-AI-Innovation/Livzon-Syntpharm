@@ -41,7 +41,7 @@ export function ControlStrategy({ solvents }: ControlStrategyProps) {
       title: '溶剂',
       key: 'name',
       width: 180,
-      render: (_: any, record: Solvent) => (
+      render: (_: unknown, record: Solvent) => (
         <div>
           <div>{record.name_cn}</div>
           {record.name_cn !== record.name_en && (
@@ -65,7 +65,7 @@ export function ControlStrategy({ solvents }: ControlStrategyProps) {
       dataIndex: 'limit_ppm',
       key: 'limit_ppm',
       width: 100,
-      render: (val: any) => {
+      render: (val: number | string | null | undefined) => {
         if (val == null) return '-'
         return typeof val === 'number' ? val.toFixed(0) : val
       },
@@ -74,7 +74,7 @@ export function ControlStrategy({ solvents }: ControlStrategyProps) {
       title: '使用步骤',
       key: 'steps',
       width: 120,
-      render: (_: any, record: Solvent) => {
+      render: (_: unknown, record: Solvent) => {
         if (!record.steps_used || record.steps_used.length === 0) return '-'
         return record.steps_used.join(', ')
       },
@@ -124,7 +124,7 @@ export function ControlStrategy({ solvents }: ControlStrategyProps) {
               scroll={{ x: 500 }}
             />
             <Alert
-              title="10% 标准"
+              message="10% 标准"
               description="残留量持续 ≤10% ICH 限值时，可豁免批批检验。根据 EMA/EDQM CEP 要求，需来自 6 批连续中试规模批次或 3 批连续工业生产规模批次。"
               type="info"
               showIcon

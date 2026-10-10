@@ -11,15 +11,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  pr-rebase:
+  pr-up-to-date:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v5
       with:
         fetch-depth: 0
-    - name: Check PR is rebased onto latest main
-      run: "git fetch origin main\nMAIN_SHA=$(git rev-parse origin/main)\nMERGE_BASE=$(git merge-base ${{ github.event.pull_request.head.sha }} origin/main)\nif [ \"$MERGE_BASE\" != \"$MAIN_SHA\" ]; then\n  echo \"::error::PR branch is not rebased onto the latest main.\"\n  echo \"Merge-base is $MERGE_BASE, but main tip is $MAIN_SHA.\"\n  echo \"Please rebase your branch onto origin/main and force-push.\"\n  exit 1\nfi\necho \"PR is rebased onto the latest main ($MAIN_SHA).\"\n"
+    - name: Check PR includes the latest main
+      run: "git fetch origin main\nMAIN_SHA=$(git rev-parse origin/main)\nMERGE_BASE=$(git merge-base ${{ github.event.pull_request.head.sha }} origin/main)\nif [ \"$MERGE_BASE\" != \"$MAIN_SHA\" ]; then\n  echo \"::error::PR branch does not include the latest main.\"\n  echo \"Merge-base is $MERGE_BASE, but main tip is $MAIN_SHA.\"\n  echo \"Please merge (or rebase) origin/main into your branch.\"\n  exit 1\nfi\necho \"PR includes the latest main ($MAIN_SHA).\"\n"
   backend-lint:
     runs-on: ubuntu-latest
     defaults:

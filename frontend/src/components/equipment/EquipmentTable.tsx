@@ -117,7 +117,7 @@ export function EquipmentTable({
           setSelectedRowKeys([])
           onRefresh?.()
           onRefreshStatistics?.()
-        } catch (error) {
+        } catch (_error) {
           message.error('批量删除失败')
         }
       },
@@ -138,8 +138,8 @@ export function EquipmentTable({
           message.success('删除设备成功')
           onRefresh?.()
           onRefreshStatistics?.()
-        } catch (error: any) {
-          message.error(error?.message || '删除设备失败')
+        } catch (error: unknown) {
+          message.error((error instanceof Error ? error.message : null) || '删除设备失败')
         }
       },
     })

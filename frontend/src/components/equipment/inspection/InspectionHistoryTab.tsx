@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useMemo, useState } from 'react'
-import {App, Button, Table, DatePicker, Input} from 'antd'
+import {App, Table, DatePicker, Input} from 'antd'
 import { EyeOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
@@ -51,7 +51,7 @@ export function InspectionHistoryTab({ equipments }: Props) {
 
   // 加载人员配置列表作为巡检人过滤选项（与 InspectionTaskDrawer 保持一致）
   useEffect(() => {
-    fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: any) => p.is_active))).catch(() => {})
+    fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: { is_active: boolean }) => p.is_active))).catch(() => {})
   }, [])
 
   const typeFilters = useMemo(() => [
@@ -98,7 +98,7 @@ export function InspectionHistoryTab({ equipments }: Props) {
       },
     },
     {
-      title: '', key: 'action', width: 60, fixed: 'end' as const,
+      title: '', key: 'action', width: 60, fixed: 'right' as const,
       render: (_: unknown, r: InspectionTask) => (
         <span role="button" onClick={() => openHistoryDetail(r.id)} style={linkPrimary}>
           <EyeOutlined />详情

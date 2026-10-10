@@ -156,7 +156,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
       onRefresh?.()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return
-      if (err instanceof Error) message.error(err.message)
+      if (err instanceof Error) message.error((err instanceof Error ? err.message : null))
     } finally {
       setSubmitting(false)
     }
@@ -165,7 +165,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
   return (
     <Drawer
       title={isEdit ? '编辑预警规则' : '新建预警规则'}
-      size={480}
+      width={480}
       open={alertConfigDrawerOpen}
       onClose={closeAlertConfigDrawer}
       destroyOnHidden

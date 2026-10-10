@@ -43,14 +43,14 @@ export default function EmployeeTable({
       await deleteEmployee(id)
       message.success('删除成功')
       onRefresh()
-    } catch (err: any) {
-      message.error(err.message || '删除失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '删除失败')
     } finally {
       setLoading(false)
     }
   }
 
-  const allColumns: any[] = [
+  const allColumns: { title: string; dataIndex?: string; key?: string; width?: number; fixed?: 'left' | 'right'; render?: (value: unknown, record: Employee) => React.ReactNode }[] = [
     {
       title: '工号',
       dataIndex: 'employee_number',
@@ -83,7 +83,7 @@ export default function EmployeeTable({
       dataIndex: 'concurrent_departments',
       key: 'concurrent_departments',
       width: 130,
-      render: (v: string) => v || '-' },
+      render: (v: unknown) => (v as string) || '-' },
     {
       title: '性别',
       dataIndex: 'gender',
@@ -109,8 +109,8 @@ export default function EmployeeTable({
       dataIndex: 'status',
       key: 'status',
       width: 90,
-      render: (status: string) => (
-        <Tag color={statusColorMap[status] || 'default'}>{status}</Tag>
+      render: (status: unknown) => (
+        <Tag color={statusColorMap[(status as string)] || 'default'}>{(status as string)}</Tag>
       ) },
     {
       title: '入职日期',
@@ -167,7 +167,7 @@ export default function EmployeeTable({
       key: 'action',
       width: 200,
       fixed: 'right' as const,
-      render: (_: any, record: Employee) => (
+      render: (_: unknown, record: Employee) => (
         <Space size="small">
           <Button
             type="text"
@@ -209,8 +209,8 @@ export default function EmployeeTable({
   const alwaysShow = new Set(['action', 'employee_number', 'name', 'department', 'position', 'concurrent_departments'])
   const columns = allColumns.filter(col => {
     if (alwaysShow.has(col.key as string)) return true
-    return employees.some((emp: any) => {
-      const v = emp[col.dataIndex as string]
+    return employees.some((emp: Employee) => {
+      const v = emp[col.dataIndex as keyof Employee]
       return v !== null && v !== undefined && v !== ''
     })
   })

@@ -99,7 +99,8 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
     back at teardown, so no test can leak data to another test.
     """
     async with _test_engine.connect() as connection:
-        async with connection.begin():
+        trans = await connection.begin()
+        try:
             factory = async_sessionmaker(
                 bind=connection,
                 class_=AsyncSession,
@@ -108,12 +109,13 @@ async def db_session(_test_engine) -> AsyncIterator[AsyncSession]:
             )
             async with factory() as session:
                 yield session
-                await session.rollback()
+        finally:
+            await trans.rollback()
 
 
 @pytest.fixture
 async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
-    """Authenticated client with a unique test user per test.
+    """Authenticated client with a named test user.
 
     Overrides ``get_db`` to use the test session and ``get_current_user``
     to return the test user.  Phase 1 auth does not enforce permissions,
@@ -122,7 +124,7 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     test_user = _make_user(
         "Test User",
         f"TEST-{uuid.uuid4().hex[:8]}",
-        feishu_open_id=f"test_{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"test_open_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()
@@ -135,7 +137,7 @@ async def auth_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
 
 @pytest.fixture
 async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
-    """Authenticated client with a unique admin test user per test.
+    """Authenticated client with an admin-named test user.
 
     Identical to ``auth_client`` in Phase 1 — Phase 2 will add admin
     permission overrides when RBAC is implemented.
@@ -143,7 +145,7 @@ async def admin_client(db_session: AsyncSession) -> AsyncIterator[AsyncClient]:
     test_user = _make_user(
         "Admin User",
         f"ADMIN-{uuid.uuid4().hex[:8]}",
-        feishu_open_id=f"admin_{uuid.uuid4().hex[:8]}",
+        feishu_open_id=f"admin_open_{uuid.uuid4().hex[:8]}",
     )
     db_session.add(test_user)
     await db_session.flush()

@@ -30,7 +30,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
 
   useEffect(() => {
     if (!maintenancePlanDrawerOpen) return
-    fetchAllUsersClient().then((list: any[]) => {
+    fetchAllUsersClient().then((list: { id: string; name: string }[]) => {
       setAllUsers(list)
       // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
       if (editingMaintenancePlan?.responsible_person_id) {
@@ -95,15 +95,15 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
       }
       closeMaintenancePlanDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 
   return (
     <Drawer
       title={editingMaintenancePlan ? '编辑维护计划' : '新建维护计划'}
-      size={480}
+      width={480}
       open={maintenancePlanDrawerOpen}
       onClose={closeMaintenancePlanDrawer}
       destroyOnHidden

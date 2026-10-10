@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { Key } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -218,11 +218,15 @@ export function InvoiceRecognitionClient({
     [deletableRecordIdSet, selectedRowKeys]
   )
 
-  useEffect(() => {
+  // Filter selectedRowKeys when deletableRecordIdSet changes (adjusting state during render)
+  const [prevDeletableSize, setPrevDeletableSize] = useState<number>(0)
+  const currentDeletableSize = deletableRecordIdSet.size
+  if (currentDeletableSize !== prevDeletableSize) {
+    setPrevDeletableSize(currentDeletableSize)
     setSelectedRowKeys((currentKeys) =>
       currentKeys.filter((key) => deletableRecordIdSet.has(String(key)))
     )
-  }, [deletableRecordIdSet])
+  }
 
   const detailRows = useMemo<InvoiceDetailRow[]>(
     () =>
@@ -799,7 +803,7 @@ export function InvoiceRecognitionClient({
             className="mt-4"
             type="info"
             showIcon
-            title="识别结果请以原始发票为准，提交入账前需要人工核对。"
+            message="识别结果请以原始发票为准，提交入账前需要人工核对。"
           />
       </section>
     </div>

@@ -196,11 +196,13 @@ async def list_employees(...):
 
 **命名规范**：迁移文件必须使用顺序编号格式 `NNNN_descriptive_name.py`，其中 NNNN 是 4 位数字（如 0001、0002）。Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）。禁止使用 Alembic 自动生成的哈希 ID（如 `3cb28d1e1ac7`）。
 
+**全局唯一编号**：`alembic/versions/` 下任意两个迁移文件不得使用相同的 `NNNN` 前缀，且文件名与 Revision ID 使用的 `NNNN` 必须一致。CI 通过 `scripts/ci/check_migration_numbers.py` 检查，重复编号会导致 PR 无法合并。
+
 **初始基线例外**：`0001_baseline_full_schema` 迁移允许跨所有 schema，这是唯一允许跨模块的迁移。
 
 **单模块原则**：基线之后的每个迁移文件只能修改一个模块的 schema。跨模块外键、`platform`/`core`/`shared` 级变更可以跨 schema，但必须由架构负责人审批。
 
-CI 会自动检查（`scripts/ci/check_migration_scope.py`），违反会导致 PR 无法合并。
+CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check_migration_numbers.py`），违反会导致 PR 无法合并。
 
 ### Model 与 Migration 绑定规则
 
@@ -539,6 +541,19 @@ frontend/src/actions/*.ts         ← Server Actions，调用 lib/api
 
 后端 API 变化后，前端必须重新生成类型：`cd ../backend && uv run python scripts/ci/export_openapi.py` 然后 `cd ../frontend && pnpm generate:api`。CI 会检查类型同步。
 
+
+## React Hooks 与 React Compiler
+
+React Compiler 已启用（`reactCompiler: true`），编写代码时必须遵循以下规则以确保编译器能够正确优化：
+
+1. **数据获取**: 使用 React Query，禁止 useEffect + setState
+2. **派生状态**: 使用 useMemo，禁止 useEffect + setState
+3. **useEffect 依赖**: 必须完整，禁止省略或抑制
+4. **不可变状态**: 禁止直接修改，使用展开运算符
+5. **依赖稳定化**: 使用 useCallback/useRef
+
+详细示例和说明参见 [`examples/react-hooks-pattern.md`](examples/react-hooks-pattern.md)。
+
 ## 禁止修改的文件
 
 以下文件修改前**必须**获得批准（影响所有开发者和部署流程）：
@@ -587,7 +602,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 
 ### Issue tracker
 
-Issues and specs live as local markdown files in `.scratch/`. See `docs/agents/issue-tracker.md`.
+Issues are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels
 

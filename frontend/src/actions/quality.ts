@@ -1,34 +1,44 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import type { components } from '@/types/generated/schema'
 import type {
   InspectionStandard,
   InspectionStandardItem,
   InspectionStandardFormData,
-  InspectionStandardItemFormData,
   StandardCopyData,
   ObsoleteData,
   ApprovalRecord,
   StandardQueryParams,
-  ApiResponse,
-  CreateDeviationRequest,
-  UpdateDeviationRequest,
-  CreateCapaRequest,
-  UpdateCapaRequest,
   CreateDepartmentContactRequest,
   UpdateDepartmentContactRequest,
   AiLogItem,
   AiLogListResponse,
   AiLogFilter,
+  UploadLcResponse,
 } from '@/types/quality'
+
+type DeviationCreate = components['schemas']['DeviationCreate']
+type DeviationUpdate = components['schemas']['DeviationUpdate']
+type CapaCreate = components['schemas']['CapaCreate']
+type CapaUpdate = components['schemas']['CapaUpdate']
+
+interface ApiResponse<T> {
+  code: number
+  message: string
+  data: T
+  meta?: {
+    total?: number
+    page?: number
+    page_size?: number
+  }
+}
 import type {
   SamplingOrder,
   SamplingOrderCreate,
   SamplingOrderUpdate,
-  SamplingOrderListItem,
   SamplingOrderListResponse,
   SamplingOrderFilter,
-  SamplingOrderItemCreate,
   SamplingApprovalRecord,
   SamplingApprovalCreate,
   SampleRetentionLedger,
@@ -39,10 +49,8 @@ import type {
   IQCInspection,
   IQCInspectionCreate,
   IQCInspectionUpdate,
-  IQCInspectionListItem,
   IQCInspectionListResponse,
   IQCInspectionFilter,
-  IQCInspectionItemCreate,
   IQCApprovalRecord,
   IQCApprovalCreate,
 } from '@/types/iqc'
@@ -50,10 +58,8 @@ import type {
   IPQCInspection,
   IPQCInspectionCreate,
   IPQCInspectionUpdate,
-  IPQCInspectionListItem,
   IPQCInspectionListResponse,
   IPQCInspectionFilter,
-  IPQCInspectionItemCreate,
   IPQCApprovalRecord,
   IPQCApprovalCreate,
 } from '@/types/ipqc'
@@ -61,10 +67,8 @@ import type {
   FQCInspection,
   FQCInspectionCreate,
   FQCInspectionUpdate,
-  FQCInspectionListItem,
   FQCInspectionListResponse,
   FQCInspectionFilter,
-  FQCInspectionItemCreate,
   FQCApprovalRecord,
   FQCApprovalCreate,
 } from '@/types/fqc'
@@ -72,7 +76,6 @@ import type {
   StabilityStudy,
   StabilityStudyCreate,
   StabilityStudyUpdate,
-  StabilityStudyListItem,
   StabilityStudyListResponse,
   StabilityStudyFilter,
   StabilitySampleNode,
@@ -80,11 +83,8 @@ import type {
   StabilityInspection,
   StabilityInspectionCreate,
   StabilityInspectionUpdate,
-  StabilityInspectionListItem,
   StabilityInspectionListResponse,
   StabilityInspectionFilter,
-  StabilityInspectionItemCreate,
-  StabilityApprovalRecord,
   StabilityApprovalCreate,
   TrendData,
 } from '@/types/stability'
@@ -505,14 +505,14 @@ export async function getAiLogById(id: string) {
 
 // ============ Deviation Actions ============
 
-export async function createDeviation(data: CreateDeviationRequest) {
+export async function createDeviation(data: DeviationCreate) {
   const result = await QualityServer.createDeviation(data)
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
   return result
 }
 
-export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
+export async function updateDeviation(deviationId: string, data: DeviationUpdate) {
   const result = await QualityServer.updateDeviation(deviationId, data)
   revalidatePath('/quality')
   revalidatePath('/quality/deviations')
@@ -528,14 +528,14 @@ export async function deleteDeviation(deviationId: string) {
 
 // ============ CAPA Actions ============
 
-export async function createCapa(data: CreateCapaRequest) {
+export async function createCapa(data: CapaCreate) {
   const result = await QualityServer.createCapa(data)
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
   return result
 }
 
-export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
+export async function updateCapa(capaId: string, data: CapaUpdate) {
   const result = await QualityServer.updateCapa(capaId, data)
   revalidatePath('/quality')
   revalidatePath('/quality/capas')
@@ -855,7 +855,7 @@ export async function triggerAIProcess(taskId: number) {
   return response
 }
 
-export async function updateAIResult(taskId: number, aiResult: any) {
+export async function updateAIResult(taskId: number, aiResult: unknown) {
   const response = await wrap<unknown>(QualityServer.updateAIResult(taskId, aiResult))
   revalidatePath('/quality/deviation-automation')
   return response
@@ -922,11 +922,10 @@ export async function uploadDeviationFileWithTask(taskId: number, file: File) {
   revalidatePath('/quality/deviation-automation')
   return response
 }
-
-export async function uploadLcExcel(file: File): Promise<any> {
+export async function uploadLcExcel(file: File): Promise<UploadLcResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  const response = await wrap<unknown>(QualityServer.uploadLcExcel(formData))
+  const result = await QualityServer.uploadLcExcel(formData)
   revalidatePath('/quality')
-  return response
+  return result
 }

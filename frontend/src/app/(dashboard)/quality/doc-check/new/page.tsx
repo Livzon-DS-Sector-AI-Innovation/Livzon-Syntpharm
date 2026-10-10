@@ -24,15 +24,12 @@ import {
   PlayCircleOutlined,
   DeleteOutlined,
   ArrowLeftOutlined,
-  LoadingOutlined,
   FileTextOutlined,
 } from '@ant-design/icons'
 
 import {
   CheckConfig,
   FILE_TYPE_OPTIONS,
-  RiskLevel,
-  CheckStatus,
 } from '@/types/doc-check'
 
 const { Dragger } = Upload
@@ -53,10 +50,6 @@ interface UploadResponse {
   file_path: string
 }
 
-interface CheckResponse {
-  task_id: string
-  status: string
-}
 
 export default function DocCheckNewPage() {
   const router = useRouter()
@@ -380,7 +373,7 @@ export default function DocCheckNewPage() {
                   })
                 }}
               >
-                <Space direction="vertical">
+                <Space orientation="vertical">
                   <Checkbox value="duplicate_check">全文智能查重</Checkbox>
                   <Checkbox value="conflict_check">跨文件条款冲突检测</Checkbox>
                   <Checkbox value="regulation_check">GMP/药典法规合规校验</Checkbox>

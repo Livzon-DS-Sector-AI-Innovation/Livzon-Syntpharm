@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {App, Drawer, Table, Form, Input, InputNumber, Typography, Empty, Popconfirm} from 'antd'
-import {PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, OrderedListOutlined} from '@ant-design/icons'
+import {PlusOutlined, EditOutlined, DeleteOutlined, OrderedListOutlined} from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createInspectionTemplateItem, updateInspectionTemplateItem, deleteInspectionTemplateItem } from '@/actions/equipment'
@@ -27,17 +28,17 @@ function ItemForm({ mode, templateId, itemsCount, initialValues, onSuccess, onCa
   }, [mode, itemsCount, initialValues, form])
 
   const submit = async () => {
-    let v: any
+    let v: ItemFormValues
     try {
       v = await form.validateFields()
     } catch { return }
     setS(true)
     try {
       const data = { item_name: v.item_name, item_description: v.item_description || undefined, expected_result: v.expected_result || undefined, check_method: v.check_method || undefined, sort_order: v.sort_order }
-      const result: any = mode === 'create'
+      const result: { success?: boolean; error?: string; data?: unknown } = mode === 'create'
         ? await createInspectionTemplateItem(templateId, data)
         : await updateInspectionTemplateItem(mode, data)
-      if (!result.success) { message.error(result.error); return }
+      if (result.success === false) { message.error(result.error); return }
       message.success(mode === 'create' ? '已添加' : '已更新')
       onSuccess()
     } finally { setS(false) }
@@ -68,30 +69,42 @@ function ItemForm({ mode, templateId, itemsCount, initialValues, onSuccess, onCa
 export function InspectionItemDrawer() {
   const { message } = App.useApp()
   const { inspectionItemDrawerOpen, inspectionItemTemplateId, editingInspectionItem, closeInspectionItemDrawer } = useEquipmentStore()
-  const [items, setItems] = useState<InspectionTemplateItem[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [formMode, setFormMode] = useState<'create' | string | null>(null)
   const [editingData, setEditingData] = useState<InspectionTemplateItem | null>(null)
 
-  const load = useCallback(async () => {
-    if (!inspectionItemTemplateId) return; setLoading(true)
-    try { const d = await fetchInspectionTemplateByIdClient(inspectionItemTemplateId); setItems(d.items || []) }
-    catch { message.error('加载失败') } finally { setLoading(false) }
-  }, [inspectionItemTemplateId, message])
+  const { data: items = [], isLoading: loading } = useQuery({
+    queryKey: ['inspection-template-items', inspectionItemTemplateId],
+    queryFn: async () => {
+      if (!inspectionItemTemplateId) return []
+      const d = await fetchInspectionTemplateByIdClient(inspectionItemTemplateId)
+      return d.items || []
+    },
+    enabled: inspectionItemDrawerOpen && !!inspectionItemTemplateId,
+  })
 
-  useEffect(() => {
-    if (inspectionItemDrawerOpen && inspectionItemTemplateId) { load(); if (editingInspectionItem) { setEditingData(editingInspectionItem); setFormMode(editingInspectionItem.id) } else { setFormMode(null); setEditingData(null) } }
-  }, [inspectionItemDrawerOpen, inspectionItemTemplateId, editingInspectionItem, load])
+  // Sync editing state when drawer opens (adjusting state during render)
+  const [prevDrawerState, setPrevDrawerState] = useState<string>('')
+  const drawerState = inspectionItemDrawerOpen && inspectionItemTemplateId ? 'open' : 'closed'
+  const itemState = editingInspectionItem?.id || 'none'
+  const combinedState = `${drawerState}-${itemState}`
+  if (combinedState !== prevDrawerState) {
+    setPrevDrawerState(combinedState)
+    if (inspectionItemDrawerOpen && inspectionItemTemplateId) {
+      if (editingInspectionItem) { setEditingData(editingInspectionItem); setFormMode(editingInspectionItem.id) }
+      else { setFormMode(null); setEditingData(null) }
+    }
+  }
 
   const close = () => { setFormMode(null); closeInspectionItemDrawer() }
   const startEdit = (item: InspectionTemplateItem) => { setEditingData(item); setFormMode(item.id) }
   const cancelEdit = () => { setFormMode(null); setEditingData(null) }
-  const onFormSuccess = () => { setFormMode(null); setEditingData(null); load() }
+  const onFormSuccess = () => { setFormMode(null); setEditingData(null); queryClient.invalidateQueries({ queryKey: ['inspection-template-items'] }) }
   const handleDelete = async (item: InspectionTemplateItem) => {
-    const result: any = await deleteInspectionTemplateItem(item.id)
-    if (!result.success) { message.error(result.error); return }
+    const result: { success?: boolean; error?: string } = await deleteInspectionTemplateItem(item.id)
+    if (result.success === false) { message.error(result.error); return }
     message.success('已删除')
-    await load()
+    queryClient.invalidateQueries({ queryKey: ['inspection-template-items'] })
   }
 
   const editInit: ItemFormValues | undefined = editingData && formMode === editingData.id ? {
@@ -104,7 +117,7 @@ export function InspectionItemDrawer() {
     { title: '描述', dataIndex: 'item_description', width: 160, render: (v: string | null) => v || <span style={{ color: C.stone }}>—</span> },
     { title: '预期结果', dataIndex: 'expected_result', width: 140, render: (v: string | null) => v || <span style={{ color: C.stone }}>—</span> },
     { title: '检查方法', dataIndex: 'check_method', width: 120, render: (v: string | null) => v || <span style={{ color: C.stone }}>—</span> },
-    { title: '操作', key: 'a', width: 120, fixed: 'end' as const,
+    { title: '操作', key: 'a', width: 120, fixed: 'right' as const,
       render: (_: unknown, r: InspectionTemplateItem) => (
         <div style={{ display: 'flex', gap: 10 }}>
           <span role="button" onClick={() => startEdit(r)} style={linkPrimary}><EditOutlined />编辑</span>
@@ -117,8 +130,8 @@ export function InspectionItemDrawer() {
   ]
 
   return (
-    <Drawer title={null} size={780} open={inspectionItemDrawerOpen} onClose={close} destroyOnHidden
-      styles={{ body: { padding: 0, background: C.surface } }}>
+    <Drawer title={null} open={inspectionItemDrawerOpen} onClose={close} destroyOnHidden
+      styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 780 } }}>
       <div style={{ background: C.navy, padding: '16px 28px', borderBottom: `3px solid ${C.purple}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>Checklist Items</div>

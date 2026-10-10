@@ -28,10 +28,10 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string; ico
 
 const ALL_STATUSES: InspectionTaskStatus[] = ['待执行', '执行中', '已完成']
 
-export function InspectionTasksTab({ templates, equipments: allEquipments }: Props) {
+export function InspectionTasksTab({ templates: _templates, equipments: allEquipments }: Props) {
   const { message, modal } = App.useApp()
   const {
-    tasks, tasksTotal, tasksPage, tasksPageSize, tasksLoading, tasksStatusFilter, tasksRefreshKey,
+    tasks, tasksTotal, tasksPage, tasksPageSize, tasksLoading, tasksStatusFilter, tasksRefreshKey: _tasksRefreshKey,
     setTasks, setTasksTotal, setTasksLoading, setTasksPage, setTasksPageSize, setTasksStatusFilter,
     openTaskDrawer, setExecutingTask, triggerTasksRefresh,
   } = useInspectionStore()
@@ -54,7 +54,7 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
     } finally {
       setTasksLoading(false)
     }
-  }, [tasksStatusFilter, tasksPage, tasksPageSize, tasksRefreshKey, setTasks, setTasksTotal, setTasksLoading, message])
+  }, [tasksStatusFilter, tasksPage, tasksPageSize, setTasks, setTasksTotal, setTasksLoading, message])
 
   useEffect(() => { loadTasks() }, [loadTasks])
 
@@ -208,7 +208,7 @@ export function InspectionTasksTab({ templates, equipments: allEquipments }: Pro
       },
     },
     {
-      title: '操作', key: 'action', width: 140, fixed: 'end' as const,
+      title: '操作', key: 'action', width: 140, fixed: 'right' as const,
       render: (_: unknown, record: InspectionTask) => (
         <Space size={12}>
           {(record.status === '待执行' || record.status === '执行中') && (

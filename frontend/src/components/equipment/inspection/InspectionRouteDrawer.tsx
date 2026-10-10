@@ -60,7 +60,7 @@ export function InspectionRouteDrawer() {
   return (
     <Drawer
       title={null}
-      size={460}
+      width={460}
       open={routeDrawerOpen}
       onClose={closeRouteDrawer}
       destroyOnHidden

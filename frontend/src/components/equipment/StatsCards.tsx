@@ -1,6 +1,5 @@
 'use client'
 
-import { Card, Statistic } from 'antd'
 import { EquipmentStatistics, EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { useState } from 'react'

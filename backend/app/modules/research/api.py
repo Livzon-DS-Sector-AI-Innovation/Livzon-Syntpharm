@@ -11,9 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import build_response, paginated_response
+from app.core.response import ApiResponse, build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
+    EDBOOptimizeApiResponse,
+    PilotWorkflowCreate,
+    PilotWorkflowListResponse,
+    PilotWorkflowResponse,
+    PilotWorkflowStepResponse,
     RdDeliverableTemplateCreate,
     RdDeliverableTemplateResponse,
     RdDeliverableTemplateUpdate,
@@ -61,7 +66,6 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.schemas import ApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +198,7 @@ async def get_ich_records(
                 "q3d_result": r.q3d_result,
                 "llm_used": r.llm_used,
                 "notes": r.notes,
-                "created_at": r.created_at.isoformat(),
+                "created_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in records
         ],
@@ -221,7 +225,7 @@ async def get_ich_record(
             "q3d_result": record.q3d_result,
             "llm_used": record.llm_used,
             "notes": record.notes,
-            "created_at": record.created_at.isoformat(),
+            "created_at": record.created_at.isoformat() if record.created_at else None,
         }
     )
 
@@ -237,7 +241,7 @@ async def delete_ich_record(
     return build_response(data={"message": "记录已删除"})
 
 
-@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=None)
+@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=EDBOOptimizeApiResponse)
 async def edbo_optimize(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="反应范围 CSV 文件"),
@@ -245,7 +249,7 @@ async def edbo_optimize(
     objective_modes: str = Body("max", description="目标方向，逗号分隔（max/min）"),
     batch_size: int = Body(5, ge=1, le=100, description="建议实验数量"),
     save_prediction: bool = Body(False, description="是否保存预测文件"),
-) -> ApiResponse:
+) -> EDBOOptimizeApiResponse:
     """
 
     使用 EDBO+ 进行贝叶斯反应优化。
@@ -301,7 +305,7 @@ async def edbo_optimize(
 
         raise HTTPException(status_code=400, detail=str(e))
 
-    return build_response(data=EDBOOptimizeResponse(**result))
+    return EDBOOptimizeApiResponse(data=EDBOOptimizeResponse(**result))
 
 
 @router.post("/edbo/generate-scope", summary="生成反应范围")
@@ -658,12 +662,6 @@ from app.modules.research.pilot_workflow.engine import (  # noqa: E402
 )
 from app.modules.research.pilot_workflow.engine import (  # noqa: E402
     start_workflow as start_workflow_engine,
-)
-from app.modules.research.schemas import (  # noqa: E402
-    PilotWorkflowCreate,
-    PilotWorkflowListResponse,
-    PilotWorkflowResponse,
-    PilotWorkflowStepResponse,
 )
 
 
@@ -1627,7 +1625,7 @@ async def delete_optimization(
 
         return build_response(data={"message": "工艺优化记录已删除"})
 
-    await db.delete(opt)
+    opt.is_deleted = True
 
     await db.commit()
 
@@ -1636,10 +1634,6 @@ async def delete_optimization(
 
 # ===== Pilot Workflow Endpoints =====
 
-
-from app.modules.research.schemas import (  # noqa: E402
-    PilotWorkflowCreate,
-)
 
 # Rd Project schemas
 

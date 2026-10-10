@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row} from 'antd'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchFilings } from '@/lib/api/client/research/rd-project'
 import { RdRegistrationFiling } from '@/types/research/rd-project'
@@ -32,25 +33,19 @@ const statusLabelMap: Record<string, string> = {
 
 export function RegistrationFilingPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
-  const [filings, setFilings] = useState<RdRegistrationFiling[]>([])
-  const [loading, setLoading] = useState(false)
+  const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdRegistrationFiling | null>(null)
   const [form] = Form.useForm()
 
-  const loadData = async () => {
-    setLoading(true)
-    try {
+  const { data: filings = [], isLoading: loading } = useQuery({
+    queryKey: ['registration-filings', projectId],
+    queryFn: async () => {
       const data = await fetchFilings(projectId)
-      setFilings(data)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => { loadData() }, [projectId])
+      return data || []
+    },
+    enabled: !!projectId,
+  })
 
   const openCreate = () => {
     setEditingRecord(null)
@@ -85,7 +80,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
     setDrawerOpen(true)
   }
 
-  const collectJsonFields = (values: Record<string, any>) => ({
+  const collectJsonFields = (values: Record<string, unknown>) => ({
     ctd_structure: {
       module1_admin: values.ctd_m1 || '',
       module2_summaries: values.ctd_m2 || '',
@@ -129,9 +124,9 @@ export function RegistrationFilingPage({ projectId }: Props) {
       }
       setDrawerOpen(false)
       form.resetFields()
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '保存失败')
+      queryClient.invalidateQueries({ queryKey: ['registration-filings', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -140,9 +135,9 @@ export function RegistrationFilingPage({ projectId }: Props) {
       const { deleteFiling } = await import('@/actions/research/modules')
       await deleteFiling(id)
       msgApi.success('删除成功')
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+      queryClient.invalidateQueries({ queryKey: ['registration-filings', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -154,7 +149,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
     { title: '备注', dataIndex: 'notes', key: 'notes', width: 200, ellipsis: true, render: (v: string) => v || '-' },
     {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
-      render: (_: any, record: RdRegistrationFiling) => (
+      render: (_: unknown, record: RdRegistrationFiling) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">

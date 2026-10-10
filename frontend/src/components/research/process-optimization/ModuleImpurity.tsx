@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {Card, Button, Space, Tag, Table, Form, Input, InputNumber, Select, App, Tabs, Alert, Row, Col, Statistic, Descriptions} from 'antd'
 import { CheckCircleOutlined, PlusOutlined, DeleteOutlined, BugOutlined, SafetyOutlined, RobotOutlined } from '@ant-design/icons'
-import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ICHSolventClass, ControlMethod, DOEExperiment } from '@/types/research'
+import type { ImpurityStudy, Impurity, ImpurityCategory, ICHM7Class, ControlMethod, DOEExperiment } from '@/types/research'
 import { identifyImpurities, generateIdentificationReport } from '@/components/research/utils/impurity-identifier'
 import { fetchRouteById } from '@/lib/api/client/research'
 
@@ -296,7 +296,7 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
               children: (
                 <div>
                   <Alert
-                    title="杂质识别与分析"
+                    message="杂质识别与分析"
                     description="基于DOE优化后的工艺，系统识别工艺杂质、降解杂质、残留溶剂和元素杂质，并进行ICH分类和风险评估。"
                     type="info"
                     showIcon
@@ -305,7 +305,7 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
 
                   {doeExperiment && (
                     <Alert
-                      title={`上游DOE优化已完成，涉及 ${doeExperiment.factors.length} 个因素、${doeExperiment.runs.filter(r => r.status === 'completed').length} 组实验`}
+                      message={`上游DOE优化已完成，涉及 ${doeExperiment.factors.length} 个因素、${doeExperiment.runs.filter(r => r.status === 'completed').length} 组实验`}
                       type="success"
                       showIcon
                       style={{ marginBottom: 16 }}
@@ -397,10 +397,10 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
                       <Card size="small"><Statistic title="总杂质数" value={impurities.length} /></Card>
                     </Col>
                     <Col span={6}>
-                      <Card size="small"><Statistic title="高风险" value={highRiskCount} valueStyle={{ color: highRiskCount > 0 ? '#ff4d4f' : '#52c41a' }} /></Card>
+                      <Card size="small"><Statistic title="高风险" value={highRiskCount} styles={{ content: { color: highRiskCount > 0 ? '#ff4d4f' : '#52c41a' } }} /></Card>
                     </Col>
                     <Col span={6}>
-                      <Card size="small"><Statistic title="中风险" value={medRiskCount} valueStyle={{ color: medRiskCount > 0 ? '#faad14' : '#52c41a' }} /></Card>
+                      <Card size="small"><Statistic title="中风险" value={medRiskCount} styles={{ content: { color: medRiskCount > 0 ? '#faad14' : '#52c41a' } }} /></Card>
                     </Col>
                     <Col span={6}>
                       <Card size="small"><Statistic title="总杂质水平" value={totalImp} precision={2} suffix="%" /></Card>
@@ -436,7 +436,7 @@ export function ModuleImpurity({ optimizationId, sourceRouteId, doeExperiment, i
 
                   <Card size="small" title="ICH Q3D 元素杂质">
                     <Alert
-                      title="元素杂质评估需根据处方组成、设备、容器密封系统等进行系统评估"
+                      message="元素杂质评估需根据处方组成、设备、容器密封系统等进行系统评估"
                       description={impurities.filter(i => i.category === 'elemental').length > 0
                         ? `已识别 ${impurities.filter(i => i.category === 'elemental').length} 种元素杂质`
                         : '当前工艺暂未识别元素杂质风险'

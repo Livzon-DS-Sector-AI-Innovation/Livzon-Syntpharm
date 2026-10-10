@@ -237,3 +237,30 @@ class IPQCInspectionFilter(BaseModel):
     batch_locked: bool | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+
+# ========== API Response Wrappers ==========
+
+
+class IPQCInspectionApiResponse(BaseModel):
+    """IPQC检验单响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: IPQCInspectionResponse | None = None
+
+
+class IPQCInspectionListApiResponse(BaseModel):
+    """IPQC检验单列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: IPQCInspectionListResponse | None = None
+
+
+class IPQCApprovalRecordListApiResponse(BaseModel):
+    """IPQC审批记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[IPQCApprovalRecordResponse] | None = None

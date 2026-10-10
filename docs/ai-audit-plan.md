@@ -480,6 +480,8 @@ Full audit
 - 迁移文件必须使用顺序编号格式 `NNNN_descriptive_name.py`，NNNN 是 4 位数字（如 `0001`、`0002`）
 - Revision ID 也应遵循相同模式（如 `0001_baseline`、`0002_drop_product`）
 - 禁止使用 Alembic 自动生成的哈希 ID（如 `3cb28d1e1ac7`）
+- 4 位 NNNN 编号必须全局唯一：不存在两个使用相同 NNNN 前缀的迁移文件
+- 编号唯一性与 down_revision 引用完整性由 `scripts/ci/check_migration_numbers.py` 检查
 
 **迁移规范 / 初始基线例外:**
 - `0001_baseline_full_schema` 迁移允许跨所有 schema
@@ -521,6 +523,7 @@ Full audit
 9. Are there any `CASCADE DELETE` foreign keys across module boundaries?
 10. Are there any circular foreign key dependencies?
 11. Is `module_registry.py` updated when a new schema is introduced?
+12. Are the 4-digit NNNN prefixes across `alembic/versions/` globally unique (no two migration files share a number)?
 
 
 
@@ -1039,11 +1042,42 @@ Full audit
 5. Are there any dynamic `ORDER BY`, `LIMIT`, or table/column name references built via string interpolation?
 
 
+
+## 16. React Hooks 与 React Compiler
+
+### Audit type
+Full audit
+
+### Rules (from AGENTS.md)
+
+**前端 / React Hooks 与 React Compiler:**
+1. **数据获取**: 使用 React Query，禁止 useEffect + setState
+2. **派生状态**: 使用 useMemo，禁止 useEffect + setState
+3. **useEffect 依赖**: 必须完整，禁止省略或抑制
+4. **不可变状态**: 禁止直接修改，使用展开运算符
+5. **依赖稳定化**: 使用 useCallback/useRef
+
+详细示例参见 [`examples/react-hooks-pattern.md`](examples/react-hooks-pattern.md)。
+
+### Directories to inspect
+- `frontend/src/app/`
+- `frontend/src/components/`
+- `frontend/src/actions/`
+
+### Questions
+
+1. Are there `useEffect` hooks that call `setState` to fetch data? (Should use React Query)
+2. Are there `useEffect` hooks that compute derived state? (Should use useMemo)
+3. Do all `useEffect` hooks have complete dependency arrays?
+4. Are there any `// eslint-disable-next-line react-hooks/exhaustive-deps` comments?
+5. Are there direct state mutations (array.push, object.property = value)?
+6. Are `useCallback` or `useRef` used appropriately to stabilize dependencies?
+
 ## Audit procedure
 
 ### Baseline audit (run once for the full repository)
 
-For each category 1–15 in sequence:
+For each category 1–16 in sequence:
 1. Read this category's section above
 2. Read the referenced AGENTS.md sections (including any exception clauses)
 3. Check the [Explicit exceptions](#explicit-exceptions-from-agentsmd) table for this category
@@ -1052,7 +1086,7 @@ For each category 1–15 in sequence:
 6. Report counts: files inspected, not inspected, rules evaluated, not evaluated
 7. Record findings in `docs/ai-audit-findings.md`
 
-After all 15 categories:
+After all 16 categories:
 - Fix confirmed violations that should be corrected immediately
 - Mark accepted exceptions with reason, approver, and date
 - Commit `docs/ai-audit-findings.md`

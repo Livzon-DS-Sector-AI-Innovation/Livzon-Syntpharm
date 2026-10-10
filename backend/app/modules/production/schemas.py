@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -501,3 +502,153 @@ class MaterialBalanceCalculate(BaseModel):
 
     batch_id: uuid.UUID = Field(..., description="批次ID")
     min_balance_rate: float = Field(95.0, ge=0, le=100, description="最低平衡率(%)")
+
+
+# ============ API Response Wrappers ============
+
+
+class BatchListApiResponse(BaseModel):
+    """批次列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[BatchResponse]
+    meta: dict[str, Any] | None = None
+
+
+class BatchApiResponse(BaseModel):
+    """批次响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: BatchResponse | None = None
+
+
+class BatchMaterialListApiResponse(BaseModel):
+    """批次物料列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[BatchMaterialResponse]
+
+
+class BatchMaterialApiResponse(BaseModel):
+    """批次物料响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: BatchMaterialResponse | None = None
+
+
+class ProductionPlanListApiResponse(BaseModel):
+    """生产计划列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProductionPlanResponse]
+    meta: dict[str, Any] | None = None
+
+
+class ProductionPlanApiResponse(BaseModel):
+    """生产计划响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProductionPlanResponse | None = None
+
+
+class PlanTaskListApiResponse(BaseModel):
+    """计划任务列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[PlanTaskResponse]
+
+
+class PlanTaskApiResponse(BaseModel):
+    """计划任务响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: PlanTaskResponse | None = None
+
+
+class ProcessSpecListApiResponse(BaseModel):
+    """工艺规程列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProcessSpecResponse]
+    meta: dict[str, Any] | None = None
+
+
+class ProcessSpecApiResponse(BaseModel):
+    """工艺规程响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProcessSpecResponse | None = None
+
+
+class ProcessStepListApiResponse(BaseModel):
+    """工艺步骤列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProcessStepResponse]
+
+
+class ProcessStepApiResponse(BaseModel):
+    """工艺步骤响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProcessStepResponse | None = None
+
+
+class ProcessParameterListApiResponse(BaseModel):
+    """工艺参数列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProcessParameterResponse]
+
+
+class ProcessParameterApiResponse(BaseModel):
+    """工艺参数响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProcessParameterResponse | None = None
+
+
+class ProductionRecordListApiResponse(BaseModel):
+    """生产记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProductionRecordResponse]
+
+
+class ProductionRecordApiResponse(BaseModel):
+    """生产记录响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProductionRecordResponse | None = None
+
+
+class MaterialBalanceApiResponse(BaseModel):
+    """物料平衡响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: MaterialBalanceResponse
+
+
+class MessageApiResponse(BaseModel):
+    """消息响应包装（用于删除等操作）"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

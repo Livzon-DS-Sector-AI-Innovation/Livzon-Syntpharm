@@ -70,15 +70,15 @@ export function CalibrationRecordDrawer({ calibrationPlans, onRefresh }: Calibra
       message.success('创建校准记录成功')
       closeCalibrationRecordDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 
   return (
     <Drawer
       title="新增校准记录"
-      size={480}
+      width={480}
       open={calibrationRecordDrawerOpen}
       onClose={closeCalibrationRecordDrawer}
       destroyOnHidden

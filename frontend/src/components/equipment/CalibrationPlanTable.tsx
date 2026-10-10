@@ -21,7 +21,7 @@ const statusMap: Record<CalibrationPlanStatus, React.CSSProperties> = {
 
 interface Props { onRefresh?: () => void; onRecordRefresh?: () => void }
 
-export function CalibrationPlanTable({ onRefresh, onRecordRefresh }: Props) {
+export function CalibrationPlanTable({ onRefresh, onRecordRefresh: _onRecordRefresh }: Props) {
   const { message, modal } = App.useApp()
   const {
     calibrationPlans, calibrationPlanTotal, calibrationPlanPage, calibrationPlanPageSize,
@@ -36,7 +36,7 @@ export function CalibrationPlanTable({ onRefresh, onRecordRefresh }: Props) {
       okText: '确认', cancelText: '取消', okButtonProps: { danger: true },
       onOk: async () => {
         try { await deleteCalibrationPlan(r.id); message.success('删除成功'); onRefresh?.() }
-        catch (error: any) { message.error(error?.message || '删除失败') }
+        catch (error: unknown) { message.error((error instanceof Error ? error.message : null) || '删除失败') }
       },
     })
   }, [modal, message, onRefresh])
@@ -64,10 +64,10 @@ export function CalibrationPlanTable({ onRefresh, onRecordRefresh }: Props) {
       render: (s: CalibrationPlanStatus) => <span style={statusMap[s]}>{s}</span>,
     },
     {
-      title: '操作', key: 'action', width: 180, fixed: 'end',
+      title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_: unknown, r: CalibrationPlan) => (
         <Space size={12}>
-          <span role="button" onClick={() => openCalibrationRecordDrawer({ calibration_plan_id: r.id, calibration_type: r.calibration_type } as any)} style={linkPurple}><FileTextOutlined />记录</span>
+          <span role="button" onClick={() => openCalibrationRecordDrawer(undefined)} style={linkPurple}><FileTextOutlined />记录</span>
           <span role="button" onClick={() => openCalibrationPlanDrawer(r)} style={linkPrimary}><EditOutlined />编辑</span>
           <span role="button" onClick={() => handleDelete(r)} style={linkDanger}><DeleteOutlined />删除</span>
         </Space>

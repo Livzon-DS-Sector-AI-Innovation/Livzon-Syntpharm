@@ -56,9 +56,9 @@ export function BitableCrossImportModal({ open, onClose, onSuccess }: BitableCro
       const importResult = await crossImportFromBitableAction(data)
       setResult(importResult)
       setStep('result')
-    } catch (error: any) {
-      if (error?.errorFields) return
-      message.error('导入失败：' + (error?.message || '未知错误'))
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "errorFields" in error) return
+      message.error('导入失败：' + ((error instanceof Error ? error.message : null) || '未知错误'))
     } finally {
       setLoading(false)
     }
@@ -140,7 +140,7 @@ export function BitableCrossImportModal({ open, onClose, onSuccess }: BitableCro
           <Alert
             type="info"
             showIcon
-            title="导入说明"
+            message="导入说明"
             description={
               <div style={{ fontSize: 12, marginTop: 4 }}>
                 <div>• 从飞书多维表格的交叉表格式导入能耗数据</div>

@@ -6,7 +6,7 @@ import base64
 import uuid
 from typing import Any
 
-from fastmcp.tools.tool import ToolResult
+from fastmcp.tools.base import ToolResult
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { App,
   Table,
   Button,
@@ -12,7 +12,6 @@ import { App,
   DatePicker,
   Input,
   Popconfirm,
-  Modal
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
@@ -21,6 +20,7 @@ import {
   ExportOutlined,
   SearchOutlined
 } from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   getMergedPressureRecords,
   deleteMergedRow,
@@ -36,9 +36,7 @@ const { RangePicker } = DatePicker
 
 export function PressureRecordsPageClient() {
   const { message } = App.useApp()
-  const [loading, setLoading] = useState(false)
-  const [records, setRecords] = useState<MergedPressureRow[]>([])
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [area, setArea] = useState<string>()
@@ -46,10 +44,10 @@ export function PressureRecordsPageClient() {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([])
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params: any = { page, page_size: pageSize }
+  const { data: recordsData, isLoading: loading } = useQuery({
+    queryKey: ['pressure-records-merged', { page, page_size: pageSize, area, pointId, dateRange: dateRange ? [dateRange[0].toISOString(), dateRange[1].toISOString()] : null }],
+    queryFn: async () => {
+      const params: Record<string, unknown> = { page, page_size: pageSize }
       if (area) params.area = area
       if (pointId) params.point_id = pointId
       if (dateRange) {
@@ -58,25 +56,20 @@ export function PressureRecordsPageClient() {
       }
       const res = await getMergedPressureRecords(params)
       if (res.code === 200) {
-        setRecords(res.data || [])
-        setTotal(res.meta?.total || 0)
+        return { data: res.data || [], total: res.meta?.total || 0 }
       }
-    } catch {
-      message.error('加载记录失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, area, pointId, dateRange])
+      return { data: [], total: 0 }
+    },
+  })
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
+  const records = recordsData?.data || []
+  const total = recordsData?.total || 0
 
   const handleDelete = async (record: MergedPressureRow) => {
     const res = await deleteMergedRow({ point_id: record.point_id, date: record.date })
     if (res.code === 200) {
       message.success('删除成功')
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['pressure-records-merged'] })
     } else {
       message.error('删除失败')
     }
@@ -91,12 +84,12 @@ export function PressureRecordsPageClient() {
     if (res.code === 200) {
       message.success(`成功删除 ${res.data?.success_count || 0} 条`)
       setSelectedRowKeys([])
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['pressure-records-merged'] })
     }
   }
 
   const handleExport = async () => {
-    const params: any = {}
+    const params: Record<string, unknown> = {}
     if (area) params.area = area
     if (dateRange) {
       params.start_date = dateRange[0].startOf('day').toISOString()
@@ -148,7 +141,7 @@ export function PressureRecordsPageClient() {
     {
       title: '各时段压差值',
       key: 'values',
-      render: (_: any, record: MergedPressureRow) => (
+      render: (_: unknown, record: MergedPressureRow) => (
         <Space wrap>
           {Object.entries(record.time_slot_values).map(([slot, value]) => (
             <Tag key={slot} color={value !== null && Math.abs((value || 0) - record.standard_pressure) > 5 ? 'error' : 'blue'}>
@@ -176,7 +169,7 @@ export function PressureRecordsPageClient() {
       title: '操作',
       key: 'action',
       width: 80,
-      render: (_: any, record: MergedPressureRow) => (
+      render: (_: unknown, record: MergedPressureRow) => (
         <Popconfirm title="确认删除该记录？" onConfirm={() => handleDelete(record)}>
           <Button type="link" danger size="small" icon={<DeleteOutlined />} />
         </Popconfirm>
@@ -210,7 +203,7 @@ export function PressureRecordsPageClient() {
               setPage(1)
             }}
           />
-          <Button icon={<ReloadOutlined />} onClick={loadData}>刷新</Button>
+          <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['pressure-records-merged'] })}>刷新</Button>
           <Button icon={<ExportOutlined />} onClick={handleExport}>导出</Button>
           {selectedRowKeys.length > 0 && (
             <Popconfirm title={`确认删除 ${selectedRowKeys.length} 条记录？`} onConfirm={handleBatchDelete}>

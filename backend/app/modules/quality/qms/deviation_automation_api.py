@@ -20,7 +20,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.exceptions import AppException, NotFoundException
-from app.core.response import ApiResponse
 from app.modules.quality.qms.deviation_automation_schemas import (
     AIResultUpdate,
     DevTaskCreate,
@@ -29,6 +28,7 @@ from app.modules.quality.qms.deviation_automation_schemas import (
     SOPRuleCreate,
     SOPRuleUpdate,
 )
+from app.modules.quality.qms.deviation_schemas import DeviationApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ async def list_sop_rules(
             }
         )
 
-    return ApiResponse(data={"items": rules, "total": total})
+    return DeviationApiResponse(data={"items": rules, "total": total})
 
 
 @router.post("/sop-rules", summary="新增SOP规则")
@@ -128,7 +128,7 @@ async def create_sop_rule(
     await db.flush()
     await db.refresh(new_rule)
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="新增成功",
         data={
             "id": new_rule.id,
@@ -152,7 +152,7 @@ async def migrate_sop_file_path(
         """)
         )
         await db.commit()
-        return ApiResponse(message="迁移成功，sop_file_path 字段已添加")
+        return DeviationApiResponse(message="迁移成功，sop_file_path 字段已添加")
     except Exception as e:
         await db.rollback()
         raise AppException(status_code=500, message=f"迁移失败: {str(e)}")
@@ -186,7 +186,7 @@ async def update_sop_rule(
     db_rule.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(message="更新成功")
+    return DeviationApiResponse(message="更新成功")
 
 
 @router.put("/sop-rules/{rule_id}/status", summary="切换SOP规则状态")
@@ -205,7 +205,7 @@ async def toggle_sop_rule_status(
     db_rule.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(message="状态切换成功")
+    return DeviationApiResponse(message="状态切换成功")
 
 
 @router.delete("/sop-rules/{rule_id}", summary="删除SOP规则")
@@ -222,7 +222,7 @@ async def delete_sop_rule(
     await db.delete(db_rule)
     await db.flush()
 
-    return ApiResponse(message="删除成功")
+    return DeviationApiResponse(message="删除成功")
 
 
 # ============ 辅助函数 ============
@@ -344,7 +344,7 @@ async def upload_sop_file(
     db_rule.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="上传成功",
         data={
             "rule_id": rule_id,
@@ -441,7 +441,7 @@ SOP文档内容：
         db_rule.update_time = datetime.now()
         await db.flush()
 
-        return ApiResponse(
+        return DeviationApiResponse(
             message="AI解析完成",
             data={
                 "rule_id": rule_id,
@@ -475,7 +475,7 @@ SOP文档内容：
                     db_rule.standard_sentence = parsed_data["standard_sentence"]
                 db_rule.update_time = datetime.now()
                 await db.commit()
-                return ApiResponse(
+                return DeviationApiResponse(
                     message="AI解析完成(sop_code已存在，跳过更新)",
                     data={
                         "rule_id": rule_id,
@@ -545,7 +545,7 @@ async def create_dev_task(
     await db.flush()
     await db.refresh(new_task)
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="创建成功",
         data={
             "task_id": new_task.task_id,
@@ -611,7 +611,7 @@ async def list_dev_tasks(
             }
         )
 
-    return ApiResponse(data={"items": tasks, "total": total})
+    return DeviationApiResponse(data={"items": tasks, "total": total})
 
 
 @router.get("/tasks/{task_id}", summary="获取任务详情")
@@ -625,7 +625,7 @@ async def get_dev_task(
     if not task:
         raise NotFoundException(resource="任务不存在")
 
-    return ApiResponse(
+    return DeviationApiResponse(
         data={
             "task_id": task.task_id,
             "deviation_no": task.deviation_no,
@@ -658,7 +658,7 @@ async def update_task_status(
     task.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(message="状态更新成功")
+    return DeviationApiResponse(message="状态更新成功")
 
 
 @router.put("/tasks/{task_id}/update-ai-result", summary="更新AI处理结果")
@@ -763,7 +763,7 @@ SOP规则库：
             task.ai_result = ai_result
             task.update_time = datetime.now()
             await db.flush()
-            return ApiResponse(message="保存成功（已自动转换为标准格式）")
+            return DeviationApiResponse(message="保存成功（已自动转换为标准格式）")
 
         except Exception as e:
             logger.error(f"HTML转JSON失败: {e}")
@@ -771,14 +771,14 @@ SOP规则库：
             task.ai_result = data.ai_result
             task.update_time = datetime.now()
             await db.flush()
-            return ApiResponse(message="保存成功（格式未转换）")
+            return DeviationApiResponse(message="保存成功（格式未转换）")
 
     # 如果是 JSON 格式，直接保存
     task.ai_result = data.ai_result
     task.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(message="保存成功")
+    return DeviationApiResponse(message="保存成功")
 
 
 # ============ Word文件上传与解析 ============
@@ -848,7 +848,7 @@ async def upload_and_parse_word(
     task.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="上传成功",
         data={
             "task_id": task_id,
@@ -1031,7 +1031,7 @@ SOP规则库：
         task.update_time = datetime.now()
         await db.flush()
 
-        return ApiResponse(
+        return DeviationApiResponse(
             message="AI处理完成",
             data={
                 "task_id": task_id,
@@ -1408,7 +1408,7 @@ async def get_task_preview(
             or ai_result_stripped.startswith("<body")
         ):
             # 已经是HTML格式，直接返回
-            return ApiResponse(
+            return DeviationApiResponse(
                 data={
                     "task_id": task_id,
                     "html_content": html_lib.escape(task.ai_result),
@@ -1527,7 +1527,7 @@ SOP规则库：
             except Exception as recovery_error:
                 logger.error(f"自动恢复失败: {recovery_error}")
                 # 如果自动恢复也失败，返回原始内容的HTML展示
-                return ApiResponse(
+                return DeviationApiResponse(
                     data={
                         "task_id": task_id,
                         "html_content": html_lib.escape(
@@ -1555,7 +1555,7 @@ SOP规则库：
         # HTML转义用于JSON传输
         escaped_html = html_lib.escape(html_content)
 
-        return ApiResponse(
+        return DeviationApiResponse(
             data={
                 "task_id": task_id,
                 "html_content": escaped_html,
@@ -1884,7 +1884,7 @@ SOP规则库：
         task.update_time = datetime.now()
         await db.flush()
 
-        return ApiResponse(
+        return DeviationApiResponse(
             message="标准文件生成成功",
             data={
                 "task_id": task_id,
@@ -1987,7 +1987,7 @@ async def create_sop_rule(  # noqa: F811
     await db.flush()
     await db.refresh(new_rule)
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="新增成功",
         data={
             "id": new_rule.id,
@@ -2037,7 +2037,7 @@ async def list_templates(
             }
         )
 
-    return ApiResponse(data={"items": templates, "total": total})
+    return DeviationApiResponse(data={"items": templates, "total": total})
 
 
 @router.post("/templates", summary="新增报告模板")
@@ -2055,7 +2055,7 @@ async def create_template(
     await db.flush()
     await db.refresh(new_template)
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="新增成功",
         data={
             "id": new_template.id,
@@ -2084,7 +2084,7 @@ async def update_template(
     db_template.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(message="更新成功")
+    return DeviationApiResponse(message="更新成功")
 
 
 @router.post("/templates/upload", summary="上传模板文件")
@@ -2123,7 +2123,7 @@ async def upload_template_file(
     db_template.update_time = datetime.now()
     await db.flush()
 
-    return ApiResponse(
+    return DeviationApiResponse(
         message="上传成功",
         data={
             "template_id": template_id,
@@ -2175,7 +2175,7 @@ async def delete_template(
     await db.delete(template)
     await db.flush()
 
-    return ApiResponse(message="删除成功")
+    return DeviationApiResponse(message="删除成功")
 
 
 # ============ 数据库模型 ============

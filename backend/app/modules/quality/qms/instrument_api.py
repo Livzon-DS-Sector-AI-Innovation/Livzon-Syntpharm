@@ -15,7 +15,6 @@ from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
 from app.core.deps import get_current_user
-from app.core.response import ApiResponse
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
     # Approval
@@ -26,9 +25,21 @@ from app.modules.quality.qms.instrument_schemas import (
     CalibrationRuleCreate,
     CalibrationRuleResponse,
     CalibrationRuleUpdate,
+    # API Response Wrappers
+    InstrumentApiResponse,
+    InstrumentApprovalApiResponse,
     # Instrument
     InstrumentCreate,
+    InstrumentFeishuUserApiResponse,
+    InstrumentListApiResponse,
+    InstrumentMessageApiResponse,
+    InstrumentRecordApiResponse,
+    InstrumentRecordListApiResponse,
+    InstrumentReminderConfigApiResponse,
+    InstrumentReminderConfigListApiResponse,
     InstrumentResponse,
+    InstrumentRuleApiResponse,
+    InstrumentRuleListApiResponse,
     InstrumentUpdate,
     # ReminderConfig
     ReminderConfigCreate,
@@ -66,7 +77,7 @@ def get_reminder_config_service(session=Depends(get_db)) -> Any:  # type: ignore
 # ========== 飞书通讯录 API ==========
 
 
-@router.post("/feishu-contacts/resolve-user", response_model=ApiResponse)
+@router.post("/feishu-contacts/resolve-user", response_model=InstrumentFeishuUserApiResponse)
 async def post(
     mobile: str = Body(None, description="手机号"),
     email: str = Body(None, description="邮箱"),
@@ -78,16 +89,16 @@ async def post(
     logger = logging.getLogger(__name__)
 
     if not mobile and not email:
-        return ApiResponse(message="请提供手机号或邮箱", data={"open_id": None})
+        return InstrumentFeishuUserApiResponse(message="请提供手机号或邮箱", data={"open_id": None})
 
     # 获取第一个启用的提醒配置的飞书凭证
     configs = await service.list_active_configs()
     if not configs:
-        return ApiResponse(message="无可用的飞书配置", data={"open_id": None})
+        return InstrumentFeishuUserApiResponse(message="无可用的飞书配置", data={"open_id": None})
 
     config = configs[0]
     if not config.feishu_app_id or not config.feishu_app_secret:
-        return ApiResponse(message="飞书应用未配置", data={"open_id": None})
+        return InstrumentFeishuUserApiResponse(message="飞书应用未配置", data={"open_id": None})
 
     try:
         from app.platform.notification.feishu_client_config import FeishuClient
@@ -95,18 +106,18 @@ async def post(
         client = FeishuClient(config.feishu_app_id, config.feishu_app_secret)
         open_id = await client.get_user_by_mobile_or_email(mobile=mobile, email=email)
         if open_id:
-            return ApiResponse(message="获取成功", data={"open_id": open_id})
+            return InstrumentFeishuUserApiResponse(message="获取成功", data={"open_id": open_id})
         else:
-            return ApiResponse(message="未找到该用户", data={"open_id": None})
+            return InstrumentFeishuUserApiResponse(message="未找到该用户", data={"open_id": None})
     except Exception as e:
         logger.error(f"获取飞书用户失败: {str(e)}")
-        return ApiResponse(message=f"获取用户失败: {str(e)}", data={"open_id": None})
+        return InstrumentFeishuUserApiResponse(message=f"获取用户失败: {str(e)}", data={"open_id": None})
 
 
 # ========== 提醒配置管理 API ==========
 
 
-@router.get("/reminder-config", response_model=ApiResponse)
+@router.get("/reminder-config", response_model=InstrumentReminderConfigListApiResponse)
 async def get(
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
@@ -135,10 +146,10 @@ async def get(
         for config in configs
     ]
 
-    return ApiResponse(message="获取成功", data={"items": items, "total": len(items)})
+    return InstrumentReminderConfigListApiResponse(message="获取成功", data={"items": items, "total": len(items)})
 
 
-@router.post("/reminder-config", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/reminder-config", response_model=InstrumentReminderConfigApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ReminderConfigCreate,
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -146,7 +157,7 @@ async def post(  # noqa: F811
     """创建提醒配置"""
     config = await service.create_config(data)
 
-    return ApiResponse(
+    return InstrumentReminderConfigApiResponse(
         message="创建成功",
         data={
             "id": str(config.id),
@@ -164,7 +175,7 @@ async def post(  # noqa: F811
     )
 
 
-@router.put("/reminder-config/{config_id}", response_model=ApiResponse)
+@router.put("/reminder-config/{config_id}", response_model=InstrumentReminderConfigApiResponse)
 async def put(
     config_id: UUID,
     data: ReminderConfigUpdate,
@@ -173,7 +184,7 @@ async def put(
     """更新提醒配置"""
     config = await service.update_config(config_id, data)
 
-    return ApiResponse(
+    return InstrumentReminderConfigApiResponse(
         message="更新成功",
         data={
             "id": str(config.id),
@@ -191,7 +202,7 @@ async def put(
     )
 
 
-@router.delete("/reminder-config/{config_id}", response_model=ApiResponse)
+@router.delete("/reminder-config/{config_id}", response_model=InstrumentMessageApiResponse)
 async def delete(
     config_id: UUID,
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -199,13 +210,13 @@ async def delete(
     """删除提醒配置"""
     await service.delete_config(config_id)
 
-    return ApiResponse(message="删除成功")
+    return InstrumentMessageApiResponse(message="删除成功")
 
 
 # ========== 仪器设备台账 API ==========
 
 
-@router.get("", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("", response_model=InstrumentListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_no: str | None = Query(None, description="仪器编号"),
     instrument_name: str | None = Query(None, description="仪器名称"),
@@ -230,7 +241,7 @@ async def get(  # noqa: F811
     )
 
     # list_instruments 已经返回包含 valid_until 和 is_overdue 的字典列表
-    return ApiResponse(
+    return InstrumentListApiResponse(
         data={
             "items": instruments,  # service.list_instruments 返回的字典已包含 valid_until 和 is_overdue
             "total": total,
@@ -240,7 +251,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.post("", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: InstrumentCreate,
     service: InstrumentService = Depends(get_instrument_service),
@@ -250,7 +261,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         instrument = await service.create_instrument(data, user_id)
-        return ApiResponse(
+        return InstrumentApiResponse(
             message="创建成功",
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
@@ -258,7 +269,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{instrument_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{instrument_id}/submit", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
@@ -268,7 +279,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         instrument = await service.submit_instrument(instrument_id, user_id)
-        return ApiResponse(
+        return InstrumentApiResponse(
             message="提交成功",
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
@@ -276,7 +287,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{instrument_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{instrument_id}/approve", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
     approved: bool = Query(..., description="是否批准"),
@@ -292,7 +303,7 @@ async def post(  # noqa: F811
         instrument = await service.approve_instrument(
             instrument_id, approved, comments, approval_type, user_id, user_name
         )
-        return ApiResponse(
+        return InstrumentApiResponse(
             message="审批完成",
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
@@ -300,7 +311,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{instrument_id}/activate", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{instrument_id}/activate", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
@@ -310,7 +321,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         instrument = await service.activate_instrument(instrument_id, user_id)
-        return ApiResponse(
+        return InstrumentApiResponse(
             message="启用成功",
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
@@ -318,7 +329,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/{instrument_id}/deactivate", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/{instrument_id}/deactivate", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
     reason: str = Query(..., description="停用原因"),
@@ -329,7 +340,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         instrument = await service.deactivate_instrument(instrument_id, reason, user_id)
-        return ApiResponse(
+        return InstrumentApiResponse(
             message="停用成功",
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
@@ -340,17 +351,19 @@ async def post(  # noqa: F811
 # ========== 校准规则 API ==========
 
 
-@router.get("/rules", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/rules", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_id: str | None = Query(None, description="仪器ID"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
     """获取校准规则列表"""
     rules = await service.list_rules(instrument_id)
-    return ApiResponse(data=[CalibrationRuleResponse.model_validate(rule).model_dump() for rule in rules])
+    return InstrumentRuleListApiResponse(
+        data=[CalibrationRuleResponse.model_validate(rule).model_dump() for rule in rules]
+    )
 
 
-@router.get("/rules/{instrument_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/rules/{instrument_id}", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_id: UUID,
     service: CalibrationRuleService = Depends(get_rule_service),
@@ -358,11 +371,11 @@ async def get(  # noqa: F811
     """获取仪器校准规则"""
     rule = await service.repository.get_by_instrument_id(instrument_id)
     if rule:
-        return ApiResponse(data=CalibrationRuleResponse.model_validate(rule).model_dump())
-    return ApiResponse(data=None)
+        return InstrumentRuleApiResponse(data=CalibrationRuleResponse.model_validate(rule).model_dump())
+    return InstrumentRuleApiResponse(data=None)
 
 
-@router.post("/rules", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/rules", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     data: CalibrationRuleCreate,
     service: CalibrationRuleService = Depends(get_rule_service),
@@ -372,7 +385,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     try:
         user_id = current_user.id if current_user else None
         rule = await service.create_rule(data, user_id)
-        return ApiResponse(
+        return InstrumentRuleApiResponse(
             message="创建成功",
             data=CalibrationRuleResponse.model_validate(rule).model_dump(),
         )
@@ -380,7 +393,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/rules/{rule_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/rules/{rule_id}", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     rule_id: UUID,
     data: CalibrationRuleUpdate,
@@ -391,7 +404,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     try:
         user_id = current_user.id if current_user else None
         rule = await service.update_rule(rule_id, data, user_id)
-        return ApiResponse(
+        return InstrumentRuleApiResponse(
             message="更新成功",
             data=CalibrationRuleResponse.model_validate(rule).model_dump(),
         )
@@ -412,14 +425,14 @@ async def delete(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/upcoming", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     days: int = Query(30, description="提前预警天数"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
     """获取即将到期的校准计划"""
     rules = await service.get_upcoming_calibrations(days)
-    return ApiResponse(
+    return InstrumentRuleListApiResponse(
         data=[
             {
                 "id": str(rule.id),
@@ -437,7 +450,7 @@ async def get(  # noqa: F811
 # ========== 校准记录 API ==========
 
 
-@router.get("/records", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/records", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_id: str | None = Query(None, description="仪器ID"),
     rule_id: str | None = Query(None, description="校准规则ID"),
@@ -495,10 +508,10 @@ async def get(  # noqa: F811
             }
         )
 
-    return ApiResponse(data={"items": items, "total": total, "page": page, "page_size": page_size})
+    return InstrumentRecordListApiResponse(data={"items": items, "total": total, "page": page, "page_size": page_size})
 
 
-@router.get("/records/{record_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
@@ -506,12 +519,12 @@ async def get(  # noqa: F811
     """获取校准记录详情"""
     try:
         record = await service.get_record(record_id)
-        return ApiResponse(data=CalibrationRecordResponse.model_validate(record).model_dump())
+        return InstrumentRecordApiResponse(data=CalibrationRecordResponse.model_validate(record).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/records", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/records", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     data: CalibrationRecordCreate,
     service: CalibrationRecordService = Depends(get_record_service),
@@ -521,7 +534,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     try:
         user_id = current_user.id if current_user else None
         record = await service.create_record(data, user_id)
-        return ApiResponse(
+        return InstrumentRecordApiResponse(
             message="创建成功",
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
@@ -529,7 +542,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.put("/records/{record_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     record_id: UUID,
     data: CalibrationRecordUpdate,
@@ -540,7 +553,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     try:
         user_id = current_user.id if current_user else None
         record = await service.update_record(record_id, data, user_id)
-        return ApiResponse(
+        return InstrumentRecordApiResponse(
             message="更新成功",
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
@@ -561,7 +574,7 @@ async def delete(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/records/{record_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/records/{record_id}/submit", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
@@ -571,7 +584,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         record = await service.submit_record(record_id, user_id)
-        return ApiResponse(
+        return InstrumentRecordApiResponse(
             message="提交成功",
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
@@ -579,7 +592,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/records/{record_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/records/{record_id}/approve", response_model=InstrumentApprovalApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     record_id: UUID,
     approved: bool = Query(..., description="是否批准"),
@@ -593,7 +606,7 @@ async def post(  # noqa: F811
         user_id = current_user.id if current_user else None
         user_name = current_user.username if current_user else None
         record = await service.approve_record(record_id, approved, comments, approval_type, user_id, user_name)
-        return ApiResponse(
+        return InstrumentRecordApiResponse(
             message="审批完成",
             data=CalibrationRecordResponse.model_validate(record).model_dump(),
         )
@@ -604,7 +617,7 @@ async def post(  # noqa: F811
 # ========== 仪器设备详情/更新/删除 API (必须在/records之后) ==========
 
 
-@router.get("/{instrument_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
@@ -612,12 +625,12 @@ async def get(  # noqa: F811
     """获取仪器详情"""
     try:
         instrument = await service.get_instrument(instrument_id)
-        return ApiResponse(data=InstrumentResponse.model_validate(instrument).model_dump())
+        return InstrumentApiResponse(data=InstrumentResponse.model_validate(instrument).model_dump())
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/{instrument_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     instrument_id: UUID,
     data: InstrumentUpdate,
@@ -628,7 +641,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     try:
         user_id = current_user.id if current_user else None
         instrument = await service.update_instrument(instrument_id, data, user_id)
-        return ApiResponse(
+        return InstrumentApiResponse(
             message="更新成功",
             data=InstrumentResponse.model_validate(instrument).model_dump(),
         )
@@ -652,7 +665,7 @@ async def delete(  # noqa: F811
 # ========== AI 识别 API ==========
 
 
-@router.post("/recognize", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/recognize", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     file: UploadFile = File(..., description="仪器标签图片"),
 ) -> Any:
@@ -722,7 +735,7 @@ async def post(  # noqa: F811
             recognized_data = json.loads(json_str.strip())
 
             # 映射字段名到我们的格式
-            return ApiResponse(
+            return InstrumentApiResponse(
                 message="识别成功",
                 data={
                     "instrument_name": recognized_data.get("instrument_name", ""),
@@ -736,7 +749,7 @@ async def post(  # noqa: F811
             )
         except json.JSONDecodeError:
             # AI返回的不是有效JSON，直接返回原始结果
-            return ApiResponse(
+            return InstrumentApiResponse(
                 message="识别完成，请核对结果",
                 data={
                     "raw_result": result,
@@ -767,7 +780,7 @@ async def post(  # noqa: F811
 # ========== 校准记录到期提醒 API ==========
 
 
-@router.get("/record/upcoming", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/record/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
@@ -799,7 +812,7 @@ async def get(  # noqa: F811
             }
         )
 
-    return ApiResponse(
+    return InstrumentRecordListApiResponse(
         message="获取成功",
         data={
             "items": items,
@@ -809,17 +822,17 @@ async def get(  # noqa: F811
     )
 
 
-@router.get("/record/for-reminder", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/record/for-reminder", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
     """获取需要提醒的记录（超期 + 即将到期）"""
     result = await service.get_records_for_reminder(days=days)
-    return ApiResponse(message="获取成功", data=result)
+    return InstrumentRecordListApiResponse(message="获取成功", data=result)
 
 
-@router.post("/record/remind", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/record/remind", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     chat_id: str = Query(..., description="飞书群ID或用户ID或open_id"),
     receive_id_type: str = Query("chat_id", description="接收者类型: chat_id/user_id/open_id"),
@@ -852,7 +865,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=500, detail=f"获取提醒记录失败: {str(e)}")
 
     if not records and not overdue_records:
-        return ApiResponse(message="没有需要提醒的校准记录", data={"sent": False, "count": 0})
+        return InstrumentMessageApiResponse(message="没有需要提醒的校准记录", data={"sent": False, "count": 0})
 
     # 构建消息内容
     now_utc = datetime.now(UTC)
@@ -930,7 +943,7 @@ async def post(  # noqa: F811
                 f"共 {total_count} 条记录（超期{overdue_count}条，即将到期{upcoming_count}条）"
             )
 
-            return ApiResponse(
+            return InstrumentMessageApiResponse(
                 message="发送成功",
                 data={
                     "sent": True,
@@ -949,7 +962,7 @@ async def post(  # noqa: F811
 # ========== 自动提醒触发 API ==========
 
 
-@router.post("/reminder/auto-trigger", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/reminder/auto-trigger", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     service: ReminderConfigService = Depends(get_reminder_config_service),
     record_service: CalibrationRecordService = Depends(get_record_service),
@@ -1057,7 +1070,7 @@ async def post(  # noqa: F811
 
         results.append(config_results)
 
-    return ApiResponse(message="自动提醒执行完成", data={"results": results})
+    return InstrumentMessageApiResponse(message="自动提醒执行完成", data={"results": results})
 
 
 async def _send_reminder(records, config, reminder_type, is_overdue=False) -> Any:  # type: ignore[no-untyped-def]

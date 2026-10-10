@@ -49,7 +49,7 @@ export default function OnboardingClient({
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const params: any = {
+      const params: Record<string, unknown> = {
         department: filterDepartment || undefined,
         position: filterPosition || undefined,
         keyword: searchKeyword || undefined,
@@ -62,8 +62,8 @@ export default function OnboardingClient({
       const res = await doFetch(params)
       setRecords(res.data)
       setTotal(res.meta?.total || 0)
-    } catch (err: any) {
-      message.error(err.message || '加载数据失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '加载数据失败')
     } finally {
       setLoading(false)
     }
@@ -81,12 +81,12 @@ export default function OnboardingClient({
 
   useEffect(() => {
     loadData()
-  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, factory])
+  }, [filterDepartment, filterPosition, filterIsEmployed, searchKeyword, page, pageSize, factory, loadData])
 
-  const employedColorMap: Record<string, string> = {
+  const employedColorMap = useMemo<Record<string, string>>(() => ({
     '是': 'success',
     '否': 'default',
-  }
+  }), [])
 
   const columns: ColumnsType<OnboardingRecord> = useMemo(() => {
     const baseColumns: ColumnsType<OnboardingRecord> = [
@@ -182,7 +182,7 @@ export default function OnboardingClient({
         key: 'action',
         width: 120,
         fixed: 'right',
-        render: (_: any, record: OnboardingRecord) => (
+        render: (_: unknown, record: OnboardingRecord) => (
           <Space size="small">
             <Button
               type="text"
@@ -198,7 +198,7 @@ export default function OnboardingClient({
     )
 
     return baseColumns
-  }, [factory])
+  }, [factory, employedColorMap])
 
   return (
     <div className="space-y-4">

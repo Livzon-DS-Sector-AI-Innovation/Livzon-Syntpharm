@@ -1,5 +1,4 @@
 import {apiFetch, getApiBaseUrl} from '@/lib/api/server/base'
-import type { AuthorizationLetterCreateInput } from '@/types/registration'
 import type { components } from '@/types/generated/schema'
 
 type DrugCreate = components['schemas']['DrugCreate']

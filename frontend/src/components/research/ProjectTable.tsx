@@ -70,7 +70,7 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
           title: '最终确认',
           content: (
             <div>
-              <p>请输入项目名称 <strong>"{record.name}"</strong> 以确认删除：</p>
+              <p>请输入项目名称 <strong>&quot;{record.name}&quot;</strong> 以确认删除：</p>
               <input 
                 id="delete-confirm-input" 
                 type="text" 
@@ -98,14 +98,14 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
               await deleteResearchProject(record.id)
               message.success('删除成功')
               onRefresh?.()
-            } catch (error: any) {
-              message.error(error?.message || '删除失败')
+            } catch (error: unknown) {
+              message.error(error instanceof Error ? error.message : '删除失败')
             }
           }
         })
       }
     })
-  }, [message, onRefresh])
+  }, [message, modal, onRefresh])
 
   const columns = [
     {
@@ -113,14 +113,14 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
       dataIndex: 'project_no',
       key: 'project_no',
       width: 130,
-      fixed: 'start' as const
+      fixed: 'left' as const
     },
     {
       title: '项目名称',
       dataIndex: 'name',
       key: 'name',
       width: 200,
-      fixed: 'start' as const
+      fixed: 'left' as const
     },
     {
       title: '项目类型',
@@ -182,7 +182,7 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
       title: '操作',
       key: 'action',
       width: 130,
-      fixed: 'end' as const,
+      fixed: 'right' as const,
       render: (_: unknown, record: ResearchProject) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => openDrawer(record)} style={{ padding: 0 }}>

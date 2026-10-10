@@ -5,7 +5,7 @@ import { App, Card, Table, Tag, Button, Input, Select, Space, Modal, Form, DateP
 import { PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import {
-  RdProject, RdProjectStage, RdProjectStatus, RdProjectPriority,
+  RdProject,
   STAGE_LABELS, STAGE_ORDER,
 } from '@/types/research/rd-project'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
@@ -51,8 +51,8 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
       const result = await fetchRdProjects({ page: p, page_size: ps, ...f })
       setProjects(result.items)
       setTotal(result.total)
-    } catch (e: any) {
-      message.error(e.message || '加载失败')
+    } catch (e: unknown) {
+      message.error(e instanceof Error ? e.message : '加载失败')
     } finally {
       setLoading(false)
     }
@@ -70,8 +70,8 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
       setCreateModalOpen(false)
       createForm.resetFields()
       loadData()
-    } catch (e: any) {
-      message.error(e.message || '创建失败')
+    } catch (e: unknown) {
+      message.error(e instanceof Error ? e.message : '创建失败')
     }
   }
 
@@ -87,7 +87,7 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
           title: '最终确认',
           content: (
             <div>
-              <p>请输入项目名称 <strong>"{project.name}"</strong> 以确认删除：</p>
+              <p>请输入项目名称 <strong>&quot;{project.name}&quot;</strong> 以确认删除：</p>
               <input
                 id="delete-confirm-input"
                 type="text"
@@ -115,8 +115,8 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
               await deleteRdProject(project.id)
               message.success('删除成功')
               loadData()
-            } catch (e: any) {
-              message.error(e.message || '删除失败')
+            } catch (e: unknown) {
+              message.error(e instanceof Error ? e.message : '删除失败')
             }
           },
         })

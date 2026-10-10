@@ -71,8 +71,8 @@ class OCRService:
 
         texts = []
         for res in result:
-            if hasattr(res, "res") and "rec_texts" in res.res:
-                texts.extend(res.res["rec_texts"])
+            if "rec_texts" in res:
+                texts.extend(res["rec_texts"])
 
         return "\n".join(texts)
 
@@ -91,24 +91,22 @@ class OCRService:
 
         blocks = []
         for res in result:
-            if hasattr(res, "res"):
-                rec_data = res.res
-                if "rec_texts" in rec_data and "rec_scores" in rec_data and "rec_polys" in rec_data:
-                    texts = rec_data["rec_texts"]
-                    scores = rec_data["rec_scores"]
-                    polys = rec_data["rec_polys"]
+            if "rec_texts" in res and "rec_scores" in res and "rec_polys" in res:
+                texts = res["rec_texts"]
+                scores = res["rec_scores"]
+                polys = res["rec_polys"]
 
-                    for text, score, poly in zip(texts, scores, polys):
-                        x_coords = [p[0] for p in poly]
-                        y_coords = [p[1] for p in poly]
-                        bbox = (
-                            int(min(x_coords)),
-                            int(min(y_coords)),
-                            int(max(x_coords)),
-                            int(max(y_coords)),
-                        )
+                for text, score, poly in zip(texts, scores, polys):
+                    x_coords = [p[0] for p in poly]
+                    y_coords = [p[1] for p in poly]
+                    bbox = (
+                        int(min(x_coords)),
+                        int(min(y_coords)),
+                        int(max(x_coords)),
+                        int(max(y_coords)),
+                    )
 
-                        blocks.append({"text": text, "bbox": bbox, "confidence": float(score)})
+                    blocks.append({"text": text, "bbox": bbox, "confidence": float(score)})
 
         return blocks
 
@@ -135,38 +133,32 @@ class OCRService:
 
         for res in result:
             # Get Markdown output
-            if hasattr(res, "save_to_markdown"):
+            if hasattr(res, "markdown"):
+                md_info = res.markdown
+                if isinstance(md_info, dict):
+                    output["markdown"] = md_info.get("markdown_texts", "")
+                elif isinstance(md_info, str):
+                    output["markdown"] = md_info
+            elif hasattr(res, "save_to_markdown"):
                 import tempfile
 
                 with tempfile.TemporaryDirectory() as tmpdir:
                     res.save_to_markdown(save_path=tmpdir)
-                    # Read the generated markdown file
                     md_files = list(Path(tmpdir).glob("*.md"))
                     if md_files:
                         output["markdown"] = md_files[0].read_text(encoding="utf-8")
 
             # Get JSON output
-            if hasattr(res, "save_to_json"):
-                import json
-                import tempfile
-
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    res.save_to_json(save_path=tmpdir)
-                    # Read the generated JSON file
-                    json_files = list(Path(tmpdir).glob("*.json"))
-                    if json_files:
-                        with open(json_files[0], encoding="utf-8") as f:
-                            output["json"] = json.load(f)
+            if hasattr(res, "json"):
+                output["json"] = res.json
 
             # Extract layout and table information from result
-            if hasattr(res, "res"):
-                res_data = res.res
-                if "layout_parsing_res" in res_data:
-                    for item in res_data["layout_parsing_res"]:
-                        if "block_label" in item:
-                            if item["block_label"] == "table":
-                                output["tables"].append(item)  # type: ignore[attr-defined]
-                            output["layout"].append(item)  # type: ignore[attr-defined]
+            if "parsing_res_list" in res:
+                for item in res["parsing_res_list"]:
+                    if "block_label" in item:
+                        if item["block_label"] == "table":
+                            output["tables"].append(item)  # type: ignore[attr-defined]
+                        output["layout"].append(item)  # type: ignore[attr-defined]
 
         return output
 

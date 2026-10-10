@@ -1,4 +1,11 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+
+type CapaApiResponse = components['schemas']['CapaApiResponse']
+type DeviationCreate = components['schemas']['DeviationCreate']
+type DeviationUpdate = components['schemas']['DeviationUpdate']
+type CapaCreate = components['schemas']['CapaCreate']
+type CapaUpdate = components['schemas']['CapaUpdate']
 
 async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
   const res = await apiFetchRaw(endpoint, { method: 'DELETE' })
@@ -7,87 +14,48 @@ async function fetchDeleteOrNull<T>(endpoint: string): Promise<T | null> {
   return unwrapResponse(json)
 }
 import type {
-  InspectionStandard,
-  InspectionStandardItem,
   InspectionStandardFormData,
-  InspectionStandardItemFormData,
   StandardCopyData,
   ObsoleteData,
-  ApprovalRecord,
   StandardQueryParams,
-  CreateDeviationRequest,
-  UpdateDeviationRequest,
-  CreateCapaRequest,
-  UpdateCapaRequest,
   CreateDepartmentContactRequest,
   UpdateDepartmentContactRequest,
+  UploadLcResponse,
 } from '@/types/quality'
 import type {
-  SamplingOrder,
   SamplingOrderCreate,
   SamplingOrderUpdate,
-  SamplingOrderListItem,
-  SamplingOrderListResponse,
   SamplingOrderFilter,
-  SamplingOrderItemCreate,
-  SamplingApprovalRecord,
   SamplingApprovalCreate,
-  SampleRetentionLedger,
-  RetentionLedgerListResponse,
   RetentionLedgerFilter,
 } from '@/types/sampling'
 import type {
-  IQCInspection,
   IQCInspectionCreate,
   IQCInspectionUpdate,
-  IQCInspectionListItem,
-  IQCInspectionListResponse,
   IQCInspectionFilter,
-  IQCInspectionItemCreate,
-  IQCApprovalRecord,
   IQCApprovalCreate,
 } from '@/types/iqc'
 import type {
-  IPQCInspection,
   IPQCInspectionCreate,
   IPQCInspectionUpdate,
-  IPQCInspectionListItem,
-  IPQCInspectionListResponse,
   IPQCInspectionFilter,
-  IPQCInspectionItemCreate,
-  IPQCApprovalRecord,
   IPQCApprovalCreate,
 } from '@/types/ipqc'
 import type {
-  FQCInspection,
   FQCInspectionCreate,
   FQCInspectionUpdate,
-  FQCInspectionListItem,
-  FQCInspectionListResponse,
   FQCInspectionFilter,
-  FQCInspectionItemCreate,
-  FQCApprovalRecord,
   FQCApprovalCreate,
 } from '@/types/fqc'
 import type {
-  StabilityStudy,
   StabilityStudyCreate,
   StabilityStudyUpdate,
-  StabilityStudyListItem,
-  StabilityStudyListResponse,
   StabilityStudyFilter,
-  StabilitySampleNode,
   StabilitySampleNodeUpdate,
-  StabilityInspection,
   StabilityInspectionCreate,
   StabilityInspectionUpdate,
-  StabilityInspectionListItem,
-  StabilityInspectionListResponse,
   StabilityInspectionFilter,
-  StabilityInspectionItemCreate,
-  StabilityApprovalRecord,
   StabilityApprovalCreate,
-  TrendData,
 } from '@/types/stability'
 
 
@@ -601,7 +569,17 @@ export async function getStabilityTrendData(studyId: string) {
 
 // ============ AI 交互日志 Actions ============
 
-export async function getAiLogs(params: any = {}) {
+interface AiLogParams {
+  page?: number
+  page_size?: number
+  operate_type?: string
+  operator?: string
+  start_date?: string
+  end_date?: string
+  keyword?: string
+}
+
+export async function getAiLogs(params: AiLogParams = {}) {
   const searchParams = new URLSearchParams()
   if (params.page) searchParams.set('page', String(params.page))
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
@@ -621,14 +599,14 @@ export async function getAiLogById(id: string) {
 
 // ============ Deviation Actions ============
 
-export async function createDeviation(data: CreateDeviationRequest) {
+export async function createDeviation(data: DeviationCreate) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateDeviation(deviationId: string, data: UpdateDeviationRequest) {
+export async function updateDeviation(deviationId: string, data: DeviationUpdate) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviations/${deviationId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
@@ -641,15 +619,15 @@ export async function deleteDeviation(deviationId: string) {
 
 // ============ CAPA Actions ============
 
-export async function createCapa(data: CreateCapaRequest) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas`, {
+export async function createCapa(data: CapaCreate): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function updateCapa(capaId: string, data: UpdateCapaRequest) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
+export async function updateCapa(capaId: string, data: CapaUpdate): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   })
@@ -711,27 +689,27 @@ export async function deleteAttachmentReview(reviewId: string) {
 
 // ============ Additional CAPA Actions ============
 
-export async function submitCapa(capaId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/submit`, {
+export async function submitCapa(capaId: string): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/submit`, {
     method: 'POST',
   })
 }
 
-export async function approveCapa(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/approve`, {
+export async function approveCapa(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/approve`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function resubmitCapa(capaId: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/resubmit`, {
+export async function resubmitCapa(capaId: string): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/resubmit`, {
     method: 'POST',
   })
 }
 
-export async function addExecutionTrack(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks`, {
+export async function addExecutionTrack(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/execution-tracks`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -741,29 +719,29 @@ export async function deleteExecutionTrack(capaId: string, trackId: string) {
   return fetchDeleteOrNull(`/api/v1/quality/capas/${capaId}/execution-tracks/${trackId}`)
 }
 
-export async function confirmExecution(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-execution`, {
+export async function confirmExecution(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-execution`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function submitEvaluation(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/evaluate`, {
+export async function submitEvaluation(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/evaluate`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function completeCapaPart(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/complete-part`, {
+export async function completeCapaPart(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/complete-part`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function confirmDeptHead(capaId: string, data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-dept-head`, {
+export async function confirmDeptHead(capaId: string, data: unknown): Promise<CapaApiResponse> {
+  return apiFetch<CapaApiResponse>(`${getApiBaseUrl()}/api/v1/quality/capas/${capaId}/confirm-dept-head`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -937,7 +915,7 @@ export async function triggerAIProcess(taskId: number) {
   })
 }
 
-export async function updateAIResult(taskId: number, aiResult: any) {
+export async function updateAIResult(taskId: number, aiResult: unknown) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/deviation-automation/tasks/${taskId}/update-ai-result`, {
     method: 'PUT',
     body: JSON.stringify({ ai_result: aiResult }),
@@ -1004,7 +982,7 @@ export async function uploadDeviationFileWithTask(formData: FormData) {
   })
 }
 
-export async function uploadLcExcel(formData: FormData) {
+export async function uploadLcExcel(formData: FormData): Promise<UploadLcResponse> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/quality/lc-report/upload`, {
     method: 'POST',
     body: formData,

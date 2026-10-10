@@ -4,7 +4,6 @@
  * API input types (Create/Update) use @/types/generated/schema.
  */
 
-import {HazardType, HazardLevel, HazardCategory} from './enums'
 
 export interface HazardIdentification {
   id: string

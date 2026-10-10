@@ -17,9 +17,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse
 from app.modules.quality.qms.static_data import schemas as s
+from app.modules.quality.qms.static_data.schemas import (
+    # Import shared response wrappers from app.shared.schemas
+    ChromColumnApiResponse,
+    ChromColumnListApiResponse,
+    HplcReferenceApiResponse,
+    HplcReferenceListApiResponse,
+    MediumApiResponse,
+    MediumListApiResponse,
+    StandardApiResponse,
+    StandardListApiResponse,
+    StorageConditionApiResponse,
+    StorageConditionListApiResponse,
+    UnitApiResponse,
+    UnitListApiResponse,
+)
 from app.modules.quality.qms.static_data.service import StaticDataService
+from app.shared.schemas import DataApiResponse, MessageApiResponse
 
 router = APIRouter(prefix="/static-data", tags=["Static Data"])
 
@@ -128,8 +143,8 @@ DICT_OPTIONS = {
 async def get_dict_options(dict_type: str) -> Any:
     """Get dictionary options - returns hardcoded options for various dict types"""
     if dict_type in DICT_OPTIONS:
-        return ApiResponse(data=DICT_OPTIONS[dict_type])
-    return ApiResponse(code=404, message=f"Dictionary type '{dict_type}' not found")
+        return DataApiResponse(data=DICT_OPTIONS[dict_type])
+    return MessageApiResponse(code=404, message=f"Dictionary type '{dict_type}' not found", data=None)
 
 
 @router.get("/storage-condition/options", summary="Get storage condition options")
@@ -145,7 +160,7 @@ async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> A
         .order_by(StorageCondition.id)
     )
     items = result.scalars().all()
-    return ApiResponse(data=[{"label": x.cond_name, "value": x.cond_code} for x in items])
+    return StorageConditionListApiResponse(data=[{"label": x.cond_name, "value": x.cond_code} for x in items])
 
 
 @router.get("/unit/options", summary="Get unit options")
@@ -157,7 +172,7 @@ async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
 
     result = await db.execute(select(Unit).where(and_(Unit.del_flag == 0, Unit.status == 0)).order_by(Unit.id))
     items = result.scalars().all()
-    return ApiResponse(data=[{"label": x.unit_name, "value": x.unit_code} for x in items])
+    return UnitListApiResponse(data=[{"label": x.unit_name, "value": x.unit_code} for x in items])
 
 
 # ========== Template Download ==========
@@ -262,7 +277,7 @@ async def handler(
 ) -> Any:
     """Import HPLC reference substances from Excel file"""
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return ApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)")
+        return MessageApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)", data=None)
 
     try:
         contents = await file.read()
@@ -353,9 +368,9 @@ async def handler(
         if errors:
             message += f"\nErrors: {'; '.join(errors[:5])}"
 
-        return ApiResponse(message=message, data={"success": success_count, "failed": error_count})
+        return DataApiResponse(message=message, data={"success": success_count, "failed": error_count})
     except Exception as e:
-        return ApiResponse(code=500, message=f"Import failed: {str(e)}")
+        return MessageApiResponse(code=500, message=f"Import failed: {str(e)}", data=None)
 
 
 # ========== 11. HPLC Reference Substance ==========
@@ -382,7 +397,7 @@ async def get(
         ref_status=ref_status,
         has_coa=has_coa,
     )
-    return ApiResponse(
+    return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -394,7 +409,7 @@ async def get(  # noqa: F811
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
     items = await service.get_hplc_references_need_recal()
-    return ApiResponse(
+    return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
         meta={"count": len(items)},
     )
@@ -407,8 +422,8 @@ async def get(  # noqa: F811
 ) -> Any:
     obj = await service.get_hplc_reference(id)
     if not obj:
-        return ApiResponse(code=404, message="Record not found")
-    return ApiResponse(data=s.HplcReferenceResponse.model_validate(obj))
+        return MessageApiResponse(code=404, message="Record not found", data=None)
+    return HplcReferenceApiResponse(data=s.HplcReferenceResponse.model_validate(obj))
 
 
 @router.post("/hplc-reference", summary="Create HPLC reference substance")
@@ -419,12 +434,12 @@ async def post(
 ) -> Any:
     try:
         obj = await service.create_hplc_reference(data, user_id)
-        return ApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Created successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.put("/hplc-reference/{id}", summary="Update HPLC reference substance")
@@ -436,12 +451,12 @@ async def put(
 ) -> Any:
     try:
         obj = await service.update_hplc_reference(id, data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Updated successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.delete("/hplc-reference/{id}", summary="Delete HPLC reference substance")
@@ -451,9 +466,9 @@ async def delete(
 ) -> Any:
     try:
         await service.delete_hplc_reference(id)
-        return ApiResponse(message="Deleted successfully")
+        return MessageApiResponse(message="Deleted successfully", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -468,12 +483,12 @@ async def handler(  # noqa: F811
     try:
         user_id = current_user.id
         obj = await service.adjust_hplc_reference_quantity(id, quantity_change, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Quantity adjusted",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")  # type: ignore[no-redef]
@@ -499,7 +514,7 @@ async def post(  # noqa: F811
             remark,
             user_id,
         )
-        return ApiResponse(
+        return ChromColumnApiResponse(
             data={
                 "reference": s.HplcReferenceResponse.model_validate(obj),
                 "usage": s.HplcReferenceUsageResponse.model_validate(usage_log),
@@ -507,7 +522,7 @@ async def post(  # noqa: F811
             message="领用成功",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")  # type: ignore[no-redef]
@@ -520,7 +535,7 @@ async def get(  # noqa: F811
     """查询指定对照品的领用历史记录"""
     skip = (page - 1) * page_size
     items, total = await service.list_hplc_reference_usage(ref_id=id, skip=skip, limit=page_size)
-    return ApiResponse(
+    return UnitApiResponse(
         data=[s.HplcReferenceUsageResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -552,7 +567,7 @@ async def get(  # noqa: F811
         col_status=col_status,
         column_category=column_category,
     )
-    return ApiResponse(
+    return ChromColumnListApiResponse(
         data=[s.ChromColumnResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -651,7 +666,7 @@ async def handler(  # noqa: F811
 ) -> Any:
     """Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)"""
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return ApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)")
+        return MessageApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)", data=None)
 
     try:
         contents = await file.read()
@@ -869,12 +884,12 @@ async def handler(  # noqa: F811
             if len(errors) > 10:
                 message += f" ...等共{len(errors)}条错误"
 
-        return ApiResponse(
+        return DataApiResponse(
             message=message,
             data={"success": success_count, "failed": error_count, "errors": errors},
         )
     except Exception as e:
-        return ApiResponse(code=500, message=f"导入失败: {str(e)}")
+        return MessageApiResponse(code=500, message=f"导入失败: {str(e)}")
 
 
 @router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]
@@ -884,8 +899,8 @@ async def get(  # noqa: F811
 ) -> Any:
     obj = await service.get_chrom_column(id)
     if not obj:
-        return ApiResponse(code=404, message="Record not found")
-    return ApiResponse(data=s.ChromColumnResponse.model_validate(obj))
+        return MessageApiResponse(code=404, message="Record not found", data=None)
+    return ChromColumnApiResponse(data=s.ChromColumnResponse.model_validate(obj))
 
 
 @router.post("/chrom-column", summary="Create chromatography column")  # type: ignore[no-redef]
@@ -896,12 +911,12 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_chrom_column(data, user_id)
-        return ApiResponse(
+        return ChromColumnApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Created successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.put("/chrom-column/{id}", summary="Update chromatography column")  # type: ignore[no-redef]
@@ -913,12 +928,12 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_chrom_column(id, data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return ChromColumnApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Updated successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.delete("/chrom-column/{id}", summary="Delete chromatography column")  # type: ignore[no-redef]
@@ -928,9 +943,9 @@ async def delete(  # noqa: F811
 ) -> Any:
     try:
         await service.delete_chrom_column(id)
-        return ApiResponse(message="Deleted successfully")
+        return MessageApiResponse(message="Deleted successfully", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -943,9 +958,9 @@ async def handler(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.increment_chrom_column_usage(id, user_id)
-        return ApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
+        return ChromColumnApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 # ========== 6. Medium (培养基) ==========
@@ -974,7 +989,7 @@ async def get(  # noqa: F811
         verify_status=verify_status,
         status=status,
     )
-    return ApiResponse(
+    return MediumListApiResponse(
         data=[s.MediumResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -987,8 +1002,8 @@ async def get(  # noqa: F811
 ) -> Any:
     obj = await service.get_medium(id)
     if not obj:
-        return ApiResponse(code=404, message="Medium not found")
-    return ApiResponse(data=s.MediumResponse.model_validate(obj))
+        return MessageApiResponse(code=404, message="Medium not found", data=None)
+    return MediumApiResponse(data=s.MediumResponse.model_validate(obj))
 
 
 @router.post("/medium", summary="Create medium")  # type: ignore[no-redef]
@@ -999,9 +1014,9 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_medium(data, user_id)
-        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.put("/medium/{id}", summary="Update medium")  # type: ignore[no-redef]
@@ -1013,9 +1028,9 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_medium(id, data, user_id)
-        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.delete("/medium/{id}", summary="Delete medium")  # type: ignore[no-redef]
@@ -1026,9 +1041,9 @@ async def delete(  # noqa: F811
 ) -> Any:
     try:
         await service.delete_medium(id)
-        return ApiResponse(message="Medium deleted")
+        return MessageApiResponse(message="Medium deleted", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post("/medium/{id}/adjust-stock", summary="Adjust medium stock quantity")  # type: ignore[no-redef]
@@ -1040,9 +1055,9 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.adjust_medium_stock(id, quantity, user_id)
-        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 # ========== 7. Standard (标准品) ==========
@@ -1069,7 +1084,7 @@ async def get(  # noqa: F811
         manufacturer=manufacturer,
         std_status=std_status,
     )
-    return ApiResponse(
+    return StandardListApiResponse(
         data=[s.StandardResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -1082,8 +1097,8 @@ async def get(  # noqa: F811
 ) -> Any:
     obj = await service.get_standard(id)
     if not obj:
-        return ApiResponse(code=404, message="Standard not found")
-    return ApiResponse(data=s.StandardResponse.model_validate(obj))
+        return MessageApiResponse(code=404, message="Standard not found", data=None)
+    return StandardApiResponse(data=s.StandardResponse.model_validate(obj))
 
 
 @router.post("/standard", summary="Create standard")  # type: ignore[no-redef]
@@ -1094,9 +1109,9 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_standard(data, user_id)
-        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.put("/standard/{id}", summary="Update standard")  # type: ignore[no-redef]
@@ -1108,9 +1123,9 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_standard(id, data, user_id)
-        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.delete("/standard/{id}", summary="Delete standard")  # type: ignore[no-redef]
@@ -1121,9 +1136,9 @@ async def delete(  # noqa: F811
 ) -> Any:
     try:
         await service.delete_standard(id)
-        return ApiResponse(message="Standard deleted")
+        return MessageApiResponse(message="Standard deleted", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post("/standard/{id}/adjust-quantity", summary="Adjust standard quantity")  # type: ignore[no-redef]
@@ -1135,9 +1150,9 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.adjust_standard_quantity(id, quantity, user_id)
-        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 # ========== 8. Storage Condition (贮存条件) ==========
@@ -1160,7 +1175,7 @@ async def get(  # noqa: F811
         cond_name=cond_name,
         status=status,
     )
-    return ApiResponse(
+    return StorageConditionListApiResponse(
         data=[s.StorageConditionResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -1173,8 +1188,8 @@ async def get(  # noqa: F811
 ) -> Any:
     obj = await service.get_storage_condition(id)
     if not obj:
-        return ApiResponse(code=404, message="Storage condition not found")
-    return ApiResponse(data=s.StorageConditionResponse.model_validate(obj))
+        return MessageApiResponse(code=404, message="Storage condition not found", data=None)
+    return StorageConditionApiResponse(data=s.StorageConditionResponse.model_validate(obj))
 
 
 @router.post("/storage-condition", summary="Create storage condition")  # type: ignore[no-redef]
@@ -1185,12 +1200,12 @@ async def post(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.create_storage_condition(data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition created",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.put("/storage-condition/{id}", summary="Update storage condition")  # type: ignore[no-redef]
@@ -1202,12 +1217,12 @@ async def put(  # noqa: F811
 ) -> Any:
     try:
         obj = await service.update_storage_condition(id, data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition updated",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)
 
 
 @router.delete("/storage-condition/{id}", summary="Delete storage condition")  # type: ignore[no-redef]
@@ -1218,6 +1233,6 @@ async def delete(  # noqa: F811
 ) -> Any:
     try:
         await service.delete_storage_condition(id)
-        return ApiResponse(message="Storage condition deleted")
+        return MessageApiResponse(message="Storage condition deleted", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return MessageApiResponse(code=400, message=str(e), data=None)

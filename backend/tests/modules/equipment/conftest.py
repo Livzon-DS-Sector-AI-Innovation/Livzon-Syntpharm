@@ -78,7 +78,7 @@ async def test_assignee(db_session: AsyncSession) -> User:
     """Create a test user for work order assignment."""
     user = User(
         username="test_assignee",
-        employee_no="EMP001",
+        employee_no=f"EMP-{uuid.uuid4().hex[:8]}",
         name="Test Assignee",
     )
     db_session.add(user)

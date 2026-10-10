@@ -12,7 +12,7 @@ interface AIFileParserProps {
   /** 解析类型 */
   parseType: 'lab_confirmation' | 'scale_up'
   /** 解析完成回调 */
-  onParseComplete: (data: any) => void
+  onParseComplete: (data: unknown) => void
   /** 支持的文本内容解析（可选） */
   supportTextParse?: boolean
   /** 提示文本 */
@@ -38,8 +38,8 @@ export function AIFileParser({
       message.success('文件解析完成，已自动填充表单')
       onParseComplete(result)
       return false // 阻止自动上传
-    } catch (err: any) {
-      message.error(err.message || '文件解析失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '文件解析失败')
       return false
     } finally {
       setParsing(false)
@@ -59,8 +59,8 @@ export function AIFileParser({
       onParseComplete(result)
       setTextContent('')
       setShowTextInput(false)
-    } catch (err: any) {
-      message.error(err.message || '内容解析失败')
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '内容解析失败')
     } finally {
       setParsing(false)
     }
@@ -84,7 +84,7 @@ export function AIFileParser({
       <Alert
         type="info"
         showIcon
-        title="AI辅助填写"
+        message="AI辅助填写"
         description={hint || defaultHint}
         style={{ marginBottom: 12 }}
       />
@@ -169,7 +169,7 @@ export function AIFileParser({
         <Alert
           type="info"
           showIcon
-          title="AI正在解析中..."
+          message="AI正在解析中..."
           description="请稍候，AI正在识别文件内容并提取关键信息"
           style={{ marginTop: 12 }}
         />

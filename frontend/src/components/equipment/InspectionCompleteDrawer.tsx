@@ -55,8 +55,8 @@ export function InspectionCompleteDrawer({ onRefresh }: InspectionCompleteDrawer
       message.success('巡检完成')
       closeInspectionCompleteDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if ((error instanceof Error ? error.message : null)) message.error((error instanceof Error ? error.message : null))
     }
   }
 
@@ -109,7 +109,7 @@ export function InspectionCompleteDrawer({ onRefresh }: InspectionCompleteDrawer
   return (
     <Drawer
       title={`巡检完成 - ${completingTemplateName || ''}`}
-      size={900}
+      width={900}
       open={inspectionCompleteDrawerOpen}
       onClose={closeInspectionCompleteDrawer}
       destroyOnHidden

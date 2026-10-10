@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -17,12 +18,10 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  PlusOutlined,
   UploadOutlined,
   EyeOutlined,
   EditOutlined,
   DeleteOutlined,
-  FileWordOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import {
@@ -32,41 +31,33 @@ import {
   previewTemplate,
   updateTemplate,
 } from '@/actions/material-report'
-import type { TemplateListItem, TemplateResponse } from '@/types/material-report'
+import type { TemplateListItem } from '@/types/material-report'
 import type { UploadProps } from 'antd'
 
 export default function TemplateListPage() {
-  const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [templates, setTemplates] = useState<TemplateListItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [uploadModalVisible, setUploadModalVisible] = useState(false)
   const [editModalVisible, setEditModalVisible] = useState(false)
   const [previewModalVisible, setPreviewModalVisible] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateListItem | null>(null)
-  const [previewData, setPreviewData] = useState<any>(null)
+  const [previewData, setPreviewData] = useState<Record<string, unknown> | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [form] = Form.useForm()
   const [editForm] = Form.useForm()
+  const queryClient = useQueryClient()
 
-  const fetchTemplates = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: ['material-report-templates', page, pageSize],
+    queryFn: async () => {
       const result = await getTemplates({ is_active: undefined, page, page_size: pageSize })
-      setTemplates(result.data?.items || [])
-      setTotal(result.data?.total || 0)
-    } catch (_error) {
-      message.error('获取模板列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }
+      return { items: result.data?.items || [], total: result.data?.total || 0 }
+    },
+  })
 
-  useEffect(() => {
-    fetchTemplates()
-  }, [page, pageSize])
+  const templates = queryResult?.items || []
+  const total = queryResult?.total || 0
 
   // 上传模板
   const handleUpload = async () => {
@@ -86,9 +77,9 @@ export default function TemplateListPage() {
       message.success('模板上传成功')
       setUploadModalVisible(false)
       form.resetFields()
-      fetchTemplates()
-    } catch (error: any) {
-      message.error(error.message || '上传失败')
+      queryClient.invalidateQueries({ queryKey: ['material-report-templates'] })
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '上传失败')
     } finally {
       setUploading(false)
     }
@@ -115,9 +106,9 @@ export default function TemplateListPage() {
       })
       message.success('模板更新成功')
       setEditModalVisible(false)
-      fetchTemplates()
-    } catch (error: any) {
-      message.error(error.message || '更新失败')
+      queryClient.invalidateQueries({ queryKey: ['material-report-templates'] })
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '更新失败')
     }
   }
 
@@ -129,7 +120,7 @@ export default function TemplateListPage() {
     try {
       const result = await previewTemplate(template.id)
       setPreviewData(result.data)
-    } catch (error) {
+    } catch (_error) {
       message.error('获取模板预览失败')
     } finally {
       setPreviewLoading(false)
@@ -141,9 +132,9 @@ export default function TemplateListPage() {
     try {
       await deleteTemplate(id)
       message.success('模板删除成功')
-      fetchTemplates()
-    } catch (error: any) {
-      message.error(error.message || '删除失败')
+      queryClient.invalidateQueries({ queryKey: ['material-report-templates'] })
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '删除失败')
     }
   }
 
@@ -341,9 +332,9 @@ export default function TemplateListPage() {
             <h4>静态字段</h4>
             {previewData.field_mapping && Object.keys(previewData.field_mapping).length > 0 ? (
               <div style={{ marginBottom: 16 }}>
-                {Object.entries(previewData.field_mapping).map(([key, config]: [string, any]) => (
+                {Object.entries(previewData.field_mapping).map(([key, config]: [string, Record<string, unknown>]) => (
                   <Tag key={key} style={{ margin: 4 }}>
-                    {config.label || key}
+                    {(config as Record<string, unknown>).label as string || key}
                   </Tag>
                 ))}
               </div>
@@ -352,30 +343,30 @@ export default function TemplateListPage() {
             )}
 
             <h4>表格字段</h4>
-            {previewData.table_fields && previewData.table_fields.columns?.length > 0 ? (
+            {previewData.table_fields && ((previewData.table_fields as Record<string, unknown>).columns as unknown[])?.length > 0 ? (
               <div style={{ background: '#f5f5f5', padding: 16, borderRadius: 4 }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr>
-                      {previewData.table_fields.columns.map((col: any) => (
+                      {((previewData.table_fields as Record<string, unknown>).columns as Record<string, unknown>[]).map((col: Record<string, unknown>) => (
                         <th
-                          key={col.key}
+                          key={col.key as string}
                           style={{
                             border: '1px solid #d9d9d9',
                             padding: 8,
                             textAlign: 'left',
                           }}
                         >
-                          {col.label}
+                          {col.label as string}
                         </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      {previewData.table_fields.columns.map((col: any) => (
+                      {((previewData.table_fields as Record<string, unknown>).columns as Record<string, unknown>[]).map((col: Record<string, unknown>) => (
                         <td
-                          key={col.key}
+                          key={col.key as string}
                           style={{
                             border: '1px solid #d9d9d9',
                             padding: 8,

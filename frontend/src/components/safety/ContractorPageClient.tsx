@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import dayjs from 'dayjs'
 import {
-  Table, Button, Space, Input, Select, Modal, Form, DatePicker, InputNumber, message, Tag, Card, Row, Col, Typography, Tabs,
+  Table, Button, Space, Input, Select, Modal, Form, DatePicker, Tag, Card, Row, Col,
   App,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
@@ -33,7 +34,7 @@ export function ContractorPageClient() {
   const [typeFilter, setTypeFilter] = useState<string | undefined>()
   const [trainingFilter, setTrainingFilter] = useState<string | undefined>()
   const [keyword, setKeyword] = useState('')
-  const [_tab, setTab] = useState('list')
+  const [_tab, _setTab] = useState('list')
 
   const loadData = async () => {
     setLoading(true)
@@ -49,13 +50,16 @@ export function ContractorPageClient() {
     } catch { message.error('加载承包商列表失败') } finally { setLoading(false) }
   }
 
-  useEffect(() => { loadData() }, [page, pageSize, statusFilter, typeFilter, trainingFilter])
-
   const handleAdd = () => { setEditingRecord(null); form.resetFields(); setModalVisible(true) }
 
   const handleEdit = (record: Contractor) => {
     setEditingRecord(record)
-    form.setFieldsValue({ ...record })
+    form.setFieldsValue({
+      ...record,
+      qualification_expiry: record.qualification_expiry ? dayjs(record.qualification_expiry) : null,
+      safety_license_expiry: record.safety_license_expiry ? dayjs(record.safety_license_expiry) : null,
+      insurance_expiry: record.insurance_expiry ? dayjs(record.insurance_expiry) : null,
+    })
     setModalVisible(true)
   }
 

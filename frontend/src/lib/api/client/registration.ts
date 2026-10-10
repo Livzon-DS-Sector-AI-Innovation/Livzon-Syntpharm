@@ -1,12 +1,12 @@
 import type { components } from '@/types/generated/schema'
 import type {
   Drug,
-  DrugNode,
   Holiday,
   ReviewNodeConfig,
-  DashboardProjectItem,
-  DashboardCertificateItem,
   DashboardSummary,
+  AuthorizationLetterListItem,
+  ReferenceStandardListItem,
+  SupplementaryReplyListItem,
 } from '@/types/registration'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
 
@@ -24,13 +24,13 @@ export async function fetchAuthorizationLetters(params?: {
   page_size?: number
   product_name?: string
   preparation_unit?: string
-}): Promise<{ data: any[]; meta: { total: number } }> {
+}): Promise<{ data: AuthorizationLetterListItem[]; meta: { total: number } }> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.product_name) searchParams.set('product_name', params.product_name)
   const query = searchParams.toString()
-  const result = await apiFetchPaginated<any>(
+  const result = await apiFetchPaginated<AuthorizationLetterListItem>(
     `/api/v1/registration/authorization-letters${query ? `?${query}` : ''}`
   )
   return { data: result.items, meta: { total: result.total } }
@@ -47,13 +47,13 @@ export async function fetchReferenceStandards(params?: {
   page?: number
   page_size?: number
   drug_name?: string
-}): Promise<{ data: any[]; meta: { total: number } }> {
+}): Promise<{ data: ReferenceStandardListItem[]; meta: { total: number } }> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.drug_name) searchParams.set('drug_name', params.drug_name)
   const query = searchParams.toString()
-  const result = await apiFetchPaginated<any>(
+  const result = await apiFetchPaginated<ReferenceStandardListItem>(
     `/api/v1/registration/reference-standards${query ? `?${query}` : ''}`
   )
   return { data: result.items, meta: { total: result.total } }
@@ -70,13 +70,13 @@ export async function fetchSupplementaryReplies(params?: {
   page?: number
   page_size?: number
   drug_name?: string
-}): Promise<{ data: any[]; meta: { total: number } }> {
+}): Promise<{ data: SupplementaryReplyListItem[]; meta: { total: number } }> {
   const searchParams = new URLSearchParams()
   if (params?.page) searchParams.set('page', String(params.page))
   if (params?.page_size) searchParams.set('page_size', String(params.page_size))
   if (params?.drug_name) searchParams.set('drug_name', params.drug_name)
   const query = searchParams.toString()
-  const result = await apiFetchPaginated<any>(
+  const result = await apiFetchPaginated<SupplementaryReplyListItem>(
     `/api/v1/registration/supplementary-replies${query ? `?${query}` : ''}`
   )
   return { data: result.items, meta: { total: result.total } }

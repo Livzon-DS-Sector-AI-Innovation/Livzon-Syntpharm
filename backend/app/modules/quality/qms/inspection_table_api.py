@@ -11,12 +11,12 @@ from fastapi import APIRouter, Depends, File, Request, UploadFile
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.exceptions import AppException, NotFoundException
-from app.core.response import ApiResponse
 from app.modules.quality.qms.inspection_table_schemas import (
     BatchRowsRequest,
     RowDataRequest,
     UpdateTableRequest,
 )
+from app.modules.quality.qms.schemas import InspectionStandardApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ async def get(
         page_size=page_size,
     )
 
-    return ApiResponse(
+    return InspectionStandardApiResponse(
         data={
             "items": tables,
             "total": total,
@@ -87,7 +87,7 @@ async def post(
             data.get("table_description"),
             data.get("columns_config", []),
         )
-        return ApiResponse(data=table)
+        return InspectionStandardApiResponse(data=table)
     except ValueError as e:
         raise AppException(status_code=400, message=str(e))
 
@@ -106,7 +106,7 @@ async def get(  # noqa: F811
     if not table:
         raise NotFoundException(resource="数据表不存在")
 
-    return ApiResponse(data=table)
+    return InspectionStandardApiResponse(data=table)
 
 
 @router.put("/{table_id}", summary="更新数据表")
@@ -135,7 +135,7 @@ async def put(
     if not table:
         raise NotFoundException(resource="数据表不存在")
 
-    return ApiResponse(data=table)
+    return InspectionStandardApiResponse(data=table)
 
 
 @router.delete("/{table_id}", summary="删除数据表")
@@ -152,7 +152,7 @@ async def delete(
     if not success:
         raise NotFoundException(resource="数据表不存在")
 
-    return ApiResponse(message="删除成功")
+    return InspectionStandardApiResponse(message="删除成功", data=None)
 
 
 # ============ 数据行 API ============
@@ -171,7 +171,7 @@ async def post(  # noqa: F811
 
     try:
         row = await service.add_row(table_id, request.row_data)
-        return ApiResponse(data=row)
+        return InspectionStandardApiResponse(data=row)
     except ValueError as e:
         raise AppException(status_code=400, message=str(e))
 
@@ -192,7 +192,7 @@ async def put(  # noqa: F811
     if not row:
         raise NotFoundException(resource="数据行不存在")
 
-    return ApiResponse(data=row)
+    return InspectionStandardApiResponse(data=row)
 
 
 @router.delete("/{table_id}/rows/{row_id}", summary="删除数据行")  # type: ignore[no-redef]
@@ -210,7 +210,7 @@ async def delete(  # noqa: F811
     if not success:
         raise NotFoundException(resource="数据行不存在")
 
-    return ApiResponse(message="删除成功")
+    return InspectionStandardApiResponse(message="删除成功", data=None)
 
 
 @router.post("/{table_id}/rows/batch", summary="批量保存数据行")  # type: ignore[no-redef]
@@ -229,7 +229,7 @@ async def post(  # noqa: F811
         saved_rows = await service.batch_save_rows(table_id, request.rows)
 
         logger.info(f"Batch save completed, saved {len(saved_rows)} rows")
-        return ApiResponse(data={"rows": saved_rows})
+        return InspectionStandardApiResponse(data={"rows": saved_rows})
     except Exception as e:
         logger.error(f"Batch save error: {str(e)}", exc_info=True)
         raise AppException(status_code=500, message=f"保存失败: {str(e)}")
@@ -264,7 +264,7 @@ async def post(  # noqa: F811
     # 这里直接接收 form data 中的 image 字段
     # 由于 FastAPI 处理 multipart 比较复杂，我们改用简化的方式
 
-    return ApiResponse(message="请使用表单上传图片")
+    return InspectionStandardApiResponse(message="请使用表单上传图片")
 
 
 @router.post("/{table_id}/recognize/upload", summary="上传图片并识别")  # type: ignore[no-redef]
@@ -360,7 +360,7 @@ async def post(  # noqa: F811
             logger.error(f"Raw response: {result}")
             raise AppException(status_code=500, message=f"AI返回格式解析失败: {str(e)}")
 
-        return ApiResponse(
+        return InspectionStandardApiResponse(
             data={
                 "image_url": f"/uploads/inspection/{saved_filename}",
                 "recognized_rows": recognized_data.get("rows", []),
@@ -485,7 +485,7 @@ async def post(  # noqa: F811
             logger.error(f"Raw response: {result}")
             raise AppException(status_code=500, message=f"AI返回格式解析失败: {str(e)}")
 
-        return ApiResponse(
+        return InspectionStandardApiResponse(
             data={
                 "images": saved_files,
                 "recognized_rows": recognized_data.get("rows", []),
@@ -552,7 +552,7 @@ async def post(  # noqa: F811
         },
     )
 
-    return ApiResponse(
+    return InspectionStandardApiResponse(
         message="模板上传成功",
         data={
             "template_path": f"/uploads/templates/{saved_filename}",
@@ -586,7 +586,7 @@ async def delete(  # noqa: F811
     # 更新数据库
     await service.update_table(table_id, {"template_path": None, "template_name": None})
 
-    return ApiResponse(message="模板删除成功")
+    return InspectionStandardApiResponse(message="模板删除成功", data=None)
 
 
 # ============ Word 导出 API ============

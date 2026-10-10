@@ -7,12 +7,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.deps import RequiredUser
+from app.core.exceptions import NotFoundException
 from app.modules.safety.schemas import (
     ApproveEhsChangeRequest,
     CloseEhsChangeRequest,
+    EhsChangeApiResponse,
     EhsChangeCreate,
+    EhsChangeListApiResponse,
     EhsChangeResponse,
     EhsChangeUpdate,
 )
@@ -23,8 +25,9 @@ from app.modules.safety.service import (
 ehs_changes_router = APIRouter()
 
 
-@ehs_changes_router.get("/ehs-changes", response_model=ApiResponse, summary="获取EHS变更列表")
+@ehs_changes_router.get("/ehs-changes", response_model=EhsChangeListApiResponse, summary="获取EHS变更列表")
 async def handler(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     status: str | None = None,
@@ -34,7 +37,6 @@ async def handler(
     department: str | None = None,
     keyword: str | None = None,
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """获取EHS变更列表，支持多条件筛选"""
     service = EhsChangeService(db)
@@ -49,207 +51,184 @@ async def handler(
         department,
         keyword,
     )
-    return ApiResponse(
+    return EhsChangeListApiResponse(
         data=[EhsChangeResponse.model_validate(i) for i in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
-    "/ehs-changes", response_model=ApiResponse, summary="创建EHS变更"
+    "/ehs-changes", response_model=EhsChangeApiResponse, summary="创建EHS变更"
 )
 async def handler(  # noqa: F811
-    data: EhsChangeCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, data: EhsChangeCreate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """创建EHS变更申请"""
     service = EhsChangeService(db)
     item = await service.create_ehs_change(data)
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.get(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}", response_model=ApiResponse, summary="获取EHS变更详情"
+    "/ehs-changes/{change_id}", response_model=EhsChangeApiResponse, summary="获取EHS变更详情"
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """获取EHS变更详情"""
     service = EhsChangeService(db)
     item = await service.get_ehs_change(change_id)
     if not item:
-        return ApiResponse(code=404, message="变更不存在")
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+        raise NotFoundException(resource="变更")
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.put(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}", response_model=ApiResponse, summary="更新EHS变更"
+    "/ehs-changes/{change_id}", response_model=EhsChangeApiResponse, summary="更新EHS变更"
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    data: EhsChangeUpdate,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, data: EhsChangeUpdate, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """更新EHS变更"""
     service = EhsChangeService(db)
     item = await service.update_ehs_change(change_id, data)
     if not item:
-        return ApiResponse(code=404, message="变更不存在")
+        raise NotFoundException(resource="变更")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.delete(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}", response_model=ApiResponse, summary="删除EHS变更"
+    "/ehs-changes/{change_id}", response_model=EhsChangeApiResponse, summary="删除EHS变更"
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """删除EHS变更（软删除）"""
     service = EhsChangeService(db)
     ok = await service.delete_ehs_change(change_id)
     if not ok:
-        return ApiResponse(code=404, message="变更不存在")
+        raise NotFoundException(resource="变更")
     await db.commit()
-    return ApiResponse(message="删除成功")
+    return EhsChangeApiResponse(code=200, message="删除成功", data=None)
 
 
 # ── EHS变更 工作流 Routes ──
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}/submit", response_model=ApiResponse, summary="提交EHS变更"
+    "/ehs-changes/{change_id}/submit", response_model=EhsChangeApiResponse, summary="提交EHS变更"
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """提交变更（草稿→审核中；紧急变更自动批准）"""
     service = EhsChangeService(db)
     item = await service.submit_change(change_id)
     if not item:
-        return ApiResponse(code=400, message="无法提交，当前状态不允许")
+        raise ValueError("无法提交，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/approve",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="审批EHS变更",
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    data: ApproveEhsChangeRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, data: ApproveEhsChangeRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """审批变更（审核中→已批准/已驳回）"""
     service = EhsChangeService(db)
     item = await service.approve_change(change_id, data.decision, data.comments)
     if not item:
-        return ApiResponse(code=400, message="无法审批，当前状态不允许")
+        raise ValueError("无法审批，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}/reject", response_model=ApiResponse, summary="驳回EHS变更"
+    "/ehs-changes/{change_id}/reject", response_model=EhsChangeApiResponse, summary="驳回EHS变更"
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     change_id: uuid.UUID,
     comments: str | None = Query(None, description="驳回原因"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """驳回变更（审核中→已驳回）"""
     service = EhsChangeService(db)
     item = await service.reject_change(change_id, comments)
     if not item:
-        return ApiResponse(code=400, message="无法驳回，当前状态不允许")
+        raise ValueError("无法驳回，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/start-implementation",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="开始实施EHS变更",
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """开始实施变更（已批准→实施中）"""
     service = EhsChangeService(db)
     item = await service.start_implementation(change_id)
     if not item:
-        return ApiResponse(code=400, message="无法开始实施，当前状态不允许")
+        raise ValueError("无法开始实施，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/commission",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="投用EHS变更",
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """投用变更（实施中→已投用）"""
     service = EhsChangeService(db)
     item = await service.commission_change(change_id)
     if not item:
-        return ApiResponse(code=400, message="无法投用，当前状态不允许")
+        raise ValueError("无法投用，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}/close", response_model=ApiResponse, summary="关闭EHS变更"
+    "/ehs-changes/{change_id}/close", response_model=EhsChangeApiResponse, summary="关闭EHS变更"
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    data: CloseEhsChangeRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, data: CloseEhsChangeRequest, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """关闭变更（已投用→已关闭）"""
     service = EhsChangeService(db)
     item = await service.close_change(change_id, data.closed_by, data.temp_expiry_date, data.restored_date)
     if not item:
-        return ApiResponse(code=400, message="无法关闭，当前状态不允许")
+        raise ValueError("无法关闭，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
-    "/ehs-changes/{change_id}/cancel", response_model=ApiResponse, summary="取消EHS变更"
+    "/ehs-changes/{change_id}/cancel", response_model=EhsChangeApiResponse, summary="取消EHS变更"
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, db: AsyncSession = Depends(get_db)
 ) -> Any:
     """取消变更（草稿→已关闭）"""
     service = EhsChangeService(db)
     item = await service.cancel_change(change_id)
     if not item:
-        return ApiResponse(code=400, message="无法取消，当前状态不允许")
+        raise ValueError("无法取消，当前状态不允许")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 # ── EHS变更 JSON子记录操作 Routes ──
@@ -257,80 +236,71 @@ async def handler(  # noqa: F811
 
 @ehs_changes_router.post(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/risk-assessments",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="添加风险评估记录",
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    data: dict[str, Any],
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, data: dict[str, Any], db: AsyncSession = Depends(get_db)
 ) -> Any:
     """追加风险评估记录到变更"""
     service = EhsChangeService(db)
     item = await service.add_risk_assessment(change_id, data)
     if not item:
-        return ApiResponse(code=404, message="变更不存在")
+        raise NotFoundException(resource="变更")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.put(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/action-items/{index}",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="更新行动项状态",
 )
 async def handler(  # noqa: F811
+    current_user: RequiredUser,
     change_id: uuid.UUID,
     index: int,
     status: str = Query(..., description="状态: pending/in_progress/completed"),
     db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
 ) -> Any:
     """更新行动项状态"""
     service = EhsChangeService(db)
     item = await service.update_action_item(change_id, index, status)
     if not item:
-        return ApiResponse(code=400, message="无法更新，变更不存在或索引无效")
+        raise ValueError("无法更新，变更不存在或索引无效")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.put(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/pssr-checklist",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="更新PSSR检查清单",
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    data: list[dict[str, Any]],
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, data: list[dict[str, Any]], db: AsyncSession = Depends(get_db)
 ) -> Any:
     """更新PSSR检查清单"""
     service = EhsChangeService(db)
     item = await service.update_pssr_checklist(change_id, data)
     if not item:
-        return ApiResponse(code=404, message="变更不存在")
+        raise NotFoundException(resource="变更")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))
 
 
 @ehs_changes_router.put(  # type: ignore[no-redef]
     "/ehs-changes/{change_id}/verification",
-    response_model=ApiResponse,
+    response_model=EhsChangeApiResponse,
     summary="提交变更验证数据",
 )
 async def handler(  # noqa: F811
-    change_id: uuid.UUID,
-    data: dict[str, Any],
-    db: AsyncSession = Depends(get_db),
-    current_user: CurrentUser | None = Depends(get_current_user),
+    current_user: RequiredUser, change_id: uuid.UUID, data: dict[str, Any], db: AsyncSession = Depends(get_db)
 ) -> Any:
     """提交变更验证数据"""
     service = EhsChangeService(db)
     item = await service.submit_verification(change_id, data)
     if not item:
-        return ApiResponse(code=404, message="变更不存在")
+        raise NotFoundException(resource="变更")
     await db.commit()
-    return ApiResponse(data=EhsChangeResponse.model_validate(item))
+    return EhsChangeApiResponse(data=EhsChangeResponse.model_validate(item))

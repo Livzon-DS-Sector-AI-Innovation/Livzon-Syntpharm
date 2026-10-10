@@ -26,7 +26,7 @@ export function SparePartTable({ onRefresh }: Props) {
       okText: '确认', cancelText: '取消', okButtonProps: { danger: true },
       onOk: async () => {
         try { await deleteSparePart(record.id); message.success('删除成功'); onRefresh?.() }
-        catch (error: any) { message.error(error?.message || '删除失败') }
+        catch (error: unknown) { message.error((error instanceof Error ? error.message : null) || '删除失败') }
       },
     })
   }, [modal, message, onRefresh])
@@ -50,7 +50,7 @@ export function SparePartTable({ onRefresh }: Props) {
       render: (v: boolean) => <span style={v ? pillSuccess : pillNeutral}>{v ? '启用' : '停用'}</span>,
     },
     {
-      title: '操作', key: 'action', width: 180, fixed: 'end',
+      title: '操作', key: 'action', width: 180, fixed: 'right',
       render: (_: unknown, r: SparePart) => (
         <Space size={12}>
           <span role="button" onClick={() => openStockInboundDrawer(r.id)} style={linkPurple}><ImportOutlined />入库</span>

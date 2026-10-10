@@ -1,9 +1,10 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  typescript: { ignoreBuildErrors: false },
   distDir: process.env.NEXT_DIST_DIR ?? '.next',
   output: 'standalone',
-  reactCompiler: false,
+  reactCompiler: true,
   allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS
     ? process.env.ALLOWED_DEV_ORIGINS.split(',').filter(Boolean)
     : ['localhost', '127.0.0.1'],

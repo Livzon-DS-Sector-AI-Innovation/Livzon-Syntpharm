@@ -60,7 +60,7 @@ function normalizeCellValue(value: unknown): unknown {
 export function EquipmentImportModal({ open, onClose, onSuccess }: EquipmentImportModalProps) {
   const { message } = App.useApp()
   const [currentStep, setCurrentStep] = useState(0)
-  const [rawData, setRawData] = useState<any[]>([])
+  const [rawData, setRawData] = useState<Record<string, unknown>[]>()
   const [previewData, setPreviewData] = useState<ImportPreviewItem[]>([])
   const [previewHeaders, setPreviewHeaders] = useState<any[]>([])
   const [importResult, setImportResult] = useState<ImportResult | null>(null)

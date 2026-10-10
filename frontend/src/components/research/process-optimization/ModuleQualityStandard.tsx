@@ -162,7 +162,7 @@ export function ModuleQualityStandard({ optimizationId, doeExperiment, impurityS
               children: (
                 <div>
                   <Alert
-                    title="质量标准建立"
+                    message="质量标准建立"
                     description="基于DOE优化数据、杂质研究和晶型研究结果，制定检测方法和质量标准。"
                     type="info"
                     showIcon
@@ -173,17 +173,17 @@ export function ModuleQualityStandard({ optimizationId, doeExperiment, impurityS
                   <Row gutter={16} style={{ marginBottom: 16 }}>
                     <Col span={8}>
                       <Card size="small">
-                        <Statistic title="DOE优化" value={doeExperiment ? '已完成' : '未进行'} valueStyle={{ fontSize: 16, color: doeExperiment ? '#52c41a' : '#999' }} />
+                        <Statistic title="DOE优化" value={doeExperiment ? '已完成' : '未进行'} styles={{ content: { fontSize: 16, color: doeExperiment ? '#52c41a' : '#999' } }} />
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card size="small">
-                        <Statistic title="杂质研究" value={impurityStudy ? `${impurityStudy.impurities.length}种杂质` : '未进行'} valueStyle={{ fontSize: 16, color: impurityStudy ? '#52c41a' : '#999' }} />
+                        <Statistic title="杂质研究" value={impurityStudy ? `${impurityStudy.impurities.length}种杂质` : '未进行'} styles={{ content: { fontSize: 16, color: impurityStudy ? '#52c41a' : '#999' } }} />
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card size="small">
-                        <Statistic title="晶型研究" value={crystalFormStudy ? `${crystalFormStudy.records.length}种晶型` : '未进行'} valueStyle={{ fontSize: 16, color: crystalFormStudy ? '#52c41a' : '#999' }} />
+                        <Statistic title="晶型研究" value={crystalFormStudy ? `${crystalFormStudy.records.length}种晶型` : '未进行'} styles={{ content: { fontSize: 16, color: crystalFormStudy ? '#52c41a' : '#999' } }} />
                       </Card>
                     </Col>
                   </Row>
@@ -235,7 +235,7 @@ export function ModuleQualityStandard({ optimizationId, doeExperiment, impurityS
               children: (
                 <div>
                   <Alert
-                    title="杂质限度制定"
+                    message="杂质限度制定"
                     description="基于ICH Q3A(R2)/Q3B(R2)指导原则，结合实验数据和安全性评估制定杂质限度。"
                     type="info"
                     showIcon

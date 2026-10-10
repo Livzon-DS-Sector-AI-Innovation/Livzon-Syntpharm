@@ -26,6 +26,7 @@ import {
   GenericDataResponse,
   GenericDataListResponse,
   PrejobTemplateResponse,
+  Candidate,
 } from '@/types/hr'
 
 const API_BASE = '/api/v1'
@@ -626,7 +627,7 @@ export async function fetchPlanItems(id: string): Promise<AnnualTrainingPlanItem
 
 // ─── 招聘候选人（待后端实现）───
 
-export async function fetchCandidates(_params: Record<string, any> = {}): Promise<{ data: any[]; meta?: { total: number } }> {
+export async function fetchCandidates(_params?: Record<string, unknown>): Promise<{ data: Candidate[]; meta?: { total: number } }> {
   // TODO: backend candidate API not yet implemented
   return { data: [], meta: { total: 0 } }
 }
@@ -662,7 +663,7 @@ export async function fetchTrainingSelectTaskResult(token: string): Promise<Gene
   return res.json()
 }
 
-export async function fetchTrainingSelectTasks(sessionId?: string): Promise<GenericDataListResponse> {
+export async function fetchTrainingSelectTasks(_sessionId?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-select-tasks`, {
     cache: 'no-store',
   })
@@ -705,7 +706,7 @@ export async function fetchTrainingSessionSelectTasks(sessionId: string): Promis
 
 // ─── Training Team & Specialist APIs ───
 
-export async function fetchTrainingTeams(factory?: string): Promise<GenericDataListResponse> {
+export async function fetchTrainingTeams(_factory?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-teams`, {
     cache: 'no-store',
   })
@@ -713,7 +714,7 @@ export async function fetchTrainingTeams(factory?: string): Promise<GenericDataL
   return res.json()
 }
 
-export async function fetchTrainingSpecialists(factory?: string): Promise<GenericDataListResponse> {
+export async function fetchTrainingSpecialists(_factory?: string): Promise<GenericDataListResponse> {
   const res = await fetch(`${API_BASE}/hr/training-specialists`, {
     cache: 'no-store',
   })

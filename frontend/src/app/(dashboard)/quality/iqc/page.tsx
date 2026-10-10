@@ -35,11 +35,10 @@ import {
   IQCInspection,
   IQCInspectionListItem,
   IQCInspectionCreate,
+  IQCInspectionItem,
   IQCInspectionItemCreate,
   IQCInspectionFilter,
-  IQCSourceType,
   IQCSourceTypeLabels,
-  MaterialCategory,
   MaterialCategoryLabels,
   InspectionStatus,
   InspectionStatusLabels,
@@ -61,7 +60,7 @@ import {
 } from '@/actions/quality'
 
 const { RangePicker } = DatePicker
-const { Text } = Typography
+const { Text: _Text } = Typography
 const { TextArea } = Input
 
 // 初始筛选条件
@@ -157,7 +156,7 @@ export default function IQCPage() {
           expiry_date: response.data?.expiry_date ? dayjs(response.data.expiry_date) : null,
           inspection_date: response.data?.inspection_date ? dayjs(response.data.inspection_date) : null,
         })
-        setEditItems(response.data?.items?.map((item: any, index: number) => ({
+        setEditItems(response.data?.items?.map((item: IQCInspectionItem, index: number) => ({
           item_no: index + 1,
           inspection_item: item.inspection_item,
           inspection_method: item.inspection_method,

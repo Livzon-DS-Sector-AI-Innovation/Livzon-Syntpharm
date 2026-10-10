@@ -24,7 +24,6 @@ export type {
   MaintenancePlanFilters,
   EquipmentStatistics,
   WorkOrderStatistics,
-  PaginatedResponse,
 } from './generated-bridge'
 
 // Export response types (new naming)

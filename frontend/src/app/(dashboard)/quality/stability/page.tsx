@@ -18,7 +18,6 @@ import {
   Row,
   Col,
   Divider,
-  Typography,
   Descriptions,
   Tabs,
 } from 'antd'
@@ -44,20 +43,9 @@ import {
   StabilityStudyType,
   StabilityStudyTypeLabels,
   StabilitySampleNode,
-  StabilitySampleNodeCreate,
   SampleNodeStatus,
   SampleNodeStatusLabels,
   SampleNodeStatusColors,
-  StabilityInspection,
-  StabilityInspectionCreate,
-  StabilityInspectionItemCreate,
-  StabilityInspectionStatus,
-  StabilityInspectionStatusLabels,
-  StabilityInspectionStatusColors,
-  StabilityInspectionConclusion,
-  StabilityInspectionConclusionLabels,
-  StabilityItemResult,
-  StabilityItemResultLabels,
 } from '@/types/stability'
 import {
   getStabilityStudies,
@@ -68,15 +56,9 @@ import {
   submitStabilityStudy,
   approveStabilityStudy,
   getStabilityStudySampleNodes,
-  getStabilityInspections,
-  getStabilityInspection,
-  createStabilityInspection,
-  updateStabilityInspection,
-  submitStabilityInspection,
 } from '@/actions/quality'
 
 const { RangePicker } = DatePicker
-const { Text } = Typography
 const { TextArea } = Input
 
 // 初始筛选条件
@@ -352,11 +334,11 @@ export default function StabilityStudyPage() {
   }
 
   // 更新取样节点
-  const handleUpdateSampleNode = (index: number, field: string, value: unknown) => {
+  const handleUpdateSampleNode = useCallback((index: number, field: string, value: unknown) => {
     const newNodes = [...sampleNodes]
     newNodes[index] = { ...newNodes[index], [field]: value }
     setSampleNodes(newNodes)
-  }
+  }, [sampleNodes])
 
   // 试验类型切换
   const handleStudyTypeChange = (type: StabilityStudyType) => {
@@ -544,7 +526,7 @@ export default function StabilityStudyPage() {
         </Tag>
       ),
     },
-  ], [sampleNodes])
+  ], [handleUpdateSampleNode])
 
   return (
     <div style={{ padding: 24 }}>

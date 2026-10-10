@@ -2,10 +2,9 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from app.core.deps import CurrentUser, get_current_user
-from app.core.response import ApiResponse
+from app.core.deps import RequiredUser
 from app.modules.safety.schemas import (
     ABNORMALITY_STATUS_OPTIONS,
     ACCIDENT_LEVEL_OPTIONS,
@@ -49,18 +48,17 @@ from app.modules.safety.schemas import (
     TRAINING_MODE_OPTIONS,
     TRAINING_TYPE_OPTIONS,
     WORK_RECORD_STATUS_OPTIONS,
+    SafetyEnumsApiResponse,
 )
 
 enums_router = APIRouter()
 
 
-@enums_router.get("/enums", response_model=ApiResponse, summary="获取枚举值列表")
-async def get(
-    current_user: CurrentUser | None = Depends(get_current_user),
-) -> Any:
+@enums_router.get("/enums", response_model=SafetyEnumsApiResponse, summary="获取枚举值列表")
+async def get(current_user: RequiredUser) -> Any:
     """获取安全模块的所有枚举值选项"""
 
-    return ApiResponse(
+    return SafetyEnumsApiResponse(
         data={
             "check_types": CHECK_TYPE_OPTIONS,
             "hazard_types": HAZARD_TYPE_OPTIONS,

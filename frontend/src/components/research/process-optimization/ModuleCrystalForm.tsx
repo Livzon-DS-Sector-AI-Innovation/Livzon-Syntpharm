@@ -167,7 +167,7 @@ export function ModuleCrystalForm({ optimizationId, initialData, onComplete }: M
               children: (
                 <div>
                   <Alert
-                    title="晶型/盐型筛选"
+                    message="晶型/盐型筛选"
                     description="通过不同溶剂体系、温度条件、冷却速率等筛选晶型，记录XRD特征峰和稳定性评估结果。"
                     type="info"
                     showIcon
@@ -283,7 +283,7 @@ export function ModuleCrystalForm({ optimizationId, initialData, onComplete }: M
                 <div>
                   {preferredForm ? (
                     <Alert
-                      title={`推荐晶型：${preferredForm.form_name}`}
+                      message={`推荐晶型：${preferredForm.form_name}`}
                       description={
                         <div>
                           <div>类型：{formTypeMap[preferredForm.form_type]?.label}</div>
@@ -297,7 +297,7 @@ export function ModuleCrystalForm({ optimizationId, initialData, onComplete }: M
                       style={{ marginBottom: 16 }}
                     />
                   ) : (
-                    <Alert title="请在晶型筛选中选择推荐晶型" type="warning" showIcon style={{ marginBottom: 16 }} />
+                    <Alert message="请在晶型筛选中选择推荐晶型" type="warning" showIcon style={{ marginBottom: 16 }} />
                   )}
 
                   <div style={{ marginBottom: 16 }}>

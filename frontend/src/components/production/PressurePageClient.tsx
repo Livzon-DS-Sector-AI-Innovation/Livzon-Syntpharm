@@ -15,7 +15,6 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import {
-  DashboardOutlined,
   FormOutlined,
   CameraOutlined,
   UnorderedListOutlined,
@@ -154,7 +153,7 @@ export function PressurePageClient() {
                 <Statistic
                   title="今日记录"
                   value={stats.today_count}
-                  styles={{ content: { color: '#5645d4' } }}
+                  styles={{ content: { color: '#5645d4'  } }}
                 />
               </Card>
             </Col>
@@ -163,7 +162,7 @@ export function PressurePageClient() {
                 <Statistic
                   title="待审核"
                   value={stats.pending_count}
-                  styles={{ content: { color: '#dd5b00' } }}
+                  styles={{ content: { color: '#dd5b00'  } }}
                 />
               </Card>
             </Col>
@@ -176,7 +175,7 @@ export function PressurePageClient() {
                       ? new Date(stats.last_record_time).toLocaleString('zh-CN')
                       : '暂无'
                   }
-                  styles={{ content: { fontSize: 16 } }}
+                  styles={{ content: { fontSize: 16  } }}
                 />
               </Card>
             </Col>
@@ -233,7 +232,7 @@ export function PressurePageClient() {
                     size="small"
                     pagination={false}
                     className="cursor-pointer"
-                    onRow={(record) => ({
+                    onRow={(_record) => ({
                       onClick: () =>
                         router.push('/production/pressure/records'),
                     })}

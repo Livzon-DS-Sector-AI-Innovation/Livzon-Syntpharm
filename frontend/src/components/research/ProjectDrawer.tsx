@@ -74,8 +74,8 @@ export function ProjectDrawer({ onRefresh }: ProjectDrawerProps) {
       }
       closeDrawer()
       onRefresh?.()
-    } catch (error: any) {
-      if (error?.message) message.error(error.message)
+    } catch (error: unknown) {
+      if (error instanceof Error) message.error(error.message)
     } finally {
       setSubmitting(false)
     }
@@ -84,7 +84,7 @@ export function ProjectDrawer({ onRefresh }: ProjectDrawerProps) {
   return (
     <Drawer
       title={editingProject ? '编辑研发项目' : '新建研发项目'}
-      size={480}
+      width={480}
       open={drawerOpen}
       onClose={closeDrawer}
       extra={

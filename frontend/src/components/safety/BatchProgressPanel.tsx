@@ -14,10 +14,9 @@ import { getHazardIdentifications } from '@/actions/safety'
 import type { HazardIdentification } from '@/types/safety'
 import {
   AI_NODE_PROGRESS_OPTIONS,
-  OVERALL_STATUS_OPTIONS_HI,
 } from '@/types/safety'
 
-const { Text, Title } = Typography
+const { Text, Title: _Title } = Typography
 
 interface BatchProgressPanelProps {
   batchId: string
@@ -71,7 +70,7 @@ export default function BatchProgressPanel({
   if (loading) {
     return (
       <Card size="small">
-        <Spin description="加载批次进度..." />
+        <Spin tip="加载批次进度..." />
       </Card>
     )
   }

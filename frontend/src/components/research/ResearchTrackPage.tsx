@@ -1,19 +1,51 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker, InputNumber} from 'antd'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {App, Card, Table, Button, Drawer, Form, Input, Select, Tag, Space, Popconfirm, Tabs, Row, Col, Descriptions, Timeline, Modal, DatePicker} from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, HistoryOutlined, ExperimentOutlined, FileTextOutlined, DownloadOutlined } from '@ant-design/icons'
 import {fetchTracks, fetchTrackDetail} from '@/lib/api/client/research/rd-project'
 import { publishConclusionVersion } from '@/actions/research/rd-project'
 import { deleteTrack, deleteFinding } from '@/actions/research/modules'
 import {
-  RdResearchTrack, RdResearchFinding, RdTrackConclusionVersion,
+  RdResearchTrack, RdResearchFinding,
   RdTrackType, RdTrackStatus, RdFindingType, RdFindingConfidence,
   TRACK_TYPE_LABELS, STAGE_LABELS,
 } from '@/types/research/rd-project'
 import dayjs from 'dayjs'
 import { createTrack, updateTrack, createFinding, updateFinding } from '@/actions/research/rd-project'
 
+
+// JSON structure interfaces for ResearchTrackPage
+interface ExperimentConditions {
+  temperature?: string
+  solvent?: string
+  time?: string
+  ph?: string
+}
+
+interface MaterialsUsed {
+  reagents?: string
+  quantities?: string
+}
+
+interface EquipmentUsed {
+  instruments?: string
+  models?: string
+}
+
+interface SpectraRefs {
+  hplc?: string
+  nmr?: string
+  xrd?: string
+  ms?: string
+}
+
+interface AnalyticalResults {
+  purity?: string
+  impurities?: string
+  yield?: string
+}
 interface Props { projectId: string; trackTypeFilter?: string }
 
 const typeOptions = Object.entries(TRACK_TYPE_LABELS).map(([value, label]) => ({ value, label }))
@@ -63,13 +95,11 @@ const typeColorMap: Record<string, string> = {
 }
 
 export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
-  const { message: msgApi, modal } = App.useApp()
-  const [tracks, setTracks] = useState<RdResearchTrack[]>([])
-  const [loading, setLoading] = useState(false)
+  const { message: msgApi, modal: _modal } = App.useApp()
+  const queryClient = useQueryClient()
   
   // Track detail
-  const [selectedTrack, setSelectedTrack] = useState<RdResearchTrack | null>(null)
-  const [_detailLoading, setDetailLoading] = useState(false)
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null)
   
   // Create/Edit track drawer
   const [trackDrawerOpen, setTrackDrawerOpen] = useState(false)
@@ -85,37 +115,31 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   const [conclusionModalOpen, setConclusionModalOpen] = useState(false)
   const [conclusionForm] = Form.useForm()
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  const { data: tracks = [], isLoading: loading } = useQuery({
+    queryKey: ['research-tracks', projectId, trackTypeFilter],
+    queryFn: async () => {
       const data = await fetchTracks(projectId)
-      // Filter by type if specified
       const filtered = trackTypeFilter ? data.filter(t => t.type === trackTypeFilter) : data
-      setTracks(filtered)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId, trackTypeFilter])
+      return filtered || []
+    },
+    enabled: !!projectId,
+  })
 
+  const { data: selectedTrack = null } = useQuery({
+    queryKey: ['track-detail', selectedTrackId],
+    queryFn: async () => {
+      if (!selectedTrackId) return null
+      return await fetchTrackDetail(selectedTrackId)
+    },
+    enabled: !!selectedTrackId,
+  })
 
   const handleExport = () => {
     window.open(`/api/v1/research/export/tracks?project_id=${projectId}`, '_blank')
   }
 
-  useEffect(() => { loadData() }, [loadData])
-
-  const loadTrackDetail = async (trackId: string) => {
-    setDetailLoading(true)
-    try {
-      const detail = await fetchTrackDetail(trackId)
-      setSelectedTrack(detail)
-    } catch (e: any) {
-      msgApi.error(e.message || '加载详情失败')
-    } finally {
-      setDetailLoading(false)
-    }
+  const loadTrackDetail = (trackId: string) => {
+    setSelectedTrackId(trackId)
   }
 
   const openCreateTrack = () => {
@@ -148,13 +172,13 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         msgApi.success('创建成功')
       }
       setTrackDrawerOpen(false)
-      loadData()
+      queryClient.invalidateQueries({ queryKey: ['research-tracks', projectId] })
       if (selectedTrack && editingTrack?.id === selectedTrack.id) {
         loadTrackDetail(selectedTrack.id)
       }
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -162,10 +186,10 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
     try {
       await deleteTrack(id)
       msgApi.success('删除成功')
-      if (selectedTrack?.id === id) setSelectedTrack(null)
-      loadData()
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+      if (selectedTrack?.id === id) setSelectedTrackId(null)
+      queryClient.invalidateQueries({ queryKey: ['research-tracks', projectId] })
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -188,21 +212,21 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       observations: finding.observations,
       notes: finding.notes,
       // JSON fields
-      ec_temperature: (finding.experiment_conditions as any)?.temperature || '',
-      ec_solvent: (finding.experiment_conditions as any)?.solvent || '',
-      ec_time: (finding.experiment_conditions as any)?.time || '',
-      ec_ph: (finding.experiment_conditions as any)?.ph || '',
-      mu_reagents: (finding.materials_used as any)?.reagents || '',
-      mu_quantities: (finding.materials_used as any)?.quantities || '',
-      eu_instruments: (finding.equipment_used as any)?.instruments || '',
-      eu_models: (finding.equipment_used as any)?.models || '',
-      sr_hplc: (finding.spectra_refs as any)?.hplc || '',
-      sr_nmr: (finding.spectra_refs as any)?.nmr || '',
-      sr_xrd: (finding.spectra_refs as any)?.xrd || '',
-      sr_ms: (finding.spectra_refs as any)?.ms || '',
-      ar_purity: (finding.analytical_results as any)?.purity || '',
-      ar_impurities: (finding.analytical_results as any)?.impurities || '',
-      ar_yield: (finding.analytical_results as any)?.yield || '',
+      ec_temperature: (finding.experiment_conditions as ExperimentConditions)?.temperature || '',
+      ec_solvent: (finding.experiment_conditions as ExperimentConditions)?.solvent || '',
+      ec_time: (finding.experiment_conditions as ExperimentConditions)?.time || '',
+      ec_ph: (finding.experiment_conditions as ExperimentConditions)?.ph || '',
+      mu_reagents: (finding.materials_used as MaterialsUsed)?.reagents || '',
+      mu_quantities: (finding.materials_used as MaterialsUsed)?.quantities || '',
+      eu_instruments: (finding.equipment_used as EquipmentUsed)?.instruments || '',
+      eu_models: (finding.equipment_used as EquipmentUsed)?.models || '',
+      sr_hplc: (finding.spectra_refs as SpectraRefs)?.hplc || '',
+      sr_nmr: (finding.spectra_refs as SpectraRefs)?.nmr || '',
+      sr_xrd: (finding.spectra_refs as SpectraRefs)?.xrd || '',
+      sr_ms: (finding.spectra_refs as SpectraRefs)?.ms || '',
+      ar_purity: (finding.analytical_results as AnalyticalResults)?.purity || '',
+      ar_impurities: (finding.analytical_results as AnalyticalResults)?.impurities || '',
+      ar_yield: (finding.analytical_results as AnalyticalResults)?.yield || '',
       // data JSON
       data_summary: finding.data ? JSON.stringify(finding.data, null, 2) : '',
     })
@@ -257,9 +281,9 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       }
       setFindingDrawerOpen(false)
       if (selectedTrack) loadTrackDetail(selectedTrack.id)
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '保存失败')
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '保存失败')
     }
   }
 
@@ -268,8 +292,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       await deleteFinding(id)
       msgApi.success('删除成功')
       if (selectedTrack) loadTrackDetail(selectedTrack.id)
-    } catch (e: any) {
-      msgApi.error(e.message || '删除失败')
+    } catch (e: unknown) {
+      msgApi.error(e instanceof Error ? e.message : '删除失败')
     }
   }
 
@@ -294,11 +318,11 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       })
       msgApi.success('结论版本发布成功')
       setConclusionModalOpen(false)
-      loadTrackDetail(selectedTrack.id)
-      loadData()
-    } catch (e: any) {
-      if (e.errorFields) return
-      msgApi.error(e.message || '发布失败')
+      queryClient.invalidateQueries({ queryKey: ['track-detail', selectedTrack.id] })
+      queryClient.invalidateQueries({ queryKey: ['research-tracks', projectId] })
+    } catch (e: unknown) {
+      if (e && typeof e === "object" && "errorFields" in e) return
+      msgApi.error(e instanceof Error ? e.message : '发布失败')
     }
   }
 
@@ -437,7 +461,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         <Space>
           <Button icon={<HistoryOutlined />} onClick={openConclusionModal}>发布结论</Button>
           <Button icon={<EditOutlined />} onClick={() => openEditTrack(selectedTrack)}>编辑</Button>
-          <Button onClick={() => setSelectedTrack(null)}>返回列表</Button>
+          <Button onClick={() => setSelectedTrackId(null)}>返回列表</Button>
         </Space>
       }
     >

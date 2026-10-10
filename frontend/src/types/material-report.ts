@@ -20,14 +20,14 @@ export interface TableFieldsConfig {
 export interface TemplateCreate {
   template_name: string
   template_description?: string
-  field_mapping?: Record<string, any>
+  field_mapping?: Record<string, unknown>
   table_fields?: TableFieldsConfig
 }
 
 export interface TemplateUpdate {
   template_name?: string
   template_description?: string
-  field_mapping?: Record<string, any>
+  field_mapping?: Record<string, unknown>
   table_fields?: TableFieldsConfig
   is_active?: boolean
 }
@@ -37,7 +37,7 @@ export interface TemplateResponse {
   template_name: string
   template_file_url: string
   template_description?: string
-  field_mapping: Record<string, any>
+  field_mapping: Record<string, unknown>
   table_fields: TableFieldsConfig
   is_active: boolean
   created_at: string
@@ -58,14 +58,14 @@ export interface ReportCreate {
   template_id?: string
   report_title: string
   report_date: string
-  static_data?: Record<string, any>
+  static_data?: Record<string, unknown>
 }
 
 export interface ReportUpdate {
   template_id?: string
   report_title?: string
   report_date?: string
-  static_data?: Record<string, any>
+  static_data?: Record<string, unknown>
   status?: string
 }
 
@@ -86,7 +86,7 @@ export interface ReportResponse {
   template_name?: string
   report_title: string
   report_date: string
-  static_data?: Record<string, any>
+  static_data?: Record<string, unknown>
   status: string
   generated_file_url?: string
   created_at: string
@@ -95,7 +95,7 @@ export interface ReportResponse {
 
 export interface ReportDetailResponse extends ReportResponse {
   template?: TemplateResponse
-  items: Record<string, any>[]
+  items: Record<string, unknown>[]
 }
 
 export interface ReportListItem {

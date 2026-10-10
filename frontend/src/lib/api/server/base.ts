@@ -35,6 +35,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
   throw new Error('unreachable')
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- apiFetch is used by 755+ call sites; changing default from any to unknown would require updating all call sites with explicit type parameters or assertions
 export async function apiFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
   const authHeaders = await getAuthHeaders()
 

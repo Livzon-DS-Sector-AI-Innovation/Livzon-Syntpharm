@@ -5,6 +5,7 @@ import type {
   AIConfirmRequest,
 } from '@/types/dossier-writer'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- apiFetchFormData is used by 15 call sites; changing return type from any to unknown would require updating all call sites
 async function apiFetchFormData(url: string, body: FormData): Promise<any> {
   const res = await fetch(url, {
     method: 'POST',

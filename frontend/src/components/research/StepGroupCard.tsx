@@ -60,7 +60,7 @@ export function StepGroupCard({ steps }: StepGroupCardProps) {
       title: '溶剂名称',
       key: 'name',
       width: 200,
-      render: (_: any, record: StepSolvent) => (
+      render: (_: unknown, record: StepSolvent) => (
         <div>
           <div>{record.original_name || record.solvent}</div>
           {record.original_name && record.solvent !== record.original_name && (
@@ -97,7 +97,7 @@ export function StepGroupCard({ steps }: StepGroupCardProps) {
       title: 'ICH 限值 (ppm)',
       key: 'limit',
       width: 120,
-      render: (_: any, record: StepSolvent) => {
+      render: (_: unknown, record: StepSolvent) => {
         if (record.limit == null) return '-'
         if (typeof record.limit === 'number') return record.limit.toFixed(0)
         return record.limit
@@ -108,7 +108,7 @@ export function StepGroupCard({ steps }: StepGroupCardProps) {
       dataIndex: 'pde',
       key: 'pde',
       width: 110,
-      render: (val: any) => {
+      render: (val: number | string | null | undefined) => {
         if (val == null) return '-'
         if (typeof val === 'number') return val.toFixed(1)
         return val

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useEffect, use, useRef } from 'react'
+import { useState, useEffect, use, useRef, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Card,
   Form,
   Input,
   Select,
-  DatePicker,
   Button,
   message,
   Table,
@@ -20,11 +20,9 @@ import {
   Col,
   Upload,
   Image,
-  Popconfirm,
   Divider,
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import type { UploadProps } from 'antd'
 import {
   SaveOutlined,
   ArrowLeftOutlined,
@@ -32,8 +30,6 @@ import {
   EditOutlined,
   PlusOutlined,
   DeleteOutlined,
-  UploadOutlined,
-  ScanOutlined,
   EyeOutlined,
   CameraOutlined,
 } from '@ant-design/icons'
@@ -50,7 +46,6 @@ import {
 } from '@/actions/material-report'
 import {
   ReportDetailResponse,
-  TemplateListItem,
   TemplateColumnConfig,
   reportStatusLabels,
   reportStatusColors,
@@ -58,8 +53,24 @@ import {
 
 interface TableRow {
   key: number
-  [key: string]: any
+  [key: string]: string | number
 }
+
+interface AIResultItem {
+  value?: string
+  name?: string
+}
+
+interface AIResult {
+  items?: AIResultItem[]
+}
+
+interface ReportImage {
+  id: string | number
+  image_url: string
+  ai_result?: Record<string, unknown>
+}
+
 
 export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
@@ -68,30 +79,26 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const isEditMode = searchParams.get('edit') === 'true'
   const _isGenerateMode = searchParams.get('generate') === 'true'
 
-  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [_uploading, setUploading] = useState(false)
-  const [report, setReport] = useState<ReportDetailResponse | null>(null)
-  const [templates, setTemplates] = useState<TemplateListItem[]>([])
   const [form] = Form.useForm()
   const [tableColumns, setTableColumns] = useState<TemplateColumnConfig[]>([])
   const [tableData, setTableData] = useState<TableRow[]>([])
   const [_hasChanges, setHasChanges] = useState(false)
-  const [reportImages, setReportImages] = useState<any[]>([])
   const [previewVisible, setPreviewVisible] = useState(false)
   const [previewImage, setPreviewImage] = useState('')
-  const [previewAIResult, setPreviewAIResult] = useState<any>(null)
-  const _uploadRef = useRef<any>(null)
+  const [previewAIResult, setPreviewAIResult] = useState<Record<string, unknown> | null>(null)
+  const _uploadRef = useRef<HTMLInputElement>(null)
+  const queryClient = useQueryClient()
 
   // 获取报告单图片
-  const fetchReportImages = async () => {
-    try {
+  const { data: reportImages = [], refetch: refetchImages } = useQuery({
+    queryKey: ['report-images', resolvedParams.id],
+    queryFn: async () => {
       const result = await getReportImages(resolvedParams.id)
-      setReportImages(result.data || [])
-    } catch (error) {
-      console.error('获取图片失败', error)
-    }
-  }
+      return (result.data as ReportImage[]) || []
+    },
+  })
 
   // 上传图片并AI识别
   const handleImageUpload = async (file: File, rowKey: number, fieldKey: string) => {
@@ -103,8 +110,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         message.success('图片上传成功，AI识别完成')
 
         // 如果有识别结果，自动填入表格
-        const aiResult = result.data?.ai_result
-        if (aiResult?.items?.length > 0) {
+        const aiResult = (result.data as Record<string, unknown>)?.ai_result as AIResult | undefined
+        if (aiResult?.items && aiResult.items.length > 0) {
           const firstItem = aiResult.items[0]
           const fieldValue = firstItem.value || firstItem.name || ''
           if (fieldValue) {
@@ -114,12 +121,12 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         }
 
         // 刷新图片列表
-        fetchReportImages()
+        refetchImages()
       } else {
-        message.error(result.message || '上传失败')
+        message.error((result.message as string) || '上传失败')
       }
-    } catch (error: any) {
-      message.error(error.message || '上传失败')
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '上传失败')
     } finally {
       setUploading(false)
     }
@@ -127,68 +134,79 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }
 
   // 图片预览
-  const handlePreview = (image: any) => {
-    setPreviewImage(`/uploads/${image.image_url}`)
-    setPreviewAIResult(image.ai_result)
+  const handlePreview = (image: ReportImage) => {
+    setPreviewImage(`/uploads/${image.image_url as string}`)
+    setPreviewAIResult(image.ai_result ?? null)
     setPreviewVisible(true)
   }
 
-  const fetchData = async () => {
-    setLoading(true)
-    try {
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: ['report-detail', resolvedParams.id],
+    queryFn: async () => {
       const [result, templateResult] = await Promise.all([
         getReportById(resolvedParams.id),
         getTemplates({ is_active: true, page: 1, page_size: 100 }),
       ])
-      const data = result.data as ReportDetailResponse
-      setReport(data)
-      setTemplates(templateResult.data?.items || [])
-
-      // 设置表单值
-      form.setFieldsValue({
-        template_id: data.template_id,
-        report_title: data.report_title,
-        report_date: dayjs(data.report_date),
-        static_data: data.static_data || {},
-      })
-
-      // 解析表格数据
-      if (data.items && data.items.length > 0 && data.template?.table_fields?.columns) {
-        const columns = data.template.table_fields.columns
-        setTableColumns(columns)
-
-        // 转换items为行数据
-        const rowsMap: Record<number, TableRow> = {}
-        data.items.forEach((item: Record<string, any>) => {
-          const rowIdx = item.row_index
-          if (!rowsMap[rowIdx]) {
-            rowsMap[rowIdx] = { key: rowIdx }
-          }
-          rowsMap[rowIdx][item.field_key] = item.field_value
-        })
-        setTableData(Object.values(rowsMap))
-      } else if (data.template?.table_fields?.columns) {
-        setTableColumns(data.template.table_fields.columns)
-        setTableData([
-          {
-            key: 1,
-            ...Object.fromEntries(
-              data.template.table_fields.columns.map((c) => [c.key, ''])
-            ),
-          },
-        ])
+      return {
+        report: result.data as ReportDetailResponse,
+        templates: templateResult.data?.items || [],
       }
-    } catch (_error) {
-      message.error('获取报告单详情失败')
-    } finally {
-      setLoading(false)
+    },
+  })
+
+  const report = queryResult?.report || null
+  const templates = queryResult?.templates || []
+
+  // 设置表单值
+  useEffect(() => {
+    if (report) {
+      form.setFieldsValue({
+        template_id: report.template_id,
+        report_title: report.report_title,
+        report_date: dayjs(report.report_date),
+        static_data: report.static_data || {},
+      })
+    }
+  }, [report, form])
+
+  // 派生表格数据
+  const derivedTableData = useMemo(() => {
+    if (!report) return { columns: [] as TemplateColumnConfig[], rows: [] as TableRow[] }
+    
+    if (report.items && report.items.length > 0 && report.template?.table_fields?.columns) {
+      const columns = report.template.table_fields.columns
+      const rowsMap: Record<number, TableRow> = {}
+      report.items.forEach((item: Record<string, unknown>) => {
+        const rowIdx = item.row_index as number
+        if (!rowsMap[rowIdx]) {
+          rowsMap[rowIdx] = { key: rowIdx }
+        }
+        rowsMap[rowIdx][item.field_key as string] = item.field_value as string | number
+      })
+      return { columns, rows: Object.values(rowsMap) }
+    } else if (report.template?.table_fields?.columns) {
+      const columns = report.template.table_fields.columns
+      return {
+        columns,
+        rows: [{
+          key: 1,
+          ...Object.fromEntries(columns.map((c) => [c.key, ''])),
+        }],
+      }
+    }
+    return { columns: [] as TemplateColumnConfig[], rows: [] as TableRow[] }
+  }, [report])
+
+  // Sync derived data to state for mutable operations (add row, cell change)
+  // Uses React's "adjusting state during render" pattern to avoid extra render cycle
+  const [prevReportId, setPrevReportId] = useState<string | number | null>(null)
+  if (report && report.id !== prevReportId && derivedTableData.columns.length > 0) {
+    setPrevReportId(report.id)
+    setTableColumns(derivedTableData.columns)
+    if (derivedTableData.rows.length > 0) {
+      setTableData(derivedTableData.rows)
     }
   }
-
-  useEffect(() => {
-    fetchData()
-    fetchReportImages()
-  }, [resolvedParams.id, fetchData, fetchReportImages])
 
   // 添加行
   const handleAddRow = () => {
@@ -207,7 +225,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   }
 
   // 单元格值变化
-  const handleCellChange = (key: number, fieldKey: string, value: any) => {
+  const handleCellChange = (key: number, fieldKey: string, value: string | number) => {
     setTableData(
       tableData.map((row) => (row.key === key ? { ...row, [fieldKey]: value } : row))
     )
@@ -233,7 +251,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           tableColumns.map((col) => ({
             row_index: rowIndex + 1,
             field_key: col.key,
-            field_value: row[col.key] || '',
+            field_value: String(row[col.key] || ''),
           }))
         )
         await saveReportItems(resolvedParams.id, { items })
@@ -241,9 +259,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
       message.success('保存成功')
       setHasChanges(false)
-      fetchData()
-    } catch (error: any) {
-      message.error(error.message || '保存失败')
+      queryClient.invalidateQueries({ queryKey: ['report-detail'] })
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -266,7 +284,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       document.body.removeChild(a)
 
       message.success('报告单已生成并下载')
-    } catch (error) {
+    } catch (_error) {
       message.error('生成报告单失败')
     } finally {
       setSaving(false)
@@ -302,7 +320,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       dataIndex: col.key,
       key: col.key,
       width: col.width || 120,
-      render: (value: any, record: TableRow) => (
+      render: (value: string, record: TableRow) => (
         <Space.Compact style={{ width: '100%' }}>
           <Input
             value={value}
@@ -331,7 +349,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
             title: '操作',
             key: 'action',
             width: 80,
-            render: (_: any, record: TableRow) =>
+            render: (_: string, record: TableRow) =>
               tableData.length > 1 && (
                 <Button
                   type="link"
@@ -427,7 +445,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                 <Form.Item name="template_id" label="选择模板">
                   <Select
                     disabled={!isEditMode}
-                    options={templates.map((t) => ({
+                    options={templates.map((t: { id: string; template_name: string }) => ({
                       label: t.template_name,
                       value: t.id,
                     }))}
@@ -450,9 +468,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           {report.template && Object.keys(report.template.field_mapping || {}).length > 0 && (
             <Card title="静态字段" style={{ marginBottom: 16 }}>
               <Row gutter={24}>
-                {Object.entries(report.template.field_mapping || {}).map(([key, config]: [string, any]) => (
+                {Object.entries(report.template.field_mapping || {}).map(([key, config]: [string, unknown]) => (
                   <Col span={8} key={key}>
-                    <Form.Item name={['static_data', key]} label={config.label || key}>
+                    <Form.Item name={['static_data', key]} label={((config as Record<string, unknown>).label as string) || key}>
                       <Input disabled={!isEditMode} />
                     </Form.Item>
                   </Col>
@@ -489,8 +507,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           <Card title="已上传图片" size="small" style={{ marginTop: 16 }}>
             <Space wrap size="small">
               {reportImages.map((img) => (
-                <div key={img.id} style={{ position: 'relative' }}>
-                  <Image
+                <div key={img.id as string} style={{ position: 'relative' }}>
+                  <Image alt="报告图片"
                     src={`/uploads/${img.image_url}`}
                     width={80}
                     height={80}
@@ -521,7 +539,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         footer={null}
         width={800}
       >
-        <Image src={previewImage} style={{ width: '100%' }} />
+        <Image alt="预览图片" src={previewImage} style={{ width: '100%' }} />
         {previewAIResult && (
           <>
             <Divider>AI识别结果</Divider>
