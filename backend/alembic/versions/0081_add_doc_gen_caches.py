@@ -1,7 +1,7 @@
-"""0079_add_doc_gen_caches
+"""0081_add_doc_gen_caches
 
-Revision ID: 0079_add_doc_gen_caches
-Revises: 0078_add_doc_gen_job_env
+Revision ID: 0081_add_doc_gen_caches
+Revises: 0080_add_doc_gen_job_env
 Create Date: 2026-09-30 20:00:00.000000
 
 文档生成新增两张旁路缓存表（都可随时清空，代码在表缺失时静默降级为无缓存）：
@@ -20,8 +20,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0079_add_doc_gen_caches"
-down_revision: str | Sequence[str] | None = "0078_add_doc_gen_job_env"
+revision: str = "0081_add_doc_gen_caches"
+down_revision: str | Sequence[str] | None = "0080_add_doc_gen_job_env"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

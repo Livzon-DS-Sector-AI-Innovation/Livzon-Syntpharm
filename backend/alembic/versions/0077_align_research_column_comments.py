@@ -1,7 +1,7 @@
-"""0075_align_research_column_comments
+"""0077_align_research_column_comments
 
-Revision ID: 0075_align_research_column_comments
-Revises: 0074_align_llm_configs_column_comment
+Revision ID: 0077_align_research_column_comments
+Revises: 0076_align_llm_configs_column_comment
 Create Date: 2026-09-28 10:15:00.000000
 
 把 ``research`` schema 下 11 个列的注释对齐到 ORM 模型。
@@ -29,8 +29,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = "0075_align_research_column_comments"
-down_revision: str | Sequence[str] | None = "0074_align_llm_configs_column_comment"
+revision: str = "0077_align_research_column_comments"
+down_revision: str | Sequence[str] | None = "0076_align_llm_configs_column_comment"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

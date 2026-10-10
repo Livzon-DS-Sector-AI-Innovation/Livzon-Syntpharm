@@ -1,7 +1,7 @@
-"""0068_add_deliverable_template_fields
+"""0070_add_deliverable_template_fields
 
-Revision ID: 0068_add_deliverable_template_fields
-Revises: 0067_add_doc_gen_core_tables
+Revision ID: 0070_add_deliverable_template_fields
+Revises: 0069_add_doc_gen_core_tables
 Create Date: 2026-09-10 11:00:00.000000
 
 交付物模板管理支持上传 docx/dotx/doc 文档（合并版）：
@@ -16,8 +16,8 @@ import sqlalchemy as sa
 
 from alembic import op
 
-revision: str = '0068_add_deliverable_template_fields'
-down_revision: str | Sequence[str] | None = '0067_add_doc_gen_core_tables'
+revision: str = '0070_add_deliverable_template_fields'
+down_revision: str | Sequence[str] | None = '0069_add_doc_gen_core_tables'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
