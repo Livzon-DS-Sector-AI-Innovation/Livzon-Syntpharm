@@ -128,6 +128,13 @@ class Equipment(BaseModel):
     __tablename__ = "equipments"
     __table_args__ = (
         UniqueConstraint("asset_no", "is_deleted", name="uq_equipments_asset_no"),
+        # 部分唯一索引：设备位号在未删除记录范围内唯一（见迁移 0081）
+        Index(
+            "uq_equipments_equipment_tag",
+            "equipment_tag",
+            unique=True,
+            postgresql_where=text("equipment_tag IS NOT NULL AND is_deleted = false"),
+        ),
         CheckConstraint(
             "status IN ('在用', '备用', '维修中', '停用', '报废')",
             name="ck_equipments_status",
@@ -183,6 +190,7 @@ class Equipment(BaseModel):
     label_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="标签号")
     scrap_status: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="报废状态")
     scrap_time: Mapped[date | None] = mapped_column(Date, nullable=True, comment="报废时间")
+    is_fixed_asset: Mapped[bool] = mapped_column(Boolean, server_default="true", comment="是否为固定资产")
 
     # 关系
     category_links: Mapped[list["EquipmentCategoryLink"]] = relationship(

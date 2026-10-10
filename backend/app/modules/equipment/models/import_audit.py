@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Integer, String, Text, func
+from sqlalchemy import DateTime, Index, Integer, String, Text, func
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,19 +15,26 @@ class ImportAuditLog(Base):
     """导入审计日志表（不继承 BaseModel，避免 updated_by 等不存在字段的冲突）"""
 
     __tablename__ = "import_audit_logs"
-    __table_args__ = {"schema": "equipment"}
+    __table_args__ = (
+        Index("idx_import_audit_batch_id", "batch_id"),
+        Index("idx_import_audit_created_at", "created_at"),
+        {"schema": "equipment"},
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         postgresql.UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
     )
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
         server_default=func.now(),
+        comment="创建时间",
     )
 
     batch_id: Mapped[str] = mapped_column(String(50), comment="导入批次ID")
-    operation_type: Mapped[str] = mapped_column(String(20), comment="操作类型: create/update/skip/error")
+    operation_type: Mapped[str] = mapped_column(String(20), comment="操作类型")
     match_strategy: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="匹配策略")
     asset_no: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="资产编号")
     equipment_tag: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="设备位号")
@@ -35,8 +42,12 @@ class ImportAuditLog(Base):
         postgresql.UUID(as_uuid=True), nullable=True, comment="部门ID"
     )
     location_text: Mapped[str | None] = mapped_column(String(200), nullable=True, comment="位置文本")
-    changes: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="变更详情")
-    warnings: Mapped[list[str] | None] = mapped_column(JSON, nullable=True, comment="警告信息")
+    changes: Mapped[dict[str, Any] | None] = mapped_column(
+        postgresql.JSONB(astext_type=Text()), nullable=True, comment="变更详情"
+    )
+    warnings: Mapped[list[str] | None] = mapped_column(
+        postgresql.JSONB(astext_type=Text()), nullable=True, comment="警告信息"
+    )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True, comment="错误信息")
     row_index: Mapped[int | None] = mapped_column(Integer, nullable=True, comment="Excel行号")
     override_type: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="覆盖类型: normal/force")
