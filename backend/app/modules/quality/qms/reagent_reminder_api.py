@@ -8,6 +8,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import RequiredUser
 from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.reagent_reminder_schemas import (
     ItemReminderConfigResponse,
@@ -29,7 +30,7 @@ router = APIRouter(prefix="/reagent-reminder", tags=["试剂提醒管理"])
 
 
 @router.get("/config", response_model=ReagentReminderConfigResponse, summary="获取提醒配置")
-async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_config(current_user: RequiredUser, session: AsyncSession = Depends(get_db_session)) -> Any:
     """获取当前的提醒配置"""
     service = ReagentReminderService(session)
     config = await service.get_config()
@@ -59,6 +60,7 @@ async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
 
 @router.post("/config", response_model=ReagentReminderSavedResponse, summary="保存提醒配置")
 async def post(
+    current_user: RequiredUser,
     request: ReminderConfigRequest,
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -86,7 +88,7 @@ async def post(
 
 
 @router.post("/check", response_model=ReminderCheckResponse, summary="手动检查并发送提醒")
-async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def check_and_remind(current_user: RequiredUser, session: AsyncSession = Depends(get_db_session)) -> Any:
     """手动触发库存检查和提醒"""
     service = ReagentReminderService(session)
     result = await service.check_and_remind()
@@ -95,6 +97,7 @@ async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> A
 
 @router.get("/low-stock", response_model=LowStockResponse, summary="获取库存不足的试剂列表")
 async def get(
+    current_user: RequiredUser,
     threshold: int = 2,
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -114,6 +117,7 @@ async def get(
 
 @router.post("/item-reminder", response_model=ItemReminderResponse, summary="设置单个试剂的提醒开关")  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     request: ItemReminderRequest,
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -125,6 +129,7 @@ async def post(  # noqa: F811
 
 @router.get("/item-reminder/{reagent_name}", response_model=ItemReminderConfigResponse, summary="单个试剂提醒配置")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     reagent_name: str,
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:

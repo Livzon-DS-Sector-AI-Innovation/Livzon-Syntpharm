@@ -80,6 +80,7 @@ def get_reminder_config_service(session=Depends(get_db)) -> Any:  # type: ignore
 
 @router.post("/feishu-contacts/resolve-user", response_model=InstrumentFeishuUserApiResponse)
 async def post(
+    current_user: RequiredUser,
     mobile: str = Body(None, description="手机号"),
     email: str = Body(None, description="邮箱"),
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -124,6 +125,7 @@ async def post(
 
 @router.get("/reminder-config", response_model=InstrumentReminderConfigListApiResponse)
 async def get(
+    current_user: RequiredUser,
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
     """获取所有提醒配置"""
@@ -160,6 +162,7 @@ async def get(
 
 @router.post("/reminder-config", response_model=InstrumentReminderConfigApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     data: ReminderConfigCreate,
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
@@ -189,6 +192,7 @@ async def post(  # noqa: F811
 
 @router.put("/reminder-config/{config_id}", response_model=InstrumentReminderConfigApiResponse)
 async def put(
+    current_user: RequiredUser,
     config_id: UUID,
     data: ReminderConfigUpdate,
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -219,6 +223,7 @@ async def put(
 
 @router.delete("/reminder-config/{config_id}", response_model=InstrumentMessageApiResponse)
 async def delete(
+    current_user: RequiredUser,
     config_id: UUID,
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
@@ -233,6 +238,7 @@ async def delete(
 
 @router.get("", response_model=InstrumentListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_no: str | None = Query(None, description="仪器编号"),
     instrument_name: str | None = Query(None, description="仪器名称"),
     category: str | None = Query(None, description="仪器分类"),
@@ -368,6 +374,7 @@ async def post(  # noqa: F811
 
 @router.get("/rules", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: str | None = Query(None, description="仪器ID"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -380,6 +387,7 @@ async def get(  # noqa: F811
 
 @router.get("/rules/{instrument_id}", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: UUID,
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -429,6 +437,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.delete("/rules/{rule_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     rule_id: UUID,
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -442,6 +451,7 @@ async def delete(  # noqa: F811
 
 @router.get("/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     days: int = Query(30, description="提前预警天数"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -467,6 +477,7 @@ async def get(  # noqa: F811
 
 @router.get("/records", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: str | None = Query(None, description="仪器ID"),
     rule_id: str | None = Query(None, description="校准规则ID"),
     calibration_no: str | None = Query(None, description="校准单据编号"),
@@ -528,6 +539,7 @@ async def get(  # noqa: F811
 
 @router.get("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -578,6 +590,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.delete("/records/{record_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -634,6 +647,7 @@ async def post(  # noqa: F811
 
 @router.get("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Any:
@@ -666,6 +680,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.delete("/{instrument_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Any:
@@ -682,6 +697,7 @@ async def delete(  # noqa: F811
 
 @router.post("/recognize", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="仪器标签图片"),
 ) -> Any:
     """AI识别仪器标签图片，提取设备信息"""
@@ -797,6 +813,7 @@ async def post(  # noqa: F811
 
 @router.get("/record/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -839,6 +856,7 @@ async def get(  # noqa: F811
 
 @router.get("/record/for-reminder", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -849,6 +867,7 @@ async def get(  # noqa: F811
 
 @router.post("/record/remind", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     config_id: UUID = Query(..., description="提醒配置ID"),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     include_overdue: bool = Query(True, description="是否包含超期记录"),
@@ -997,6 +1016,7 @@ async def post(  # noqa: F811
 
 @router.post("/reminder/auto-trigger", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     service: ReminderConfigService = Depends(get_reminder_config_service),
     record_service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
