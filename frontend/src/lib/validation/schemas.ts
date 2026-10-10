@@ -149,9 +149,13 @@ export const RdDeliverableTemplateCreateSchema = z.object({
   name: NonEmptyStringSchema,
   deliverable_type: NonEmptyStringSchema,
   stage: NonEmptyStringSchema,
-  description: z.string().optional(),
-  template_content: z.string().optional(),
-  template_structure: z.record(z.string(), z.unknown()).optional(),
+  // 关联的填充项配置 code：Zod 默认 strip 未知键，不声明会被直接丢弃，
+  // 导致编辑里选的「填充项配置」永远保存不上（后端同名字段为 str | None）
+  template_code: z.string().max(100, '填充项配置编码过长').nullable().optional(),
+  // 数据库可空字段回填表单时为 null，编辑提交必须放行 null（后端同为 str | None）
+  description: z.string().nullable().optional(),
+  template_content: z.string().nullable().optional(),
+  template_structure: z.record(z.string(), z.unknown()).nullable().optional(),
   is_active: z.boolean(),
 })
 

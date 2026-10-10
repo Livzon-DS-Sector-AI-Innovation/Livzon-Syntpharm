@@ -276,7 +276,7 @@ class TurnoverAnalysisService:
 
         try:
             content_parts = []
-            async for chunk in llm_client._func_l309(
+            async for chunk in llm_client.stream_chat(
                 messages=messages,
             ):
                 if chunk.get("type") == "content":

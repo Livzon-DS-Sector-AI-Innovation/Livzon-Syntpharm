@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { App, Card, Table, Tag, Button, Input, Select, Space, Modal, Form, DatePicker } from 'antd'
+import { App, Card, Table, Tag, Button, Checkbox, Input, Select, Space, Modal, Form, DatePicker } from 'antd'
 import { PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useRouter } from 'next/navigation'
 import {
@@ -10,6 +10,7 @@ import {
 } from '@/types/research/rd-project'
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import { createRdProject, deleteRdProject } from '@/actions/research/rd-project'
+import { createKnowledgeBase } from '@/actions/research/knowledge-base'
 
 interface Props {
   initialProjects: RdProject[]
@@ -60,16 +61,34 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
 
   const handleCreate = async () => {
     const values = await createForm.validateFields()
+    const { with_knowledge_base: withKnowledgeBase, ...projectValues } = values
     try {
-      const _project = await createRdProject({
-        ...values,
-        start_date: values.start_date?.format('YYYY-MM-DD'),
-        target_filing_date: values.target_filing_date?.format('YYYY-MM-DD'),
+      const project = await createRdProject({
+        ...projectValues,
+        start_date: projectValues.start_date?.format('YYYY-MM-DD'),
+        target_filing_date: projectValues.target_filing_date?.format('YYYY-MM-DD'),
       })
-      message.success('创建成功')
       setCreateModalOpen(false)
       createForm.resetFields()
       loadData()
+      if (!withKnowledgeBase) {
+        message.success('创建成功')
+        return
+      }
+      // 知识库创建依赖 RAGFlow：项目已建成的既成事实不能被它拖垮，失败只提示并可后补
+      const projectId = (project as { id?: string } | undefined)?.id
+      if (!projectId) {
+        message.success('创建成功，但未能自动创建知识库，请到「项目知识库」页面手动创建')
+        return
+      }
+      try {
+        await createKnowledgeBase({ project_id: projectId })
+        message.success('创建成功，已同步创建项目知识库')
+      } catch (e: unknown) {
+        message.warning(
+          `项目已创建，但知识库创建失败：${e instanceof Error ? e.message : '未知错误'}。可在「项目知识库」页面重试`,
+        )
+      }
     } catch (e: unknown) {
       message.error(e instanceof Error ? e.message : '创建失败')
     }
@@ -276,6 +295,10 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
           </Form.Item>
           <Form.Item name="notes" label="备注">
             <Input.TextArea rows={2} />
+          </Form.Item>
+          {/* 项目知识库：与项目同期建立，后续上传的项目资料由 AI 生成报告时自动检索 */}
+          <Form.Item name="with_knowledge_base" valuePropName="checked" initialValue={false}>
+            <Checkbox>同时创建项目知识库（可上传项目资料，AI 生成报告时自动检索填入模板）</Checkbox>
           </Form.Item>
         </Form>
       </Modal>

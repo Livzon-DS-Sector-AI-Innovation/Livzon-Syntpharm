@@ -1,5 +1,6 @@
 
 
+import type { components } from '@/types/generated/schema'
 import {
   RdProject,
   RdMilestone,
@@ -18,6 +19,8 @@ import {
   RdTrackConclusionVersion,
 } from '@/types/research/rd-project'
 import { apiGet, apiFetchPaginated } from '@/lib/api/client'
+
+type RdReportUpdate = components['schemas']['RdReportUpdate']
 
 const API_BASE = '/api/v1'
 
@@ -102,6 +105,14 @@ export async function fetchReports(projectId: string): Promise<RdReport[]> {
   return result || []
 }
 
+export async function updateReport(reportId: string, data: RdReportUpdate): Promise<RdReport> {
+  const { fetchApi } = await import('@/lib/api/client')
+  const json = await fetchApi<{ code: number; data: RdReport; message?: string }>(
+    `${API_BASE}/research/reports/${reportId}`,
+    { method: 'PUT', body: JSON.stringify(data) }
+  )
+  return json.data
+}
 
 export async function fetchInitiations(projectId: string): Promise<RdInitiation[]> {
   const result = await apiGet<RdInitiation[]>(`${API_BASE}/research/initiations?project_id=${projectId}`)

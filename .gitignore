@@ -40,5 +40,5 @@ fix-any.log
 lint-output.txt
 .env.local
 
-# ai files
-.codebuddy
+# AI files
+.codebuddy/

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker} from 'antd'
+import Link from 'next/link'
+import {App, Card, Tabs, Tag, Button, Descriptions, Table, Modal, Form, Input, Select, DatePicker, Typography} from 'antd'
 import { ArrowRightOutlined, PlusOutlined } from '@ant-design/icons'
 import {
   RdProject, RdProjectStage,
@@ -12,6 +13,8 @@ import {fetchMilestones, fetchStages, } from '@/lib/api/client/research/rd-proje
 import { ProcessValidationPage } from './ProcessValidationPage'
 import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'
+import { KnowledgeBaseManager } from './KnowledgeBaseManager'
+import { useKnowledgeBase } from './useKnowledgeBase'
 import dayjs from 'dayjs'
 import {createMilestone, doTransition} from '@/actions/research/rd-project'
 
@@ -54,6 +57,10 @@ export function ProjectDetailPage({ project }: Props) {
       return data || []
     },
   })
+
+  // 关联知识库（一个项目至多一个）：与「知识库」tab 内的面板共用同一份查询缓存
+  const { data: knowledgeBases = [] } = useKnowledgeBase(project.id)
+  const knowledgeBase = knowledgeBases[0]
 
   const loading = milestonesLoading || stagesLoading
 
@@ -138,6 +145,27 @@ export function ProjectDetailPage({ project }: Props) {
             </div>
           )}
         </Card>
+      ),
+    },
+    {
+      key: 'knowledge-base',
+      label: knowledgeBase ? `知识库 (${knowledgeBase.document_count})` : '知识库',
+      children: (
+        <div>
+          <Card size="small" style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <Typography.Text type="secondary">
+                项目知识库是 AI 生成报告的资料来源：资料上传后自动解析，生成报告时按模板填充项逐项检索取值
+              </Typography.Text>
+              <Link href={`/research/knowledge-bases?projectId=${project.id}&from=project-detail`}>
+                <Button type="primary" icon={<ArrowRightOutlined />}>
+                  进入知识库页面
+                </Button>
+              </Link>
+            </div>
+          </Card>
+          <KnowledgeBaseManager projectId={project.id} variant="page" />
+        </div>
       ),
     },
     {

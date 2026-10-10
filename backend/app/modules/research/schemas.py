@@ -789,24 +789,41 @@ class RdDeliverableTemplateBase(BaseModel):
     description: str | None = None
     template_content: str | None = None
     template_structure: dict[str, Any] | None = None
-    is_active: bool = True
+    # 新建默认不启用：母本与槽位经人工核对后才允许进入 AI 生成候选
+    is_active: bool = False
 
 
 class RdDeliverableTemplateCreate(RdDeliverableTemplateBase):
-    pass
+    # 关联的填充项配置 code（可留空，上传 Word 母本时由后端自动匹配）
+    template_code: str | None = Field(None, max_length=100)
 
 
 class RdDeliverableTemplateUpdate(BaseModel):
+    # 注意：字段与编辑表单保持一致。此前缺少 stage/deliverable_type/template_code，
+    # Pydantic 会静默丢弃前端提交的这几项，导致「保存后无变化」。
     name: str | None = Field(None, max_length=200)
+    deliverable_type: str | None = Field(None, max_length=50)
+    stage: str | None = Field(None, max_length=50)
     description: str | None = None
     template_content: str | None = None
     template_structure: dict[str, Any] | None = None
+    template_code: str | None = Field(None, max_length=100)
     is_active: bool | None = None
 
 
 class RdDeliverableTemplateResponse(RdDeliverableTemplateBase):
     id: UUID
     creator_id: UUID | None = None
+    # 这几列由模板上传/自动匹配写入，必须在响应中回传：
+    # 否则前端列表拿不到 template_code/file_object_key，会误判为「尚未关联填充项配置」
+    # 并始终显示上传入口（而非预览/下载）。
+    template_code: str | None = None
+    file_object_key: str | None = None
+    file_name: str | None = None
+    file_ext: str | None = None
+    # 版本信息：由列表服务聚合填充（非数据库列），供列表直接展示当前版本号
+    current_version_no: int | None = None
+    version_count: int = 0
     created_at: datetime
     updated_at: datetime
     model_config = {"from_attributes": True}
