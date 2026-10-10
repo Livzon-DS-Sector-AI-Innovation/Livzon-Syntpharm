@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { App, Drawer } from "antd"
 import { TopNav } from "./TopNav"
 import { Sidebar } from "./Sidebar"
@@ -10,46 +10,30 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
-  const sidebarContent = <Sidebar onNavigate={() => setSidebarOpen(false)} />
 
   return (
     <App>
       <div className="h-screen flex flex-col overflow-hidden">
-        <TopNav
-          onMenuClick={() => setSidebarOpen(true)}
-          showMenuButton={isMobile}
-        />
+        <TopNav onMenuClick={() => setSidebarOpen(true)} />
         <div className="flex flex-1 overflow-hidden">
-          {isMobile ? (
-            <Drawer
-              placement="left"
-              open={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
-              styles={{ body: { padding: 0 } }}
-              size={256}
-            >
-              {sidebarContent}
-            </Drawer>
-          ) : (
-            sidebarContent
-          )}
-          <main className={`flex-1 overflow-y-auto bg-[var(--color-surface)] ${isMobile ? 'p-3' : 'p-6'}`}>
+          {/* 桌面侧栏：md(≥768px) 显示；移动端由下方 Drawer 承载，用 CSS 决定显示避免首屏闪动 */}
+          <div className="hidden md:flex shrink-0 overflow-hidden">
+            <Sidebar />
+          </div>
+          <Drawer
+            placement="left"
+            open={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            styles={{ body: { padding: 0 }, wrapper: { width: 256 } }}
+          >
+            <Sidebar forceExpanded onNavigate={() => setSidebarOpen(false)} />
+          </Drawer>
+          <main className="flex-1 overflow-y-auto bg-[var(--color-surface)] p-3 md:p-6">
             {children}
           </main>
         </div>
-        </div>
+      </div>
     </App>
   )
 }
