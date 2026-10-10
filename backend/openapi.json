@@ -71185,6 +71185,24 @@
         "summary": "\u83b7\u53d6\u63d0\u9192\u914d\u7f6e",
         "description": "\u83b7\u53d6\u5f53\u524d\u7684\u63d0\u9192\u914d\u7f6e",
         "operationId": "get_config_api_v1_quality_reagent_reminder_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -71192,6 +71210,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReagentReminderConfigResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -71206,15 +71234,33 @@
         "summary": "\u4fdd\u5b58\u63d0\u9192\u914d\u7f6e",
         "description": "\u4fdd\u5b58\u63d0\u9192\u914d\u7f6e",
         "operationId": "post_api_v1_quality_reagent_reminder_config_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReminderConfigRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -71249,6 +71295,24 @@
         "summary": "\u624b\u52a8\u68c0\u67e5\u5e76\u53d1\u9001\u63d0\u9192",
         "description": "\u624b\u52a8\u89e6\u53d1\u5e93\u5b58\u68c0\u67e5\u548c\u63d0\u9192",
         "operationId": "check_and_remind_api_v1_quality_reagent_reminder_check_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -71256,6 +71320,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReminderCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -71281,6 +71355,22 @@
               "type": "integer",
               "default": 2,
               "title": "Threshold"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -71317,15 +71407,33 @@
         "summary": "\u8bbe\u7f6e\u5355\u4e2a\u8bd5\u5242\u7684\u63d0\u9192\u5f00\u5173",
         "description": "\u8bbe\u7f6e\u5355\u4e2a\u8bd5\u5242\u7684\u63d0\u9192\u5f00\u5173\uff08\u542f\u7528/\u7981\u7528\uff09",
         "operationId": "post_api_v1_quality_reagent_reminder_item_reminder_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ItemReminderRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -71369,6 +71477,22 @@
               "type": "string",
               "title": "Reagent Name"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -71404,6 +71528,24 @@
         "summary": "Post",
         "description": "\u901a\u8fc7\u624b\u673a\u53f7\u6216\u90ae\u7bb1\u83b7\u53d6\u98de\u4e66\u7528\u6237\u7684 open_id",
         "operationId": "post_api_v1_quality_instrument_feishu_contacts_resolve_user_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -71446,6 +71588,24 @@
         "summary": "Get",
         "description": "\u83b7\u53d6\u6240\u6709\u63d0\u9192\u914d\u7f6e",
         "operationId": "get_api_v1_quality_instrument_reminder_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -71453,6 +71613,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstrumentReminderConfigListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -71467,15 +71637,33 @@
         "summary": "Post",
         "description": "\u521b\u5efa\u63d0\u9192\u914d\u7f6e",
         "operationId": "post_api_v1_quality_instrument_reminder_config_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReminderConfigCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -71519,6 +71707,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -71572,6 +71776,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -71743,6 +71963,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72151,6 +72387,22 @@
               "title": "Instrument Id"
             },
             "description": "\u4eea\u5668ID"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72254,6 +72506,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Instrument Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -72369,6 +72637,22 @@
               "format": "uuid",
               "title": "Rule Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72416,6 +72700,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u9884\u8b66\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72622,6 +72922,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72725,6 +73041,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -72837,6 +73169,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -73046,6 +73394,22 @@
               "format": "uuid",
               "title": "Instrument Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -73158,6 +73522,22 @@
               "format": "uuid",
               "title": "Instrument Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -73193,15 +73573,33 @@
         "summary": "Post",
         "description": "AI\u8bc6\u522b\u4eea\u5668\u6807\u7b7e\u56fe\u7247\uff0c\u63d0\u53d6\u8bbe\u5907\u4fe1\u606f",
         "operationId": "post_api_v1_quality_instrument_recognize_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_quality_instrument_recognize_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -73250,6 +73648,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u63d0\u9192\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -73299,6 +73713,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u63d0\u9192\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -73372,6 +73802,22 @@
               "title": "Include Overdue"
             },
             "description": "\u662f\u5426\u5305\u542b\u8d85\u671f\u8bb0\u5f55"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -73407,6 +73853,24 @@
         "summary": "Post",
         "description": "\u89e6\u53d1\u81ea\u52a8\u63d0\u9192\uff08\u53ef\u7531\u5b9a\u65f6\u4efb\u52a1\u8c03\u7528\uff09",
         "operationId": "post_api_v1_quality_instrument_reminder_auto_trigger_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -73414,6 +73878,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstrumentMessageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
