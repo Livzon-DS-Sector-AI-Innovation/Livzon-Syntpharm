@@ -1,7 +1,7 @@
 """Add sync_logs table for equipment audit trail
 
-Revision ID: 0080_add_sync_logs_table
-Revises: 0066_add_knowledge_article_document_fields
+Revision ID: 0069_add_sync_logs_table
+Revises: 0068_add_background_jobs
 Create Date: 2026-09-02
 """
 from alembic import op
@@ -10,8 +10,8 @@ from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
-revision = '0080_add_sync_logs_table'
-down_revision = '0066_add_knowledge_article_document_fields'
+revision = '0069_add_sync_logs_table'
+down_revision = '0068_add_background_jobs'
 branch_labels = None
 depends_on = None
 

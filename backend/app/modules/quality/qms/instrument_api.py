@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Instrument Calibration API (仪器校准管理API路由)
 
 仪器设备台账、校准规则配置、校准记录的API接口
@@ -14,7 +13,9 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import RequiredUser, get_current_user
+from app.core.exceptions import BadRequestException
+from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
     # Approval
@@ -79,6 +80,7 @@ def get_reminder_config_service(session=Depends(get_db)) -> Any:  # type: ignore
 
 @router.post("/feishu-contacts/resolve-user", response_model=InstrumentFeishuUserApiResponse)
 async def post(
+    current_user: RequiredUser,
     mobile: str = Body(None, description="手机号"),
     email: str = Body(None, description="邮箱"),
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -103,14 +105,18 @@ async def post(
     try:
         from app.platform.notification.feishu_client_config import FeishuClient
 
-        client = FeishuClient(config.feishu_app_id, config.feishu_app_secret)
+        # The client needs the plaintext secret, not the stored ciphertext.
+        client = FeishuClient(config.feishu_app_id, decrypt_secret(config.feishu_app_secret))
         open_id = await client.get_user_by_mobile_or_email(mobile=mobile, email=email)
         if open_id:
             return InstrumentFeishuUserApiResponse(message="获取成功", data={"open_id": open_id})
         else:
             return InstrumentFeishuUserApiResponse(message="未找到该用户", data={"open_id": None})
     except Exception as e:
-        logger.error(f"获取飞书用户失败: {str(e)}")
+        # `extra` carries the context (`AGENTS.md:332`). The lookup key is not logged:
+        # `mobile`/`email` are personal data, and the rule reserves `extra` for
+        # identifiers, not for whatever happens to be in scope.
+        logger.error("获取飞书用户失败", extra={"config_id": str(config.id), "error": str(e)})
         return InstrumentFeishuUserApiResponse(message=f"获取用户失败: {str(e)}", data={"open_id": None})
 
 
@@ -119,6 +125,7 @@ async def post(
 
 @router.get("/reminder-config", response_model=InstrumentReminderConfigListApiResponse)
 async def get(
+    current_user: RequiredUser,
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
     """获取所有提醒配置"""
@@ -128,7 +135,11 @@ async def get(
             "id": str(config.id),
             "name": config.name,
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext, so echoing it would hand the
+            # client the encrypted blob.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "chat_id": config.chat_id,
             "receive_id_type": config.receive_id_type,
             "remind_30_days": config.remind_30_days,
@@ -151,6 +162,7 @@ async def get(
 
 @router.post("/reminder-config", response_model=InstrumentReminderConfigApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     data: ReminderConfigCreate,
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
@@ -163,7 +175,10 @@ async def post(  # noqa: F811
             "id": str(config.id),
             "name": config.name,
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "chat_id": config.chat_id,
             "receive_id_type": config.receive_id_type,
             "remind_30_days": config.remind_30_days,
@@ -177,6 +192,7 @@ async def post(  # noqa: F811
 
 @router.put("/reminder-config/{config_id}", response_model=InstrumentReminderConfigApiResponse)
 async def put(
+    current_user: RequiredUser,
     config_id: UUID,
     data: ReminderConfigUpdate,
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -190,7 +206,10 @@ async def put(
             "id": str(config.id),
             "name": config.name,
             "feishu_app_id": config.feishu_app_id,
-            "feishu_app_secret": config.feishu_app_secret,
+            # Masked: the column holds ciphertext.
+            "feishu_app_secret": mask_secret(decrypt_secret(config.feishu_app_secret))
+            if config.feishu_app_secret
+            else None,
             "chat_id": config.chat_id,
             "receive_id_type": config.receive_id_type,
             "remind_30_days": config.remind_30_days,
@@ -204,6 +223,7 @@ async def put(
 
 @router.delete("/reminder-config/{config_id}", response_model=InstrumentMessageApiResponse)
 async def delete(
+    current_user: RequiredUser,
     config_id: UUID,
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
@@ -218,6 +238,7 @@ async def delete(
 
 @router.get("", response_model=InstrumentListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_no: str | None = Query(None, description="仪器编号"),
     instrument_name: str | None = Query(None, description="仪器名称"),
     category: str | None = Query(None, description="仪器分类"),
@@ -353,6 +374,7 @@ async def post(  # noqa: F811
 
 @router.get("/rules", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: str | None = Query(None, description="仪器ID"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -365,6 +387,7 @@ async def get(  # noqa: F811
 
 @router.get("/rules/{instrument_id}", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: UUID,
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -377,9 +400,9 @@ async def get(  # noqa: F811
 
 @router.post("/rules", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     data: CalibrationRuleCreate,
     service: CalibrationRuleService = Depends(get_rule_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """创建校准规则"""
     try:
@@ -395,10 +418,10 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.put("/rules/{rule_id}", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     rule_id: UUID,
     data: CalibrationRuleUpdate,
     service: CalibrationRuleService = Depends(get_rule_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """更新校准规则"""
     try:
@@ -412,8 +435,9 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/rules/{rule_id}")  # type: ignore[no-redef]
+@router.delete("/rules/{rule_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     rule_id: UUID,
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -427,6 +451,7 @@ async def delete(  # noqa: F811
 
 @router.get("/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     days: int = Query(30, description="提前预警天数"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -452,6 +477,7 @@ async def get(  # noqa: F811
 
 @router.get("/records", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: str | None = Query(None, description="仪器ID"),
     rule_id: str | None = Query(None, description="校准规则ID"),
     calibration_no: str | None = Query(None, description="校准单据编号"),
@@ -513,6 +539,7 @@ async def get(  # noqa: F811
 
 @router.get("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -526,9 +553,9 @@ async def get(  # noqa: F811
 
 @router.post("/records", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     data: CalibrationRecordCreate,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """创建校准记录"""
     try:
@@ -544,10 +571,10 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
 
 @router.put("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     record_id: UUID,
     data: CalibrationRecordUpdate,
     service: CalibrationRecordService = Depends(get_record_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """更新校准记录"""
     try:
@@ -561,8 +588,9 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/records/{record_id}")  # type: ignore[no-redef]
+@router.delete("/records/{record_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     record_id: UUID,
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -619,6 +647,7 @@ async def post(  # noqa: F811
 
 @router.get("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Any:
@@ -632,10 +661,10 @@ async def get(  # noqa: F811
 
 @router.put("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
+    current_user: RequiredUser,
     instrument_id: UUID,
     data: InstrumentUpdate,
     service: InstrumentService = Depends(get_instrument_service),
-    current_user=Depends(get_current_user),
 ) -> Any:
     """更新仪器设备"""
     try:
@@ -649,8 +678,9 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.delete("/{instrument_id}")  # type: ignore[no-redef]
+@router.delete("/{instrument_id}", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    current_user: RequiredUser,
     instrument_id: UUID,
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Any:
@@ -667,6 +697,7 @@ async def delete(  # noqa: F811
 
 @router.post("/recognize", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     file: UploadFile = File(..., description="仪器标签图片"),
 ) -> Any:
     """AI识别仪器标签图片，提取设备信息"""
@@ -782,6 +813,7 @@ async def post(  # noqa: F811
 
 @router.get("/record/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -824,6 +856,7 @@ async def get(  # noqa: F811
 
 @router.get("/record/for-reminder", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -834,15 +867,27 @@ async def get(  # noqa: F811
 
 @router.post("/record/remind", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    chat_id: str = Query(..., description="飞书群ID或用户ID或open_id"),
-    receive_id_type: str = Query("chat_id", description="接收者类型: chat_id/user_id/open_id"),
+    current_user: RequiredUser,
+    config_id: UUID = Query(..., description="提醒配置ID"),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     include_overdue: bool = Query(True, description="是否包含超期记录"),
-    feishu_app_id: str | None = Query(None, description="飞书应用AppID"),
-    feishu_app_secret: str | None = Query(None, description="飞书应用AppSecret"),
     service: CalibrationRecordService = Depends(get_record_service),
+    config_service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
-    """发送校准记录到期提醒到飞书"""
+    """发送校准记录到期提醒到飞书。
+
+    Credentials come from the selected reminder config, decrypted server-side.
+    They are deliberately NOT accepted as parameters: a secret in a query string
+    is written to every access log, proxy log and browser history along the way.
+    """
+    # Same source as the scheduled reminder — the config, never the caller.
+    config = await config_service.get_config(config_id)
+    chat_id = config.chat_id
+    receive_id_type = config.receive_id_type
+    feishu_app_id = config.feishu_app_id
+    feishu_app_secret = decrypt_secret(config.feishu_app_secret) if config.feishu_app_secret else None
+    if not feishu_app_id or not feishu_app_secret or not chat_id:
+        raise BadRequestException(message="提醒配置缺少飞书应用凭证或群 ID")
     import logging
 
     from app.platform.notification.feishu_client_config import (
@@ -861,7 +906,11 @@ async def post(  # noqa: F811
         if include_overdue:
             overdue_records = await service.get_overdue_records()
     except Exception as e:
-        logger.error(f"获取校准提醒记录失败: {str(e)}", exc_info=True)
+        logger.error(
+            "获取校准提醒记录失败",
+            extra={"days": days, "include_overdue": include_overdue, "error": str(e)},
+            exc_info=True,
+        )
         raise HTTPException(status_code=500, detail=f"获取提醒记录失败: {str(e)}")
 
     if not records and not overdue_records:
@@ -955,7 +1004,10 @@ async def post(  # noqa: F811
                 },
             )
         except Exception as e:
-            logger.error(f"发送飞书提醒失败: {str(e)}")
+            logger.error(
+                "发送飞书提醒失败",
+                extra={"chat_id": chat_id, "receive_id_type": receive_id_type, "error": str(e)},
+            )
             raise HTTPException(status_code=500, detail=f"发送失败: {str(e)}")
 
 
@@ -964,6 +1016,7 @@ async def post(  # noqa: F811
 
 @router.post("/reminder/auto-trigger", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    current_user: RequiredUser,
     service: ReminderConfigService = Depends(get_reminder_config_service),
     record_service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -1109,7 +1162,7 @@ async def _send_reminder(records, config, reminder_type, is_overdue=False) -> An
 
     await send_feishu_card_from_config(
         app_id=config.feishu_app_id,
-        app_secret=config.feishu_app_secret,
+        app_secret=decrypt_secret(config.feishu_app_secret),
         receive_id=config.chat_id,
         receive_id_type=config.receive_id_type,
         title=f"🔔 仪器校准{reminder_type}提醒（共 {len(records)} 条）",

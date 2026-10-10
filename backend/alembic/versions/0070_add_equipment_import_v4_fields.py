@@ -1,7 +1,7 @@
 """add equipment import v4 fields: is_fixed_asset, unique equipment_tag index, audit logs
 
 Revision ID: 0059
-Revises: 0080_add_sync_logs_table
+Revises: 0069_add_sync_logs_table
 Create Date: 2026-09-07
 
 """
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers
-revision = '0081_add_equipment_import_v4_fields'
-down_revision = '0080_add_sync_logs_table'
+revision = '0070_add_equipment_import_v4_fields'
+down_revision = '0069_add_sync_logs_table'
 branch_labels = None
 depends_on = None
 

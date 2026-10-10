@@ -1,179 +1,65 @@
-# 设备批量导入功能 v2 - 上下文文档
+# Livzon-Syntpharm
 
-## 📅 创建时间
-2026-08-17
+Livzon-Syntpharm 是一个模块化单体（modular monolith）应用：后端 FastAPI 按业务模块划分，前端 Next.js 通过 OpenAPI 契约与后端交互。
 
-## 🎯 需求背景
-用户需要批量导入 3000+ 条设备数据（来源：`202606sbgz.xls`）。现有导入功能存在路径错误、部门映射缺失以及模型冲突问题，导致全部 2970 条数据无法导入。
+## Language
 
-## 🔍 现状分析
-1.  **数据源**：Excel 表头位于第 5 行，包含 38 个唯一部门名称。
-2.  **核心痛点**：
-    *   **Schema 冲突**：`identity.models.Department` 与 `hr.models.HrDepartment` 并存，导致查询混乱。
-    *   **路径不匹配**：前端请求 `/equipment/import/...`，后端注册在 `/equipment/equipments/import/...`。
-    *   **映射不全**：大量车间别名（如“头孢合成一车间”）未在系统中定义。
+### API 契约 (API Contract)
 
-## 💡 技术方案 (v2)
-1.  **唯一真理来源**：强制所有部门查询指向 `hr.departments` (Schema: `hr`)。
-2.  **严格映射引擎**：建立完整的 `DEPT_MAPPING_V2`，取消不可控的模糊匹配。
-3.  **部分成功机制**：支持行级事务，导入成功后返回详细的错误报告。
+**API Response Envelope** (API 响应信封):
+所有后端 API 成功响应遵循的统一结构 `{ code, message, data, meta? }`，由 `ApiResponse` 模型定义；`meta` 承载分页等附加信息。
+_Avoid_: API 包装器, response wrapper, 响应壳
 
-## ⚠️ 注意事项
-*   **磁盘空间**：服务器磁盘紧张，需定期执行 `docker system prune`。
-*   **热重载**：开发环境下修改 Python 代码后，Uvicorn 会自动重启，无需重建镜像。
+**Generated Types** (生成类型):
+由后端 OpenAPI 规范自动生成的 TypeScript 类型，是前后端 API 契约的唯一真实来源，位于 `frontend/src/types/generated/schema.ts`。
+_Avoid_: 手写 API 类型, OpenAPI 类型, schema 类型
 
-## 🔄 v3 重构决策（基于 /grill-with-docs）
+### 模块边界 (Module Boundaries)
 
-### 核心变更
-1. **混合导入模式**：前端解析 → 预览确认 → 批量入库。
-2. **智能推断逻辑**：
-   - `equipment_class`：根据"资产类别说明"自动映射（电子设备/机器设备 → C类）。
-   - `importance`：根据"当前成本"自动分级（>10万=高，5-10万=中，<5万=低）。
-   - `status`："未报废" → "在用"。
-3. **部门映射增强**：补充溶剂回收车间各岗位映射，未匹配部门设为 NULL 但不跳过数据。
-4. **数量字段处理**：存入 `technical_params`，前端表格增加显示列。
-5. **资产类别说明**：直接存入 `category_description` 字段。
+**模块** (Module):
+按业务域划分的后端单元，注册于模块注册表，拥有一个 code 与一个同名主 schema。一个模块可以拥有多个 schema——例如 `quality` 模块同时拥有 `quality` 与 `qms`。迁移的「单模块原则」按模块判定，不是按 schema。
+_Avoid_: schema（当指代模块时）, 服务, 子系统
 
-### 待办事项
-- [ ] 更新 `batch_import.py` 的映射算法
-- [ ] 扩展 `DEPT_MAPPING_V2`
-- [ ] 修改前端 `EquipmentTable.tsx` 显示数量
-- [ ] 编写 ADR 文档
+**Public API**:
+模块对外暴露的唯一入口 `public_api.py`；跨模块调用必须经由它，禁止直接引用其他模块的 `repository.py`、`service.py` 或 `models.py`。
+_Avoid_: 内部接口, 跨模块导入
 
-## 📚 术语表 (Glossary)
+**模块注册表** (Module Registry):
+记录模块与其数据库 schema 对应关系的注册表 `app/shared/module_registry.py`；新增模块时必须同步更新。
+_Avoid_: 模块清单, 模块列表
 
-### API Response Envelope (API 响应信封)
-所有后端 API 响应遵循的标准结构：`{code: number, data: T, message: string, meta?: object}`。这个结构由 `ApiResponse` 模型定义，确保前后端交互的一致性。
+### 数据与认证 (Data and Auth)
 
-- `code`: HTTP 状态码或业务状态码（200 表示成功）
-- `data`: 实际的业务数据
-- `message`: 响应消息（成功或错误信息）
-- `meta`: 可选的元数据（如分页信息）
+**软删除** (Soft Delete):
+删除业务数据的默认方式，通过 `is_deleted` 标记而非物理删除；仅当需求明确要求时才做物理删除。
+_Avoid_: 逻辑删除, 标记删除
 
-### Generated Types (生成类型)
-从后端 OpenAPI 规范自动生成的 TypeScript 类型。这些类型是前后端 API 契约的唯一真实来源。
+**RequiredUser**:
+必须登录的接口所使用的依赖注入参数；未登录返回 401，是所有业务 API 的默认选择。
+_Avoid_: CurrentUser, 必选用户
 
-生成流程：
-1. 后端导出 OpenAPI 规范：`uv run python scripts/ci/export_openapi.py`
-2. 前端生成 TypeScript 类型：`BACKEND_SPEC_PATH=../backend/openapi.json node scripts/generate-api.mjs`
+**OptionalUser**:
+允许未登录访问的接口所使用的依赖注入参数；仍会解析 JWT/cookie，端点可据其做条件逻辑。
+_Avoid_: 可选用户, 匿名用户
 
-生成的类型位于 `frontend/src/types/generated/schema.ts`，包含所有 API 请求和响应的类型定义。
+### 设备台账 (Equipment Ledger)
 
----
+**增量更新策略** (Incremental Update Strategy):
+设备批量导入 v4 的选择性更新机制：A 类字段（`current_cost`、`book_value` 等财务数据）每次导入都更新；B 类字段（部门、位置、负责人、位号等业务配置）仅在库中为空或开启强制覆盖时更新，以保护人工修正过的数据。
+_Avoid_: 部分更新, 选择性覆盖
 
-## 🔄 v4 重构决策（2026-09-07）
+**设备位号** (Equipment Tag):
+按「车间-类型-序号」命名的设备标识符，如 `101-L-001`。在未删除记录范围内全局唯一（部分唯一索引），可作为资产编号之外的备选匹配键。
+_Avoid_: 设备编号（与 `asset_no` 混淆）
 
-### 核心变更
+**固定资产标记** (Fixed Asset Flag):
+`is_fixed_asset` 布尔字段，区分固定资产与非固定资产，判定规则为 `asset_no IS NOT NULL`。仅用于财务分类统计，工单、巡检等业务不据此区别对待。
 
-1. **增量更新策略**：
-   - **A类字段**（总是更新）：`current_cost`, `book_value`
-   - **B类字段**（仅DB为NULL时更新）：`department_id`, `location_text`, `responsible_person_name`, `equipment_tag`
-   - 支持财务定期重估设备价值
+**导入审计日志** (Import Audit Log):
+`import_audit_logs` 表按行记录批量导入的批次 ID、操作类型、匹配策略、字段变更前后值与警告信息，用于财务合规与数据追溯。
 
-2. **设备位号全局唯一**：
-   - 命名规则：`{车间}-{类型简称}-{序号}`（如 `101-L-001`）
-   - 添加部分唯一索引（允许NULL）
-   - 匹配优先级：asset_no → equipment_tag → 创建新记录
+## Relationships
 
-3. **非固定资产标记**：
-   - 新增 `is_fixed_asset` 字段
-   - 判断规则：`asset_no IS NOT NULL` → true
-   - 业务限制：无，与固定资产一致
-
-4. **完整审计日志**：
-   - 新建 `import_audit_logs` 表
-   - 记录批次ID、操作类型、变更详情、错误信息
-   - 满足财务合规要求
-
-5. **前端交互优化**：
-   - 预览→修改→确认三步流程
-   - 用户可修改任意字段（部门、位号等）
-   - 后端根据策略决定是否应用修改
-
-### 待办事项
-- [ ] 执行数据库迁移（添加字段、索引、审计表）
-- [ ] 更新批量导入接口实现
-- [ ] 前端适配新的预览和导入流程
-- [ ] 编写单元测试和集成测试
-
-### 相关文档
-- [ADR 002: 设备批量导入 v4](./backend/docs/adr/002-equipment-import-v4-incremental-update.md)
-
-## 📚 术语表更新 (Glossary)
-
-### Incremental Update Strategy (增量更新策略)
-设备批量导入v4采用的选择性更新机制，将字段分为两类：
-- **A类字段**：财务核心数据（成本、净值），每次导入都更新，即使值为NULL/0
-- **B类字段**：业务配置数据（部门、位置、负责人、位号），仅在数据库中为NULL时才更新，保护用户手动修正的数据
-
-### Equipment Tag (设备位号)
-按"车间-类型-序号"规则命名的设备标识符，格式如 `101-L-001`（101车间离心机001号）。在数据库中具有部分唯一约束（非NULL值全局唯一），可作为资产编号的备选匹配键。
-
-### Fixed Asset Flag (固定资产标记)
-`is_fixed_asset` 布尔字段，用于区分固定资产和非固定资产。判断规则为 `asset_no IS NOT NULL`。非固定资产在工单、巡检等业务上与固定资产无区别，仅用于财务分类统计。
-
-### Import Audit Log (导入审计日志)
-记录每次批量导入操作的详细日志，包括批次ID、操作类型（创建/更新/跳过/错误）、字段变更前后值、错误信息等。用于满足财务合规要求和数据追溯。
-
----
-
-## 🏢 部门主数据参考 (Department Master Data)
-
-为确保设备导入的准确性，以下 Excel 原始名称与系统标准部门名称的映射关系已固化在 `DEPT_MAPPING_V3` 中：
-
-| Excel 原始名称 | 系统标准部门名称 | 备注 |
-| :--- | :--- | :--- |
-| **非头孢一/二/三车间** | 101/102/103车间 | 车间编号标准化 |
-| **仪表电工班** | 设备工程部 | 班组归并 |
-| **机修/制冷/锅炉班** | 动力部 | 设施维护归并 |
-| **检验室** | 质量控制部 | 质量职能归并 |
-| **环保/安全中心** | 安全环保部 | HSE 职能合并 |
-| **溶剂回收车间-4XX岗** | 溶剂回收车间 | 岗位层级归并至车间 |
-| **炊事班** | 人事行政部 | 后勤职能归并 |
-
-**容错说明**：若遇到未在上述列表中的部门名称，系统将自动在数据库中创建同名部门以保证导入不中断。
-
-
-## 🏢 部门主数据参考 (Department Master Data)
-
-为确保设备导入的准确性，以下 Excel 原始名称与系统标准部门名称的映射关系已固化在 `DEPT_MAPPING_V3` 中：
-
-| Excel 原始名称 | 系统标准部门名称 | 业务逻辑说明 |
-| :--- | :--- | :--- |
-| **非头孢一/二/三车间** | 101/102/103车间 | 车间编号标准化 |
-| **非头孢五/六/七车间** | 105/106/107车间 | 车间编号标准化 |
-| **头孢合成一/二车间** | 201/202车间 | 头孢系列编号标准化 |
-| **头孢精制一/二/三车间** | 301/302/303车间 | 头孢系列编号标准化 |
-| **头孢精制制造部** | **头孢无菌制造部** | ⚠️ 业务标准名称修正 |
-| **仪表电工班** | 设备工程部 | 班组归并至上级职能部门 |
-| **机修/制冷/锅炉班** | 动力部 | 设施维护与能源供应归并 |
-| **检验室** | 质量控制部 | 质量职能归并 (QC) |
-| **质量部** | 质量保证部 | 质量体系区分 (QA) |
-| **环保/安全中心** | 安全环保部 | HSE 职能合并 |
-| **溶剂回收车间-4XX岗** | 溶剂回收车间 | 岗位层级归并至车间 |
-| **炊事班** | 人事行政部 | 后勤职能归并 |
-| **实验室** | 技术研发部 | 研发职能归并 |
-| **生产管理部** | 生产部 | 管理部门简化 |
-| **工程部** | 设备工程部 | 通用名称标准化 |
-| **其他部门** | 保持原名 | 如：财务部、采购部、注册部、仓库等 |
-
-**容错说明**：若遇到未在上述列表中的部门名称（如 AI创新部），系统将自动在数据库中创建同名部门以保证导入不中断。
-
-
-## 🔄 v4 重构决策（2026-09-09）
-
-### 核心变更
-1. **唯一约束升级**：数据库约束从 `(asset_no, is_deleted)` 升级为 `(asset_no, department_id, location_text, is_deleted)`。
-   - **业务语义**：资产编号仅代表“批次号”，同一批次在不同部门/位置的设备视为独立实例。
-2. **匹配策略精简**：删除了会导致跨部门错误匹配的 P1b (location_match) 和 P2 (asset_no_only)。
-   - **新策略**：P1 (复合主键精确匹配) → P2 (设备位号全局匹配) → P3 (无编号模糊匹配)。
-3. **增量更新逻辑优化**：
-   - **A类字段**（财务）：总是覆盖。
-   - **B类字段**（基础信息）：仅在 `force_override=True` 或原值为空时更新，保护已维护数据。
-   - **范围隔离**：导入操作严格限制在 Excel 数据集对应的三元组内，不影响全库其他设备。
-
-### 待办事项
-- [x] 修改 `equipment.py` 模型约束
-- [x] 执行数据库 SQL 迁移
-- [x] 重构 `import_engine.py` 匹配与更新逻辑
-- [ ] 前端增加 `force_override` 开关选项
+- **Backend → Frontend**: 后端导出 OpenAPI 规范；前端据此生成 `Generated Types`。契约变更先于前端消费。
+- **Module → Module**: 模块之间只经 `Public API` 协作；`API Response Envelope` 是所有模块对外的统一响应形状。
+- **导入策略 → ADR**：设备导入的匹配与更新决策记录在 `backend/docs/adr/001-equipment-import-v3.md` 与 `backend/docs/adr/002-equipment-import-v4-incremental-update.md`；Excel 部门名称映射的真实来源是 `backend/app/modules/equipment/config/dept_mapping.py`。

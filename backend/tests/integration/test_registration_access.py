@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Tests verifying registration API endpoints respond correctly."""
 
 from __future__ import annotations

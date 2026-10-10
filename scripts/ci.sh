@@ -28,9 +28,18 @@ check_command() {
 run_openapi() {
     log_section "OpenAPI Drift Check"
 
-    # Configure git identity for CI auto-commits
-    git config --global user.name "CI Bot" 2>/dev/null || true
-    git config --global user.email "ci@livzon-syntpharm.com" 2>/dev/null || true
+    # No git identity is configured here. The drift check only READS git state
+    # (git diff) to decide pass/fail — it never commits — so it needs no author.
+    #
+    # These two lines previously set a GLOBAL identity for an auto-commit path:
+    #
+    #     git config --global user.name  "CI Bot"
+    #     git config --global user.email "ci@livzon-syntpharm.com"
+    #
+    # That auto-commit was removed because it could never land (a91fbbdf) — the
+    # check now fails on drift instead of silently discarding the fix. The
+    # identity lines outlived it, and `--global` meant running this script on a
+    # developer machine rewrote their ~/.gitconfig for every repository on it.
 
     # Step 1: Backend — export spec and validate it matches committed openapi.json
     log_info "Exporting backend OpenAPI spec..."
@@ -43,11 +52,13 @@ run_openapi() {
 
     uv run python scripts/ci/export_openapi.py
     if ! git diff --exit-code openapi.json > /dev/null 2>&1; then
-        log_warn "Backend OpenAPI spec was out of date, auto-updating..."
-        git add openapi.json
-        git commit -m "chore: auto-update openapi.json [ci skip]" --no-verify || true
+        log_error "Backend OpenAPI spec is out of date."
+        log_error "Fix: cd backend && uv run python scripts/ci/export_openapi.py"
+        git --no-pager diff --stat openapi.json
+        FAILED=1
+    else
+        log_info "Backend OpenAPI spec is up to date"
     fi
-    log_info "Backend OpenAPI spec is up to date"
 
     # Step 2: Frontend — generate types from spec and check drift
     cd "$REPO_ROOT/frontend"
@@ -66,9 +77,10 @@ run_openapi() {
         return 1
     fi
     if ! git diff --exit-code src/types/generated/schema.ts > /dev/null 2>&1; then
-        log_warn "Generated types were out of date, auto-updating..."
-        git add -f src/types/generated/schema.ts
-        git commit -m "chore: auto-update frontend API types [ci skip]" --no-verify || true
+        log_error "Generated API types are out of date."
+        log_error "Fix: cd frontend && BACKEND_SPEC_PATH=../backend/openapi.json node scripts/generate-api.mjs"
+        git --no-pager diff --stat src/types/generated/schema.ts
+        FAILED=1
     else
         log_info "Generated types are up to date"
     fi

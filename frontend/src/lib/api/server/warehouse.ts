@@ -1,3 +1,4 @@
+import type { ApiResponse } from '@/types/common'
 import type {
   PackagingMaterial,
   PackagingMaterialListResponse,
@@ -113,12 +114,6 @@ export async function fetchWarehouseFeishuTableRecords(
 
 export async function fetchWarehouseFeishuWsStatus(): Promise<WarehouseFeishuWsStatus> {
   return unwrapResponse(await apiFetch<{ code: number; data: WarehouseFeishuWsStatus; message?: string; meta?: unknown }>(`${BASE}/feishu/ws/status`))
-}
-
-interface ApiResponse<T> {
-  code: number
-  data: T
-  message?: string
 }
 
 export async function saveWarehouseFeishuConfig(

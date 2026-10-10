@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Tests verifying sop-ai route prefix works at /quality/sop-ai."""
 
 from __future__ import annotations

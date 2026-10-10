@@ -1,7 +1,7 @@
 """add override_type to equipment.import_audit_logs
 
-Revision ID: 0082_add_import_audit_override_type
-Revises: 0081_add_equipment_import_v4_fields
+Revision ID: 0071_add_import_audit_override_type
+Revises: 0070_add_equipment_import_v4_fields
 Create Date: 2026-09-11
 
 背景:
@@ -18,8 +18,8 @@ Create Date: 2026-09-11
 """
 from alembic import op
 
-revision = "0082_add_import_audit_override_type"
-down_revision = "0081_add_equipment_import_v4_fields"
+revision = "0071_add_import_audit_override_type"
+down_revision = "0070_add_equipment_import_v4_fields"
 branch_labels = None
 depends_on = None
 

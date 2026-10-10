@@ -142,7 +142,7 @@ export function InspectionScheduleDrawer() {
   return (
     <Drawer
       title={null}
-      width={480}
+      size={480}
       open={scheduleDrawerOpen}
       onClose={closeScheduleDrawer}
       destroyOnHidden

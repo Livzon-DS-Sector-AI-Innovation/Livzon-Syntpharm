@@ -1,7 +1,7 @@
 """add quantity to equipment.equipments
 
-Revision ID: 0083_add_equipment_quantity
-Revises: 0082_add_import_audit_override_type
+Revision ID: 0072_add_equipment_quantity
+Revises: 0071_add_import_audit_override_type
 Create Date: 2026-09-11
 
 背景:
@@ -18,8 +18,8 @@ Create Date: 2026-09-11
 """
 from alembic import op
 
-revision = "0083_add_equipment_quantity"
-down_revision = "0082_add_import_audit_override_type"
+revision = "0072_add_equipment_quantity"
+down_revision = "0071_add_import_audit_override_type"
 branch_labels = None
 depends_on = None
 

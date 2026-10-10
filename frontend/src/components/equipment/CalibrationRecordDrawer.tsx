@@ -76,9 +76,9 @@ export function CalibrationRecordDrawer({ calibrationPlans, onRefresh }: Calibra
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title="新增校准记录"
-      width={480}
+      size={480}
       open={calibrationRecordDrawerOpen}
       onClose={closeCalibrationRecordDrawer}
       destroyOnHidden

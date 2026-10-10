@@ -215,7 +215,7 @@ export function EquipmentDetailDrawer({ open, equipment, categoryName: _category
   return (
     <Drawer
       title="设备详情"
-      width={860}
+      size={860}
       open={open}
       onClose={onClose}
       destroyOnHidden
