@@ -439,7 +439,17 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
         {/* 编辑表单 */}
         <Form form={form} layout="vertical">
-          <Card title="报告单信息" style={{ marginBottom: 16 }}>
+          {/* This page carries no separate page-level title — "报告单详情" exists
+              only as a modal header — so the first section header doubles as the
+              top-level heading (#102). Styles reset so it looks identical. */}
+          <Card
+            title={
+              <h1 style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', lineHeight: 'inherit' }}>
+                报告单信息
+              </h1>
+            }
+            style={{ marginBottom: 16 }}
+          >
             <Row gutter={24}>
               <Col span={12}>
                 <Form.Item name="template_id" label="选择模板">
@@ -532,7 +542,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       </Card>
 
       {/* 图片预览和AI识别结果弹窗 */}
-      <Modal
+      <Modal forceRender
         title="图片预览"
         open={previewVisible}
         onCancel={() => setPreviewVisible(false)}

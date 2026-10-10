@@ -44119,7 +44119,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44261,7 +44261,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44320,7 +44320,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44387,7 +44387,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44444,7 +44444,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44515,7 +44515,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44598,7 +44598,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44670,7 +44670,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44729,7 +44729,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44786,7 +44786,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -44963,7 +44963,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45069,7 +45069,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45128,7 +45128,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45185,7 +45185,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45244,7 +45244,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45303,7 +45303,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45372,7 +45372,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45441,7 +45441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45619,7 +45619,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45678,7 +45678,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45736,7 +45736,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45804,7 +45804,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45860,7 +45860,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -45930,7 +45930,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46000,7 +46000,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46056,7 +46056,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46176,7 +46176,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46235,7 +46235,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46293,7 +46293,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46361,7 +46361,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -46417,7 +46417,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47687,7 +47687,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47744,7 +47744,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47803,7 +47803,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47870,7 +47870,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47927,7 +47927,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -47998,7 +47998,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48068,7 +48068,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48129,7 +48129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48186,7 +48186,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48255,7 +48255,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48316,7 +48316,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48373,7 +48373,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48442,7 +48442,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48503,7 +48503,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48560,7 +48560,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -48629,7 +48629,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -49944,7 +49944,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50001,7 +50001,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50070,7 +50070,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50190,7 +50190,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50247,7 +50247,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50316,7 +50316,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50436,7 +50436,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50493,7 +50493,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50562,7 +50562,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50681,7 +50681,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50751,7 +50751,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -50809,7 +50809,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51027,7 +51027,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51077,7 +51077,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51180,7 +51180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51237,7 +51237,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51306,7 +51306,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -51424,7 +51424,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EDBOOptimizeApiResponse"
+                  "$ref": "#/components/schemas/ApiResponse"
                 }
               }
             }
@@ -60079,7 +60079,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FQCInspectionListApiResponse"
+                  "$ref": "#/components/schemas/FQCPaginatedListApiResponse"
                 }
               }
             }
@@ -62007,7 +62007,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/StabilityStudyApiResponse"
+                  "$ref": "#/components/schemas/StabilityTrendApiResponse"
                 }
               }
             }
@@ -68117,6 +68117,22 @@
               "type": "string",
               "title": "Dict Type"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -68152,6 +68168,24 @@
         "summary": "Get storage condition options",
         "description": "Get storage condition options for dropdown selection",
         "operationId": "get_storage_condition_options_api_v1_quality_static_data_storage_condition_options_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68159,6 +68193,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Storage Condition Options Api V1 Quality Static Data Storage Condition Options Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68175,6 +68219,24 @@
         "summary": "Get unit options",
         "description": "Get unit options for dropdown selection",
         "operationId": "get_unit_options_api_v1_quality_static_data_unit_options_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68182,6 +68244,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Unit Options Api V1 Quality Static Data Unit Options Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68198,6 +68270,24 @@
         "summary": "Download HPLC reference template",
         "description": "Download Excel template for HPLC reference substance import",
         "operationId": "download_hplc_reference_template_api_v1_quality_static_data_hplc_reference_template_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68205,6 +68295,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Download Hplc Reference Template Api V1 Quality Static Data Hplc Reference Template Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68219,7 +68319,7 @@
           "Static Data"
         ],
         "summary": "Batch import HPLC reference substances",
-        "description": "Import HPLC reference substances from Excel file",
+        "description": "Import HPLC reference substances from Excel file.\n\nReturns immediately with a job id; the rows are created off the request path \u2014\n`AGENTS.md:310` forbids running an operation over 5 seconds inside a request.\nPoll `GET /jobs/{job_id}` for the counts.",
         "operationId": "handler_api_v1_quality_static_data_hplc_reference_batch_import_post",
         "parameters": [
           {
@@ -68250,12 +68350,72 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchImportJobApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/static-data/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u9759\u6001\u6570\u636e",
+          "Static Data"
+        ],
+        "summary": "Query a batch-import job",
+        "description": "Poll a batch import started by `batch-import`.\n\n`result` is present only once `status` is `done`; `error` only once it is\n`failed`. The job is a row, so this answers **after** a restart \u2014 unlike the\nin-memory store this replaced (`AGENTS.md:308`, \u91cd\u542f\u540e\u4e22\u5931).",
+        "operationId": "get_import_job_api_v1_quality_static_data_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Handler Api V1 Quality Static Data Hplc Reference Batch Import Post"
+                  "$ref": "#/components/schemas/BatchImportJobApiResponse"
                 }
               }
             }
@@ -68394,6 +68554,22 @@
               "title": "Has Coa"
             },
             "description": "Has COA"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -68487,6 +68663,24 @@
         "summary": "\u67e5\u8be2\u9700\u8981\u590d\u6807\u7684\u5bf9\u7167\u54c1",
         "description": "\u67e5\u8be2\u5269\u4f59\u91cf\u4f4e\u4e8e\u590d\u6807\u9608\u503c\u3001\u9700\u8981\u590d\u6807\u7684\u5bf9\u7167\u54c1\u5217\u8868",
         "operationId": "get_api_v1_quality_static_data_hplc_reference_need_recal_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -68494,6 +68688,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Get Api V1 Quality Static Data Hplc Reference Need Recal Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -68515,8 +68719,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -68556,7 +68777,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -68623,8 +68845,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -68666,7 +68905,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -68736,7 +68976,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -68806,7 +69047,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -68831,6 +69073,22 @@
               "minimum": 1,
               "default": 20,
               "title": "Page Size"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -68997,6 +69255,22 @@
               "title": "Column Category"
             },
             "description": "Category: 0-HPLC 1-GC"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69090,6 +69364,24 @@
         "summary": "Download chromatography column template",
         "description": "Download Excel template for chromatography column import",
         "operationId": "download_chrom_column_template_api_v1_quality_static_data_chrom_column_template_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -69097,6 +69389,16 @@
               "application/json": {
                 "schema": {
                   "title": "Response Download Chrom Column Template Api V1 Quality Static Data Chrom Column Template Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -69111,7 +69413,7 @@
           "Static Data"
         ],
         "summary": "Batch import chromatography columns",
-        "description": "Import chromatography columns from Excel file (supports both \u6db2\u76f8 and \u6c14\u76f8 sheets)",
+        "description": "Import chromatography columns from Excel (\u6db2\u76f8 and \u6c14\u76f8 sheets).\n\nReturns immediately with a job id; the rows are created off the request path \u2014\n`AGENTS.md:310` forbids an operation over 5 seconds inside a request. Poll\n`GET /jobs/{job_id}` for the counts.",
         "operationId": "handler_api_v1_quality_static_data_chrom_column_batch_import_post",
         "parameters": [
           {
@@ -69142,12 +69444,12 @@
           }
         },
         "responses": {
-          "200": {
+          "202": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Handler Api V1 Quality Static Data Chrom Column Batch Import Post"
+                  "$ref": "#/components/schemas/BatchImportJobApiResponse"
                 }
               }
             }
@@ -69179,8 +69481,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69220,7 +69539,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -69287,8 +69607,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69330,7 +69667,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -69358,6 +69696,75 @@
               "application/json": {
                 "schema": {
                   "title": "Response Handler Api V1 Quality Static Data Chrom Column  Id  Increment Usage Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/static-data/medium/stats": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u9759\u6001\u6570\u636e",
+          "Static Data"
+        ],
+        "summary": "Counts for the mediums page",
+        "description": "Counts the mediums page renders, in one request.\n\nThe page fetched every row and counted in JavaScript; as the table grew the\nstats got slower with it (#103).",
+        "operationId": "get_medium_stats_api_v1_quality_static_data_medium_stats_get",
+        "parameters": [
+          {
+            "name": "medium_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Medium type, when one is chosen",
+              "title": "Medium Type"
+            },
+            "description": "Medium type, when one is chosen"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediumStatsResponse"
                 }
               }
             }
@@ -69514,6 +69921,22 @@
               "title": "Status"
             },
             "description": "Status: 0-active 1-inactive"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -69612,8 +70035,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -69653,7 +70093,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -69720,7 +70161,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -69779,7 +70221,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -69817,6 +70260,57 @@
               "application/json": {
                 "schema": {
                   "title": "Response Post Api V1 Quality Static Data Medium  Id  Adjust Stock Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/static-data/standard/stats": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u9759\u6001\u6570\u636e",
+          "Static Data"
+        ],
+        "summary": "Counts for the standards page",
+        "description": "Counts the standards page renders, in one request (see #103).",
+        "operationId": "get_standard_stats_api_v1_quality_static_data_standard_stats_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardStatsResponse"
                 }
               }
             }
@@ -69955,6 +70449,22 @@
               "title": "Std Status"
             },
             "description": "Status: 0-active 1-used_up 2-expired 3-scrapped"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70053,8 +70563,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -70094,7 +70621,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -70161,7 +70689,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -70220,7 +70749,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -70360,6 +70890,22 @@
               "title": "Status"
             },
             "description": "Status: 0-enabled 1-disabled"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70458,8 +71004,25 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -70499,7 +71062,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -70566,7 +71130,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
+              "format": "uuid",
               "title": "Id"
             }
           },
@@ -70620,13 +71185,41 @@
         "summary": "\u83b7\u53d6\u63d0\u9192\u914d\u7f6e",
         "description": "\u83b7\u53d6\u5f53\u524d\u7684\u63d0\u9192\u914d\u7f6e",
         "operationId": "get_config_api_v1_quality_reagent_reminder_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Config Api V1 Quality Reagent Reminder Config Get"
+                  "$ref": "#/components/schemas/ReagentReminderConfigResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -70641,15 +71234,33 @@
         "summary": "\u4fdd\u5b58\u63d0\u9192\u914d\u7f6e",
         "description": "\u4fdd\u5b58\u63d0\u9192\u914d\u7f6e",
         "operationId": "post_api_v1_quality_reagent_reminder_config_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReminderConfigRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -70657,7 +71268,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Post Api V1 Quality Reagent Reminder Config Post"
+                  "$ref": "#/components/schemas/ReagentReminderSavedResponse"
                 }
               }
             }
@@ -70684,13 +71295,41 @@
         "summary": "\u624b\u52a8\u68c0\u67e5\u5e76\u53d1\u9001\u63d0\u9192",
         "description": "\u624b\u52a8\u89e6\u53d1\u5e93\u5b58\u68c0\u67e5\u548c\u63d0\u9192",
         "operationId": "check_and_remind_api_v1_quality_reagent_reminder_check_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Check And Remind Api V1 Quality Reagent Reminder Check Post"
+                  "$ref": "#/components/schemas/ReminderCheckResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -70717,6 +71356,22 @@
               "default": 2,
               "title": "Threshold"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70725,7 +71380,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Quality Reagent Reminder Low Stock Get"
+                  "$ref": "#/components/schemas/LowStockResponse"
                 }
               }
             }
@@ -70752,15 +71407,33 @@
         "summary": "\u8bbe\u7f6e\u5355\u4e2a\u8bd5\u5242\u7684\u63d0\u9192\u5f00\u5173",
         "description": "\u8bbe\u7f6e\u5355\u4e2a\u8bd5\u5242\u7684\u63d0\u9192\u5f00\u5173\uff08\u542f\u7528/\u7981\u7528\uff09",
         "operationId": "post_api_v1_quality_reagent_reminder_item_reminder_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ItemReminderRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -70768,7 +71441,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Post Api V1 Quality Reagent Reminder Item Reminder Post"
+                  "$ref": "#/components/schemas/ItemReminderResponse"
                 }
               }
             }
@@ -70792,7 +71465,7 @@
           "\u8d28\u91cf\u7ba1\u7406 - \u8bd5\u5242\u63d0\u9192",
           "\u8bd5\u5242\u63d0\u9192\u7ba1\u7406"
         ],
-        "summary": "\u83b7\u53d6\u5355\u4e2a\u8bd5\u5242\u7684\u63d0\u9192\u914d\u7f6e",
+        "summary": "\u5355\u4e2a\u8bd5\u5242\u63d0\u9192\u914d\u7f6e",
         "description": "\u83b7\u53d6\u5355\u4e2a\u8bd5\u5242\u7684\u63d0\u9192\u914d\u7f6e",
         "operationId": "get_api_v1_quality_reagent_reminder_item_reminder__reagent_name__get",
         "parameters": [
@@ -70804,6 +71477,22 @@
               "type": "string",
               "title": "Reagent Name"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -70812,7 +71501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Get Api V1 Quality Reagent Reminder Item Reminder  Reagent Name  Get"
+                  "$ref": "#/components/schemas/ItemReminderConfigResponse"
                 }
               }
             }
@@ -70839,6 +71528,24 @@
         "summary": "Post",
         "description": "\u901a\u8fc7\u624b\u673a\u53f7\u6216\u90ae\u7bb1\u83b7\u53d6\u98de\u4e66\u7528\u6237\u7684 open_id",
         "operationId": "post_api_v1_quality_instrument_feishu_contacts_resolve_user_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -70881,6 +71588,24 @@
         "summary": "Get",
         "description": "\u83b7\u53d6\u6240\u6709\u63d0\u9192\u914d\u7f6e",
         "operationId": "get_api_v1_quality_instrument_reminder_config_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -70888,6 +71613,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstrumentReminderConfigListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -70902,15 +71637,33 @@
         "summary": "Post",
         "description": "\u521b\u5efa\u63d0\u9192\u914d\u7f6e",
         "operationId": "post_api_v1_quality_instrument_reminder_config_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReminderConfigCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -70954,6 +71707,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -71007,6 +71776,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Config Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -71178,6 +71963,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -71586,6 +72387,22 @@
               "title": "Instrument Id"
             },
             "description": "\u4eea\u5668ID"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -71689,6 +72506,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Instrument Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -71804,6 +72637,22 @@
               "format": "uuid",
               "title": "Rule Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -71812,7 +72661,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Api V1 Quality Instrument Rules  Rule Id  Delete"
+                  "$ref": "#/components/schemas/InstrumentMessageApiResponse"
                 }
               }
             }
@@ -71851,6 +72700,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u9884\u8b66\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72057,6 +72922,22 @@
               "title": "Page Size"
             },
             "description": "\u6bcf\u9875\u6570\u91cf"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72160,6 +73041,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -72273,6 +73170,22 @@
               "format": "uuid",
               "title": "Record Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72281,7 +73194,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Api V1 Quality Instrument Records  Record Id  Delete"
+                  "$ref": "#/components/schemas/InstrumentMessageApiResponse"
                 }
               }
             }
@@ -72481,6 +73394,22 @@
               "format": "uuid",
               "title": "Instrument Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72593,6 +73522,22 @@
               "format": "uuid",
               "title": "Instrument Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72601,7 +73546,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "title": "Response Delete Api V1 Quality Instrument  Instrument Id  Delete"
+                  "$ref": "#/components/schemas/InstrumentMessageApiResponse"
                 }
               }
             }
@@ -72628,15 +73573,33 @@
         "summary": "Post",
         "description": "AI\u8bc6\u522b\u4eea\u5668\u6807\u7b7e\u56fe\u7247\uff0c\u63d0\u53d6\u8bbe\u5907\u4fe1\u606f",
         "operationId": "post_api_v1_quality_instrument_recognize_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "$ref": "#/components/schemas/Body_post_api_v1_quality_instrument_recognize_post"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -72685,6 +73648,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u63d0\u9192\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72734,6 +73713,22 @@
               "title": "Days"
             },
             "description": "\u63d0\u524d\u63d0\u9192\u5929\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72767,31 +73762,20 @@
           "\u4eea\u5668\u6821\u51c6\u7ba1\u7406"
         ],
         "summary": "Post",
-        "description": "\u53d1\u9001\u6821\u51c6\u8bb0\u5f55\u5230\u671f\u63d0\u9192\u5230\u98de\u4e66",
+        "description": "\u53d1\u9001\u6821\u51c6\u8bb0\u5f55\u5230\u671f\u63d0\u9192\u5230\u98de\u4e66\u3002\n\nCredentials come from the selected reminder config, decrypted server-side.\nThey are deliberately NOT accepted as parameters: a secret in a query string\nis written to every access log, proxy log and browser history along the way.",
         "operationId": "post_api_v1_quality_instrument_record_remind_post",
         "parameters": [
           {
-            "name": "chat_id",
+            "name": "config_id",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "description": "\u98de\u4e66\u7fa4ID\u6216\u7528\u6237ID\u6216open_id",
-              "title": "Chat Id"
+              "format": "uuid",
+              "description": "\u63d0\u9192\u914d\u7f6eID",
+              "title": "Config Id"
             },
-            "description": "\u98de\u4e66\u7fa4ID\u6216\u7528\u6237ID\u6216open_id"
-          },
-          {
-            "name": "receive_id_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "description": "\u63a5\u6536\u8005\u7c7b\u578b: chat_id/user_id/open_id",
-              "default": "chat_id",
-              "title": "Receive Id Type"
-            },
-            "description": "\u63a5\u6536\u8005\u7c7b\u578b: chat_id/user_id/open_id"
+            "description": "\u63d0\u9192\u914d\u7f6eID"
           },
           {
             "name": "days",
@@ -72820,8 +73804,8 @@
             "description": "\u662f\u5426\u5305\u542b\u8d85\u671f\u8bb0\u5f55"
           },
           {
-            "name": "feishu_app_id",
-            "in": "query",
+            "name": "auth_token",
+            "in": "cookie",
             "required": false,
             "schema": {
               "anyOf": [
@@ -72832,28 +73816,8 @@
                   "type": "null"
                 }
               ],
-              "description": "\u98de\u4e66\u5e94\u7528AppID",
-              "title": "Feishu App Id"
-            },
-            "description": "\u98de\u4e66\u5e94\u7528AppID"
-          },
-          {
-            "name": "feishu_app_secret",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u98de\u4e66\u5e94\u7528AppSecret",
-              "title": "Feishu App Secret"
-            },
-            "description": "\u98de\u4e66\u5e94\u7528AppSecret"
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -72889,6 +73853,24 @@
         "summary": "Post",
         "description": "\u89e6\u53d1\u81ea\u52a8\u63d0\u9192\uff08\u53ef\u7531\u5b9a\u65f6\u4efb\u52a1\u8c03\u7528\uff09",
         "operationId": "post_api_v1_quality_instrument_reminder_auto_trigger_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -72896,6 +73878,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstrumentMessageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -86645,14 +87637,12 @@
           "meta": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/PaginationMeta"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Meta"
+            ]
           }
         },
         "type": "object",
@@ -87177,13 +88167,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/BatchResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "BatchApiResponse",
         "description": "\u6279\u6b21\u54cd\u5e94\u5305\u88c5"
       },
@@ -87415,6 +88409,71 @@
         "title": "BatchDeleteRequest",
         "description": "\u6279\u91cf\u5220\u9664\u8bf7\u6c42"
       },
+      "BatchImportJobApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BatchImportJobData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchImportJobApiResponse",
+        "description": "Batch import job response wrapper"
+      },
+      "BatchImportJobData": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "BatchImportJobData",
+        "description": "Handle for a running batch import.\n\n`result` is populated only once `status` is `done`; `error` only once it is\n`failed`. Typed deliberately rather than `dict[str, Any]` \u2014 an untyped payload\nis what let an earlier caller read fields the response never contained."
+      },
       "BatchListApiResponse": {
         "properties": {
           "code": {
@@ -87563,13 +88622,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/BatchMaterialResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BatchMaterialResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "BatchMaterialApiResponse",
         "description": "\u6279\u6b21\u7269\u6599\u54cd\u5e94\u5305\u88c5"
       },
@@ -90637,13 +91700,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/CapaResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CapaResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "CapaApiResponse",
         "description": "Single CAPA response wrapper"
       },
@@ -92371,13 +93438,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ClosingResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClosingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ClosingApiResponse",
         "description": "Closing response wrapper"
       },
@@ -95315,13 +96386,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/CorrectionResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CorrectionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "CorrectionApiResponse",
         "description": "Correction response wrapper"
       },
@@ -97512,13 +98587,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/DepartmentLeaderResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentLeaderResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "DepartmentLeaderApiResponse",
         "description": "Department leader response wrapper"
       },
@@ -97574,13 +98653,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/DepartmentSafetyOfficerResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentSafetyOfficerResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "DepartmentSafetyOfficerApiResponse",
         "description": "Department safety officer response wrapper"
       },
@@ -98549,13 +99632,10 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/DeviationResponse"
+            "title": "Data"
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "DeviationApiResponse",
         "description": "Single deviation response wrapper"
       },
@@ -107295,173 +108375,6 @@
         "title": "FQCInspectionItemResponse",
         "description": "FQC\u68c0\u9a8c\u660e\u7ec6\u54cd\u5e94"
       },
-      "FQCInspectionListApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FQCInspectionListResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "FQCInspectionListApiResponse",
-        "description": "FQC\u68c0\u9a8c\u5355\u5217\u8868\u54cd\u5e94\u5305\u88c5"
-      },
-      "FQCInspectionListResponse": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "inspection_no": {
-            "type": "string",
-            "title": "Inspection No"
-          },
-          "batch_no": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Batch No"
-          },
-          "product_code": {
-            "type": "string",
-            "title": "Product Code"
-          },
-          "product_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Product Name"
-          },
-          "production_workshop": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Production Workshop"
-          },
-          "batch_quantity": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Batch Quantity"
-          },
-          "manufacturing_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Manufacturing Date"
-          },
-          "inspector_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Inspector Name"
-          },
-          "inspection_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Inspection Date"
-          },
-          "status": {
-            "$ref": "#/components/schemas/FQCInspectionStatus"
-          },
-          "inspection_conclusion": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FQCInspectionConclusion"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "release_status": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/FQCReleaseStatus"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "batch_locked": {
-            "type": "boolean",
-            "title": "Batch Locked",
-            "default": false
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "inspection_no",
-          "product_code",
-          "status",
-          "created_at"
-        ],
-        "title": "FQCInspectionListResponse",
-        "description": "FQC\u68c0\u9a8c\u5355\u5217\u8868\u54cd\u5e94"
-      },
       "FQCInspectionResponse": {
         "properties": {
           "batch_record_id": {
@@ -108278,6 +109191,65 @@
         ],
         "title": "FQCItemResult",
         "description": "FQC\u5355\u9879\u5224\u5b9a"
+      },
+      "FQCPaginatedListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FQCPaginatedListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "FQCPaginatedListApiResponse",
+        "description": "FQC paginated list API response wrapper"
+      },
+      "FQCPaginatedListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/FQCInspectionResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "FQCPaginatedListResponse",
+        "description": "FQC paginated list response"
       },
       "FQCReleaseStatus": {
         "type": "string",
@@ -109173,13 +110145,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/HazardIdentificationResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardIdentificationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "HazardIdentificationApiResponse",
         "description": "Single hazard identification response wrapper"
       },
@@ -112338,12 +113314,6 @@
             ],
             "title": "Attach File",
             "description": "Attachments"
-          },
-          "create_by": {
-            "type": "integer",
-            "title": "Create By",
-            "description": "Creator",
-            "default": 0
           }
         },
         "type": "object",
@@ -115764,13 +116734,10 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/InspectionStandardResponse"
+            "title": "Data"
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "InspectionStandardApiResponse",
         "description": "Single inspection standard response wrapper"
       },
@@ -117979,13 +118946,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/InvestigationResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InvestigationResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "InvestigationApiResponse",
         "description": "Investigation response wrapper"
       },
@@ -118846,6 +119817,69 @@
         "title": "ItemCategory",
         "description": "\u9879\u76ee\u5206\u7c7b"
       },
+      "ItemReminderConfigResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ItemReminderData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ItemReminderConfigResponse",
+        "description": "`GET /item-reminder/{reagent_name}` \u2014 defaults to enabled when unset."
+      },
+      "ItemReminderData": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "reagent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reagent Name"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "title": "ItemReminderData",
+        "description": "`POST /item-reminder` returns no `data` key at all \u2014 hence the optional."
+      },
       "ItemReminderRequest": {
         "properties": {
           "reagent_name": {
@@ -118866,6 +119900,33 @@
         ],
         "title": "ItemReminderRequest",
         "description": "\u5355\u4e2a\u8bd5\u5242\u63d0\u9192\u914d\u7f6e\u8bf7\u6c42"
+      },
+      "ItemReminderResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "\u8bbe\u7f6e\u6210\u529f"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ItemReminderData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ItemReminderResponse",
+        "description": "`POST /item-reminder`"
       },
       "ItemResult": {
         "type": "string",
@@ -119918,6 +120979,107 @@
         "title": "LocationUpdate",
         "description": "\u66f4\u65b0\u4f4d\u7f6e\u8bf7\u6c42"
       },
+      "LowStockData": {
+        "properties": {
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LowStockItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "count",
+          "items"
+        ],
+        "title": "LowStockData"
+      },
+      "LowStockItem": {
+        "properties": {
+          "reagent_name": {
+            "type": "string",
+            "title": "Reagent Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "statuses": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Statuses"
+          },
+          "units": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Units"
+          },
+          "latest_arrival": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Arrival"
+          },
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "reagent_name",
+          "count"
+        ],
+        "title": "LowStockItem",
+        "description": "One reagent below the threshold, with its reminder toggle state."
+      },
+      "LowStockResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/LowStockData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "LowStockResponse",
+        "description": "`GET /low-stock`"
+      },
       "MaintenancePlanCreate": {
         "properties": {
           "equipment_id": {
@@ -120572,6 +121734,63 @@
         "title": "MediumCreate",
         "description": "Create Medium"
       },
+      "MediumStatsData": {
+        "properties": {
+          "all": {
+            "type": "integer",
+            "title": "All"
+          },
+          "verified": {
+            "type": "integer",
+            "title": "Verified"
+          },
+          "pending": {
+            "type": "integer",
+            "title": "Pending"
+          },
+          "expired": {
+            "type": "integer",
+            "title": "Expired"
+          },
+          "lowStock": {
+            "type": "integer",
+            "title": "Lowstock"
+          }
+        },
+        "type": "object",
+        "required": [
+          "all",
+          "verified",
+          "pending",
+          "expired",
+          "lowStock"
+        ],
+        "title": "MediumStatsData",
+        "description": "Counts the mediums page renders."
+      },
+      "MediumStatsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MediumStatsData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "MediumStatsResponse",
+        "description": "Mediums stats response wrapper"
+      },
       "MediumUpdate": {
         "properties": {
           "medium_name": {
@@ -121104,13 +122323,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/OhHazardMonitorResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OhHazardMonitorResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "OhHazardMonitorApiResponse",
         "description": "Single OH hazard monitor response wrapper"
       },
@@ -123585,6 +124808,30 @@
         "title": "PageSplitItem",
         "description": "\u9875\u62c6\u5206\u9879"
       },
+      "PaginationMeta": {
+        "properties": {
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "PaginationMeta",
+        "description": "Pagination envelope carried in ApiResponse.meta.\n\nMirrors what app/core/response.py:paginated_response() emits, so the\nOpenAPI contract names these fields instead of leaving meta an opaque dict.\n\nDeliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta\ninto a model instance, and the ~73 module envelopes that declare\n`meta: dict[...]` would then fail `response_model` validation with\n\"Input should be a valid dictionary\". A TypedDict keeps meta a plain dict\nwhile still generating a named schema for the frontend."
+      },
       "PartComplete": {
         "properties": {
           "part": {
@@ -123832,13 +125079,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/PlanTaskResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlanTaskResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "PlanTaskApiResponse",
         "description": "\u8ba1\u5212\u4efb\u52a1\u54cd\u5e94\u5305\u88c5"
       },
@@ -124596,13 +125847,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProcessParameterResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessParameterResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProcessParameterApiResponse",
         "description": "\u5de5\u827a\u53c2\u6570\u54cd\u5e94\u5305\u88c5"
       },
@@ -124894,13 +126149,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProcessSpecResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessSpecResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProcessSpecApiResponse",
         "description": "\u5de5\u827a\u89c4\u7a0b\u54cd\u5e94\u5305\u88c5"
       },
@@ -125359,13 +126618,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProcessStepResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProcessStepResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProcessStepApiResponse",
         "description": "\u5de5\u827a\u6b65\u9aa4\u54cd\u5e94\u5305\u88c5"
       },
@@ -126463,13 +127726,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProductionPlanResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductionPlanResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProductionPlanApiResponse",
         "description": "\u751f\u4ea7\u8ba1\u5212\u54cd\u5e94\u5305\u88c5"
       },
@@ -126785,13 +128052,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/ProductionRecordResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductionRecordResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "ProductionRecordApiResponse",
         "description": "\u751f\u4ea7\u8bb0\u5f55\u54cd\u5e94\u5305\u88c5"
       },
@@ -132581,6 +133852,199 @@
         ],
         "title": "RdTrackConclusionVersionCreate"
       },
+      "ReagentReminderConfigData": {
+        "properties": {
+          "feishu_app_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu App Id"
+          },
+          "feishu_app_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu App Secret"
+          },
+          "feishu_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Chat Id"
+          },
+          "low_stock_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Stock Threshold"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          },
+          "last_remind_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Remind Time"
+          },
+          "last_remind_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Remind Content"
+          }
+        },
+        "type": "object",
+        "title": "ReagentReminderConfigData",
+        "description": "The reminder config as the page reads it.\n\n`feishu_app_secret` is masked server-side \u2014 the column holds ciphertext, so the\nplaintext is never returned."
+      },
+      "ReagentReminderConfigResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReagentReminderConfigData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ReagentReminderConfigResponse",
+        "description": "`GET /config` \u2014 data is null until a config exists."
+      },
+      "ReagentReminderSavedData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "feishu_app_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu App Id"
+          },
+          "feishu_chat_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Chat Id"
+          },
+          "low_stock_threshold": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low Stock Threshold"
+          },
+          "is_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "ReagentReminderSavedData",
+        "description": "The subset returned after saving \u2014 deliberately excludes the secret."
+      },
+      "ReagentReminderSavedResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "\u4fdd\u5b58\u6210\u529f"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ReagentReminderSavedData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ReagentReminderSavedResponse",
+        "description": "`POST /config`"
+      },
       "RectificationReplyRequest": {
         "properties": {
           "reply_content": {
@@ -133413,13 +134877,17 @@
             "default": "success"
           },
           "data": {
-            "$ref": "#/components/schemas/RegulationStagesResponse"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RegulationStagesResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
-        "required": [
-          "data"
-        ],
         "title": "RegulationStagesApiResponse",
         "description": "Regulation stages response wrapper"
       },
@@ -133455,6 +134923,73 @@
         ],
         "title": "RegulationStagesResponse",
         "description": "\u64cd\u89c4 Chapter 7 \u5de5\u827a\u9636\u6bb5\u5217\u8868\uff08\u4f9b\u524d\u7aef\u9009\u62e9\uff09"
+      },
+      "ReminderCheckData": {
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Count"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "filtered": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filtered"
+          }
+        },
+        "type": "object",
+        "title": "ReminderCheckData",
+        "description": "`/check` payload \u2014 varies by branch, so every field is optional.\n\nThe service returns `data: null` for the early exits (no config, disabled,\nincomplete Feishu settings) and a count otherwise."
+      },
+      "ReminderCheckResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReminderCheckData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ReminderCheckResponse",
+        "description": "`POST /check`"
       },
       "ReminderConfigCreate": {
         "properties": {
@@ -143360,6 +144895,138 @@
         "title": "StabilityStudyUpdate",
         "description": "\u66f4\u65b0\u7a33\u5b9a\u6027\u8bd5\u9a8c"
       },
+      "StabilityTrendApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StabilityTrendResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "StabilityTrendApiResponse",
+        "description": "\u7a33\u5b9a\u6027\u8d8b\u52bf\u54cd\u5e94\u5305\u88c5"
+      },
+      "StabilityTrendDataPoint": {
+        "properties": {
+          "inspection_item": {
+            "type": "string",
+            "title": "Inspection Item"
+          },
+          "node_month": {
+            "type": "integer",
+            "title": "Node Month"
+          },
+          "measured_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measured Value"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StabilityItemResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "inspection_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inspection_item",
+          "node_month"
+        ],
+        "title": "StabilityTrendDataPoint",
+        "description": "\u8d8b\u52bf\u5206\u6790\u6570\u636e\u70b9"
+      },
+      "StabilityTrendResponse": {
+        "properties": {
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "batch_no": {
+            "type": "string",
+            "title": "Batch No"
+          },
+          "study_type": {
+            "$ref": "#/components/schemas/StabilityStudyType"
+          },
+          "inspection_items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Inspection Items"
+          },
+          "data_points": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/StabilityTrendDataPoint"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Data Points"
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_code",
+          "batch_no",
+          "study_type",
+          "inspection_items",
+          "data_points"
+        ],
+        "title": "StabilityTrendResponse",
+        "description": "\u8d8b\u52bf\u5206\u6790\u54cd\u5e94"
+      },
       "StandardCreate": {
         "properties": {
           "std_code": {
@@ -143568,6 +145235,63 @@
         ],
         "title": "StandardCreate",
         "description": "Create Standard"
+      },
+      "StandardStatsData": {
+        "properties": {
+          "all": {
+            "type": "integer",
+            "title": "All"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active"
+          },
+          "expired": {
+            "type": "integer",
+            "title": "Expired"
+          },
+          "lowStock": {
+            "type": "integer",
+            "title": "Lowstock"
+          },
+          "national": {
+            "type": "integer",
+            "title": "National"
+          }
+        },
+        "type": "object",
+        "required": [
+          "all",
+          "active",
+          "expired",
+          "lowStock",
+          "national"
+        ],
+        "title": "StandardStatsData",
+        "description": "Counts the standards page renders.\n\nA concrete model rather than `DataApiResponse`'s `data: Any`, so the generated\nOpenAPI describes the fields the frontend actually reads (`AGENTS.md:133`)."
+      },
+      "StandardStatsResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/StandardStatsData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "StandardStatsResponse",
+        "description": "Standards stats response wrapper"
       },
       "StandardStatus": {
         "type": "string",
@@ -143949,18 +145673,12 @@
             "title": "Status",
             "description": "0-enabled 1-disabled",
             "default": 0
-          },
-          "create_by": {
-            "type": "integer",
-            "title": "Create By",
-            "description": "Creator"
           }
         },
         "type": "object",
         "required": [
           "cond_code",
-          "cond_name",
-          "create_by"
+          "cond_name"
         ],
         "title": "StorageConditionCreate",
         "description": "Create Storage Condition"

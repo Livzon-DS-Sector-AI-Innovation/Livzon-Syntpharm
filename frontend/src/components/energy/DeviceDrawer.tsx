@@ -160,9 +160,9 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
   const platformReady = currentPlatform ? isPlatformReady(currentPlatform.name) : false
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEdit ? '编辑数据源' : '新增数据源'}
-      width={480}
+      size={480}
       open={deviceDrawerOpen}
       onClose={closeDeviceDrawer}
       destroyOnHidden

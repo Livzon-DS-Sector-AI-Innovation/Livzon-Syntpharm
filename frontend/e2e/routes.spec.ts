@@ -9,6 +9,14 @@ type RouteCase = {
   expectedPath?: string
   expected: (page: Page) => Locator
   heading?: string
+  /**
+   * Text of the page's top-level heading, when it has one worth pinning.
+   *
+   * `expected` uses `getByRole('heading')`, which matches **any** level — so it
+   * cannot tell an `h1` from an `h2`. This asserts `level: 1` specifically, which
+   * is what stops a page quietly regressing to no top-level heading (#102).
+   */
+  topLevelHeading?: string
 }
 
 const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -31,9 +39,19 @@ function summarizeErrors(errors: string[], label: string): string {
   return `${errors.length} ${label} errors:\n${lines.join('\n')}`
 }
 
+/**
+ * Console errors that are known noise and would otherwise fail every sweep.
+ * Keep this list short and justified — everything else is a real finding.
+ */
+const IGNORED_CONSOLE_ERRORS = [
+  // React DevTools advertises itself on dev builds; harmless.
+  'Download the React DevTools',
+]
+
 async function checkRoute(page: Page, route: RouteCase) {
   const httpErrors: string[] = []
   const networkFailures: string[] = []
+  const consoleErrors: string[] = []
 
   const isApplicationUrl = (url: string) =>
     (url.startsWith('http://127.0.0.1:13000') ||
@@ -58,8 +76,20 @@ async function checkRoute(page: Page, route: RouteCase) {
     }
   }
 
+  // Console errors are invisible to the status/DOM assertions below, and every
+  // bug reported against these pages so far arrived as one: a styled-jsx hydration
+  // mismatch, an antd deprecation, and antd's useForm "not connected" warning.
+  // A page can render perfectly and still log an error, so nothing else catches it.
+  const onConsole = (msg: { type(): string; text(): string }) => {
+    if (msg.type() !== 'error') return
+    const text = msg.text()
+    if (IGNORED_CONSOLE_ERRORS.some((ignored) => text.includes(ignored))) return
+    consoleErrors.push(text.split('\n')[0] ?? text)
+  }
+
   page.on('response', onResponse)
   page.on('requestfailed', onRequestFailed)
+  page.on('console', onConsole)
 
   try {
     const response = await page.goto(route.path, {
@@ -70,6 +100,7 @@ async function checkRoute(page: Page, route: RouteCase) {
     // Clear any errors from late responses of the previous page
     httpErrors.length = 0
     networkFailures.length = 0
+    consoleErrors.length = 0
 
     if (route.kind === 'redirect') {
       expect(response).not.toBeNull()
@@ -93,14 +124,26 @@ async function checkRoute(page: Page, route: RouteCase) {
       await expect(route.expected(page)).toBeVisible({ timeout: 10_000 })
     }
 
+    if (route.topLevelHeading) {
+      await expect(
+        page.getByRole('heading', { level: 1, name: route.topLevelHeading }).first(),
+        `${route.path} has no level-1 heading`,
+      ).toBeVisible({ timeout: 10_000 })
+    }
+
     await expect(page.getByText('页面加载出错')).not.toBeVisible()
     await expect(page.getByText('应用加载出错')).not.toBeVisible()
 
     expect(httpErrors.length, summarizeErrors(httpErrors, 'HTTP')).toBe(0)
     expect(networkFailures.length, summarizeErrors(networkFailures, 'network')).toBe(0)
+    expect(
+      consoleErrors.length,
+      `${consoleErrors.length} console error(s) on ${route.path}:\n${consoleErrors.join('\n')}`,
+    ).toBe(0)
   } finally {
     page.off('response', onResponse)
     page.off('requestfailed', onRequestFailed)
+    page.off('console', onConsole)
   }
 }
 
@@ -277,8 +320,11 @@ const qualityRoutes: RouteCase[] = [
   { path: '/quality/stability', module: 'quality', kind: 'normal', expected: heading('稳定性') },
   { path: '/quality/stability/plan', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 方案录入') },
   { path: '/quality/stability/result', module: 'quality', kind: 'normal', expected: heading('稳定性实验管理 - 检测结果') },
-  { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据') },
-  { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
+  { path: '/quality/static-data', module: 'quality', kind: 'normal', expected: heading('业务静态数据'), topLevelHeading: '业务静态数据' },
+  // Removed: the page was deleted (commit d1a9d2db) — it called
+  // /api/v1/quality/static-data/audit{,/modules}, which the backend never implemented,
+  // so it returned 500 on every load.
+  // { path: '/quality/static-data/audit', module: 'quality', kind: 'normal', expected: text('变更审计日志') },
   // Disabled: endpoint /api/v1/ai/config not implemented (returns 404)
   // { path: '/quality/ai-config', module: 'quality', kind: 'normal', expected: text('AI 配置设置') },
   { path: '/quality/ai-log', module: 'quality', kind: 'normal', expected: heading('AI交互日志') },
@@ -333,13 +379,13 @@ const safetyRoutes: RouteCase[] = [
   { path: '/safety/accident', module: 'safety', kind: 'normal', expected: text('事故管理') },
   { path: '/safety/check', module: 'safety', kind: 'normal', expected: text('安全检查') },
   { path: '/safety/contractor', module: 'safety', kind: 'normal', expected: text('承包商管理') },
-  { path: '/safety/ehs-change', module: 'safety', kind: 'normal', expected: heading('变更管理') },
+  { path: '/safety/ehs-change', module: 'safety', kind: 'normal', expected: heading('变更管理'), topLevelHeading: 'EHS变更管理' },
   { path: '/safety/knowledge-base', module: 'safety', kind: 'normal', expected: heading('文档处理中枢') },
   { path: '/safety/knowledge-base/graph', module: 'safety', kind: 'normal', expected: heading('知识图谱') },
   { path: '/safety/occupational-health', module: 'safety', kind: 'normal', expected: heading('职业健康') },
-  { path: '/safety/regulation', module: 'safety', kind: 'normal', expected: heading('安全操规管理') },
+  { path: '/safety/regulation', module: 'safety', kind: 'normal', expected: heading('安全操规管理'), topLevelHeading: '安全操规管理' },
   { path: '/safety/regulation/generator', module: 'safety', kind: 'normal', expected: heading('操规标准化生成') },
-  { path: '/safety/risk-reporting', module: 'safety', kind: 'normal', expected: heading('关键风险作业报备') },
+  { path: '/safety/risk-reporting', module: 'safety', kind: 'normal', expected: heading('关键风险作业报备'), topLevelHeading: '关键风险作业报备' },
   { path: '/safety/settings', module: 'safety', kind: 'normal', expected: heading('安全管理配置') },
   { path: '/safety/special-ops', module: 'safety', kind: 'normal', expected: heading('特殊作业') },
   { path: '/safety/special-ops/personnel', module: 'safety', kind: 'normal', expected: heading('作业人员') },

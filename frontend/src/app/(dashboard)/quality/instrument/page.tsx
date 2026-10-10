@@ -489,13 +489,9 @@ export default function InstrumentDashboardPage() {
                     }
                     setRemindLoading(true)
                     try {
-                      const result = await sendCalibrationReminder(
-                        config.chat_id!,
-                        config.receive_id_type as 'chat_id' | 'open_id',
-                        remindDays,
-                        config.feishu_app_id || undefined,
-                        config.feishu_app_secret || undefined
-                      )
+                      // Only the config id: the server reads the credentials from the
+                      // stored config, so the secret never travels in a URL.
+                      const result = await sendCalibrationReminder(config.id!, remindDays)
                       if (result.sent) {
                         message.success(`成功发送提醒，共 ${result.count} 条记录`)
                         setRemindModalVisible(false)

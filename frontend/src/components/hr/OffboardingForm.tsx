@@ -66,7 +66,7 @@ export default function OffboardingForm({ open, record, onClose, onSuccess }: Of
     label: `${e.name} (${e.employee_number})` }))
 
   return (
-    <Modal
+    <Modal forceRender
       title={isEdit ? '编辑离职记录' : '新增离职记录'}
       open={open}
       onOk={handleSubmit}

@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 from app.platform.integrations.feishu.utils import (
     normalize_app_token,
     normalize_table_id,

@@ -81,12 +81,8 @@ export interface LogQueryParams {
 }
 
 // 分页响应
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  page_size: number
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { PaginatedResponse } from '@/types/common'
 
 // 预警等级
 export type AlertLevel = 'info' | 'warning' | 'critical' | 'emergency'

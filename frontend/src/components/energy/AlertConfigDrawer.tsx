@@ -163,9 +163,9 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEdit ? '编辑预警规则' : '新建预警规则'}
-      width={480}
+      size={480}
       open={alertConfigDrawerOpen}
       onClose={closeAlertConfigDrawer}
       destroyOnHidden

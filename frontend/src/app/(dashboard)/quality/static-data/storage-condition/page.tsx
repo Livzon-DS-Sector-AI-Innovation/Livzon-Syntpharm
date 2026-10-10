@@ -35,12 +35,15 @@ import {
   CloudOutlined,
 } from '@ant-design/icons'
 import { StorageCondition, Status0Or1 } from '@/types/static-data'
+// Reads stay on the browser client (`AGENTS.md:413`); writes go through the action
+// (`:443`). The action and the client function have the same name, so the write
+// imports come from `@/actions/static-data`.
+import { listStorageCondition } from '@/lib/api/client/static-data-api'
 import {
-  listStorageCondition,
   createStorageCondition,
   updateStorageCondition,
   deleteStorageCondition,
-} from '@/lib/api/client/static-data-api'
+} from '@/actions/static-data'
 import './storage-condition-style.css'
 
 const { Search } = Input
@@ -149,7 +152,7 @@ export default function StorageConditionPage() {
       const values = await form.validateFields()
       setDrawerLoading(true)
       if (isNew) {
-        await createStorageCondition({ ...values, create_by: 0 })
+        await createStorageCondition(values)
         message.success('创建成功')
       } else if (editingRecord) {
         await updateStorageCondition(editingRecord.id, values)
@@ -522,7 +525,7 @@ export default function StorageConditionPage() {
         title={isNew ? '新建贮存条件' : '编辑贮存条件'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={520}
+        size={520}
         destroyOnHidden
         extra={
           <Space>

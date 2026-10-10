@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import type { components } from '@/types/generated/schema'
+import type { ApiResponse } from '@/types/common'
 import type {
   InspectionStandard,
   InspectionStandardItem,
@@ -23,16 +24,6 @@ type DeviationUpdate = components['schemas']['DeviationUpdate']
 type CapaCreate = components['schemas']['CapaCreate']
 type CapaUpdate = components['schemas']['CapaUpdate']
 
-interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-  meta?: {
-    total?: number
-    page?: number
-    page_size?: number
-  }
-}
 import type {
   SamplingOrder,
   SamplingOrderCreate,
@@ -785,22 +776,27 @@ export async function deleteDeviationTask(taskId: string) {
   return response
 }
 
+// These three return the server's body as-is, rather than wrapping it in
+// `ApiResponse` like the actions above. `apiFetch` already yields
+// `{code, message, data}`, so `wrap` nested it a second time and the caller could
+// not reach `data.id` — which is what the templates page needs after a create, to
+// open the upload modal. Same shape as `fetchLabelVerificationsServer` below.
 export async function createDeviationTemplate(data: unknown) {
   const validated = parse(DeviationTemplateCreateSchema, data)
-  const response = await wrap<unknown>(QualityServer.createDeviationTemplate(validated))
+  const response = await QualityServer.createDeviationTemplate(validated)
   revalidatePath('/quality/deviation-automation/templates')
   return response
 }
 
 export async function updateDeviationTemplate(templateId: string, data: unknown) {
   const validated = parse(DeviationTemplateCreateSchema.partial(), data)
-  const response = await wrap<unknown>(QualityServer.updateDeviationTemplate(templateId, validated))
+  const response = await QualityServer.updateDeviationTemplate(templateId, validated)
   revalidatePath('/quality/deviation-automation/templates')
   return response
 }
 
 export async function deleteDeviationTemplate(templateId: string | number) {
-  const response = await wrap<unknown>(QualityServer.deleteDeviationTemplate(templateId))
+  const response = await QualityServer.deleteDeviationTemplate(templateId)
   revalidatePath('/quality/deviation-automation/templates')
   return response
 }

@@ -37,13 +37,15 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Standard, STANDARD_STATUS_OPTIONS, STANDARD_TYPE_OPTIONS } from '@/types/static-data'
+// Reads stay on the browser client (`AGENTS.md:413`); writes go through the action
+// (`:443`), where the function names match.
+import { listStandard, getStandardStats } from '@/lib/api/client/static-data-api'
 import {
-  listStandard,
   createStandard,
   updateStandard,
   deleteStandard,
   adjustStandardQuantity,
-} from '@/lib/api/client/static-data-api'
+} from '@/actions/static-data'
 import './standard-style.css'
 
 const { Search } = Input
@@ -105,24 +107,8 @@ export default function StandardPage() {
   const { data: statsData = { all: 0, active: 0, expired: 0, lowStock: 0, national: 0 } } = useQuery({
     queryKey: ['standard-stats'],
     queryFn: async () => {
-      let allData: Standard[] = []
-      let curPage = 1
-      while (true) {
-        const res = await listStandard({ page: curPage, page_size: 200 })
-        const batch = (res?.data ?? []) as Standard[]
-        allData = allData.concat(batch)
-        if (allData.length >= (res?.meta?.total ?? 0) || batch.length === 0) break
-        curPage++
-      }
-      let active = 0, expired = 0, lowStock = 0, national = 0
-      const today = dayjs()
-      allData.forEach(item => {
-        if (item.std_status === 0) active++
-        if (item.expire_date && dayjs(item.expire_date).isBefore(today)) expired++
-        if (item.quantity <= item.min_stock) lowStock++
-        if (item.std_type === 'national') national++
-      })
-      return { all: allData.length, active, expired, lowStock, national }
+      // One request. The previous version paged the whole table and counted here.
+      return await getStandardStats()
     },
   })
 
@@ -534,7 +520,7 @@ export default function StandardPage() {
       <Drawer
         title={isNew ? '新建标准品' : '编辑标准品'}
         placement="right"
-        width={560}
+        size={560}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -666,7 +652,7 @@ export default function StandardPage() {
       <Drawer
         title="调整数量"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

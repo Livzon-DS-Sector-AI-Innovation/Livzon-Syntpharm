@@ -54,9 +54,9 @@ export function MaterialConsumeDrawer({ workOrderId, spareParts, onRefresh }: Ma
       <Button type="primary" icon={<PlusOutlined />} onClick={() => setOpen(true)}>
         领料
       </Button>
-      <Drawer
+      <Drawer forceRender
         title="工单领料"
-        width={480}
+        size={480}
         open={open}
         onClose={() => setOpen(false)}
         destroyOnHidden

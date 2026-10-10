@@ -42,9 +42,9 @@ export function StockInboundDrawer({ onRefresh }: StockInboundDrawerProps) {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title="备件入库"
-      width={480}
+      size={480}
       open={stockInboundDrawerOpen}
       onClose={closeStockInboundDrawer}
       destroyOnHidden

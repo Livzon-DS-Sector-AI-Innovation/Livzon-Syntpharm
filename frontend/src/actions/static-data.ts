@@ -4,7 +4,6 @@ import type {
   ApiResponse,
   PageParams,
   WarningsResponse,
-  AuditLogItem,
   UploadResponse,
 } from '@/types/static-data'
 import {
@@ -57,11 +56,18 @@ import {
   createMedium as createMediumServer,
   updateMedium as updateMediumServer,
   deleteMedium as deleteMediumServer,
+  adjustMediumStock as adjustMediumStockServer,
+  adjustStandardQuantity as adjustStandardQuantityServer,
+  adjustHplcReferenceQuantity as adjustHplcReferenceQuantityServer,
+  consumeHplcReference as consumeHplcReferenceServer,
   listReagent as listReagentServer,
   getReagent as getReagentServer,
   createReagent as createReagentServer,
   updateReagent as updateReagentServer,
   deleteReagent as deleteReagentServer,
+  createStandard as createStandardServer,
+  updateStandard as updateStandardServer,
+  deleteStandard as deleteStandardServer,
   listStandardMaterial as listStandardMaterialServer,
   getStandardMaterial as getStandardMaterialServer,
   createStandardMaterial as createStandardMaterialServer,
@@ -82,8 +88,6 @@ import {
   updateHplcReference as updateHplcReferenceServer,
   deleteHplcReference as deleteHplcReferenceServer,
   getWarnings as getWarningsServer,
-  listAuditLogs as listAuditLogsServer,
-  getAuditModules as getAuditModulesServer,
   uploadFile as uploadFileServer,
   getDownloadUrl as getDownloadUrlServer,
   downloadExcelTemplate as downloadExcelTemplateServer,
@@ -295,6 +299,35 @@ export async function deleteStandardMaterial(id: number) {
   return deleteStandardMaterialServer(id)
 }
 
+// Adjustments — writes that the browser client used to perform directly.
+export async function adjustMediumStock(id: number, quantity: number) {
+  return adjustMediumStockServer(id, quantity)
+}
+export async function adjustStandardQuantity(id: number, quantity: number) {
+  return adjustStandardQuantityServer(id, quantity)
+}
+export async function adjustHplcReferenceQuantity(id: number, quantity_change: number) {
+  return adjustHplcReferenceQuantityServer(id, quantity_change)
+}
+export async function consumeHplcReference(id: number, data: Record<string, unknown>) {
+  return consumeHplcReferenceServer(id, data)
+}
+
+// ========== 质量标准（standard）==========
+// Distinct from `standard-material` / `material-standard` below. The browser client
+// (`lib/api/client/static-data-api.ts`) had these writes and called them directly from
+// client components; `AGENTS.md:443` requires writes to go through an action, and
+// `:413` reserves `lib/api/client/` for reads.
+export async function createStandard(data: Record<string, unknown>) {
+  return createStandardServer(data)
+}
+export async function updateStandard(id: number, data: Record<string, unknown>) {
+  return updateStandardServer(id, data)
+}
+export async function deleteStandard(id: number) {
+  return deleteStandardServer(id)
+}
+
 // ========== 物料质量标准 ==========
 
 export async function listMaterialStandard(params: PageParams & { material_code?: string; material_name?: string; material_type?: string; status?: number }) {
@@ -350,25 +383,6 @@ export async function deleteHplcReference(id: number) {
 
 export async function getWarnings(days = 30): Promise<ApiResponse<WarningsResponse>> {
   return getWarningsServer(days)
-}
-
-// ========== 审计日志 ==========
-
-export async function listAuditLogs(params: {
-  page?: number
-  page_size?: number
-  module_type?: string
-  record_id?: number
-  operate_by?: number
-  operate_type?: string
-  start_date?: string
-  end_date?: string
-}): Promise<ApiResponse<AuditLogItem[]>> {
-  return listAuditLogsServer(params as Record<string, unknown>)
-}
-
-export async function getAuditModules(): Promise<ApiResponse<{ module_type: string; module_label: string }[]>> {
-  return getAuditModulesServer()
 }
 
 // ========== 文件上传下载 ==========
