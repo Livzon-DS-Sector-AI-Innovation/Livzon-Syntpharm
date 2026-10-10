@@ -123,6 +123,36 @@ export async function deleteStorageCondition(id: number) {
   })
 }
 
+// Adjustments are writes too, and were also living in `lib/api/client/`. They are not
+// named `create/update/delete`, which is why the first pass missed them.
+export async function adjustMediumStock(id: number, quantity: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/medium/${id}/adjust-stock`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity }),
+  })
+}
+
+export async function adjustStandardQuantity(id: number, quantity: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard/${id}/adjust-quantity`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity }),
+  })
+}
+
+export async function adjustHplcReferenceQuantity(id: number, quantity_change: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference/${id}/adjust-quantity`, {
+    method: 'POST',
+    body: JSON.stringify({ quantity_change }),
+  })
+}
+
+export async function consumeHplcReference(id: number, data: Record<string, unknown>) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/hplc-reference/${id}/use`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
 export async function toggleStorageConditionStatus(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/storage-condition/${id}/toggle-status`, {
     method: 'POST',
@@ -396,6 +426,30 @@ export async function updateStandardMaterial(id: number, data: unknown) {
   })
 }
 
+// The plain `standard` resource — distinct from `standard-material` and
+// `material-standard` above. The client had these writes in
+// `lib/api/client/static-data-api.ts`; they belong here (`AGENTS.md:413` reserves
+// `lib/api/client/` for reads).
+export async function createStandard(data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function updateStandard(id: number, data: unknown) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+}
+
+export async function deleteStandard(id: number) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard/${id}`, {
+    method: 'DELETE',
+  })
+}
+
 export async function deleteStandardMaterial(id: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/standard-material/${id}`, {
     method: 'DELETE',
@@ -505,25 +559,6 @@ export async function deleteHplcReference(id: number) {
 
 export async function getWarnings(days: number = 30) {
   return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/warnings?days=${days}`)
-}
-
-// ===== 审计日志 =====
-
-export async function listAuditLogs(params: Record<string, unknown> = {}) {
-  const qs = new URLSearchParams()
-  if (params.page) qs.set('page', String(params.page))
-  if (params.page_size) qs.set('page_size', String(params.page_size))
-  if (params.module_type) qs.set('module_type', String(params.module_type))
-  if (params.record_id !== undefined) qs.set('record_id', String(params.record_id))
-  if (params.operate_by !== undefined) qs.set('operate_by', String(params.operate_by))
-  if (params.operate_type) qs.set('operate_type', String(params.operate_type))
-  if (params.start_date) qs.set('start_date', String(params.start_date))
-  if (params.end_date) qs.set('end_date', String(params.end_date))
-  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/audit?${qs}`)
-}
-
-export async function getAuditModules() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1${PREFIX}/audit/modules`)
 }
 
 // ===== 文件上传下载 =====

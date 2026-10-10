@@ -1,30 +1,31 @@
 """Static Data Module - Models
 
 SQLAlchemy ORM models for static data tables.
+
+All tables inherit the shared `app.shared.base_model.BaseModel`, which supplies
+the standard contract: UUID `id`, `created_at`, `updated_at`, `created_by`,
+`updated_by` and `is_deleted`.
 """
 
-from datetime import date, datetime
+import logging
+from datetime import date
 from decimal import Decimal
 
 from sqlalchemy import (
     BigInteger,
     Boolean,
     Date,
-    DateTime,
     Integer,
     Numeric,
     SmallInteger,
     String,
     Text,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
+from app.shared.base_model import BaseModel
 
-class BaseModel(DeclarativeBase):
-    """Base class for all models"""
-
-    pass
-
+logger = logging.getLogger(__name__)
 
 # ========== 1. Storage Condition ==========
 
@@ -35,7 +36,6 @@ class StorageCondition(BaseModel):
     __tablename__ = "t_qs_storage_condition"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     cond_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Condition code (unique)")
     cond_name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Condition name")
     temp_min: Mapped[Decimal | None] = mapped_column(Numeric(5, 2), comment="Min temperature")
@@ -43,11 +43,6 @@ class StorageCondition(BaseModel):
     humidity: Mapped[str | None] = mapped_column(String(50), comment="Humidity requirement")
     remark: Mapped[str | None] = mapped_column(String(500), comment="Remark")
     status: Mapped[int] = mapped_column(SmallInteger, default=0, comment="Status: 0-enabled 1-disabled")
-    create_by: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    update_by: Mapped[int | None] = mapped_column(BigInteger, comment="Updater")
-    update_time: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.now, comment="Update time")
-    del_flag: Mapped[int] = mapped_column(SmallInteger, default=0, comment="Delete flag")
 
 
 # ========== 2. Unit ==========
@@ -59,18 +54,12 @@ class Unit(BaseModel):
     __tablename__ = "t_qs_unit"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     unit_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Unit code (unique)")
     unit_name: Mapped[str] = mapped_column(String(50), nullable=False, comment="Unit name")
     unit_type: Mapped[str] = mapped_column(String(30), nullable=False, comment="Unit type")
     base_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 6), comment="Conversion base value")
     remark: Mapped[str | None] = mapped_column(String(500), comment="Remark")
     status: Mapped[int] = mapped_column(SmallInteger, default=0, comment="Status: 0-enabled 1-disabled")
-    create_by: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    update_by: Mapped[int | None] = mapped_column(BigInteger, comment="Updater")
-    update_time: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.now, comment="Update time")
-    del_flag: Mapped[int] = mapped_column(SmallInteger, default=0, comment="Delete flag")
 
 
 # ========== 11. HPLC Reference Substance Ledger ==========
@@ -82,7 +71,12 @@ class HplcReference(BaseModel):
     __tablename__ = "t_qs_hplc_reference"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # Uniqueness is enforced in the service (check-then-insert), NOT by a database
+    # constraint — so two concurrent imports can still create a duplicate.
+    #
+    # The column comment keeps its original wording on purpose: `comment=` is schema
+    # state, and changing it makes alembic demand a migration. The truth lives here
+    # instead, where it costs nothing.
     ref_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Reference code (unique)")
     ref_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="Reference name")
     project_name: Mapped[str | None] = mapped_column(String(100), comment="Associated test project")
@@ -115,11 +109,6 @@ class HplcReference(BaseModel):
     ref_status: Mapped[int] = mapped_column(Integer, default=0, comment="Status: 0-active 1-used 2-expired 3-scrapped")
     remark: Mapped[str | None] = mapped_column(Text, comment="Remark")
     attach_file: Mapped[str | None] = mapped_column(Text, comment="Attachments JSON")
-    create_by: Mapped[int] = mapped_column(Integer, default=0, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    update_by: Mapped[int | None] = mapped_column(Integer, comment="Updater")
-    update_time: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.now, comment="Update time")
-    del_flag: Mapped[int] = mapped_column(Integer, default=0, comment="Delete flag")
 
 
 class HplcReferenceUsage(BaseModel):
@@ -128,7 +117,6 @@ class HplcReferenceUsage(BaseModel):
     __tablename__ = "t_qs_hplc_reference_usage"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     ref_id: Mapped[int] = mapped_column(BigInteger, nullable=False, comment="Reference substance ID")
     ref_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Reference code")
     ref_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="Reference name")
@@ -139,9 +127,6 @@ class HplcReferenceUsage(BaseModel):
     usage_purpose: Mapped[str | None] = mapped_column(String(200), comment="Usage purpose/project")
     usage_date: Mapped[date] = mapped_column(Date, default=date.today, comment="Usage date")
     remark: Mapped[str | None] = mapped_column(Text, comment="Remark")
-    create_by: Mapped[int] = mapped_column(Integer, default=0, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    del_flag: Mapped[int] = mapped_column(Integer, default=0, comment="Delete flag")
 
 
 # ========== 5. Chromatography Column ==========
@@ -153,7 +138,7 @@ class ChromColumn(BaseModel):
     __tablename__ = "t_qs_chrom_column"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # Same as `ref_code`: a service-level check, not a database constraint.
     col_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Column code (unique)")
     col_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="Stationary phase type (C18/C8 etc.)")
     spec: Mapped[str] = mapped_column(String(100), nullable=False, comment="Specification")
@@ -172,11 +157,6 @@ class ChromColumn(BaseModel):
     apply_method: Mapped[str | None] = mapped_column(String(500), comment="Applicable test method")
     attach_file: Mapped[str | None] = mapped_column(Text, comment="Attachments")
     remark: Mapped[str | None] = mapped_column(String(500), comment="Remark")
-    create_by: Mapped[int] = mapped_column(Integer, default=0, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    update_by: Mapped[int | None] = mapped_column(Integer, comment="Updater")
-    update_time: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.now, comment="Update time")
-    del_flag: Mapped[int] = mapped_column(Integer, default=0, comment="Delete flag")
 
 
 # ========== 7. Standard (标准品) ==========
@@ -188,7 +168,6 @@ class Standard(BaseModel):
     __tablename__ = "t_qs_standard"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     std_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Standard code (unique)")
     std_name: Mapped[str] = mapped_column(String(200), nullable=False, comment="Standard name")
     std_type: Mapped[str] = mapped_column(String(30), nullable=False, comment="Type: national/working/international")
@@ -209,11 +188,6 @@ class Standard(BaseModel):
     std_status: Mapped[int] = mapped_column(SmallInteger, default=0, comment="0-active 1-used_up 2-expired 3-scrapped")
     attach_file: Mapped[str | None] = mapped_column(Text, comment="Attachments")
     remark: Mapped[str | None] = mapped_column(String(500), comment="Remark")
-    create_by: Mapped[int] = mapped_column(Integer, default=0, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    update_by: Mapped[int | None] = mapped_column(Integer, comment="Updater")
-    update_time: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.now, comment="Update time")
-    del_flag: Mapped[int] = mapped_column(Integer, default=0, comment="Delete flag")
 
 
 class Medium(BaseModel):
@@ -222,7 +196,6 @@ class Medium(BaseModel):
     __tablename__ = "t_qs_medium"
     __table_args__ = {"schema": "qms"}
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     medium_code: Mapped[str] = mapped_column(String(50), nullable=False, comment="Medium code (unique)")
     medium_name: Mapped[str] = mapped_column(String(100), nullable=False, comment="Medium name")
     medium_type: Mapped[str] = mapped_column(String(50), nullable=False, comment="Medium type")
@@ -239,8 +212,3 @@ class Medium(BaseModel):
     status: Mapped[int] = mapped_column(SmallInteger, default=0, comment="0-active 1-inactive")
     attach_file: Mapped[str | None] = mapped_column(Text, comment="Attachments")
     remark: Mapped[str | None] = mapped_column(String(500), comment="Remark")
-    create_by: Mapped[int] = mapped_column(Integer, default=0, comment="Creator")
-    create_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, comment="Create time")
-    update_by: Mapped[int | None] = mapped_column(Integer, comment="Updater")
-    update_time: Mapped[datetime | None] = mapped_column(DateTime, onupdate=datetime.now, comment="Update time")
-    del_flag: Mapped[int] = mapped_column(Integer, default=0, comment="Delete flag")

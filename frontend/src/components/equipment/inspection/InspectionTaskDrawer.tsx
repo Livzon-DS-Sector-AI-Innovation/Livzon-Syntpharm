@@ -76,7 +76,7 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
   return (
     <Drawer title={null} open={taskDrawerOpen}
       onClose={() => { closeTaskDrawer() }}
-      destroyOnClose styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 520 } }}>
+      destroyOnHidden styles={{ body: { padding: 0, background: C.surface }, wrapper: { width: 520 } }}>
       {/* header */}
       <div style={{ background: C.navy, padding: '18px 28px', borderBottom: `3px solid ${C.purple}` }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 2 }}>Inspection Task Assignment</div>

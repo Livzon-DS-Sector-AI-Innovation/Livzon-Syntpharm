@@ -413,7 +413,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
                     style={{ marginBottom: 16 }}
                   />
                   
-                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                  <Space orientation="vertical" style={{ width: '100%' }} size="large">
                     {experimentPlans.map((plan, idx) => (
                       <Card 
                         key={idx}

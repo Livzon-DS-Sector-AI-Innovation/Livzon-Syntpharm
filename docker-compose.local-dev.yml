@@ -42,9 +42,13 @@ services:
     restart: "no"
 
   frontend:
+    # 前端使用生产构建（runtime）：dev 模式单页需加载 7MB+ 未打包 JS，手机/公网访问几乎不可用；
+    # 注意：改前端代码后需重新构建镜像再重建容器（无热更新）：
+    #   docker build --pull=false -f frontend/Dockerfile --target runtime -t livzon-syntpharm-frontend:latest frontend
+    #   docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --force-recreate --no-deps frontend
     build:
       context: ./frontend
-      target: dev
+      target: runtime
     container_name: ${LOCAL_FRONTEND_NAME:-local-frontend}
     restart: unless-stopped
     environment:
@@ -58,11 +62,7 @@ services:
       # 带 Origin 的 /_next 内部请求（HMR WebSocket 等）会被 403。
       # 在本机 .env.local 中设置 ALLOWED_DEV_ORIGINS=<访问用主机名/IP,逗号分隔> 即可放开。
       - ALLOWED_DEV_ORIGINS=${ALLOWED_DEV_ORIGINS:-localhost,127.0.0.1}
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     ports:
       - 3000:3000
     depends_on:
       - backend
-    command: ["pnpm", "dev"]

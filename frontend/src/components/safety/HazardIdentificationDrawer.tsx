@@ -76,6 +76,14 @@ export default function HazardIdentificationDrawer({ open, onClose, onDone }: Pr
         return
       }
 
+      // The contract types `data` as optional; a 200 with no payload would
+      // otherwise throw on the next line.
+      if (!createRes.data) {
+        message.error('创建失败：响应缺少数据')
+        setLoading(false)
+        return
+      }
+
       const recordId = createRes.data.id
 
       if (!saveOnly) {
@@ -127,7 +135,7 @@ export default function HazardIdentificationDrawer({ open, onClose, onDone }: Pr
       onClose={handleClose}
       placement="right"
       size="large"
-      destroyOnClose
+      destroyOnHidden
       styles={{ body: { padding: '16px 24px 24px' } }}
     >
       {/* 表单卡片 — 与隐患登记 HazardInspectionForm 视觉对齐 */}

@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse  # type: ignore[attr-defined]
 from app.modules.quality.qms.schemas import (
     ApprovalRecordListApiResponse,
     ApprovalRecordResponse,
@@ -60,7 +59,7 @@ async def get(
         version=version,
         is_effective=is_effective,
     )
-    return ApiResponse(
+    return InspectionStandardListApiResponse(
         data=[InspectionStandardResponse.model_validate(s) for s in standards],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -79,7 +78,7 @@ async def handler(
         material_code=material_code,
         material_category=material_category,
     )
-    return ApiResponse(data=[InspectionStandardResponse.model_validate(s) for s in standards])
+    return InspectionStandardListApiResponse(data=[InspectionStandardResponse.model_validate(s) for s in standards])
 
 
 @router.get(  # type: ignore[no-redef]
@@ -94,8 +93,8 @@ async def handler(  # noqa: F811
     service = QualityService(db)
     standard = await service.get_standard(standard_id)
     if not standard:
-        return ApiResponse(code=404, message="检验标准不存在")
-    return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+        return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+    return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
 
 
 @router.post("/standards", response_model=InspectionStandardApiResponse, summary="创建检验标准")
@@ -108,7 +107,7 @@ async def post(
     service = QualityService(db)
     standard = await service.create_standard(data)
     await db.commit()
-    return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
 
 
 @router.put(  # type: ignore[no-redef]
@@ -125,11 +124,11 @@ async def handler(  # noqa: F811
     try:
         standard = await service.update_standard(standard_id, data)
         if not standard:
-            return ApiResponse(code=404, message="检验标准不存在")
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
         await db.commit()
-        return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
 
 
 @router.delete(  # type: ignore[no-redef]
@@ -167,11 +166,11 @@ async def handler(  # noqa: F811
     try:
         standard = await service.submit_for_approval(standard_id)
         if not standard:
-            return ApiResponse(code=404, message="检验标准不存在")
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
         await db.commit()
-        return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -189,11 +188,11 @@ async def handler(  # noqa: F811
         user_name = current_user.name
         standard = await service.approve_standard(standard_id, user_id, user_name)
         if not standard:
-            return ApiResponse(code=404, message="检验标准不存在")
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
         await db.commit()
-        return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -211,11 +210,11 @@ async def handler(  # noqa: F811
         user_id = uuid.UUID(current_user.id)
         standard = await service.reject_standard(standard_id, user_id, comments)
         if not standard:
-            return ApiResponse(code=404, message="检验标准不存在")
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
         await db.commit()
-        return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post(  # type: ignore[no-redef]
@@ -232,11 +231,11 @@ async def handler(  # noqa: F811
     try:
         standard = await service.obsolete_standard(standard_id, data)
         if not standard:
-            return ApiResponse(code=404, message="检验标准不存在")
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
         await db.commit()
-        return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
 
 
 @router.post("/standards/copy", response_model=InspectionStandardApiResponse, summary="复制标准")  # type: ignore[no-redef]
@@ -249,9 +248,9 @@ async def post(  # noqa: F811
     service = QualityService(db)
     standard = await service.copy_standard(data)
     if not standard:
-        return ApiResponse(code=404, message="源标准不存在")
+        return InspectionStandardApiResponse(code=404, message="源标准不存在", data=None)
     await db.commit()
-    return ApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
 
 
 # ============ InspectionStandardItem Routes ============
@@ -272,7 +271,7 @@ async def handler(  # noqa: F811
 
     repo = QualityRepository(db)
     items = await repo.get_items_by_standard(standard_id)
-    return ApiResponse(data=[InspectionStandardItemResponse.model_validate(i) for i in items])
+    return InspectionStandardItemListApiResponse(data=[InspectionStandardItemResponse.model_validate(i) for i in items])
 
 
 # ============ ApprovalRecord Routes ============
@@ -293,4 +292,4 @@ async def handler(  # noqa: F811
 
     repo = QualityRepository(db)
     records = await repo.get_approval_records(standard_id)
-    return ApiResponse(data=[ApprovalRecordResponse.model_validate(r) for r in records])
+    return ApprovalRecordListApiResponse(data=[ApprovalRecordResponse.model_validate(r) for r in records])

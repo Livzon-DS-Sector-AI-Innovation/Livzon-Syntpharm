@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
 import { createWorkOrder, updateWorkOrder } from '@/actions/equipment'
 import { FailureCode } from '@/types/equipment/generated-bridge'
-import { CreateWorkOrderInput, UpdateWorkOrderInput, WorkOrderStatus, Maintainer } from '@/types/equipment/generated-bridge'
+import { CreateWorkOrderInput, UpdateWorkOrderInput, WorkOrderStatus } from '@/types/equipment/generated-bridge'
 import { Equipment } from '@/types/equipment/generated-bridge'
 import { fetchAllUsersClient } from '@/lib/api/client/equipment'
 
@@ -29,21 +30,33 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const { workOrderDrawerOpen, editingWorkOrder, closeWorkOrderDrawer } = useEquipmentStore()
-  const [maintainers, setMaintainers] = useState<Maintainer[]>([])
 
   const isEditing = !!editingWorkOrder
 
+  // `AGENTS.md:549` — 数据获取：使用 React Query，禁止 useEffect + setState.
+  // `enabled` replaces the `if (workOrderDrawerOpen)` guard, and the list is cached
+  // across opens instead of refetched on every one. `initialData: []` keeps
+  // `maintainers` a plain array below, so the Select never sees `undefined`.
+  const { data: maintainers = [] } = useQuery({
+    queryKey: ['all-users'],
+    queryFn: fetchAllUsersClient,
+    enabled: workOrderDrawerOpen,
+    initialData: [],
+  })
+
+  // 选项到齐后重新设置责任人，让 Select 能匹配选项显示姓名。
+  //
+  // This is not data fetching — it syncs a form value *after* the options exist.
+  // Without it antd's Select renders the raw id instead of the name, because the
+  // value was set by `initialValues` before any option was available. The previous
+  // code did this inside the fetch's `.then()`; the trigger is now the data arriving,
+  // which is the same moment.
   useEffect(() => {
-    if (workOrderDrawerOpen) {
-      fetchAllUsersClient().then((list: { id: string; name: string }[]) => {
-        setMaintainers(list)
-        // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
-        if (editingWorkOrder?.responsible_person_id) {
-          form.setFieldsValue({ responsible_person_id: editingWorkOrder.responsible_person_id })
-        }
-      }).catch(() => {})
+    if (workOrderDrawerOpen && maintainers.length) {
+      const id = editingWorkOrder?.responsible_person_id
+      if (id) form.setFieldsValue({ responsible_person_id: id })
     }
-  }, [workOrderDrawerOpen, form, editingWorkOrder])
+  }, [workOrderDrawerOpen, editingWorkOrder, maintainers, form])
 
   // 构建 initialValues：编辑时填充已有数据，新建时给默认值
   const initialValues = useMemo(() => {
@@ -104,12 +117,12 @@ export function WorkOrderDrawer({ equipments, symptoms, onRefresh }: WorkOrderDr
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEditing ? '编辑维修工单' : '新建维修工单'}
-      width={480}
+      size={480}
       open={workOrderDrawerOpen}
       onClose={closeWorkOrderDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeWorkOrderDrawer}>取消</Button>

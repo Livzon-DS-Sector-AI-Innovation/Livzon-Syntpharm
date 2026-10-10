@@ -843,3 +843,14 @@ class RdReportGenerateResponse(BaseModel):
     content: str
     structure: dict[str, Any] | None = None
     data_sources: list[str] = []
+
+
+# ===== API Response Wrappers =====
+
+
+class EDBOOptimizeApiResponse(BaseModel):
+    """EDBO+ 优化响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: EDBOOptimizeResponse | None = None

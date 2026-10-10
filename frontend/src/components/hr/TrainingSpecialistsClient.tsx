@@ -324,7 +324,7 @@ export default function TrainingSpecialistsClient() {
           </div>
           <Table rowKey="id" columns={specialistColumns} dataSource={data} loading={loading} pagination={false} />
 
-          <Modal title={editingRecord ? '编辑培训专员' : '新增培训专员'} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleSave} confirmLoading={saving} destroyOnClose>
+          <Modal title={editingRecord ? '编辑培训专员' : '新增培训专员'} open={modalOpen} onCancel={() => setModalOpen(false)} onOk={handleSave} confirmLoading={saving} destroyOnHidden>
             <Form form={form} layout="vertical" className="mt-4" initialValues={{ factory: 'old' }}>
               <Form.Item label="厂区" name="factory" rules={[{ required: true }]}>
                 <Radio.Group onChange={(e) => { setFactory(e.target.value); form.setFieldsValue({ department: undefined, employee_name: undefined, employee_number: undefined }); setEmployees([]) }} optionType="button"
@@ -364,7 +364,7 @@ export default function TrainingSpecialistsClient() {
           </div>
           <Table rowKey="id" columns={teamColumns} dataSource={teams} loading={teamsLoading} pagination={false} />
 
-          <Modal title={editingTeam ? '编辑受训班组' : '新增受训班组'} open={teamModalOpen} onCancel={() => setTeamModalOpen(false)} onOk={handleTeamSave} confirmLoading={teamSaving} destroyOnClose width={600}>
+          <Modal title={editingTeam ? '编辑受训班组' : '新增受训班组'} open={teamModalOpen} onCancel={() => setTeamModalOpen(false)} onOk={handleTeamSave} confirmLoading={teamSaving} destroyOnHidden width={600}>
             <Form form={teamForm} layout="vertical" className="mt-4" initialValues={{ factory: 'old', employee_names: [], employee_numbers: [] }}>
               <Form.Item label="厂区" name="factory" rules={[{ required: true }]}>
                 <Radio.Group onChange={(e) => handleTeamFactoryChange(e.target.value)} optionType="button"

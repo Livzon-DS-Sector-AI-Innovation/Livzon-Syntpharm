@@ -110,12 +110,12 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingEquipment ? '编辑设备' : '新增设备'}
-      width={480}
+      size={480}
       open={equipmentDrawerOpen}
       onClose={closeEquipmentDrawer}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },
         body: { padding: '24px' },

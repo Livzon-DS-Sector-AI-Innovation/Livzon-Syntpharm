@@ -244,3 +244,30 @@ class IQCInspectionFilter(BaseModel):
     inspection_no: str | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+
+# ========== API Response Wrappers ==========
+
+
+class IQCInspectionApiResponse(BaseModel):
+    """IQC检验单响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: IQCInspectionResponse | None = None
+
+
+class IQCInspectionListApiResponse(BaseModel):
+    """IQC检验单列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: IQCInspectionListResponse | None = None
+
+
+class IQCApprovalRecordListApiResponse(BaseModel):
+    """IQC审批记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[IQCApprovalRecordResponse] | None = None

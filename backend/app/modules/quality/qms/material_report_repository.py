@@ -38,13 +38,18 @@ class MaterialReportRepository:
                 selectinload(MaterialReport.template),
                 selectinload(MaterialReport.items),
             )
-            .where(MaterialReport.id == report_id)
+            # A soft-deleted report must read as absent, or the delete is cosmetic.
+            .where(and_(MaterialReport.id == report_id, MaterialReport.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
     async def get_by_no(self, report_no: str) -> MaterialReport | None:
         """通过编号获取报告单"""
-        result = await self.session.execute(select(MaterialReport).where(MaterialReport.report_no == report_no))
+        result = await self.session.execute(
+            select(MaterialReport).where(
+                and_(MaterialReport.report_no == report_no, MaterialReport.is_deleted.is_(False))
+            )
+        )
         return result.scalar_one_or_none()
 
     async def update(self, report_id: UUID, data: dict[str, Any]) -> MaterialReport | None:
@@ -62,11 +67,23 @@ class MaterialReportRepository:
         return report
 
     async def delete(self, report_id: UUID) -> bool:
-        """删除报告单"""
+        """删除报告单（软删除）
+
+        Was a physical delete — the only hard delete in this repository, and the
+        opposite of what `ReportTemplateRepository.delete()` beside it does.
+        `AGENTS.md:130` makes soft delete the default and allows a physical delete
+        only 除非需求明确要求, and no such requirement exists.
+
+        Soft-deleting also means the `ondelete="CASCADE"` foreign keys on
+        `material_report_items` and `report_images` no longer fire, because the
+        parent row is never removed.
+        """
         report = await self.get_by_id(report_id)
         if not report:
             return False
-        await self.session.delete(report)
+
+        report.is_deleted = True
+        await self.session.flush()
         return True
 
     async def list_with_filter(
@@ -80,9 +97,14 @@ class MaterialReportRepository:
         page_size: int = 20,
     ) -> tuple[list[MaterialReport], int]:
         """带筛选条件的列表查询"""
-        query = select(MaterialReport).options(
-            selectinload(MaterialReport.template),
-            selectinload(MaterialReport.items),
+        query = (
+            select(MaterialReport)
+            .options(
+                selectinload(MaterialReport.template),
+                selectinload(MaterialReport.items),
+            )
+            # Soft-deleted reports must not appear in the list.
+            .where(MaterialReport.is_deleted.is_(False))
         )
 
         conditions = []

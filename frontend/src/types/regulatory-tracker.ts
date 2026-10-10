@@ -85,19 +85,12 @@ export interface DocumentListParams {
   pageSize?: number
 }
 
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
-
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
+// Response envelopes are owned by types/common.ts — re-exported so existing
+// importers keep working. Previously these were declared locally, and
+// PaginatedResponse used camelCase (pageSize/totalPages) which matched neither
+// the backend's paginated_response() helper nor the other four copies; the
+// camelCase fields had no readers.
+export type { ApiResponse, PaginatedResponse } from '@/types/common'
 
 // AI Analysis types
 export interface AIAnalysisResult {

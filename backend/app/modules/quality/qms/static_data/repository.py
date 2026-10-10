@@ -3,8 +3,10 @@
 Database access layer for static data tables.
 """
 
+import logging
 from datetime import date
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -17,6 +19,8 @@ from app.modules.quality.qms.static_data.models import (
     Standard,
     StorageCondition,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class StaticDataRepository:
@@ -38,8 +42,8 @@ class StaticDataRepository:
         has_coa: bool | None = None,
     ) -> tuple[list[HplcReference], int]:
         """List HPLC reference substances with filters"""
-        query = select(HplcReference).where(HplcReference.del_flag == 0)
-        count_query = select(func.count(HplcReference.id)).where(HplcReference.del_flag == 0)
+        query = select(HplcReference).where(HplcReference.is_deleted.is_(False))
+        count_query = select(func.count(HplcReference.id)).where(HplcReference.is_deleted.is_(False))
 
         if ref_code:
             query = query.where(HplcReference.ref_code.like(f"%{ref_code}%"))
@@ -67,17 +71,17 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_hplc_reference(self, id: int) -> HplcReference | None:
+    async def get_hplc_reference(self, id: UUID) -> HplcReference | None:
         """Get single HPLC reference substance by ID"""
         result = await self.db.execute(
-            select(HplcReference).where(and_(HplcReference.id == id, HplcReference.del_flag == 0))
+            select(HplcReference).where(and_(HplcReference.id == id, HplcReference.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
     async def get_hplc_reference_by_code(self, ref_code: str) -> HplcReference | None:
         """Get HPLC reference substance by code"""
         result = await self.db.execute(
-            select(HplcReference).where(and_(HplcReference.ref_code == ref_code, HplcReference.del_flag == 0))
+            select(HplcReference).where(and_(HplcReference.ref_code == ref_code, HplcReference.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
@@ -97,7 +101,7 @@ class StaticDataRepository:
         # 阈值 > 0 且剩余量 <= 阈值 时标记需要复标；否则清除标记
         obj.need_recal = threshold > 0 and remaining <= threshold
 
-    async def update_hplc_reference(self, id: int, data: dict[str, Any]) -> HplcReference | None:
+    async def update_hplc_reference(self, id: UUID, data: dict[str, Any]) -> HplcReference | None:
         """Update HPLC reference substance"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -111,16 +115,16 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_hplc_reference(self, id: int) -> bool:
+    async def delete_hplc_reference(self, id: UUID) -> bool:
         """Soft delete HPLC reference substance"""
         obj = await self.get_hplc_reference(id)
         if not obj:
             raise ValueError(f"HPLC reference substance {id} not found")
-        obj.del_flag = 1
+        obj.is_deleted = True
         await self.db.flush()
         return True
 
-    async def adjust_hplc_reference_quantity(self, id: int, quantity_change: int) -> HplcReference | None:
+    async def adjust_hplc_reference_quantity(self, id: UUID, quantity_change: int) -> HplcReference | None:
         """Adjust HPLC reference quantity (positive = in, negative = out)"""
         obj = await self.get_hplc_reference(id)
         if not obj:
@@ -138,13 +142,13 @@ class StaticDataRepository:
 
     async def use_hplc_reference(
         self,
-        id: int,
+        id: UUID,
         usage_amount: float,
         usage_unit: str,
         usage_person: str | None,
         usage_purpose: str | None,
         remark: str | None,
-        user_id: int,
+        user_id: UUID,
     ) -> tuple[HplcReference, HplcReferenceUsage]:
         """Use HPLC reference substance (扣减剩余量并记录领用)"""
         obj = await self.get_hplc_reference(id)
@@ -164,7 +168,7 @@ class StaticDataRepository:
         # 重算 need_recal 标记（剩余量恢复到阈值以上时自动清除）
         self._recompute_need_recal(obj)
 
-        obj.update_by = user_id
+        obj.updated_by = user_id
         await self.db.flush()
         await self.db.refresh(obj)
 
@@ -180,7 +184,7 @@ class StaticDataRepository:
             usage_purpose=usage_purpose,
             usage_date=date.today(),
             remark=remark,
-            create_by=user_id,
+            created_by=user_id,
         )
         self.db.add(usage_log)
         await self.db.flush()
@@ -195,8 +199,8 @@ class StaticDataRepository:
         limit: int = 20,
     ) -> tuple[list[HplcReferenceUsage], int]:
         """查询领用记录"""
-        query = select(HplcReferenceUsage).where(HplcReferenceUsage.del_flag == 0)
-        count_query = select(func.count(HplcReferenceUsage.id)).where(HplcReferenceUsage.del_flag == 0)
+        query = select(HplcReferenceUsage).where(HplcReferenceUsage.is_deleted.is_(False))
+        count_query = select(func.count(HplcReferenceUsage.id)).where(HplcReferenceUsage.is_deleted.is_(False))
 
         if ref_id:
             query = query.where(HplcReferenceUsage.ref_id == ref_id)
@@ -217,7 +221,7 @@ class StaticDataRepository:
         result = await self.db.execute(
             select(HplcReference).where(
                 and_(
-                    HplcReference.del_flag == 0,
+                    HplcReference.is_deleted.is_(False),
                     HplcReference.ref_status == 0,
                     HplcReference.recal_threshold > 0,
                     HplcReference.remaining_amount <= HplcReference.recal_threshold,
@@ -240,8 +244,8 @@ class StaticDataRepository:
         column_category: int | None = None,
     ) -> tuple[list[ChromColumn], int]:
         """List chromatography columns with filters"""
-        query = select(ChromColumn).where(ChromColumn.del_flag == 0)
-        count_query = select(func.count(ChromColumn.id)).where(ChromColumn.del_flag == 0)
+        query = select(ChromColumn).where(ChromColumn.is_deleted.is_(False))
+        count_query = select(func.count(ChromColumn.id)).where(ChromColumn.is_deleted.is_(False))
 
         if col_code:
             query = query.where(ChromColumn.col_code.like(f"%{col_code}%"))
@@ -272,15 +276,17 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_chrom_column(self, id: int) -> ChromColumn | None:
+    async def get_chrom_column(self, id: UUID) -> ChromColumn | None:
         """Get single chromatography column by ID"""
-        result = await self.db.execute(select(ChromColumn).where(and_(ChromColumn.id == id, ChromColumn.del_flag == 0)))
+        result = await self.db.execute(
+            select(ChromColumn).where(and_(ChromColumn.id == id, ChromColumn.is_deleted.is_(False)))
+        )
         return result.scalar_one_or_none()
 
     async def get_chrom_column_by_code(self, col_code: str) -> ChromColumn | None:
         """Get chromatography column by code"""
         result = await self.db.execute(
-            select(ChromColumn).where(and_(ChromColumn.col_code == col_code, ChromColumn.del_flag == 0))
+            select(ChromColumn).where(and_(ChromColumn.col_code == col_code, ChromColumn.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
@@ -292,7 +298,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_chrom_column(self, id: int, data: dict[str, Any]) -> ChromColumn | None:
+    async def update_chrom_column(self, id: UUID, data: dict[str, Any]) -> ChromColumn | None:
         """Update chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
@@ -304,16 +310,16 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_chrom_column(self, id: int) -> bool:
+    async def delete_chrom_column(self, id: UUID) -> bool:
         """Soft delete chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
             raise ValueError(f"Chromatography column {id} not found")
-        obj.del_flag = 1
+        obj.is_deleted = True
         await self.db.flush()
         return True
 
-    async def increment_chrom_column_usage(self, id: int) -> ChromColumn | None:
+    async def increment_chrom_column_usage(self, id: UUID) -> ChromColumn | None:
         """Increment usage count of a chromatography column"""
         obj = await self.get_chrom_column(id)
         if not obj:
@@ -337,8 +343,8 @@ class StaticDataRepository:
         status: int | None = None,
     ) -> tuple[list[Medium], int]:
         """List medium with filters"""
-        query = select(Medium).where(Medium.del_flag == 0)
-        count_query = select(func.count(Medium.id)).where(Medium.del_flag == 0)
+        query = select(Medium).where(Medium.is_deleted.is_(False))
+        count_query = select(func.count(Medium.id)).where(Medium.is_deleted.is_(False))
 
         if medium_code:
             query = query.where(Medium.medium_code.like(f"%{medium_code}%"))
@@ -369,15 +375,15 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_medium(self, id: int) -> Medium | None:
+    async def get_medium(self, id: UUID) -> Medium | None:
         """Get single medium by ID"""
-        result = await self.db.execute(select(Medium).where(and_(Medium.id == id, Medium.del_flag == 0)))
+        result = await self.db.execute(select(Medium).where(and_(Medium.id == id, Medium.is_deleted.is_(False))))
         return result.scalar_one_or_none()
 
     async def get_medium_by_code(self, medium_code: str) -> Medium | None:
         """Get medium by code"""
         result = await self.db.execute(
-            select(Medium).where(and_(Medium.medium_code == medium_code, Medium.del_flag == 0))
+            select(Medium).where(and_(Medium.medium_code == medium_code, Medium.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
@@ -389,7 +395,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_medium(self, id: int, data: dict[str, Any]) -> Medium | None:
+    async def update_medium(self, id: UUID, data: dict[str, Any]) -> Medium | None:
         """Update medium"""
         obj = await self.get_medium(id)
         if not obj:
@@ -401,16 +407,16 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_medium(self, id: int) -> bool:
+    async def delete_medium(self, id: UUID) -> bool:
         """Soft delete medium"""
         obj = await self.get_medium(id)
         if not obj:
             raise ValueError(f"Medium {id} not found")
-        obj.del_flag = 1
+        obj.is_deleted = True
         await self.db.flush()
         return True
 
-    async def adjust_medium_stock(self, id: int, quantity: int) -> Medium | None:
+    async def adjust_medium_stock(self, id: UUID, quantity: int) -> Medium | None:
         """Adjust medium stock quantity"""
         obj = await self.get_medium(id)
         if not obj:
@@ -435,8 +441,8 @@ class StaticDataRepository:
         std_status: int | None = None,
     ) -> tuple[list[Standard], int]:
         """List standards with filters"""
-        query = select(Standard).where(Standard.del_flag == 0)
-        count_query = select(func.count(Standard.id)).where(Standard.del_flag == 0)
+        query = select(Standard).where(Standard.is_deleted.is_(False))
+        count_query = select(func.count(Standard.id)).where(Standard.is_deleted.is_(False))
 
         if std_code:
             query = query.where(Standard.std_code.like(f"%{std_code}%"))
@@ -464,15 +470,71 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_standard(self, id: int) -> Standard | None:
+    async def get_standard_stats(self) -> dict[str, int]:
+        """Counts the standards page renders, computed in the database.
+
+        The page fetched every row and counted in JavaScript; these counts let it
+        ask once instead (#103).
+        """
+        today = date.today()
+        active = func.count().filter(Standard.std_status == 0)
+        expired = func.count().filter(and_(Standard.expire_date.is_not(None), Standard.expire_date < today))
+        low_stock = func.count().filter(Standard.quantity <= Standard.min_stock)
+        national = func.count().filter(Standard.std_type == "national")
+
+        stmt = select(
+            func.count().label("total"),
+            active.label("active_count"),
+            expired.label("expired_count"),
+            low_stock.label("low_stock_count"),
+            national.label("national_count"),
+        ).where(Standard.is_deleted.is_(False))
+
+        row = (await self.db.execute(stmt)).one()
+        return {
+            "all": row.total,
+            "active": row.active_count,
+            "expired": row.expired_count,
+            "lowStock": row.low_stock_count,
+            "national": row.national_count,
+        }
+
+    async def get_medium_stats(self, medium_type: str | None = None) -> dict[str, int]:
+        """Counts the mediums page renders, filtered by type when one is chosen."""
+        today = date.today()
+        verified = func.count().filter(Medium.verify_status == "已验证")
+        pending = func.count().filter(Medium.verify_status == "待验证")
+        expired = func.count().filter(Medium.expire_date < today)
+        low_stock = func.count().filter(Medium.stock_num <= Medium.min_stock)
+
+        stmt = select(
+            func.count().label("total"),
+            verified.label("verified_count"),
+            pending.label("pending_count"),
+            expired.label("expired_count"),
+            low_stock.label("low_stock_count"),
+        ).where(Medium.is_deleted.is_(False))
+        if medium_type:
+            stmt = stmt.where(Medium.medium_type == medium_type)
+
+        row = (await self.db.execute(stmt)).one()
+        return {
+            "all": row.total,
+            "verified": row.verified_count,
+            "pending": row.pending_count,
+            "expired": row.expired_count,
+            "lowStock": row.low_stock_count,
+        }
+
+    async def get_standard(self, id: UUID) -> Standard | None:
         """Get single standard by ID"""
-        result = await self.db.execute(select(Standard).where(and_(Standard.id == id, Standard.del_flag == 0)))
+        result = await self.db.execute(select(Standard).where(and_(Standard.id == id, Standard.is_deleted.is_(False))))
         return result.scalar_one_or_none()
 
     async def get_standard_by_code(self, std_code: str) -> Standard | None:
         """Get standard by code"""
         result = await self.db.execute(
-            select(Standard).where(and_(Standard.std_code == std_code, Standard.del_flag == 0))
+            select(Standard).where(and_(Standard.std_code == std_code, Standard.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
@@ -484,7 +546,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_standard(self, id: int, data: dict[str, Any]) -> Standard | None:
+    async def update_standard(self, id: UUID, data: dict[str, Any]) -> Standard | None:
         """Update standard"""
         obj = await self.get_standard(id)
         if not obj:
@@ -496,16 +558,16 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_standard(self, id: int) -> bool:
+    async def delete_standard(self, id: UUID) -> bool:
         """Soft delete standard"""
         obj = await self.get_standard(id)
         if not obj:
             raise ValueError(f"Standard {id} not found")
-        obj.del_flag = 1
+        obj.is_deleted = True
         await self.db.flush()
         return True
 
-    async def adjust_standard_quantity(self, id: int, quantity: int) -> Standard | None:
+    async def adjust_standard_quantity(self, id: UUID, quantity: int) -> Standard | None:
         """Adjust standard quantity"""
         obj = await self.get_standard(id)
         if not obj:
@@ -528,8 +590,8 @@ class StaticDataRepository:
         status: int | None = None,
     ) -> tuple[list[StorageCondition], int]:
         """List storage conditions with filters"""
-        query = select(StorageCondition).where(StorageCondition.del_flag == 0)
-        count_query = select(func.count(StorageCondition.id)).where(StorageCondition.del_flag == 0)
+        query = select(StorageCondition).where(StorageCondition.is_deleted.is_(False))
+        count_query = select(func.count(StorageCondition.id)).where(StorageCondition.is_deleted.is_(False))
 
         if cond_code:
             query = query.where(StorageCondition.cond_code.like(f"%{cond_code}%"))
@@ -551,10 +613,10 @@ class StaticDataRepository:
 
         return items, total
 
-    async def get_storage_condition(self, id: int) -> StorageCondition | None:
+    async def get_storage_condition(self, id: UUID) -> StorageCondition | None:
         """Get single storage condition by ID"""
         result = await self.db.execute(
-            select(StorageCondition).where(and_(StorageCondition.id == id, StorageCondition.del_flag == 0))
+            select(StorageCondition).where(and_(StorageCondition.id == id, StorageCondition.is_deleted.is_(False)))
         )
         return result.scalar_one_or_none()
 
@@ -564,7 +626,7 @@ class StaticDataRepository:
             select(StorageCondition).where(
                 and_(
                     StorageCondition.cond_code == cond_code,
-                    StorageCondition.del_flag == 0,
+                    StorageCondition.is_deleted.is_(False),
                 )
             )
         )
@@ -578,7 +640,7 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def update_storage_condition(self, id: int, data: dict[str, Any]) -> StorageCondition | None:
+    async def update_storage_condition(self, id: UUID, data: dict[str, Any]) -> StorageCondition | None:
         """Update storage condition"""
         obj = await self.get_storage_condition(id)
         if not obj:
@@ -596,11 +658,11 @@ class StaticDataRepository:
         await self.db.refresh(obj)
         return obj
 
-    async def delete_storage_condition(self, id: int) -> bool:
+    async def delete_storage_condition(self, id: UUID) -> bool:
         """Soft delete storage condition"""
         obj = await self.get_storage_condition(id)
         if not obj:
             raise ValueError(f"Storage condition {id} not found")
-        obj.del_flag = 1
+        obj.is_deleted = True
         await self.db.flush()
         return True

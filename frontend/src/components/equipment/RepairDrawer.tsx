@@ -91,12 +91,12 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title="报故障维修"
-      width={480}
+      size={480}
       open={repairDrawerOpen}
       onClose={closeRepairDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeRepairDrawer}>取消</Button>

@@ -86,12 +86,12 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
   const parentOptions = flattenTree(locations, editingLocation?.id)
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingLocation ? '编辑位置' : '新增位置'}
-      width={400}
+      size={400}
       open={locationDrawerOpen}
       onClose={closeLocationDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeLocationDrawer}>取消</Button>

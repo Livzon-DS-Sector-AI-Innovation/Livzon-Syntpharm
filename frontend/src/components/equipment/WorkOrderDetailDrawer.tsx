@@ -286,10 +286,10 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
           </Tag>
         </div>
       }
-      width={520}
+      size={520}
       open={workOrderDetailOpen}
       onClose={closeWorkOrderDetail}
-      destroyOnClose
+      destroyOnHidden
     >
       <Descriptions column={2} size="small" styles={{ label: { color: '#787671', fontSize: 13 }, content: { color: '#1a1a1a', fontSize: 14 } }}>
         <Descriptions.Item label="工单类型">

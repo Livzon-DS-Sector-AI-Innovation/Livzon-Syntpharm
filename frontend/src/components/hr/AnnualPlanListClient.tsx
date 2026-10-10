@@ -183,7 +183,7 @@ export default function AnnualPlanListClient() {
           form.resetFields()
         }}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Spin spinning={modalLoading} tip="加载部门列表...">
           <Form

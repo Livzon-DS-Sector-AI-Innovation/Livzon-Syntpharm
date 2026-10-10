@@ -411,7 +411,7 @@ function ExpandedRow({ record, onRefresh, isMobile }: { record: ExpandedRecord; 
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
         width={720}
-        destroyOnClose
+        destroyOnHidden
         onOk={handleCreateSubmit}
         confirmLoading={submitLoading}
         okText="创建"
@@ -1077,7 +1077,7 @@ export default function InstrumentListPage() {
           ruleForm.resetFields()
           handleResetRecognition()
         }}
-        width={isMobile ? '100%' : 900}
+        size={isMobile ? '100%' : 900}
         className="instrument-drawer"
         styles={{ body: { paddingBottom: 80 } }}
       >

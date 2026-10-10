@@ -36,8 +36,5 @@ export type LLMConfigUpdate = components['schemas']['LLMConfigUpdate']
 
 // FeishuDiagnosticResult (use generated type)
 
-export interface ApiResponse<T> {
-  code: number
-  data: T
-  message?: string
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { ApiResponse } from '@/types/common'

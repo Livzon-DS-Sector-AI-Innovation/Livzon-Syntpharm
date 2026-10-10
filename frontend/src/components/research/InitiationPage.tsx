@@ -375,7 +375,7 @@ export function InitiationPage({ projectId }: Props) {
         title={editingRecord ? '编辑立项' : '新建立项'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={720}
+        size={720}
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
