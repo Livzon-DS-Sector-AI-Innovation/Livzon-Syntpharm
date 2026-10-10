@@ -1,5 +1,4 @@
 'use client'
-"use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
@@ -172,12 +171,15 @@ function containsPath(
 
 interface SidebarProps {
   onNavigate?: () => void
+  /** 移动端抽屉内使用：强制展开，忽略桌面折叠状态 */
+  forceExpanded?: boolean
 }
 
-export function Sidebar({ onNavigate }: SidebarProps) {
+export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { collapsed } = useSidebarStore()
+  const { collapsed: collapsedState } = useSidebarStore()
+  const collapsed = collapsedState && !forceExpanded
   const router = useRouter()
   const { user: _currentUser } = usePermission()
   const moduleKey = pathname.split("/")[1] || "production"
