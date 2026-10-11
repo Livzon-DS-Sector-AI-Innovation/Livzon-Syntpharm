@@ -104,7 +104,7 @@ class VehicleService:
     async def batch_import(self, file_bytes: bytes, file_type: str) -> dict:  # type: ignore[type-arg]
         from io import BytesIO
 
-        import pandas as pd  # type: ignore[import-untyped]
+        import pandas as pd
         from sqlalchemy import select
         from sqlalchemy.dialects.postgresql import insert as pg_insert
 

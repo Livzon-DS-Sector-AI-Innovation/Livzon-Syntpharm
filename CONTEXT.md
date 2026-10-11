@@ -42,7 +42,24 @@ _Avoid_: CurrentUser, 必选用户
 允许未登录访问的接口所使用的依赖注入参数；仍会解析 JWT/cookie，端点可据其做条件逻辑。
 _Avoid_: 可选用户, 匿名用户
 
+### 设备台账 (Equipment Ledger)
+
+**增量更新策略** (Incremental Update Strategy):
+设备批量导入 v4 的选择性更新机制：A 类字段（`current_cost`、`book_value` 等财务数据）每次导入都更新；B 类字段（部门、位置、负责人、位号等业务配置）仅在库中为空或开启强制覆盖时更新，以保护人工修正过的数据。
+_Avoid_: 部分更新, 选择性覆盖
+
+**设备位号** (Equipment Tag):
+按「车间-类型-序号」命名的设备标识符，如 `101-L-001`。在未删除记录范围内全局唯一（部分唯一索引），可作为资产编号之外的备选匹配键。
+_Avoid_: 设备编号（与 `asset_no` 混淆）
+
+**固定资产标记** (Fixed Asset Flag):
+`is_fixed_asset` 布尔字段，区分固定资产与非固定资产，判定规则为 `asset_no IS NOT NULL`。仅用于财务分类统计，工单、巡检等业务不据此区别对待。
+
+**导入审计日志** (Import Audit Log):
+`import_audit_logs` 表按行记录批量导入的批次 ID、操作类型、匹配策略、字段变更前后值与警告信息，用于财务合规与数据追溯。
+
 ## Relationships
 
 - **Backend → Frontend**: 后端导出 OpenAPI 规范；前端据此生成 `Generated Types`。契约变更先于前端消费。
 - **Module → Module**: 模块之间只经 `Public API` 协作；`API Response Envelope` 是所有模块对外的统一响应形状。
+- **导入策略 → ADR**：设备导入的匹配与更新决策记录在 `backend/docs/adr/001-equipment-import-v3.md` 与 `backend/docs/adr/002-equipment-import-v4-incremental-update.md`；Excel 部门名称映射的真实来源是 `backend/app/modules/equipment/config/dept_mapping.py`。

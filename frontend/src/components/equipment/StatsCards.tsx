@@ -1,109 +1,117 @@
 'use client'
 
-import { Card, Col, Row, Statistic } from 'antd'
-import { EquipmentStatistics } from '@/types/equipment/generated-bridge'
-import { EquipmentStatus } from '@/types/equipment/generated-bridge'
+import { EquipmentStatistics, EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
+import { useState } from 'react'
 
 interface StatsCardsProps {
   statistics: EquipmentStatistics
   compact?: boolean
 }
 
-const statusCards = [
-  { key: '' as const, label: '总数', color: '#1a1a1a', dotColor: '#787671' },
-  { key: '在用' as EquipmentStatus, label: '在用', color: '#1aae39', dotColor: '#1aae39' },
-  { key: '维修中' as EquipmentStatus, label: '维修中', color: '#dd5b00', dotColor: '#dd5b00' },
-  { key: '停用' as EquipmentStatus, label: '停用', color: '#787671', dotColor: '#787671' },
+// 定义状态配置：包含颜色、标签和图标语义
+const STATUS_CONFIG = [
+  { key: '' as const, label: '总数', color: '#1a1a1a', bg: '#f5f5f5' },
+  { key: '在用' as EquipmentStatus, label: '在用', color: '#10b981', bg: '#ecfdf5' },
+  { key: '维修中' as EquipmentStatus, label: '维修中', color: '#f59e0b', bg: '#fffbeb' },
+  { key: '停用' as EquipmentStatus, label: '停用', color: '#64748b', bg: '#f8fafc' },
+  { key: '报废' as EquipmentStatus, label: '报废', color: '#ef4444', bg: '#fef2f2' },
 ]
 
 export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
   const { statusFilter, setStatusFilter } = useEquipmentStore()
+  const [hoveredKey, setHoveredKey] = useState<string | null>(null)
 
   const handleClick = (status: EquipmentStatus | '') => {
     setStatusFilter(status)
   }
 
+  // 紧凑型视图（用于导入弹窗等狭小空间）
   if (compact) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        {statusCards.map(({ key, label, color, dotColor }) => {
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {STATUS_CONFIG.map(({ key, label, color }) => {
           const isActive = statusFilter === key
           const value = key === '' ? statistics.total : (statistics.by_status[key] || 0)
-
           return (
-            <button
+            <div
               key={key}
-              type="button"
               onClick={() => handleClick(key)}
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                cursor: 'pointer',
-                background: isActive ? '#f0eeec' : 'transparent',
-                border: isActive ? '1px solid #c8c4be' : '1px solid transparent',
-                borderRadius: 20,
                 padding: '4px 12px',
-                fontSize: 13,
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#1a1a1a' : '#5d5b54',
-                transition: 'all 0.15s ease',
-                fontFamily: 'inherit',
-                lineHeight: '20px',
+                borderRadius: 20,
+                background: isActive ? color : 'transparent',
+                border: `1px solid ${isActive ? color : '#e5e7eb'}`,
+                color: isActive ? '#fff' : '#6b7280',
+                fontSize: 12,
+                fontWeight: isActive ? 600 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
               }}
             >
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  backgroundColor: dotColor,
-                  flexShrink: 0,
-                }}
-              />
-              {label}
-              <span style={{ fontWeight: 600, color, marginLeft: 2 }}>
-                {value}
-              </span>
-            </button>
+              {label}: <span style={{ fontWeight: 700 }}>{value}</span>
+            </div>
           )
         })}
       </div>
     )
   }
 
+  // 仪表盘型视图（主页面）- 大气舒展风格
   return (
-    <Row gutter={16} style={{ marginBottom: 16 }}>
-      {statusCards.map(({ key, label, color }) => {
+    <div 
+      style={{ 
+        display: 'flex', 
+        gap: 12,
+        width: '100%',
+      }}
+    >
+      {STATUS_CONFIG.map(({ key, label, color, bg }) => {
         const isActive = statusFilter === key
-        const value = key === '' ? statistics.total : (statistics.by_status?.[key] || 0)
+        const isDimmed = hoveredKey && hoveredKey !== key
+        const value = key === '' ? statistics.total : (statistics.by_status[key] || 0)
 
         return (
-          <Col span={6} key={key}>
-            <Card
-              hoverable
-              style={{
-                cursor: 'pointer',
-                background: isActive ? '#ffffff' : '#fafaf9',
-                border: isActive ? '2px solid #5645d4' : '2px solid #e5e3df',
-                borderRadius: 12,
-                transition: 'all 0.2s ease',
-              }}
-              styles={{
-                body: { padding: '16px 20px' },
-              }}
-              onClick={() => handleClick(key)}
-            >
-              <Statistic
-                title={<span style={{ color: '#5d5b54', fontSize: 14 }}>{label}</span>}
-                value={value}
-                styles={{ content: { color, fontWeight: 600 } }}
-              />
-            </Card>
-          </Col>
+          <div
+            key={key}
+            onMouseEnter={() => setHoveredKey(key)}
+            onMouseLeave={() => setHoveredKey(null)}
+            onClick={() => handleClick(key)}
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: '8px 12px',
+              background: bg,
+              border: isActive ? `2px solid ${color}` : '1px solid #E7E5E4',
+              borderRadius: 6,
+              cursor: 'pointer',
+              opacity: isDimmed ? 0.6 : 1,
+              transition: 'all 0.2s ease',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ 
+              fontSize: 11, 
+              color: isActive ? color : '#78716C',
+              fontWeight: 500,
+              marginBottom: 2,
+              letterSpacing: '0.02em',
+            }}>
+              {label}
+            </div>
+            <div style={{ 
+              fontSize: 20, 
+              fontWeight: 700, 
+              color: isActive ? color : '#1C1917',
+              lineHeight: 1,
+              fontFamily: 'ui-monospace, SF Mono, Menlo, monospace',
+            }}>
+              {value.toLocaleString()}
+            </div>
+          </div>
         )
       })}
-    </Row>
+    </div>
   )
 }
+

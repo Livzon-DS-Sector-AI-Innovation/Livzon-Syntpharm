@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     CheckConstraint,
     Date,
     ForeignKey,
@@ -15,6 +16,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.shared.base_model import BaseModel
@@ -126,6 +128,13 @@ class Equipment(BaseModel):
     __tablename__ = "equipments"
     __table_args__ = (
         UniqueConstraint("asset_no", "is_deleted", name="uq_equipments_asset_no"),
+        # 部分唯一索引：设备位号在未删除记录范围内唯一（见迁移 0081）
+        Index(
+            "uq_equipments_equipment_tag",
+            "equipment_tag",
+            unique=True,
+            postgresql_where=text("equipment_tag IS NOT NULL AND is_deleted = false"),
+        ),
         CheckConstraint(
             "status IN ('在用', '备用', '维修中', '停用', '报废')",
             name="ck_equipments_status",
@@ -168,6 +177,7 @@ class Equipment(BaseModel):
     warranty_expire_date: Mapped[date | None] = mapped_column(Date, nullable=True, comment="保修到期日")
     current_cost: Mapped[float | None] = mapped_column(nullable=True, comment="当前成本（元）")
     book_value: Mapped[float | None] = mapped_column(nullable=True, comment="账面净值（元）")
+    quantity: Mapped[int | None] = mapped_column(nullable=True, comment="数量（台/套）")
     depreciation_years: Mapped[int | None] = mapped_column(nullable=True, comment="折旧年限")
     technical_params: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True, comment="技术参数（JSON）")
     department_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -180,6 +190,7 @@ class Equipment(BaseModel):
     label_no: Mapped[str | None] = mapped_column(String(100), nullable=True, comment="标签号")
     scrap_status: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="报废状态")
     scrap_time: Mapped[date | None] = mapped_column(Date, nullable=True, comment="报废时间")
+    is_fixed_asset: Mapped[bool] = mapped_column(Boolean, server_default="true", comment="是否为固定资产")
 
     # 关系
     category_links: Mapped[list["EquipmentCategoryLink"]] = relationship(
@@ -188,3 +199,20 @@ class Equipment(BaseModel):
         lazy="selectin",
     )
     location: Mapped["Location"] = relationship("Location")
+
+
+class EquipmentSyncLog(BaseModel):
+    """设备同步操作审计日志"""
+
+    __tablename__ = "sync_logs"
+    __table_args__ = {"schema": "equipment"}
+
+    operator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("identity.users.id"), comment="操作人ID")
+    file_name: Mapped[str] = mapped_column(String(255), comment="上传的文件名")
+    summary: Mapped[dict[str, Any]] = mapped_column(
+        postgresql.JSON, comment="同步统计摘要 {updated, inserted, migrated, deleted}"
+    )
+    changes_detail: Mapped[list[dict[str, Any]]] = mapped_column(
+        postgresql.JSON, comment="详细变更列表 [{asset_no, field, old_val, new_val}]"
+    )
+    is_dry_run: Mapped[bool] = mapped_column(Boolean, default=False, comment="是否为预演模式")

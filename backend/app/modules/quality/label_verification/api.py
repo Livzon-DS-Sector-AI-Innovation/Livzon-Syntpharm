@@ -29,7 +29,6 @@ router = create_module_router(MODULES_BY_CODE["quality"])
 def get_label_verification_service(
     session: AsyncSession = Depends(get_db),
 ) -> LabelVerificationService:
-
     return LabelVerificationService(session)
 
 
@@ -47,7 +46,6 @@ async def get(
     page_params: PageParams = Depends(),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     verifications, total = await service.list_verifications(
         batch_number=batch_number,
         product_name=product_name,
@@ -74,7 +72,6 @@ async def post(
     payload: LabelVerificationCreate,
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     verification = await service.create_verification(payload)
 
     return success_response(
@@ -89,7 +86,6 @@ async def get(  # noqa: F811
     current_user: CurrentUser,
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     stats = await service.get_statistics()
 
     return success_response(data=stats.model_dump(mode="json"))
@@ -104,7 +100,6 @@ async def handler(
     batch_number: str,
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     verifications = await service.get_by_batch_number(batch_number)
 
     data = [v.model_dump(mode="json") for v in verifications]
@@ -121,7 +116,6 @@ async def handler(  # noqa: F811
     verification_id: UUID,
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     verification = await service.get_verification(verification_id)
 
     return success_response(
@@ -139,7 +133,6 @@ async def handler(  # noqa: F811
     payload: LabelVerificationUpdate,
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     verification = await service.update_verification(verification_id, payload)
 
     return success_response(
@@ -157,7 +150,6 @@ async def handler(  # noqa: F811
     verification_id: UUID,
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
-
     await service.delete_verification(verification_id)
 
     return success_response(message="标签复核记录删除成功")

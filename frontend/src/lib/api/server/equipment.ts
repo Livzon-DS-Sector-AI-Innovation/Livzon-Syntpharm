@@ -1,9 +1,12 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
+import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipment-query'
 
 
 // Equipment import row type (matches backend EquipmentImportRow schema)
+// 列名由 Excel 表头动态决定（后端 import-v4 下发 headers），已知列保留强类型
 export interface EquipmentImportRow {
+  [column: string]: string | number | boolean | null | undefined;
   资产编号?: string | null;
   资产说明?: string | null;
   实物所在部门?: string | null;
@@ -360,18 +363,26 @@ export async function updateScheduleApiTyped(routeId: string, scheduleId: string
 }
 
 // Equipment Import (using EquipmentImportRow from backend)
-export async function previewEquipmentImportApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
+export async function previewEquipmentImportApiTyped(
+  data: EquipmentImportRow[], 
+  headers?: Record<string, string>,
+  forceOverride: boolean = false
+) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-v4/preview`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
   })
 }
 
-export async function batchImportEquipmentApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
+export async function batchImportEquipmentApiTyped(
+  data: EquipmentImportRow[], 
+  headers?: Record<string, string>,
+  forceOverride: boolean = false
+) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-v4/batch`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
   })
 }
@@ -619,17 +630,8 @@ export async function fetchLocationTree() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations?tree=true`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
-export async function fetchEquipments(filters: any = {}) {
-  const params = new URLSearchParams()
-  if (filters.category_id) params.append('category_id', filters.category_id)
-  if (filters.location_id) params.append('location_id', filters.location_id)
-  if (filters.department_id) params.append('department_id', filters.department_id)
-  if (filters.status) params.append('status', filters.status)
-  if (filters.keyword) params.append('keyword', filters.keyword)
-  if (filters.page) params.append('page', filters.page.toString())
-  if (filters.page_size) params.append('page_size', filters.page_size.toString())
-  const qs = params.toString()
+export async function fetchEquipments(query: EquipmentListQuery = {}) {
+  const qs = buildEquipmentQuery(query).toString()
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments${qs ? `?${qs}` : ''}`)
 }
 

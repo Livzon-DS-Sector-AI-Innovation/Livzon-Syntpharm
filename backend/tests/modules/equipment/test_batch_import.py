@@ -110,3 +110,9 @@ class TestSequenceMatcher:
         """测试字符串相似度计算."""
         score = SequenceMatcher(None, str1, str2).ratio()
         assert expected_min <= score <= expected_max
+
+
+class MockEquipment:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)

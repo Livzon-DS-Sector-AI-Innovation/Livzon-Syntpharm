@@ -128,7 +128,7 @@ def parse_excel_date(value: Any) -> date | None:
     # 处理 datetime 对象（openpyxl 读取 Excel 日期单元格时返回）
     if isinstance(value, datetime):
         return value.date()
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         from datetime import timedelta
 
         base_date = date(1899, 12, 30)
