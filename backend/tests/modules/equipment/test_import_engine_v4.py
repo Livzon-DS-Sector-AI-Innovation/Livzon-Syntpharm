@@ -3,8 +3,6 @@
 import uuid
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 from app.modules.equipment.service.import_engine import (
     apply_incremental_update,
     find_existing_equipment,
@@ -14,7 +12,6 @@ from app.modules.equipment.service.import_engine import (
 class TestFindExistingEquipmentWarnings:
     """测试 find_existing_equipment 的结构化警告返回."""
 
-    @pytest.mark.asyncio
     async def test_fuzzy_match_returns_warning(self):
         """测试模糊匹配成功时返回结构化警告."""
         # Mock db and existing equipment

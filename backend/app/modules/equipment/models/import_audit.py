@@ -12,7 +12,11 @@ from app.shared.base_model import Base
 
 
 class ImportAuditLog(Base):
-    """导入审计日志表（不继承 BaseModel，避免 updated_by 等不存在字段的冲突）"""
+    """导入审计日志表：append-only，只插入不修改不删除。
+
+    直接继承 Base 而非 BaseModel——BaseModel 带入的 `is_deleted` 会让审计记录可被软删除，
+    与财务追溯要求冲突。同类先例见 `app/platform/audit/models.py` 的 `AuditLog(Base)`。
+    """
 
     __tablename__ = "import_audit_logs"
     __table_args__ = (

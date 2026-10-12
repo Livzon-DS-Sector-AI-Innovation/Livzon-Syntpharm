@@ -1,3 +1,5 @@
+'use client'
+
 import { Switch, Popconfirm } from 'antd';
 import { SafetyOutlined, WarningOutlined } from '@ant-design/icons';
 

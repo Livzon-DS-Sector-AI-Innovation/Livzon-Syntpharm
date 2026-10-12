@@ -128,7 +128,7 @@ class Equipment(BaseModel):
     __tablename__ = "equipments"
     __table_args__ = (
         UniqueConstraint("asset_no", "is_deleted", name="uq_equipments_asset_no"),
-        # 部分唯一索引：设备位号在未删除记录范围内唯一（见迁移 0081）
+        # 部分唯一索引：设备位号在未删除记录范围内唯一（见迁移 0070）
         Index(
             "uq_equipments_equipment_tag",
             "equipment_tag",

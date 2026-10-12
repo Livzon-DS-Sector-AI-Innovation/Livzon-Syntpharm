@@ -2,7 +2,7 @@ services:
   backend:
     volumes:
     - ./backend/app:/app/app:ro
-    # 宿主机无 uv，测试只能在容器里跑；不挂 tests 就得每次 docker cp
+    # DATABASE_URL 的 host 是容器网络服务名，宿主机连不到 Postgres，DB 测试只能在容器内跑
     - ./backend/tests:/app/tests:ro
     environment:
     - UVICORN_RELOAD=true

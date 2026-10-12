@@ -35,7 +35,6 @@ def create_mock_excel(rows):
     return output.read()
 
 
-@pytest.mark.asyncio
 async def test_sync_updates_cost_and_value(db_session: AsyncSession, seed_departments_and_locations):
     """测试：同步功能是否正确更新了成本和净值"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
@@ -72,7 +71,6 @@ async def test_sync_updates_cost_and_value(db_session: AsyncSession, seed_depart
     assert updated_equip.book_value == 100.0
 
 
-@pytest.mark.asyncio
 async def test_sync_soft_deletes_missing_assets(db_session: AsyncSession, seed_departments_and_locations):
     """测试：Excel 中消失的设备是否被软删除"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
@@ -108,7 +106,6 @@ async def test_sync_soft_deletes_missing_assets(db_session: AsyncSession, seed_d
     assert deleted_equip.is_deleted
 
 
-@pytest.mark.asyncio
 async def test_sync_threshold_fuse(db_session: AsyncSession, seed_departments_and_locations):
     """测试：缺失比例超过 5% 时是否触发熔断"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))

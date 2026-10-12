@@ -34,7 +34,6 @@ def _create_excel(rows) -> bytes:
     return output.read()
 
 
-@pytest.mark.asyncio
 async def test_tb01_exact_match_updates_cost(db_session, seed_basic_data):
     """TB-01: 验证完全匹配时，成本和净值被正确更新"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
@@ -70,7 +69,6 @@ async def test_tb01_exact_match_updates_cost(db_session, seed_basic_data):
     assert updated.name == "NewName"
 
 
-@pytest.mark.asyncio
 async def test_tb02_soft_delete_missing_assets(db_session, seed_basic_data):
     """TB-02: 验证 Excel 中消失的设备被软删除"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
@@ -105,7 +103,6 @@ async def test_tb02_soft_delete_missing_assets(db_session, seed_basic_data):
     assert deleted.is_deleted
 
 
-@pytest.mark.asyncio
 async def test_tb04_threshold_fuse(db_session, seed_basic_data):
     """TB-04: 验证缺失比例超过 5% 时触发熔断"""
     dept = await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
@@ -134,7 +131,6 @@ async def test_tb04_threshold_fuse(db_session, seed_basic_data):
         await sync_equipments_with_audit(db_session, excel_data, file_name="fuse.xlsx")
 
 
-@pytest.mark.asyncio
 async def test_tb04_audit_log_created(db_session, seed_basic_data):
     """TB-04: 验证同步后生成了审计日志"""
     await db_session.execute(select(HrDepartment).where(HrDepartment.name == "201车间"))
