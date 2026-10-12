@@ -4839,3 +4839,396 @@ _None._
 - OpenAPI drift check now fails on drift instead of auto-committing
 - 11 legacy quality tables migrated to shared BaseModel
 
+
+---
+
+### PR #43: feat(equipment): 设备台账导入 V4、动态排序、强制覆盖与 UI 优化 (base: main, head: lzhc-zhuang-equipment, date: 2026-08-27)
+
+**Changed files (159):**
+- `backend/alembic/versions/0069_add_sync_logs_table.py` (added)
+- `backend/alembic/versions/0070_add_equipment_import_v4_fields.py` (added)
+- `backend/alembic/versions/0071_add_import_audit_override_type.py` (added)
+- `backend/alembic/versions/0072_add_equipment_quantity.py` (added)
+- `backend/app/modules/equipment/` (28 files modified/added/removed)
+- `backend/app/modules/administration/service.py` (modified)
+- `backend/app/modules/energy/feishu_import.py` (modified)
+- `backend/app/modules/production/pressure/api.py` (modified, -37)
+- `backend/app/modules/quality/ai/api.py` (modified)
+- `backend/app/modules/quality/label_verification/api.py` (modified)
+- `backend/app/modules/registration/dossier_writer/asset_text_extractor.py` (modified)
+- `backend/app/modules/research/api.py` (modified, -95)
+- `backend/app/modules/safety/card_builder.py` (modified)
+- `backend/app/modules/warehouse/api.py` (modified)
+- `backend/scripts/` (20+ migration/seed scripts added)
+- `backend/tests/modules/equipment/` (10 test files added/modified)
+- `backend/tests/modules/production/conftest.py` (modified, -35)
+- `frontend/src/actions/equipment.ts` (modified)
+- `frontend/src/actions/equipment/` (3 files removed)
+- `frontend/src/app/(dashboard)/equipment/assets/` (2 files modified)
+- `frontend/src/components/equipment/` (25+ files modified/added/removed)
+- `frontend/src/lib/api/` (3 files modified/added)
+- `frontend/src/stores/equipment.ts` (modified)
+- `frontend/src/stores/equipment/` (3 files removed)
+- `frontend/src/types/generated/schema.ts` (modified, +334)
+- `frontend/e2e/equipment-sorting.spec.ts` (added, 177 lines)
+- `frontend/e2e/auth.setup.ts` (modified)
+- `docker-compose.dev.yml` (modified)
+- `backend/openapi.json` (modified, +513)
+
+**Affected categories:** 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
+
+---
+
+#### Category 2: Secrets and hardcoded values
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 49 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+No hardcoded absolute paths, localhost URLs (except E2E test defaults with env var overrides), API keys in logs, or .env files found.
+
+---
+
+#### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 28 |
+| Cross-module import sites evaluated | 4 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+All cross-module imports correctly use `public_api.py`:
+- `batch_import_v4.py:548` → `from app.modules.hr.public_api import get_department_by_name` ✅
+- `repository/equipment.py:2028` → `from app.modules.hr.public_api import list_all_departments` ✅
+- `service/equipment.py:2247` → `from app.modules.hr.public_api import list_all_departments` ✅
+- `repository/equipment.py:15` → `from app.platform.identity.models import Department, User` ✅ (global layer)
+
+---
+
+#### Category 4: API and authentication
+
+| Stat | Count |
+|------|-------|
+| New endpoints evaluated | 3 |
+| Modified endpoints evaluated | 2 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+| Endpoint | Auth | response_model | Verdict |
+|----------|------|----------------|---------|
+| `POST /equipments/import-v4/batch` | `RequiredUser` ✅ | `ImportV4BatchApiResponse` ✅ | ✅ |
+| `POST /equipments/import-v4/preview` | `RequiredUser` ✅ | `ImportV4PreviewApiResponse` ✅ | ✅ |
+| `POST /equipments/sync-excel` | `RequiredUser` ✅ | `EquipmentSyncResponse` ✅ | ✅ |
+
+Soft delete: `bulk_soft_delete()` uses `is_deleted=True` ✅
+
+---
+
+#### Category 5: Models and migrations
+
+| Stat | Count |
+|------|-------|
+| New models evaluated | 2 |
+| New migrations evaluated | 4 |
+| Modified models evaluated | 1 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/equipment/models/import_audit.py:14` — 业务模型继承规则 — `class ImportAuditLog(Base):` 继承 `Base` 而非 `BaseModel`。AGENTS.md 规定"业务模型继承 `app/shared/base_model.py` 中的 `BaseModel`"。代码注释说明原因是"避免 updated_by 等不存在字段的冲突"，但这导致缺少 `updated_at`（无变更追踪）、`is_deleted`（无软删除）等标准审计列。建议：(a) 继承 `BaseModel` 并添加 dummy 列，或 (b) 在 AGENTS.md 例外表中注册此偏差。
+
+**Notes:**
+- `models/equipment.py:133` — 注释说"见迁移 0081"但实际由迁移 0070 创建，建议更新为"见迁移 0070"（非违规，仅注释准确性）
+
+---
+
+#### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| `os.getenv()` calls | 0 |
+| Logger calls inspected | ~12 |
+| Sensitive data in logs | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+All logger calls use lazy `%s` formatting ✅
+
+**Notes:**
+- `main.py:380` — `logger.exception("Database integrity error occurred")` 缺少上下文（表名、约束、请求路径），建议改为 `logger.exception("Database integrity error: %s", exc.orig)`（非违规，仅改进建议）
+- `api/equipment.py:47-60` — 内存速率限制器 `_rate_limit_store` 不跨 Uvicorn worker，代码注释已说明"生产环境应使用 Redis"（非违规，当前单 worker 部署可接受）
+
+---
+
+#### Category 7: External services and background tasks
+
+| Stat | Count |
+|------|-------|
+| `asyncio.create_task()` calls | 0 |
+| `SchedulerEngine` usage | 0 |
+| `register_background_worker()` usage | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+No background tasks or async task spawning introduced. All new code runs within HTTP request lifecycle ✅
+
+---
+
+#### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Test files modified | 2 |
+| Test files added | 8 |
+| Total lines added | ~850 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `backend/tests/modules/equipment/test_import_engine_v4.py:17`, `test_sync_tdd.py:37,73,108,137`, `test_sync_logic.py:38,75,111` — pytest-asyncio auto mode — 8 个 async test 函数使用 `@pytest.mark.asyncio` 装饰器，但 `pyproject.toml` 已配置 `asyncio_mode = "auto"`。AGENTS.md 规定"`async def test_*` 函数会被自动识别为异步测试，不需要 `@pytest.mark.asyncio` 装饰器"。冗余且与同 PR 其他测试文件（如 `test_sorting.py`、`test_import_v4_contract.py`）不一致。
+
+- [ ] `backend/tests/modules/equipment/test_batch_import_integration.py` — 测试目录结构 — 文件 docstring 明确说明"Integration tests for Equipment Import v4 Force Override"，但放置在 `backend/tests/modules/equipment/` 而非 `backend/tests/integration/`。AGENTS.md 规定"集成测试放在 `backend/tests/integration/`"。代码库已有 `backend/tests/integration/test_import_api_integration.py` 确立了集成测试的目录模式。
+
+**Uncertain:**
+
+- [ ] `backend/tests/modules/equipment/test_import_v4_matching.py` — 测试覆盖率 — 文件包含 4 个 async test 函数，但全部使用 `pass` 语句，无实际测试逻辑或断言。文件注释说明"Running in Red state..."，似乎是 TDD 占位符。虽然不直接违反规则，但这些测试提供零覆盖率，可能给人测试完整的错觉。标记为 Uncertain 因为：(1) 可能是有意的 TDD 工作流；(2) 规则未明确禁止 stub 测试。
+
+**Notes:**
+- 所有测试文件正确遵循 `backend/tests/modules/<module>/` 模式 ✅
+- 无测试调用真实外部服务（LLM、飞书、MinIO），全部使用 `MagicMock` 和 `AsyncMock` ✅
+- `conftest.py` 包含两个几乎相同的 fixture（`seed_departments_and_locations` 和 `seed_basic_data`），存在不必要的重复（非违规，仅代码质量建议）
+
+---
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 25+ |
+| Barrel file `'use client'` check | ✅ |
+| `page.tsx` `export const dynamic` check | ✅ |
+| Client Components `'use client'` check | ⚠️ |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `frontend/src/components/equipment/ImportCockpit.tsx:1` — Client Component `'use client'` 指令 — 文件导入 `Table`, `Tag`, `Tooltip` from `antd` 但缺少 `'use client'` 指令。AGENTS.md 规定"使用了 React Hooks、浏览器 API、事件处理器、Zustand store 或直接使用 antd 组件 → 必须加 `'use client'`"。严重程度：Low — 组件仅从已有 `'use client'` 的 `EquipmentImportModal.tsx` 导入，继承了客户端上下文，但文件本身应声明以防将来被其他地方导入。
+
+- [ ] `frontend/src/components/equipment/ForceOverrideToggle.tsx:1` — Client Component `'use client'` 指令 — 文件导入 `Switch`, `Popconfirm` from `antd` 并使用事件处理器（`onConfirm`, `onClick`）但缺少 `'use client'` 指令。严重程度：Low — 同上，仅从客户端组件导入。
+
+---
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| API types from generated schema | ✅ |
+| Write operations in Server Actions | ✅ |
+| Client calls use relative paths | ✅ |
+| Server calls use `API_BASE_URL` | ✅ |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+- `ExcelSyncButton.tsx:35` uses direct `fetch()` with `FormData` for file upload — **allowed exception** per AGENTS.md ✅
+- `equipment-query.ts` derives types from generated schema ✅
+- All Server Actions properly wrap API calls ✅
+
+---
+
+#### Category 11: Proxy and routing
+
+| Stat | Count |
+|------|-------|
+| `proxy.ts` modified | ❌ Not modified |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+`proxy.ts` was not changed in this PR ✅
+
+---
+
+#### Category 12: Cross-project OpenAPI
+
+| Stat | Count |
+|------|-------|
+| `backend/openapi.json` updated | ✅ |
+| `frontend/src/types/generated/schema.ts` regenerated | ✅ |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+- `openapi.json` adds `sort_by`, `sort_order` query parameters and new endpoints ✅
+- `schema.ts` adds corresponding types (334 lines added) ✅
+
+---
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Protected files modified | ⚠️ Yes |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `docker-compose.dev.yml:4-5` — 受保护文件修改 — AGENTS.md 将 `docker-compose.dev.yml` 列为受保护文件，修改前需要批准。变更添加了 `./backend/tests:/app/tests:ro` volume mount 用于容器内测试执行。注释说明了理由（"宿主机无 uv，测试只能在容器里跑"），但 PR 中未记录批准。严重程度：Medium — 影响所有开发者环境和 CI。
+
+---
+
+#### Category 14: E2E
+
+| Stat | Count |
+|------|-------|
+| E2E tests in `frontend/e2e/` | ✅ |
+| Uses Playwright | ✅ |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+- New file: `frontend/e2e/equipment-sorting.spec.ts` (177 lines) ✅
+- Uses Playwright test framework ✅
+- `auth.setup.ts` refactored to support `E2E_AUTH_TOKEN` injection ✅
+
+---
+
+#### Category 15: SQL 注入与不安全查询
+
+| Stat | Count |
+|------|-------|
+| SQL query sites inspected | ~25 |
+| Raw SQL `text()` usage | 2 (static constants) |
+| f-string/concatenation in SQL | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+Dynamic sort logic analysis (`repository/equipment.py` `_build_order_by()`):
+1. Whitelist validation: `sort_by` checked against `_SORT_COLUMNS` dict ✅
+2. API-layer enforcement: `EquipmentSortBy = Literal[...]` rejects invalid values ✅
+3. `text()` fragments are module-level constants with zero runtime interpolation ✅
+4. ORM `case()` expression built from static dict ✅
+5. All WHERE clauses use ORM expressions (parameterized) ✅
+6. LIKE patterns use `_escape_like()` ✅
+7. `update().values(**new_vals)` passes as bound parameters ✅
+
+---
+
+#### Category 16: React Hooks 与 React Compiler
+
+| Stat | Count |
+|------|-------|
+| useEffect + setState for data fetching | ⚠️ Present but justified |
+| useEffect + setState for derived state | ✅ Uses useMemo |
+| useEffect dependencies complete | ✅ |
+| Direct state mutations | ✅ None |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 3 |
+
+**Uncertain:**
+
+- [ ] `frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx:221-229` — useEffect + setState for data fetching — 页面使用混合 SSR + 客户端 fetch 模式。数据先通过 `page.tsx` 服务端获取，然后客户端用于更新。`useEffect` 用于 filter/pagination 变化，非初始加载。标记为 Uncertain 因为：(1) 这是 URL 驱动状态的有意架构选择；(2) 使用 `useRef` 防止重复 fetch（`lastFetchKey`）；(3) 代码已文档化。建议：考虑迁移到 React Query 以与项目偏好一致，但当前模式功能正常且有文档。
+
+- [ ] `frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx:89-103` — useEffect + setState for localStorage hydration — 读取 `localStorage` 在 useState initializer 中会导致 SSR/client hydration 不匹配。eslint-disable 注释说明了原因。标记为 Uncertain 因为：(1) 这是客户端存储的合理例外；(2) 已有 eslint-disable 文档化。
+
+- [ ] `frontend/src/components/equipment/EquipmentTable.tsx:209-211` — useEffect + setState for animation phase toggle — 这不是数据获取或派生状态，而是 CSS 动画触发器。toggle 重启 CSS 动画而不重新挂载。eslint-disable 注释说明了原因。标记为 Uncertain 因为：(1) 这是动画控制的合理例外；(2) 已有 eslint-disable 文档化。
+
+---
+
+#### Categories not affected
+
+1 — no relevant files changed (no test/script directory reorganization)
+
+---
+
+#### PR #43 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 1 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 2 | 1 |
+| 9. Frontend component boundaries | 2 | 0 |
+| 10. Frontend API and generated types | 0 | 0 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 1 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL 注入与不安全查询 | 0 | 0 |
+| 16. React Hooks 与 React Compiler | 0 | 3 |
+| **Total** | **6** | **4** |
+
+---
+
+#### PR #43 Overall Assessment
+
+**Severity breakdown:**
+
+| Severity | Count | Key issues |
+|----------|-------|------------|
+| **Blocking** | 0 | — |
+| **High** | 0 | — |
+| **Medium** | 3 | `ImportAuditLog` inherits `Base` instead of `BaseModel`; `docker-compose.dev.yml` modified without documented approval; integration test in wrong directory |
+| **Low** | 3 | 2 missing `'use client'` directives; 8 redundant `@pytest.mark.asyncio` decorators |
+
+**Top 3 priorities for fix:**
+1. **`docker-compose.dev.yml`**: Add approval note to PR or revert the change — this is a protected file affecting all developer environments
+2. **`models/import_audit.py`**: Either inherit `BaseModel` and add dummy columns, or document the deviation in AGENTS.md exceptions table
+3. **Test directory**: Move `test_batch_import_integration.py` to `backend/tests/integration/` to follow established pattern
+
+**Positive changes:**
+- ✅ All new endpoints use concrete Pydantic response models (not `ApiResponse`)
+- ✅ Cross-module imports correctly use `public_api.py`
+- ✅ SQL injection prevention: whitelist validation, parameterized queries, ORM expressions
+- ✅ Logger uses lazy `%s` formatting throughout
+- ✅ OpenAPI spec and generated types synchronized
+- ✅ E2E test added for new sorting functionality
+- ✅ Soft delete correctly implemented
+- ✅ All external services properly mocked in tests
+
+**Recommendation:** **fix first** — 3 medium-severity issues should be addressed before merge:
+1. Document approval for `docker-compose.dev.yml` change or revert
+2. Fix `ImportAuditLog` inheritance or document exception
+3. Move integration test to correct directory
+
+The 2 low-severity `'use client'` issues and 8 redundant `@pytest.mark.asyncio` decorators can be fixed in a follow-up commit.
+
