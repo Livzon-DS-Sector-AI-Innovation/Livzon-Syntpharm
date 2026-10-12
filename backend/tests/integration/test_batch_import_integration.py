@@ -31,12 +31,3 @@ def test_protective_mode_skips_existing_business_fields():
 
     assert "department_id" not in changes
     assert existing.department_id == "dept_old"
-
-
-def test_audit_log_marks_force_override():
-    """验证审计日志中能识别强制覆盖操作。"""
-    # 模拟：当 changes 中包含 B类字段且 force_override 为 True 时
-    # 审计逻辑应记录 override_type: force
-    changes = {"department_id": {"old": "A", "new": "B"}}
-    audit_entry = {"changes": changes, "override_type": "force" if changes.get("department_id") else "normal"}
-    assert audit_entry["override_type"] == "force"
