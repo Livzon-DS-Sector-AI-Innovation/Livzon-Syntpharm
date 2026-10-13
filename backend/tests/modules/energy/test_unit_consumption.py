@@ -401,6 +401,7 @@ class TestAISuggestionFallback:
             )
 
         # 传入 expected_keys 会让 chat_json 对缺字段直接抛错，可用结论会被整体丢弃
+        assert chat_json.await_args is not None
         assert "expected_keys" not in chat_json.await_args.kwargs
         suggestion = result["ai_suggestion"]
         assert suggestion.summary == "单耗正常"
