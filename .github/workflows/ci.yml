@@ -10,6 +10,11 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+env:
+  # GitHub runner（海外）无法稳定访问清华 PyPI 镜像，uv sync 会连接超时导致失败；
+  # uv.toml 的 fallback 只覆盖"包不存在"，不覆盖网络错误，因此 CI 需显式覆盖为官方源。
+  # 中国大陆开发者本地 uv sync 仍走 backend/uv.toml 的 tuna 镜像加速，不受影响。
+  UV_DEFAULT_INDEX: https://pypi.org/simple
 jobs:
   pr-up-to-date:
     if: github.event_name == 'pull_request'
