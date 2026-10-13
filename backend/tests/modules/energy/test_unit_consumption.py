@@ -409,6 +409,34 @@ class TestAISuggestionFallback:
         assert suggestion.confidence_level == "medium"
         assert suggestion.summary != "AI 分析暂时不可用，请人工审核"
 
+    async def test_gateway_json_object_envelope_is_unwrapped(self) -> None:
+        """网关对 response_format=json_object 会套 {"type":"json_object","content":{...}}，
+        按顶层取字段会全部落空并误判为 AI 不可用。"""
+        from app.modules.energy.service import analyze_energy_v2
+
+        llm_payload = {
+            "type": "json_object",
+            "content": {
+                "summary": "单耗优于目标",
+                "detailed_analysis": "本月总能耗低于目标水平",
+                "recommendations": [{"建议": "加装分项计量", "预期效果": "定位高耗能工序"}],
+                "confidence_level": "medium",
+            },
+        }
+        with (
+            _patched_energy_source(30000.0),
+            patch("app.modules.energy.service.llm_client.chat_json", AsyncMock(return_value=llm_payload)),
+        ):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        suggestion = result["ai_suggestion"]
+        assert suggestion.summary == "单耗优于目标"
+        assert suggestion.detailed_analysis == "本月总能耗低于目标水平"
+        assert suggestion.recommendations == ["加装分项计量 — 定位高耗能工序"]
+        assert suggestion.confidence_level == "medium"
+
     async def test_envelope_without_analysis_fields_degrades(self) -> None:
         from app.modules.energy.service import analyze_energy_v2
 

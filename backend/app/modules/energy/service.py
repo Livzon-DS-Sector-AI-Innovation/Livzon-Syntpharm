@@ -965,6 +965,23 @@ def _normalize_recommendations(value: Any) -> list[str]:
     return [text for item in items if item is not None and (text := _normalize_recommendation_item(item))]
 
 
+_AI_SUGGESTION_KEYS = ("summary", "detailed_analysis", "recommendations", "confidence_level")
+
+
+def _unwrap_ai_payload(parsed: Any) -> dict[str, Any]:
+    """网关在 response_format=json_object 下约半数响应会套一层信封：
+    `{"type": "json_object", "content": {"summary": ...}}`，直接按顶层取字段会全部落空。
+    """
+    if not isinstance(parsed, dict):
+        return {}
+    if any(key in parsed for key in _AI_SUGGESTION_KEYS):
+        return parsed
+    for value in parsed.values():
+        if isinstance(value, dict) and any(key in value for key in _AI_SUGGESTION_KEYS):
+            return value
+    return {}
+
+
 async def analyze_energy_v2(
     db: AsyncSession,
     workshop_id: UUID,
@@ -987,7 +1004,7 @@ async def analyze_energy_v2(
             # 不传 expected_keys：模型偶发漏掉 confidence_level 等可选字段时，已有的 summary/详细分析仍然可用，
             # 只有完全拿不到结论文本时才降级。
             parsed = await llm_client.chat_json(messages, temperature=0.3)
-            ai_result = parsed if isinstance(parsed, dict) else {}
+            ai_result = _unwrap_ai_payload(parsed)
             summary = str(ai_result.get("summary") or "").strip()
             detailed_analysis = str(ai_result.get("detailed_analysis") or "").strip()
             if not summary and not detailed_analysis:
