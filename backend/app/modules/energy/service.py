@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
-from app.core.llm import LLMError, llm_client
+from app.core.llm import LLMError, LLMOutputError, llm_client
 from app.core.llm.client import LLMClient
 from app.modules.energy import repository as repo
 from app.modules.energy.adapters import ADAPTERS
@@ -930,7 +930,7 @@ def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
 请以 JSON 格式返回，包含以下字段：
 - summary: 一句话总结（不超过 50 字）
 - detailed_analysis: 详细分析（200-500 字）
-- recommendations: 建议列表（数组，3-5 条）
+- recommendations: 建议列表（JSON 字符串数组，3-5 条，每条为一句完整的中文，禁止返回对象）
 - confidence_level: 置信度（high/medium/low）
 
 【注意事项】
@@ -952,10 +952,17 @@ def _normalize_confidence_level(value: Any) -> Literal["high", "medium", "low"]:
     return "medium"
 
 
+def _normalize_recommendation_item(item: Any) -> str:
+    """模型常把单条建议返回成 {建议, 具体措施, 预期效果} 这样的对象，取 value 拼成一行可读文本。"""
+    if isinstance(item, dict):
+        return " — ".join(str(v).strip() for v in item.values() if str(v).strip())
+    return str(item).strip()
+
+
 def _normalize_recommendations(value: Any) -> list[str]:
-    """LLM 可能把建议返回成非数组，或夹带空项。"""
+    """LLM 可能把建议返回成非数组、对象数组、缺失该字段，或夹带空项。"""
     items = value if isinstance(value, list) else [value]
-    return [str(item).strip() for item in items if str(item).strip()]
+    return [text for item in items if item is not None and (text := _normalize_recommendation_item(item))]
 
 
 async def analyze_energy_v2(
@@ -977,15 +984,18 @@ async def analyze_energy_v2(
         prompt = construct_ai_prompt(analysis_data)
         messages = [{"role": "user", "content": prompt}]
         try:
-            ai_result = await llm_client.chat_json(
-                messages,
-                expected_keys=["summary", "detailed_analysis", "recommendations", "confidence_level"],
-                temperature=0.3,
-            )
+            # 不传 expected_keys：模型偶发漏掉 confidence_level 等可选字段时，已有的 summary/详细分析仍然可用，
+            # 只有完全拿不到结论文本时才降级。
+            parsed = await llm_client.chat_json(messages, temperature=0.3)
+            ai_result = parsed if isinstance(parsed, dict) else {}
+            summary = str(ai_result.get("summary") or "").strip()
+            detailed_analysis = str(ai_result.get("detailed_analysis") or "").strip()
+            if not summary and not detailed_analysis:
+                raise LLMOutputError("LLM 未返回有效的总结或详细分析", str(parsed)[:200])
             ai_suggestion = AISuggestion(
                 status=analysis_data["deviation_status"],
-                summary=str(ai_result.get("summary", "")),
-                detailed_analysis=str(ai_result.get("detailed_analysis", "")),
+                summary=summary,
+                detailed_analysis=detailed_analysis,
                 recommendations=_normalize_recommendations(ai_result.get("recommendations")),
                 confidence_level=_normalize_confidence_level(ai_result.get("confidence_level")),
             )

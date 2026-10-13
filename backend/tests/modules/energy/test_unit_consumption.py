@@ -357,6 +357,121 @@ class TestAISuggestionFallback:
         assert suggestion.confidence_level == "medium"
         assert suggestion.recommendations == ["单条建议不是数组"]
 
+    async def test_recommendation_objects_flatten_to_readable_text(self) -> None:
+        """网关模型实际会把单条建议返回成对象，直接 str() 会把 Python dict repr 渲染到页面。"""
+        from app.modules.energy.service import analyze_energy_v2
+
+        llm_payload = {
+            "summary": "s",
+            "detailed_analysis": "d",
+            "recommendations": [
+                {"建议": "加装分项计量", "具体措施": "按工序加装电表", "预期效果": "识别 1-2% 节能空间"},
+                {"建议": "优化排程", "具体措施": "", "预期效果": "  "},
+                "",
+            ],
+            "confidence_level": "medium",
+        }
+        with (
+            _patched_energy_source(30000.0),
+            patch("app.modules.energy.service.llm_client.chat_json", AsyncMock(return_value=llm_payload)),
+        ):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        assert result["ai_suggestion"].recommendations == [
+            "加装分项计量 — 按工序加装电表 — 识别 1-2% 节能空间",
+            "优化排程",
+        ]
+
+    async def test_partial_output_still_usable(self) -> None:
+        """模型漏掉 confidence_level / recommendations 时不能把已有结论一起丢弃。"""
+        from app.modules.energy.service import analyze_energy_v2
+
+        llm_payload = {
+            "summary": "单耗正常",
+            "detailed_analysis": "分析内容",
+            "recommendations": None,
+            "confidence_level": None,
+        }
+        chat_json = AsyncMock(return_value=llm_payload)
+        with _patched_energy_source(30000.0), patch("app.modules.energy.service.llm_client.chat_json", chat_json):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        # 传入 expected_keys 会让 chat_json 对缺字段直接抛错，可用结论会被整体丢弃
+        assert "expected_keys" not in chat_json.await_args.kwargs
+        suggestion = result["ai_suggestion"]
+        assert suggestion.summary == "单耗正常"
+        assert suggestion.detailed_analysis == "分析内容"
+        assert suggestion.recommendations == []
+        assert suggestion.confidence_level == "medium"
+        assert suggestion.summary != "AI 分析暂时不可用，请人工审核"
+
+    async def test_envelope_without_analysis_fields_degrades(self) -> None:
+        from app.modules.energy.service import analyze_energy_v2
+
+        with (
+            _patched_energy_source(30000.0),
+            patch(
+                "app.modules.energy.service.llm_client.chat_json",
+                AsyncMock(return_value={"type": "json_object", "result": {"foo": "bar"}}),
+            ),
+        ):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        assert result["ai_suggestion"].summary == "AI 分析暂时不可用，请人工审核"
+        assert result["ai_suggestion"].confidence_level == "low"
+
+    async def test_blank_summary_and_analysis_degrades(self) -> None:
+        from app.modules.energy.service import analyze_energy_v2
+
+        llm_payload = {"summary": "  ", "detailed_analysis": "", "recommendations": ["建议一"]}
+        with (
+            _patched_energy_source(30000.0),
+            patch("app.modules.energy.service.llm_client.chat_json", AsyncMock(return_value=llm_payload)),
+        ):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        assert result["ai_suggestion"].summary == "AI 分析暂时不可用，请人工审核"
+
+    async def test_only_detailed_analysis_is_still_shown(self) -> None:
+        """模型漏掉 summary 时不能整块丢弃已经拿到的详细分析。"""
+        from app.modules.energy.service import analyze_energy_v2
+
+        llm_payload = {"summary": None, "detailed_analysis": "本月单耗低于目标", "recommendations": ["保持现状"]}
+        with (
+            _patched_energy_source(30000.0),
+            patch("app.modules.energy.service.llm_client.chat_json", AsyncMock(return_value=llm_payload)),
+        ):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        suggestion = result["ai_suggestion"]
+        assert suggestion.summary == ""
+        assert suggestion.detailed_analysis == "本月单耗低于目标"
+        assert suggestion.recommendations == ["保持现状"]
+
+    async def test_non_dict_output_degrades_instead_of_crashing(self) -> None:
+        """chat_json 兜不住非对象输出（模型返回裸字符串/数组），不能让它冒成 500。"""
+        from app.modules.energy.service import analyze_energy_v2
+
+        with (
+            _patched_energy_source(30000.0),
+            patch("app.modules.energy.service.llm_client.chat_json", AsyncMock(return_value="只有一段文本")),
+        ):
+            result = await analyze_energy_v2(
+                _mock_db(), uuid4(), "2026-08", self._production_items(), include_ai_suggestion=True
+            )
+
+        assert result["ai_suggestion"].summary == "AI 分析暂时不可用，请人工审核"
+
     async def test_ai_suggestion_skipped_when_not_requested(self) -> None:
         from app.modules.energy.service import analyze_energy_v2
 
