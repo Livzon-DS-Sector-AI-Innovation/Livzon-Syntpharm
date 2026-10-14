@@ -1,6 +1,6 @@
 import { EquipmentPage } from './EquipmentPage'
 import { fetchCategoryTree, fetchLocationTree, fetchEquipments, fetchEquipmentStatistics, fetchDepartments } from '@/lib/api/server/equipment'
-import { parseEquipmentUrlRecord } from '@/lib/api/equipment-query'
+import { parseEquipmentUrlRecord, toEquipmentListQuery, toEquipmentStatsQuery } from '@/lib/api/equipment-query'
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { unwrapResponse } from '@/lib/api/server/base'
@@ -12,30 +12,20 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-// 默认空数据
-const defaultStatistics: EquipmentStatistics = {
-  total: 0,
-  by_status: {
-    '在用': 0,
-    '备用': 0,
-    '维修中': 0,
-    '停用': 0,
-    '报废': 0,
-  },
-  by_category: {},
-  by_location: {},
-}
-
 export default async function EquipmentPageWrapper({ searchParams }: PageProps) {
   let categories: EquipmentCategory[] = []
   let locations: Location[] = []
   let equipments: Equipment[] = []
   let total = 0
-  let statistics = defaultStatistics
+  // null = 首屏统计取数失败，客户端不喂 initialData，直接按当前筛选重新请求
+  let statistics: EquipmentStatistics | null = null
   let departments: DepartmentOption[] = []
 
-  // 服务端首屏按 URL 的排序/分页取数，否则客户端二次请求覆盖时会产生闪变
-  const { state: listQuery } = parseEquipmentUrlRecord(await searchParams)
+  // 服务端首屏按 URL 的完整查询状态（筛选 + 排序 + 分页）取数，
+  // 与客户端 hydration 后的 queryKey 同源，否则首屏数据会被二次请求覆盖并产生闪变
+  const { state: urlState } = parseEquipmentUrlRecord(await searchParams)
+  const listQuery = toEquipmentListQuery(urlState)
+  const statsQuery = toEquipmentStatsQuery(urlState)
 
   // 每个 API 独立 try/catch，避免一个失败拖垮全部数据
   try {
@@ -57,8 +47,8 @@ export default async function EquipmentPageWrapper({ searchParams }: PageProps) 
     console.warn('加载设备列表失败:', error)
   }
   try {
-    const statsResult = await fetchEquipmentStatistics()
-    statistics = unwrapResponse<EquipmentStatistics>(statsResult) ?? defaultStatistics
+    const statsResult = await fetchEquipmentStatistics(statsQuery)
+    statistics = unwrapResponse<EquipmentStatistics>(statsResult)
   } catch (error) {
     console.warn('加载设备统计失败:', error)
   }

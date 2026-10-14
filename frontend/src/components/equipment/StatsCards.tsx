@@ -1,12 +1,14 @@
 'use client'
 
 import { EquipmentStatistics, EquipmentStatus } from '@/types/equipment/generated-bridge'
-import { useEquipmentStore } from '@/stores/equipment'
 import { useState } from 'react'
 
 interface StatsCardsProps {
   statistics: EquipmentStatistics
   compact?: boolean
+  /** 当前 URL 上的状态筛选（空串 = 不限） */
+  statusFilter: string
+  onStatusFilterChange: (status: string) => void
 }
 
 // 定义状态配置：包含颜色、标签和图标语义
@@ -18,12 +20,11 @@ const STATUS_CONFIG = [
   { key: '报废' as EquipmentStatus, label: '报废', color: '#ef4444', bg: '#fef2f2' },
 ]
 
-export function StatsCards({ statistics, compact = false }: StatsCardsProps) {
-  const { statusFilter, setStatusFilter } = useEquipmentStore()
+export function StatsCards({ statistics, compact = false, statusFilter, onStatusFilterChange }: StatsCardsProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null)
 
   const handleClick = (status: EquipmentStatus | '') => {
-    setStatusFilter(status)
+    onStatusFilterChange(status)
   }
 
   // 紧凑型视图（用于导入弹窗等狭小空间）

@@ -4,7 +4,6 @@ import {
   EquipmentCategory,
   Location,
   Equipment,
-  EquipmentStatus,
   FailureCode,
   WorkOrder,
   WorkOrderStatus,
@@ -24,14 +23,6 @@ import {
 } from '@/types/equipment/generated-bridge'
 
 interface EquipmentStore {
-  // 筛选状态（服务端数据一律走 React Query，不在 store 里做第二份缓存）
-  selectedCategory: string | null
-  selectedLocation: string | null
-  statusFilter: EquipmentStatus | ''
-  departmentFilter: string | null
-  setDepartmentFilter: (id: string | null) => void
-  keyword: string
-
   // 抽屉状态
   equipmentDrawerOpen: boolean
   categoryDrawerOpen: boolean
@@ -41,11 +32,6 @@ interface EquipmentStore {
   editingLocation: Location | null
 
   // 操作
-  setSelectedCategory: (id: string | null) => void
-  setSelectedLocation: (id: string | null) => void
-  setStatusFilter: (status: EquipmentStatus | '') => void
-  setKeyword: (keyword: string) => void
-  resetFilters: () => void
   openEquipmentDrawer: (equipment?: Equipment) => void
   closeEquipmentDrawer: () => void
   openCategoryDrawer: (category?: EquipmentCategory) => void
@@ -227,11 +213,6 @@ export const useEquipmentStore = create<EquipmentStore>()(
   devtools(
     (set) => ({
       // 初始状态
-      selectedCategory: null,
-      selectedLocation: null,
-      statusFilter: '',
-      departmentFilter: null,
-      keyword: '',
       equipmentDrawerOpen: false,
       categoryDrawerOpen: false,
       locationDrawerOpen: false,
@@ -240,18 +221,6 @@ export const useEquipmentStore = create<EquipmentStore>()(
       editingLocation: null,
 
       // 操作
-      setSelectedCategory: (id) => set({ selectedCategory: id }, false, 'equipment/setSelectedCategory'),
-      setSelectedLocation: (id) => set({ selectedLocation: id }, false, 'equipment/setSelectedLocation'),
-      setStatusFilter: (status) => set({ statusFilter: status }, false, 'equipment/setStatusFilter'),
-      setDepartmentFilter: (id) => set({ departmentFilter: id }, false, 'equipment/setDepartmentFilter'),
-      setKeyword: (keyword) => set({ keyword }, false, 'equipment/setKeyword'),
-      resetFilters: () => set({
-        selectedCategory: null,
-        selectedLocation: null,
-        departmentFilter: null,
-        statusFilter: '',
-        keyword: '',
-      }, false, 'equipment/resetFilters'),
       openEquipmentDrawer: (equipment) =>
         set({
           equipmentDrawerOpen: true,

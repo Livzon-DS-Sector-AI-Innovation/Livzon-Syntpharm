@@ -81,12 +81,12 @@ export function EquipmentTable({
       info?.order === 'ascend' ? 'asc' : info?.order === 'descend' ? 'desc' : undefined
 
     if (nextSortBy && nextSortOrder && (nextSortBy !== sortBy || nextSortOrder !== sortOrder)) {
-      onQueryChange({ sort_by: nextSortBy, sort_order: nextSortOrder, page: 1 })
+      onQueryChange({ sort_by: nextSortBy, sort_order: nextSortOrder })
       return
     }
     // 第三次点击取消排序：回落默认序，与「恢复默认」同一语义
     if (!info?.order && (sortBy !== DEFAULT_EQUIPMENT_SORT_BY || sortOrder !== DEFAULT_EQUIPMENT_SORT_ORDER)) {
-      onQueryChange({ sort_by: DEFAULT_EQUIPMENT_SORT_BY, sort_order: DEFAULT_EQUIPMENT_SORT_ORDER, page: 1 })
+      onQueryChange({ sort_by: DEFAULT_EQUIPMENT_SORT_BY, sort_order: DEFAULT_EQUIPMENT_SORT_ORDER })
       return
     }
     onQueryChange({ page: pagination.current ?? page, page_size: pagination.pageSize ?? pageSize })

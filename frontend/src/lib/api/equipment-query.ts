@@ -9,17 +9,36 @@ export type EquipmentListQuery = NonNullable<
 export type EquipmentSortBy = NonNullable<EquipmentListQuery['sort_by']>
 export type EquipmentSortOrder = NonNullable<EquipmentListQuery['sort_order']>
 
-/** URL 唯一持有的查询状态：排序 + 分页。筛选条件仍由 store 单一来源管理 */
-export type EquipmentUrlState = Required<
-  Pick<EquipmentListQuery, 'sort_by' | 'sort_order' | 'page' | 'page_size'>
->
+/**
+ * URL 唯一持有的查询状态：筛选 + 排序 + 分页。
+ * 台账的取数参数必须能由地址栏完整还原，否则「分享链接」和「刷新保持」都只是半成品。
+ * 五个筛选项统一用空串表示「不限」：URL 中缺省即未设置，写回时也不会落进地址栏。
+ */
+export interface EquipmentFilterState {
+  category_id: string
+  location_id: string
+  department_id: string
+  status: string
+  keyword: string
+}
 
-const QUERY_KEYS = [
+export type EquipmentUrlState = EquipmentFilterState & {
+  sort_by: EquipmentSortBy
+  sort_order: EquipmentSortOrder
+  page: number
+  page_size: number
+}
+
+const FILTER_KEYS = [
   'category_id',
   'location_id',
   'department_id',
   'status',
   'keyword',
+] as const satisfies readonly (keyof EquipmentFilterState & keyof EquipmentListQuery)[]
+
+const QUERY_KEYS = [
+  ...FILTER_KEYS,
   'sort_by',
   'sort_order',
   'page',
@@ -97,6 +116,11 @@ function parseEquipmentUrlState(reader: ParamReader): EquipmentUrlParse {
   if (sortOrder && !(sortOrder in SORT_ORDER_VALUES)) rejectedSort.push(`sort_order=${sortOrder}`)
   return {
     state: {
+      category_id: readString(reader, 'category_id') ?? '',
+      location_id: readString(reader, 'location_id') ?? '',
+      department_id: readString(reader, 'department_id') ?? '',
+      status: readString(reader, 'status') ?? '',
+      keyword: readString(reader, 'keyword') ?? '',
       sort_by: sortBy && sortBy in SORT_BY_VALUES ? (sortBy as EquipmentSortBy) : DEFAULT_EQUIPMENT_SORT_BY,
       sort_order:
         sortOrder && sortOrder in SORT_ORDER_VALUES ? (sortOrder as EquipmentSortOrder) : DEFAULT_EQUIPMENT_SORT_ORDER,
@@ -123,6 +147,7 @@ export function parseEquipmentUrlRecord(
 export function writeEquipmentUrlQuery(current: URLSearchParams, state: EquipmentUrlState): string {
   const next = new URLSearchParams(current)
   const entries: Array<[string, string | null]> = [
+    ...FILTER_KEYS.map((key): [string, string | null] => [key, state[key] || null]),
     ['sort_by', state.sort_by === DEFAULT_EQUIPMENT_SORT_BY ? null : state.sort_by],
     ['sort_order', state.sort_order === DEFAULT_EQUIPMENT_SORT_ORDER ? null : state.sort_order],
     ['page', state.page === DEFAULT_EQUIPMENT_PAGE ? null : String(state.page)],
@@ -133,4 +158,36 @@ export function writeEquipmentUrlQuery(current: URLSearchParams, state: Equipmen
     else next.set(key, value)
   }
   return next.toString()
+}
+
+/** URL 状态 → 后端列表参数：空串表示「不限」，转 undefined 后不会进入 query string */
+export function toEquipmentListQuery(state: EquipmentUrlState): EquipmentListQuery {
+  return {
+    category_id: state.category_id || undefined,
+    location_id: state.location_id || undefined,
+    department_id: state.department_id || undefined,
+    status: state.status || undefined,
+    keyword: state.keyword || undefined,
+    sort_by: state.sort_by,
+    sort_order: state.sort_order,
+    page: state.page,
+    page_size: state.page_size,
+  }
+}
+
+/** 统计口径：与列表同筛选，但不含关键词、排序与分页 */
+export interface EquipmentStatsQuery {
+  category_id?: string
+  location_id?: string
+  department_id?: string
+  status?: string
+}
+
+export function toEquipmentStatsQuery(state: EquipmentUrlState): EquipmentStatsQuery {
+  return {
+    category_id: state.category_id || undefined,
+    location_id: state.location_id || undefined,
+    department_id: state.department_id || undefined,
+    status: state.status || undefined,
+  }
 }

@@ -1,10 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Input, Select, Button } from 'antd'
 import { PlusOutlined, SettingOutlined, ImportOutlined, SearchOutlined } from '@ant-design/icons'
-import { useEquipmentStore } from '@/stores/equipment'
 import { FilterSummary } from './FilterSummary'
-import type { EquipmentSortBy, EquipmentSortOrder } from '@/lib/api/equipment-query'
+import type { EquipmentFilterState, EquipmentSortBy, EquipmentSortOrder } from '@/lib/api/equipment-query'
 import type { EquipmentCategory, Location } from '@/types/equipment'
 import type { DepartmentOption } from '@/lib/api/client/equipment'
 
@@ -16,6 +16,10 @@ import type { DepartmentOption } from '@/lib/api/client/equipment'
  * 自然塌缩成 [selects, input, spacer, buttons]。
  */
 interface EquipmentFilterBarProps {
+  /** 当前 URL 上的筛选状态（空串 = 不限） */
+  filters: EquipmentFilterState
+  /** 任一筛选变化都由入口统一写回 URL，并连带把页码归 1 */
+  onFiltersChange: (patch: Partial<EquipmentFilterState>) => void
   sortBy: EquipmentSortBy
   sortOrder: EquipmentSortOrder
   onResetSort: () => void
@@ -38,21 +42,28 @@ const STATUS_OPTIONS = [
 
 export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
   const {
+    filters, onFiltersChange,
     sortBy, sortOrder, onResetSort, invalidSort,
     locations, categories, departments,
     onOpenColumnConfig, onOpenImport, onAddNew,
   } = props
 
-  const {
-    statusFilter,
-    keyword,
-    departmentFilter,
-    setDepartmentFilter,
-    setStatusFilter,
-    setKeyword,
-    selectedLocation,
-    selectedCategory,
-  } = useEquipmentStore()
+  // 关键词在本地草稿里编辑，回车/失焦/清空才落进 URL：
+  // 直接拿 URL 当受控值会让每次按键都等一次路由跳转，输入会丢字。
+  const [keywordDraft, setKeywordDraft] = useState(filters.keyword)
+  const [keywordInUrl, setKeywordInUrl] = useState(filters.keyword)
+  if (filters.keyword !== keywordInUrl) {
+    // 前进/后退等外部改动 URL 时，在渲染期把草稿对齐到 URL，省掉一次 useEffect 同步
+    setKeywordInUrl(filters.keyword)
+    setKeywordDraft(filters.keyword)
+  }
+
+  const commitKeyword = (value: string) => {
+    const next = value.trim()
+    setKeywordInUrl(next)
+    setKeywordDraft(next)
+    if (next !== filters.keyword) onFiltersChange({ keyword: next })
+  }
 
   return (
     <div
@@ -69,16 +80,16 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
         placeholder="设备状态"
         allowClear
         style={{ width: 120, flexShrink: 0 }}
-        value={statusFilter || undefined}
-        onChange={(v) => setStatusFilter(v || '')}
+        value={filters.status || undefined}
+        onChange={(v) => onFiltersChange({ status: v ?? '' })}
         options={STATUS_OPTIONS}
       />
       <Select
         placeholder="归属部门"
         allowClear
         style={{ width: 140, flexShrink: 0 }}
-        value={departmentFilter || undefined}
-        onChange={(v) => setDepartmentFilter(v || null)}
+        value={filters.department_id || undefined}
+        onChange={(v) => onFiltersChange({ department_id: v ?? '' })}
         options={departments.map((d) => ({ label: d.name, value: d.id }))}
       />
       <Input
@@ -90,16 +101,27 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
           flex: '1 1 auto',
           flexShrink: 1 
         }}
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
+        value={keywordDraft}
+        onChange={(e) => {
+          const value = e.target.value
+          setKeywordDraft(value)
+          // allowClear 的清空没有 blur/回车可依，当场提交
+          if (!value) commitKeyword('')
+        }}
+        onPressEnter={(e) => {
+          // 中文输入法候选确认同样是 Enter，此时提交会把未上屏的拼音当成关键词
+          if (e.nativeEvent.isComposing) return
+          commitKeyword(e.currentTarget.value)
+        }}
+        onBlur={(e) => commitKeyword(e.currentTarget.value)}
         allowClear
       />
       <FilterSummary
         compact
-        selectedLocation={selectedLocation}
-        selectedCategory={selectedCategory}
-        departmentFilter={departmentFilter}
-        statusFilter={statusFilter}
+        selectedLocation={filters.location_id}
+        selectedCategory={filters.category_id}
+        departmentFilter={filters.department_id}
+        statusFilter={filters.status}
         sortBy={sortBy}
         sortOrder={sortOrder}
         onResetSort={onResetSort}

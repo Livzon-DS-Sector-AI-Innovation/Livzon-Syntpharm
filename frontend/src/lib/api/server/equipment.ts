@@ -1,6 +1,6 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
-import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipment-query'
+import { buildEquipmentQuery, type EquipmentListQuery, type EquipmentStatsQuery } from '@/lib/api/equipment-query'
 
 
 // Equipment import row type (matches backend EquipmentImportRow schema)
@@ -635,8 +635,10 @@ export async function fetchEquipments(query: EquipmentListQuery = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments${qs ? `?${qs}` : ''}`)
 }
 
-export async function fetchEquipmentStatistics() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/statistics`)
+/** 首屏统计按 URL 上的筛选取数，与列表同口径，否则 SSR 数字会被客户端二次请求覆盖 */
+export async function fetchEquipmentStatistics(filters: EquipmentStatsQuery = {}) {
+  const qs = buildEquipmentQuery(filters).toString()
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/statistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchDepartments() {
