@@ -115,7 +115,8 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
   }
 
   return (
-    <Drawer forceRender
+    // 不加 forceRender：那会让关闭态的 portal 出现在 SSR HTML 里，客户端首渲染没有对应节点，整棵子树 hydration 失配并重建
+    <Drawer
       title={editingEquipment ? '编辑设备' : '新增设备'}
       size={480}
       open={equipmentDrawerOpen}
