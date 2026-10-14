@@ -451,7 +451,6 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "it-tickets", label: "IT工单", path: "/administration/it-tickets" },
       { key: "vehicle-requests", label: "用车数据", path: "/administration/vehicle-requests" },
       { key: "vehicles", label: "车辆管理", path: "/administration/vehicles" },
-      { key: "login-logs", label: "登录记录", path: "/administration/login-logs" },
     ],
   },
 
@@ -509,15 +508,20 @@ export const moduleMenus: ModuleMenu[] = [
   },
 
   // ═══════════════════════════════════════════════════════
-  // 系统设置模块
+  // 系统管理模块（系统设置 / 权限管理 / 后续：系统运维）
   // ═══════════════════════════════════════════════════════
   {
     key: "settings",
-    label: "系统设置",
+    label: "系统管理",
     icon: "setting",
     path: "/settings",
     children: [
       { key: "settings-overview", label: "系统设置", path: "/settings" },
+      { key: "users", label: "用户管理", path: "/settings/users" },
+      { key: "login-logs", label: "登录记录", path: "/settings/login-logs" },
+      { key: "permission", label: "权限管理", path: "/settings/permission" },
+      { key: "ops", label: "系统运维", path: "/settings/ops" },
+      { key: "settings-menus", label: "菜单管理", path: "/settings/menus" },
     ],
   },
 ]

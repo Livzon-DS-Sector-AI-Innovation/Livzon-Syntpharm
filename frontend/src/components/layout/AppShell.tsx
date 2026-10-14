@@ -4,12 +4,15 @@ import { useState, useEffect } from "react"
 import { App, Drawer } from "antd"
 import { TopNav } from "./TopNav"
 import { Sidebar } from "./Sidebar"
+import type { PermissionView } from "@/lib/permissions/modules"
 
 interface AppShellProps {
   children: React.ReactNode
+  /** 服务端解析的权限视图（可见模块 / 权限码），下发给顶部导航与侧边栏 */
+  permissionView: PermissionView
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, permissionView }: AppShellProps) {
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -22,12 +25,15 @@ export function AppShell({ children }: AppShellProps) {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  const sidebarContent = <Sidebar onNavigate={() => setSidebarOpen(false)} />
+  const sidebarContent = (
+    <Sidebar permissionView={permissionView} onNavigate={() => setSidebarOpen(false)} />
+  )
 
   return (
     <App>
       <div className="h-screen flex flex-col overflow-hidden">
         <TopNav
+          permissionView={permissionView}
           onMenuClick={() => setSidebarOpen(true)}
           showMenuButton={isMobile}
         />

@@ -1,8 +1,9 @@
-"use client"
+'use client'
 
-import { Button, Card, Typography } from "antd"
-import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { Button, Card, Divider, Typography } from "antd"
 
 const errorMessages: Record<string, string> = {
   invalid_state: "登录状态已过期，请重新登录",
@@ -11,14 +12,19 @@ const errorMessages: Record<string, string> = {
   auth_failed: "登录失败，请重试",
 }
 
-function LoginForm() {
+/**
+ * 默认登录页 = 飞书登录。
+ *
+ * 账号密码登录已拆到独立页面 `/login/password`（本页底部保留入口）。
+ */
+function FeishuLoginCard() {
   const searchParams = useSearchParams()
   const error = searchParams.get("error")
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-sm shadow-lg" variant="borderless">
-        <div className="mb-8 text-center">
+        <div className="mb-6 text-center">
           <Typography.Title level={3} style={{ marginBottom: 4 }}>
             工厂管理平台
           </Typography.Title>
@@ -30,9 +36,9 @@ function LoginForm() {
         {error && (
           <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600">
             {errorMessages[error] || "登录出错，请重试"}
-            {error === 'auth_failed' && searchParams.get('detail') && (
+            {error === "auth_failed" && searchParams.get("detail") && (
               <div className="mt-2 text-xs text-red-500">
-                {searchParams.get('detail')}
+                {searchParams.get("detail")}
               </div>
             )}
           </div>
@@ -47,6 +53,21 @@ function LoginForm() {
         >
           飞书登录
         </Button>
+
+        <p className="m-0 mt-3 text-center text-[12px] text-[var(--color-steel)]">
+          使用企业飞书账号扫码 / 授权登录
+        </p>
+
+        <Divider plain className="!my-5">
+          <span className="text-[12px] text-[var(--color-stone)]">或</span>
+        </Divider>
+
+        <Link
+          href="/login/password"
+          className="block text-center text-[13px] text-[var(--color-primary)] hover:underline"
+        >
+          使用账号密码登录
+        </Link>
       </Card>
     </div>
   )
@@ -55,7 +76,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense>
-      <LoginForm />
+      <FeishuLoginCard />
     </Suspense>
   )
 }

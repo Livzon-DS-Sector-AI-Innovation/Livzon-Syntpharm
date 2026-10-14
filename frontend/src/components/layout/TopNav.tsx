@@ -1,16 +1,15 @@
 'use client'
-"use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Dropdown, Avatar } from "antd"
 import { LogoutOutlined, UserOutlined, MenuOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons"
-import { moduleMenus } from "@/lib/menu-config"
+import { resolveMenus } from "@/lib/menu/resolve"
 import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
 import { logout, getCurrentUser } from "@/actions/auth"
 import type { User, ImpersonateUserInfo } from "@/types/user"
-import { usePermission } from "@/hooks/usePermission"
+import type { PermissionView } from "@/lib/permissions/modules"
 import { useSidebarStore } from "@/stores/sidebar"
 
 interface ImpersonationStatus {
@@ -26,15 +25,14 @@ async function getImpersonationStatus(): Promise<ImpersonationStatus | null> {
 interface TopNavProps {
   onMenuClick?: () => void
   showMenuButton?: boolean
+  permissionView: PermissionView
 }
 
-export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
+export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavProps) {
   const pathname = usePathname()
   const activeModule = pathname.split("/")[1] || "production"
   const [loggingOut, setLoggingOut] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const { loading } = usePermission()
-  const isLoaded = !loading
   const { collapsed, toggle: toggleSidebar } = useSidebarStore()
 
   const [_impersonation, setImpersonation] = useState<ImpersonationStatus | null>(null)
@@ -42,7 +40,7 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
   useEffect(() => {
     getCurrentUser().then(setUser)
     getImpersonationStatus().then(setImpersonation)
-  }, [isLoaded])
+  }, [])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -56,7 +54,11 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
   const avatarSrc = user?.avatar_url || undefined
   const displayName = user?.name || "未登录"
 
-  const _visibleMenus = moduleMenus
+  // 可见模块与排序 = 「代码菜单结构 + 服务端下发的菜单配置」合并结果（见 lib/menu/resolve.ts）
+  const visibleMenus = useMemo(
+    () => resolveMenus(permissionView.menuConfig, new Set(permissionView.granted), permissionView.isSuperuser),
+    [permissionView],
+  )
 
   return (
     <header className="h-16 bg-[var(--color-canvas)] border-b border-[var(--color-hairline)] flex items-center px-5 shrink-0">
@@ -87,7 +89,7 @@ export function TopNav({ onMenuClick, showMenuButton }: TopNavProps) {
 
       {/* Module Tabs */}
       <nav className="flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide h-full ml-8">
-        {moduleMenus.map((mod) => {
+        {visibleMenus.map((mod) => {
           const isActive = activeModule === mod.key
           return (
             <Link
