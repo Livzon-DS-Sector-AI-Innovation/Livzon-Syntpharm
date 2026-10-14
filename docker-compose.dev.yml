@@ -2,6 +2,8 @@ services:
   backend:
     volumes:
     - ./backend/app:/app/app:ro
+    # DATABASE_URL 的 host 是容器网络服务名，宿主机连不到 Postgres，DB 测试只能在容器内跑
+    - ./backend/tests:/app/tests:ro
     environment:
     - UVICORN_RELOAD=true
     command: "bash -c \"\n  cd /app &&\n  uv run uvicorn app.main:app --reload --host\

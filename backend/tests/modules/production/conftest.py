@@ -4,20 +4,14 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator
 
 import pytest
-from httpx import ASGITransport, AsyncClient
 
-from app.core.database import get_db
-from app.main import app
 from app.modules.production.schemas import (
     BatchCreate,
     ProcessSpecCreate,
     ProductionPlanCreate,
 )
-from app.platform.identity.deps import get_current_user
-from app.platform.identity.models import User
 
 
 @pytest.fixture
@@ -96,32 +90,3 @@ def sample_production_record_data():
         "record_no": "REC-001",
         "operation_type": "material_add",
     }
-
-
-@pytest.fixture
-async def auth_client(db_session) -> AsyncIterator[AsyncClient]:
-    """Authenticated client with unique user per test."""
-    emp_no = f"EMP-{uuid.uuid4().hex[:8]}"
-    user = User(name="Test User", employee_no=emp_no)
-    db_session.add(user)
-    await db_session.flush()
-    await db_session.refresh(user)
-
-    async def _override_get_db():
-        try:
-            yield db_session
-        finally:
-            pass
-
-    async def _override_get_current_user():
-        return user
-
-    app.dependency_overrides[get_db] = _override_get_db
-    app.dependency_overrides[get_current_user] = _override_get_current_user
-
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        yield ac
-
-    app.dependency_overrides.clear()
-    await db_session.rollback()
