@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  Alert,
   App,
   Button,
   Form,
@@ -18,7 +19,13 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { PlusOutlined, ReloadOutlined, UserSwitchOutlined } from '@ant-design/icons'
+import {
+  CopyOutlined,
+  KeyOutlined,
+  PlusOutlined,
+  ReloadOutlined,
+  UserSwitchOutlined,
+} from '@ant-design/icons'
 import {
   createUser,
   getUsers,
@@ -69,10 +76,16 @@ export default function UserManagementClient() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<UserManagementItem | null>(null)
   const [saving, setSaving] = useState(false)
-  // 编辑弹窗内的「账号操作」：重置密码 / 解绑飞书
-  const [newPassword, setNewPassword] = useState('')
+  // 编辑弹窗内的「账号操作」：生成随机密码 / 解绑飞书
   const [resetting, setResetting] = useState(false)
   const [unbinding, setUnbinding] = useState(false)
+  // 一次性展示的随机密码：后端不落库明文，关掉弹窗就再也看不到
+  const [oneTimePassword, setOneTimePassword] = useState<{
+    name: string
+    username: string
+    password: string
+  } | null>(null)
+  const [copying, setCopying] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [authSource, setAuthSource] = useState<AuthSourceValue | undefined>()
   const [form] = Form.useForm()
@@ -102,7 +115,6 @@ export default function UserManagementClient() {
 
   const handleCreate = () => {
     setEditingUser(null)
-    setNewPassword('')
     form.resetFields()
     form.setFieldsValue({ status: 'active' })
     setModalOpen(true)
@@ -110,7 +122,6 @@ export default function UserManagementClient() {
 
   const handleEdit = (record: UserManagementItem) => {
     setEditingUser(record)
-    setNewPassword('')
     form.setFieldsValue({
       username: record.username,
       name: record.name,
@@ -178,23 +189,43 @@ export default function UserManagementClient() {
     queryClient.invalidateQueries({ queryKey: ['users'] })
   }
 
-  const handleResetPassword = async () => {
+  /** 生成随机初始密码：明文只在本响应里返回一次，必须当场展示。 */
+  const handleGeneratePassword = async () => {
     if (!editingUser) return
-    if (newPassword.trim().length < 6) {
-      message.warning('新密码至少 6 位')
-      return
-    }
     setResetting(true)
     try {
-      const result = await resetUserPassword(editingUser.id, { password: newPassword })
+      const result = await resetUserPassword(editingUser.id, {})
       if (!result.ok) {
         message.error(result.message)
         return
       }
-      message.success('密码已重置')
-      setNewPassword('')
+      const generated = result.data.password
+      if (!generated) {
+        // 后端未回传明文（理论上只在「指定密码」时发生）→ 不要假装看到了密码
+        message.warning(result.data.message || '密码已重置')
+        return
+      }
+      setOneTimePassword({
+        name: editingUser.name,
+        username: editingUser.username || '-',
+        password: generated,
+      })
+      queryClient.invalidateQueries({ queryKey: ['users'] })
     } finally {
       setResetting(false)
+    }
+  }
+
+  const handleCopyPassword = async () => {
+    if (!oneTimePassword) return
+    setCopying(true)
+    try {
+      await navigator.clipboard.writeText(oneTimePassword.password)
+      message.success('密码已复制')
+    } catch {
+      message.error('复制失败，请手动选中复制')
+    } finally {
+      setCopying(false)
     }
   }
 
@@ -259,11 +290,15 @@ export default function UserManagementClient() {
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
-      render: (status: string) => (
-        <Tag color={status === 'active' ? 'success' : 'error'}>
-          {status === 'active' ? '启用' : '禁用'}
-        </Tag>
+      width: 140,
+      render: (status: string, record: UserManagementItem) => (
+        <Space size={4}>
+          <Tag color={status === 'active' ? 'success' : 'error'}>
+            {status === 'active' ? '启用' : '禁用'}
+          </Tag>
+          {/* 管理员重置过密码但用户还没改 → 提示该账号仍在用初始密码 */}
+          {record.must_change_password && <Tag color="orange">待改密</Tag>}
+        </Space>
       ),
     },
     { title: '部门', dataIndex: 'department', width: 160 },
@@ -462,25 +497,35 @@ export default function UserManagementClient() {
             </Form.Item>
           </Space>
 
-          {/* 账号操作：重置密码 / 飞书解绑（仅编辑已有用户时） */}
+          {/* 账号操作：随机密码 / 飞书解绑（仅编辑已有用户时） */}
           {editingUser && (
             <div className="mt-2 rounded-md border border-[var(--color-mist)] p-3">
               <Text strong className="text-[13px]">
                 账号操作
               </Text>
               <div className="mt-3 space-y-3">
-                <Space>
-                  <Input.Password
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    placeholder="新密码（至少 6 位）"
-                    style={{ width: 220 }}
-                    autoComplete="new-password"
-                  />
-                  <Button onClick={handleResetPassword} loading={resetting}>
-                    重置密码
-                  </Button>
-                </Space>
+                <div>
+                  <Space>
+                    <Button
+                      icon={<KeyOutlined />}
+                      onClick={handleGeneratePassword}
+                      loading={resetting}
+                      type={editingUser.must_change_password ? 'primary' : 'default'}
+                    >
+                      生成随机密码
+                    </Button>
+                    {editingUser.must_change_password && <Tag color="orange">待改密</Tag>}
+                  </Space>
+                  <div className="mt-2 text-[12px] text-[var(--color-steel)]">
+                    飞书首次登录只自动分配用户名（
+                    <Text code>{editingUser.username || '未分配'}</Text>
+                    ），不发密码；需要账号密码登录时点这里生成。随机密码
+                    <Text strong className="text-[12px]">
+                      只显示一次
+                    </Text>
+                    ，请当场复制并发给本人；本人首次登录会被要求修改。
+                  </div>
+                </div>
                 <div>
                   {isFeishuUser ? (
                     <Space>
@@ -506,6 +551,53 @@ export default function UserManagementClient() {
             </div>
           )}
         </Form>
+      </Modal>
+
+      {/* 一次性密码展示：明文只存在这一刻，后端不落库，关闭后无法查看 */}
+      <Modal
+        title="随机密码已生成"
+        open={!!oneTimePassword}
+        onCancel={() => setOneTimePassword(null)}
+        footer={[
+          <Button key="copy" icon={<CopyOutlined />} loading={copying} onClick={handleCopyPassword}>
+            复制密码
+          </Button>,
+          <Button key="close" type="primary" onClick={() => setOneTimePassword(null)}>
+            我已保存
+          </Button>,
+        ]}
+        maskClosable={false}
+        width={480}
+      >
+        <Alert
+          type="warning"
+          showIcon
+          message="此密码只显示这一次，关闭后无法再次查看"
+          description="数据库只保存密码哈希，管理员也无法再看到明文。请立即复制并通过可靠渠道发给本人。"
+          className="mb-4"
+        />
+        {oneTimePassword && (
+          <div className="space-y-2">
+            <div className="text-[13px] text-[var(--color-steel)]">
+              账号：<Text strong>{oneTimePassword.name}</Text>
+              <Text className="ml-2" code>
+                {oneTimePassword.username}
+              </Text>
+            </div>
+            <div className="rounded-md border border-[var(--color-mist)] bg-[var(--color-cloud)] p-3 text-center">
+              <Text
+                strong
+                className="text-[18px] tracking-wider"
+                copyable={{ text: oneTimePassword.password }}
+              >
+                {oneTimePassword.password}
+              </Text>
+            </div>
+            <div className="text-[12px] text-[var(--color-steel)]">
+              该用户首次登录后会被要求立即修改密码（用户名 / 邮箱 / 手机号均可作为登录账号）。
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   )

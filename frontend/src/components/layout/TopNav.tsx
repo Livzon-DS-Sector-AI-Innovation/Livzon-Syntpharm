@@ -2,9 +2,16 @@
 
 import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Dropdown, Avatar } from "antd"
-import { LogoutOutlined, UserOutlined, MenuOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons"
+import {
+  LogoutOutlined,
+  UserOutlined,
+  MenuOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  KeyOutlined,
+} from "@ant-design/icons"
 import { resolveMenus } from "@/lib/menu/resolve"
 import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
 import { logout, getCurrentUser } from "@/actions/auth"
@@ -30,6 +37,7 @@ interface TopNavProps {
 
 export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const activeModule = pathname.split("/")[1] || "production"
   const [loggingOut, setLoggingOut] = useState(false)
   const [user, setUser] = useState<User | null>(null)
@@ -133,6 +141,12 @@ export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavPr
           menu={{
             items: [
               {
+                key: 'change-password',
+                label: '修改密码',
+                icon: <KeyOutlined />,
+              },
+              { type: 'divider' as const },
+              {
                 key: 'logout',
                 label: '退出登录',
                 icon: <LogoutOutlined />,
@@ -140,6 +154,7 @@ export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavPr
               },
             ],
             onClick: (info) => {
+              if (info.key === 'change-password') router.push('/change-password')
               if (info.key === 'logout') handleLogout()
             },
           }}

@@ -18,6 +18,12 @@ export default async function RootPage() {
     redirect('/login')
   }
 
+  // 强制改密优先于落地页：否则「无任何模块权限」的账号会卡在「暂无可访问的模块」，
+  // 拿不到去改密页的入口（(dashboard)/layout.tsx 的拦截在这条路径上不生效）
+  if (user.must_change_password) {
+    redirect('/change-password')
+  }
+
   const landingPath = await resolveLandingPath()
 
   if (landingPath) {

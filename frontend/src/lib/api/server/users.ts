@@ -46,6 +46,14 @@ export async function resetUserPassword(id: string, data: unknown, token?: strin
   })
 }
 
+export async function changeMyPassword(data: unknown, token?: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/me/password`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: JSON.stringify(data),
+  })
+}
+
 export async function bindFeishuUser(id: string, data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/bind-feishu`, {
     method: 'POST',

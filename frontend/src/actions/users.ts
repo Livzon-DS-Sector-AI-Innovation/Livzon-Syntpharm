@@ -7,6 +7,7 @@ import {
   createUser as createUserServer,
   updateUser as updateUserServer,
   resetUserPassword as resetUserPasswordServer,
+  changeMyPassword as changeMyPasswordServer,
   bindFeishuUser as bindFeishuUserServer,
   unbindFeishuUser as unbindFeishuUserServer,
 } from '@/lib/api/server/users'
@@ -16,6 +17,8 @@ import type {
   LocalUserCreate,
   UserManagementUpdate,
   PasswordResetRequest,
+  PasswordResetResult,
+  ChangePasswordRequest,
 } from '@/types/users'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -66,17 +69,36 @@ export async function updateUser(
   }
 }
 
+/**
+ * 重置用户密码；`data.password` 留空表示随机生成。
+ * 随机生成的明文密码只在本次响应里返回一次（后端不落库），调用方必须当场展示。
+ */
 export async function resetUserPassword(
   id: string,
   data: PasswordResetRequest,
-): Promise<UsersActionResult<{ message: string }>> {
+): Promise<UsersActionResult<PasswordResetResult>> {
   const token = await getAuthToken()
   try {
-    const res = (await resetUserPasswordServer(id, data, token)) as { data: { message: string } }
+    const res = (await resetUserPasswordServer(id, data, token)) as { data: PasswordResetResult }
     revalidatePath('/settings/users')
     return { ok: true, data: res.data }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : '重置密码失败' }
+  }
+}
+
+/** 当前登录用户自助改密（被标记「首登强制改密」的用户必须走这里）。 */
+export async function changeMyPassword(
+  data: ChangePasswordRequest,
+): Promise<UsersActionResult<{ message: string }>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await changeMyPasswordServer(data, token)) as { data: { message: string } }
+    // 清掉客户端路由缓存：改密会解除「首登强制改密」，导航与守卫都要按新状态重算
+    revalidatePath('/', 'layout')
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '修改密码失败' }
   }
 }
 
