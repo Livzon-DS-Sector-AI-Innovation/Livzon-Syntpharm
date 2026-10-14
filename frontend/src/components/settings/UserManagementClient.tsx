@@ -57,6 +57,40 @@ const AUTH_SOURCE_LABEL: Record<string, string> = {
 
 type AuthSourceValue = 'local' | 'feishu'
 
+/**
+ * 复制到剪贴板。
+ *
+ * `navigator.clipboard` 只在安全上下文（https / localhost）可用；本系统常以
+ * `http://<内网IP>:3000` 访问，此时它是 undefined，必须回退到 textarea + execCommand，
+ * 否则「复制密码」按钮在真实环境下直接失效（而随机密码只显示一次，抄错就没了）。
+ */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      // 落到下面的兜底方案
+    }
+  }
+
+  try {
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.setAttribute('readonly', '')
+    textarea.style.position = 'fixed'
+    textarea.style.top = '-1000px'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    const ok = document.execCommand('copy')
+    document.body.removeChild(textarea)
+    return ok
+  } catch {
+    return false
+  }
+}
+
 // 选项从上面的映射派生，中文名只写一份
 const authSourceOptions = (['local', 'feishu'] as const).map((value) => ({
   value,
@@ -220,10 +254,12 @@ export default function UserManagementClient() {
     if (!oneTimePassword) return
     setCopying(true)
     try {
-      await navigator.clipboard.writeText(oneTimePassword.password)
-      message.success('密码已复制')
-    } catch {
-      message.error('复制失败，请手动选中复制')
+      const ok = await copyToClipboard(oneTimePassword.password)
+      if (ok) {
+        message.success('密码已复制')
+      } else {
+        message.error('复制失败，请手动选中密码复制')
+      }
     } finally {
       setCopying(false)
     }
