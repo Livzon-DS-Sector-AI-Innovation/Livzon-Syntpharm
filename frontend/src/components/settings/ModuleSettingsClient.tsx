@@ -25,7 +25,7 @@ import type { ModuleSetting } from '@/types/module-settings'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 interface ModuleSettingsClientProps {
@@ -197,7 +197,7 @@ export default function ModuleSettingsClient({
       <Card>
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>
           <div>
-            <Title level={4}>{moduleName}配置</Title>
+            <h3 className="m-0 text-[16px] font-semibold text-[var(--color-charcoal)]">{moduleName}配置</h3>
             <Text type="secondary">{moduleDescription}</Text>
           </div>
 
@@ -207,6 +207,7 @@ export default function ModuleSettingsClient({
             rowKey="id"
             loading={loading}
             pagination={false}
+            scroll={{ x: 'max-content' }}
           />
         </Space>
       </Card>
@@ -219,6 +220,7 @@ export default function ModuleSettingsClient({
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
+        width="min(520px, calc(100vw - 24px))"
       >
         <Form form={form} layout="vertical">
           {editingSetting && renderEditInput(editingSetting)}

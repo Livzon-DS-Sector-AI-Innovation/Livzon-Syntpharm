@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   App,
   Button,
+  Card,
   Checkbox,
   Form,
   Input,
@@ -348,14 +349,16 @@ export default function GrantManagementClient() {
             给用户发角色，他就拥有该角色的全部权限；一次可选择多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
           </Text>
         </div>
-        <Space>
-          <Input.Search
-            allowClear
-            placeholder="搜索用户或角色"
-            style={{ width: 240 }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[240px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索用户或角色"
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
           <Button
             icon={<ReloadOutlined />}
             onClick={() => queryClient.invalidateQueries({ queryKey: ['permission-grants'] })}
@@ -370,9 +373,10 @@ export default function GrantManagementClient() {
               新建授权
             </Button>
           )}
-        </Space>
+        </div>
       </div>
 
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         columns={columns}
         dataSource={visibleGrants}
@@ -381,6 +385,7 @@ export default function GrantManagementClient() {
         scroll={{ x: 1000 }}
         pagination={{ pageSize: 10 }}
       />
+      </Card>
 
       <Modal
         title={editing ? '编辑该用户的角色授权' : '新建授权'}
@@ -390,7 +395,7 @@ export default function GrantManagementClient() {
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
-        width={640}
+        width="min(640px, calc(100vw - 24px))"
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           {editing ? (
@@ -407,7 +412,7 @@ export default function GrantManagementClient() {
               name="user_id"
               label="用户"
               rules={[{ required: true, message: '请选择用户' }]}
-              style={{ width: 260 }}
+              style={{ width: '100%', maxWidth: 260 }}
             >
               <Select showSearch optionFilterProp="label" options={userOptions} placeholder="选择用户" />
             </Form.Item>
@@ -443,7 +448,7 @@ export default function GrantManagementClient() {
                   noStyle
                   rules={[{ required: true, message: '请选择可见数据范围' }]}
                 >
-                  <Select options={scopeOptions} style={{ width: 360 }} />
+                  <Select options={scopeOptions} style={{ width: '100%', maxWidth: 360 }} />
                 </Form.Item>
               )}
             </Space>
@@ -478,7 +483,7 @@ export default function GrantManagementClient() {
         open={previewOpen}
         onCancel={() => setPreviewOpen(false)}
         footer={null}
-        width={560}
+        width="min(560px, calc(100vw - 24px))"
       >
         <Select
           showSearch

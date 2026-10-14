@@ -7,6 +7,7 @@ import {
   Alert,
   App,
   Button,
+  Card,
   Form,
   Input,
   Modal,
@@ -454,40 +455,38 @@ export default function UserManagementClient() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
-            用户管理
-          </h2>
-          <Text className="text-[13px] text-[var(--color-steel)]">
-            管理平台账号与角色授权，为飞书 SSO 用户分配平台权限；登录历史见左侧「登录记录」。
-          </Text>
-        </div>
-        <Space>
-          <Select
-            allowClear
-            placeholder="登录来源"
-            style={{ width: 130 }}
-            value={authSource}
-            onChange={(value) => setAuthSource(value)}
-            options={authSourceOptions}
-          />
-          <Select
-            allowClear
-            placeholder="账号属性"
-            style={{ width: 140 }}
-            value={pendingFilter}
-            onChange={(value) => setPendingFilter(value)}
-            options={[
-              { value: 'pending_change', label: '待改密' },
-              { value: 'unbound', label: '未绑定飞书' },
-            ]}
-          />
-          <Input.Search
-            allowClear
-            placeholder="搜索姓名、账号、邮箱"
-            onSearch={(value) => setKeyword(value)}
-            style={{ width: 260 }}
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[130px]">
+            <Select
+              allowClear
+              placeholder="登录来源"
+              style={{ width: '100%' }}
+              value={authSource}
+              onChange={(value) => setAuthSource(value)}
+              options={authSourceOptions}
+            />
+          </div>
+          <div className="w-full sm:w-[140px]">
+            <Select
+              allowClear
+              placeholder="账号属性"
+              style={{ width: '100%' }}
+              value={pendingFilter}
+              onChange={(value) => setPendingFilter(value)}
+              options={[
+                { value: 'pending_change', label: '待改密' },
+                { value: 'unbound', label: '未绑定飞书' },
+              ]}
+            />
+          </div>
+          <div className="w-full sm:w-[260px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索姓名、账号、邮箱"
+              onSearch={(value) => setKeyword(value)}
+              style={{ width: '100%' }}
+            />
+          </div>
           <Button icon={<ReloadOutlined />} onClick={loadUsers}>
             刷新
           </Button>
@@ -496,9 +495,10 @@ export default function UserManagementClient() {
               新建用户
             </Button>
           )}
-        </Space>
+        </div>
       </div>
 
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         columns={columns}
         dataSource={users}
@@ -507,6 +507,7 @@ export default function UserManagementClient() {
         scroll={{ x: 1050 }}
         pagination={{ pageSize: 10 }}
       />
+      </Card>
 
       <Modal
         title={editingUser ? '编辑用户' : '新建本地用户'}
@@ -516,7 +517,7 @@ export default function UserManagementClient() {
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
-        width={640}
+        width="min(640px, calc(100vw - 24px))"
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           {isFeishuUser && (
@@ -553,7 +554,7 @@ export default function UserManagementClient() {
           >
             <Input placeholder="用户姓名" disabled={isFeishuUser} />
           </Form.Item>
-          <Space size="large" align="start">
+          <Space size="large" align="start" wrap>
             <Form.Item label="角色">
               <Space direction="vertical" size={4}>
                 <Space size={4} wrap>
@@ -578,7 +579,7 @@ export default function UserManagementClient() {
                 </Text>
               </Space>
             </Form.Item>
-            <Form.Item name="status" label="状态" style={{ width: 160 }}>
+            <Form.Item name="status" label="状态" style={{ width: '100%', maxWidth: 160 }}>
               <Select options={statusOptions} />
             </Form.Item>
           </Space>
@@ -597,19 +598,19 @@ export default function UserManagementClient() {
           <Form.Item name="email" label="邮箱">
             <Input placeholder="name@example.com" disabled={isFeishuUser} />
           </Form.Item>
-          <Space size="large" align="start">
-            <Form.Item name="mobile" label="手机号" style={{ width: 180 }}>
+          <Space size="large" align="start" wrap>
+            <Form.Item name="mobile" label="手机号" style={{ width: '100%', maxWidth: 180 }}>
               <Input disabled={isFeishuUser} />
             </Form.Item>
-            <Form.Item name="employee_no" label="工号" style={{ width: 180 }}>
+            <Form.Item name="employee_no" label="工号" style={{ width: '100%', maxWidth: 180 }}>
               <Input disabled={isFeishuUser} />
             </Form.Item>
           </Space>
-          <Space size="large" align="start">
-            <Form.Item name="department" label="部门" style={{ width: 220 }}>
+          <Space size="large" align="start" wrap>
+            <Form.Item name="department" label="部门" style={{ width: '100%', maxWidth: 220 }}>
               <Input disabled={isFeishuUser} />
             </Form.Item>
-            <Form.Item name="position" label="职位" style={{ width: 220 }}>
+            <Form.Item name="position" label="职位" style={{ width: '100%', maxWidth: 220 }}>
               <Input disabled={isFeishuUser} />
             </Form.Item>
           </Space>
@@ -696,7 +697,7 @@ export default function UserManagementClient() {
           </Button>,
         ]}
         maskClosable={false}
-        width={480}
+        width="min(480px, calc(100vw - 24px))"
       >
         <Alert
           type="warning"

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { Key } from 'react'
-import { Button, Input, Space, Tooltip, Tree, Typography } from 'antd'
+import { Button, Input, Tooltip, Tree, Typography } from 'antd'
 import type { DataNode } from 'antd/es/tree'
 import type { PermissionTreeNode } from '@/types/permission'
 
@@ -118,13 +118,15 @@ export default function PermissionTreePanel({
 
   return (
     <div className="space-y-2">
-      <Space wrap>
-        <Input.Search
-          allowClear
-          placeholder="搜索模块 / 功能 / 权限码"
-          style={{ width: 220 }}
-          onChange={(event) => setKeyword(event.target.value.trim().toLowerCase())}
-        />
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-full sm:w-[220px]">
+          <Input.Search
+            allowClear
+            placeholder="搜索模块 / 功能 / 权限码"
+            style={{ width: '100%' }}
+            onChange={(event) => setKeyword(event.target.value.trim().toLowerCase())}
+          />
+        </div>
         <Button size="small" disabled={disabled} onClick={() => onChange?.(allCodes)}>
           全选
         </Button>
@@ -134,7 +136,7 @@ export default function PermissionTreePanel({
         <Text className="text-[12px] text-[var(--color-steel)]">
           已选 {value.length} / {allCodes.length} 项
         </Text>
-      </Space>
+      </div>
 
       <div className="rounded-md border border-[var(--color-hairline)] p-2">
         <Tree

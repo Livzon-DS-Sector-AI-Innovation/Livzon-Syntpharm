@@ -76,12 +76,13 @@ function HealthTab() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <Text className="text-[13px] text-[var(--color-steel)]">
           每 30 秒自动刷新；redis 为共享实例（本机与 UAT 共用）
         </Text>
         <Button
           icon={<ReloadOutlined />}
+          className="self-start"
           onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-health'] })}
         >
           刷新
@@ -113,7 +114,7 @@ function HealthTab() {
 
       {info && (
         <Card size="small" title="系统信息">
-          <Descriptions column={2} size="small" bordered>
+          <Descriptions column={{ xs: 1, sm: 2 }} size="small" bordered>
             <Descriptions.Item label="应用">{info.app_name}</Descriptions.Item>
             <Descriptions.Item label="环境">
               <Tag color={info.app_env === 'production' ? 'red' : info.app_env === 'development' ? 'blue' : 'orange'}>
@@ -173,7 +174,7 @@ function ResourcesTab() {
       </Card>
 
       <Card size="small" title="系统负载">
-        <Descriptions column={4} size="small">
+        <Descriptions column={{ xs: 2, sm: 4 }} size="small">
           <Descriptions.Item label="1 分钟">{load.load1.toFixed(2)}</Descriptions.Item>
           <Descriptions.Item label="5 分钟">{load.load5.toFixed(2)}</Descriptions.Item>
           <Descriptions.Item label="15 分钟">{load.load15.toFixed(2)}</Descriptions.Item>
@@ -225,7 +226,7 @@ function RedisTab() {
     <div className="space-y-4">
       {overview && (
         <Card size="small" title="Redis 概览">
-          <Descriptions column={4} size="small">
+          <Descriptions column={{ xs: 2, sm: 4 }} size="small">
             <Descriptions.Item label="Key 总数">{overview.dbsize}</Descriptions.Item>
             <Descriptions.Item label="内存占用">{overview.used_memory_human}</Descriptions.Item>
             <Descriptions.Item label="连接数">{overview.connected_clients}</Descriptions.Item>
@@ -238,15 +239,17 @@ function RedisTab() {
       )}
 
       <Card size="small" title="按前缀查询 / 清理">
-        <Space className="mb-3">
-          <Input
-            placeholder="key 前缀（留空 = 全部，至少 2 字符才能清理）"
-            value={prefix}
-            onChange={(e) => setPrefix(e.target.value)}
-            onPressEnter={() => setQueryPrefix(prefix)}
-            style={{ width: 360 }}
-            prefix={<SearchOutlined />}
-          />
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[360px]">
+            <Input
+              placeholder="key 前缀（留空 = 全部，至少 2 字符才能清理）"
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
+              onPressEnter={() => setQueryPrefix(prefix)}
+              style={{ width: '100%' }}
+              prefix={<SearchOutlined />}
+            />
+          </div>
           <Button type="primary" onClick={() => setQueryPrefix(prefix)}>
             查询
           </Button>
@@ -259,7 +262,7 @@ function RedisTab() {
               清理该前缀
             </Button>
           </Popconfirm>
-        </Space>
+        </div>
 
         <Table
           columns={columns}
@@ -370,21 +373,23 @@ function TasksTab() {
         <Text className="text-[13px] text-[var(--color-steel)]">
           任务来自代码注册（调度引擎 / 后台进程 / 轮询循环）。执行历史需等执行记录表落地。
         </Text>
-        <Space>
-          <Input.Search
-            allowClear
-            placeholder="搜索任务名、模块、说明"
-            style={{ width: 260 }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[260px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索任务名、模块、说明"
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
           <Button
             icon={<ReloadOutlined />}
             onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-tasks'] })}
           >
             刷新
           </Button>
-        </Space>
+        </div>
       </div>
       <Table
         columns={columns}
@@ -392,6 +397,7 @@ function TasksTab() {
         rowKey="name"
         size="small"
         loading={isLoading}
+        scroll={{ x: 'max-content' }}
         pagination={{ pageSize: 20 }}
       />
     </div>
@@ -511,13 +517,15 @@ function ApiTab() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <Input.Search
-          allowClear
-          placeholder="搜索路径或说明"
-          style={{ width: 320 }}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
+        <div className="w-full sm:w-[320px]">
+          <Input.Search
+            allowClear
+            placeholder="搜索路径或说明"
+            style={{ width: '100%' }}
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+        </div>
         <Select
           allowClear
           placeholder="方法"
@@ -570,6 +578,7 @@ function ApiTab() {
         okText="确认禁用"
         okButtonProps={{ danger: true }}
         cancelText="取消"
+        width="min(480px, calc(100vw - 24px))"
       >
         <div className="mt-3 space-y-2">
           <Text type="secondary" className="text-[13px]">
@@ -648,22 +657,26 @@ function LogsTab() {
         （<Text code>docker logs local-backend</Text>）。
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <Select
-          mode="multiple"
-          allowClear
-          placeholder="级别（默认全部）"
-          style={{ minWidth: 260 }}
-          value={levels}
-          onChange={setLevels}
-          options={['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'].map((lv) => ({ value: lv, label: lv }))}
-        />
-        <Input.Search
-          allowClear
-          placeholder="搜索消息 / 来源"
-          style={{ width: 300 }}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-        />
+        <div className="w-full sm:w-[260px]">
+          <Select
+            mode="multiple"
+            allowClear
+            placeholder="级别（默认全部）"
+            style={{ width: '100%' }}
+            value={levels}
+            onChange={setLevels}
+            options={['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'].map((lv) => ({ value: lv, label: lv }))}
+          />
+        </div>
+        <div className="w-full sm:w-[300px]">
+          <Input.Search
+            allowClear
+            placeholder="搜索消息 / 来源"
+            style={{ width: '100%' }}
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+          />
+        </div>
         <Space size={6}>
           <span className="text-[13px] text-[var(--color-steel)]">自动刷新</span>
           <Switch checked={autoRefresh} onChange={setAutoRefresh} size="small" />
@@ -758,7 +771,7 @@ function DbTab() {
     <div className="space-y-4">
       {overview && (
         <Card size="small">
-          <Descriptions column={3} size="small">
+          <Descriptions column={{ xs: 1, sm: 2, md: 3 }} size="small">
             <Descriptions.Item label="数据库">{overview.database}</Descriptions.Item>
             <Descriptions.Item label="版本">{overview.version}</Descriptions.Item>
             <Descriptions.Item label="迁移版本">
@@ -778,12 +791,14 @@ function DbTab() {
         <Text className="text-[13px] text-[var(--color-steel)]">
           只读视图：仅展示表结构与体积，不含任何数据内容；行数为统计估算值（ANALYZE 后准确）。
         </Text>
-        <Input.Search
-          allowClear
-          placeholder="搜索表名 / schema"
-          style={{ width: 240 }}
-          onSearch={(value) => setKeyword(value)}
-        />
+        <div className="w-full md:w-[240px]">
+          <Input.Search
+            allowClear
+            placeholder="搜索表名 / schema"
+            style={{ width: '100%' }}
+            onSearch={(value) => setKeyword(value)}
+          />
+        </div>
       </div>
 
       <Table
@@ -843,7 +858,7 @@ function DbTab() {
 
       <Drawer
         title={detail ? `${detail.schema}.${detail.table}` : '表字段'}
-        width={880}
+        width="min(880px, 100vw)"
         open={!!detail}
         onClose={() => setDetail(null)}
       >
@@ -866,6 +881,7 @@ function DbTab() {
               dataSource={columns?.items ?? []}
               size="small"
               pagination={false}
+              scroll={{ x: 'max-content' }}
               columns={[
                 { title: '#', dataIndex: 'ordinal', width: 50 },
                 { title: '字段名', dataIndex: 'name', width: 200 },
@@ -905,7 +921,7 @@ function DbTab() {
 
 export default function SystemOpsClient() {
   return (
-    <div className="mx-auto max-w-[1320px] px-6 py-6">
+    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
       <div className="mb-5">
         <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">系统运维</h1>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">

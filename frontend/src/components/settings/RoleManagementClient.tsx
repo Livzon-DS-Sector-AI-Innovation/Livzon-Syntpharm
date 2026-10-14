@@ -6,6 +6,7 @@ import {
   Alert,
   App,
   Button,
+  Card,
   Form,
   Input,
   Modal,
@@ -246,14 +247,16 @@ export default function RoleManagementClient() {
             角色编码由「模块 + 档位」生成（也可手填平台角色编码），权限在目录树上勾选；内置角色只剩超级管理员，不可删除。
           </Text>
         </div>
-        <Space>
-          <Input.Search
-            allowClear
-            placeholder="搜索角色编码、名称、模块"
-            style={{ width: 260 }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[260px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索角色编码、名称、模块"
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
           <Button
             icon={<ReloadOutlined />}
             onClick={() => queryClient.invalidateQueries({ queryKey: ['permission-roles'] })}
@@ -265,9 +268,10 @@ export default function RoleManagementClient() {
               新建角色
             </Button>
           )}
-        </Space>
+        </div>
       </div>
 
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         columns={columns}
         dataSource={visibleRoles}
@@ -276,6 +280,7 @@ export default function RoleManagementClient() {
         scroll={{ x: 1000 }}
         pagination={{ pageSize: 10 }}
       />
+      </Card>
 
       <Modal
         title={editing ? '编辑角色' : '新建角色'}
@@ -285,15 +290,15 @@ export default function RoleManagementClient() {
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
-        width={780}
+        width="min(780px, calc(100vw - 24px))"
       >
         <Form form={form} layout="vertical" style={{ marginTop: 12 }}>
           {editing ? (
-            <Space size="large" align="start">
-              <Form.Item label="角色编码" style={{ width: 260 }}>
+            <Space size="large" align="start" wrap>
+              <Form.Item label="角色编码" style={{ width: '100%', maxWidth: 260 }}>
                 <Input value={editing.code} disabled />
               </Form.Item>
-              <Form.Item label="角色类型" style={{ width: 200 }}>
+              <Form.Item label="角色类型" style={{ width: '100%', maxWidth: 200 }}>
                 <Input
                   value={editing.category === 'platform' ? '平台角色' : '模块角色'}
                   disabled
@@ -306,7 +311,7 @@ export default function RoleManagementClient() {
                 name="category"
                 label="角色类型"
                 rules={[{ required: true, message: '请选择角色类型' }]}
-                style={{ width: 220 }}
+                style={{ width: '100%', maxWidth: 220 }}
               >
                 <Select
                   options={categoryOptions}
@@ -324,7 +329,7 @@ export default function RoleManagementClient() {
                     name="module_code"
                     label="所属模块"
                     rules={[{ required: true, message: '请选择模块' }]}
-                    style={{ width: 220 }}
+                    style={{ width: '100%', maxWidth: 220 }}
                   >
                     <Select
                       options={moduleOptions}
@@ -337,11 +342,11 @@ export default function RoleManagementClient() {
                     name="code_suffix"
                     label="角色档位"
                     rules={[{ required: true, message: '请选择档位' }]}
-                    style={{ width: 200 }}
+                    style={{ width: '100%', maxWidth: 200 }}
                   >
                     <Select options={suffixOptions} placeholder="选择档位" />
                   </Form.Item>
-                  <Form.Item label="角色编码（自动生成）" style={{ width: 260 }}>
+                  <Form.Item label="角色编码（自动生成）" style={{ width: '100%', maxWidth: 260 }}>
                     <Input
                       value={moduleCode && suffix ? `${moduleCode}:${suffix}` : ''}
                       disabled

@@ -19,7 +19,7 @@ export default async function SettingsMenusPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1320px] px-6 py-6">
+    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
       <div className="mb-5">
         <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">菜单管理</h1>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   App,
   Button,
+  Card,
   Form,
   Input,
   InputNumber,
@@ -560,7 +561,7 @@ export default function MenuManagerClient() {
           权重数字越小排越前；「显示」关掉后所有人（含超管）都看不到该项 —— 系统管理入口、系统设置与菜单管理本身受保护，不可隐藏。
           {mode === 'view' ? '点「编辑」后可逐项修改（改完立即生效）。' : '编辑模式下逐项修改，改完立即生效。'}
         </Text>
-        <Space>
+        <Space wrap>
           <Button
             icon={<ReloadOutlined />}
             loading={isFetching}
@@ -602,6 +603,7 @@ export default function MenuManagerClient() {
         </Space>
       </div>
 
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         rowKey="key"
         columns={columns}
@@ -617,6 +619,7 @@ export default function MenuManagerClient() {
           indentSize: 18,
         }}
       />
+      </Card>
 
       {/* 行编辑：改完立即提交，无需全局保存 */}
       <Modal
@@ -629,7 +632,7 @@ export default function MenuManagerClient() {
         confirmLoading={committing}
         okText="确定"
         cancelText="取消"
-        width={620}
+        width="min(620px, calc(100vw - 24px))"
       >
         <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="label" label="菜单名称" rules={[{ required: true, message: '请输入名称' }]}>
@@ -699,7 +702,7 @@ export default function MenuManagerClient() {
         confirmLoading={committing}
         okText="创建"
         cancelText="取消"
-        width={560}
+        width="min(560px, calc(100vw - 24px))"
       >
         <Form form={createForm} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="parent" label="父级" rules={[{ required: true, message: '请选择父级' }]}>
@@ -724,11 +727,11 @@ export default function MenuManagerClient() {
               <Input placeholder="例如：/quality/dashboard" />
             )}
           </Form.Item>
-          <Space size="large" align="start">
-            <Form.Item name="icon" label="图标" style={{ width: 160 }}>
+          <Space size="large" align="start" wrap>
+            <Form.Item name="icon" label="图标" style={{ width: '100%', maxWidth: 160 }}>
               <Select options={ICON_OPTIONS} />
             </Form.Item>
-            <Form.Item name="sort" label="排列权重" style={{ width: 150 }}>
+            <Form.Item name="sort" label="排列权重" style={{ width: '100%', maxWidth: 150 }}>
               <InputNumber min={-9999} max={9999} style={{ width: '100%' }} />
             </Form.Item>
             <Form.Item name="visible" label="显示" valuePropName="checked">

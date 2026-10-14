@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Input, Table, Tabs, Tag, Typography } from 'antd'
+import { Card, Input, Table, Tabs, Tag, Typography } from 'antd'
 import { fetchApiBindings, fetchPermissions } from '@/actions/permission'
 
 const { Text } = Typography
@@ -44,17 +44,20 @@ function PermissionTable() {
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <Input.Search
-          allowClear
-          placeholder="搜索权限码、名称、模块、资源"
-          style={{ width: 320 }}
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-        />
+        <div className="w-full md:w-[320px]">
+          <Input.Search
+            allowClear
+            placeholder="搜索权限码、名称、模块、资源"
+            style={{ width: '100%' }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+        </div>
         <Text className="text-[12px] text-[var(--color-steel)]">
           共 {permissions.length} 条，筛选后 {visiblePermissions.length} 条
         </Text>
       </div>
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         columns={columns}
         dataSource={visiblePermissions}
@@ -63,6 +66,7 @@ function PermissionTable() {
         scroll={{ x: 1000 }}
         pagination={{ pageSize: 15 }}
       />
+      </Card>
     </div>
   )
 }
@@ -99,17 +103,20 @@ function ApiBindingTable() {
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <Input.Search
-          allowClear
-          placeholder="搜索路由模板、权限码"
-          style={{ width: 320 }}
-          value={keyword}
-          onChange={(event) => setKeyword(event.target.value)}
-        />
+        <div className="w-full md:w-[320px]">
+          <Input.Search
+            allowClear
+            placeholder="搜索路由模板、权限码"
+            style={{ width: '100%' }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+        </div>
         <Text className="text-[12px] text-[var(--color-steel)]">
           共 {bindings.length} 条，筛选后 {visibleBindings.length} 条
         </Text>
       </div>
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         columns={columns}
         dataSource={visibleBindings}
@@ -118,6 +125,7 @@ function ApiBindingTable() {
         scroll={{ x: 900 }}
         pagination={{ pageSize: 15 }}
       />
+      </Card>
     </div>
   )
 }

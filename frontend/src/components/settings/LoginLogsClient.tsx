@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Input, Result, Select, Space, Table, Tag } from 'antd'
+import { Button, Card, Input, Result, Select, Table, Tag } from 'antd'
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
 
@@ -68,7 +68,7 @@ export default function LoginLogsClient() {
       key: 'status',
       width: 100,
       render: (status: string) => (
-        <Tag color={status === 'success' ? 'green' : 'red'}>
+        <Tag color={status === 'success' ? 'success' : 'error'}>
           {status === 'success' ? '成功' : '失败'}
         </Tag>
       ),
@@ -112,37 +112,43 @@ export default function LoginLogsClient() {
 
   return (
     <div className="space-y-4">
-      <Space wrap>
-        <Select
-          placeholder="登录状态"
-          allowClear
-          style={{ width: 140 }}
-          value={status}
-          onChange={(v) => { setStatus(v); setPage(1) }}
-          options={[
-            { value: 'success', label: '成功' },
-            { value: 'failed', label: '失败' },
-          ]}
-        />
-        <Input
-          placeholder="搜索用户名"
-          prefix={<SearchOutlined />}
-          style={{ width: 200 }}
-          value={keyword}
-          onChange={(e) => setKeyword(e.target.value)}
-          onPressEnter={() => { setPage(1) }}
-          allowClear
-        />
-        <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="w-full sm:w-[140px]">
+          <Select
+            placeholder="登录状态"
+            allowClear
+            style={{ width: '100%' }}
+            value={status}
+            onChange={(v) => { setStatus(v); setPage(1) }}
+            options={[
+              { value: 'success', label: '成功' },
+              { value: 'failed', label: '失败' },
+            ]}
+          />
+        </div>
+        <div className="w-full sm:w-[200px]">
+          <Input
+            placeholder="搜索用户名"
+            prefix={<SearchOutlined />}
+            style={{ width: '100%' }}
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onPressEnter={() => { setPage(1) }}
+            allowClear
+          />
+        </div>
+        <Button icon={<ReloadOutlined />} onClick={() => refetch()} className="shrink-0">
           刷新
         </Button>
-      </Space>
+      </div>
 
+      <Card className="[&_.ant-table]:!m-0">
       <Table
         rowKey="id"
         columns={columns}
         dataSource={data?.items || []}
         loading={isLoading}
+        scroll={{ x: 'max-content' }}
         pagination={{
           current: page,
           pageSize,
@@ -153,6 +159,7 @@ export default function LoginLogsClient() {
         }}
         size="middle"
       />
+      </Card>
     </div>
   )
 }

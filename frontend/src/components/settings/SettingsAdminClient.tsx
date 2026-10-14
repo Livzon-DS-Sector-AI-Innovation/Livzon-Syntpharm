@@ -19,7 +19,7 @@ export default function SettingsAdminClient() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-[1320px] px-6 py-6 text-[13px] text-[var(--color-steel)]">
+      <div className="mx-auto max-w-[1320px] md:px-6 md:py-6 text-[13px] text-[var(--color-steel)]">
         正在加载…
       </div>
     )
@@ -56,7 +56,7 @@ export default function SettingsAdminClient() {
   ]
 
   return (
-    <div className="mx-auto max-w-[1320px] px-6 py-6">
+    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
       <div className="mb-5">
         <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">
           系统设置

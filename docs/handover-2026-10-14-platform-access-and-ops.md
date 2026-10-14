@@ -1,10 +1,10 @@
 # 平台访问控制 / 菜单与导航 / 系统运维 —— 交接文档
 
-> **日期**：2026-10-11 初稿；2026-10-12 更新（字典移除、测试角色改造、多 Tab 权限过滤）；**2026-10-13 更新**（12 个业务模块接入菜单级权限、菜单管理交互重构、统一边界页、系统运维新增数据库页、用户管理页调整）
+> **日期**：2026-10-11 初稿；2026-10-12 更新（字典移除、测试角色改造、多 Tab 权限过滤）；2026-10-13 更新（12 个业务模块接入菜单级权限、菜单管理交互重构、统一边界页、系统运维新增数据库页、用户管理页调整）；**2026-10-14 更新**（系统管理界面统一美化 + 移动端适配收尾）
 > **分支**：`feature/permission-system-admin`
-> **状态**：改动全部落库并实测通过；**111 个文件未提交 git**（60 个新增未跟踪 + 51 个修改）
-> **环境**：本地开发（`local-backend` / `local-frontend` / `local-dev-postgres`，库 `dazah_local`）
-> **完整流水**：`.codebuddy/memory/2026-10-11.md`（第一轮）+ `2026-10-12.md`（字典移除等）+ **`2026-10-13.md`（最新，本对话）**；长期约定见 `.codebuddy/memory/MEMORY.md`
+> **状态**：此前主体改动（权限体系 / 菜单 / 边界页 / 运维页等，含 111 个文件）**已于 2026-10-14 分批提交 git**（当前 tip `c391a754`）；**未提交 = 19 个文件**（系统管理界面美化 + 移动端适配），改动全部落库并实测通过
+> **环境**：本地开发（`local-backend` / `local-dev-postgres`，库 `dazah_local`）；**前端校验在宿主机跑**（`cd frontend && npx tsc --noEmit && npx eslint <文件>`），仅在需要抓页面 HTML 时才起 `local-frontend`
+> **完整流水**：`.codebuddy/memory/2026-10-11.md`（第一轮）+ `2026-10-12.md`（字典移除等）+ `2026-10-13.md` + **`2026-10-14`（最新，本对话：界面美化与移动端适配）**；长期约定见 `.codebuddy/memory/MEMORY.md`
 >
 > **文件命名约定**：本文档随对话持续更新，**内容有变动就同步改文件名里的日期**；主题名保持概括（`platform-access-and-ops` = 访问控制 + 平台运维），不随单次内容改动。
 
@@ -28,6 +28,8 @@
 | **12** | 菜单「显示」关闭对超管失效修复 + 可见权限显示中文名称 | ✅ | `/settings/menus` |
 | **13** | **统一边界页**：404 / 错误页 / 401 自动回跳 / 菜单死链校验 | ✅ | 全局 |
 | **14** | 系统运维：服务健康加运行时长 + 新增「数据库」页（表清单 + 字段详情） | ✅ | `/settings/ops` |
+| **15** | **系统管理界面统一美化**：标题层级统一 + 表格卡片化 + 内联样式清理 + Tag 语义色 | ✅ | `/settings/*` |
+| **16** | **系统管理页移动端适配收尾**：容器内边距 / 表单宽度 / 弹窗宽度 / 描述列表列数响应式化 | ✅ | `/settings/*` |
 
 > **当前权限规模**：**25 权限码**（13 平台码 + 12 业务模块访问码）/ **43 接口绑定** / 4 个活跃角色（1 内置 `super_admin` + 3 自建）。CI 自检命令见第七节（`check_permissions.py` 已修正为遍历 `ALL_PERMISSIONS`，业务码同样纳入校验）。
 
@@ -35,14 +37,15 @@
 
 ## 二、⚠️ 接手先看
 
-### 2.1 111 个文件未提交 git
+### 2.1 git 提交状态（2026-10-14 更新）
 
 ```bash
-git status --short | wc -l   # 111（60 个新增未跟踪 + 51 个修改）
+git status --short | wc -l   # 19（系统管理界面美化 + 移动端适配，全部已落库）
 git branch --show-current    # feature/permission-system-admin
+git log -1 --oneline         # c391a754
 ```
 
-**建议先提交一次**（改动跨多个主题，可按主题拆 commit：权限基建 / 模块接入 / 菜单管理 / 边界页 / 运维页）。
+**此前 111 个文件已于 2026-10-14 分批提交**（权限基建 / 模块接入 / 菜单管理 / 边界页 / 运维页 / 会话与审计等主题）；**当前只余 19 个未提交**（本轮的界面美化与移动端适配），建议单独成一次 commit。
 
 ### 2.2 飞书有两个权限在**等集团审核**（外部阻塞）
 
@@ -171,13 +174,33 @@ docker restart local-backend     # 否则你的改动不生效（会以为"改�
   - **红线：只暴露结构，不返回任何数据行**；`schema`/`table` 全部走 SQL 参数绑定；
   - 新接口：`GET /api/v1/system/db/tables`、`GET /api/v1/system/db/tables/{schema}/{table}/columns`（已登记 `platform:ops:read` 绑定）。
 
+### 3.10 系统管理界面统一美化（工作包 15）★
+
+**统一后的标题层级：页面 `h1` → 内容区 `h2` → 卡片内 `h3`**（RSC 页面保留 `<h1>`，Client 内容层统一用 Tailwind 字号）。
+
+| 类别 | 涉及文件 | 改动 |
+|---|---|---|
+| 去重复标题 | `UserManagementClient.tsx` | 删掉与 `page.tsx` `<h1>` 重复的 `<h2>用户管理</h2>` |
+| antd Title → Tailwind | `LLMConfigClient.tsx` / `FeishuSettingsClient.tsx` / `ModuleSettingsClient.tsx` | `<Title level={3\|4}>` → `<h2>`（20px）/`<h3>`（16px），并清理无用的 `Title` 导入 |
+| 表格卡片化 | `AuditLogsClient` / `LoginLogsClient` / `MenuManagerClient` / `UserManagementClient` / `RoleManagementClient` / `PermissionCatalogClient`（权限码表 + 绑定表）/ `GrantManagementClient` | `<Table>` 外包 `<Card>`；Card 加 `[&_.ant-table]:!m-0` 消除双层内边距 |
+| 内联样式清理 | `LLMConfigClient.tsx` | 外层 `style={{maxWidth,margin,padding}}` → `className="p-6"`；flex 容器 `style` → `mb-6 flex flex-wrap items-center justify-between gap-3` |
+| Tag 语义色 | `LoginLogsClient.tsx` | 登录结果 `color="green"/"red"` → `"success"/"error"` |
+
+### 3.11 系统管理页移动端适配收尾（工作包 16）
+
+- **容器内边距响应式**：4 个 `settings/*/page.tsx`（users / menus / audit / login-logs）+ `PermissionAdminClient` + `SettingsAdminClient` 的 `px-6 py-6` → `md:px-6 md:py-6`（小屏交给全局移动端防护层，不再吃满边距）；
+- **表单宽度弹性化**：`UserManagementClient` 编辑弹窗的 `Form.Item` 固定宽（160/180/220）→ `style={{width:'100%', maxWidth:N}}`，外层 `Space` 加 `wrap`（小屏自动换行、不横向溢出）；
+- **弹窗宽度按视口收缩**：`UserManagementClient`（重置密码弹窗）、`ModuleSettingsClient`（模块设置编辑弹窗）`width={480\|520}` → `width="min(480px, calc(100vw - 24px))"`；
+- **Descriptions 响应式列数**：`SystemOpsClient` 的 `column={2}` → `{xs:1,sm:2}`、`column={4}` → `{xs:2,sm:4}`；
+- **筛选/工具行换行**：`SystemOpsClient` 健康页头部、`AgentSkillManagementClient`、`PermissionTreePanel` 由固定宽搜索框 + `Space` 改为 Tailwind `flex flex-wrap` + `w-full sm:w-[220px]`、按钮 `self-start`。
+
 ---
 
 ## 四、待办
 
 | 优先级 | 事项 | 说明 |
 |---|---|---|
-| **P0** | 提交 git | 111 个文件（60 新增 + 51 修改），建议按主题拆 commit |
+| **P0** | 提交 git | **当前 19 个文件未提交**（界面美化 + 移动端适配）；此前 111 个文件已于 2026-10-14 分批提交（tip `c391a754`） |
 | **P1** | 业务模块**接口级**权限 | 菜单级已做完（每模块 1 个码）；细化到 `<module>:<resource>:<action>` 需逐模块立项（现存 1,260 个方法级接口，量力而行） |
 | **P1** | 业务模块**按钮级**权限 | 质量 / 注册 / 能源等模块的写操作按钮（做法同 3.5） |
 | **P1** | 数据范围真正接入 | 见 2.3，按模块立项；试点建议 `equipment`（已有 `EquipmentAccessContext` 基础设施） |
@@ -211,11 +234,28 @@ docker restart local-backend     # 否则你的改动不生效（会以为"改�
 - 菜单配置存在 `core.module_settings`（module=menu, key=CONFIG）；`items` 只存**偏离代码默认的覆盖**（`label` / `visible` / `sort` / `perms`），`custom` 存自定义项
 - **边界页（404 / 错误页）必须用 RSC + Tailwind**，不要用 antd（见 6.x）
 
+### 5.4 界面与移动端（本轮 2026-10-14 确立，系统管理页后续沿用）
+- **标题层级**：页面 `h1`（RSC `page.tsx`）→ 内容区 `h2` → 卡片内 `h3`；**Client 组件不要重复页面标题**（否则与 `page.tsx` 的 `h1` 形成双标题）；
+- **标题统一用 Tailwind**（`text-[20px] font-semibold text-[var(--color-charcoal)]`），不再用 antd `Typography.Title`；
+- **表格统一套 `<Card>`**，Card 加 `[&_.ant-table]:!m-0` 消除双层内边距；
+- **不用内联 `style`** 写颜色 / 间距：颜色用 CSS 变量（`--color-charcoal` / `--color-steel` / `--color-hairline`），布局用 Tailwind；
+- **宽度弹性化**：弹窗用 `width="min(<n>px, calc(100vw - 24px))"`，表单项固定宽改 `width:'100%', maxWidth:N` 且外层 `Space` 加 `wrap`；页面容器用 `md:px-6 md:py-6`（小屏交给全局防护层）；
+- **Tag 用语义色**（`success` / `error` / `warning`），不要用 `green` / `red`。
+
 ---
 
 ## 六、踩过的坑（可复用）
 
-### 6.1 本轮（2026-10-13）新增
+### 6.1 本轮（2026-10-14）新增
+
+| 现象 | 原因 | 做法 |
+|---|---|---|
+| Card 包 Table 后表格上下出现多余留白 | antd 的 Card body 与 Table 各自带内边距，叠加成双层 | Card 上加 `[&_.ant-table]:!m-0` 压掉表格外边距 |
+| 移动端编辑弹窗里的表单项横向溢出 | `Form.Item` 用固定 px 宽度（160/180/220），窄屏超出容器 | 改 `style={{width:'100%', maxWidth:N}}`，外层 `Space` 加 `wrap` |
+| 弹窗在手机宽度下被挤出视口 | `Modal width={480}` 是固定值 | 改 `width="min(480px, calc(100vw - 24px))"`（按视口收缩、两侧各留 12px） |
+| 无头浏览器抓页面时白屏（有 SSR HTML、脚本不接管） | 用宿主内网 IP `http://172.17.62.102:3000` 访问；疑与 Next 的安全上下文 / dev 跨站保护有关（`/_next` 被拦的先例见 2026-09-24 流水的 `ALLOWED_DEV_ORIGINS` 坑） | 做页面/移动端断言时统一走 `http://127.0.0.1:3000` |
+
+### 6.2 上一轮（2026-10-13）新增
 
 | 现象 | 原因 | 做法 |
 |---|---|---|
@@ -229,7 +269,7 @@ docker restart local-backend     # 否则你的改动不生效（会以为"改�
 | `check_permissions.py` 漏检业务码 | 正则只匹配 `platform:` 前缀 | 改为匹配任意 `模块:资源:动作` |
 | 改了后端"没生效" | 后端没有热重载 | `docker restart local-backend` |
 
-### 6.2 第一轮（2026-10-11/12）
+### 6.3 第一轮（2026-10-11/12）
 
 | 现象 | 原因 | 做法 |
 |---|---|---|
@@ -299,9 +339,9 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
 - 系统管理页：`src/components/settings/*`、`src/app/(dashboard)/settings/**`
 
 **文档 / 记忆**
-- 本文档（第三轮，2026-10-13 更新）
-- `.codebuddy/memory/2026-10-13.md`（本对话完整流水，最新）
-- `.codebuddy/memory/{2026-10-11,2026-10-12}.md`（前两轮）
+- 本文档（第四轮，2026-10-14 更新）
+- `.codebuddy/memory/2026-10-14.md`（本对话完整流水，最新）
+- `.codebuddy/memory/{2026-10-11,2026-10-12,2026-10-13}.md`（前三轮）
 - `.codebuddy/memory/MEMORY.md`（跨会话长期事实与约定）
 - `backend/docs/alembic-guide.md`（迁移规范）
 
@@ -313,4 +353,4 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
 
 1. `.codebuddy/memory/MEMORY.md`（长期约定）
 2. 本文档第二节「接手先看」（尤其是 2.5 模块权限已全开、2.6 后端要重启）
-3. 需要细节时按时间倒序翻日更：`.codebuddy/memory/2026-10-13.md`（最新）→ `2026-10-12.md` → `2026-10-11.md`
+3. 需要细节时按时间倒序翻日更：`.codebuddy/memory/2026-10-14.md`（最新）→ `2026-10-13.md` → `2026-10-12.md` → `2026-10-11.md`

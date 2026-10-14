@@ -35,7 +35,7 @@ import type {
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
-const { Text, Title } = Typography
+const { Text } = Typography
 type DiagnosticStep = NonNullable<FeishuDiagnosticResult['steps']>[number]
 
 const STATUS_COLOR: Record<string, string> = {
@@ -184,10 +184,10 @@ export default function FeishuSettingsClient() {
   return (
     <div className="max-w-[1120px]">
       <div className="mb-5">
-        <Title level={3} style={{ margin: 0 }}>
-          <SafetyCertificateOutlined style={{ marginRight: 10 }} />
+        <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
+          <SafetyCertificateOutlined className="mr-3" />
           Livzon 助手飞书设置
-        </Title>
+        </h2>
         <Text className="mt-2 block text-[13px] text-[var(--color-steel)]">
           此配置仅用于 Livzon 助手通讯录同步和权限诊断，不影响仓储、安全、设备等模块的飞书应用配置。
         </Text>
@@ -237,29 +237,31 @@ export default function FeishuSettingsClient() {
             <Input.Password placeholder={configuredSecret ? '留空则不修改' : '请输入 App Secret'} />
           </Form.Item>
 
-          <Space size="large" wrap align="start">
+          <Space size="large" wrap align="start" className="w-full">
             <Form.Item
               name="card_callback_verification_token"
               label="卡片回调 Verification Token"
+              style={{ width: '100%', maxWidth: 360 }}
               extra={
                 config?.card_callback_verification_token_configured
                   ? `已配置：${config.card_callback_verification_token_masked || '******'}；留空则不修改。`
                   : 'HTTP 回调模式用于校验请求；长连接模式可留空。'
               }
             >
-              <Input.Password style={{ width: 360 }} placeholder="留空则不修改" />
+              <Input.Password style={{ width: '100%' }} placeholder="留空则不修改" />
             </Form.Item>
 
             <Form.Item
               name="card_callback_encrypt_key"
               label="卡片回调 Encrypt Key"
+              style={{ width: '100%', maxWidth: 360 }}
               extra={
                 config?.card_callback_encrypt_key_configured
                   ? `已配置：${config.card_callback_encrypt_key_masked || '******'}；留空则不修改。`
                   : '可选。配置后后端会进行回调签名校验，密钥加密入库。'
               }
             >
-              <Input.Password style={{ width: 360 }} placeholder="留空则不修改" />
+              <Input.Password style={{ width: '100%' }} placeholder="留空则不修改" />
             </Form.Item>
           </Space>
 
@@ -271,21 +273,23 @@ export default function FeishuSettingsClient() {
             description={`生产环境可配置 HTTP 回调地址：${config?.card_callback_url || '/api/v1/identity/feishu/card-callback'}；开发环境可在后端开启 LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED=true，并在飞书开放平台选择使用长连接接收回调。`}
           />
 
-          <Space size="large" wrap>
+          <Space size="large" wrap className="w-full">
             <Form.Item
               name="sync_root_department_id"
               label="组织架构同步根部门 ID"
+              style={{ width: '100%', maxWidth: 260 }}
               tooltip="默认为 0，表示从飞书根部门开始读取子部门。"
             >
-              <Input style={{ width: 260 }} placeholder="0 或 open_department_id" />
+              <Input style={{ width: '100%' }} placeholder="0 或 open_department_id" />
             </Form.Item>
 
             <Form.Item
               name="sync_member_department_id"
               label="成员同步部门 ID"
+              style={{ width: '100%', maxWidth: 260 }}
               tooltip="默认为 0，建议填写 Livzon 助手可访问的成员根部门。"
             >
-              <Input style={{ width: 260 }} placeholder="0 或 open_department_id" />
+              <Input style={{ width: '100%' }} placeholder="0 或 open_department_id" />
             </Form.Item>
 
             <Form.Item name="is_active" label="启用状态" valuePropName="checked">

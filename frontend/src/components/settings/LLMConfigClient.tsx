@@ -4,21 +4,20 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
-  Card,
-  Table,
+  App,
   Button,
-  Modal,
+  Card,
   Form,
   Input,
-  Select,
-  Switch,
   InputNumber,
-  Typography,
-  Space,
-  Tag,
+  Modal,
   Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
   Tooltip,
-  App,
 } from 'antd'
 import {
   PlusOutlined,
@@ -40,7 +39,6 @@ import type { LLMConfig } from '@/types/settings'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
-const { Title, Text } = Typography
 const { TextArea } = Input
 
 const CONFIG_TYPE_OPTIONS = [
@@ -260,28 +258,21 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
   ]
 
   return (
-    <div style={{ maxWidth: 1300, margin: '0 auto', padding: embedded ? 0 : '24px' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-        }}
-      >
-        <div>
-        {!embedded && (
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }}>
-            返回
-          </Button>
-        )}
-          <Title level={3} style={{ margin: 0 }}>
-            <SettingOutlined style={{ marginRight: 12 }} />
-            LLM 模型配置
-          </Title>
-          <Text style={{ fontSize: 14, color: '#666', marginTop: 8, display: 'block' }}>
-            配置 AI 大模型 API 连接参数。同一时间仅一个配置生效。
-          </Text>
+    <div className={embedded ? '' : 'p-6'}>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+            {!embedded && (
+              <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} className="mr-4">
+                返回
+              </Button>
+            )}
+            <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
+          <SettingOutlined className="mr-3" />
+          LLM 模型配置
+        </h2>
+        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
+          配置 AI 大模型 API 连接参数。同一时间仅一个配置生效。
+        </p>
         </div>
         <Space>
           {canManage && (
@@ -301,8 +292,9 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
         </Space>
       </div>
 
-      <Card>
-        <Table scroll={{ x: 1000 }}
+      <Card className="[&_.ant-table]:!m-0">
+        <Table
+          scroll={{ x: 1000 }}
           columns={columns}
           dataSource={configs}
           rowKey="id"
@@ -318,7 +310,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
         confirmLoading={saving}
-        width={640}
+        width="min(640px, calc(100vw - 24px))"
         okText="保存"
         cancelText="取消"
       >
@@ -364,7 +356,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
             <Input placeholder="gpt-4o" />
           </Form.Item>
 
-          <Space size="large">
+          <Space size="large" wrap>
             <Form.Item name="temperature" label="Temperature">
               <InputNumber min={0} max={2} step={0.1} style={{ width: 120 }} />
             </Form.Item>

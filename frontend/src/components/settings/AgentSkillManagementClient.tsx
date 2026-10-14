@@ -272,14 +272,16 @@ export default function AgentSkillManagementClient() {
             管理助手渐进式披露的 Skill。普通用户只能使用，不能创建或修改。
           </Text>
         </div>
-        <Space>
-          <Input.Search
-            allowClear
-            placeholder="搜索标题、名称、触发词"
-            style={{ width: 240 }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="w-full sm:w-[240px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索标题、名称、触发词"
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
           <Button icon={<ReloadOutlined />} onClick={loadSkills}>
             刷新
           </Button>
@@ -288,7 +290,7 @@ export default function AgentSkillManagementClient() {
               新建 Skill
             </Button>
           )}
-        </Space>
+        </div>
       </div>
 
       <Table
@@ -308,7 +310,7 @@ export default function AgentSkillManagementClient() {
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
-        width={760}
+        width="min(760px, calc(100vw - 24px))"
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item name="name" label="名称" rules={[{ required: !editingSkill }]}>
