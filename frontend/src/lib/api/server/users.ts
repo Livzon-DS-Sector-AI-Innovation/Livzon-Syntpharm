@@ -68,3 +68,10 @@ export async function unbindFeishuUser(id: string, token?: string) {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   })
 }
+
+export async function revokeUserSessions(id: string, token?: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/sessions`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+}

@@ -49,6 +49,10 @@ export function getApiBindings(token?: string) {
 
 // ── 授权 ──────────────────────────────────────────────────────────
 
+export function getDepartments(token?: string) {
+  return apiFetch(P('/departments'), { headers: auth(token) })
+}
+
 export function getGrants(userId?: string, token?: string) {
   const q = userId ? `?user_id=${userId}` : ''
   return apiFetch(P(`/grants${q}`), { headers: auth(token) })

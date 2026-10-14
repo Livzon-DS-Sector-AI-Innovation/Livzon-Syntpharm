@@ -22,6 +22,7 @@ import {
 import {
   CopyOutlined,
   KeyOutlined,
+  LogoutOutlined,
   PlusOutlined,
   ReloadOutlined,
   UserSwitchOutlined,
@@ -30,6 +31,7 @@ import {
   createUser,
   getUsers,
   resetUserPassword,
+  revokeUserSessions,
   unbindFeishuUser,
   updateUser,
 } from '@/actions/users'
@@ -115,6 +117,7 @@ export default function UserManagementClient() {
   // 编辑弹窗内的「账号操作」：生成随机密码 / 解绑飞书
   const [resetting, setResetting] = useState(false)
   const [unbinding, setUnbinding] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   // 一次性展示的随机密码：后端不落库明文，关掉弹窗就再也看不到
   const [oneTimePassword, setOneTimePassword] = useState<{
     name: string
@@ -306,6 +309,23 @@ export default function UserManagementClient() {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     } finally {
       setUnbinding(false)
+    }
+  }
+
+  const handleForceLogout = async () => {
+    if (!editingUser) return
+    setLoggingOut(true)
+    try {
+      const result = await revokeUserSessions(editingUser.id)
+      if (!result.ok) {
+        message.error(result.message)
+        return
+      }
+      message.success(
+        result.data.revoked > 0 ? `已强制下线 ${result.data.revoked} 个会话` : '该用户当前无在线会话',
+      )
+    } finally {
+      setLoggingOut(false)
     }
   }
 
@@ -625,6 +645,18 @@ export default function UserManagementClient() {
                       未绑定飞书。用户本人首次用飞书登录时自动绑定，管理员不代绑。
                     </Text>
                   )}
+                </div>
+                <div>
+                  <Popconfirm
+                    title="强制下线会使其所有登录会话立即失效，确认？"
+                    onConfirm={handleForceLogout}
+                    okText="强制下线"
+                    cancelText="取消"
+                  >
+                    <Button danger loading={loggingOut} icon={<LogoutOutlined />}>
+                      强制下线
+                    </Button>
+                  </Popconfirm>
                 </div>
               </div>
             </div>

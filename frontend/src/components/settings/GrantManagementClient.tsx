@@ -21,12 +21,13 @@ import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   createGrant,
   deleteGrant,
+  fetchDepartmentOptions,
   fetchGrants,
   fetchRoles,
   fetchUserOptions,
   updateGrant,
 } from '@/actions/permission'
-import type { GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
+import type { DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -72,6 +73,14 @@ export default function GrantManagementClient() {
     queryKey: ['permission-user-options'],
     queryFn: fetchUserOptions,
   })
+
+  const { data: departments = [] } = useQuery<DepartmentOption[]>({
+    queryKey: ['permission-department-options'],
+    queryFn: fetchDepartmentOptions,
+    staleTime: 5 * 60_000,
+  })
+
+  const departmentOptions = departments.map((d) => ({ value: d.code, label: `${d.name}（${d.code}）` }))
 
   const roleOptions = roles.map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))
   const userOptions = users.map((u) => ({
@@ -415,8 +424,15 @@ export default function GrantManagementClient() {
             </Space>
           </Form.Item>
           {limitScope && (scopeType === 'department' || scopeType === 'department_and_children') && (
-            <Form.Item name="scope_dept_codes" label="范围部门编码">
-              <Select mode="tags" placeholder="输入部门编码后回车，可多个" />
+            <Form.Item name="scope_dept_codes" label="范围部门">
+              <Select
+                mode="multiple"
+                showSearch
+                allowClear
+                optionFilterProp="label"
+                placeholder="选择数据范围部门（可多选）"
+                options={departmentOptions}
+              />
             </Form.Item>
           )}
           {editing && (

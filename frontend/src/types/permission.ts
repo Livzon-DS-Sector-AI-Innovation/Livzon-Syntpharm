@@ -88,6 +88,11 @@ export interface UserOption {
   username: string | null
 }
 
+export interface DepartmentOption {
+  code: string
+  name: string
+}
+
 export interface PermissionTreeNode {
   key: string
   title: string

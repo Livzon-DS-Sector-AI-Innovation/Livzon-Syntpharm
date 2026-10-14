@@ -8,6 +8,7 @@ import {
   deleteGrant as deleteGrantApi,
   deleteRole as deleteRoleApi,
   getApiBindings as getApiBindingsApi,
+  getDepartments as getDepartmentsApi,
   getGrants as getGrantsApi,
   getMyPermissions as getMyPermissionsApi,
   getPermissions as getPermissionsApi,
@@ -19,6 +20,7 @@ import {
 } from '@/lib/api/server/permission'
 import type {
   ApiBindingItem,
+  DepartmentOption,
   GrantCreateInput,
   GrantItem,
   GrantUpdateInput,
@@ -48,6 +50,13 @@ const PERMISSION_PATH = '/settings/permission'
 export async function fetchRoles(): Promise<RoleDetail[]> {
   const token = await getAuthToken()
   const res = (await getRolesApi(token)) as { data: RoleDetail[] }
+  return res.data ?? []
+}
+
+/** 授权数据范围选部门用的部门选项（hr.departments.code + name）。 */
+export async function fetchDepartmentOptions(): Promise<DepartmentOption[]> {
+  const token = await getAuthToken()
+  const res = (await getDepartmentsApi(token)) as { data: DepartmentOption[] }
   return res.data ?? []
 }
 

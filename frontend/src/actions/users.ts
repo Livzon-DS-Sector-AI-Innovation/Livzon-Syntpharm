@@ -10,6 +10,7 @@ import {
   changeMyPassword as changeMyPasswordServer,
   bindFeishuUser as bindFeishuUserServer,
   unbindFeishuUser as unbindFeishuUserServer,
+  revokeUserSessions as revokeUserSessionsServer,
 } from '@/lib/api/server/users'
 import type {
   UserManagementItem,
@@ -138,5 +139,18 @@ export async function unbindFeishuUser(id: string): Promise<UsersActionResult<Us
     return { ok: true, data: res.data }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : '解绑飞书账号失败' }
+  }
+}
+
+/** 吊销某用户的全部在线会话（强制下线）。 */
+export async function revokeUserSessions(
+  id: string,
+): Promise<UsersActionResult<{ revoked: number }>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await revokeUserSessionsServer(id, token)) as { data: { revoked: number } }
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '强制下线失败' }
   }
 }
