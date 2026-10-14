@@ -124,6 +124,20 @@ class GrantUpdate(BaseModel):
     status: str | None = Field(None, pattern="^(active|disabled)$")
 
 
+# ── 授权数据范围部门选项（hr.departments.code + name）───────────────
+
+
+class DepartmentOption(BaseModel):
+    code: str
+    name: str
+
+
+class DepartmentOptionListResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[DepartmentOption]
+
+
 # ── 接口绑定登记簿 ────────────────────────────────────────────────
 
 

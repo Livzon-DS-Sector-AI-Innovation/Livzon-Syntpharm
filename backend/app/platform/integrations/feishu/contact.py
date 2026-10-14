@@ -477,6 +477,8 @@ async def find_users_by_department(department_id: str) -> list[dict[str, Any]]:
                         "avatar_big": (u.avatar.avatar_640 or "") if u.avatar else "",
                         "join_time": u.join_time or 0,
                         "is_frozen": u.is_frozen if u.is_frozen is not None else False,
+                        # 员工状态（UserStatus）：is_resigned 表示已离职；字段缺失时按 False
+                        "is_resigned": bool(getattr(getattr(u, "status", None), "is_resigned", False)),
                     }
                 )
 
@@ -564,6 +566,7 @@ async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict[s
             "avatar_big": (u.avatar.avatar_640 or "") if u.avatar else "",
             "join_time": u.join_time or 0,
             "is_frozen": u.is_frozen if u.is_frozen is not None else False,
+            "is_resigned": bool(getattr(getattr(u, "status", None), "is_resigned", False)),
         }
 
     return None

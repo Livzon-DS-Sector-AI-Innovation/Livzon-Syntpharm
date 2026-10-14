@@ -31,6 +31,8 @@ from app.platform.permission.repository import (
 from app.platform.permission.schemas import (
     ApiBindingListResponse,
     ApiBindingResponse,
+    DepartmentOption,
+    DepartmentOptionListResponse,
     GrantCreate,
     GrantDetailApiResponse,
     GrantListResponse,
@@ -288,6 +290,27 @@ async def list_api_bindings(
 # ── 授权管理 ──────────────────────────────────────────────────────
 
 
+@router.get("/departments", response_model=DepartmentOptionListResponse)
+async def list_department_options(
+    ctx: PermissionContext = Depends(require_permission("platform:grant:read")),
+    db: AsyncSession = Depends(get_db),
+):
+    """授权管理「数据范围」选部门用的选项（hr.departments.code + name）。
+
+    数据源是 hr.departments（部门唯一真理来源），通过 hr public_api 只读获取，
+    避免在权限模块里直接 import hr 的模型。
+    """
+    from app.modules.hr.public_api import list_all_departments
+
+    departments = await list_all_departments(db)
+    data = [
+        DepartmentOption(code=d.code, name=d.name)
+        for d in departments
+        if d.is_deleted is False
+    ]
+    return build_response(data=data)
+
+
 @router.get("/grants", response_model=GrantListResponse)
 async def list_grants(
     user_id: uuid.UUID | None = Query(None),
@@ -345,6 +368,7 @@ async def create_grant(
     await assert_actor_can_grant_role(db, actor=ctx.user, role=role)
 
     _validate_scope(payload.scope_type, payload.scope_dept_codes)
+    await _validate_department_codes(db, payload.scope_dept_codes)
     await assert_actor_can_grant_scope(
         db,
         actor=ctx.user,
@@ -412,6 +436,7 @@ async def update_grant(
 
     if payload.scope_type is not None:
         _validate_scope(payload.scope_type, payload.scope_dept_codes)
+        await _validate_department_codes(db, payload.scope_dept_codes)
         await assert_actor_can_grant_scope(
             db,
             actor=ctx.user,
@@ -529,3 +554,16 @@ async def my_permissions(
 def _validate_scope(scope_type: str, scope_dept_codes: list[str] | None) -> None:
     if scope_type in ("department", "department_and_children") and not scope_dept_codes:
         raise BadRequestException("指定部门范围时必须提供部门编码列表")
+
+
+async def _validate_department_codes(db: AsyncSession, scope_dept_codes: list[str] | None) -> None:
+    """校验数据范围里的部门编码在 hr.departments 中存在（纵深防御，防绕过前端直接调 API）。"""
+    if not scope_dept_codes:
+        return
+    from app.modules.hr.public_api import list_all_departments
+
+    departments = await list_all_departments(db)
+    valid = {d.code for d in departments if d.is_deleted is False}
+    invalid = [c for c in scope_dept_codes if c not in valid]
+    if invalid:
+        raise BadRequestException(f"部门编码不存在：{', '.join(invalid)}")

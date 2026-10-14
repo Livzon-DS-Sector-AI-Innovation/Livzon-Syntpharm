@@ -161,6 +161,10 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/reset-password"),
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/bind-feishu"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/bind-feishu"),
+    # 会话管理（在线会话 / 踢下线）
+    ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/sessions"),
+    ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/sessions/{jti}"),
+    ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/sessions"),
     # 组织架构 / 人员名单（平台用户读权限即可）
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/departments"),
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/departments/{dept_id}"),
@@ -187,6 +191,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/tree"),
     ApiBindingDef("platform:api-binding:read", "GET", "/api/v1/permission/api-bindings"),
     # 授权管理
+    ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/departments"),
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/grants"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants"),
     ApiBindingDef("platform:grant:manage", "PUT", "/api/v1/permission/grants/{id}"),

@@ -13,6 +13,7 @@ from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.jobs import spawn_task
 from app.core.response import build_response, success_response
 from app.platform.audit.service import record_audit_log
+from app.platform.identity.models import User
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
     ChangePasswordApiResponse,
@@ -163,6 +164,7 @@ async def local_login(
     user.locked_until = None
     user.last_login_at = datetime.now(UTC)
     token = generate_jwt(user)
+    await _record_login_session(token, user, ip_address, user_agent)
     await log_repo.create(
         db,
         user_id=user.id,
@@ -263,6 +265,9 @@ async def auth_callback(
         user_agent=user_agent,
     )
     await db.commit()
+
+    # 会话登记（踢下线用）
+    await _record_login_session(token, user, ip_address, user_agent)
 
     # Redirect to frontend with token
     return RedirectResponse(
@@ -739,6 +744,10 @@ async def reset_user_password(
         new_value={"random": generated is not None},
     )
     await db.commit()
+
+    # 通知绑定了飞书的用户（卡片不含明文密码，失败静默降级）
+    await _notify_password_reset(user)
+
     return build_response(
         data=PasswordResetData(
             message=(
@@ -747,6 +756,78 @@ async def reset_user_password(
             password=generated or None,
         )
     )
+
+
+async def _notify_password_reset(user: User) -> None:
+    """重置密码后通知用户（仅限绑定了飞书的账号；失败静默降级，不影响重置结果）。
+
+    通知**不含明文密码**：明文只在重置响应的弹窗里展示一次，由管理员转交。
+    卡片只告知「密码已重置 + 首次登录需改密」，用户可用飞书一键登录。
+    """
+    open_id = user.feishu_open_id
+    if not open_id:
+        return
+    try:
+        from app.platform.integrations.feishu.notification import send_user_card
+
+        content = (
+            "你的平台账号密码已由管理员重置。\n\n"
+            "**首次登录后需立即设置新密码。**\n"
+            "登录方式：\n- 飞书一键登录\n- 账号密码登录（新密码请向管理员获取）"
+        )
+        await send_user_card(open_id, "账号密码已重置", content)
+    except Exception:
+        logger.exception("重置密码后发送飞书通知失败（不影响重置结果）")
+
+
+async def _record_login_session(token: str, user: User, ip_address: str | None, user_agent: str | None) -> None:
+    """登录成功后把 jti 登记到 Redis 会话索引（供「踢下线」用）。失败只记日志。"""
+    try:
+        import jwt as pyjwt
+
+        from app.platform.identity.session import record_session
+
+        payload = pyjwt.decode(token, get_settings().SECRET_KEY, algorithms=["HS256"])
+        await record_session(jti=payload["jti"], user=user, ip_address=ip_address, user_agent=user_agent)
+    except Exception:
+        logger.warning("记录登录会话失败", exc_info=True)
+
+
+@user_router.get("/sessions", summary="在线会话列表")
+async def list_sessions(
+    ctx: PermissionContext = Depends(require_permission("platform:user:read")),
+) -> Any:
+    """列出全部在线会话（账号管理员可看，用于识别并踢掉异常会话）。"""
+    from app.platform.identity.session import list_all_sessions
+
+    return build_response(data=await list_all_sessions())
+
+
+@user_router.delete("/sessions/{jti}", summary="吊销会话（踢下线）")
+async def revoke_session_api(
+    jti: str,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+) -> Any:
+    from app.platform.identity.session import revoke_session
+
+    await revoke_session(jti)
+    return build_response(data={"revoked": True})
+
+
+@user_router.delete("/users/{user_id}/sessions", summary="吊销某用户全部会话")
+async def revoke_user_sessions(
+    user_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    from app.core.exceptions import NotFoundException
+    from app.platform.identity.session import revoke_all_user_sessions
+
+    user = await UserRepository().get_by_id(db, user_id)
+    if user is None:
+        raise NotFoundException("用户")
+    count = await revoke_all_user_sessions(user.id)
+    return build_response(data={"revoked": count})
 
 
 @user_router.post(

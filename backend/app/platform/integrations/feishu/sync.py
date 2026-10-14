@@ -119,6 +119,8 @@ def _parse_user_record(rec: dict[str, Any]) -> dict[str, Any] | None:
         "avatar_middle": rec.get("avatar_middle") or None,
         "avatar_big": rec.get("avatar_big") or None,
         "feishu_department_ids": dept_ids_json,
+        "is_resigned": bool(rec.get("is_resigned", False)),
+        "is_frozen": bool(rec.get("is_frozen", False)),
     }
 
 
@@ -146,6 +148,9 @@ async def _upsert_user(parsed: dict[str, Any]) -> None:
             # user_id 需 contact:user.employee_id:readonly（集团审核中），为空时不覆盖
             if not existing.feishu_user_id and parsed["user_id"]:
                 existing.feishu_user_id = parsed["user_id"]
+            # 离职/冻结：开关开启时自动禁用账号（不自动恢复，恢复需人工；跳过超管）
+            if parsed.get("is_resigned") or parsed.get("is_frozen"):
+                await _maybe_disable_resigned(db, existing)
         else:
             db.add(
                 User(
@@ -167,6 +172,23 @@ async def _upsert_user(parsed: dict[str, Any]) -> None:
                 )
             )
         await db.commit()
+
+
+async def _maybe_disable_resigned(db: Any, user: Any) -> None:
+    """离职/冻结的成员：开关开启时自动禁用本地账号。
+
+    - 开关：`identity.AUTO_DISABLE_RESIGNED`（默认 false，关闭）；
+    - 跳过超级管理员（避免把最后一个超管锁死）；
+    - 只禁用、不自动恢复（成员复职后需管理员手动启用）。
+    """
+    from app.platform.permission.public_api import user_is_superuser
+    from app.shared.config_reader import get_module_setting_bool
+
+    if not await get_module_setting_bool("identity", "AUTO_DISABLE_RESIGNED", False):
+        return
+    if await user_is_superuser(db, user):
+        return
+    user.status = "disabled"
 
 
 async def _get_existing_user(open_id: str) -> Any:

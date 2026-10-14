@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from hashlib import pbkdf2_hmac
 from hmac import compare_digest
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import jwt
 from fastapi import HTTPException, status
@@ -726,6 +726,33 @@ async def sync_livzon_feishu_contacts_all() -> None:
             await db.commit()
     except Exception:
         logger.exception("Livzon Feishu contacts sync (all) failed")
+
+
+async def record_member_sync_result(result: dict[str, Any]) -> None:
+    """把「每日自动成员同步」的结果写入飞书配置的 last_sync_* 字段。
+
+    手动触发的全量同步（run_livzon_feishu_sync_all）已自行写状态；每日 00:00 的
+    自动同步直接调 sync_members，此前不写状态，导致「系统设置 → 飞书设置」里看不到
+    自动同步的结果。此函数补齐这条链路；失败只记日志，不影响同步本身。
+    """
+    try:
+        async with async_session_factory() as db:
+            config = await _feishu_config_repo.get_active(db)
+            if config is None:
+                return
+            errors = result.get("errors") or []
+            user_count = result.get("user_count", 0)
+            config.last_synced_at = datetime.now(UTC)
+            if errors:
+                config.last_sync_status = "warning"
+                preview = "; ".join(str(e) for e in errors[:5])
+                config.last_sync_message = f"自动同步完成：成员 {user_count} 名，部分失败：{preview}"
+            else:
+                config.last_sync_status = "ok"
+                config.last_sync_message = f"自动同步完成：成员 {user_count} 名"
+            await db.commit()
+    except Exception:
+        logger.exception("记录成员自动同步结果失败")
 
 
 async def _active_livzon_feishu_credentials(db: AsyncSession) -> tuple[str, str]:
@@ -1502,7 +1529,10 @@ async def handle_oauth_callback(
 
 
 def generate_jwt(user: User) -> str:
-    """Generate a JWT token for the given user."""
+    """Generate a JWT token for the given user.
+
+    含 `jti`（token 唯一 ID）：会话管理据此在 Redis 索引 / 吊销（踢下线）。
+    """
     settings = get_settings()
     now = datetime.now(UTC)
     payload = {
@@ -1510,6 +1540,7 @@ def generate_jwt(user: User) -> str:
         "open_id": user.feishu_open_id,
         "name": user.name,
         "auth_source": user.auth_source,
+        "jti": str(uuid4()),
         "iat": now,
         "exp": now + timedelta(seconds=settings.JWT_EXPIRE_SECONDS),
     }
