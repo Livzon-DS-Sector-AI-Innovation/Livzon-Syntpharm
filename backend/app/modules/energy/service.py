@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 import logging
 from datetime import date, datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import DuplicateException, NotFoundException
+from app.core.llm import LLMError, LLMOutputError, llm_client
 from app.core.llm.client import LLMClient
 from app.modules.energy import repository as repo
 from app.modules.energy.adapters import ADAPTERS
@@ -763,20 +764,12 @@ async def get_workshop_by_id(db: AsyncSession, workshop_id: UUID) -> EnergyWorks
     return result.scalar_one_or_none()
 
 
-async def calculate_unit_consumption(total_energy_kwh: float, production: int) -> float:
-    """计算实际单耗"""
-    if not isinstance(production, int) or production <= 0:
-        raise ValueError("产量必须为正整数")
+async def calculate_unit_consumption(total_energy_kwh: float, production: float) -> float:
+    """计算实际单耗。production 为折算后产量，允许小数。"""
+    if production <= 0:
+        raise ValueError("产量必须为正数")
 
-    try:
-        result = total_energy_kwh / production
-        return round(result, 4)
-    except ZeroDivisionError:
-        # 防御性编程，理论上不会到达这里
-        raise ValueError("产量不能为零")
-    except Exception as e:
-        logger.error(f"单耗计算失败: {e}")
-        raise ValueError("单耗计算失败")
+    return round(total_energy_kwh / production, 4)
 
 
 def calculate_deviation_rate(actual: float, target: float) -> float:
@@ -856,7 +849,7 @@ async def prepare_ai_analysis_data(
         raise ValueError("折算后总产量不能为 0")
 
     # 4. 计算实际单耗
-    actual_unit_consumption = await calculate_unit_consumption(total_energy_kwh, int(converted_production))
+    actual_unit_consumption = await calculate_unit_consumption(total_energy_kwh, converted_production)
 
     # 4. 查询目标值
     target_record = await get_target(db, workshop_id, analysis_month)
@@ -891,7 +884,7 @@ def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
     product_details = ""
     for item in analysis_data.get("production_details", []):
         product_details += (
-            f"- {item['name']}: {item['quantity']} kg\n"
+            f"- {item['product_name']}: {item['quantity']} kg\n"
             f"  (系数: {item['factor']}, 折算后: {item['converted_qty']:.2f} kg)\n"
         )
 
@@ -937,7 +930,7 @@ def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
 请以 JSON 格式返回，包含以下字段：
 - summary: 一句话总结（不超过 50 字）
 - detailed_analysis: 详细分析（200-500 字）
-- recommendations: 建议列表（数组，3-5 条）
+- recommendations: 建议列表（JSON 字符串数组，3-5 条，每条为一句完整的中文，禁止返回对象）
 - confidence_level: 置信度（high/medium/low）
 
 【注意事项】
@@ -949,6 +942,46 @@ def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
     return prompt
 
 
+def _normalize_confidence_level(value: Any) -> Literal["high", "medium", "low"]:
+    """LLM 返回的置信度可能不在枚举内，收敛为 medium 而不是让响应校验整体失败。"""
+    normalized = str(value or "").strip().lower()
+    if normalized == "high":
+        return "high"
+    if normalized == "low":
+        return "low"
+    return "medium"
+
+
+def _normalize_recommendation_item(item: Any) -> str:
+    """模型常把单条建议返回成 {建议, 具体措施, 预期效果} 这样的对象，取 value 拼成一行可读文本。"""
+    if isinstance(item, dict):
+        return " — ".join(str(v).strip() for v in item.values() if str(v).strip())
+    return str(item).strip()
+
+
+def _normalize_recommendations(value: Any) -> list[str]:
+    """LLM 可能把建议返回成非数组、对象数组、缺失该字段，或夹带空项。"""
+    items = value if isinstance(value, list) else [value]
+    return [text for item in items if item is not None and (text := _normalize_recommendation_item(item))]
+
+
+_AI_SUGGESTION_KEYS = ("summary", "detailed_analysis", "recommendations", "confidence_level")
+
+
+def _unwrap_ai_payload(parsed: Any) -> dict[str, Any]:
+    """网关在 response_format=json_object 下约半数响应会套一层信封：
+    `{"type": "json_object", "content": {"summary": ...}}`，直接按顶层取字段会全部落空。
+    """
+    if not isinstance(parsed, dict):
+        return {}
+    if any(key in parsed for key in _AI_SUGGESTION_KEYS):
+        return parsed
+    for value in parsed.values():
+        if isinstance(value, dict) and any(key in value for key in _AI_SUGGESTION_KEYS):
+            return value
+    return {}
+
+
 async def analyze_energy_v2(
     db: AsyncSession,
     workshop_id: UUID,
@@ -957,7 +990,6 @@ async def analyze_energy_v2(
     include_ai_suggestion: bool = True,
 ) -> dict[str, Any]:
     """执行 AI 能耗分析 V2（支持多产品和单耗计算）"""
-    from app.core.llm import LLMClient
     from app.modules.energy.schemas import AISuggestion
 
     # 1. 准备分析数据
@@ -966,37 +998,29 @@ async def analyze_energy_v2(
     # 2. 生成 AI 建议（如果请求）
     ai_suggestion = None
     if include_ai_suggestion:
+        prompt = construct_ai_prompt(analysis_data)
+        messages = [{"role": "user", "content": prompt}]
         try:
-            prompt = construct_ai_prompt(analysis_data)
-            client = LLMClient()
-            messages = [{"role": "user", "content": prompt}]
-
-            response_text = await client.chat(messages, temperature=0.3)
-            content = response_text.replace("```json", "").replace("```", "").strip()
-
-            import json
-
-            try:
-                ai_result = json.loads(content)
-                ai_suggestion = AISuggestion(
-                    status=analysis_data["deviation_status"],
-                    summary=ai_result.get("summary", ""),
-                    detailed_analysis=ai_result.get("detailed_analysis", ""),
-                    recommendations=ai_result.get("recommendations", []),
-                    confidence_level=ai_result.get("confidence_level", "medium"),
-                )
-            except json.JSONDecodeError:
-                ai_suggestion = AISuggestion(
-                    status=analysis_data["deviation_status"],
-                    summary="AI 分析暂时不可用",
-                    detailed_analysis="请稍后重试",
-                    recommendations=[],
-                    confidence_level="low",
-                )
-        except Exception as e:
+            # 不传 expected_keys：模型偶发漏掉 confidence_level 等可选字段时，已有的 summary/详细分析仍然可用，
+            # 只有完全拿不到结论文本时才降级。
+            parsed = await llm_client.chat_json(messages, temperature=0.3)
+            ai_result = _unwrap_ai_payload(parsed)
+            summary = str(ai_result.get("summary") or "").strip()
+            detailed_analysis = str(ai_result.get("detailed_analysis") or "").strip()
+            if not summary and not detailed_analysis:
+                raise LLMOutputError("LLM 未返回有效的总结或详细分析", str(parsed)[:200])
             ai_suggestion = AISuggestion(
                 status=analysis_data["deviation_status"],
-                summary=f"AI 分析失败: {str(e)}",
+                summary=summary,
+                detailed_analysis=detailed_analysis,
+                recommendations=_normalize_recommendations(ai_result.get("recommendations")),
+                confidence_level=_normalize_confidence_level(ai_result.get("confidence_level")),
+            )
+        except LLMError:
+            logger.exception("能源 AI 建议生成失败: workshop_id=%s month=%s", workshop_id, analysis_month)
+            ai_suggestion = AISuggestion(
+                status=analysis_data["deviation_status"],
+                summary="AI 分析暂时不可用，请人工审核",
                 detailed_analysis="",
                 recommendations=[],
                 confidence_level="low",
