@@ -1695,9 +1695,10 @@ async def change_own_password(
 async def bootstrap_local_users() -> None:
     """创建引导账号（幂等）。
 
-    **只补不覆盖**：启动时不再重置已存在账号的密码 —— 否则用户自己改过的密码
-    会在容器重启后被 `.env` 里的初始值打回，「密码只有本人能改」形同虚设。
-    确实需要强制回灌时，显式打开 `BOOTSTRAP_ADMIN_FORCE_RESET=true`。
+    **只补建、不覆盖**：账号已存在时，每次启动都不再改动它的密码 / 姓名 / 邮箱 /
+    状态 —— 否则用户自己改过的密码会在容器重启后被 `.env` 里的初始值打回，
+    「密码只有本人能改」形同虚设；运维在界面上的改名、禁用也会被静默还原。
+    确实需要按 `.env` 强制回灌时，显式打开 `BOOTSTRAP_ADMIN_FORCE_RESET=true`。
     """
     settings = get_settings()
     force_reset = settings.BOOTSTRAP_ADMIN_FORCE_RESET
@@ -1736,7 +1737,12 @@ async def bootstrap_local_users() -> None:
                 logger.info("Bootstrapped local user: %s", username)
                 continue
 
-            if force_reset and not verify_password(password, existing.password_hash):
+            if not force_reset:
+                # 只补建、不覆盖：账号一旦存在，姓名 / 邮箱 / 状态 / 密码都以库内为准，
+                # 避免每次重启把运维在界面上的改动（改名、禁用）静默打回。
+                continue
+
+            if not verify_password(password, existing.password_hash):
                 existing.password_hash = hash_password(password)
                 existing.must_change_password = True
                 logger.warning("Bootstrapped local user password force-reset: %s", username)
