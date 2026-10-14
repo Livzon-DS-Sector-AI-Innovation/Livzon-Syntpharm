@@ -239,19 +239,27 @@ SSR 侧 `assets/page.tsx:44` 目前硬编码 `{page:1, page_size:20}` 且忽略�
 刷新一个带排序的 URL 时先渲染默认序首屏、再由客户端二次请求覆盖，产生可见闪变。
 决策：服务端组件读取 `searchParams` 并传入同一查询构造函数，使首屏即落在正确排序视角。
 
-**已落地（02），含一处范围收敛**：URL 只承载 **排序 + 分页**，筛选条件仍由 `stores/equipment.ts` 单一持有。
-比 v1 设想的「排序与分页、筛选同构」窄，理由是筛选项含分类/位置的树形 id 与 `keyword`，全部塞进 URL 要额外
-设计序列化格式，属于另一件事；但「同一状态不得有两份真相」这条已经落实——`localPage/localPageSize` 与
-store 里对列表失效的 `page/pageSize` 都已删除，分页与排序的唯一写入点是 `patchQuery`。
+**落地范围（02 → 复审后扩到筛选）**：URL 承载 **筛选 + 排序 + 分页**，`stores/equipment.ts` 不再持有任何台账查询状态。
+02 首版只做「排序 + 分页」，把筛选留在 store；复审时 CI e2e 暴露了这样留半截的代价——筛选在 store、页码在 URL，
+「筛选变化回到第 1 页」就得靠一个 `filterSignature` 的 effect 事后补写 URL，第一次请求仍然带着旧 `page=2` 发出去
+（列表按不存在的页渲染一次，再被纠正）。状态分两处就没有可靠的归位时机，因此把五个筛选项一并收进 URL。
+序列化沿用既有约定：`category_id / location_id / department_id / status / keyword` 直接以同名 query 参数存在，
+**空串与缺省同义（= 不限）**，写回时不落到地址栏，无需额外的编码格式。
 
 其余实现事实：
 - `writeEquipmentUrlQuery` 在值等于默认时**删除**参数（分享链接保持短），并原样保留其它未知参数（不清空别人的查询串）。
+- 「除翻页自身以外，任何条件变化都回到第 1 页」这条规则只有一个实现点：`EquipmentPage` 的 `patchQuery`
+  （`'page' in patch` 为假时把 `page` 归 1）。表头排序、筛选、恢复默认都不必自己记得带 `page: 1`。
+- `toEquipmentListQuery` / `toEquipmentStatsQuery` 从同一份 URL 状态派生取数参数，SSR 与客户端共用，
+  不存在「首屏用无筛选参数、客户端用带筛选参数」的分叉。
 - SSR 与客户端共用 `parseEquipmentUrlRecord` / `parseEquipmentUrlParams`（同一套解析 + 同一套白名单校验），
   首屏即落在 URL 的排序视角，闪变消除。
 - 被丢弃的脏参数以 `rejectedSort` 返回，客户端交给 `FilterSummary` 提示；**SSR 侧只能静默丢弃**
   （服务端组件无法弹 message），因此该提示是「客户端水合后出现」，不是首屏即有。
-- fetch effect 的缺陷按 D10 要求修复：改为 `filterSignature + page + page_size + sort` 组成的 `fetchKey` 去重，
-  筛选变化时强制 `page: 1`，`page_size` 不再被任何筛选变化重置回 20。
+- 关键词是唯一的例外输入：它在 `EquipmentFilterBar` 内以草稿态编辑，回车 / 失焦 / 清空才写 URL。
+  直接拿 URL 当受控值会让每次按键都等一次路由跳转，输入会丢字；外部（前进后退）改动 URL 时在渲染期对齐草稿，
+  不用 `useEffect` 二次同步。
+- 原本「筛选变化 → effect 补写 `page: 1`」的 `filterSignature` / `previousFilters` effect 已删除。
 
 ### D11 — 排序状态标签并入 `FilterSummary`，不新增胶囊
 
@@ -279,6 +287,36 @@ store 里对列表失效的 `page/pageSize` 都已删除，分页与排序的唯
 - **前端**：URL 是不可信输入。若把 `?sort_by=x` 原样发给后端，用户看到的是列表报错空转而不知原因。
   因此解析阶段就**丢弃**脏参数回落默认序，同时把被丢弃的原始值经 `rejectedSort` 交给 `FilterSummary` 明示，
   让用户知道「当前不是按你要的字段排」。语义与 D12 一致：不静默改变结果，而是把偏离摆在台面上。
+
+### D13 — 抽屉不预渲染 portal：SSR HTML 必须与客户端首渲染同构
+
+E2E 有两条用例反复在 `gotoLedger` 的 `waitForResponse` 上超时，根因不在测试而在页面：台账页渲染的
+`EquipmentDrawer` / `LocationDrawer` / `RepairDrawer` 带 `forceRender`，antd 因此**在关闭态也渲染 portal 节点**，
+SSR HTML 里多出 `<div class="ant-drawer …">`，客户端首渲染没有它 → React 判定 hydration 失配，
+**丢弃服务端 HTML 并整棵重建子树**。重建等于 dashboard shell 二次挂载，一次页面加载因此打出 8 个
+`POST /equipment/assets`（每个都重跑 `getCurrentUser`：`usePermission` ×2 + `TopNav` ×2 + `Sidebar`，
+见 `usePermission.ts:11-16`、`TopNav.tsx:40-43`、`Sidebar.tsx:192-194`），持续约 750ms。
+
+后果不止于浪费：`waitForLoadState('networkidle')` 的语义是「在途请求全部落地」，它必然在这串 POST 之后才 resolve，
+而客户端 hydration 的列表 GET 夹在它之前完成——于是「先 networkidle 再等列表响应」等的是一次**已经发生**的请求，
+能不能过取决于 POST 串的长短。
+
+- **已落地**：三个抽屉去掉 `forceRender`（`destroyOnHidden` 保留）。可行性核对过：这些抽屉对 `form` 的调用全在
+  `open` 门之后（`EquipmentDrawer.tsx:41`、`LocationDrawer.tsx:26`、`RepairDrawer.tsx:37` 的 effect 与提交处理器），
+  因此不需要靠预渲染来「接上」表单实例，也不会触发 antd 的 `not connected to any Form element` 告警
+  （该告警由 `e2e/antd-form-connected.spec.ts` 守着，与本改动无关）。
+- **已落地**：`gotoLedger` 把响应等待登记到导航**之前**，再按 `goto → 标题可见 → 收列表响应 → networkidle` 收口。
+  等待顺序本身就是断言的一部分：先发生的请求必须先把监听挂上。
+- **已落地**：新增一条用例断言台账加载不出现 `Hydration failed`。`forceRender` 是跨模块复发不了的教训但挡不住人重新加回，
+  没有断言就会悄悄退回来。
+- **范围**：`components/safety/*`、`components/energy/*` 另有 10 处同样的 `Drawer forceRender`，属他人模块，
+  本期不动（AGENTS.md 禁止借需求重构其他模块），另开 issue。shell 重复打 `getCurrentUser` 同上。
+
+### D14 — 统计卡片右上角提供手动刷新
+
+统计与列表都是 React Query 缓存（`staleTime: 0` 只对首屏/参数变化生效），用户停在同一视角时没有任何入口
+能表达「我知道后端变了，重新取一次」。因此统计行右上角加「刷新」按钮，一次同时失效列表与统计两个 query key
+（复用既有的 `refreshList` / `refreshStatistics`，不新增取数路径），并在二者任一 `isFetching` 时显示 loading。
 
 ## Testing Decisions
 

@@ -17,12 +17,16 @@ const isListRequest = (req: { url: () => string }) => req.url().includes('/api/v
 /**
  * 台账首屏由 SSR 渲染，客户端 hydration 后会再发一次列表请求。
  * 不先等这一次落地，交互断言就会捕到 hydration 请求而不是点击触发的那一次。
+ *
+ * 等待必须在导航之前登记：networkidle 的语义是「所有在途请求都已落地」，
+ * 先 idle 再等响应等于等一次已经发生过的请求，只能靠运气命中。
  */
 async function gotoLedger(page: Page, query = '') {
+  const listResponse = page.waitForResponse((res) => isListRequest(res.request()), { timeout: 15000 })
   await page.goto(`${PAGE_URL}${query}`)
   await expect(page.getByRole('heading', { name: '设备台账' })).toBeVisible({ timeout: 15000 })
+  await listResponse
   await page.waitForLoadState('networkidle')
-  await page.waitForResponse((res) => isListRequest(res.request()), { timeout: 15000 })
 }
 
 /** 执行 action 并返回它触发的列表请求参数 */
@@ -37,6 +41,14 @@ async function listRequestOf(page: Page, action: () => Promise<void>) {
 const header = (page: Page, title: string) => page.locator('th', { hasText: title }).first()
 
 test.describe('设备台账动态排序', () => {
+  test('水合无错：SSR 与客户端首渲染一致，子树不被重建', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (e) => errors.push(e.message))
+    await gotoLedger(page)
+    // 抽屉 portal 进入 SSR HTML 时 React 会丢弃服务端 HTML 整棵重建，其余 spec 的时序假设会随之失效
+    expect(errors.filter((m) => m.includes('Hydration failed'))).toEqual([])
+  })
+
   test('点击表头：URL、请求参数与 aria-sort 三者一致', async ({ page }) => {
     await gotoLedger(page)
     const asc = await listRequestOf(page, () => header(page, '设备名称').click())
