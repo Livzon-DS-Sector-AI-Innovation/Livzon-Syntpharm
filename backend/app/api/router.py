@@ -50,7 +50,10 @@ from app.platform.identity.api import (
     sync_router,
     user_router,
 )
+from app.platform.permission.api import router as permission_router
 from app.platform.system import router as system_router
+from app.platform.system.menu_api import router as system_menu_router
+from app.platform.system.ops_api import router as system_ops_router
 
 api_router = APIRouter()
 
@@ -62,6 +65,9 @@ api_router.include_router(sync_router, prefix="/identity", tags=["飞书同步"]
 api_router.include_router(feishu_config_router, prefix="/identity", tags=["Livzon 飞书配置"])
 api_router.include_router(login_log_router, prefix="/identity", tags=["登录记录"])
 api_router.include_router(system_router, prefix="/system", tags=["系统"])
+api_router.include_router(system_ops_router, prefix="/system", tags=["系统运维"])
+api_router.include_router(system_menu_router, prefix="/system", tags=["菜单管理"])
+api_router.include_router(permission_router, prefix="/permission", tags=["权限管理"])
 api_router.include_router(production_router, prefix="/production", tags=["生产管理"])
 api_router.include_router(equipment_router, prefix="/equipment", tags=["设备管理"])
 api_router.include_router(safety_router, prefix="/safety", tags=["安全管理"])

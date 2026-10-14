@@ -1,4 +1,6 @@
 import logging
+import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -7,18 +9,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.jobs import spawn_task
 from app.core.response import success_response
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
     DepartmentResponse,
     DepartmentTreeNode,
+    FeishuBindRequest,
     FeishuConfigApiResponse,
     FeishuConfigUpsert,
     FeishuDiagnosticApiResponse,
+    LocalLoginApiResponse,
+    LocalLoginRequest,
+    LocalUserCreate,
+    PasswordResetRequest,
     PersonnelItem,
     PersonnelListResponse,
+    TokenResponse,
+    UserManagementItem,
+    UserManagementListResponse,
+    UserManagementUpdate,
     UserResponse,
 )
 
@@ -29,6 +40,24 @@ user_router = APIRouter(tags=["用户信息"])
 dept_router = APIRouter(prefix="/departments", tags=["组织架构"])
 personnel_router = APIRouter(prefix="/personnel", tags=["人员名单"])
 sync_router = APIRouter(prefix="/sync", tags=["飞书同步"])
+
+
+def _client_ip(request: Request) -> str | None:
+    """取真实客户端 IP。
+
+    浏览器请求先到 Next.js（`src/proxy.ts` 转发 `/api/v1/*`），所以后端的
+    `request.client.host` 是前端容器的地址。这里优先取代理透传的
+    X-Forwarded-For 第一跳（最靠近用户的地址），否则退回 X-Real-IP / 直连地址。
+    """
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        first = forwarded.split(",")[0].strip()
+        if first:
+            return first[:64]
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip and real_ip.strip():
+        return real_ip.strip()[:64]
+    return request.client.host if request.client else None
 
 
 # ── Auth (SSO) ──────────────────────────────────────────────────────
@@ -57,6 +86,74 @@ async def test_login(
     await db.commit()
     token = generate_jwt(user)
     return {"token": token, "user": {"id": str(user.id), "name": user.name}}
+
+
+@auth_router.post("/local/login", summary="本地账号密码登录", response_model=LocalLoginApiResponse)
+async def local_login(
+    payload: LocalLoginRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> LocalLoginApiResponse:
+    """本地账号密码登录，成功返回 JWT（与飞书登录共用同一套 token）。
+
+    统一错误消息「账号或密码错误」，避免账号枚举。
+    """
+    from app.core.exceptions import UnauthorizedException
+    from app.platform.identity.repository import LoginLogRepository
+    from app.platform.identity.service import generate_jwt, verify_password
+
+    repo = UserRepository()
+    log_repo = LoginLogRepository()
+    ip_address = _client_ip(request)
+    user_agent = request.headers.get("user-agent")
+
+    user = await repo.get_by_login_identifier(db, payload.username)
+
+    # 账号不存在 / 已禁用 / 无密码（如飞书账号）→ 统一拒绝
+    if user is None or user.status == "disabled" or not user.password_hash:
+        await log_repo.create(
+            db,
+            status="failed",
+            login_type="local",
+            # 记下尝试登录的账号：页面「按用户名搜索」才能搜到失败的登录尝试
+            user_name=payload.username[:100],
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message=f"账号不存在或不可用: {payload.username[:64]}",
+        )
+        await db.commit()
+        raise UnauthorizedException("账号或密码错误")
+
+    if not verify_password(payload.password, user.password_hash):
+        await log_repo.create(
+            db,
+            user_id=user.id,
+            user_name=user.name,
+            status="failed",
+            login_type="local",
+            ip_address=ip_address,
+            user_agent=user_agent,
+            error_message="密码错误",
+        )
+        await db.commit()
+        raise UnauthorizedException("账号或密码错误")
+
+    user.last_login_at = datetime.now(UTC)
+    token = generate_jwt(user)
+    await log_repo.create(
+        db,
+        user_id=user.id,
+        user_name=user.name,
+        status="success",
+        login_type="local",
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    await db.commit()
+
+    return LocalLoginApiResponse(
+        data=TokenResponse(access_token=token, user=UserResponse.model_validate(user)),
+    )
 
 
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
@@ -89,7 +186,7 @@ async def auth_callback(
         validate_state_token,
     )
 
-    ip_address = request.client.host if request.client else None
+    ip_address = _client_ip(request)
     user_agent = request.headers.get("user-agent")
     log_repo = LoginLogRepository()
 
@@ -277,19 +374,16 @@ async def trigger_sync_departments(
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
-    root_id = settings.feishu.platform.sync_root_dept_id
-    if not root_id:
-        return JSONResponse(
-            status_code=400,
-            content={"message": "未配置 FEISHU_SYNC_ROOT_DEPT_ID"},
-        )
+    # root_id 允许为空：为空时由 get_all_departments 自动从「应用可见范围内的部门」出发
+    # （应用可见范围通常不含根部门 "0"，硬编码 "0" 会报 40004 no dept authority error）
+    root_id = settings.feishu.platform.sync_root_dept_id or None
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    spawn_task(sync_departments(root_id), name="identity.sync_departments")  # type: ignore[arg-type]
-    logger.info("Department sync triggered for root=%s", root_id)
+    spawn_task(sync_departments(root_id), name="identity.sync_departments")
+    logger.info("Department sync triggered for root=%s", root_id or "(自动：可见范围内的部门)")
     return success_response(
-        data={"message": "组织架构同步已触发", "root_dept_id": root_id},
+        data={"message": "组织架构同步已触发", "root_dept_id": root_id or "auto"},
     )
 
 
@@ -299,19 +393,36 @@ async def trigger_sync_members(
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
-    target_id = settings.feishu.platform.sync_member_dept_id
-    if not target_id:
-        return JSONResponse(
-            status_code=400,
-            content={"message": "未配置 FEISHU_SYNC_MEMBER_DEPT_ID"},
-        )
+    # target_id 允许为空：为空时由 sync_members 自动从「应用可见范围内的部门」出发
+    target_id = settings.feishu.platform.sync_member_dept_id or None
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    spawn_task(sync_members(target_id), name="identity.sync_members")  # type: ignore[arg-type]
-    logger.info("Member sync triggered for target=%s", target_id)
+    spawn_task(sync_members(target_id), name="identity.sync_members")
+    logger.info("Member sync triggered for target=%s", target_id or "(自动)")
     return success_response(
-        data={"message": "成员同步已触发", "target_dept_id": target_id},
+        data={"message": "成员同步已触发", "target_dept_id": target_id or "auto"},
+    )
+
+
+@sync_router.post("/all", summary="同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）")
+async def trigger_sync_all(
+    current_user: RequiredUser,
+) -> JSONResponse:
+    """POST 触发一次「部门 + 成员」全量同步。
+
+    全量同步耗时较长（数百人约 50 秒），按项目规范走后台任务、不阻塞请求；
+    结果写入飞书配置的 last_sync_status / last_sync_message / last_synced_at。
+    """
+    from app.platform.identity.service import sync_livzon_feishu_contacts_all
+
+    spawn_task(sync_livzon_feishu_contacts_all(), name="identity.sync_all")
+    logger.info("Livzon Feishu contacts sync (departments + members) triggered")
+    return success_response(
+        data={
+            "status": "ok",
+            "message": "通讯录同步已在后台开始（部门 + 成员），约 1 分钟后刷新本页查看结果。",
+        },
     )
 
 
@@ -366,7 +477,7 @@ login_log_router = APIRouter(prefix="/login-logs", tags=["登录记录"])
 
 @login_log_router.get("", summary="查询登录记录")
 async def list_login_logs(
-    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:audit:read")),
     status: str | None = Query(None, description="筛选状态：success / failed"),
     keyword: str | None = Query(None, description="按用户名搜索"),
     page: int = Query(1, ge=1),
@@ -394,3 +505,216 @@ async def list_login_logs(
         page_size=page_size,
     )
     return success_response(data=resp.model_dump())
+
+
+# ── 用户管理（管理页）──────────────────────────────────────────────
+
+
+@user_router.get("/users", summary="用户管理列表")
+async def list_users_management(
+    ctx: PermissionContext = Depends(require_permission("platform:user:read")),
+    keyword: str | None = Query(None, description="按姓名/账号/邮箱/手机号搜索"),
+    status: str | None = Query(None, description="按状态筛选"),
+    auth_source: str | None = Query(None, description="按账号来源筛选：local / feishu"),
+    unbound_only: bool = Query(False, description="仅返回未绑定飞书身份的账号"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    repo = UserRepository()
+    users, total = await repo.list_users(
+        db,
+        keyword=keyword,
+        status=status,
+        auth_source=auth_source,
+        unbound_only=unbound_only,
+        offset=offset,
+        limit=limit,
+    )
+    items = []
+    roles_map = await repo.get_roles_for_users(db, [u.id for u in users])
+    for u in users:
+        item = UserManagementItem.model_validate(u)
+        item.roles = roles_map.get(u.id, [])
+        items.append(item.model_dump())
+    resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
+    return success_response(data=resp.model_dump())
+
+
+@user_router.post("/users", summary="新建本地用户")
+async def create_user_management(
+    payload: LocalUserCreate,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    from app.core.exceptions import DuplicateException
+    from app.platform.identity.service import hash_password
+
+    repo = UserRepository()
+    existing = await repo.get_by_username(db, payload.username)
+    if existing is not None:
+        raise DuplicateException("用户名", payload.username)
+
+    user = await repo.create(
+        db,
+        name=payload.name,
+        username=payload.username,
+        password_hash=hash_password(payload.password),
+        email=payload.email,
+        mobile=payload.mobile,
+        employee_no=payload.employee_no,
+        department=payload.department,
+        position=payload.position,
+        status=payload.status,
+        auth_source="local",
+    )
+    await db.commit()
+    return success_response(data=UserManagementItem.model_validate(user).model_dump())
+
+
+@user_router.put("/users/{user_id}", summary="更新用户")
+async def update_user_management(
+    user_id: uuid.UUID,
+    payload: UserManagementUpdate,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    from app.core.exceptions import DuplicateException, ForbiddenException, NotFoundException
+
+    repo = UserRepository()
+    user = await repo.get_by_id(db, user_id)
+    if user is None:
+        raise NotFoundException("用户")
+
+    # 防自我提权：不能修改自己的账号状态
+    if user.id == ctx.user.id and payload.status is not None and payload.status != user.status:
+        raise ForbiddenException("不能修改自己的状态")
+
+    # 已绑定飞书的账号：人员资料以飞书为准（每次登录自动同步，手工改了也会被覆盖），
+    # 因此禁止手工修改；用户名 / 状态属于平台侧管理字段，仍允许修改
+    # （状态另有表格上的「启用 / 禁用」按钮）。
+    if user.feishu_open_id or user.feishu_user_id:
+        managed_fields = {
+            "name": "姓名",
+            "email": "邮箱",
+            "mobile": "手机号",
+            "employee_no": "工号",
+            "department": "部门",
+            "position": "职位",
+        }
+        changed_labels = [
+            label
+            for field_name, label in managed_fields.items()
+            if getattr(payload, field_name) is not None
+            and getattr(payload, field_name) != getattr(user, field_name)
+        ]
+        if changed_labels:
+            raise ForbiddenException(
+                f"该账号已绑定飞书，{'、'.join(changed_labels)}由飞书自动同步，不能手工修改",
+            )
+
+    # 修改登录用户名（唯一，大小写不敏感；改后旧用户名不能再登录）
+    if payload.username is not None:
+        new_username = payload.username.strip()
+        if new_username and new_username != (user.username or ""):
+            existing = await repo.get_by_username(db, new_username)
+            if existing is not None and existing.id != user.id:
+                raise DuplicateException("用户名", new_username)
+            user.username = new_username
+
+    if payload.name is not None:
+        user.name = payload.name
+    if payload.email is not None:
+        user.email = payload.email
+    if payload.mobile is not None:
+        user.mobile = payload.mobile
+    if payload.employee_no is not None:
+        user.employee_no = payload.employee_no
+    if payload.department is not None:
+        user.department = payload.department
+    if payload.position is not None:
+        user.position = payload.position
+    if payload.status is not None:
+        user.status = payload.status
+
+    await db.commit()
+    return success_response(data=UserManagementItem.model_validate(user).model_dump())
+
+
+@user_router.post("/users/{user_id}/reset-password", summary="重置用户密码")
+async def reset_user_password(
+    user_id: uuid.UUID,
+    payload: PasswordResetRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    from app.core.exceptions import NotFoundException
+    from app.platform.identity.service import hash_password
+
+    repo = UserRepository()
+    user = await repo.get_by_id(db, user_id)
+    if user is None:
+        raise NotFoundException("用户")
+
+    user.password_hash = hash_password(payload.password)
+    await db.commit()
+    return success_response(data={"message": "密码已重置"})
+
+
+@user_router.post("/users/{user_id}/bind-feishu", summary="绑定飞书用户")
+async def bind_user_feishu(
+    user_id: uuid.UUID,
+    payload: FeishuBindRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """把一条飞书用户记录合并进该账号：迁角色授权 + 迁飞书身份 + 软删原记录。
+
+    ⚠️ 产品要求（2026-10-13）：**管理端界面不再提供「绑定飞书」入口** ——
+    管理员只能解绑，不能替用户绑定；绑定由用户本人首次飞书登录时自动完成
+    （见 `handle_oauth_callback`）。本接口保留，以便后续「系统自动合并重复账号」
+    等场景调用；若需彻底禁止人工调用，可把依赖换成更高权限码或直接下线。
+    """
+    from app.core.exceptions import BadRequestException, NotFoundException
+    from app.platform.identity.service import bind_feishu_user
+
+    repo = UserRepository()
+    target = await repo.get_by_id(db, user_id)
+    if target is None:
+        raise NotFoundException("用户")
+    if target.feishu_open_id or target.feishu_user_id:
+        raise BadRequestException("该账号已绑定飞书身份，请先解绑")
+    if payload.source_user_id == user_id:
+        raise BadRequestException("不能绑定到账号自身")
+
+    source = await repo.get_by_id(db, payload.source_user_id)
+    if source is None:
+        raise NotFoundException("飞书用户")
+    if not (source.feishu_open_id or source.feishu_user_id):
+        raise BadRequestException("所选记录不是飞书用户（缺少飞书标识）")
+
+    result = await bind_feishu_user(db, target=target, source=source, operator_id=ctx.user.id)
+    data = UserManagementItem.model_validate(target).model_dump()
+    data["bind_result"] = result
+    return success_response(data=data)
+
+
+@user_router.delete("/users/{user_id}/bind-feishu", summary="解绑飞书用户")
+async def unbind_user_feishu(
+    user_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> JSONResponse:
+    """清空该账号的飞书身份；账号本体与角色授权保留。"""
+    from app.core.exceptions import BadRequestException, NotFoundException
+    from app.platform.identity.service import unbind_feishu_user
+
+    repo = UserRepository()
+    user = await repo.get_by_id(db, user_id)
+    if user is None:
+        raise NotFoundException("用户")
+    if not (user.feishu_open_id or user.feishu_user_id):
+        raise BadRequestException("该账号未绑定飞书身份")
+
+    await unbind_feishu_user(db, user=user, operator_id=ctx.user.id)
+    return success_response(data=UserManagementItem.model_validate(user).model_dump())

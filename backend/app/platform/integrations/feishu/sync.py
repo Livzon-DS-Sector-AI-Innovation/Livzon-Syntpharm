@@ -99,11 +99,14 @@ def _parse_user_record(rec: dict[str, Any]) -> dict[str, Any] | None:
     open_id = rec.get("open_id")
     if not open_id:
         return None
-    dept_ids = rec.get("department_ids", [])
+    # 部门归属优先用「遍历部门」反推的结果（dept_ids）；
+    # contact 用户接口自带的 department_ids 需额外权限，未开通时为空
+    dept_ids = rec.get("dept_ids") or rec.get("department_ids") or []
     dept_ids_json = json.dumps(dept_ids) if dept_ids else None
     return {
         "open_id": open_id,
-        "user_id": rec.get("user_id", ""),
+        "user_id": rec.get("user_id") or None,
+        "union_id": rec.get("union_id") or None,
         "name": rec.get("name", ""),
         "en_name": rec.get("en_name", ""),
         "employee_no": rec.get("employee_no") or None,
@@ -111,7 +114,10 @@ def _parse_user_record(rec: dict[str, Any]) -> dict[str, Any] | None:
         "mobile": rec.get("mobile") or None,
         "department": rec.get("dept_name", ""),
         "position": rec.get("job_title") or None,
-        "avatar_url": rec.get("avatar_key") or None,
+        "avatar_url": rec.get("avatar_url") or rec.get("avatar_key") or None,
+        "avatar_thumb": rec.get("avatar_thumb") or None,
+        "avatar_middle": rec.get("avatar_middle") or None,
+        "avatar_big": rec.get("avatar_big") or None,
         "feishu_department_ids": dept_ids_json,
     }
 
@@ -130,10 +136,15 @@ async def _upsert_user(parsed: dict[str, Any]) -> None:
             existing.mobile = parsed["mobile"] or existing.mobile
             existing.position = parsed["position"] or existing.position
             existing.avatar_url = parsed["avatar_url"] or existing.avatar_url
+            existing.avatar_thumb = parsed["avatar_thumb"] or existing.avatar_thumb
+            existing.avatar_middle = parsed["avatar_middle"] or existing.avatar_middle
+            existing.avatar_big = parsed["avatar_big"] or existing.avatar_big
+            existing.feishu_union_id = parsed["union_id"] or existing.feishu_union_id
             if not existing.department:
                 existing.department = parsed["department"]
             existing.feishu_department_ids = parsed["feishu_department_ids"]
-            if not existing.feishu_user_id:
+            # user_id 需 contact:user.employee_id:readonly（集团审核中），为空时不覆盖
+            if not existing.feishu_user_id and parsed["user_id"]:
                 existing.feishu_user_id = parsed["user_id"]
         else:
             db.add(
@@ -148,6 +159,10 @@ async def _upsert_user(parsed: dict[str, Any]) -> None:
                     department=parsed["department"],
                     position=parsed["position"],
                     avatar_url=parsed["avatar_url"],
+                    avatar_thumb=parsed["avatar_thumb"],
+                    avatar_middle=parsed["avatar_middle"],
+                    avatar_big=parsed["avatar_big"],
+                    feishu_union_id=parsed["union_id"],
                     feishu_department_ids=parsed["feishu_department_ids"],
                 )
             )
@@ -185,11 +200,9 @@ async def sync_departments(
     logger.info("sync_departments starting (root=%s)", root_dept_id)
 
     async def fetch_depts() -> list[dict[str, Any]]:
-        return await get_all_departments(  # type: ignore[call-arg]
-            root_department_id=root_dept_id or "0",
-            app_id=app_id,
-            app_secret=app_secret,
-        )
+        # root_dept_id 为空时由 get_all_departments 自行决定起点
+        # （优先应用可见范围内的部门，避免从根部门 "0" 拉时报 40004）
+        return await get_all_departments(root_department_id=root_dept_id or None)
 
     def parse_dept(rec: dict[str, Any]) -> dict[str, Any] | None:
         dept_id = rec.get("department_id")
@@ -260,15 +273,18 @@ async def sync_departments(
 
 
 async def sync_members(
-    target_dept_id: str,
+    target_dept_id: str | None = None,
     *,
     app_id: str | None = None,
     app_secret: str | None = None,
 ) -> dict[str, Any]:
-    """Sync all members under target_dept_id from Feishu.
+    """同步可见范围内的成员到 identity.users。
 
-    BFS fetches all departments under target, then fetches all users
-    from each department, and upserts into identity.users table.
+    不传 target_dept_id 时从「应用可见范围内的部门」出发
+    （可见范围通常不含根部门 "0"，从 "0" 拉会报 40004）。
+    归属部门由「遍历部门」反推（contact 用户接口的 department_ids 需额外权限）。
+    仅需 contact:user.base:readonly：姓名 / 英文名 / 头像 / open_id / union_id；
+    工号、职务、邮箱、手机号需集团审核的权限，未开通时为空。
 
     Returns stats dict with user_count, dept_count, elapsed.
     """
@@ -278,46 +294,51 @@ async def sync_members(
     )
 
     t0 = time.time()
-    logger.info("sync_members starting (target=%s)", target_dept_id)
+    logger.info("sync_members starting (target=%s)", target_dept_id or "(自动：可见范围内的部门)")
 
-    # Get all departments under target
     try:
-        all_depts = await get_all_departments(  # type: ignore[call-arg]
-            root_department_id=target_dept_id or "0",
-            app_id=app_id,
-            app_secret=app_secret,
-        )
+        all_depts = await get_all_departments(root_department_id=target_dept_id or None)
     except Exception:
         logger.exception("Failed to fetch departments under %s", target_dept_id)
         all_depts = []
-    dept_ids = [target_dept_id or "0"]
-    dept_ids.extend(d["department_id"] for d in all_depts)
+
+    dept_ids = [d["department_id"] for d in all_depts]
+    if not dept_ids and target_dept_id:
+        dept_ids = [target_dept_id]
     dept_ids = list(dict.fromkeys(dept_ids))
 
     async def fetch_users() -> list[dict[str, Any]]:
-        """Fetch all users from all departments."""
-        all_users = []
+        """按部门拉取成员，并按 open_id 合并（同一人常属于多个部门）。"""
+        merged: dict[str, dict[str, Any]] = {}
         fetch_users.errors = []  # type: ignore[attr-defined]
         for dept_id in dept_ids:
             try:
-                users = await find_users_by_department(  # type: ignore[call-arg]
-                    dept_id,
-                    app_id=app_id,
-                    app_secret=app_secret,
-                )
-                # Add dept_name to each user
+                users = await find_users_by_department(dept_id)
                 dept_name = next(
                     (d["name"] for d in all_depts if d["department_id"] == dept_id),
                     "",
                 )
                 for u in users:
-                    u["dept_name"] = dept_name
-                    u["dept_id"] = dept_id
-                all_users.extend(users)
+                    open_id = u.get("open_id")
+                    if not open_id:
+                        continue
+                    item = merged.get(open_id)
+                    if item is None:
+                        item = dict(u)
+                        item["dept_ids"] = []
+                        item["dept_names"] = []
+                        merged[open_id] = item
+                    if dept_id not in item["dept_ids"]:
+                        item["dept_ids"].append(dept_id)
+                    if dept_name and dept_name not in item["dept_names"]:
+                        item["dept_names"].append(dept_name)
+                    # 单部门字段（兼容旧解析）：取第一个部门
+                    item["dept_name"] = item["dept_names"][0] if item["dept_names"] else ""
+                    item["dept_id"] = item["dept_ids"][0] if item["dept_ids"] else ""
             except Exception as exc:
                 logger.exception("Failed to fetch users from dept %s", dept_id)
                 fetch_users.errors.append(f"{dept_id}: {exc}")  # type: ignore[attr-defined]
-        return all_users
+        return list(merged.values())
 
     fetch_users.errors = []  # type: ignore[attr-defined]
 

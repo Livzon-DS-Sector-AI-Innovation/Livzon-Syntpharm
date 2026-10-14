@@ -18,6 +18,7 @@ import app.platform.audit.models  # noqa: F401
 
 # Ensure platform models are registered in SQLAlchemy metadata
 import app.platform.identity.models  # noqa: F401
+import app.platform.permission.models  # noqa: F401
 from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import AppException
@@ -26,6 +27,8 @@ from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
     start_scheduler,
 )
 from app.platform.audit import AuditMiddleware
+from app.platform.permission.middleware import PermissionBindingMiddleware
+from app.platform.system.api_switch_middleware import ApiSwitchMiddleware
 from app.shared.ocr_service import init_ocr
 from app.shared.file_conversion import init_file_conversion
 
@@ -35,6 +38,11 @@ logging.basicConfig(
     level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+
+# 运行日志内存环形缓冲（供「系统运维 → 日志管理」查看，不落盘）
+from app.shared.log_buffer import install_log_buffer  # noqa: E402
+
+install_log_buffer()
 
 # 抑制第三方库的 DEBUG 日志噪音
 logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
@@ -78,6 +86,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await run_seeds()
 
+    # 同步权限注册表（权限码 / 内置角色 / 接口绑定）
+    # 权限表尚未迁移时降级为告警，不阻塞启动
+    from app.platform.permission.service.management import sync_registry
+
+    try:
+        await sync_registry()
+    except Exception:
+        logger.exception("Permission registry sync failed (non-fatal, 权限表可能未迁移)")
+
+    # 加载 API 启停开关（禁用清单，内存判定）
+    from app.platform.system.api_switch_service import load_switches
+
+    try:
+        await load_switches()
+    except Exception:
+        logger.exception("API 开关加载失败 (non-fatal)")
+
     # Start all registered background workers
     from app.shared.lifecycle import get_all_workers
 
@@ -93,6 +118,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from app.platform.identity.service import bootstrap_local_users
 
     await bootstrap_local_users()
+
+    # 给初始管理员挂 super_admin 角色
+    from app.platform.permission.service.management import bootstrap_initial_superadmin
+
+    try:
+        await bootstrap_initial_superadmin()
+    except Exception:
+        logger.exception("Bootstrap superadmin failed (non-fatal)")
 
     from app.modules.warehouse.feishu_events import register_feishu_event_handlers
 
@@ -176,6 +209,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     from app.modules.equipment.scheduled import InspectionScheduleGenerator
     from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
+    from app.platform.scheduler.registry import set_global_registry
 
     scheduler_registry = SchedulerRegistry()
     scheduler_registry.register_generator(InspectionScheduleGenerator())
@@ -188,6 +222,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     scheduler_registry.register_task(daily_sync_task)
     scheduler_registry.register_task(daily_ai_analysis_task)
+    set_global_registry(scheduler_registry)
     scheduler_engine = SchedulerEngine(scheduler_registry)
     scheduler_engine_task = asyncio.create_task(scheduler_engine.run())
 
@@ -250,6 +285,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 from fastmcp.utilities.lifespan import combine_lifespans  # noqa: E402
 
+
+class UTF8JSONResponse(JSONResponse):
+    """统一声明 UTF-8 的 JSON 响应。
+
+    FastAPI 默认响应头是 `application/json`（不带 charset）；响应体含中文时
+    （例如错误提示「数据重复，该记录已存在」），部分客户端 / 代理会按
+    ISO-8859-1 解析 → 显示成「æ•°æ®é‡å¤」这类乱码。显式带 charset 可避免。
+    """
+
+    media_type = "application/json; charset=utf-8"
+
+
 app: FastAPI = FastAPI(
     title=settings.APP_NAME,
     description="原料药事业部工厂基座系统",
@@ -257,6 +304,7 @@ app: FastAPI = FastAPI(
     lifespan=combine_lifespans(lifespan, mcp_asgi.lifespan),
     docs_url="/docs" if not settings.is_production else None,
     redoc_url="/redoc" if not settings.is_production else None,
+    default_response_class=UTF8JSONResponse,
 )
 
 __all__ = ["app"]
@@ -278,6 +326,9 @@ app.add_middleware(
 )
 
 app.add_middleware(AuditMiddleware)
+app.add_middleware(PermissionBindingMiddleware)
+# 最后 add = 最外层 = 最先执行：被禁用的接口直接 403，不再走后续判定
+app.add_middleware(ApiSwitchMiddleware)
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 

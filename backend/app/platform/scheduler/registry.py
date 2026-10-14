@@ -179,3 +179,21 @@ def get_action_handler(
 ) -> Callable[..., Awaitable[Any]] | None:
     """Return the handler registered for *action_type*, or None."""
     return _ACTION_HANDLERS.get(action_type)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Global registry reference — 供系统运维页只读introspection
+# ═══════════════════════════════════════════════════════════════
+
+_GLOBAL_REGISTRY: SchedulerRegistry | None = None
+
+
+def set_global_registry(registry: SchedulerRegistry) -> None:
+    """应用启动时登记全局注册表（main.py 调用）。"""
+    global _GLOBAL_REGISTRY
+    _GLOBAL_REGISTRY = registry
+
+
+def get_global_registry() -> SchedulerRegistry | None:
+    """返回全局注册表；未初始化时为 None。"""
+    return _GLOBAL_REGISTRY

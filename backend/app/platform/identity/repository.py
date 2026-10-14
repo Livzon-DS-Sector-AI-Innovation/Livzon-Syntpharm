@@ -155,6 +155,8 @@ class UserRepository:
         *,
         keyword: str | None = None,
         status: str | None = None,
+        auth_source: str | None = None,
+        unbound_only: bool = False,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
@@ -181,10 +183,47 @@ class UserRepository:
         if status:
             base = base.where(User.status == status)
             count_stmt = count_stmt.where(User.status == status)
+        if auth_source:
+            base = base.where(User.auth_source == auth_source)
+            count_stmt = count_stmt.where(User.auth_source == auth_source)
+        if unbound_only:
+            # 仅返回尚未绑定飞书身份的账号（供「绑定飞书」选择器使用）
+            base = base.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
+            count_stmt = count_stmt.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
 
         total = int((await session.execute(count_stmt)).scalar_one())
         result = await session.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))
         return list(result.scalars().all()), total
+
+    async def get_roles_for_users(
+        self,
+        session: AsyncSession,
+        user_ids: list[UUID],
+    ) -> dict[UUID, list[str]]:
+        """批量取用户的有效角色名（用户管理列表的「角色」列据此显示）。
+
+        只统计「生效中」的授权（授权 status=active 且未软删）——禁用授权不算。
+        """
+        if not user_ids:
+            return {}
+        # 函数内导入：避免 identity ↔ permission 模块级循环依赖
+        from app.platform.permission.models import GRANT_ACTIVE, Role, UserRoleGrant
+
+        stmt = (
+            select(UserRoleGrant.user_id, Role.name)
+            .join(Role, Role.id == UserRoleGrant.role_id)
+            .where(
+                UserRoleGrant.user_id.in_(user_ids),
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+                UserRoleGrant.status == GRANT_ACTIVE,
+            )
+            .order_by(Role.name)
+        )
+        rows = (await session.execute(stmt)).all()
+        result: dict[UUID, list[str]] = {}
+        for user_id, role_name in rows:
+            result.setdefault(user_id, []).append(role_name)
+        return result
 
     async def list_all(
         self,
@@ -301,7 +340,7 @@ class LoginLogRepository:
         await session.flush()
         return log
 
-    async def list_logs(  # type: ignore[return]
+    async def list_logs(
         self,
         session: AsyncSession,
         *,
@@ -312,22 +351,24 @@ class LoginLogRepository:
     ) -> tuple[list[Any], int]:
         from app.platform.identity.models import LoginLog
 
-        base = select(LoginLog).where(LoginLog.is_deleted == False)  # noqa: E712
-        count_base = select(LoginLog.id).where(LoginLog.is_deleted == False)  # noqa: E712
-
+        conditions = [LoginLog.is_deleted == False]  # noqa: E712
         if status:
-            base = base.where(LoginLog.status == status)
-            count_base = count_base.where(LoginLog.status == status)
+            conditions.append(LoginLog.status == status)
         if keyword:
-            base = base.where(LoginLog.user_name.ilike(f"%{keyword}%"))
-            count_base = count_base.where(LoginLog.user_name.ilike(f"%{keyword}%"))
+            conditions.append(LoginLog.user_name.ilike(f"%{keyword}%"))
 
-        total_result = await session.execute(count_base)
-        len(total_result.scalars().all())
+        # 用 COUNT(*) 统计总数（原来把符合条件的全部 id 拉回内存再取长度，数据量增长后很慢）
+        total = (await session.execute(select(func.count()).select_from(LoginLog).where(*conditions))).scalar_one()
 
-        stmt = base.order_by(LoginLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        stmt = (
+            select(LoginLog)
+            .where(*conditions)
+            .order_by(LoginLog.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
         result = await session.execute(stmt)
-        list(result.scalars().all())
+        return list(result.scalars().all()), int(total)
 
 
 class FeishuConfigRepository:

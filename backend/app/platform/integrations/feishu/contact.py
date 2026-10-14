@@ -4,6 +4,8 @@ import json
 import logging
 from typing import Any
 
+import httpx
+
 from app.core.config import get_settings
 from app.core.redis import cache_get, cache_set
 
@@ -54,13 +56,112 @@ async def _get_tenant_token(client) -> Any:  # type: ignore[no-untyped-def]
     raise RuntimeError("Empty tenant token response")
 
 
+def _raise_on_feishu_error(payload: dict[str, Any], api_name: str) -> None:
+    """校验飞书原始响应的业务错误码，非 0 直接抛错。
+
+    不校验的后果：权限未生效 / 可见范围为空时飞书返回 `code=40004`，
+    而直接取 `data.items` 会表现为「静默返回 0 条」，排查时完全看不出原因
+    （曾误判为「租户没有数据」）。
+    """
+    code = payload.get("code")
+    if code is not None and code != 0:
+        msg = payload.get("msg", "")
+        raise RuntimeError(f"飞书接口 {api_name} 返回错误: code={code}, msg={msg}")
+
+
+async def get_contact_scope(
+    *,
+    app_id: str | None = None,
+    app_secret: str | None = None,
+    tenant_access_token: str | None = None,
+) -> dict[str, list[str]]:
+    """获取应用「通讯录授权范围」，对应接口 `GET /contact/v3/scopes`。
+
+    返回 `{"department_ids": [...], "user_ids": [...], "group_ids": [...]}`；
+    三个列表都为空表示授权范围是「全部成员」（不受限）。
+
+    凭证优先级：显式 `tenant_access_token` > 显式 `app_id`/`app_secret` > 模块默认凭证。
+    权限诊断要检查的是「Livzon 助手」这个应用自己的授权范围，
+    所以必须支持传入该应用的凭证，不能只依赖模块默认凭证。
+    """
+    if tenant_access_token:
+        token = tenant_access_token
+    elif app_id and app_secret:
+        from app.platform.integrations.feishu.utils import get_tenant_access_token
+
+        token = await get_tenant_access_token(
+            app_id,
+            app_secret,
+            cache_key=f"livzon-assistant:{app_id}",
+        )
+    else:
+        client = await _get_feishu_client()
+        token = await _get_tenant_token(client)
+
+    url = "https://open.feishu.cn/open-apis/contact/v3/scopes"
+    params: dict[str, Any] = {
+        "user_id_type": "open_id",
+        "department_id_type": "open_department_id",
+        "page_size": 100,
+    }
+    headers = {"Authorization": f"Bearer {token}"}
+
+    department_ids: list[str] = []
+    user_ids: list[str] = []
+    group_ids: list[str] = []
+    async with httpx.AsyncClient(timeout=15.0) as http:
+        while True:
+            resp = await http.get(url, params=params, headers=headers)
+            payload = resp.json()
+            _raise_on_feishu_error(payload, "contact/v3/scopes")
+            data = payload.get("data") or {}
+            department_ids.extend(data.get("department_ids") or [])
+            user_ids.extend(data.get("user_ids") or [])
+            group_ids.extend(data.get("group_ids") or [])
+            if not data.get("has_more"):
+                break
+            page_token = data.get("page_token") or ""
+            if not page_token:
+                break
+            params["page_token"] = page_token
+
+    logger.info(
+        "应用通讯录授权范围: 部门 %d 个，用户 %d 名，用户组 %d 个（全为 0 表示范围为全部成员）",
+        len(department_ids),
+        len(user_ids),
+        len(group_ids),
+    )
+    return {
+        "department_ids": department_ids,
+        "user_ids": user_ids,
+        "group_ids": group_ids,
+    }
+
+
+async def get_scope_department_ids() -> list[str]:
+    """获取应用「可见范围内的部门」open_department_id 列表。
+
+    返回空列表表示可见范围是「全部成员」（不受限）。
+
+    用途：应用的通讯录可见范围通常**不包含根部门 "0"**，
+    所以不能硬编码从 "0" 开始 BFS（会报 `40004 no dept authority error`），
+    而应从可见范围内的部门出发。
+    """
+    scope = await get_contact_scope()
+    return scope["department_ids"]
+
+
 # ── Department helpers ──────────────────────────────────────────────
 
 
-async def get_all_departments() -> list[dict[str, Any]]:
-    """BFS 递归获取全公司所有部门（含名称），包括叶子节点。
+async def get_all_departments(root_department_id: str | None = None) -> list[dict[str, Any]]:
+    """BFS 递归获取部门（含名称），返回扁平列表。
 
-    返回扁平列表。
+    起点选择：
+    - 显式传入 `root_department_id` → 从它开始；
+    - 否则先查应用**可见范围内的部门**并从它们开始（可见范围通常不含根部门 "0"，
+      硬编码从 "0" 会报 `40004 no dept authority error`）；
+    - 可见范围为「全部成员」时飞书返回空列表，此时退回从根 "0" 开始。
     """
     client = await _get_feishu_client()
     token = await _get_tenant_token(client)
@@ -68,9 +169,13 @@ async def get_all_departments() -> list[dict[str, Any]]:
     from lark_oapi.api.contact.v3 import ListDepartmentRequest
 
     all_depts: list[dict[str, Any]] = []
-    # BFS: 从根出发，逐层获取子部门
-    queue: list[tuple[str, str]] = [("0", "")]
-    visited: set[str] = {"0"}
+    # BFS 起点
+    if root_department_id and root_department_id != "0":
+        queue: list[tuple[str, str]] = [(root_department_id, "")]
+    else:
+        scope_dept_ids = await get_scope_department_ids()
+        queue = [(oid, "") for oid in scope_dept_ids] if scope_dept_ids else [("0", "")]
+    visited: set[str] = {oid for oid, _ in queue}
 
     while queue:
         parent_id, parent_oid = queue.pop(0)
@@ -91,7 +196,16 @@ async def get_all_departments() -> list[dict[str, Any]]:
             raw = resp.raw.content if resp.raw else None
             if not raw:
                 break
-            data = json.loads(raw.decode("utf-8")).get("data", {})
+            payload = json.loads(raw.decode("utf-8"))
+            try:
+                _raise_on_feishu_error(payload, "contact/v3/departments")
+            except RuntimeError as exc:
+                if "40004" in str(exc):
+                    # 该部门超出应用可见范围：跳过它的子部门，继续其他分支
+                    logger.warning("部门 %s 超出应用可见范围，跳过其子部门", parent_id)
+                    break
+                raise
+            data = payload.get("data", {})
             for it in data.get("items", []):
                 oid = it.get("open_department_id", "")
                 if not oid or oid in visited:
@@ -142,9 +256,11 @@ async def get_department_members(dept_id: str) -> list[dict[str, Any]]:
         req = (
             ListUserRequest.builder()
             .department_id(dept_id)
-            .page_size(100)
+            # page_size 上限 50：传 100 会报 99992402 field validation failed
+            .page_size(50)
             .page_token(page_token)
-            .user_id_type("user_id")
+            # user_id_type="open_id"：无需 contact:user.employee_id:readonly（该权限需集团审核）
+            .user_id_type("open_id")
             .build()
         )
         req.headers["Authorization"] = f"Bearer {token}"
@@ -158,14 +274,7 @@ async def get_department_members(dept_id: str) -> list[dict[str, Any]]:
             data = json.loads(raw.decode("utf-8")).get("data", {})
             items = data.get("items", [])
             for item in items:
-                all_members.append(
-                    {
-                        "user_id": item.get("user_id", ""),
-                        "name": item.get("name", ""),
-                        "employee_no": item.get("employee_no", ""),
-                        "department_id": dept_id,
-                    }
-                )
+                all_members.append({**_parse_feishu_user(item), "department_id": dept_id})
             if not data.get("has_more"):
                 break
             page_token = data.get("page_token", "")
@@ -188,7 +297,7 @@ async def get_department_leader(dept_id: str) -> dict[str, Any] | None:
 
     from lark_oapi.api.contact.v3 import GetDepartmentRequest
 
-    req = GetDepartmentRequest.builder().department_id(dept_id).user_id_type("user_id").build()
+    req = GetDepartmentRequest.builder().department_id(dept_id).user_id_type("open_id").build()
     req.headers["Authorization"] = f"Bearer {token}"
     resp = await client.contact.v3.department.aget(req)
     if not resp.success():
@@ -216,6 +325,36 @@ async def is_department_member(user_id: str, dept_id: str) -> bool:
 # ── User helpers ────────────────────────────────────────────────────
 
 
+def _parse_feishu_user(u: dict[str, Any]) -> dict[str, Any]:
+    """统一解析飞书用户条目（`contact/v3/users` 与 `find_by_department` 结构一致）。
+
+    权限分级（重要，2026-10 实测）：
+    - **无需额外权限**：`open_id` / `union_id` / `name` / `en_name` / `avatar`(72/240/640)；
+    - **需额外权限**：`user_id`（`contact:user.employee_id:readonly`，需集团审核）、
+      `employee_no` / `job_title` / `enterprise_email`（`contact:user.employee:readonly`）、
+      `email`、`mobile`、`department_ids`。
+      未开通时这些字段为空，调用方需容忍缺字段。
+    """
+    avatar = u.get("avatar") or {}
+    return {
+        "user_id": u.get("user_id") or "",
+        "open_id": u.get("open_id") or "",
+        "union_id": u.get("union_id") or "",
+        "name": (u.get("name") or "").strip(),
+        "en_name": (u.get("en_name") or "").strip(),
+        "employee_no": u.get("employee_no") or "",
+        "email": u.get("email") or "",
+        "enterprise_email": u.get("enterprise_email") or "",
+        "mobile": u.get("mobile") or "",
+        "job_title": u.get("job_title") or "",
+        "department_ids": u.get("department_ids") or [],
+        "avatar_url": avatar.get("avatar_640") or avatar.get("avatar_240") or "",
+        "avatar_thumb": avatar.get("avatar_72") or "",
+        "avatar_middle": avatar.get("avatar_240") or "",
+        "avatar_big": avatar.get("avatar_640") or "",
+    }
+
+
 async def get_all_users() -> list[dict[str, Any]]:
     """获取所有可见用户（全公司范围，分页）。
 
@@ -230,25 +369,18 @@ async def get_all_users() -> list[dict[str, Any]]:
     all_users: list[dict[str, Any]] = []
     page_token = ""
     while True:
-        req = ListUserRequest.builder().user_id_type("user_id").page_size(100).page_token(page_token).build()
+        # user_id_type="open_id"：无需 contact:user.employee_id:readonly（该权限需集团审核）
+        # page_size 上限 50：传 100 会报 99992402 field validation failed
+        req = ListUserRequest.builder().user_id_type("open_id").page_size(50).page_token(page_token).build()
         req.headers["Authorization"] = f"Bearer {token}"
         resp = await client.contact.v3.user.alist(req)
         raw = resp.raw.content if resp.raw else None
         if raw:
-            data = json.loads(raw.decode("utf-8")).get("data", {})
+            payload = json.loads(raw.decode("utf-8"))
+            _raise_on_feishu_error(payload, "contact/v3/users")
+            data = payload.get("data", {})
             for u in data.get("items", []):
-                all_users.append(
-                    {
-                        "user_id": u.get("user_id", ""),
-                        "open_id": u.get("open_id", ""),
-                        "name": u.get("name", ""),
-                        "employee_no": u.get("employee_no", ""),
-                        "email": u.get("email", ""),
-                        "mobile": u.get("mobile", ""),
-                        "job_title": u.get("job_title", ""),
-                        "department_ids": u.get("department_ids", []),
-                    }
-                )
+                all_users.append(_parse_feishu_user(u))
             if not data.get("has_more"):
                 break
             page_token = data.get("page_token", "")
@@ -276,10 +408,12 @@ async def find_users_by_department(department_id: str) -> list[dict[str, Any]]:
     while True:
         req = (
             FindByDepartmentUserRequest.builder()
-            .user_id_type("user_id")
+            # user_id_type="open_id"：无需 contact:user.employee_id:readonly（该权限需集团审核）
+            .user_id_type("open_id")
             .department_id_type("open_department_id")
             .department_id(department_id)
-            .page_size(100)
+            # page_size 上限 50：传 100 会报 99992402 field validation failed
+            .page_size(50)
             .page_token(page_token)
             .build()
         )
@@ -326,6 +460,7 @@ async def find_users_by_department(department_id: str) -> list[dict[str, Any]]:
                     {
                         "user_id": u.user_id or "",
                         "open_id": u.open_id or "",
+                        "union_id": u.union_id or "",
                         "name": u.name or "",
                         "en_name": u.en_name or "",
                         "email": u.email or "",
@@ -336,6 +471,10 @@ async def find_users_by_department(department_id: str) -> list[dict[str, Any]]:
                         "positions": positions,
                         "department_path": department_path,
                         "avatar_key": u.avatar_key or "",
+                        "avatar_url": (u.avatar.avatar_640 or u.avatar.avatar_240) if u.avatar else "",
+                        "avatar_thumb": (u.avatar.avatar_72 or "") if u.avatar else "",
+                        "avatar_middle": (u.avatar.avatar_240 or "") if u.avatar else "",
+                        "avatar_big": (u.avatar.avatar_640 or "") if u.avatar else "",
                         "join_time": u.join_time or 0,
                         "is_frozen": u.is_frozen if u.is_frozen is not None else False,
                     }
@@ -407,9 +546,11 @@ async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict[s
         return {
             "user_id": u.user_id or "",
             "open_id": u.open_id or "",
+            "union_id": u.union_id or "",
             "name": u.name or "",
             "en_name": u.en_name or "",
             "email": u.email or "",
+            "enterprise_email": getattr(u, "enterprise_email", "") or "",
             "mobile": u.mobile or "",
             "employee_no": u.employee_no or "",
             "job_title": u.job_title or "",
@@ -417,6 +558,10 @@ async def get_user_detail(user_id: str, user_id_type: str = "user_id") -> dict[s
             "positions": positions,
             "department_path": department_path,
             "avatar_key": u.avatar_key or "",
+            "avatar_url": (u.avatar.avatar_640 or u.avatar.avatar_240) if u.avatar else "",
+            "avatar_thumb": (u.avatar.avatar_72 or "") if u.avatar else "",
+            "avatar_middle": (u.avatar.avatar_240 or "") if u.avatar else "",
+            "avatar_big": (u.avatar.avatar_640 or "") if u.avatar else "",
             "join_time": u.join_time or 0,
             "is_frozen": u.is_frozen if u.is_frozen is not None else False,
         }

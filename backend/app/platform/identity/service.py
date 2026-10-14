@@ -15,6 +15,7 @@ from uuid import UUID
 
 import jwt
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -276,7 +277,7 @@ async def diagnose_livzon_feishu_config(
     db: AsyncSession,
     payload: FeishuConfigUpsert | None = None,
 ) -> FeishuDiagnosticResult:
-    from app.platform.integrations.feishu.contact import (  # type: ignore[attr-defined]
+    from app.platform.integrations.feishu.contact import (
         find_users_by_department,
         get_all_departments,
         get_contact_scope,
@@ -373,12 +374,9 @@ async def diagnose_livzon_feishu_config(
         )
 
     try:
-        departments = await get_all_departments(  # type: ignore[call-arg]
-            root_department_id=root_id,
-            app_id=app_id,
-            app_secret=app_secret,
-            tenant_access_token=token,
-        )
+        # get_all_departments 内部自建客户端与 token（用平台应用凭证），不接受外部凭证参数；
+        # 被检查的 Livzon 应用凭证已在上面「tenant_access_token」「通讯录授权范围」两步验证过。
+        departments = await get_all_departments(root_department_id=root_id)
         steps.append(
             FeishuDiagnosticStep(
                 name="部门列表",
@@ -428,12 +426,7 @@ async def diagnose_livzon_feishu_config(
         try:
             for sample_department_id in sample_department_ids:
                 tried_ids.append(sample_department_id)
-                users = await find_users_by_department(  # type: ignore[call-arg]
-                    sample_department_id,
-                    app_id=app_id,
-                    app_secret=app_secret,
-                    tenant_access_token=token,
-                )
+                users = await find_users_by_department(sample_department_id)
                 if users:
                     sampled_department_id = sample_department_id
                     break
@@ -541,7 +534,7 @@ async def _save_diagnostic_result(
 
 
 async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict[str, Any]:
-    from app.platform.integrations.feishu.contact import get_contact_scope  # type: ignore[attr-defined]
+    from app.platform.integrations.feishu.contact import get_contact_scope
     from app.platform.integrations.feishu.sync import (
         sync_departments,
         sync_members,
@@ -660,6 +653,21 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict[str, Any]:
         "status": sync_status,
         "message": sync_message,
     }
+
+
+async def sync_livzon_feishu_contacts_all() -> None:
+    """后台任务入口：自建会话跑一次「部门 + 成员」全量同步。
+
+    全量同步耗时可达数十秒，不适合放在 HTTP 请求里（项目规范要求超过 5 秒的操作走后台任务），
+    因此由 `spawn_task` 触发；结果（last_sync_status / last_sync_message / last_synced_at）
+    由 run_livzon_feishu_sync_all 写入飞书配置。后台任务抛异常没人接，故这里兜底后只记日志。
+    """
+    try:
+        async with async_session_factory() as db:
+            await run_livzon_feishu_sync_all(db)
+            await db.commit()
+    except Exception:
+        logger.exception("Livzon Feishu contacts sync (all) failed")
 
 
 async def _active_livzon_feishu_credentials(db: AsyncSession) -> tuple[str, str]:
@@ -1248,6 +1256,84 @@ async def handle_livzon_feishu_card_action_event(
     }
 
 
+def _apply_contact_profile(user: User, detail: dict[str, Any]) -> None:
+    """把通讯录详情里的 部门 / 职务 / 工号 / 企业邮箱 写入用户记录（只补齐非空值）。"""
+    employee_no = (detail.get("employee_no") or "").strip()
+    if employee_no:
+        user.employee_no = employee_no
+
+    job_title = (detail.get("job_title") or "").strip()
+    if job_title:
+        user.position = job_title
+
+    # 部门名取部门路径的最后一级（最具体的部门）
+    department_path = detail.get("department_path") or []
+    department_name = ""
+    if department_path:
+        department_name = (department_path[-1].get("department_name") or "").strip()
+    if department_name:
+        user.department = department_name
+
+    department_ids = detail.get("department_ids") or []
+    if department_ids:
+        user.feishu_department_ids = json.dumps(list(department_ids), ensure_ascii=False)
+
+    enterprise_email = (detail.get("enterprise_email") or "").strip()
+    if enterprise_email:
+        user.enterprise_email = enterprise_email
+
+    # 头像三档（通讯录返回的是直链 URL）
+    for field in ("avatar_url", "avatar_thumb", "avatar_middle", "avatar_big"):
+        value = (detail.get(field) or "").strip()
+        if value:
+            setattr(user, field, value)
+
+    # 飞书侧已冻结（离职/停用）→ 单向禁用平台账号。
+    # 注意只做单向：飞书恢复正常时不自动启用，避免覆盖管理员在平台上的手工禁用。
+    if detail.get("is_frozen"):
+        user.status = "disabled"
+
+
+async def enrich_user_from_feishu_contact(
+    user: User,
+    *,
+    open_id: str | None,
+    feishu_user_id: str | None,
+) -> None:
+    """登录后尽力补齐通讯录字段（部门 / 职务 / 工号 / 企业邮箱）。
+
+    背景：登录用的 `authen/v1/user_info` 不返回部门、职务、工号，
+    必须另外调通讯录接口 `contact/v3/users/{id}`。
+    通讯录接口需要额外权限，未开通或查不到时**只记日志、不影响登录**——
+    宁可只有登录信息，也不能让用户登不进来。
+    """
+    identifier = (open_id or "").strip() or (feishu_user_id or "").strip()
+    if not identifier:
+        return
+    id_type = "open_id" if (open_id or "").strip() else "user_id"
+    try:
+        from app.platform.integrations.feishu.contact import get_user_detail
+
+        detail = await get_user_detail(identifier, user_id_type=id_type)
+        if not detail:
+            logger.warning(
+                "飞书通讯录详情为空，跳过资料补齐（检查应用是否已开通通讯录权限）: %s=%s",
+                id_type,
+                identifier,
+            )
+            return
+        _apply_contact_profile(user, detail)
+        logger.info(
+            "已补齐飞书通讯录资料: open_id=%s 部门=%s 职务=%s 工号=%s",
+            open_id,
+            user.department,
+            user.position,
+            user.employee_no,
+        )
+    except Exception:  # noqa: BLE001 - 资料补齐失败绝不能影响登录主流程
+        logger.warning("补齐飞书通讯录资料失败（不影响登录）: %s", identifier, exc_info=True)
+
+
 async def handle_oauth_callback(
     db: AsyncSession,
     code: str,
@@ -1273,10 +1359,17 @@ async def handle_oauth_callback(
     union_id = info.get("union_id") or None  # Convert empty to None
     name = info.get("name", "")
     en_name = info.get("en_name")
-    avatar_url = info.get("avatar_url") or info.get("avatar_middle")
-    avatar_thumb = info.get("avatar_thumb")
-    avatar_middle = info.get("avatar_middle")
-    avatar_big = info.get("avatar_big")
+    # 头像：新版接口返回 avatar 对象（avatar_72/240/640），旧版是 avatar_* 平铺字段，两种都兼容
+    avatar_obj = info.get("avatar") or {}
+    avatar_url = (
+        info.get("avatar_url")
+        or info.get("avatar_middle")
+        or avatar_obj.get("avatar_640")
+        or avatar_obj.get("avatar_240")
+    )
+    avatar_thumb = info.get("avatar_thumb") or avatar_obj.get("avatar_72")
+    avatar_middle = info.get("avatar_middle") or avatar_obj.get("avatar_240")
+    avatar_big = info.get("avatar_big") or avatar_obj.get("avatar_640")
     email = info.get("email") or info.get("enterprise_email")
     enterprise_email = info.get("enterprise_email")
     mobile = info.get("mobile")
@@ -1330,8 +1423,14 @@ async def handle_oauth_callback(
             pass  # role column removed
         logger.info("Updated user: %s (open_id=%s)", user.name, open_id)
 
+    # 3.1 登录时补齐通讯录资料（部门 / 职务 / 工号 / 企业邮箱 / 冻结状态）
+    #     user_info 不返回这些字段，需另调 contact/v3/users；失败只记日志，不影响登录
+    await enrich_user_from_feishu_contact(user, open_id=open_id, feishu_user_id=user_id)
+
+    # 放在补齐之后判断：若本次发现飞书侧已冻结，当场就拒绝登录
     if user.status == "disabled":
         raise PermissionError("User account is disabled")
+
     user.last_login_at = datetime.now(UTC)
     await db.commit()
 
@@ -1385,6 +1484,113 @@ async def authenticate_local_user(db: AsyncSession, *, username: str, password: 
     user.last_login_at = datetime.now(UTC)
     await db.flush()
     return user, generate_jwt(user)
+
+
+# 飞书身份字段（绑定/解绑时整体搬迁或清空）
+FEISHU_IDENTITY_FIELDS: tuple[str, ...] = (
+    "feishu_user_id",
+    "feishu_open_id",
+    "feishu_union_id",
+    "avatar_url",
+    "avatar_thumb",
+    "avatar_middle",
+    "avatar_big",
+    "feishu_department_ids",
+)
+
+
+async def bind_feishu_user(
+    db: AsyncSession,
+    *,
+    target: User,
+    source: User,
+    operator_id: UUID | None = None,
+) -> dict[str, int]:
+    """把一条飞书用户记录「合并」进目标账号（绑定飞书登录）。
+
+    做四件事：
+    1. 迁移角色授权（按 role_id + scope_type 去重：目标已有同款则软删源侧那条）；
+    2. 搬迁飞书身份字段（源侧清空，避免 feishu_user_id 唯一索引冲突）；
+    3. 补齐目标账号缺失的基础资料（邮箱 / 手机 / 工号 / 部门 / 岗位）；
+    4. 软删源记录（其历史引用继续挂在原 id 上，不迁移）。
+
+    目标账号保留自己的 username / password_hash / auth_source —— 本地账号合并后
+    既能继续用账号密码登录，也能用飞书登录（登录回调按 feishu_open_id 命中它）。
+    """
+    from app.platform.permission.models import UserRoleGrant
+
+    # 1. 迁移授权
+    target_grants = (
+        (
+            await db.execute(
+                select(UserRoleGrant).where(
+                    UserRoleGrant.user_id == target.id,
+                    UserRoleGrant.is_deleted == False,  # noqa: E712
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    existing_keys = {(grant.role_id, grant.scope_type) for grant in target_grants}
+
+    source_grants = (
+        (
+            await db.execute(
+                select(UserRoleGrant).where(
+                    UserRoleGrant.user_id == source.id,
+                    UserRoleGrant.is_deleted == False,  # noqa: E712
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    moved = 0
+    deduplicated = 0
+    for grant in source_grants:
+        if (grant.role_id, grant.scope_type) in existing_keys:
+            grant.is_deleted = True
+            deduplicated += 1
+        else:
+            grant.user_id = target.id
+            grant.version += 1
+            moved += 1
+        grant.updated_by = operator_id
+
+    # 2. 身份字段搬迁
+    for field in FEISHU_IDENTITY_FIELDS:
+        value = getattr(source, field, None)
+        setattr(source, field, None)
+        if value and not getattr(target, field, None):
+            setattr(target, field, value)
+
+    # 3. 补齐基础资料
+    for field in ("email", "mobile", "employee_no", "department", "position"):
+        if not getattr(target, field, None) and getattr(source, field, None):
+            setattr(target, field, getattr(source, field))
+
+    # 4. 软删源记录
+    source.is_deleted = True
+    source.updated_by = operator_id
+    target.updated_by = operator_id
+    await db.commit()
+
+    return {"moved_grants": moved, "deduplicated_grants": deduplicated}
+
+
+async def unbind_feishu_user(
+    db: AsyncSession,
+    *,
+    user: User,
+    operator_id: UUID | None = None,
+) -> None:
+    """解绑飞书身份：只清空飞书字段，账号本体与角色授权保留。"""
+    for field in FEISHU_IDENTITY_FIELDS:
+        setattr(user, field, None)
+    user.updated_by = operator_id
+    await db.commit()
 
 
 async def bootstrap_local_users() -> None:
