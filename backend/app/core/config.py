@@ -169,6 +169,9 @@ class Settings(BaseSettings):
     ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
     ENERGY_BITABLE_SYNC_HOUR: int = 17
     DEBUG: bool = False
+    # 权限：是否强制执行「接口精确绑定兜底」（未登记绑定的受保护接口一律 403）。
+    # 默认关闭，待存量业务接口全部接入绑定登记后再开启。
+    PERMISSION_ENFORCE_ENABLED: bool = False
 
     @field_validator("DEBUG", mode="before")
     @classmethod

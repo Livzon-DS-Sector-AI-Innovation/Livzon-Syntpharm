@@ -1,0 +1,246 @@
+"""权限服务：注册表同步 + 初始超管挂载 + 授权/角色业务规则。
+
+sync_registry 是「代码注册表为唯一权威、DB 只读镜像」的落地：
+启动时幂等同步，不物理删除、不复活已退役项。
+"""
+
+import logging
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.config import get_settings
+from app.core.database import async_session_factory
+from app.core.exceptions import ForbiddenException
+from app.platform.permission.models import (
+    GRANT_ACTIVE,
+    PERMISSION_ACTIVE,
+    SCOPE_ALL,
+    ApiBinding,
+    Permission,
+    Role,
+    RolePermission,
+    UserRoleGrant,
+)
+from app.platform.permission.registry import (
+    ALL_BUILTIN_ROLES,
+    ALL_PERMISSIONS,
+    API_BINDINGS,
+    BUILTIN_ROLE_PERMISSIONS,
+)
+
+logger = logging.getLogger(__name__)
+
+
+async def _get_permission_by_code(db: AsyncSession, code: str) -> Permission | None:
+    result = await db.execute(
+        select(Permission).where(
+            Permission.code == code,
+            Permission.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def _get_role_by_code(db: AsyncSession, code: str) -> Role | None:
+    result = await db.execute(
+        select(Role).where(
+            Role.code == code,
+            Role.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def sync_registry() -> None:
+    """幂等同步 registry 声明到 DB（权限码 / 角色 / 角色权限 / 接口绑定）。"""
+    async with async_session_factory() as db:
+        await _sync_permissions(db)
+        await _sync_roles(db)
+        await _sync_role_permissions(db)
+        await _sync_api_bindings(db)
+        await db.commit()
+    logger.info("Permission registry synced")
+
+
+async def _sync_permissions(db: AsyncSession) -> None:
+    # 注意：遍历 ALL_PERMISSIONS（= 平台码 + 业务模块访问码）。
+    # 历史上这里写死 PLATFORM_PERMISSIONS，导致往 ALL_PERMISSIONS 里加的业务码
+    # 无法同步进 permission 表（权限目录里看不到、无法授权）。
+    for p in ALL_PERMISSIONS:
+        existing = await _get_permission_by_code(db, p.code)
+        if existing is None:
+            db.add(
+                Permission(
+                    code=p.code,
+                    name=p.name,
+                    module=p.module,
+                    resource=p.resource,
+                    action=p.action,
+                    description=p.description or None,
+                    status=PERMISSION_ACTIVE,
+                    is_builtin=True,
+                )
+            )
+            continue
+        # 只更新描述性字段，不改 status（退役不可复活）
+        existing.name = p.name
+        existing.module = p.module
+        existing.resource = p.resource
+        existing.action = p.action
+        if p.description:
+            existing.description = p.description
+
+
+async def _sync_roles(db: AsyncSession) -> None:
+    for r in ALL_BUILTIN_ROLES:
+        existing = await _get_role_by_code(db, r.code)
+        if existing is None:
+            db.add(
+                Role(
+                    code=r.code,
+                    name=r.name,
+                    category=r.category,
+                    module_code=r.module_code,
+                    description=r.description,
+                    is_builtin=True,
+                    is_superuser=r.is_superuser,
+                    status=GRANT_ACTIVE,
+                )
+            )
+            continue
+        existing.name = r.name
+        existing.category = r.category
+        existing.module_code = r.module_code
+        existing.description = r.description
+        existing.is_superuser = r.is_superuser
+        existing.is_builtin = True
+
+
+async def _sync_role_permissions(db: AsyncSession) -> None:
+    for role_code, codes in BUILTIN_ROLE_PERMISSIONS.items():
+        role = await _get_role_by_code(db, role_code)
+        if role is None:
+            continue
+        for code in codes:
+            result = await db.execute(
+                select(RolePermission.id).where(
+                    RolePermission.role_id == role.id,
+                    RolePermission.permission_code == code,
+                    RolePermission.is_deleted == False,  # noqa: E712
+                )
+            )
+            if result.scalar_one_or_none() is None:
+                db.add(RolePermission(role_id=role.id, permission_code=code))
+
+
+async def _sync_api_bindings(db: AsyncSession) -> None:
+    for b in API_BINDINGS:
+        result = await db.execute(
+            select(ApiBinding.id).where(
+                ApiBinding.method == b.method,
+                ApiBinding.route_template == b.route_template,
+                ApiBinding.is_deleted == False,  # noqa: E712
+            )
+        )
+        if result.scalar_one_or_none() is None:
+            db.add(
+                ApiBinding(
+                    permission_code=b.permission_code,
+                    method=b.method,
+                    route_template=b.route_template,
+                    scope_required=b.scope_required,
+                    status=PERMISSION_ACTIVE,
+                )
+            )
+            continue
+
+
+async def ensure_superadmin(db: AsyncSession, username: str) -> None:
+    """给指定用户名挂 super_admin 角色（幂等，无则创建授权）。"""
+    from app.platform.identity.repository import UserRepository
+
+    if not username:
+        return
+
+    user_repo = UserRepository()
+    user = await user_repo.get_by_username(db, username)
+    if user is None:
+        return
+
+    super_role = await _get_role_by_code(db, "super_admin")
+    if super_role is None:
+        logger.warning("super_admin role missing, skip bootstrap")
+        return
+
+    result = await db.execute(
+        select(UserRoleGrant.id).where(
+            UserRoleGrant.user_id == user.id,
+            UserRoleGrant.role_id == super_role.id,
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+        )
+    )
+    if result.scalar_one_or_none() is not None:
+        return
+
+    db.add(
+        UserRoleGrant(
+            user_id=user.id,
+            role_id=super_role.id,
+            scope_type=SCOPE_ALL,
+            status=GRANT_ACTIVE,
+            version=1,
+        )
+    )
+    logger.info("Granted super_admin to %s", username)
+
+
+async def bootstrap_initial_superadmin() -> None:
+    """给初始管理员（BOOTSTRAP_ADMIN_USERNAME）挂 super_admin 角色（幂等）。"""
+    settings = get_settings()
+    async with async_session_factory() as db:
+        await ensure_superadmin(db, settings.BOOTSTRAP_ADMIN_USERNAME)
+        await db.commit()
+
+
+# ── 防自我提权 guard ─────────────────────────────────────────────
+
+
+async def get_role(db: AsyncSession, role_id) -> Role | None:
+    result = await db.execute(
+        select(Role).where(
+            Role.id == role_id,
+            Role.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def count_active_superadmins(db: AsyncSession) -> int:
+    stmt = (
+        select(func.count())
+        .select_from(UserRoleGrant)
+        .join(Role, Role.id == UserRoleGrant.role_id)
+        .where(
+            Role.is_superuser.is_(True),
+            Role.is_deleted == False,  # noqa: E712
+            UserRoleGrant.status == GRANT_ACTIVE,
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+        )
+    )
+    return int((await db.execute(stmt)).scalar_one())
+
+
+def guard_self_escalation(actor_id, grant: UserRoleGrant) -> None:
+    """禁止修改 / 删除自己的授权。"""
+    if grant.user_id == actor_id:
+        raise ForbiddenException("不能修改自己的授权")
+
+
+async def guard_last_superadmin(db: AsyncSession, grant: UserRoleGrant) -> None:
+    """删除 super_admin 授权前，确保系统中还有其他超级管理员。"""
+    role = await get_role(db, grant.role_id)
+    if role is None or not role.is_superuser:
+        return
+    if await count_active_superadmins(db) <= 1:
+        raise ForbiddenException("不能移除最后一个超级管理员")
