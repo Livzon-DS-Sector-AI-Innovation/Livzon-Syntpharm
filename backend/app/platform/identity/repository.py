@@ -119,6 +119,7 @@ class UserRepository:
         feishu_department_ids: str | None = None,
         username: str | None = None,
         password_hash: str | None = None,
+        must_change_password: bool = False,
         status: str = "active",
         auth_source: str = "feishu",
     ) -> User:
@@ -126,6 +127,7 @@ class UserRepository:
             name=name,
             username=username,
             password_hash=password_hash,
+            must_change_password=must_change_password,
             status=status,
             auth_source=auth_source,
             feishu_user_id=feishu_user_id,
@@ -148,6 +150,27 @@ class UserRepository:
         session.add(user)
         await session.flush()
         return user
+
+    async def allocate_username(
+        self,
+        session: AsyncSession,
+        *,
+        prefix: str,
+        max_attempts: int = 20,
+    ) -> str:
+        """分配默认用户名 `{prefix}{6 位自增号}`（如 YTH000001）。
+
+        用 PG 序列 `identity.user_username_seq` 的 nextval 保证并发建号不撞号；
+        若序列值与既有账号重合（例如历史上手工建过同前缀用户名），跳过再取下一个。
+        """
+        for _ in range(max_attempts):
+            result = await session.execute(select(func.nextval("identity.user_username_seq")))
+            candidate = f"{prefix}{int(result.scalar_one()):06d}"
+            # 唯一约束含软删行，判重不能加 is_deleted 过滤
+            existing = await session.execute(select(User.id).where(User.username == candidate).limit(1))
+            if existing.scalar_one_or_none() is None:
+                return candidate
+        raise RuntimeError(f"无法分配唯一用户名（前缀 {prefix}），请检查 identity.user_username_seq 序列状态")
 
     async def list_users(
         self,

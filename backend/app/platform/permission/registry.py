@@ -230,6 +230,9 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     ("POST", "/api/v1/identity/auth/local/login"),
     ("POST", "/api/v1/identity/auth/test-login"),
     ("GET", "/api/v1/identity/me"),
+    # 自助改密：任何登录用户都可能需要（尤其被标记「首登强制改密」时），
+    # 不挂权限码，判定交给路由自身的 require_user
+    ("POST", "/api/v1/identity/me/password"),
     # 菜单栏配置读取：每个登录用户的导航渲染都要读，只要求已登录（写操作用 ops:manage）
     ("GET", "/api/v1/system/menus/config"),
 )

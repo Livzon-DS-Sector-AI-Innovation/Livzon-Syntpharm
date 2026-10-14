@@ -15,6 +15,15 @@ from app.core.database import async_session_factory
 from app.platform.identity.models import User  # noqa: F401
 
 DEFAULT_SETTINGS = [
+    # Identity / 平台账号：飞书首登自动建号时的本地用户名前缀
+    # 最终用户名 = 前缀 + 6 位自增号（identity.user_username_seq），如 YTH000001
+    (
+        "identity",
+        "USERNAME_PREFIX",
+        "YTH",
+        "string",
+        "默认本地用户名前缀（飞书首登自动建号）",
+    ),
     # Safety module
     (
         "safety",

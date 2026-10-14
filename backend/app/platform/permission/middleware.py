@@ -44,8 +44,7 @@ def _is_exempt(method: str, path: str) -> bool:
     """
     method = method.upper()
     return any(
-        exempt_method == method and template_matches(template, path)
-        for exempt_method, template in EXEMPT_ROUTES
+        exempt_method == method and template_matches(template, path) for exempt_method, template in EXEMPT_ROUTES
     )
 
 

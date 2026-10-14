@@ -234,6 +234,9 @@ class Settings(BaseSettings):
     BOOTSTRAP_USER_PASSWORD: str = ""
     BOOTSTRAP_USER_NAME: str = "普通用户"
     BOOTSTRAP_USER_EMAIL: str = ""
+    # 默认 false：启动时只补建缺失的引导账号，不覆盖已存在账号的密码
+    # （用户自行修改过的密码必须活过容器重启）。需要回灌初始密码时显式打开。
+    BOOTSTRAP_ADMIN_FORCE_RESET: bool = False
     LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED: bool = False
 
     # AI — HR 离职分析

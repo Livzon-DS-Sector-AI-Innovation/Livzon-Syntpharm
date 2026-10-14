@@ -32,6 +32,16 @@ class User(BaseModel):
     name: Mapped[str] = mapped_column(String(100))
     username: Mapped[str | None] = mapped_column(String(64), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="是否强制修改密码（管理员重置后为 true）",
+    )
+    password_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="密码最后修改时间"
+    )
     status: Mapped[str] = mapped_column(String(20), default="active", server_default="active")
     auth_source: Mapped[str] = mapped_column(String(20), default="feishu", server_default="feishu")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

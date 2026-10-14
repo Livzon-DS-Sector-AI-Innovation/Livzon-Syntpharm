@@ -56,6 +56,8 @@ class UserResponse(BaseModel):
     feishu_open_id: str | None = None
     feishu_union_id: str | None = None
     tenant_key: str | None = None
+    # 强制改密标记：登录后前端据此把用户挡在 /change-password（管理员重置密码后为 true）
+    must_change_password: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -63,10 +65,11 @@ class UserResponse(BaseModel):
 class UserManagementItem(UserResponse):
     status: str = "active"  # 用户状态（active / disabled）；用户管理列表的「状态」列依赖该字段
     last_login_at: str | None = None
+    password_updated_at: str | None = None  # 密码最后修改时间（管理员重置后更新）
     # 有效角色名列表（来自权限管理的授权，非 User.role 之类的历史字段）
     roles: list[str] = Field(default_factory=list)
 
-    @field_validator("last_login_at", mode="before")
+    @field_validator("last_login_at", "password_updated_at", mode="before")
     @classmethod
     def datetime_to_str(cls, v: object) -> str | None:
         if v is None:
@@ -107,7 +110,42 @@ class UserManagementUpdate(BaseModel):
 
 
 class PasswordResetRequest(BaseModel):
-    password: str = Field(..., min_length=6, max_length=255)
+    """管理员重置密码。
+
+    `password` 留空 = 随机生成：生成的明文密码只在响应里返回一次（一次性展示），
+    数据库仍只存哈希，之后无法再次查看。两种情况都会把账号标记为「首登需改密」。
+    """
+
+    password: str | None = Field(None, min_length=6, max_length=255)
+
+
+class PasswordResetData(BaseModel):
+    message: str
+    # 仅「随机生成」时返回，供管理员当场抄给用户；不落库
+    password: str | None = None
+
+
+class PasswordResetApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: PasswordResetData
+
+
+class ChangePasswordRequest(BaseModel):
+    """当前登录用户自助改密。"""
+
+    old_password: str = Field(..., min_length=1, max_length=255)
+    new_password: str = Field(..., min_length=6, max_length=255)
+
+
+class ChangePasswordData(BaseModel):
+    message: str
+
+
+class ChangePasswordApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ChangePasswordData
 
 
 class FeishuBindRequest(BaseModel):

@@ -35,6 +35,7 @@ from app.platform.identity.schemas import (
     FeishuDiagnosticStep,
 )
 from app.platform.integrations.feishu.oauth import FeishuOAuthClient
+from app.shared.config_reader import get_module_setting
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,49 @@ def verify_password(password: str, stored_hash: str | None) -> bool:
     except (ValueError, TypeError):
         return False
     return compare_digest(expected, digest_hex)
+
+
+# ── 本地账号凭据：默认用户名与随机密码 ──────────────────────────────
+# 飞书首次登录时为账号补齐本地用户名（`{前缀}{6 位自增号}`），但不自动生成密码：
+# 密码由管理员在「用户管理」按需随机生成并**一次性展示**，库里只存哈希。
+# 若在这里生成密码，既没有人在场查看，也等于凭空多出一条无人知晓的登录凭据。
+
+DEFAULT_USERNAME_PREFIX = "YTH"
+USERNAME_PREFIX_SETTING_KEY = "USERNAME_PREFIX"
+
+# 随机密码字符集：剔除 0/O、1/l/I 等易混字符，避免管理员抄错
+PASSWORD_ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+DEFAULT_PASSWORD_LENGTH = 12
+
+
+def generate_random_password(length: int = DEFAULT_PASSWORD_LENGTH) -> str:
+    """生成随机初始密码（只用于一次性展示，不落库明文）。"""
+    if length < 6:
+        length = DEFAULT_PASSWORD_LENGTH
+    return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(length))
+
+
+async def resolve_username_prefix() -> str:
+    """用户名前缀：运行时配置 `identity.USERNAME_PREFIX` 优先，缺省 YTH。"""
+    raw = await get_module_setting("identity", USERNAME_PREFIX_SETTING_KEY, DEFAULT_USERNAME_PREFIX)
+    cleaned = "".join(ch for ch in raw.strip().upper() if ch.isalnum())[:8]
+    return cleaned or DEFAULT_USERNAME_PREFIX
+
+
+async def allocate_default_username(db: AsyncSession) -> str:
+    """分配默认用户名，如 `YTH000001`。"""
+    return await _repo.allocate_username(db, prefix=await resolve_username_prefix())
+
+
+async def ensure_default_username(db: AsyncSession, user: User) -> str:
+    """补齐本地用户名并返回。
+
+    「先同步、后登录」的账号（`sync_members` 走 `create` 但只写飞书字段）与历史账号
+    都在这里补齐 —— 只在建号时分配的话，这些账号永远无法用账号密码登录。
+    """
+    if not user.username:
+        user.username = await allocate_default_username(db)
+    return user.username
 
 
 def _split_identifiers(raw: str) -> set[str]:
@@ -1388,6 +1432,7 @@ async def handle_oauth_callback(
         user = await _repo.create(
             db,
             name=name,
+            username=await allocate_default_username(db),
             feishu_user_id=user_id,
             feishu_open_id=open_id,
             feishu_union_id=union_id,
@@ -1422,6 +1467,9 @@ async def handle_oauth_callback(
         if _matches_admin_whitelist(user, get_settings().SSO_ADMIN_IDENTIFIERS):
             pass  # role column removed
         logger.info("Updated user: %s (open_id=%s)", user.name, open_id)
+
+    # 3.05 补齐本地用户名（同步进来/历史建号只有飞书字段的账号在这里补）
+    await ensure_default_username(db, user)
 
     # 3.1 登录时补齐通讯录资料（部门 / 职务 / 工号 / 企业邮箱 / 冻结状态）
     #     user_info 不返回这些字段，需另调 contact/v3/users；失败只记日志，不影响登录
@@ -1593,8 +1641,66 @@ async def unbind_feishu_user(
     await db.commit()
 
 
+async def reset_password_by_admin(
+    db: AsyncSession,
+    *,
+    user: User,
+    password: str | None,
+    operator_id: UUID | None = None,
+) -> str:
+    """管理员为账号设置密码；`password` 为空则随机生成。
+
+    返回本次生成的明文密码（管理员自填时返回空串）—— 随机密码**只在此处返回一次**，
+    不落库明文，前端弹窗展示后即不可再查看。两种情况都置 `must_change_password`，
+    强制用户首次登录后自行修改。
+    """
+    plain = (password or "").strip()
+    generated = ""
+    if not plain:
+        generated = generate_random_password()
+        plain = generated
+
+    user.password_hash = hash_password(plain)
+    user.password_updated_at = datetime.now(UTC)
+    user.must_change_password = True
+    user.updated_by = operator_id
+    await db.commit()
+    return generated
+
+
+async def change_own_password(
+    db: AsyncSession,
+    *,
+    user: User,
+    old_password: str,
+    new_password: str,
+) -> None:
+    """用户自助改密：校验原密码 → 更新哈希 → 清除强制改密标记。
+
+    原密码错误返回 400（不是 401）：前端把 401 当作会话过期会触发登录跳转。
+    """
+    from app.core.exceptions import BadRequestException
+
+    if not verify_password(old_password, user.password_hash):
+        raise BadRequestException("原密码不正确")
+    if old_password == new_password:
+        raise BadRequestException("新密码不能与原密码相同")
+
+    user.password_hash = hash_password(new_password)
+    user.password_updated_at = datetime.now(UTC)
+    user.must_change_password = False
+    await db.commit()
+
+
 async def bootstrap_local_users() -> None:
+    """创建引导账号（幂等）。
+
+    **只补不覆盖**：启动时不再重置已存在账号的密码 —— 否则用户自己改过的密码
+    会在容器重启后被 `.env` 里的初始值打回，「密码只有本人能改」形同虚设。
+    确实需要强制回灌时，显式打开 `BOOTSTRAP_ADMIN_FORCE_RESET=true`。
+    """
     settings = get_settings()
+    force_reset = settings.BOOTSTRAP_ADMIN_FORCE_RESET
     entries = [
         (
             settings.BOOTSTRAP_ADMIN_USERNAME,
@@ -1624,17 +1730,25 @@ async def bootstrap_local_users() -> None:
                     email=email or None,
                     status="active",
                     auth_source="local",
+                    # 引导密码是公开的初始值 → 首次登录必须改密
+                    must_change_password=True,
                 )
                 logger.info("Bootstrapped local user: %s", username)
                 continue
 
-            existing.password_hash = hash_password(password)
+            if force_reset and not verify_password(password, existing.password_hash):
+                existing.password_hash = hash_password(password)
+                existing.must_change_password = True
+                logger.warning("Bootstrapped local user password force-reset: %s", username)
+
             existing.name = name or existing.name
             existing.email = email or existing.email
             existing.status = "active"
             existing.auth_source = existing.auth_source or "local"
 
-        await get_or_create_system_admin(session)
+        # 未配置引导管理员时才落「登录关闭模式」的占位管理员，避免与引导账号并存出两个账号
+        if not (settings.BOOTSTRAP_ADMIN_USERNAME and settings.BOOTSTRAP_ADMIN_PASSWORD):
+            await get_or_create_system_admin(session)
         await session.commit()
 
 

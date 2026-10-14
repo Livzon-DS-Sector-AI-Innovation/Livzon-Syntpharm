@@ -11,9 +11,12 @@ from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.jobs import spawn_task
-from app.core.response import success_response
+from app.core.response import build_response, success_response
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
+    ChangePasswordApiResponse,
+    ChangePasswordData,
+    ChangePasswordRequest,
     DepartmentResponse,
     DepartmentTreeNode,
     FeishuBindRequest,
@@ -23,6 +26,8 @@ from app.platform.identity.schemas import (
     LocalLoginApiResponse,
     LocalLoginRequest,
     LocalUserCreate,
+    PasswordResetApiResponse,
+    PasswordResetData,
     PasswordResetRequest,
     PersonnelItem,
     PersonnelListResponse,
@@ -605,8 +610,7 @@ async def update_user_management(
         changed_labels = [
             label
             for field_name, label in managed_fields.items()
-            if getattr(payload, field_name) is not None
-            and getattr(payload, field_name) != getattr(user, field_name)
+            if getattr(payload, field_name) is not None and getattr(payload, field_name) != getattr(user, field_name)
         ]
         if changed_labels:
             raise ForbiddenException(
@@ -641,24 +645,75 @@ async def update_user_management(
     return success_response(data=UserManagementItem.model_validate(user).model_dump())
 
 
-@user_router.post("/users/{user_id}/reset-password", summary="重置用户密码")
+@user_router.post(
+    "/users/{user_id}/reset-password",
+    summary="重置用户密码（留空则随机生成，明文只返回一次）",
+    response_model=PasswordResetApiResponse,
+)
 async def reset_user_password(
     user_id: uuid.UUID,
     payload: PasswordResetRequest,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    from app.core.exceptions import NotFoundException
-    from app.platform.identity.service import hash_password
+) -> Any:
+    """管理员重置密码。
+
+    - 不传 `password`：随机生成，明文在响应里**只返回一次**（不落库），前端弹窗展示；
+    - 传 `password`：按管理员指定值设置，响应不含明文；
+    - 两种情况都把账号标记为「首登需改密」；
+    - 超级管理员账号不允许被他人重置 —— 其密码只能由本人登录后自助修改。
+    """
+    from app.core.exceptions import ForbiddenException, NotFoundException
+    from app.platform.identity.service import reset_password_by_admin
+    from app.platform.permission.public_api import user_is_superuser
 
     repo = UserRepository()
     user = await repo.get_by_id(db, user_id)
     if user is None:
         raise NotFoundException("用户")
 
-    user.password_hash = hash_password(payload.password)
-    await db.commit()
-    return success_response(data={"message": "密码已重置"})
+    if await user_is_superuser(db, user):
+        raise ForbiddenException("超级管理员的密码只能由本人登录后修改")
+
+    generated = await reset_password_by_admin(
+        db,
+        user=user,
+        password=payload.password,
+        operator_id=ctx.user.id,
+    )
+    return build_response(
+        data=PasswordResetData(
+            message=(
+                "已生成新密码，请立即复制（只显示这一次）" if generated else "密码已重置，该用户下次登录需修改密码"
+            ),
+            password=generated or None,
+        )
+    )
+
+
+@user_router.post(
+    "/me/password",
+    summary="修改当前登录用户的密码（自助改密）",
+    response_model=ChangePasswordApiResponse,
+)
+async def change_my_password(
+    payload: ChangePasswordRequest,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """当前登录用户自助改密：校验原密码 → 更新 → 清除强制改密标记。
+
+    只要求「已登录」，不挂权限码（已在 `registry.EXEMPT_ROUTES` 登记豁免绑定兜底）。
+    """
+    from app.platform.identity.service import change_own_password
+
+    await change_own_password(
+        db,
+        user=current_user,
+        old_password=payload.old_password,
+        new_password=payload.new_password,
+    )
+    return build_response(data=ChangePasswordData(message="密码已修改"))
 
 
 @user_router.post("/users/{user_id}/bind-feishu", summary="绑定飞书用户")
