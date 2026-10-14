@@ -13,6 +13,7 @@ from app.platform.permission.service.authorization import (
     build_permission_context,
     has_permission,
 )
+from app.platform.permission.service.management import guard_manage_target
 
 
 async def user_is_superuser(db: AsyncSession, user: User) -> bool:
@@ -24,5 +25,6 @@ __all__ = [
     "PermissionContext",
     "build_permission_context",
     "has_permission",
+    "guard_manage_target",
     "user_is_superuser",
 ]

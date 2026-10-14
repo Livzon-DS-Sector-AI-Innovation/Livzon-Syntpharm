@@ -167,6 +167,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/personnel"),
     # 登录记录（审计类）
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/identity/login-logs"),
+    # 操作审计
+    ApiBindingDef("platform:audit:read", "GET", "/api/v1/audit/logs"),
     # Livzon 助手飞书配置与通讯录同步
     ApiBindingDef("platform:config:read", "GET", "/api/v1/identity/feishu-config"),
     ApiBindingDef("platform:config:manage", "PUT", "/api/v1/identity/feishu-config"),
@@ -181,7 +183,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:role:manage", "DELETE", "/api/v1/permission/roles/{id}"),
     # 权限目录
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/permissions"),
-    ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/tree"),
+    # 权限树只服务于「角色管理」勾选权限，跟随 role:read（与端点 require_permission 对齐）
+    ApiBindingDef("platform:role:read", "GET", "/api/v1/permission/tree"),
     ApiBindingDef("platform:api-binding:read", "GET", "/api/v1/permission/api-bindings"),
     # 授权管理
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/grants"),
@@ -251,6 +254,7 @@ PROTECTED_ROUTE_PREFIXES: tuple[str, ...] = tuple(
     "/api/v1/permission",
     "/api/v1/identity",
     "/api/v1/system",
+    "/api/v1/audit",
 )
 
 

@@ -106,6 +106,20 @@ def generate_random_password(length: int = DEFAULT_PASSWORD_LENGTH) -> str:
     return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(length))
 
 
+MIN_PASSWORD_LENGTH = 8
+
+
+def validate_password_strength(password: str) -> str | None:
+    """校验密码复杂度：≥8 位且同时含字母与数字。合规返回 None，否则返回错误文案。"""
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return f"密码长度至少 {MIN_PASSWORD_LENGTH} 位"
+    if not any(c.isalpha() for c in password):
+        return "密码需包含字母"
+    if not any(c.isdigit() for c in password):
+        return "密码需包含数字"
+    return None
+
+
 async def resolve_username_prefix() -> str:
     """用户名前缀：运行时配置 `identity.USERNAME_PREFIX` 优先，缺省 YTH。"""
     raw = await get_module_setting("identity", USERNAME_PREFIX_SETTING_KEY, DEFAULT_USERNAME_PREFIX)
@@ -1523,13 +1537,33 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
     return user
 
 
+MAX_LOGIN_FAILURES = 5
+LOCKOUT_SECONDS = 15 * 60
+
+
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
-    if user is None or not verify_password(password, user.password_hash):
+    if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+
+    now = datetime.now(UTC)
+    if user.locked_until is not None and user.locked_until > now:
+        raise HTTPException(status.HTTP_423_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试")
+
+    if not verify_password(password, user.password_hash):
+        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+        if user.failed_login_attempts >= MAX_LOGIN_FAILURES:
+            user.locked_until = now + timedelta(seconds=LOCKOUT_SECONDS)
+            user.failed_login_attempts = 0
+        await db.flush()
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+
     if user.status == "disabled":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "账号已禁用")
-    user.last_login_at = datetime.now(UTC)
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = now
     await db.flush()
     return user, generate_jwt(user)
 
@@ -1659,6 +1693,12 @@ async def reset_password_by_admin(
     if not plain:
         generated = generate_random_password()
         plain = generated
+    else:
+        strength_error = validate_password_strength(plain)
+        if strength_error:
+            from app.core.exceptions import BadRequestException
+
+            raise BadRequestException(strength_error)
 
     user.password_hash = hash_password(plain)
     user.password_updated_at = datetime.now(UTC)
@@ -1685,6 +1725,10 @@ async def change_own_password(
         raise BadRequestException("原密码不正确")
     if old_password == new_password:
         raise BadRequestException("新密码不能与原密码相同")
+
+    strength_error = validate_password_strength(new_password)
+    if strength_error:
+        raise BadRequestException(strength_error)
 
     user.password_hash = hash_password(new_password)
     user.password_updated_at = datetime.now(UTC)

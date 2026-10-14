@@ -42,6 +42,16 @@ class User(BaseModel):
     password_updated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, comment="密码最后修改时间"
     )
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+        comment="连续登录失败次数",
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="账号锁定截止时间（失败次数超限后锁定）"
+    )
     status: Mapped[str] = mapped_column(String(20), default="active", server_default="active")
     auth_source: Mapped[str] = mapped_column(String(20), default="feishu", server_default="feishu")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

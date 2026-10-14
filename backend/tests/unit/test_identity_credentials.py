@@ -21,6 +21,7 @@ from app.platform.identity.service import (
     generate_random_password,
     hash_password,
     reset_password_by_admin,
+    validate_password_strength,
     verify_password,
 )
 
@@ -142,6 +143,49 @@ async def test_change_own_password_rejects_same_password() -> None:
 
     with pytest.raises(BadRequestException):
         await change_own_password(session, user=user, old_password="SamePass#2026", new_password="SamePass#2026")
+
+
+# ── 密码复杂度 ───────────────────────────────────────────────────────
+
+
+def test_validate_password_strength_accepts_valid() -> None:
+    assert validate_password_strength("Abc12345") is None
+    assert validate_password_strength("a1b2c3d4e5") is None
+
+
+def test_validate_password_strength_rejects_too_short() -> None:
+    assert validate_password_strength("Ab1") is not None
+    assert validate_password_strength("Abc1234") is not None  # 7 位
+
+
+def test_validate_password_strength_rejects_missing_letter_or_digit() -> None:
+    assert validate_password_strength("12345678") is not None  # 纯数字
+    assert validate_password_strength("abcdefgh") is not None  # 纯字母
+
+
+async def test_change_own_password_rejects_weak_password() -> None:
+    from app.core.exceptions import BadRequestException
+
+    session = StubSession()
+    user = _stub_user("OldPass#2026")
+
+    with pytest.raises(BadRequestException):
+        await change_own_password(session, user=user, old_password="OldPass#2026", new_password="12345678")
+
+    assert verify_password("OldPass#2026", user.password_hash)
+    assert session.commits == 0
+
+
+async def test_reset_by_admin_rejects_weak_manual_password() -> None:
+    from app.core.exceptions import BadRequestException
+
+    session = StubSession()
+    user = _stub_user()
+
+    with pytest.raises(BadRequestException):
+        await reset_password_by_admin(session, user=user, password="abcdefgh")
+
+    assert session.commits == 0
 
 
 # ── 默认用户名 ───────────────────────────────────────────────────────

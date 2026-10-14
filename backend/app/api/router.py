@@ -41,6 +41,7 @@ from app.modules.registration.regulatory_tracker import (
 from app.modules.research import router as research_router
 from app.modules.safety import router as safety_router
 from app.modules.warehouse import router as warehouse_router
+from app.platform.audit.api import router as audit_router
 from app.platform.identity.api import (
     auth_router,
     dept_router,
@@ -68,6 +69,7 @@ api_router.include_router(system_router, prefix="/system", tags=["系统"])
 api_router.include_router(system_ops_router, prefix="/system", tags=["系统运维"])
 api_router.include_router(system_menu_router, prefix="/system", tags=["菜单管理"])
 api_router.include_router(permission_router, prefix="/permission", tags=["权限管理"])
+api_router.include_router(audit_router, prefix="/audit", tags=["操作审计"])
 api_router.include_router(production_router, prefix="/production", tags=["生产管理"])
 api_router.include_router(equipment_router, prefix="/equipment", tags=["设备管理"])
 api_router.include_router(safety_router, prefix="/safety", tags=["安全管理"])

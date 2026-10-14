@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.jobs import spawn_task
 from app.core.response import build_response, success_response
+from app.platform.audit.service import record_audit_log
 from app.platform.identity.repository import DepartmentRepository, UserRepository
 from app.platform.identity.schemas import (
     ChangePasswordApiResponse,
@@ -103,9 +104,16 @@ async def local_login(
 
     统一错误消息「账号或密码错误」，避免账号枚举。
     """
+    from datetime import timedelta
+
     from app.core.exceptions import UnauthorizedException
     from app.platform.identity.repository import LoginLogRepository
-    from app.platform.identity.service import generate_jwt, verify_password
+    from app.platform.identity.service import (
+        LOCKOUT_SECONDS,
+        MAX_LOGIN_FAILURES,
+        generate_jwt,
+        verify_password,
+    )
 
     repo = UserRepository()
     log_repo = LoginLogRepository()
@@ -129,7 +137,15 @@ async def local_login(
         await db.commit()
         raise UnauthorizedException("账号或密码错误")
 
+    # 账号已锁定 → 直接拒绝（锁定期间不计数、不再验证密码）
+    if user.locked_until is not None and user.locked_until > datetime.now(UTC):
+        raise UnauthorizedException("登录失败次数过多，账号已临时锁定，请稍后再试")
+
     if not verify_password(payload.password, user.password_hash):
+        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+        if user.failed_login_attempts >= MAX_LOGIN_FAILURES:
+            user.locked_until = datetime.now(UTC) + timedelta(seconds=LOCKOUT_SECONDS)
+            user.failed_login_attempts = 0
         await log_repo.create(
             db,
             user_id=user.id,
@@ -143,6 +159,8 @@ async def local_login(
         await db.commit()
         raise UnauthorizedException("账号或密码错误")
 
+    user.failed_login_attempts = 0
+    user.locked_until = None
     user.last_login_at = datetime.now(UTC)
     token = generate_jwt(user)
     await log_repo.create(
@@ -552,13 +570,17 @@ async def create_user_management(
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    from app.core.exceptions import DuplicateException
-    from app.platform.identity.service import hash_password
+    from app.core.exceptions import BadRequestException, DuplicateException
+    from app.platform.identity.service import hash_password, validate_password_strength
 
     repo = UserRepository()
     existing = await repo.get_by_username(db, payload.username)
     if existing is not None:
         raise DuplicateException("用户名", payload.username)
+
+    strength_error = validate_password_strength(payload.password)
+    if strength_error:
+        raise BadRequestException(strength_error)
 
     user = await repo.create(
         db,
@@ -572,6 +594,14 @@ async def create_user_management(
         position=payload.position,
         status=payload.status,
         auth_source="local",
+    )
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="user.create",
+        resource_type="user",
+        resource_id=user.id,
+        new_value={"username": payload.username, "name": payload.name, "status": payload.status},
     )
     await db.commit()
     return success_response(data=UserManagementItem.model_validate(user).model_dump())
@@ -590,6 +620,11 @@ async def update_user_management(
     user = await repo.get_by_id(db, user_id)
     if user is None:
         raise NotFoundException("用户")
+
+    # 超管保护 + 防越级：非超管不能操作超管账号；下级管理员只能管理权限严格低于自己的账号
+    from app.platform.permission.public_api import guard_manage_target
+
+    await guard_manage_target(db, actor=ctx.user, target=user)
 
     # 防自我提权：不能修改自己的账号状态
     if user.id == ctx.user.id and payload.status is not None and payload.status != user.status:
@@ -641,6 +676,19 @@ async def update_user_management(
     if payload.status is not None:
         user.status = payload.status
 
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="user.update",
+        resource_type="user",
+        resource_id=user.id,
+        old_value={"username": user.username, "name": user.name, "status": user.status},
+        new_value={
+            "username": payload.username if payload.username is not None else user.username,
+            "name": payload.name if payload.name is not None else user.name,
+            "status": payload.status if payload.status is not None else user.status,
+        },
+    )
     await db.commit()
     return success_response(data=UserManagementItem.model_validate(user).model_dump())
 
@@ -681,6 +729,16 @@ async def reset_user_password(
         password=payload.password,
         operator_id=ctx.user.id,
     )
+    # 审计：只记录「谁重置了谁的口令」与方式，**绝不记录密码明文**
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="user.reset_password",
+        resource_type="user",
+        resource_id=user.id,
+        new_value={"random": generated is not None},
+    )
+    await db.commit()
     return build_response(
         data=PasswordResetData(
             message=(
@@ -713,6 +771,14 @@ async def change_my_password(
         old_password=payload.old_password,
         new_password=payload.new_password,
     )
+    await record_audit_log(
+        db,
+        user=current_user,
+        action="user.change_password",
+        resource_type="user",
+        resource_id=current_user.id,
+    )
+    await db.commit()
     return build_response(data=ChangePasswordData(message="密码已修改"))
 
 
@@ -737,6 +803,10 @@ async def bind_user_feishu(
     target = await repo.get_by_id(db, user_id)
     if target is None:
         raise NotFoundException("用户")
+    # 超管保护 + 防越级
+    from app.platform.permission.public_api import guard_manage_target
+
+    await guard_manage_target(db, actor=ctx.user, target=target)
     if target.feishu_open_id or target.feishu_user_id:
         raise BadRequestException("该账号已绑定飞书身份，请先解绑")
     if payload.source_user_id == user_id:
@@ -768,8 +838,20 @@ async def unbind_user_feishu(
     user = await repo.get_by_id(db, user_id)
     if user is None:
         raise NotFoundException("用户")
+    # 超管保护 + 防越级
+    from app.platform.permission.public_api import guard_manage_target
+
+    await guard_manage_target(db, actor=ctx.user, target=user)
     if not (user.feishu_open_id or user.feishu_user_id):
         raise BadRequestException("该账号未绑定飞书身份")
 
     await unbind_feishu_user(db, user=user, operator_id=ctx.user.id)
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="user.unbind_feishu",
+        resource_type="user",
+        resource_id=user.id,
+    )
+    await db.commit()
     return success_response(data=UserManagementItem.model_validate(user).model_dump())

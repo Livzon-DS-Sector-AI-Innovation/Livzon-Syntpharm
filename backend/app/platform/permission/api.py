@@ -14,6 +14,7 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, require_current_user, require_permission
 from app.core.exceptions import BadRequestException, DuplicateException, ForbiddenException, NotFoundException
 from app.core.response import build_response
+from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
 from app.platform.permission.models import (
     GRANT_ACTIVE,
@@ -51,8 +52,11 @@ from app.platform.permission.schemas import (
 )
 from app.platform.permission.service.catalog import build_permission_tree
 from app.platform.permission.service.management import (
+    assert_actor_can_grant_role,
+    assert_actor_can_grant_scope,
     get_role,
     guard_last_superadmin,
+    guard_manage_target,
     guard_self_escalation,
 )
 
@@ -116,6 +120,14 @@ async def create_role(
     db.add(role)
     await db.flush()
     await role_repo.set_role_permissions(db, role.id, payload.permission_codes)
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="role.create",
+        resource_type="role",
+        resource_id=role.id,
+        new_value={"code": role.code, "name": role.name, "permission_codes": payload.permission_codes},
+    )
     await db.commit()
 
     codes = await role_repo.list_role_permission_codes(db, role.id)
@@ -166,6 +178,19 @@ async def update_role(
     if payload.permission_codes is not None:
         await role_repo.set_role_permissions(db, role.id, payload.permission_codes)
 
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="role.update",
+        resource_type="role",
+        resource_id=role.id,
+        new_value={
+            "name": payload.name,
+            "description": payload.description,
+            "status": payload.status,
+            "permission_codes": payload.permission_codes,
+        },
+    )
     await db.commit()
 
     codes = await role_repo.list_role_permission_codes(db, role.id)
@@ -201,6 +226,14 @@ async def delete_role(
         raise ForbiddenException("超级管理员角色不可删除")
 
     await role_repo.soft_delete_role(db, role)
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="role.delete",
+        resource_type="role",
+        resource_id=role.id,
+        old_value={"code": role.code, "name": role.name},
+    )
     await db.commit()
     return build_response()
 
@@ -220,9 +253,13 @@ async def list_permissions(
 
 @router.get("/tree", response_model=PermissionTreeResponse)
 async def get_permission_tree(
-    ctx: PermissionContext = Depends(require_permission("platform:permission:read")),
+    ctx: PermissionContext = Depends(require_permission("platform:role:read")),
 ):
     """权限目录树（模块 → 资源 → 权限码），供角色管理按模块 / 功能勾选权限。
+
+    权限码口径取 `platform:role:read` 而非 `platform:permission:read`：
+    该树只服务于「角色管理」勾选权限，跟随角色读权限，避免出现
+    「有角色管理权、却因缺权限目录读权而整个角色页报错」的口径不一致。
 
     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
     """
@@ -300,7 +337,20 @@ async def create_grant(
     if role is None:
         raise NotFoundException("角色")
 
+    # 超管保护 + 防越级：目标账号层级校验 + 授出角色不能超出操作者权限范围
+    target_user = (await db.execute(select(User).where(User.id == payload.user_id))).scalar_one_or_none()
+    if target_user is None:
+        raise NotFoundException("用户")
+    await guard_manage_target(db, actor=ctx.user, target=target_user)
+    await assert_actor_can_grant_role(db, actor=ctx.user, role=role)
+
     _validate_scope(payload.scope_type, payload.scope_dept_codes)
+    await assert_actor_can_grant_scope(
+        db,
+        actor=ctx.user,
+        scope_type=payload.scope_type,
+        scope_dept_codes=payload.scope_dept_codes,
+    )
 
     grant_repo = GrantRepository()
     grant = await grant_repo.create_grant(
@@ -310,6 +360,19 @@ async def create_grant(
         scope_type=payload.scope_type,
         scope_dept_codes=payload.scope_dept_codes,
         granted_by=ctx.user.id,
+    )
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="grant.create",
+        resource_type="grant",
+        resource_id=grant.id,
+        new_value={
+            "user_id": str(payload.user_id),
+            "role_code": role.code,
+            "scope_type": payload.scope_type,
+            "scope_dept_codes": payload.scope_dept_codes,
+        },
     )
     await db.commit()
 
@@ -343,14 +406,36 @@ async def update_grant(
 
     guard_self_escalation(ctx.user.id, grant)
 
+    target_user = (await db.execute(select(User).where(User.id == grant.user_id))).scalar_one_or_none()
+    if target_user is not None:
+        await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
+
     if payload.scope_type is not None:
         _validate_scope(payload.scope_type, payload.scope_dept_codes)
+        await assert_actor_can_grant_scope(
+            db,
+            actor=ctx.user,
+            scope_type=payload.scope_type,
+            scope_dept_codes=payload.scope_dept_codes,
+        )
         grant.scope_type = payload.scope_type
         grant.scope_dept_codes = payload.scope_dept_codes
     if payload.status is not None:
         grant.status = payload.status
         grant.version += 1
 
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="grant.update",
+        resource_type="grant",
+        resource_id=grant.id,
+        new_value={
+            "scope_type": payload.scope_type,
+            "scope_dept_codes": payload.scope_dept_codes,
+            "status": payload.status,
+        },
+    )
     await db.commit()
 
     role = await get_role(db, grant.role_id)
@@ -382,8 +467,26 @@ async def delete_grant(
         raise NotFoundException("授权")
 
     guard_self_escalation(ctx.user.id, grant)
+
+    target_user = (await db.execute(select(User).where(User.id == grant.user_id))).scalar_one_or_none()
+    if target_user is not None:
+        await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
+
     await guard_last_superadmin(db, grant)
 
+    role = await get_role(db, grant.role_id)
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="grant.delete",
+        resource_type="grant",
+        resource_id=grant.id,
+        old_value={
+            "user_id": str(grant.user_id),
+            "role_code": role.code if role else None,
+            "scope_type": grant.scope_type,
+        },
+    )
     grant.is_deleted = True
     await db.commit()
     return build_response()
