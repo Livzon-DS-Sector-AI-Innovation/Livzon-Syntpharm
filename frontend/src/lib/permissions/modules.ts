@@ -55,6 +55,7 @@ export const SUBMENU_ACCESS_PERMS: Record<string, readonly PermissionCode[]> = {
   'settings-overview': [PERM.configRead],
   users: [PERM.userRead],
   'login-logs': [PERM.auditRead],
+  audit: [PERM.auditRead],
   permission: [PERM.roleRead],
   ops: [PERM.opsRead],
   'settings-menus': [PERM.opsRead],

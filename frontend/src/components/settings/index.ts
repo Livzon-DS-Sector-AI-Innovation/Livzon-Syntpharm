@@ -1,4 +1,5 @@
 'use client'
+export { default as AuditLogsClient } from './AuditLogsClient'
 export { default as LLMConfigClient } from './LLMConfigClient'
 export { default as LoginLogsClient } from './LoginLogsClient'
 export { default as MenuManagerClient } from './MenuManagerClient'

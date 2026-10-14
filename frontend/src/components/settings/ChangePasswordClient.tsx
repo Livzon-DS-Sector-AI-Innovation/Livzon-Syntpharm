@@ -85,10 +85,11 @@ export function ChangePasswordClient({ userName, forced = false }: ChangePasswor
             label="新密码"
             rules={[
               { required: true, message: '请输入新密码' },
-              { min: 6, message: '新密码至少 6 位' },
+              { min: 8, message: '新密码至少 8 位' },
+              { pattern: /(?=.*[A-Za-z])(?=.*\d)/, message: '新密码需同时包含字母和数字' },
             ]}
           >
-            <Input.Password autoComplete="new-password" placeholder="至少 6 位" />
+            <Input.Password autoComplete="new-password" placeholder="至少 8 位，含字母和数字" />
           </Form.Item>
 
           <Form.Item

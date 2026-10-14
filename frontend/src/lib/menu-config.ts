@@ -519,6 +519,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "settings-overview", label: "系统设置", path: "/settings" },
       { key: "users", label: "用户管理", path: "/settings/users" },
       { key: "login-logs", label: "登录记录", path: "/settings/login-logs" },
+      { key: "audit", label: "操作审计", path: "/settings/audit" },
       { key: "permission", label: "权限管理", path: "/settings/permission" },
       { key: "ops", label: "系统运维", path: "/settings/ops" },
       { key: "settings-menus", label: "菜单管理", path: "/settings/menus" },

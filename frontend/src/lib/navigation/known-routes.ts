@@ -197,6 +197,7 @@ export const KNOWN_STATIC_ROUTES: readonly string[] = [
   '/safety/special-ops/personnel',
   '/safety/training',
   '/settings',
+  '/settings/audit',
   '/settings/login-logs',
   '/settings/menus',
   '/settings/ops',

@@ -33,11 +33,13 @@ import {
   unbindFeishuUser,
   updateUser,
 } from '@/actions/users'
+import { createGrant, fetchRoles } from '@/actions/permission'
 import type {
   LocalUserCreate,
   UserManagementItem,
   UserManagementUpdate,
 } from '@/types/users'
+import type { RoleDetail } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -135,6 +137,13 @@ export default function UserManagementClient() {
     staleTime: 0,
   })
 
+  // 新建用户时可「同时授予角色」：拉角色列表供多选
+  const { data: roles = [] } = useQuery<RoleDetail[]>({
+    queryKey: ['permission-roles'],
+    queryFn: fetchRoles,
+    staleTime: 5 * 60_000,
+  })
+
   if (error) {
     return (
       <Result
@@ -198,12 +207,30 @@ export default function UserManagementClient() {
         }
         message.success('用户已更新')
       } else {
-        const result = await createUser(values as LocalUserCreate)
+        // 一站式授权：表单里「同时授予角色」不作为用户字段提交，单独走 create_grant
+        const roleIds: string[] = values.role_ids ?? []
+        const createData = { ...values } as LocalUserCreate & { role_ids?: string[] }
+        delete createData.role_ids
+        const result = await createUser(createData)
         if (!result.ok) {
           message.error(result.message)
           return
         }
-        message.success('用户已创建')
+        let grantFailed = false
+        for (const roleId of roleIds) {
+          try {
+            await createGrant({
+              user_id: result.data.id,
+              role_id: roleId,
+              scope_type: 'all',
+              scope_dept_codes: [],
+            })
+          } catch (e) {
+            grantFailed = true
+            message.error(e instanceof Error ? e.message : '授权失败')
+          }
+        }
+        message.success(grantFailed ? '用户已创建，但部分角色授权失败' : '用户已创建')
       }
       setModalOpen(false)
       queryClient.invalidateQueries({ queryKey: ['users'] })
@@ -405,7 +432,7 @@ export default function UserManagementClient() {
             用户管理
           </h2>
           <Text className="text-[13px] text-[var(--color-steel)]">
-            管理开发阶段本地账号，并为飞书 SSO 用户分配平台角色。
+            管理平台账号与角色授权，为飞书 SSO 用户分配平台权限；登录历史见左侧「登录记录」。
           </Text>
         </div>
         <Space>
@@ -472,9 +499,13 @@ export default function UserManagementClient() {
             <Form.Item
               name="password"
               label="初始密码"
-              rules={[{ required: true, min: 6, message: '请输入至少 6 位密码' }]}
+              rules={[
+                { required: true, message: '请输入初始密码' },
+                { min: 8, message: '密码至少 8 位' },
+                { pattern: /(?=.*[A-Za-z])(?=.*\d)/, message: '需同时包含字母和数字' },
+              ]}
             >
-              <Input.Password placeholder="至少 6 位" />
+              <Input.Password placeholder="至少 8 位，含字母和数字" />
             </Form.Item>
           )}
           <Form.Item
@@ -513,6 +544,18 @@ export default function UserManagementClient() {
               <Select options={statusOptions} />
             </Form.Item>
           </Space>
+          {!editingUser && (
+            <Form.Item name="role_ids" label="同时授予角色" className="mb-1">
+              <Select
+                mode="multiple"
+                allowClear
+                placeholder="可选：创建后立即授予角色（可在授权管理中调整）"
+                options={roles
+                  .filter((r) => !r.is_superuser)
+                  .map((r) => ({ value: r.id, label: `${r.name}（${r.code}）` }))}
+              />
+            </Form.Item>
+          )}
           <Form.Item name="email" label="邮箱">
             <Input placeholder="name@example.com" disabled={isFeishuUser} />
           </Form.Item>
