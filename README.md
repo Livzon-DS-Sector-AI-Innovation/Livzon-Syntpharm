@@ -127,34 +127,57 @@
 
 ### 个人开发启动模式
 
-本地只启动前后端，数据库/Redis/MinIO 连接 UAT 服务器（内网互通）。
+本地启动完整环境（基础设施 + 前后端），使用 `docker-compose.yml` + `docker-compose.dev.yml`（源码挂载 + 前后端热重载），数据与 UAT 完全隔离。
 
 ```bash
 # 1. 从 main 拉分支
 git checkout main && git pull origin main
 git checkout -b feature/你的功能名
 
-# 2. 配置本地环境（已预设 UAT 地址，只需填写凭证）
-cp .env.local.example .env.local
-# 编辑 .env.local，填写 <从团队获取> 的占位符:
-#   - POSTGRES_PASSWORD / DATABASE_URL 中的密码
-#   - REDIS_PASSWORD / REDIS_URL 中的密码
-#   - MINIO_SECRET_KEY
-#   - 飞书应用凭证（FEISHU__*__APP_ID / APP_SECRET）
+# 2. 配置本地环境
+cp .env.dev.example .env
+# 编辑 .env，按需填写:
+#   - 飞书应用凭证（FEISHU__*__APP_ID / APP_SECRET，不用飞书功能可留空）
 #   - AI API Keys（如需要）
+#   - BOOTSTRAP_ADMIN_USERNAME/PASSWORD（首次创建管理员账号）
 
-# 3. 只启动前后端（不启动本地数据库/Redis/MinIO）
-docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --build backend frontend
+# 3. 一键启动（自动执行迁移 + 首次写入种子数据）
+bash scripts/dev.sh
 
-# 4. 首次启动或 model 变更后执行迁移
-docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
-
-# 5. 访问
+# 4. 访问
 # 前端: http://localhost:3000
 # 后端: http://localhost:8000/docs
+# MinIO 控制台: http://localhost:9001
 ```
 
-**配置文件**：`.env.local.example`（UAT 内网地址为占位符 `<内网IP地址>`，需向团队获取）
+**与 UAT 完全隔离**：PostgreSQL/Redis/MinIO/EDBO 均在本地容器运行，数据落在 `./postgres-data`、`./redis-data`、`./minio-data`，做 migration、灌测试数据都不影响 UAT 和其他开发者。
+
+**重置本地数据**（清空数据库/缓存/对象存储，恢复初始状态；数据为挂载目录，需手动删除）：
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml down
+rm -rf postgres-data redis-data minio-data
+```
+
+**首次初始化**（`bash scripts/dev.sh` 已自动完成，手动步骤如下）：
+
+```bash
+# 1. 数据库迁移（up 时自动执行；手动则用下面的命令）
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm migrate
+
+# 2. 模块设置种子数据（新库为空，不执行则各模块功能开关/模型配置为空）
+docker compose -f docker-compose.yml -f docker-compose.dev.yml exec backend \
+  uv run python scripts/seed/seed_module_settings.py
+
+# 3. 管理员账号: .env 填写 BOOTSTRAP_ADMIN_USERNAME/PASSWORD 后重启 backend
+docker compose -f docker-compose.yml -f docker-compose.dev.yml restart backend
+```
+
+**配置文件**：`.env.dev.example`（本地开发模板；生产环境用 `.env.example`）
+
+**注意**：
+- 飞书多维表格同步、飞书 WS、LLM/OCR 等外部服务仍连接真实服务；本地默认已关闭 WS 与自动同步（`*_WS_ENABLED=false`、`ENERGY_AUTO_COLLECT_ENABLED=false`、`MAINTENANCE_PLAN_AUTO_ENABLED=false`），避免本地操作产生外部副作用
+- 如宿主机 80 端口被占用，可跳过 nginx：`bash scripts/dev.sh` 命令加 `--scale nginx=0`（或手动 `up -d --scale nginx=0`）
 
 ### UAT 启动模式
 
