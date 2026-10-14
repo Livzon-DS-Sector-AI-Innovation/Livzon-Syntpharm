@@ -91,7 +91,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
         
         // 读取 SSE 流
         const reader = response.body.getReader()
-        const decoder = new TextDecoder()
+        const decoder = new TextDecoder('utf-8')
         let buffer = ''
         
         while (true) {

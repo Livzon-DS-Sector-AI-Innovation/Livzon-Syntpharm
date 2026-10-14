@@ -1,5 +1,17 @@
 'use client'
 
+/**
+ * Livzon Skill 管理（**待后端接入**）。
+ *
+ * 后端 agent 模块已在迁移 `0035_drop_agent_tables`（2026-07-14）整体下线，
+ * `core.agent_skills` 等表与 `/api/v1/agent/skills` 接口都不存在了，调用必 404。
+ * 因此本组件目前**不可达**：系统设置页的入口已置灰且不挂载它
+ * （见 `SettingsAdminClient` 里的 `key: 'agent-skills'`）。
+ *
+ * 后端恢复后：把 `SettingsAdminClient` 中该 Tab 的 `disabled` 去掉即可，
+ * 本组件与 `actions/agent-skills.ts`、`lib/api/server/agent-skills.ts` 均无需改动。
+ */
+
 import { useCallback, useEffect, useState } from 'react'
 import {
   App,
@@ -29,6 +41,8 @@ import {
   updateAgentSkill,
 } from '@/actions/agent-skills'
 import type { AgentSkill } from '@/types/agent-skills'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -47,11 +61,20 @@ function splitKeywords(value: string | undefined): string[] {
 
 export default function AgentSkillManagementClient() {
   const { message } = App.useApp()
+
+  // 权限：无「平台配置管理」权限时隐藏全部写操作入口
+  // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用；
+  //  「普通用户只能使用、不能创建或修改」这条由这里体现）
+  // 注意：hook 必须写在任何 early return 之前
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.configManage)
+
   const [skills, setSkills] = useState<AgentSkill[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null)
   const [saving, setSaving] = useState(false)
+  const [keyword, setKeyword] = useState('')
   const [form] = Form.useForm()
 
   const loadSkills = useCallback(async () => {
@@ -59,7 +82,7 @@ export default function AgentSkillManagementClient() {
     try {
       setSkills(await getAgentSkills())
     } catch (error) {
-      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '加载 Skill 失败')
+      message.error(error instanceof Error ? (error.message || '加载 Skill 失败') : '加载 Skill 失败')
     } finally {
       setLoading(false)
     }
@@ -114,7 +137,7 @@ export default function AgentSkillManagementClient() {
       setModalOpen(false)
       loadSkills()
     } catch (error) {
-      if (error instanceof Error) message.error((error instanceof Error ? error.message : null))
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -131,7 +154,7 @@ export default function AgentSkillManagementClient() {
       }
       loadSkills()
     } catch (error) {
-      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '操作失败')
+      message.error(error instanceof Error ? (error.message || '操作失败') : '操作失败')
     }
   }
 
@@ -141,9 +164,19 @@ export default function AgentSkillManagementClient() {
       message.success('Skill 已删除')
       loadSkills()
     } catch (error) {
-      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '删除失败')
+      message.error(error instanceof Error ? (error.message || '删除失败') : '删除失败')
     }
   }
+
+  // 列表搜索：标题 / 名称 / 描述 / 触发词（Skill 由代码注册与手工维护，前端过滤即可）
+  const query = keyword.trim().toLowerCase()
+  const visibleSkills = query
+    ? skills.filter((skill) =>
+        [skill.title, skill.name, skill.description, skill.trigger_keywords.join(' ')].some(
+          (value) => (value ?? '').toLowerCase().includes(query),
+        ),
+      )
+    : skills
 
   const columns = [
     {
@@ -191,36 +224,41 @@ export default function AgentSkillManagementClient() {
       dataIndex: 'version',
       width: 80,
     },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 220,
-      fixed: 'right' as const,
-      render: (_: unknown, record: AgentSkill) => (
-        <Space>
-          <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Button size="small" onClick={() => handleToggle(record)}>
-            {record.status === 'active' ? '停用' : '启用'}
-          </Button>
-          <Popconfirm
-            title="确认删除该 Skill？"
-            disabled={record.is_builtin}
-            onConfirm={() => handleDelete(record)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              disabled={record.is_builtin}
-            />
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    // 操作列：无「平台配置管理」权限时整列不出现
+    ...(canManage
+      ? [
+          {
+            title: '操作',
+            key: 'actions',
+            width: 220,
+            fixed: 'right' as const,
+            render: (_: unknown, record: AgentSkill) => (
+              <Space>
+                <Button size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+                  编辑
+                </Button>
+                <Button size="small" onClick={() => handleToggle(record)}>
+                  {record.status === 'active' ? '停用' : '启用'}
+                </Button>
+                <Popconfirm
+                  title="确认删除该 Skill？"
+                  disabled={record.is_builtin}
+                  onConfirm={() => handleDelete(record)}
+                  okText="确定"
+                  cancelText="取消"
+                >
+                  <Button
+                    size="small"
+                    danger
+                    icon={<DeleteOutlined />}
+                    disabled={record.is_builtin}
+                  />
+                </Popconfirm>
+              </Space>
+            ),
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -235,18 +273,27 @@ export default function AgentSkillManagementClient() {
           </Text>
         </div>
         <Space>
+          <Input.Search
+            allowClear
+            placeholder="搜索标题、名称、触发词"
+            style={{ width: 240 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
           <Button icon={<ReloadOutlined />} onClick={loadSkills}>
             刷新
           </Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            新建 Skill
-          </Button>
+          {canManage && (
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              新建 Skill
+            </Button>
+          )}
         </Space>
       </div>
 
       <Table
         columns={columns}
-        dataSource={skills}
+        dataSource={visibleSkills}
         rowKey="id"
         loading={loading}
         scroll={{ x: 1080 }}

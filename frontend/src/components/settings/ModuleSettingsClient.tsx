@@ -22,6 +22,8 @@ import {
   updateModuleSetting,
 } from '@/actions/module-settings'
 import type { ModuleSetting } from '@/types/module-settings'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -38,6 +40,13 @@ export default function ModuleSettingsClient({
   moduleDescription,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
+
+  // 权限：无「平台配置管理」权限时隐藏编辑入口
+  // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
+  // 注意：hook 必须写在任何 early return 之前
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.configManage)
+
   const queryClient = useQueryClient()
   const [editingSetting, setEditingSetting] = useState<ModuleSetting | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -76,7 +85,7 @@ export default function ModuleSettingsClient({
       queryClient.invalidateQueries({ queryKey: ['module-settings', moduleCode] })
     } catch (error) {
       console.error('Failed to save setting:', error)
-      message.error('保存失败')
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -162,20 +171,25 @@ export default function ModuleSettingsClient({
       key: 'value',
       render: (_: unknown, setting: ModuleSetting) => renderValue(setting),
     },
-    {
-      title: '操作',
-      key: 'action',
-      width: 100,
-      render: (_: unknown, setting: ModuleSetting) => (
-        <Button
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => handleEdit(setting)}
-        >
-          编辑
-        </Button>
-      ),
-    },
+    // 操作列：无「平台配置管理」权限时整列不出现
+    ...(canManage
+      ? [
+          {
+            title: '操作',
+            key: 'action',
+            width: 100,
+            render: (_: unknown, setting: ModuleSetting) => (
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(setting)}
+              >
+                编辑
+              </Button>
+            ),
+          },
+        ]
+      : []),
   ]
 
   return (

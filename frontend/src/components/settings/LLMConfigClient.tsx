@@ -37,6 +37,8 @@ import {
   testLLMConnection,
 } from '@/actions/settings'
 import type { LLMConfig } from '@/types/settings'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Title, Text } = Typography
 const { TextArea } = Input
@@ -52,6 +54,12 @@ interface LLMConfigClientProps {
 
 export default function LLMConfigClient({ embedded = false }: LLMConfigClientProps) {
   const { message } = App.useApp()
+
+  // 权限：无「配置管理」权限时隐藏全部写操作入口
+  // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
+  // 注意：必须放在任何 early return 之前
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.configManage)
   const router = useRouter()
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
@@ -101,8 +109,8 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       await deleteLLMConfig(id)
       message.success('删除成功')
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
-    } catch {
-      message.error('删除失败')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '删除失败')
     }
   }
 
@@ -125,6 +133,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
     } catch (error) {
       console.error('Save failed:', error)
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -136,8 +145,8 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       await updateLLMConfig(id, { is_active: true })
       message.success('已激活，所有 AI 调用将使用此配置')
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
-    } catch {
-      message.error('激活失败')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '激活失败')
     } finally {
       setTestingId(null)
     }
@@ -151,8 +160,8 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       } else {
         message.error(res.data?.detail || '连接测试失败')
       }
-    } catch {
-      message.error('连接测试失败')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '连接测试失败')
     }
   }
 
@@ -205,44 +214,49 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       key: 'timeout_seconds',
       width: 100,
     },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 200, fixed: "right" as const,
-      render: (_: unknown, record: LLMConfig) => (
-        <Space>
-          {!record.is_active && (
-            <Tooltip title="激活此配置">
-              <Button
-                type="link"
-                size="small"
-                icon={<CheckCircleOutlined />}
-                loading={testingId === record.id}
-                onClick={() => handleActivate(record.id)}
-              />
-            </Tooltip>
-          )}
-          <Tooltip title="编辑">
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="确定删除此配置？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Tooltip title="删除">
-              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    // 操作列：无配置管理权限时整列不出现
+    ...(canManage
+      ? [
+          {
+            title: '操作',
+            key: 'actions',
+            width: 200, fixed: "right" as const,
+            render: (_: unknown, record: LLMConfig) => (
+              <Space>
+                {!record.is_active && (
+                  <Tooltip title="激活此配置">
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<CheckCircleOutlined />}
+                      loading={testingId === record.id}
+                      onClick={() => handleActivate(record.id)}
+                    />
+                  </Tooltip>
+                )}
+                <Tooltip title="编辑">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(record)}
+                  />
+                </Tooltip>
+                <Popconfirm
+                  title="确定删除此配置？"
+                  onConfirm={() => handleDelete(record.id)}
+                  okText="确定"
+                  cancelText="取消"
+                >
+                  <Tooltip title="删除">
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                  </Tooltip>
+                </Popconfirm>
+              </Space>
+            ),
+          },
+        ]
+      : []),
   ]
 
   return (
@@ -270,16 +284,20 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
           </Text>
         </div>
         <Space>
-          <Button icon={<ApiOutlined />} onClick={handleTestConnection}>
-            测试连接
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            新建配置
-          </Button>
+          {canManage && (
+            <>
+              <Button icon={<ApiOutlined />} onClick={handleTestConnection}>
+                测试连接
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+              >
+                新建配置
+              </Button>
+            </>
+          )}
         </Space>
       </div>
 

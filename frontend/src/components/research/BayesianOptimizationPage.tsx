@@ -210,7 +210,9 @@ export function BayesianOptimizationPage() {
       ...resultData.map(row => headers.map(h => row[h]).join(','))
     ].join('\n')
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    // 加 BOM：否则 Excel 打开中文列会乱码（与批次 / 检验标准导出的做法一致）
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = 'optimization_results.csv'
@@ -219,7 +221,9 @@ export function BayesianOptimizationPage() {
 
   const handleDownloadPrediction = () => {
     if (!predictionData || !predictionFilename) return
-    const blob = new Blob([predictionData], { type: 'text/csv;charset=utf-8;' })
+    // 加 BOM：否则 Excel 打开中文列会乱码
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + predictionData], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = predictionFilename

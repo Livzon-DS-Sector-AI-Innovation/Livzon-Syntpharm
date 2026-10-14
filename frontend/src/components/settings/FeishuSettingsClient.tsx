@@ -32,6 +32,8 @@ import type {
   FeishuConfigUpsert,
   FeishuDiagnosticResult,
 } from '@/types/settings'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Text, Title } = Typography
 type DiagnosticStep = NonNullable<FeishuDiagnosticResult['steps']>[number]
@@ -68,6 +70,12 @@ function normalizePayload(values: FeishuConfigUpsert): FeishuConfigUpsert {
 
 export default function FeishuSettingsClient() {
   const { message } = App.useApp()
+
+  // 权限：无「配置管理」权限时隐藏保存 / 诊断 / 同步入口
+  // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
+  // 注意：必须放在任何 early return 之前
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.configManage)
   const [form] = Form.useForm<FeishuConfigUpsert>()
   const queryClient = useQueryClient()
   const { data: config = null, isLoading: loading } = useQuery({
@@ -127,7 +135,7 @@ export default function FeishuSettingsClient() {
       message.success('Livzon 助手飞书设置已保存')
     } catch (error) {
       console.error('Save Livzon Feishu config failed:', error)
-      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '保存失败')
+      message.error(error instanceof Error ? (error.message || '保存失败') : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -148,7 +156,7 @@ export default function FeishuSettingsClient() {
       queryClient.invalidateQueries({ queryKey: ['livzon-feishu-config'] })
     } catch (error) {
       console.error('Test Livzon Feishu config failed:', error)
-      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '诊断失败')
+      message.error(error instanceof Error ? (error.message || '诊断失败') : '诊断失败')
     } finally {
       setTesting(false)
     }
@@ -167,7 +175,7 @@ export default function FeishuSettingsClient() {
       queryClient.invalidateQueries({ queryKey: ['livzon-feishu-config'] })
     } catch (error) {
       console.error('Sync Livzon Feishu contacts failed:', error)
-      message.error(error instanceof Error ? (error instanceof Error ? error.message : null) : '同步失败')
+      message.error(error instanceof Error ? (error.message || '同步失败') : '同步失败')
     } finally {
       setSyncing(false)
     }
@@ -286,15 +294,24 @@ export default function FeishuSettingsClient() {
           </Space>
 
           <Space wrap>
-            <Button type="primary" icon={<SaveOutlined />} loading={saving} onClick={handleSave}>
-              保存设置
-            </Button>
-            <Button icon={<ApiOutlined />} loading={testing} onClick={handleTest}>
-              诊断权限
-            </Button>
-            <Button icon={<CloudSyncOutlined />} loading={syncing} onClick={handleSync}>
-              同步通讯录
-            </Button>
+            {canManage && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  loading={saving}
+                  onClick={handleSave}
+                >
+                  保存设置
+                </Button>
+                <Button icon={<ApiOutlined />} loading={testing} onClick={handleTest}>
+                  诊断权限
+                </Button>
+                <Button icon={<CloudSyncOutlined />} loading={syncing} onClick={handleSync}>
+                  同步通讯录
+                </Button>
+              </>
+            )}
           </Space>
         </Form>
       </Card>
