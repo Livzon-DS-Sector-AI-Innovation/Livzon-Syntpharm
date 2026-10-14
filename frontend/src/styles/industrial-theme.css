@@ -127,12 +127,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .equipment-ledger[data-fade="a"] .ant-table-tbody {
-    animation: equipment-tbody-fade-a 150ms ease-out;
-  }
-
-  .equipment-ledger[data-fade="b"] .ant-table-tbody {
-    animation: equipment-tbody-fade-b 150ms ease-out;
+  .equipment-ledger .ant-table-tbody {
+    animation: equipment-tbody-fade 150ms ease-out;
   }
 
   .equipment-ledger .ant-table-column-sorter {
@@ -140,12 +136,7 @@
   }
 }
 
-@keyframes equipment-tbody-fade-a {
-  from { opacity: 0.4; }
-  to { opacity: 1; }
-}
-
-@keyframes equipment-tbody-fade-b {
+@keyframes equipment-tbody-fade {
   from { opacity: 0.4; }
   to { opacity: 1; }
 }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEffect } from 'react'
 import { useEquipmentStore } from '@/stores/equipment'
+import { useEquipmentTaxonomyQuery } from '@/hooks/useEquipmentLedger'
 import { createCategory, updateCategory } from '@/actions/equipment'
 
 const { TextArea } = Input
@@ -16,8 +17,9 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
     categoryDrawerOpen,
     editingCategory,
     closeCategoryDrawer,
-    categories,
   } = useEquipmentStore()
+  const { data: taxonomy } = useEquipmentTaxonomyQuery()
+  const categories = taxonomy?.categories ?? []
 
   useEffect(() => {
     if (!categoryDrawerOpen) return

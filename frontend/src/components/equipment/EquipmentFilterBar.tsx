@@ -46,7 +46,6 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
   const {
     statusFilter,
     keyword,
-    departments: storeDepartments,
     departmentFilter,
     setDepartmentFilter,
     setStatusFilter,
@@ -54,9 +53,6 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
     selectedLocation,
     selectedCategory,
   } = useEquipmentStore()
-
-  // 优先用 store 里的部门；为空时回退到 props 传入（SSR 初始数据兜底）
-  const departmentList = storeDepartments.length > 0 ? storeDepartments : departments
 
   return (
     <div
@@ -83,7 +79,7 @@ export function EquipmentFilterBar(props: EquipmentFilterBarProps) {
         style={{ width: 140, flexShrink: 0 }}
         value={departmentFilter || undefined}
         onChange={(v) => setDepartmentFilter(v || null)}
-        options={departmentList.map((d) => ({ label: d.name, value: d.id }))}
+        options={departments.map((d) => ({ label: d.name, value: d.id }))}
       />
       <Input
         placeholder="搜索设备编号或名称"

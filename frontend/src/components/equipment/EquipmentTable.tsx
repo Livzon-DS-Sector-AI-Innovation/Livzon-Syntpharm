@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { App, Table, Space, Button } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
@@ -23,6 +23,8 @@ import { EquipmentDetailDrawer } from './EquipmentDetailDrawer'
 import { StatusBadge } from './StatusBadge'
 
 interface EquipmentTableProps {
+  /** 台账数据由父组件的 React Query 提供 */
+  equipments: Equipment[]
   onRefreshStatistics?: () => void
   onRefresh?: () => void
   loading?: boolean
@@ -41,12 +43,11 @@ interface EquipmentTableProps {
 const monoCell = () => ({ className: 'equipment-cell-mono' })
 
 export function EquipmentTable({
-  loading = false, page, pageSize, sortBy, sortOrder, onQueryChange, onRefreshStatistics, onRefresh,
+  equipments, loading = false, page, pageSize, sortBy, sortOrder, onQueryChange, onRefreshStatistics, onRefresh,
   visibleColumns,
 }: EquipmentTableProps) {
   const { message, modal } = App.useApp()
   const {
-    equipments,
     openEquipmentDrawer, openRepairDrawer,
   } = useEquipmentStore()
 
@@ -203,16 +204,11 @@ export function EquipmentTable({
     return visibleColumns.length === 0 || visibleColumns.includes(col.key as string)
   })
 
-  // 换序/翻页时切换淡入相位：animation-name 变化即重启动画，无需重挂载表体（D9）
-  const [fadePhase, setFadePhase] = useState(false)
-  /* eslint-disable react-hooks/set-state-in-effect -- Animation phase toggle (restart CSS animation), not state-from-fetch */
-  useEffect(() => {
-    setFadePhase((prev) => !prev)
-  }, [sortBy, sortOrder, page])
-  /* eslint-enable react-hooks/set-state-in-effect */
+  // 换序/翻页时以查询签名为 key 重挂载表体，挂载即触发 CSS 淡入（D9）
+  const fadeKey = `${sortBy}-${sortOrder}-${page}`
 
   return (
-    <div className="equipment-ledger" data-fade={fadePhase ? 'b' : 'a'} style={{}}>
+    <div className="equipment-ledger" style={{}}>
       {selectedRowKeys.length > 0 && (
         <div style={{
           marginBottom: 12,
@@ -241,7 +237,7 @@ export function EquipmentTable({
           </Button>
         </div>
       )}
-      <div>
+      <div key={fadeKey}>
         <Table
           rowSelection={rowSelection}
           columns={filteredColumns} dataSource={equipments} rowKey="id" size="small"

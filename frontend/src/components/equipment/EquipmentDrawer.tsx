@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { App, Drawer, Form, Input, Select, DatePicker, Button, Space, InputNumber } from 'antd'
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
+import { useEquipmentTaxonomyQuery } from '@/hooks/useEquipmentLedger'
 import { EquipmentStatus } from '@/types/equipment/generated-bridge'
 import { createEquipment, updateEquipment } from '@/actions/equipment'
 
@@ -31,8 +32,9 @@ export function EquipmentDrawer({ onRefresh }: EquipmentDrawerProps) {
     equipmentDrawerOpen,
     editingEquipment,
     closeEquipmentDrawer,
-    departments,
   } = useEquipmentStore()
+  const { data: taxonomy } = useEquipmentTaxonomyQuery()
+  const departments = taxonomy?.departments ?? []
 
 
 

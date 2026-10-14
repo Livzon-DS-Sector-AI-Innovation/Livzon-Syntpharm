@@ -5,7 +5,6 @@ import {
   Location,
   Equipment,
   EquipmentStatus,
-  EquipmentStatistics,
   FailureCode,
   WorkOrder,
   WorkOrderStatus,
@@ -22,27 +21,16 @@ import {
   InspectionTemplate,
   InspectionTemplateItem,
   Maintainer,
-  DepartmentOption,
 } from '@/types/equipment/generated-bridge'
 
 interface EquipmentStore {
-  // 数据
-  categories: EquipmentCategory[]
-  locations: Location[]
-  equipments: Equipment[]
-  statistics: EquipmentStatistics | null
-
-  // 筛选状态
+  // 筛选状态（服务端数据一律走 React Query，不在 store 里做第二份缓存）
   selectedCategory: string | null
   selectedLocation: string | null
   statusFilter: EquipmentStatus | ''
   departmentFilter: string | null
-  departments: DepartmentOption[]
   setDepartmentFilter: (id: string | null) => void
-  setDepartments: (departments: DepartmentOption[]) => void
   keyword: string
-  total: number
-  loading: boolean
 
   // 抽屉状态
   equipmentDrawerOpen: boolean
@@ -53,16 +41,10 @@ interface EquipmentStore {
   editingLocation: Location | null
 
   // 操作
-  setCategories: (categories: EquipmentCategory[]) => void
-  setLocations: (locations: Location[]) => void
-  setEquipments: (equipments: Equipment[]) => void
-  setStatistics: (statistics: EquipmentStatistics | null) => void
   setSelectedCategory: (id: string | null) => void
   setSelectedLocation: (id: string | null) => void
   setStatusFilter: (status: EquipmentStatus | '') => void
   setKeyword: (keyword: string) => void
-  setTotal: (total: number) => void
-  setLoading: (loading: boolean) => void
   resetFilters: () => void
   openEquipmentDrawer: (equipment?: Equipment) => void
   closeEquipmentDrawer: () => void
@@ -245,18 +227,11 @@ export const useEquipmentStore = create<EquipmentStore>()(
   devtools(
     (set) => ({
       // 初始状态
-      categories: [],
-      locations: [],
-      equipments: [],
-      statistics: null,
       selectedCategory: null,
       selectedLocation: null,
       statusFilter: '',
       departmentFilter: null,
-      departments: [],
       keyword: '',
-      total: 0,
-      loading: false,
       equipmentDrawerOpen: false,
       categoryDrawerOpen: false,
       locationDrawerOpen: false,
@@ -265,18 +240,11 @@ export const useEquipmentStore = create<EquipmentStore>()(
       editingLocation: null,
 
       // 操作
-      setCategories: (categories) => set({ categories }, false, 'equipment/setCategories'),
-      setLocations: (locations) => set({ locations }, false, 'equipment/setLocations'),
-      setEquipments: (equipments) => set({ equipments }, false, 'equipment/setEquipments'),
-      setStatistics: (statistics) => set({ statistics }, false, 'equipment/setStatistics'),
       setSelectedCategory: (id) => set({ selectedCategory: id }, false, 'equipment/setSelectedCategory'),
       setSelectedLocation: (id) => set({ selectedLocation: id }, false, 'equipment/setSelectedLocation'),
       setStatusFilter: (status) => set({ statusFilter: status }, false, 'equipment/setStatusFilter'),
       setDepartmentFilter: (id) => set({ departmentFilter: id }, false, 'equipment/setDepartmentFilter'),
-      setDepartments: (departments) => set({ departments }, false, 'equipment/setDepartments'),
       setKeyword: (keyword) => set({ keyword }, false, 'equipment/setKeyword'),
-      setTotal: (total) => set({ total }, false, 'equipment/setTotal'),
-      setLoading: (loading) => set({ loading }, false, 'equipment/setLoading'),
       resetFilters: () => set({
         selectedCategory: null,
         selectedLocation: null,

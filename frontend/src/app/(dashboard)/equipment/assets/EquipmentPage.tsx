@@ -6,15 +6,25 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { App, ConfigProvider, Tabs, Button, Pagination } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import { MenuFoldOutlined, MenuUnfoldOutlined, ReloadOutlined } from '@ant-design/icons'
+import { useQueryClient } from '@tanstack/react-query'
 import { EquipmentCategory, Location, Equipment, EquipmentStatistics } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { antdTheme } from '@/lib/antd-theme'
-import { fetchEquipmentsClient, fetchEquipmentStatisticsClient, fetchCategoriesClient, fetchLocationsClient, fetchDepartmentsClient } from '@/lib/api/client/equipment'
+import type { GetStatisticsQuery } from '@/lib/api/client/equipment'
+import {
+  EQUIPMENT_LIST_KEY,
+  EQUIPMENT_STATISTICS_KEY,
+  EQUIPMENT_TAXONOMY_KEY,
+  useEquipmentListQuery,
+  useEquipmentStatisticsQuery,
+  useEquipmentTaxonomyQuery,
+} from '@/hooks/useEquipmentLedger'
 import {
   DEFAULT_EQUIPMENT_SORT_BY,
   DEFAULT_EQUIPMENT_SORT_ORDER,
   parseEquipmentUrlParams,
   writeEquipmentUrlQuery,
+  type EquipmentListQuery,
   type EquipmentUrlState,
 } from '@/lib/api/equipment-query'
 import { CategoryTree, ColumnConfigModal, EquipmentDrawer, EquipmentFilterBar, EquipmentImportModal, EquipmentTable, LocationDrawer, LocationTree, RepairDrawer, StatsCards } from '@/components/equipment'
@@ -43,33 +53,20 @@ export function EquipmentPage({
   initialDepartments,
 }: EquipmentPageProps) {
   const {
-    categories,
-    locations,
-    statistics,
-    equipments,
     failureCodes,
     selectedCategory,
     selectedLocation,
     statusFilter,
     departmentFilter,
-    departments,
     keyword,
-    total,
-    loading,
     openEquipmentDrawer,
     setSelectedCategory,
     setSelectedLocation,
-    setCategories,
-    setLocations,
-    setEquipments,
-    setStatistics,
-    setTotal,
-    setLoading,
-    setDepartments,
   } = useEquipmentStore()
 
+  const queryClient = useQueryClient()
+
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [initialized, setInitialized] = useState(false)
   const [columnConfigOpen, setColumnConfigOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [visibleColumns, setVisibleColumns] = useState<string[]>(DEFAULT_VISIBLE_COLUMNS)
@@ -113,133 +110,81 @@ export function EquipmentPage({
     }
   }, [visibleColumns])
 
-  // 初始化 store 数据（包含 SSR 数据）- 只在首次加载时执行
-  useEffect(() => {
-    if (!initialized) {
-      setCategories(initialCategories)
-      setLocations(initialLocations)
-      setEquipments(initialEquipments)
-      setTotal(initialTotal)
-      setStatistics(initialStatistics)
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-shot hydration of the zustand store from server props; flag must flip after the writes or later re-renders would overwrite user filters/paging
-      setInitialized(true)
-    }
-  }, [initialized, initialCategories, initialLocations, initialEquipments, initialTotal, initialStatistics, setCategories, setLocations, setEquipments, setTotal, setStatistics])
+  // 列表取数参数：排序与分页来自 URL，筛选来自 store，二者在此合成唯一一份
+  const listParams = useMemo<EquipmentListQuery>(() => ({
+    category_id: selectedCategory,
+    location_id: selectedLocation,
+    department_id: departmentFilter,
+    status: statusFilter || undefined,
+    keyword: keyword || undefined,
+    ...urlState,
+  }), [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, urlState])
 
-  // 初始化部门列表（服务端数据）
-  useEffect(() => {
-    setDepartments(initialDepartments)
-  }, [initialDepartments, setDepartments])
+  const statsParams = useMemo<GetStatisticsQuery>(() => ({
+    category_id: selectedCategory || undefined,
+    location_id: selectedLocation || undefined,
+    department_id: departmentFilter || undefined,
+    status: statusFilter || undefined,
+  }), [selectedCategory, selectedLocation, departmentFilter, statusFilter])
 
-  // 客户端补偿加载：如果服务端初始数据为空（某个 API 失败导致），从客户端重新获取
-  useEffect(() => {
-    const loadMissing = async () => {
-      const tasks: Promise<void>[] = []
-      if (!categories.length) {
-        tasks.push(
-          fetchCategoriesClient().then((cats) => { setCategories(cats) }).catch((e: unknown) => { console.warn('客户端加载分类失败:', e) })
-        )
-      }
-      if (!locations.length) {
-        tasks.push(
-          fetchLocationsClient().then((locs) => { setLocations(locs) }).catch((e: unknown) => { console.warn('客户端加载位置失败:', e) })
-        )
-      }
-      if (!departments.length) {
-        tasks.push(
-          fetchDepartmentsClient().then((depts) => { setDepartments(depts) }).catch((e: unknown) => { console.warn('客户端加载部门失败:', e) })
-        )
-      }
-      if (tasks.length) {
-        await Promise.allSettled(tasks)
-      }
-    }
-    loadMissing()
-  }, [categories.length, locations.length, departments.length, setCategories, setLocations, setDepartments])
+  // SSR 只在「无筛选 + URL 排序分页」这一份参数上取过数；参数一致才喂 initialData，
+  // 否则会把首屏数据错当成新 key 的结果（换页/换筛选后不再请求）。
+  // SSR 侧某个 API 失败时喂 undefined，让 React Query 正常发起首屏补偿请求。
+  const [ssrSignature] = useState(() => JSON.stringify({ ...listParams }))
+  const isSsrQuery = JSON.stringify(listParams) === ssrSignature
+  const equipmentsQuery = useEquipmentListQuery(listParams, isSsrQuery
+    && (initialEquipments.length > 0 || initialTotal > 0)
+    ? { items: initialEquipments, total: initialTotal, page: urlState.page, page_size: urlState.page_size }
+    : undefined)
+  const statisticsQuery = useEquipmentStatisticsQuery(
+    statsParams,
+    isSsrQuery && initialStatistics.total > 0 ? initialStatistics : undefined,
+  )
+  const taxonomyQuery = useEquipmentTaxonomyQuery(
+    initialCategories.length > 0 || initialLocations.length > 0 || initialDepartments.length > 0
+      ? { categories: initialCategories, locations: initialLocations, departments: initialDepartments }
+      : undefined,
+  )
 
-  // 列表取数：排序与分页来自 URL，筛选来自 store，二者在此合成唯一一份请求参数
-  const fetchData = useCallback(async (state: EquipmentUrlState) => {
-    setLoading(true)
-    try {
-      const equipmentsResponse = await fetchEquipmentsClient({
-        category_id: selectedCategory,
-        location_id: selectedLocation,
-        department_id: departmentFilter,
-        status: statusFilter || undefined,
-        keyword: keyword || undefined,
-        sort_by: state.sort_by,
-        sort_order: state.sort_order,
-        page: state.page,
-        page_size: state.page_size,
-      })
-      setEquipments(equipmentsResponse.items)
-      setTotal(equipmentsResponse.total)
-    } catch (error) {
-      console.error('获取设备数据失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, keyword, setEquipments, setTotal, setLoading])
+  const categories = taxonomyQuery.data?.categories ?? initialCategories
+  const locations = taxonomyQuery.data?.locations ?? initialLocations
+  const departments = taxonomyQuery.data?.departments ?? initialDepartments
+  const equipments = equipmentsQuery.data?.items ?? initialEquipments
+  const total = equipmentsQuery.data?.total ?? initialTotal
 
-  // 数据变更后重取当前页（新增/编辑/删除/导入完成）
-  const refreshList = useCallback(() => fetchData(urlState), [fetchData, urlState])
+  // 数据变更后重取（新增/编辑/删除/导入完成）
+  const refreshList = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: EQUIPMENT_LIST_KEY })
+  }, [queryClient])
 
-  // 单独刷新统计（根据当前筛选条件）
-  const refreshStatistics = useCallback(async () => {
-    try {
-      const stats = await fetchEquipmentStatisticsClient({
-        category_id: selectedCategory || undefined,
-        location_id: selectedLocation || undefined,
-        department_id: departmentFilter || undefined,
-        status: statusFilter || undefined,
-      })
-      setStatistics(stats)
-    } catch { /* 静默 */ }
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, setStatistics])
+  const refreshStatistics = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: EQUIPMENT_STATISTICS_KEY })
+  }, [queryClient])
 
-  // 筛选条件变化时自动刷新统计
-  useEffect(() => {
-    refreshStatistics()
-  }, [selectedCategory, selectedLocation, departmentFilter, statusFilter, refreshStatistics])
+  const refreshTaxonomy = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: EQUIPMENT_TAXONOMY_KEY })
+  }, [queryClient])
 
-  // 刷新分类和位置树
-  const refreshCategoriesAndLocations = useCallback(async () => {
-    try {
-      const [cats, locs] = await Promise.all([fetchCategoriesClient(), fetchLocationsClient()])
-      setCategories(cats)
-      setLocations(locs)
-    } catch (error) {
-      console.error('刷新分类/位置失败:', error)
-    }
-  }, [setCategories, setLocations])
-
-  // 筛选变化 → 回到第 1 页；URL 与 store 共同决定取数，fetchData 必须在依赖内
+  // 筛选变化 → 回到第 1 页并写回 URL；取数由 queryKey 变化自动触发
   const filterSignature = `${selectedCategory ?? ''}|${selectedLocation ?? ''}|${departmentFilter ?? ''}|${statusFilter}|${keyword ?? ''}`
   const previousFilters = useRef(filterSignature)
-  const lastFetchKey = useRef('')
 
   useEffect(() => {
-    const filtersChanged = previousFilters.current !== filterSignature
+    if (previousFilters.current === filterSignature) return
     previousFilters.current = filterSignature
-    const state: EquipmentUrlState = filtersChanged ? { ...urlState, page: 1 } : urlState
-    const fetchKey = `${filterSignature}|${state.page}|${state.page_size}|${state.sort_by}|${state.sort_order}`
-    if (fetchKey === lastFetchKey.current) return
-    lastFetchKey.current = fetchKey
-    // 已按第 1 页取数，但 URL 仍停在旧页码时补一次写回，使地址栏与实际视图一致
-    if (filtersChanged && urlState.page !== 1) patchQuery({ page: 1 })
-    fetchData(state)
-  }, [filterSignature, urlState, patchQuery, fetchData])
+    if (urlState.page !== 1) patchQuery({ page: 1 })
+  }, [filterSignature, urlState.page, patchQuery])
 
   const tabItems = [
     {
       key: 'category',
       label: '分类',
-      children: <CategoryTree categories={categories} onRefresh={refreshCategoriesAndLocations} />,
+      children: <CategoryTree categories={categories} onRefresh={refreshTaxonomy} />,
     },
     {
       key: 'location',
       label: '位置',
-      children: <LocationTree locations={locations} onRefresh={refreshCategoriesAndLocations} />,
+      children: <LocationTree locations={locations} onRefresh={refreshTaxonomy} />,
     },
   ]
 
@@ -258,7 +203,7 @@ export function EquipmentPage({
     </Button>
   ) : null
 
-  const currentStats = statistics ?? initialStatistics
+  const currentStats = statisticsQuery.data ?? initialStatistics
 
   return (
     <ConfigProvider theme={antdTheme} locale={zhCN}>
@@ -391,7 +336,8 @@ export function EquipmentPage({
             {/* 表格区域（flex: 1，内部滚动） */}
             <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
               <EquipmentTable
-                loading={loading}
+                equipments={equipments}
+                loading={equipmentsQuery.isFetching}
                 page={urlState.page}
                 pageSize={urlState.page_size}
                 sortBy={urlState.sort_by}
@@ -432,7 +378,7 @@ export function EquipmentPage({
 
         {/* 抽屉组件（在页面根容器外） */}
         <EquipmentDrawer onRefresh={() => { refreshList(); refreshStatistics(); }} />
-        <LocationDrawer onRefresh={() => { refreshCategoriesAndLocations(); refreshStatistics(); }} />
+        <LocationDrawer onRefresh={() => { refreshTaxonomy(); refreshStatistics(); }} />
         <RepairDrawer
           equipments={equipments.map(e => ({
             id: e.id, asset_no: e.asset_no, name: e.name,

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
+from app.core.exceptions import AppException, BadRequestException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
@@ -352,28 +353,31 @@ async def sync_equipments_excel(
     """上传 Excel 文件并执行智能同步"""
     # 检查速率限制
     if not _check_rate_limit(str(current_user.id)):
-        raise ValueError(f"操作过于频繁，请稍后再试（限制：{RATE_LIMIT_PER_MINUTE} 次/分钟）")
+        raise AppException(
+            status_code=429,
+            message=f"操作过于频繁，请稍后再试（限制：{RATE_LIMIT_PER_MINUTE} 次/分钟）",
+        )
 
     # 验证文件扩展名
     if not file.filename:
-        raise ValueError("文件名不能为空")
+        raise BadRequestException(message="文件名不能为空")
 
     file_ext = Path(file.filename).suffix.lower()
     if file_ext not in ALLOWED_EXCEL_EXTENSIONS:
-        raise ValueError(f"不支持的文件格式: {file_ext}，仅支持 {', '.join(ALLOWED_EXCEL_EXTENSIONS)}")
+        raise BadRequestException(message=f"不支持的文件格式: {file_ext}，仅支持 {', '.join(ALLOWED_EXCEL_EXTENSIONS)}")
 
     # 读取文件内容
     content = await file.read()
 
     # 验证文件大小
     if len(content) > MAX_FILE_SIZE:
-        raise ValueError(
-            f"文件大小超过限制 ({MAX_FILE_SIZE // 1024 // 1024}MB)，当前文件大小: {len(content) // 1024}KB"
+        raise BadRequestException(
+            message=f"文件大小超过限制 ({MAX_FILE_SIZE // 1024 // 1024}MB)，当前文件大小: {len(content) // 1024}KB"
         )
 
     # 验证 MIME 类型（简单检查文件头）
     if not _validate_excel_signature(content):
-        raise ValueError("文件内容不是有效的 Excel 格式")
+        raise BadRequestException(message="文件内容不是有效的 Excel 格式")
     result = await service.sync_equipments_with_audit(
         db, content, dry_run=dry_run, operator_id=current_user.id, file_name=file.filename
     )
