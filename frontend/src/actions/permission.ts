@@ -12,6 +12,7 @@ import {
   getGrants as getGrantsApi,
   getMyPermissions as getMyPermissionsApi,
   getPermissions as getPermissionsApi,
+  getPermissionPreview as getPermissionPreviewApi,
   getPermissionTree as getPermissionTreeApi,
   getRoles as getRolesApi,
   getUsersForSelect,
@@ -58,6 +59,17 @@ export async function fetchDepartmentOptions(): Promise<DepartmentOption[]> {
   const token = await getAuthToken()
   const res = (await getDepartmentsApi(token)) as { data: DepartmentOption[] }
   return res.data ?? []
+}
+
+/** 预览某用户的生效权限码 + 是否超管（授权管理「生效预览」用）。 */
+export async function fetchUserPreview(
+  userId: string,
+): Promise<{ permissions: string[]; is_superuser: boolean }> {
+  const token = await getAuthToken()
+  const res = (await getPermissionPreviewApi(userId, token)) as {
+    data: { permissions: string[]; is_superuser: boolean }
+  }
+  return res.data ?? { permissions: [], is_superuser: false }
 }
 
 export async function createRole(data: RoleCreateInput): Promise<PermissionActionResult<RoleDetail>> {

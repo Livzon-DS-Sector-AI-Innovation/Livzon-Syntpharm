@@ -127,12 +127,19 @@ export default function UserManagementClient() {
   const [copying, setCopying] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [authSource, setAuthSource] = useState<AuthSourceValue | undefined>()
+  // 运营筛选：待改密 / 未绑定飞书（互斥单选）
+  const [pendingFilter, setPendingFilter] = useState<'pending_change' | 'unbound' | undefined>()
   const [form] = Form.useForm()
 
   const { data: users = [], isLoading: loading, error, refetch: refetchUsers } = useQuery({
-    queryKey: ['users', keyword, authSource],
+    queryKey: ['users', keyword, authSource, pendingFilter],
     queryFn: async () => {
-      const result = await getUsers({ keyword: keyword || undefined, auth_source: authSource })
+      const result = await getUsers({
+        keyword: keyword || undefined,
+        auth_source: authSource,
+        must_change_password: pendingFilter === 'pending_change' ? true : undefined,
+        unbound_only: pendingFilter === 'unbound' ? true : undefined,
+      })
       return result.items || []
     },
     // 每次进入页面都取最新（在「授权管理」改了角色后回到本页，不该看到旧角色）
@@ -463,6 +470,17 @@ export default function UserManagementClient() {
             value={authSource}
             onChange={(value) => setAuthSource(value)}
             options={authSourceOptions}
+          />
+          <Select
+            allowClear
+            placeholder="账号属性"
+            style={{ width: 140 }}
+            value={pendingFilter}
+            onChange={(value) => setPendingFilter(value)}
+            options={[
+              { value: 'pending_change', label: '待改密' },
+              { value: 'unbound', label: '未绑定飞书' },
+            ]}
           />
           <Input.Search
             allowClear

@@ -6,6 +6,7 @@ export async function getUsers(
     status?: string
     auth_source?: string
     unbound_only?: boolean
+    must_change_password?: boolean
     limit?: number
   },
   token?: string,
@@ -15,6 +16,9 @@ export async function getUsers(
   if (params?.status) search.set('status', params.status)
   if (params?.auth_source) search.set('auth_source', params.auth_source)
   if (params?.unbound_only) search.set('unbound_only', 'true')
+  if (params?.must_change_password !== undefined) {
+    search.set('must_change_password', String(params.must_change_password))
+  }
   if (params?.limit) search.set('limit', String(params.limit))
   const query = search.toString()
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users${query ? `?${query}` : ''}`, {

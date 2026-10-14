@@ -125,6 +125,7 @@ export interface LogClearResult {
 export interface DbOverview {
   database: string
   version: string
+  migration_version: string | null
   size_bytes: number
   table_count: number
   connections: number

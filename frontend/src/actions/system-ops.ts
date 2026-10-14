@@ -15,6 +15,7 @@ import {
   getScheduledTasks,
   getSystemInfo,
   setApiSwitch as setApiSwitchApi,
+  toggleScheduledTask as toggleScheduledTaskApi,
 } from '@/lib/api/server/system-ops'
 import type {
   ApiRouteItem,
@@ -77,6 +78,11 @@ export async function fetchScheduledTasks(): Promise<ScheduledTaskItem[]> {
   const token = await getAuthToken()
   const res = (await getScheduledTasks(token)) as { data: ScheduledTaskItem[] }
   return res.data ?? []
+}
+
+export async function toggleScheduledTask(name: string, enabled: boolean): Promise<void> {
+  const token = await getAuthToken()
+  await toggleScheduledTaskApi(name, enabled, token)
 }
 
 export async function fetchApiRoutes(): Promise<ApiRouteItem[]> {

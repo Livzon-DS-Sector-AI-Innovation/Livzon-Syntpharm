@@ -3,7 +3,12 @@ import { getMenuConfig } from '@/actions/menu'
 import { getMyPermissions } from '@/lib/api/server/permission'
 import { moduleMenus } from '@/lib/menu-config'
 import { resolveMenus } from '@/lib/menu/resolve'
-import { MODULE_ACCESS_PERMS, type PermissionView } from '@/lib/permissions/modules'
+import {
+  MODULE_ACCESS_PERMS,
+  SUBMENU_ACCESS_PERMS,
+  canAccess,
+  type PermissionView,
+} from '@/lib/permissions/modules'
 import type { PermissionCode } from '@/lib/permissions/codes'
 
 /** 当前请求用户的权限快照（未登录 / 后端不可用 → null）。 */
@@ -94,7 +99,23 @@ export async function getPermissionView(): Promise<PermissionView> {
 export async function resolveLandingPath(): Promise<string | null> {
   const view = await getPermissionView()
   const visible = new Set(view.visibleModuleKeys)
-  return moduleMenus.find((mod) => visible.has(mod.key))?.path ?? null
+  const granted = new Set(view.granted)
+  const isSuperuser = view.isSuperuser
+
+  for (const mod of moduleMenus) {
+    if (!visible.has(mod.key)) continue
+    // settings 模块根路径 `/settings` 需要 platform:config:read；只持后台其它权限（如
+    // audit:read / user:read / ops:read）的账号会落到这里却看到「权限不足」。
+    // 因此对 settings 特判：落到第一个「有权限」的子页面，而不是模块根。
+    if (mod.key === 'settings') {
+      const firstVisible = (mod.children ?? []).find((child) =>
+        canAccess(granted, isSuperuser, SUBMENU_ACCESS_PERMS[child.key]),
+      )
+      if (firstVisible?.path) return firstVisible.path
+    }
+    return mod.path
+  }
+  return null
 }
 
 /**

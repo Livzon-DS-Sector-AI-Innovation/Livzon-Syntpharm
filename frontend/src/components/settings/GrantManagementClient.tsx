@@ -17,7 +17,7 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   createGrant,
   deleteGrant,
@@ -25,11 +25,14 @@ import {
   fetchGrants,
   fetchRoles,
   fetchUserOptions,
+  fetchUserPreview,
   updateGrant,
 } from '@/actions/permission'
 import type { DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { moduleMenus } from '@/lib/menu-config'
+import { MODULE_ACCESS_PERMS, SUBMENU_ACCESS_PERMS, canAccess } from '@/lib/permissions/modules'
 
 const { Text } = Typography
 
@@ -57,6 +60,9 @@ export default function GrantManagementClient() {
   // 默认不限制可见数据（固定 all），需要限制时才展开范围选择
   const [limitScope, setLimitScope] = useState(false)
   const [keyword, setKeyword] = useState('')
+  // 生效预览：选一个用户，看其当前权限下能进哪些模块/页面
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewUserId, setPreviewUserId] = useState<string | undefined>()
   const scopeType = Form.useWatch('scope_type', form)
 
   const { data: grants = [], isLoading } = useQuery({
@@ -87,6 +93,22 @@ export default function GrantManagementClient() {
     value: u.id,
     label: `${u.name}${u.username ? `（${u.username}）` : ''}`,
   }))
+
+  // 生效预览：选定用户后拉其权限，算出可见模块/页面
+  const { data: previewData } = useQuery({
+    queryKey: ['permission-preview', previewUserId],
+    queryFn: () => fetchUserPreview(previewUserId as string),
+    enabled: !!previewUserId,
+  })
+  const previewGranted = new Set(previewData?.permissions ?? [])
+  const previewIsSuper = previewData?.is_superuser ?? false
+  const previewVisibleModules = moduleMenus
+    .filter((m) => canAccess(previewGranted, previewIsSuper, MODULE_ACCESS_PERMS[m.key]))
+    .map((m) => m.label)
+  const previewVisibleSubmenus = moduleMenus
+    .flatMap((m) => m.children ?? [])
+    .filter((c) => canAccess(previewGranted, previewIsSuper, SUBMENU_ACCESS_PERMS[c.key]))
+    .map((c) => c.label)
 
   // 列表搜索：用户（姓名/ID）/ 角色（名称/编码）（授权量小，前端过滤即可）
   const query = keyword.trim().toLowerCase()
@@ -340,6 +362,9 @@ export default function GrantManagementClient() {
           >
             刷新
           </Button>
+          <Button icon={<EyeOutlined />} onClick={() => setPreviewOpen(true)}>
+            生效预览
+          </Button>
           {canManage && (
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
               新建授权
@@ -446,6 +471,54 @@ export default function GrantManagementClient() {
             </Form.Item>
           )}
         </Form>
+      </Modal>
+
+      <Modal
+        title="授权生效预览"
+        open={previewOpen}
+        onCancel={() => setPreviewOpen(false)}
+        footer={null}
+        width={560}
+      >
+        <Select
+          showSearch
+          allowClear
+          placeholder="选择用户，查看其当前权限下能访问的模块 / 页面"
+          style={{ width: '100%' }}
+          value={previewUserId}
+          onChange={(v) => setPreviewUserId(v)}
+          options={userOptions}
+          optionFilterProp="label"
+        />
+        <div className="mt-4">
+          {previewData && (
+            <>
+              {previewIsSuper && (
+                <Tag color="gold" className="mb-2">超级管理员（拥有全部权限）</Tag>
+              )}
+              <Text strong className="text-[13px]">可见模块：</Text>
+              <div className="mt-1">
+                {previewVisibleModules.length ? (
+                  previewVisibleModules.map((m) => (
+                    <Tag key={m} color="blue" className="mb-1">{m}</Tag>
+                  ))
+                ) : (
+                  <Text type="secondary">无</Text>
+                )}
+              </div>
+              <Text strong className="mt-3 block text-[13px]">可见后台页面：</Text>
+              <div className="mt-1">
+                {previewVisibleSubmenus.length ? (
+                  previewVisibleSubmenus.map((s) => (
+                    <Tag key={s} color="green" className="mb-1">{s}</Tag>
+                  ))
+                ) : (
+                  <Text type="secondary">无</Text>
+                )}
+              </div>
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   )

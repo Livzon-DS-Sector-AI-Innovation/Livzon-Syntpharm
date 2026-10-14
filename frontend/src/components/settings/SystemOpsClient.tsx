@@ -35,6 +35,7 @@ import {
   fetchScheduledTasks,
   fetchSystemInfo,
   setApiSwitch,
+  toggleScheduledTask,
 } from '@/actions/system-ops'
 import type {
   ApiRouteItem,
@@ -42,6 +43,7 @@ import type {
   DbColumnItem,
   DbTableItem,
   LogItem,
+  ScheduledTaskItem,
 } from '@/types/system-ops'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
@@ -293,14 +295,27 @@ const kindLabel: Record<string, { label: string; color: string }> = {
 
 function TasksTab() {
   const queryClient = useQueryClient()
+  const { message } = App.useApp()
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.opsManage)
   const [keyword, setKeyword] = useState('')
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['ops-tasks'],
     queryFn: fetchScheduledTasks,
   })
 
+  const handleToggle = async (name: string, enabled: boolean) => {
+    try {
+      await toggleScheduledTask(name, enabled)
+      message.success(enabled ? '已启用' : '已禁用')
+      queryClient.invalidateQueries({ queryKey: ['ops-tasks'] })
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : '切换失败')
+    }
+  }
+
   const columns = [
-    { title: '任务名', dataIndex: 'name', width: 260 },
+    { title: '任务名', dataIndex: 'name', width: 240 },
     {
       title: '类型',
       dataIndex: 'kind',
@@ -313,6 +328,26 @@ function TasksTab() {
     { title: '调度', dataIndex: 'schedule', width: 160, render: (v: string) => v || '-' },
     { title: '模块', dataIndex: 'module', width: 120, render: (v: string) => v || '-' },
     { title: '说明', dataIndex: 'description', ellipsis: true },
+    ...(canManage
+      ? [
+          {
+            title: '启用',
+            key: 'enabled',
+            width: 70,
+            render: (_: unknown, task: ScheduledTaskItem) => {
+              const togglable = task.kind === 'task' || task.kind === 'generator'
+              if (!togglable) return null
+              return (
+                <Switch
+                  size="small"
+                  checked={task.enabled}
+                  onChange={(checked) => handleToggle(task.name, checked)}
+                />
+              )
+            },
+          },
+        ]
+      : []),
   ]
 
   // 列表搜索：任务名 / 类型 / 调度 / 模块 / 说明（任务来自代码注册，前端过滤即可）
@@ -607,6 +642,11 @@ function LogsTab() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-md bg-[var(--color-mist)] px-3 py-2 text-[12px] text-[var(--color-steel)]">
+        当前展示的是内存缓冲（最近约 2000 条，服务重启后清空）。完整历史：生产环境按模块落盘到
+        <Text code className="mx-1">logs/*.log</Text>（10MB×轮转）；本地开发可查看后端容器的 stdout 日志
+        （<Text code>docker logs local-backend</Text>）。
+      </div>
       <div className="flex flex-wrap items-center gap-3">
         <Select
           mode="multiple"
@@ -721,6 +761,9 @@ function DbTab() {
           <Descriptions column={3} size="small">
             <Descriptions.Item label="数据库">{overview.database}</Descriptions.Item>
             <Descriptions.Item label="版本">{overview.version}</Descriptions.Item>
+            <Descriptions.Item label="迁移版本">
+              {overview.migration_version ?? '—'}
+            </Descriptions.Item>
             <Descriptions.Item label="库大小">{formatBytes(overview.size_bytes)}</Descriptions.Item>
             <Descriptions.Item label="表数量">{overview.table_count}</Descriptions.Item>
             <Descriptions.Item label="连接数">

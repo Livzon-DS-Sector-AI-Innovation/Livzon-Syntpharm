@@ -39,6 +39,8 @@ export async function getUsers(params?: {
   role?: 'admin' | 'user'
   status?: 'active' | 'disabled'
   auth_source?: 'local' | 'feishu'
+  unbound_only?: boolean
+  must_change_password?: boolean
 }): Promise<UserManagementListResponse> {
   const token = await getAuthToken()
   const res = (await getUsersServer(params, token)) as { data: UserManagementListResponse }

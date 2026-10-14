@@ -41,6 +41,14 @@ export function getScheduledTasks(token?: string) {
   return apiFetch(P('/scheduled-tasks'), { headers: auth(token) })
 }
 
+export function toggleScheduledTask(name: string, enabled: boolean, token?: string) {
+  return apiFetch(P(`/scheduled-tasks/${encodeURIComponent(name)}/toggle`), {
+    method: 'PUT',
+    headers: auth(token),
+    body: JSON.stringify({ enabled }),
+  })
+}
+
 export function getApiRoutes(token?: string) {
   return apiFetch(P('/api-routes'), { headers: auth(token) })
 }

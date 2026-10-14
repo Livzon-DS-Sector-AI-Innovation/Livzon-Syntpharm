@@ -53,6 +53,10 @@ export function getDepartments(token?: string) {
   return apiFetch(P('/departments'), { headers: auth(token) })
 }
 
+export function getPermissionPreview(userId: string, token?: string) {
+  return apiFetch(P(`/preview/${userId}`), { headers: auth(token) })
+}
+
 export function getGrants(userId?: string, token?: string) {
   const q = userId ? `?user_id=${userId}` : ''
   return apiFetch(P(`/grants${q}`), { headers: auth(token) })
