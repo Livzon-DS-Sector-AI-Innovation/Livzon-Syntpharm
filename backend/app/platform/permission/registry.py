@@ -193,6 +193,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # 授权管理
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/departments"),
     ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/grants"),
+    ApiBindingDef("platform:grant:read", "GET", "/api/v1/permission/preview/{user_id}"),
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants"),
     ApiBindingDef("platform:grant:manage", "PUT", "/api/v1/permission/grants/{id}"),
     ApiBindingDef("platform:grant:manage", "DELETE", "/api/v1/permission/grants/{id}"),
@@ -206,6 +207,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/redis/keys"),
     ApiBindingDef("platform:ops:manage", "DELETE", "/api/v1/system/redis/keys"),
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/scheduled-tasks"),
+    ApiBindingDef("platform:ops:manage", "PUT", "/api/v1/system/scheduled-tasks/{name}/toggle"),
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/modules"),
     # API 启停开关
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/api-routes"),

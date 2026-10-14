@@ -28,6 +28,9 @@ from app.platform.system.ops_schemas import (
     ResourcesResponse,
     ScheduledTasksResponse,
     SystemInfoResponse,
+    TaskToggleRequest,
+    TaskToggleResponse,
+    TaskToggleResult,
 )
 from app.shared import log_buffer
 
@@ -95,6 +98,24 @@ async def system_scheduled_tasks(
 ) -> ScheduledTasksResponse:
     """汇总调度引擎任务、动态生成器、后台 worker 与独立轮询循环。"""
     return ScheduledTasksResponse(data=ops_service.list_scheduled_tasks())
+
+
+@router.put(
+    "/scheduled-tasks/{name}/toggle",
+    response_model=TaskToggleResponse,
+    summary="启用 / 禁用某个定时任务（运行时临时）",
+)
+async def system_scheduled_task_toggle(
+    name: str,
+    payload: TaskToggleRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:ops:manage")),
+) -> TaskToggleResponse:
+    """运行时临时启停（内存态，容器重启后恢复默认）。找不到名字返回 400。"""
+    from app.core.exceptions import BadRequestException
+
+    if not ops_service.set_task_enabled(name, payload.enabled):
+        raise BadRequestException(f"定时任务不存在或不可切换：{name}")
+    return TaskToggleResponse(data=TaskToggleResult(name=name, enabled=payload.enabled))
 
 
 # ── API 启停开关 ──────────────────────────────────────────────────

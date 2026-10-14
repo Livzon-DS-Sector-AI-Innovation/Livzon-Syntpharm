@@ -276,7 +276,7 @@ def list_scheduled_tasks() -> list[ScheduledTaskItem]:
                     kind="task",
                     schedule=_describe_schedule(task.schedule),
                     module=task.module,
-                    enabled=task.enabled,
+                    enabled=task.enabled and not registry.is_disabled(name),
                 )
             )
         for name, gen in registry.generators.items():
@@ -285,7 +285,7 @@ def list_scheduled_tasks() -> list[ScheduledTaskItem]:
                     name=name,
                     kind="generator",
                     schedule=_describe_schedule(gen.schedule),
-                    enabled=gen.enabled,
+                    enabled=gen.enabled and not registry.is_disabled(name),
                 )
             )
 
@@ -311,6 +311,25 @@ def list_scheduled_tasks() -> list[ScheduledTaskItem]:
     return items
 
 
+def set_task_enabled(name: str, enabled: bool) -> bool:
+    """运行时临时启停一个定时任务 / 生成器（内存态，容器重启后恢复默认）。
+
+    返回是否找到并生效；找不到（名字不存在或 registry 未初始化）返回 False。
+    """
+    from app.platform.scheduler.registry import get_global_registry
+
+    registry = get_global_registry()
+    if registry is None:
+        return False
+    if name not in registry.tasks and name not in registry.generators:
+        return False
+    if enabled:
+        registry.enable(name)
+    else:
+        registry.disable(name)
+    return True
+
+
 def _describe_schedule(schedule) -> str:  # noqa: ANN001 - ScheduleConfig
     strategy = getattr(schedule, "strategy", None)
     value = getattr(strategy, "value", str(strategy))
@@ -333,6 +352,7 @@ _DB_OVERVIEW_SQL = text(
     """
     SELECT current_database() AS database_name,
            version() AS version_text,
+           (SELECT version_num FROM public.alembic_version LIMIT 1) AS migration_version,
            pg_database_size(current_database()) AS size_bytes,
            current_setting('max_connections')::int AS max_connections,
            (SELECT count(*) FROM pg_stat_activity) AS connections,
@@ -409,6 +429,7 @@ async def get_db_tables() -> DbTablesData:
         overview=DbOverview(
             database=overview["database_name"],
             version=str(overview["version_text"]).split(" on ")[0],
+            migration_version=overview["migration_version"],
             size_bytes=int(overview["size_bytes"] or 0),
             table_count=int(overview["table_count"] or 0),
             connections=int(overview["connections"] or 0),

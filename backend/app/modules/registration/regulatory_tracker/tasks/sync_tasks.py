@@ -116,6 +116,7 @@ def start_scheduler() -> Any:
 
     from app.modules.equipment.public_api import get_inspection_schedule_generator
     from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
+    from app.platform.scheduler.registry import set_global_registry
 
     registry = SchedulerRegistry()
 
@@ -125,6 +126,9 @@ def start_scheduler() -> Any:
 
     # Register equipment generators
     registry.register_generator(get_inspection_schedule_generator())
+
+    # 登记为全局注册表：系统运维页据此展示清单并支持运行时启停
+    set_global_registry(registry)
 
     # Create engine (started by background worker via await)
     _scheduler_engine = SchedulerEngine(registry)

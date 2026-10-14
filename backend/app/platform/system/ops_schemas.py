@@ -143,6 +143,21 @@ class ScheduledTasksResponse(BaseModel):
     data: list[ScheduledTaskItem]
 
 
+class TaskToggleRequest(BaseModel):
+    enabled: bool = Field(..., description="目标状态：true 启用 / false 禁用")
+
+
+class TaskToggleResult(BaseModel):
+    name: str
+    enabled: bool
+
+
+class TaskToggleResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: TaskToggleResult
+
+
 # ── API 启停开关 ──────────────────────────────────────────────────
 
 
@@ -227,6 +242,7 @@ class DbOverview(BaseModel):
 
     database: str
     version: str = Field(..., description="数据库版本（已裁掉 OS 后缀）")
+    migration_version: str | None = Field(None, description="当前 Alembic 迁移版本号（alembic_version.version_num）")
     size_bytes: int = Field(..., description="当前库占用字节数")
     table_count: int = Field(..., description="业务表数量（排除 pg_* 系统 schema）")
     connections: int = Field(..., description="当前连接数")

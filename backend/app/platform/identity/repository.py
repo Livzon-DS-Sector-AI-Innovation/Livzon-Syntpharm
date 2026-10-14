@@ -180,6 +180,7 @@ class UserRepository:
         status: str | None = None,
         auth_source: str | None = None,
         unbound_only: bool = False,
+        must_change_password: bool | None = None,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
@@ -213,6 +214,9 @@ class UserRepository:
             # 仅返回尚未绑定飞书身份的账号（供「绑定飞书」选择器使用）
             base = base.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
             count_stmt = count_stmt.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
+        if must_change_password is not None:
+            base = base.where(User.must_change_password == must_change_password)
+            count_stmt = count_stmt.where(User.must_change_password == must_change_password)
 
         total = int((await session.execute(count_stmt)).scalar_one())
         result = await session.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))

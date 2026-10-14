@@ -23,9 +23,6 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import AppException
 from app.core.response import error_response
-from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
-    start_scheduler,
-)
 from app.platform.audit import AuditMiddleware
 from app.platform.permission.middleware import PermissionBindingMiddleware
 from app.platform.system.api_switch_middleware import ApiSwitchMiddleware
@@ -142,7 +139,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         member_sync_loop,
     )
 
-    start_scheduler()
+    # regulatory_tracker 的调度引擎由其 background worker（regulatory_tracker.scheduler）
+    # 负责初始化并运行；这里不再重复启动，避免定时任务被执行两遍。
     energy_task = asyncio.ensure_future(energy_collection_loop())
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
@@ -205,31 +203,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         asyncio.create_task(start_livzon_card_ws())
 
-    # ── 统一调度引擎（平台级，各模块可渐进迁移）──
+    # ── 统一调度引擎 ──
+    # 定时任务由各模块的 background worker 注册并运行：regulatory_tracker.scheduler
+    # 已把 daily_sync_task / daily_ai_analysis_task / InspectionScheduleGenerator 登记到
+    # 全局注册表并启动引擎。这里**不再重复创建引擎**，否则这些任务会被执行两遍。
+    from app.platform.scheduler.registry import get_global_registry
 
-    from app.modules.equipment.scheduled import InspectionScheduleGenerator
-    from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
-    from app.platform.scheduler.registry import set_global_registry
-
-    scheduler_registry = SchedulerRegistry()
-    scheduler_registry.register_generator(InspectionScheduleGenerator())
-
-    # Register regulatory_tracker scheduled tasks
-    from app.modules.registration.regulatory_tracker.tasks.sync_tasks import (
-        daily_ai_analysis_task,
-        daily_sync_task,
-    )
-
-    scheduler_registry.register_task(daily_sync_task)
-    scheduler_registry.register_task(daily_ai_analysis_task)
-    set_global_registry(scheduler_registry)
-    scheduler_engine = SchedulerEngine(scheduler_registry)
-    scheduler_engine_task = asyncio.create_task(scheduler_engine.run())
+    _global_registry = get_global_registry()
 
     logger.info(
         "Background tasks started (%d workers, %d generators)",
         len(workers),
-        len(scheduler_registry.generators),
+        len(_global_registry.generators) if _global_registry else 0,
     )
 
     yield
@@ -237,12 +222,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown: stop all workers in reverse order
     logger.info("Shutting down %s", settings.APP_NAME)
 
-    # ── 停止统一调度引擎 ──
-    scheduler_engine.stop()
-    try:
-        await asyncio.wait_for(scheduler_engine_task, timeout=10)
-    except (TimeoutError, asyncio.CancelledError):
-        pass
+    # 调度引擎由 regulatory_tracker.scheduler 这个 background worker 负责停止
+    # （见下方 worker 循环），这里不再单独停引擎。
 
     # Stop all background workers
     for worker, task in reversed(tasks):

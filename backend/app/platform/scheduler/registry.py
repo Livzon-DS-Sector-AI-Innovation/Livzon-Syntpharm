@@ -124,6 +124,8 @@ class SchedulerRegistry:
     def __init__(self) -> None:
         self._tasks: dict[str, TaskDefinition] = {}
         self._generators: dict[str, TaskGenerator] = {}
+        # 运行时临时禁用集合（系统运维页可启停；内存态，容器重启后恢复默认）
+        self._disabled: set[str] = set()
 
     # ── registration ──────────────────────────────────────────
 
@@ -152,6 +154,21 @@ class SchedulerRegistry:
     def generators(self) -> dict[str, TaskGenerator]:
         """Shallow copy of the generator map."""
         return dict(self._generators)
+
+    # ── 运行时临时启停（内存态） ──────────────────────────────────
+
+    def disable(self, name: str) -> None:
+        self._disabled.add(name)
+
+    def enable(self, name: str) -> None:
+        self._disabled.discard(name)
+
+    def is_disabled(self, name: str) -> bool:
+        return name in self._disabled
+
+    @property
+    def disabled_names(self) -> set[str]:
+        return set(self._disabled)
 
 
 # ═══════════════════════════════════════════════════════════════

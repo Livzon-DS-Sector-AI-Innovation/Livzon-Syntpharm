@@ -545,6 +545,7 @@ async def list_users_management(
     status: str | None = Query(None, description="按状态筛选"),
     auth_source: str | None = Query(None, description="按账号来源筛选：local / feishu"),
     unbound_only: bool = Query(False, description="仅返回未绑定飞书身份的账号"),
+    must_change_password: bool | None = Query(None, description="按「待改密」筛选"),
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -556,6 +557,7 @@ async def list_users_management(
         status=status,
         auth_source=auth_source,
         unbound_only=unbound_only,
+        must_change_password=must_change_password,
         offset=offset,
         limit=limit,
     )

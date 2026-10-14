@@ -548,6 +548,43 @@ async def my_permissions(
     return build_response(data=MyPermissionsData(permissions=codes, is_superuser=False))
 
 
+@router.get("/preview/{user_id}", response_model=MyPermissionsResponse)
+async def preview_user_access(
+    user_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("platform:grant:read")),
+    db: AsyncSession = Depends(get_db),
+):
+    """预览某用户的生效权限（授权管理「生效预览」用）：返回权限码集合 + 是否超管。
+
+    口径与 `my-permissions` 完全一致（超管返回全部权限码），只是针对任意目标用户。
+    """
+    target = (await db.execute(select(User).where(User.id == user_id))).scalar_one_or_none()
+    if target is None:
+        raise NotFoundException("用户")
+
+    grant_repo = GrantRepository()
+    if await grant_repo.is_superuser(db, target):
+        perms = await PermissionRepository().list_permissions(db)
+        return build_response(data=MyPermissionsData(permissions=[p.code for p in perms], is_superuser=True))
+
+    stmt = (
+        select(RolePermission.permission_code)
+        .join(Role, Role.id == RolePermission.role_id)
+        .join(UserRoleGrant, UserRoleGrant.role_id == Role.id)
+        .where(
+            UserRoleGrant.user_id == target.id,
+            UserRoleGrant.status == GRANT_ACTIVE,
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+            Role.status == GRANT_ACTIVE,
+            Role.is_deleted == False,  # noqa: E712
+            RolePermission.is_deleted == False,  # noqa: E712
+        )
+        .distinct()
+    )
+    codes = list((await db.execute(stmt)).scalars().all())
+    return build_response(data=MyPermissionsData(permissions=codes, is_superuser=False))
+
+
 # ── 工具 ──────────────────────────────────────────────────────────
 
 
