@@ -51,10 +51,10 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "stats", label: "设备仪表盘", path: "/equipment/stats" },
       { key: "assets", label: "设备台账", path: "/equipment/assets" },
       { key: "maintenance", label: "维护保养", path: "/equipment/maintenance" },
-      { key: "inspection", label: "设备巡检", path: "/equipment/inspection" },
+      { key: "equipment-inspection", label: "设备巡检", path: "/equipment/inspection" },
       { key: "spare-parts", label: "备件管理", path: "/equipment/spare-parts" },
       { key: "personnel", label: "人员配置", path: "/equipment/personnel" },
-      { key: "settings", label: "模块配置", path: "/equipment/settings" },
+      { key: "equipment-settings", label: "模块配置", path: "/equipment/settings" },
     ],
   },
   {
@@ -127,11 +127,11 @@ export const moduleMenus: ModuleMenu[] = [
             ],
           },
           {
-            key: "regulation",
+            key: "safety-regulation",
             label: "安全操规管理",
             path: "",
             children: [
-              { key: "regulation-list", label: "安全操规台账", path: "/safety/regulation" },
+              { key: "safety-regulation-list", label: "安全操规台账", path: "/safety/regulation" },
               { key: "regulation-generator", label: "标准化生成", path: "/safety/regulation/generator" },
             ],
           },
@@ -256,7 +256,7 @@ export const moduleMenus: ModuleMenu[] = [
         label: "检验管理",
         path: "",
         children: [
-          { key: "inspection", label: "质量检验", path: "/quality/inspection" },
+          { key: "quality-inspection", label: "质量检验", path: "/quality/inspection" },
           { key: "inspection-standards", label: "检验标准", path: "/quality/inspection/standards" },
           { key: "inspection-table", label: "检验表格", path: "/quality/inspection-table" },
           { key: "ipqc", label: "IPQC管理", path: "/quality/ipqc" },
@@ -345,7 +345,7 @@ export const moduleMenus: ModuleMenu[] = [
     path: "/research",
     children: [
       { key: "research-overview", label: "研发概览", path: "/research" },
-      { key: "projects", label: "研发项目", path: "/research/projects" },
+      { key: "research-projects", label: "研发项目", path: "/research/projects" },
       { key: "initiations", label: "立项管理", path: "/research/initiations" },
       { key: "route-development", label: "打通路线", path: "/research/route-development" },
       { key: "process-optimization", label: "工艺优化", path: "/research/process-optimization" },
@@ -370,14 +370,14 @@ export const moduleMenus: ModuleMenu[] = [
     path: "/registration",
     children: [
       { key: "registration-overview", label: "注册概览", path: "/registration" },
-      { key: "projects", label: "注册项目", path: "/registration/projects" },
+      { key: "registration-projects", label: "注册项目", path: "/registration/projects" },
       {
-        key: "regulation",
+        key: "registration-regulation",
         label: "法规跟踪",
         path: "",
         children: [
           { key: "regulation-dashboard", label: "法规看板", path: "/registration/regulation" },
-          { key: "regulation-list", label: "法规列表", path: "/registration/regulation/list" },
+          { key: "registration-regulation-list", label: "法规列表", path: "/registration/regulation/list" },
         ],
       },
       { key: "authorization-letter", label: "授权书管理", path: "/registration/authorization-letter" },
@@ -447,7 +447,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "meeting-ledger", label: "物品台账", path: "/administration/meeting/ledger" },
       { key: "meeting-requests", label: "领用记录", path: "/administration/meeting/requests" },
       { key: "meeting-requisitions", label: "领用申请", path: "/administration/meeting/requisitions" },
-      { key: "approval", label: "文件审批", path: "/administration/approval" },
+      { key: "administration-approval", label: "文件审批", path: "/administration/approval" },
       { key: "it-tickets", label: "IT工单", path: "/administration/it-tickets" },
       { key: "vehicle-requests", label: "用车数据", path: "/administration/vehicle-requests" },
       { key: "vehicles", label: "车辆管理", path: "/administration/vehicles" },
@@ -470,7 +470,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "invoice-recognition", label: "发票识别", path: "/procurement/invoice-recognition" },
       { key: "contract-summary", label: "合同汇总", path: "/procurement/contract-summary" },
       { key: "contract-generation", label: "合同生成", path: "/procurement/contract-generation" },
-      { key: "approval", label: "审批流程", path: "/procurement/approval" },
+      { key: "procurement-approval", label: "审批流程", path: "/procurement/approval" },
     ],
   },
 
