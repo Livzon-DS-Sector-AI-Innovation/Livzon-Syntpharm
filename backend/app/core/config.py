@@ -172,6 +172,9 @@ class Settings(BaseSettings):
     # 权限：是否强制执行「接口精确绑定兜底」（未登记绑定的受保护接口一律 403）。
     # 默认关闭，待存量业务接口全部接入绑定登记后再开启。
     PERMISSION_ENFORCE_ENABLED: bool = False
+    # 权限灰度：逗号分隔的模块码（业务模块码 + 平台域 identity/permission/system/audit）。
+    # 空字符串 = 对所有受保护前缀强制（最终态）；非空 = 仅所列模块强制（灰度节奏：接入一个开一个）。
+    PERMISSION_ENFORCE_MODULES: str = ""
 
     @field_validator("DEBUG", mode="before")
     @classmethod

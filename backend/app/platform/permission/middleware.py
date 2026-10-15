@@ -18,13 +18,26 @@ from starlette.responses import JSONResponse, Response
 from app.core.config import get_settings
 from app.platform.permission.registry import (
     BINDINGS_BY_ROUTE,
+    ENFORCEABLE_MODULE_CODES,
     EXEMPT_ROUTES,
     ApiBindingDef,
-    is_protected_route,
+    is_enforced_route,
 )
 from app.shared.route_match import template_matches
 
 logger = logging.getLogger(__name__)
+
+
+def _parse_enabled_modules(raw: str) -> frozenset[str]:
+    """解析灰度模块集合；未知模块码记警告并忽略（拼错不致全部放开）。"""
+    codes = frozenset(part.strip() for part in raw.split(",") if part.strip())
+    unknown = codes - ENFORCEABLE_MODULE_CODES
+    if unknown:
+        logger.warning(
+            "permission_enforce_unknown_modules modules=%s（忽略，合法值见 registry.ENFORCEABLE_MODULE_CODES）",
+            ",".join(sorted(unknown)),
+        )
+    return codes & ENFORCEABLE_MODULE_CODES
 
 
 def _find_binding(method: str, path: str) -> ApiBindingDef | None:
@@ -61,7 +74,8 @@ class PermissionBindingMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         path = request.url.path
-        if not is_protected_route(path):
+        enabled_modules = _parse_enabled_modules(settings.PERMISSION_ENFORCE_MODULES)
+        if not is_enforced_route(path, enabled_modules):
             return await call_next(request)
 
         binding = _find_binding(request.method, path)

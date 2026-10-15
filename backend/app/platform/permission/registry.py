@@ -95,6 +95,22 @@ RESOURCE_LABELS: dict[str, str] = {
     "audit": "审计日志",
     "api-binding": "接口绑定",
     "ops": "系统运维",
+    # ── research（研发管理）资源 ──
+    "project": "研发项目",
+    "track": "研究跟踪",
+    "initiation": "立项",
+    "route": "工艺路线",
+    "experiment-log": "实验日志",
+    "pilot-study": "中试研究",
+    "pilot-workflow": "中试工作流",
+    "process-validation": "工艺验证",
+    "registration-filing": "注册申报",
+    "deliverable-template": "交付物模板",
+    "stage-deliverable": "阶段交付物",
+    "optimization": "工艺优化",
+    "ich": "ICH 分析",
+    "literature": "文献分析",
+    "report": "研发报告",
 }
 
 # ── 业务模块访问权限码（菜单级：每个模块 1 个）─────────────────────
@@ -117,8 +133,81 @@ BUSINESS_MODULE_PERMISSIONS: tuple[PermissionDef, ...] = tuple(
 )
 
 
+# ── 业务模块细粒度权限码：research（研发管理）─────────────────
+
+RESEARCH_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef(
+        "research:deliverable-template:create", "创建交付物模板", "research", "deliverable-template", "create"
+    ),
+    PermissionDef(
+        "research:deliverable-template:delete", "删除交付物模板", "research", "deliverable-template", "delete"
+    ),
+    PermissionDef("research:deliverable-template:read", "查看交付物模板", "research", "deliverable-template", "read"),
+    PermissionDef(
+        "research:deliverable-template:update", "更新交付物模板", "research", "deliverable-template", "update"
+    ),
+    PermissionDef("research:experiment-log:create", "创建实验日志", "research", "experiment-log", "create"),
+    PermissionDef("research:experiment-log:delete", "删除实验日志", "research", "experiment-log", "delete"),
+    PermissionDef("research:experiment-log:export", "导出实验日志", "research", "experiment-log", "export"),
+    PermissionDef("research:experiment-log:read", "查看实验日志", "research", "experiment-log", "read"),
+    PermissionDef("research:experiment-log:update", "更新实验日志", "research", "experiment-log", "update"),
+    PermissionDef("research:ich:create", "创建ICH 分析", "research", "ich", "create"),
+    PermissionDef("research:ich:delete", "删除ICH 分析", "research", "ich", "delete"),
+    PermissionDef("research:ich:read", "查看ICH 分析", "research", "ich", "read"),
+    PermissionDef("research:initiation:create", "创建立项", "research", "initiation", "create"),
+    PermissionDef("research:initiation:delete", "删除立项", "research", "initiation", "delete"),
+    PermissionDef("research:initiation:read", "查看立项", "research", "initiation", "read"),
+    PermissionDef("research:initiation:update", "更新立项", "research", "initiation", "update"),
+    PermissionDef("research:literature:create", "创建文献分析", "research", "literature", "create"),
+    PermissionDef("research:optimization:create", "创建工艺优化", "research", "optimization", "create"),
+    PermissionDef("research:optimization:delete", "删除工艺优化", "research", "optimization", "delete"),
+    PermissionDef("research:optimization:read", "查看工艺优化", "research", "optimization", "read"),
+    PermissionDef("research:optimization:update", "更新工艺优化", "research", "optimization", "update"),
+    PermissionDef("research:pilot-study:create", "创建中试研究", "research", "pilot-study", "create"),
+    PermissionDef("research:pilot-study:delete", "删除中试研究", "research", "pilot-study", "delete"),
+    PermissionDef("research:pilot-study:read", "查看中试研究", "research", "pilot-study", "read"),
+    PermissionDef("research:pilot-study:update", "更新中试研究", "research", "pilot-study", "update"),
+    PermissionDef("research:pilot-workflow:approve", "审批中试工作流", "research", "pilot-workflow", "approve"),
+    PermissionDef("research:pilot-workflow:create", "创建中试工作流", "research", "pilot-workflow", "create"),
+    PermissionDef("research:pilot-workflow:delete", "删除中试工作流", "research", "pilot-workflow", "delete"),
+    PermissionDef("research:pilot-workflow:read", "查看中试工作流", "research", "pilot-workflow", "read"),
+    PermissionDef("research:pilot-workflow:submit", "提交/流转中试工作流", "research", "pilot-workflow", "submit"),
+    PermissionDef("research:process-validation:create", "创建工艺验证", "research", "process-validation", "create"),
+    PermissionDef("research:process-validation:delete", "删除工艺验证", "research", "process-validation", "delete"),
+    PermissionDef("research:process-validation:read", "查看工艺验证", "research", "process-validation", "read"),
+    PermissionDef("research:process-validation:update", "更新工艺验证", "research", "process-validation", "update"),
+    PermissionDef("research:project:create", "创建研发项目", "research", "project", "create"),
+    PermissionDef("research:project:delete", "删除研发项目", "research", "project", "delete"),
+    PermissionDef("research:project:export", "导出研发项目", "research", "project", "export"),
+    PermissionDef("research:project:read", "查看研发项目", "research", "project", "read"),
+    PermissionDef("research:project:submit", "提交/流转研发项目", "research", "project", "submit"),
+    PermissionDef("research:project:update", "更新研发项目", "research", "project", "update"),
+    PermissionDef("research:registration-filing:create", "创建注册申报", "research", "registration-filing", "create"),
+    PermissionDef("research:registration-filing:delete", "删除注册申报", "research", "registration-filing", "delete"),
+    PermissionDef("research:registration-filing:read", "查看注册申报", "research", "registration-filing", "read"),
+    PermissionDef("research:registration-filing:update", "更新注册申报", "research", "registration-filing", "update"),
+    PermissionDef("research:report:create", "创建研发报告", "research", "report", "create"),
+    PermissionDef("research:report:delete", "删除研发报告", "research", "report", "delete"),
+    PermissionDef("research:report:read", "查看研发报告", "research", "report", "read"),
+    PermissionDef("research:report:update", "更新研发报告", "research", "report", "update"),
+    PermissionDef("research:route:create", "创建工艺路线", "research", "route", "create"),
+    PermissionDef("research:route:delete", "删除工艺路线", "research", "route", "delete"),
+    PermissionDef("research:route:read", "查看工艺路线", "research", "route", "read"),
+    PermissionDef("research:route:update", "更新工艺路线", "research", "route", "update"),
+    PermissionDef("research:stage-deliverable:create", "创建阶段交付物", "research", "stage-deliverable", "create"),
+    PermissionDef("research:stage-deliverable:delete", "删除阶段交付物", "research", "stage-deliverable", "delete"),
+    PermissionDef("research:stage-deliverable:read", "查看阶段交付物", "research", "stage-deliverable", "read"),
+    PermissionDef("research:stage-deliverable:update", "更新阶段交付物", "research", "stage-deliverable", "update"),
+    PermissionDef("research:track:create", "创建研究跟踪", "research", "track", "create"),
+    PermissionDef("research:track:delete", "删除研究跟踪", "research", "track", "delete"),
+    PermissionDef("research:track:export", "导出研究跟踪", "research", "track", "export"),
+    PermissionDef("research:track:read", "查看研究跟踪", "research", "track", "read"),
+    PermissionDef("research:track:update", "更新研究跟踪", "research", "track", "update"),
+)
+
+
 # 全部权限码（业务模块接入存量接口时，把业务权限码合并进来即可，权限树会自动生长）
-ALL_PERMISSIONS: tuple[PermissionDef, ...] = PLATFORM_PERMISSIONS + BUSINESS_MODULE_PERMISSIONS
+ALL_PERMISSIONS: tuple[PermissionDef, ...] = PLATFORM_PERMISSIONS + BUSINESS_MODULE_PERMISSIONS + RESEARCH_PERMISSIONS
 
 
 # ── 内置角色 ──────────────────────────────────────────────────────
@@ -224,6 +313,140 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     # 菜单栏管理（显隐 / 权重 / 权限绑定 / 自定义菜单项）
     ApiBindingDef("platform:ops:manage", "PUT", "/api/v1/system/menus/config"),
+    # create_module_router 注册的是 GET "/" → 实际路径带尾斜杠；中间件在路由重定向前执行，两种写法都要登记
+    ApiBindingDef("research:module:read", "GET", "/api/v1/research"),
+    ApiBindingDef("research:module:read", "GET", "/api/v1/research/"),
+    ApiBindingDef(
+        "research:deliverable-template:delete", "DELETE", "/api/v1/research/deliverable-templates/{template_id}"
+    ),
+    ApiBindingDef("research:experiment-log:delete", "DELETE", "/api/v1/research/experiment-logs/{log_id}"),
+    ApiBindingDef("research:route:delete", "DELETE", "/api/v1/research/experiments/{exp_id}"),
+    ApiBindingDef("research:track:delete", "DELETE", "/api/v1/research/findings/{finding_id}"),
+    ApiBindingDef("research:ich:delete", "DELETE", "/api/v1/research/ich/records/{record_id}"),
+    ApiBindingDef("research:initiation:delete", "DELETE", "/api/v1/research/initiations/{initiation_id}"),
+    ApiBindingDef("research:optimization:delete", "DELETE", "/api/v1/research/optimizations/{optimization_id}"),
+    ApiBindingDef("research:pilot-workflow:delete", "DELETE", "/api/v1/research/pilot/workflow/{workflow_id}"),
+    ApiBindingDef("research:track:delete", "DELETE", "/api/v1/research/projects/tracks/{track_id}"),
+    ApiBindingDef("research:project:delete", "DELETE", "/api/v1/research/projects/{project_id}"),
+    ApiBindingDef("research:pilot-study:delete", "DELETE", "/api/v1/research/rd-pilot-studies/{study_id}"),
+    ApiBindingDef(
+        "research:process-validation:delete", "DELETE", "/api/v1/research/rd-process-validations/{validation_id}"
+    ),
+    ApiBindingDef("research:project:delete", "DELETE", "/api/v1/research/rd-projects/{project_id}"),
+    ApiBindingDef(
+        "research:registration-filing:delete", "DELETE", "/api/v1/research/rd-registration-filings/{filing_id}"
+    ),
+    ApiBindingDef(
+        "research:stage-deliverable:delete", "DELETE", "/api/v1/research/rd-stage-deliverables/{deliverable_id}"
+    ),
+    ApiBindingDef("research:report:delete", "DELETE", "/api/v1/research/reports/{report_id}"),
+    ApiBindingDef("research:route:delete", "DELETE", "/api/v1/research/routes/{route_id}"),
+    ApiBindingDef("research:deliverable-template:read", "GET", "/api/v1/research/deliverable-templates"),
+    ApiBindingDef("research:experiment-log:read", "GET", "/api/v1/research/experiment-logs"),
+    ApiBindingDef("research:experiment-log:export", "GET", "/api/v1/research/export/experiment-logs"),
+    ApiBindingDef("research:project:export", "GET", "/api/v1/research/export/projects"),
+    ApiBindingDef("research:track:export", "GET", "/api/v1/research/export/tracks"),
+    ApiBindingDef("research:ich:read", "GET", "/api/v1/research/ich/records"),
+    ApiBindingDef("research:ich:read", "GET", "/api/v1/research/ich/records/{record_id}"),
+    ApiBindingDef("research:initiation:read", "GET", "/api/v1/research/initiations"),
+    ApiBindingDef("research:optimization:read", "GET", "/api/v1/research/optimizations"),
+    ApiBindingDef("research:optimization:read", "GET", "/api/v1/research/optimizations/{optimization_id}"),
+    ApiBindingDef("research:pilot-study:read", "GET", "/api/v1/research/pilot-studies"),
+    ApiBindingDef("research:pilot-workflow:read", "GET", "/api/v1/research/pilot/workflow"),
+    ApiBindingDef("research:pilot-workflow:read", "GET", "/api/v1/research/pilot/workflow/{workflow_id}"),
+    ApiBindingDef(
+        "research:pilot-workflow:read", "GET", "/api/v1/research/pilot/workflow/{workflow_id}/steps/{step_id}"
+    ),
+    ApiBindingDef("research:process-validation:read", "GET", "/api/v1/research/process-validations"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/projects"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/projects/{project_id}"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/projects/{project_id}/milestones"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/projects/{project_id}/stages"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/projects/{project_id}/tracks"),
+    ApiBindingDef("research:pilot-study:read", "GET", "/api/v1/research/rd-pilot-studies"),
+    ApiBindingDef("research:process-validation:read", "GET", "/api/v1/research/rd-process-validations"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/rd-projects"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/rd-projects/{project_id}"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/rd-projects/{project_id}/transition-check"),
+    ApiBindingDef("research:registration-filing:read", "GET", "/api/v1/research/rd-registration-filings"),
+    ApiBindingDef("research:stage-deliverable:read", "GET", "/api/v1/research/rd-stage-deliverables"),
+    ApiBindingDef("research:stage-deliverable:read", "GET", "/api/v1/research/rd-stage-deliverables/{deliverable_id}"),
+    ApiBindingDef(
+        "research:stage-deliverable:read", "GET", "/api/v1/research/rd-stage-deliverables/{deliverable_id}/download"
+    ),
+    ApiBindingDef("research:registration-filing:read", "GET", "/api/v1/research/registration-filings"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/reports"),
+    ApiBindingDef("research:route:read", "GET", "/api/v1/research/routes"),
+    ApiBindingDef("research:route:read", "GET", "/api/v1/research/routes/{route_id}"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/stats/overview"),
+    ApiBindingDef("research:project:read", "GET", "/api/v1/research/stats/project-progress"),
+    ApiBindingDef("research:track:read", "GET", "/api/v1/research/tracks"),
+    ApiBindingDef("research:track:read", "GET", "/api/v1/research/tracks/{track_id}"),
+    ApiBindingDef("research:track:read", "GET", "/api/v1/research/tracks/{track_id}/conclusion-versions"),
+    ApiBindingDef("research:track:read", "GET", "/api/v1/research/tracks/{track_id}/conclusions"),
+    ApiBindingDef("research:track:read", "GET", "/api/v1/research/tracks/{track_id}/findings"),
+    ApiBindingDef("research:deliverable-template:create", "POST", "/api/v1/research/deliverable-templates"),
+    ApiBindingDef("research:optimization:create", "POST", "/api/v1/research/edbo/generate-scope"),
+    ApiBindingDef("research:optimization:create", "POST", "/api/v1/research/edbo/optimize"),
+    ApiBindingDef("research:experiment-log:create", "POST", "/api/v1/research/experiment-logs"),
+    ApiBindingDef("research:report:create", "POST", "/api/v1/research/generate-report"),
+    ApiBindingDef("research:ich:create", "POST", "/api/v1/research/ich/analyze"),
+    ApiBindingDef("research:ich:create", "POST", "/api/v1/research/ich/q3c/analyze"),
+    ApiBindingDef("research:initiation:create", "POST", "/api/v1/research/initiations"),
+    ApiBindingDef("research:literature:create", "POST", "/api/v1/research/literature/analyze"),
+    ApiBindingDef("research:optimization:create", "POST", "/api/v1/research/optimizations"),
+    ApiBindingDef("research:pilot-study:create", "POST", "/api/v1/research/pilot-studies"),
+    ApiBindingDef("research:pilot-workflow:create", "POST", "/api/v1/research/pilot/workflow"),
+    ApiBindingDef("research:pilot-workflow:approve", "POST", "/api/v1/research/pilot/workflow/{workflow_id}/approve"),
+    ApiBindingDef("research:pilot-workflow:submit", "POST", "/api/v1/research/pilot/workflow/{workflow_id}/start"),
+    ApiBindingDef("research:pilot-workflow:create", "POST", "/api/v1/research/pilot/workflow/{workflow_id}/upload"),
+    ApiBindingDef("research:process-validation:create", "POST", "/api/v1/research/process-validations"),
+    ApiBindingDef("research:project:create", "POST", "/api/v1/research/projects"),
+    ApiBindingDef("research:project:create", "POST", "/api/v1/research/projects/{project_id}/milestones"),
+    ApiBindingDef("research:project:create", "POST", "/api/v1/research/projects/{project_id}/stages"),
+    ApiBindingDef("research:project:create", "POST", "/api/v1/research/projects/{project_id}/tracks"),
+    ApiBindingDef("research:pilot-study:create", "POST", "/api/v1/research/rd-pilot-studies"),
+    ApiBindingDef("research:process-validation:create", "POST", "/api/v1/research/rd-process-validations"),
+    ApiBindingDef("research:project:create", "POST", "/api/v1/research/rd-projects"),
+    ApiBindingDef("research:project:submit", "POST", "/api/v1/research/rd-projects/{project_id}/transition"),
+    ApiBindingDef("research:registration-filing:create", "POST", "/api/v1/research/rd-registration-filings"),
+    ApiBindingDef("research:stage-deliverable:create", "POST", "/api/v1/research/rd-stage-deliverables"),
+    ApiBindingDef(
+        "research:stage-deliverable:create", "POST", "/api/v1/research/rd-stage-deliverables/{deliverable_id}/upload"
+    ),
+    ApiBindingDef("research:registration-filing:create", "POST", "/api/v1/research/registration-filings"),
+    ApiBindingDef("research:report:create", "POST", "/api/v1/research/reports"),
+    ApiBindingDef("research:route:create", "POST", "/api/v1/research/routes"),
+    ApiBindingDef("research:route:create", "POST", "/api/v1/research/routes/{route_id}/experiments"),
+    ApiBindingDef("research:track:create", "POST", "/api/v1/research/tracks/{track_id}/conclusion-versions"),
+    ApiBindingDef("research:track:create", "POST", "/api/v1/research/tracks/{track_id}/conclusions"),
+    ApiBindingDef("research:track:create", "POST", "/api/v1/research/tracks/{track_id}/findings"),
+    ApiBindingDef(
+        "research:deliverable-template:update", "PUT", "/api/v1/research/deliverable-templates/{template_id}"
+    ),
+    ApiBindingDef("research:experiment-log:update", "PUT", "/api/v1/research/experiment-logs/{log_id}"),
+    ApiBindingDef("research:route:update", "PUT", "/api/v1/research/experiments/{exp_id}"),
+    ApiBindingDef("research:track:update", "PUT", "/api/v1/research/findings/{finding_id}"),
+    ApiBindingDef("research:initiation:update", "PUT", "/api/v1/research/initiations/{initiation_id}"),
+    ApiBindingDef("research:optimization:update", "PUT", "/api/v1/research/optimizations/{optimization_id}"),
+    ApiBindingDef("research:pilot-study:update", "PUT", "/api/v1/research/pilot-studies/{study_id}"),
+    ApiBindingDef("research:process-validation:update", "PUT", "/api/v1/research/process-validations/{validation_id}"),
+    ApiBindingDef("research:project:update", "PUT", "/api/v1/research/projects/milestones/{milestone_id}"),
+    ApiBindingDef("research:project:update", "PUT", "/api/v1/research/projects/stages/{record_id}"),
+    ApiBindingDef("research:track:update", "PUT", "/api/v1/research/projects/tracks/{track_id}"),
+    ApiBindingDef("research:project:update", "PUT", "/api/v1/research/projects/{project_id}"),
+    ApiBindingDef("research:pilot-study:update", "PUT", "/api/v1/research/rd-pilot-studies/{study_id}"),
+    ApiBindingDef(
+        "research:process-validation:update", "PUT", "/api/v1/research/rd-process-validations/{validation_id}"
+    ),
+    ApiBindingDef("research:project:update", "PUT", "/api/v1/research/rd-projects/{project_id}"),
+    ApiBindingDef("research:registration-filing:update", "PUT", "/api/v1/research/rd-registration-filings/{filing_id}"),
+    ApiBindingDef(
+        "research:stage-deliverable:update", "PUT", "/api/v1/research/rd-stage-deliverables/{deliverable_id}"
+    ),
+    ApiBindingDef("research:registration-filing:update", "PUT", "/api/v1/research/registration-filings/{filing_id}"),
+    ApiBindingDef("research:report:update", "PUT", "/api/v1/research/reports/{report_id}"),
+    ApiBindingDef("research:route:update", "PUT", "/api/v1/research/routes/{route_id}"),
 )
 
 
@@ -268,3 +491,43 @@ PROTECTED_ROUTE_PREFIXES: tuple[str, ...] = tuple(
 def is_protected_route(path: str) -> bool:
     """判断路由是否属于受保护前缀。"""
     return any(path == prefix or path.startswith(prefix + "/") for prefix in PROTECTED_ROUTE_PREFIXES)
+
+
+# ── 按模块灰度强制 ────────────────────────────────────────────────
+# `PERMISSION_ENFORCE_MODULES`（config.py）允许只对已完成绑定的模块开强制，
+# 未完成的模块暂不受兜底影响（接入一个开一个，避免一刀切 403）。
+
+# 路径前缀 → 模块码（含平台域伪模块码，用于灰度集合取值）
+_PREFIX_TO_MODULE: dict[str, str] = {
+    **{f"/api/v1/{m.path.lstrip('/')}": m.code for m in BUSINESS_MODULES},
+    "/api/v1/permission": "permission",
+    "/api/v1/identity": "identity",
+    "/api/v1/system": "system",
+    "/api/v1/audit": "audit",
+}
+
+# 灰度集合可用模块码全集（校验配置拼写用）
+ENFORCEABLE_MODULE_CODES: frozenset[str] = frozenset(_PREFIX_TO_MODULE.values())
+
+# ── 已完成接入的模块（CI 完整性门禁范围）─────────────────────────
+# 模块的全部接口绑定登记完成后，把模块码加到这里：
+# - scripts/ci/check_permissions.py 会对它执行完整性校验
+#   （每个路由都有绑定或豁免、每个 require_permission 码都存在）；
+# - 此后才允许把该模块码加入部署配置的 PERMISSION_ENFORCE_MODULES 开强制。
+ENFORCE_READY_MODULES: tuple[str, ...] = ("research",)
+
+
+def module_for_path(path: str) -> str | None:
+    """反查请求路径所属模块码；非受保护路径返回 None。"""
+    for prefix, code in _PREFIX_TO_MODULE.items():
+        if path == prefix or path.startswith(prefix + "/"):
+            return code
+    return None
+
+
+def is_enforced_route(path: str, enabled_modules: frozenset[str]) -> bool:
+    """该路径是否处于强制兜底范围：受保护 且 （灰度集合为空=全部 / 或所属模块在集合内）。"""
+    code = module_for_path(path)
+    if code is None:
+        return False
+    return not enabled_modules or code in enabled_modules
