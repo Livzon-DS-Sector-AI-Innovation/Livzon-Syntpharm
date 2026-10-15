@@ -14,7 +14,6 @@ import {
   Space,
   Switch,
   Tag,
-  Typography,
 } from 'antd'
 import {
   ApiOutlined,
@@ -35,7 +34,6 @@ import type {
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
-const { Text } = Typography
 type DiagnosticStep = NonNullable<FeishuDiagnosticResult['steps']>[number]
 
 const STATUS_COLOR: Record<string, string> = {
@@ -182,22 +180,22 @@ export default function FeishuSettingsClient() {
   }
 
   return (
-    <div className="max-w-[1120px]">
+    <div className="settings-stagger max-w-[1120px]">
       <div className="mb-5">
         <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
-          <SafetyCertificateOutlined className="mr-3" />
+          <SafetyCertificateOutlined className="mr-2" />
           Livzon 助手飞书设置
         </h2>
-        <Text className="mt-2 block text-[13px] text-[var(--color-steel)]">
+        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
           此配置仅用于 Livzon 助手通讯录同步和权限诊断，不影响仓储、安全、设备等模块的飞书应用配置。
-        </Text>
+        </p>
       </div>
 
       <Alert
         className="mb-4"
         type="info"
         showIcon
-        message="仅针对 Livzon 助手"
+        title="仅针对 Livzon 助手"
         description="这里保存的 App ID、App Secret 和卡片回调配置只会用于 Livzon 助手通讯录、消息发送和权限诊断，不影响其他模块。"
       />
 
@@ -269,7 +267,7 @@ export default function FeishuSettingsClient() {
             className="mb-4"
             type="warning"
             showIcon
-            message="交互卡片回调方式"
+            title="交互卡片回调方式"
             description={`生产环境可配置 HTTP 回调地址：${config?.card_callback_url || '/api/v1/identity/feishu/card-callback'}；开发环境可在后端开启 LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED=true，并在飞书开放平台选择使用长连接接收回调。`}
           />
 
@@ -344,7 +342,7 @@ export default function FeishuSettingsClient() {
               className="mb-3"
               type={diagnostic.status === 'ok' ? 'success' : diagnostic.status}
               showIcon
-              message={diagnostic.message}
+              title={diagnostic.message}
               description={`部门 ${diagnostic.department_count || 0} 个，抽样用户 ${diagnostic.sample_user_count || 0} 名。`}
             />
             <List<DiagnosticStep>
@@ -355,14 +353,16 @@ export default function FeishuSettingsClient() {
                     title={
                       <Space>
                         <Tag color={STATUS_COLOR[item.status] || 'default'}>{item.status}</Tag>
-                        <span>{item.name}</span>
+                        <span className="font-medium text-[var(--color-charcoal)]">{item.name}</span>
                       </Space>
                     }
                     description={
                       <div>
                         <div>{item.message}</div>
                         {item.suggestion && (
-                          <Text type="secondary">{item.suggestion}</Text>
+                          <span className="text-[12px] text-[var(--color-steel)]">
+                            {item.suggestion}
+                          </span>
                         )}
                       </div>
                     }

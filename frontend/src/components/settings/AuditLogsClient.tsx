@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Card, Input, Result, Select, Space, Table, Tag, Typography } from 'antd'
+import { Button, Input, Result, Select, Space, Table, Tag } from 'antd'
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getAuditLogs } from '@/actions/audit'
 import type { AuditLogItem } from '@/types/audit'
-
-const { Text } = Typography
+import { SettingsListCard } from './SettingsListCard'
 
 const ACTION_LABEL: Record<string, string> = {
   'user.create': '新建用户',
@@ -88,9 +87,11 @@ export default function AuditLogsClient() {
       key: 'user_name',
       width: 140,
       render: (text: string | null, record: AuditLogItem) => (
-        <Space direction="vertical" size={0}>
-          <Text strong>{text || '-'}</Text>
-          {record.username && <Text type="secondary" className="text-[12px]">{record.username}</Text>}
+        <Space orientation="vertical" size={0}>
+          <span className="font-medium text-[var(--color-charcoal)]">{text || '-'}</span>
+          {record.username && (
+            <span className="text-[12px] text-[var(--color-steel)]">{record.username}</span>
+          )}
         </Space>
       ),
     },
@@ -115,9 +116,9 @@ export default function AuditLogsClient() {
       ellipsis: true,
       render: (_: unknown, record: AuditLogItem) => {
         if (record.action === 'user.reset_password' || record.action === 'user.change_password') {
-          return <Text type="secondary">口令已更新（内容不展示）</Text>
+          return <span className="text-[12px] text-[var(--color-steel)]">口令已更新（内容不展示）</span>
         }
-        return <Text type="secondary">点击行展开查看改前 / 改后详情</Text>
+        return <span className="text-[12px] text-[var(--color-steel)]">点击行展开查看改前 / 改后详情</span>
       },
     },
     {
@@ -130,45 +131,46 @@ export default function AuditLogsClient() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-full sm:w-[160px]">
-          <Select
-            placeholder="动作类型"
-            allowClear
-            style={{ width: '100%' }}
-            value={action}
-            onChange={(v) => { setAction(v); setPage(1) }}
-            options={Object.entries(ACTION_LABEL).map(([value, label]) => ({ value, label }))}
-          />
-        </div>
-        <div className="w-full sm:w-[140px]">
-          <Select
-            placeholder="对象类型"
-            allowClear
-            style={{ width: '100%' }}
-            value={resourceType}
-            onChange={(v) => { setResourceType(v); setPage(1) }}
-            options={Object.entries(RESOURCE_LABEL).map(([value, label]) => ({ value, label }))}
-          />
-        </div>
-        <div className="w-full sm:w-[220px]">
-          <Input
-            placeholder="搜索操作者姓名 / 用户名"
-            prefix={<SearchOutlined />}
-            style={{ width: '100%' }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onPressEnter={() => setPage(1)}
-            allowClear
-          />
-        </div>
-        <Button icon={<ReloadOutlined />} onClick={() => refetch()} className="shrink-0">
-          刷新
-        </Button>
-      </div>
-
-      <Card className="[&_.ant-table]:!m-0">
+    <SettingsListCard
+      toolbar={
+        <>
+          <div className="w-full sm:w-[160px]">
+            <Select
+              placeholder="动作类型"
+              allowClear
+              style={{ width: '100%' }}
+              value={action}
+              onChange={(v) => { setAction(v); setPage(1) }}
+              options={Object.entries(ACTION_LABEL).map(([value, label]) => ({ value, label }))}
+            />
+          </div>
+          <div className="w-full sm:w-[140px]">
+            <Select
+              placeholder="对象类型"
+              allowClear
+              style={{ width: '100%' }}
+              value={resourceType}
+              onChange={(v) => { setResourceType(v); setPage(1) }}
+              options={Object.entries(RESOURCE_LABEL).map(([value, label]) => ({ value, label }))}
+            />
+          </div>
+          <div className="w-full sm:w-[220px]">
+            <Input
+              placeholder="搜索操作者姓名 / 用户名"
+              prefix={<SearchOutlined />}
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onPressEnter={() => setPage(1)}
+              allowClear
+            />
+          </div>
+          <Button icon={<ReloadOutlined />} onClick={() => refetch()} className="shrink-0">
+            刷新
+          </Button>
+        </>
+      }
+    >
       <Table
         rowKey="id"
         columns={columns}
@@ -179,14 +181,14 @@ export default function AuditLogsClient() {
           expandedRowRender: (record: AuditLogItem) => (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <Text type="secondary" className="text-[12px]">改前（old_value）</Text>
-                <pre className="m-0 mt-1 whitespace-pre-wrap rounded bg-[var(--color-mist)] p-3 text-[12px]">
+                <span className="text-[12px] text-[var(--color-steel)]">改前（old_value）</span>
+                <pre className="m-0 mt-1 whitespace-pre-wrap rounded bg-[var(--color-surface-soft)] p-3 text-[12px]">
                   {formatValue(record.old_value)}
                 </pre>
               </div>
               <div>
-                <Text type="secondary" className="text-[12px]">改后（new_value）</Text>
-                <pre className="m-0 mt-1 whitespace-pre-wrap rounded bg-[var(--color-mist)] p-3 text-[12px]">
+                <span className="text-[12px] text-[var(--color-steel)]">改后（new_value）</span>
+                <pre className="m-0 mt-1 whitespace-pre-wrap rounded bg-[var(--color-surface-soft)] p-3 text-[12px]">
                   {formatValue(record.new_value)}
                 </pre>
               </div>
@@ -201,9 +203,7 @@ export default function AuditLogsClient() {
           showTotal: (t) => `共 ${t} 条`,
           onChange: (p, ps) => { setPage(p); setPageSize(ps) },
         }}
-        size="middle"
       />
-      </Card>
-    </div>
+    </SettingsListCard>
   )
 }

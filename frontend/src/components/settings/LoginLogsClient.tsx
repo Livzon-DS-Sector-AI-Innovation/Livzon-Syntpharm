@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Card, Input, Result, Select, Table, Tag } from 'antd'
+import { Button, Input, Result, Select, Table, Tag } from 'antd'
 import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getLoginLogs } from '@/actions/identity'
+import { SettingsListCard } from './SettingsListCard'
 
 const LOGIN_TYPE_LABEL: Record<string, string> = {
   feishu_sso: '飞书登录',
@@ -111,38 +112,39 @@ export default function LoginLogsClient() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-full sm:w-[140px]">
-          <Select
-            placeholder="登录状态"
-            allowClear
-            style={{ width: '100%' }}
-            value={status}
-            onChange={(v) => { setStatus(v); setPage(1) }}
-            options={[
-              { value: 'success', label: '成功' },
-              { value: 'failed', label: '失败' },
-            ]}
-          />
-        </div>
-        <div className="w-full sm:w-[200px]">
-          <Input
-            placeholder="搜索用户名"
-            prefix={<SearchOutlined />}
-            style={{ width: '100%' }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onPressEnter={() => { setPage(1) }}
-            allowClear
-          />
-        </div>
-        <Button icon={<ReloadOutlined />} onClick={() => refetch()} className="shrink-0">
-          刷新
-        </Button>
-      </div>
-
-      <Card className="[&_.ant-table]:!m-0">
+    <SettingsListCard
+      toolbar={
+        <>
+          <div className="w-full sm:w-[140px]">
+            <Select
+              placeholder="登录状态"
+              allowClear
+              style={{ width: '100%' }}
+              value={status}
+              onChange={(v) => { setStatus(v); setPage(1) }}
+              options={[
+                { value: 'success', label: '成功' },
+                { value: 'failed', label: '失败' },
+              ]}
+            />
+          </div>
+          <div className="w-full sm:w-[200px]">
+            <Input
+              placeholder="搜索用户名"
+              prefix={<SearchOutlined />}
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(e) => setKeyword(e.target.value)}
+              onPressEnter={() => { setPage(1) }}
+              allowClear
+            />
+          </div>
+          <Button icon={<ReloadOutlined />} onClick={() => refetch()} className="shrink-0">
+            刷新
+          </Button>
+        </>
+      }
+    >
       <Table
         rowKey="id"
         columns={columns}
@@ -157,9 +159,7 @@ export default function LoginLogsClient() {
           showTotal: (t) => `共 ${t} 条`,
           onChange: (p, ps) => { setPage(p); setPageSize(ps) },
         }}
-        size="middle"
       />
-      </Card>
-    </div>
+    </SettingsListCard>
   )
 }

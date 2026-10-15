@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Card, Input, Table, Tabs, Tag, Typography } from 'antd'
+import { Input, Table, Tabs, Tag, Typography } from 'antd'
 import { fetchApiBindings, fetchPermissions } from '@/actions/permission'
+import { SettingsListCard } from './SettingsListCard'
 
 const { Text } = Typography
 
@@ -42,32 +43,37 @@ function PermissionTable() {
     : permissions
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="w-full md:w-[320px]">
-          <Input.Search
-            allowClear
-            placeholder="搜索权限码、名称、模块、资源"
-            style={{ width: '100%' }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+    <SettingsListCard
+      toolbar={
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <div className="w-full md:w-[320px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索权限码、名称、模块、资源"
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
+          <Text className="text-[12px] text-[var(--color-steel)]">
+            共 {permissions.length} 条，筛选后 {visiblePermissions.length} 条
+          </Text>
         </div>
-        <Text className="text-[12px] text-[var(--color-steel)]">
-          共 {permissions.length} 条，筛选后 {visiblePermissions.length} 条
-        </Text>
-      </div>
-      <Card className="[&_.ant-table]:!m-0">
+      }
+    >
       <Table
         columns={columns}
         dataSource={visiblePermissions}
         rowKey="id"
         loading={isLoading}
         scroll={{ x: 1000 }}
-        pagination={{ pageSize: 15 }}
+        pagination={{
+          pageSize: 20,
+          showSizeChanger: true,
+          showTotal: (t) => `共 ${t} 条`,
+        }}
       />
-      </Card>
-    </div>
+    </SettingsListCard>
   )
 }
 
@@ -86,7 +92,7 @@ function ApiBindingTable() {
       title: '需数据范围',
       dataIndex: 'scope_required',
       width: 110,
-      render: (v: boolean) => (v ? <Tag color="orange">是</Tag> : '-'),
+      render: (v: boolean) => (v ? <Tag color="warning">是</Tag> : '-'),
     },
   ]
 
@@ -101,32 +107,37 @@ function ApiBindingTable() {
     : bindings
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="w-full md:w-[320px]">
-          <Input.Search
-            allowClear
-            placeholder="搜索路由模板、权限码"
-            style={{ width: '100%' }}
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
+    <SettingsListCard
+      toolbar={
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
+          <div className="w-full md:w-[320px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索路由模板、权限码"
+              style={{ width: '100%' }}
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </div>
+          <Text className="text-[12px] text-[var(--color-steel)]">
+            共 {bindings.length} 条，筛选后 {visibleBindings.length} 条
+          </Text>
         </div>
-        <Text className="text-[12px] text-[var(--color-steel)]">
-          共 {bindings.length} 条，筛选后 {visibleBindings.length} 条
-        </Text>
-      </div>
-      <Card className="[&_.ant-table]:!m-0">
+      }
+    >
       <Table
         columns={columns}
         dataSource={visibleBindings}
         rowKey="id"
         loading={isLoading}
         scroll={{ x: 900 }}
-        pagination={{ pageSize: 15 }}
+        pagination={{
+          pageSize: 20,
+          showSizeChanger: true,
+          showTotal: (t) => `共 ${t} 条`,
+        }}
       />
-      </Card>
-    </div>
+    </SettingsListCard>
   )
 }
 
@@ -135,9 +146,9 @@ export default function PermissionCatalogClient() {
     <div className="space-y-4">
       <div>
         <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">权限目录</h2>
-        <Text className="text-[13px] text-[var(--color-steel)]">
+        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
           代码注册表为唯一权威，本页只读展示。权限码一经发布不可删除、只能退役。
-        </Text>
+        </p>
       </div>
 
       <Tabs

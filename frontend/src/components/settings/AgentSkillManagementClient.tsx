@@ -43,6 +43,7 @@ import {
 import type { AgentSkill } from '@/types/agent-skills'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -262,45 +263,52 @@ export default function AgentSkillManagementClient() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
-            Livzon Skill 管理
-          </h2>
-          <Text className="text-[13px] text-[var(--color-steel)]">
-            管理助手渐进式披露的 Skill。普通用户只能使用，不能创建或修改。
-          </Text>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[240px]">
-            <Input.Search
-              allowClear
-              placeholder="搜索标题、名称、触发词"
-              style={{ width: '100%' }}
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
-          </div>
-          <Button icon={<ReloadOutlined />} onClick={loadSkills}>
-            刷新
-          </Button>
-          {canManage && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              新建 Skill
-            </Button>
-          )}
-        </div>
+    <>
+      <div className="mb-4">
+        <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
+          Livzon Skill 管理
+        </h2>
+        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
+          管理助手渐进式披露的 Skill。普通用户只能使用，不能创建或修改。
+        </p>
       </div>
 
-      <Table
-        columns={columns}
-        dataSource={visibleSkills}
-        rowKey="id"
-        loading={loading}
-        scroll={{ x: 1080 }}
-        pagination={{ pageSize: 10 }}
-      />
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[240px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索标题、名称、触发词"
+                style={{ width: '100%' }}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </div>
+            <Button icon={<ReloadOutlined />} onClick={loadSkills}>
+              刷新
+            </Button>
+            {canManage && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                新建 Skill
+              </Button>
+            )}
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={visibleSkills}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 1080 }}
+          pagination={{
+            pageSize: 20,
+            showSizeChanger: true,
+            showTotal: (t) => `共 ${t} 条`,
+          }}
+        />
+      </SettingsListCard>
 
       <Modal
         title={editingSkill ? '编辑 Skill' : '新建 Skill'}
@@ -333,6 +341,6 @@ export default function AgentSkillManagementClient() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   )
 }

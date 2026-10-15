@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/actions/auth'
-import { MenuManagerClient, NoAccessResult } from '@/components/settings'
+import { MenuManagerClient, NoAccessResult, SettingsPageHeader } from '@/components/settings'
 import { PERM } from '@/lib/permissions/codes'
 import { hasPermission } from '@/lib/permissions/server'
 
@@ -19,13 +19,11 @@ export default async function SettingsMenusPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <div className="mb-5">
-        <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">菜单管理</h1>
-        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          配置顶部导航与左侧菜单的显隐、排列权重与可见权限，也可新增自定义菜单项。未配置的菜单项按代码默认渲染。
-        </p>
-      </div>
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+      <SettingsPageHeader
+        title="菜单管理"
+        description="配置顶部导航与左侧菜单的显隐、排列权重与可见权限，也可新增自定义菜单项。未配置的菜单项按代码默认渲染。"
+      />
       <MenuManagerClient />
     </div>
   )

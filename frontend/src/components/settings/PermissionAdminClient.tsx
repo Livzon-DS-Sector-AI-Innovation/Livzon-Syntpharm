@@ -6,6 +6,7 @@ import { Spin, Tabs } from 'antd'
 import GrantManagementClient from './GrantManagementClient'
 import PermissionCatalogClient from './PermissionCatalogClient'
 import RoleManagementClient from './RoleManagementClient'
+import { SettingsPageHeader } from './SettingsPageHeader'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -59,16 +60,12 @@ export default function PermissionAdminClient({ initialTab }: { initialTab?: str
   }
 
   return (
-    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <div className="mb-5">
-        <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">
-          权限管理
-        </h1>
-        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          管理角色、用户授权与数据范围、权限目录与接口绑定登记簿。
-        </p>
-      </div>
-      <Tabs
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+            <SettingsPageHeader
+              title="权限管理"
+              description="管理角色、用户授权与数据范围、权限目录与接口绑定登记簿。"
+            />
+            <Tabs
         activeKey={effectiveKey}
         onChange={(key) => {
           setActiveKey(key as TabKey)

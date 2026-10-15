@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Card,
   Table,
   Button,
   Modal,
@@ -24,6 +23,8 @@ import {
 import type { ModuleSetting } from '@/types/module-settings'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
+import { SettingsPageHeader } from './SettingsPageHeader'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -102,9 +103,15 @@ export default function ModuleSettingsClient({
       case 'int':
         return <Text code>{setting.value}</Text>
       case 'json':
-        return <Text code style={{ fontSize: 12 }}>{setting.value}</Text>
+        return <Text code className="text-[12px]">{setting.value}</Text>
       default:
-        return <Text>{setting.value || <Text type="secondary">未设置</Text>}</Text>
+        return (
+          <Text>
+            {setting.value || (
+              <span className="text-[12px] text-[var(--color-steel)]">未设置</span>
+            )}
+          </Text>
+        )
     }
   }
 
@@ -145,11 +152,9 @@ export default function ModuleSettingsClient({
       width: 300,
       render: (key: string, setting: ModuleSetting) => (
         <Space orientation="vertical" size={0}>
-          <Text strong>{key}</Text>
+          <span className="font-medium text-[var(--color-charcoal)]">{key}</span>
           {setting.description && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {setting.description}
-            </Text>
+            <span className="text-[12px] text-[var(--color-steel)]">{setting.description}</span>
           )}
         </Space>
       ),
@@ -193,24 +198,19 @@ export default function ModuleSettingsClient({
   ]
 
   return (
-    <>
-      <Card>
-        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <h3 className="m-0 text-[16px] font-semibold text-[var(--color-charcoal)]">{moduleName}配置</h3>
-            <Text type="secondary">{moduleDescription}</Text>
-          </div>
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+      <SettingsPageHeader title={moduleName} description={moduleDescription} />
 
-          <Table
-            dataSource={settings}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            pagination={false}
-            scroll={{ x: 'max-content' }}
-          />
-        </Space>
-      </Card>
+      <SettingsListCard>
+        <Table
+          dataSource={settings}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={false}
+          scroll={{ x: 'max-content' }}
+        />
+      </SettingsListCard>
 
       <Modal
         title={`编辑配置: ${editingSetting?.key}`}
@@ -226,6 +226,6 @@ export default function ModuleSettingsClient({
           {editingSetting && renderEditInput(editingSetting)}
         </Form>
       </Modal>
-    </>
+    </div>
   )
 }

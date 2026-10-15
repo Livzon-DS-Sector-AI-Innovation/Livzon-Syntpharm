@@ -47,6 +47,7 @@ import type {
 } from '@/types/system-ops'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 
 const { Text } = Typography
 
@@ -125,7 +126,7 @@ function HealthTab() {
             <Descriptions.Item label="Python">{info.python_version}</Descriptions.Item>
             <Descriptions.Item label="启动时间">{info.started_at?.replace('T', ' ').slice(0, 19)}</Descriptions.Item>
             <Descriptions.Item label="运行时长">{formatUptime(info.uptime_seconds)}</Descriptions.Item>
-            <Descriptions.Item label="关键依赖" span={2}>
+            <Descriptions.Item label="关键依赖" span="filled">
               {info.dependencies.map((d) => (
                 <Tag key={d.name} className="mb-1">
                   {d.name} {d.version}
@@ -223,7 +224,7 @@ function RedisTab() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="settings-stagger space-y-4">
       {overview && (
         <Card size="small" title="Redis 概览">
           <Descriptions column={{ xs: 2, sm: 4 }} size="small">
@@ -238,39 +239,42 @@ function RedisTab() {
         </Card>
       )}
 
-      <Card size="small" title="按前缀查询 / 清理">
-        <div className="mb-3 flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[360px]">
-            <Input
-              placeholder="key 前缀（留空 = 全部，至少 2 字符才能清理）"
-              value={prefix}
-              onChange={(e) => setPrefix(e.target.value)}
-              onPressEnter={() => setQueryPrefix(prefix)}
-              style={{ width: '100%' }}
-              prefix={<SearchOutlined />}
-            />
-          </div>
-          <Button type="primary" onClick={() => setQueryPrefix(prefix)}>
-            查询
-          </Button>
-          <Popconfirm
-            title={`确认清理 ${queryPrefix || '(全部)'}* ？`}
-            description="删除后不可恢复"
-            onConfirm={handleDelete}
-          >
-            <Button danger icon={<DeleteOutlined />} disabled={queryPrefix.length < 2}>
-              清理该前缀
+      <SettingsListCard
+        title="按前缀查询 / 清理"
+        toolbar={
+          <>
+            <div className="w-full sm:w-[360px]">
+              <Input
+                placeholder="key 前缀（留空 = 全部，至少 2 字符才能清理）"
+                value={prefix}
+                onChange={(e) => setPrefix(e.target.value)}
+                onPressEnter={() => setQueryPrefix(prefix)}
+                style={{ width: '100%' }}
+                prefix={<SearchOutlined />}
+              />
+            </div>
+            <Button type="primary" onClick={() => setQueryPrefix(prefix)}>
+              查询
             </Button>
-          </Popconfirm>
-        </div>
-
+            <Popconfirm
+              title={`确认清理 ${queryPrefix || '(全部)'}* ？`}
+              description="删除后不可恢复"
+              onConfirm={handleDelete}
+            >
+              <Button danger icon={<DeleteOutlined />} disabled={queryPrefix.length < 2}>
+                清理该前缀
+              </Button>
+            </Popconfirm>
+          </>
+        }
+      >
         <Table
           columns={columns}
           dataSource={(keysData?.keys ?? []).map((k) => ({ key: k }))}
           rowKey="key"
           size="small"
           loading={isLoading}
-          pagination={{ pageSize: 15 }}
+          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
           locale={{
             emptyText: queryPrefix ? `无匹配 key（${queryPrefix}*）` : '暂无 key',
           }}
@@ -282,7 +286,7 @@ function RedisTab() {
             ) : null
           }
         />
-      </Card>
+      </SettingsListCard>
     </div>
   )
 }
@@ -368,39 +372,42 @@ function TasksTab() {
     : tasks
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <Text className="text-[13px] text-[var(--color-steel)]">
-          任务来自代码注册（调度引擎 / 后台进程 / 轮询循环）。执行历史需等执行记录表落地。
-        </Text>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[260px]">
-            <Input.Search
-              allowClear
-              placeholder="搜索任务名、模块、说明"
-              style={{ width: '100%' }}
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
-          </div>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-tasks'] })}
-          >
-            刷新
-          </Button>
-        </div>
-      </div>
-      <Table
-        columns={columns}
-        dataSource={visibleTasks}
-        rowKey="name"
-        size="small"
-        loading={isLoading}
-        scroll={{ x: 'max-content' }}
-        pagination={{ pageSize: 20 }}
-      />
-    </div>
+    <>
+      <p className="mb-3 text-[13px] text-[var(--color-steel)]">
+        任务来自代码注册（调度引擎 / 后台进程 / 轮询循环）。执行历史需等执行记录表落地。
+      </p>
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[260px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索任务名、模块、说明"
+                style={{ width: '100%' }}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </div>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-tasks'] })}
+            >
+              刷新
+            </Button>
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={visibleTasks}
+          rowKey="name"
+          size="small"
+          loading={isLoading}
+          scroll={{ x: 'max-content' }}
+          pagination={{ pageSize: 20, showSizeChanger: true }}
+        />
+      </SettingsListCard>
+    </>
   )
 }
 
@@ -493,7 +500,7 @@ function ApiTab() {
             width: 130,
             fixed: 'right' as const,
             render: (_: unknown, r: ApiRouteItem) => {
-              if (r.protected) return <Text type="secondary">不可禁用</Text>
+              if (r.protected) return <span className="text-[12px] text-[var(--color-steel)]">不可禁用</span>
               if (r.disabled) {
                 return (
                   <Popconfirm title="确认重新启用该接口？" onConfirm={() => handleEnable(r)}>
@@ -515,56 +522,64 @@ function ApiTab() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-full sm:w-[320px]">
-          <Input.Search
-            allowClear
-            placeholder="搜索路径或说明"
-            style={{ width: '100%' }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-        </div>
-        <Select
-          allowClear
-          placeholder="方法"
-          style={{ width: 120 }}
-          value={methodFilter}
-          onChange={setMethodFilter}
-          options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({ value: m, label: m }))}
+    <>
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[320px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索路径或说明"
+                style={{ width: '100%' }}
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+            </div>
+            <div className="w-full sm:w-[120px]">
+              <Select
+                allowClear
+                placeholder="方法"
+                style={{ width: '100%' }}
+                value={methodFilter}
+                onChange={setMethodFilter}
+                options={['GET', 'POST', 'PUT', 'DELETE', 'PATCH'].map((m) => ({ value: m, label: m }))}
+              />
+            </div>
+            <div className="w-full sm:w-[140px]">
+              <Select
+                style={{ width: '100%' }}
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: 'all', label: '全部状态' },
+                  { value: 'disabled', label: '已禁用' },
+                  { value: 'normal', label: '正常启用' },
+                  { value: 'protected', label: '保护名单' },
+                ]}
+              />
+            </div>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-api-routes'] })}
+            >
+              刷新
+            </Button>
+            <Text className="text-[12px] text-[var(--color-steel)]">
+              共 {routes.length} 条，筛选后 {filtered.length} 条；禁用后立即 403，无需重启
+            </Text>
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={filtered}
+          rowKey={(r) => `${r.method} ${r.route}`}
+          size="small"
+          loading={isLoading}
+          scroll={{ x: 1000 }}
+          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
         />
-        <Select
-          style={{ width: 140 }}
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={[
-            { value: 'all', label: '全部状态' },
-            { value: 'disabled', label: '已禁用' },
-            { value: 'normal', label: '正常启用' },
-            { value: 'protected', label: '保护名单' },
-          ]}
-        />
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-api-routes'] })}
-        >
-          刷新
-        </Button>
-        <Text className="text-[12px] text-[var(--color-steel)]">
-          共 {routes.length} 条，筛选后 {filtered.length} 条；禁用后立即 403，无需重启
-        </Text>
-      </div>
-
-      <Table
-        columns={columns}
-        dataSource={filtered}
-        rowKey={(r) => `${r.method} ${r.route}`}
-        size="small"
-        loading={isLoading}
-        scroll={{ x: 1000 }}
-        pagination={{ pageSize: 20, showSizeChanger: true }}
-      />
+      </SettingsListCard>
 
       <Modal
         title={`禁用接口：${disableTarget?.method} ${disableTarget?.route}`}
@@ -581,9 +596,9 @@ function ApiTab() {
         width="min(480px, calc(100vw - 24px))"
       >
         <div className="mt-3 space-y-2">
-          <Text type="secondary" className="text-[13px]">
+          <p className="m-0 text-[13px] text-[var(--color-steel)]">
             禁用后该接口对所有调用方立即返回 403；填写原因便于排查（记入审计日志）。
-          </Text>
+          </p>
           <Input.TextArea
             rows={3}
             placeholder="禁用原因（可选），例如：接口异常，临时下线排查"
@@ -592,7 +607,7 @@ function ApiTab() {
           />
         </div>
       </Modal>
-    </div>
+    </>
   )
 }
 
@@ -650,65 +665,69 @@ function LogsTab() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-md bg-[var(--color-mist)] px-3 py-2 text-[12px] text-[var(--color-steel)]">
+    <>
+      <div className="mb-3 rounded-md bg-[var(--color-surface-soft)] px-3 py-2 text-[12px] text-[var(--color-steel)]">
         当前展示的是内存缓冲（最近约 2000 条，服务重启后清空）。完整历史：生产环境按模块落盘到
         <Text code className="mx-1">logs/*.log</Text>（10MB×轮转）；本地开发可查看后端容器的 stdout 日志
         （<Text code>docker logs local-backend</Text>）。
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="w-full sm:w-[260px]">
-          <Select
-            mode="multiple"
-            allowClear
-            placeholder="级别（默认全部）"
-            style={{ width: '100%' }}
-            value={levels}
-            onChange={setLevels}
-            options={['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'].map((lv) => ({ value: lv, label: lv }))}
-          />
-        </div>
-        <div className="w-full sm:w-[300px]">
-          <Input.Search
-            allowClear
-            placeholder="搜索消息 / 来源"
-            style={{ width: '100%' }}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-          />
-        </div>
-        <Space size={6}>
-          <span className="text-[13px] text-[var(--color-steel)]">自动刷新</span>
-          <Switch checked={autoRefresh} onChange={setAutoRefresh} size="small" />
-        </Space>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-logs'] })}
-        >
-          刷新
-        </Button>
-        <Popconfirm title="确认清空内存日志缓冲？" onConfirm={handleClear}>
-          <Button danger icon={<DeleteOutlined />}>
-            清空缓冲
-          </Button>
-        </Popconfirm>
-      </div>
 
-      <Text className="text-[12px] text-[var(--color-steel)]">
-        内存环形缓冲：最多 2000 条、重启清空（不落盘，避免磁盘压力）。当前 {data?.buffer_size ?? 0} 条、
-        筛选后 {data?.total ?? 0} 条；更早的日志可用 <code>docker logs local-backend</code> 查看。
-      </Text>
-
-      <Table
-        columns={columns}
-        dataSource={data?.items ?? []}
-        rowKey={(r: LogItem) => String(r.seq)}
-        size="small"
-        loading={isLoading}
-        scroll={{ x: 1100 }}
-        pagination={{ pageSize: 25, showSizeChanger: true }}
-      />
-    </div>
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[260px]">
+              <Select
+                mode="multiple"
+                allowClear
+                placeholder="级别（默认全部）"
+                style={{ width: '100%' }}
+                value={levels}
+                onChange={setLevels}
+                options={['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'].map((lv) => ({ value: lv, label: lv }))}
+              />
+            </div>
+            <div className="w-full sm:w-[300px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索消息 / 来源"
+                style={{ width: '100%' }}
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+              />
+            </div>
+            <Space size={6}>
+              <span className="text-[13px] text-[var(--color-steel)]">自动刷新</span>
+              <Switch checked={autoRefresh} onChange={setAutoRefresh} size="small" />
+            </Space>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['ops-logs'] })}
+            >
+              刷新
+            </Button>
+            <Popconfirm title="确认清空内存日志缓冲？" onConfirm={handleClear}>
+              <Button danger icon={<DeleteOutlined />}>
+                清空缓冲
+              </Button>
+            </Popconfirm>
+            <Text className="text-[12px] text-[var(--color-steel)]">
+              内存环形缓冲：最多 2000 条、重启清空（不落盘，避免磁盘压力）。当前 {data?.buffer_size ?? 0} 条、
+              筛选后 {data?.total ?? 0} 条；更早的日志可用 <code>docker logs local-backend</code> 查看。
+            </Text>
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={data?.items ?? []}
+          rowKey={(r: LogItem) => String(r.seq)}
+          size="small"
+          loading={isLoading}
+          scroll={{ x: 1100 }}
+          pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
+        />
+      </SettingsListCard>
+    </>
   )
 }
 
@@ -768,7 +787,7 @@ function DbTab() {
   const overview = data?.overview
 
   return (
-    <div className="space-y-4">
+    <div className="settings-stagger space-y-4">
       {overview && (
         <Card size="small">
           <Descriptions column={{ xs: 1, sm: 2, md: 3 }} size="small">
@@ -787,27 +806,29 @@ function DbTab() {
         </Card>
       )}
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <Text className="text-[13px] text-[var(--color-steel)]">
-          只读视图：仅展示表结构与体积，不含任何数据内容；行数为统计估算值（ANALYZE 后准确）。
-        </Text>
-        <div className="w-full md:w-[240px]">
-          <Input.Search
-            allowClear
-            placeholder="搜索表名 / schema"
-            style={{ width: '100%' }}
-            onSearch={(value) => setKeyword(value)}
-          />
-        </div>
-      </div>
+      <p className="mb-3 text-[13px] text-[var(--color-steel)]">
+        只读视图：仅展示表结构与体积，不含任何数据内容；行数为统计估算值（ANALYZE 后准确）。
+      </p>
 
-      <Table
+      <SettingsListCard
+        toolbar={
+          <div className="w-full sm:w-[240px]">
+            <Input.Search
+              allowClear
+              placeholder="搜索表名 / schema"
+              style={{ width: '100%' }}
+              onSearch={(value) => setKeyword(value)}
+            />
+          </div>
+        }
+      >
+        <Table
         rowKey={(row: DbTableItem) => `${row.schema}.${row.table}`}
         loading={isLoading}
         dataSource={items}
         size="small"
         scroll={{ x: 900 }}
-        pagination={{ pageSize: 20, showSizeChanger: true }}
+        pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
         columns={[
           {
             title: '表名',
@@ -840,7 +861,7 @@ function DbTab() {
             dataIndex: 'last_analyze',
             width: 170,
             render: (value: string | null) =>
-              value ? value.replace('T', ' ').slice(0, 19) : <Text type="secondary">从未</Text>,
+              value ? value.replace('T', ' ').slice(0, 19) : <span className="text-[12px] text-[var(--color-steel)]">从未</span>,
           },
           {
             title: '操作',
@@ -854,11 +875,12 @@ function DbTab() {
             ),
           },
         ]}
-      />
+        />
+      </SettingsListCard>
 
       <Drawer
         title={detail ? `${detail.schema}.${detail.table}` : '表字段'}
-        width="min(880px, 100vw)"
+        size="min(880px, 100vw)"
         open={!!detail}
         onClose={() => setDetail(null)}
       >
@@ -921,7 +943,7 @@ function DbTab() {
 
 export default function SystemOpsClient() {
   return (
-    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
       <div className="mb-5">
         <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">系统运维</h1>
         <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">

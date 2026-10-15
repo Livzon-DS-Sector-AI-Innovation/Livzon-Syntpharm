@@ -6,7 +6,6 @@ import {
   Alert,
   App,
   Button,
-  Card,
   Form,
   Input,
   Modal,
@@ -16,7 +15,6 @@ import {
   Space,
   Table,
   Tag,
-  Typography,
 } from 'antd'
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
@@ -27,11 +25,10 @@ import {
   updateRole,
 } from '@/actions/permission'
 import PermissionTreePanel from './PermissionTreePanel'
+import { SettingsListCard } from './SettingsListCard'
 import type { RoleCreateInput, RoleDetail, RoleUpdateInput } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
-
-const { Text } = Typography
 
 const categoryOptions = [
   { value: 'platform', label: '平台角色' },
@@ -240,47 +237,52 @@ export default function RoleManagementClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">角色管理</h2>
-          <Text className="text-[13px] text-[var(--color-steel)]">
-            角色编码由「模块 + 档位」生成（也可手填平台角色编码），权限在目录树上勾选；内置角色只剩超级管理员，不可删除。
-          </Text>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[260px]">
-            <Input.Search
-              allowClear
-              placeholder="搜索角色编码、名称、模块"
-              style={{ width: '100%' }}
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
-          </div>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['permission-roles'] })}
-          >
-            刷新
-          </Button>
-          {canManage && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpen(null)}>
-              新建角色
-            </Button>
-          )}
-        </div>
+      <div>
+        <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">角色管理</h2>
+        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
+          角色编码由「模块 + 档位」生成（也可手填平台角色编码），权限在目录树上勾选；内置角色只剩超级管理员，不可删除。
+        </p>
       </div>
 
-      <Card className="[&_.ant-table]:!m-0">
-      <Table
-        columns={columns}
-        dataSource={visibleRoles}
-        rowKey="id"
-        loading={isLoading}
-        scroll={{ x: 1000 }}
-        pagination={{ pageSize: 10 }}
-      />
-      </Card>
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[260px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索角色编码、名称、模块"
+                style={{ width: '100%' }}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </div>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['permission-roles'] })}
+            >
+              刷新
+            </Button>
+            {canManage && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpen(null)}>
+                新建角色
+              </Button>
+            )}
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={visibleRoles}
+          rowKey="id"
+          loading={isLoading}
+          scroll={{ x: 1000 }}
+          pagination={{
+            pageSize: 20,
+            showSizeChanger: true,
+            showTotal: (t) => `共 ${t} 条`,
+          }}
+        />
+      </SettingsListCard>
 
       <Modal
         title={editing ? '编辑角色' : '新建角色'}
@@ -292,7 +294,7 @@ export default function RoleManagementClient() {
         cancelText="取消"
         width="min(780px, calc(100vw - 24px))"
       >
-        <Form form={form} layout="vertical" style={{ marginTop: 12 }}>
+        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           {editing ? (
             <Space size="large" align="start" wrap>
               <Form.Item label="角色编码" style={{ width: '100%', maxWidth: 260 }}>
@@ -384,7 +386,7 @@ export default function RoleManagementClient() {
               type="info"
               showIcon
               className="mb-3"
-              message={
+              title={
                 editing?.is_superuser
                   ? '超级管理员按「直接放行」判定，不需要权限码'
                   : '内置角色的权限由代码注册表（registry.py）定义，界面不可修改'

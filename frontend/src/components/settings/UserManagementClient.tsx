@@ -7,7 +7,6 @@ import {
   Alert,
   App,
   Button,
-  Card,
   Form,
   Input,
   Modal,
@@ -45,6 +44,7 @@ import type {
 import type { RoleDetail } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 
 const { Text } = Typography
 
@@ -197,7 +197,7 @@ export default function UserManagementClient() {
       if (editingUser) {
         const boundToFeishu = !!(editingUser.feishu_open_id || editingUser.feishu_user_id)
         const updateData: UserManagementUpdate = {
-          username: values.username,
+          // 账号创建后不可修改：不提交 username
           status: values.status,
           // 已绑定飞书的账号：人员资料以飞书为准，不提交（后端同样会拒绝修改）
           ...(boundToFeishu
@@ -388,7 +388,7 @@ export default function UserManagementClient() {
             {status === 'active' ? '启用' : '禁用'}
           </Tag>
           {/* 管理员重置过密码但用户还没改 → 提示该账号仍在用初始密码 */}
-          {record.must_change_password && <Tag color="orange">待改密</Tag>}
+          {record.must_change_password && <Tag color="warning">待改密</Tag>}
         </Space>
       ),
     },
@@ -410,7 +410,7 @@ export default function UserManagementClient() {
       width: 120,
       render: (_: unknown, record: UserManagementItem) =>
         record.feishu_open_id || record.feishu_user_id ? (
-          <Tag color="green">已绑定</Tag>
+          <Tag color="success">已绑定</Tag>
         ) : (
           <Tag>未绑定</Tag>
         ),
@@ -453,61 +453,65 @@ export default function UserManagementClient() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[130px]">
-            <Select
-              allowClear
-              placeholder="登录来源"
-              style={{ width: '100%' }}
-              value={authSource}
-              onChange={(value) => setAuthSource(value)}
-              options={authSourceOptions}
-            />
-          </div>
-          <div className="w-full sm:w-[140px]">
-            <Select
-              allowClear
-              placeholder="账号属性"
-              style={{ width: '100%' }}
-              value={pendingFilter}
-              onChange={(value) => setPendingFilter(value)}
-              options={[
-                { value: 'pending_change', label: '待改密' },
-                { value: 'unbound', label: '未绑定飞书' },
-              ]}
-            />
-          </div>
-          <div className="w-full sm:w-[260px]">
-            <Input.Search
-              allowClear
-              placeholder="搜索姓名、账号、邮箱"
-              onSearch={(value) => setKeyword(value)}
-              style={{ width: '100%' }}
-            />
-          </div>
-          <Button icon={<ReloadOutlined />} onClick={loadUsers}>
-            刷新
-          </Button>
-          {canManage && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              新建用户
+    <>
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[130px]">
+              <Select
+                allowClear
+                placeholder="登录来源"
+                style={{ width: '100%' }}
+                value={authSource}
+                onChange={(value) => setAuthSource(value)}
+                options={authSourceOptions}
+              />
+            </div>
+            <div className="w-full sm:w-[140px]">
+              <Select
+                allowClear
+                placeholder="账号属性"
+                style={{ width: '100%' }}
+                value={pendingFilter}
+                onChange={(value) => setPendingFilter(value)}
+                options={[
+                  { value: 'pending_change', label: '待改密' },
+                  { value: 'unbound', label: '未绑定飞书' },
+                ]}
+              />
+            </div>
+            <div className="w-full sm:w-[260px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索姓名、账号、邮箱"
+                onSearch={(value) => setKeyword(value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+            <Button icon={<ReloadOutlined />} onClick={loadUsers}>
+              刷新
             </Button>
-          )}
-        </div>
-      </div>
-
-      <Card className="[&_.ant-table]:!m-0">
-      <Table
-        columns={columns}
-        dataSource={users}
-        rowKey="id"
-        loading={loading}
-        scroll={{ x: 1050 }}
-        pagination={{ pageSize: 10 }}
-      />
-      </Card>
+            {canManage && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                新建用户
+              </Button>
+            )}
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={users}
+          rowKey="id"
+          loading={loading}
+          scroll={{ x: 1050 }}
+          pagination={{
+            pageSize: 20,
+            showSizeChanger: true,
+            showTotal: (t) => `共 ${t} 条`,
+          }}
+        />
+      </SettingsListCard>
 
       <Modal
         title={editingUser ? '编辑用户' : '新建本地用户'}
@@ -523,16 +527,16 @@ export default function UserManagementClient() {
           {isFeishuUser && (
             <Text type="warning" className="text-[13px]">
               该账号已绑定飞书：姓名 / 邮箱 / 手机号 / 工号 / 部门 / 职位由飞书自动同步，不能手工编辑；
-              用户名与状态仍可修改。
+              状态仍可修改。
             </Text>
           )}
           <Form.Item
             name="username"
             label="用户名"
             rules={[{ required: !editingUser, message: '请输入用户名' }]}
-            extra={editingUser ? '修改后，原用户名将不能再用于登录' : undefined}
+            extra={editingUser ? '账号创建后不可修改' : undefined}
           >
-            <Input placeholder="例如：admin" />
+            <Input placeholder="例如：admin" disabled={!!editingUser} />
           </Form.Item>
           {!editingUser && (
             <Form.Item
@@ -556,7 +560,7 @@ export default function UserManagementClient() {
           </Form.Item>
           <Space size="large" align="start" wrap>
             <Form.Item label="角色">
-              <Space direction="vertical" size={4}>
+              <Space orientation="vertical" size={4}>
                 <Space size={4} wrap>
                   {editingRoles.length ? (
                     editingRoles.map((name) => (
@@ -617,7 +621,7 @@ export default function UserManagementClient() {
 
           {/* 账号操作：随机密码 / 飞书解绑（仅编辑已有用户时） */}
           {editingUser && (
-            <div className="mt-2 rounded-md border border-[var(--color-mist)] p-3">
+            <div className="mt-2 rounded-md border border-[var(--color-hairline)] p-3">
               <Text strong className="text-[13px]">
                 账号操作
               </Text>
@@ -632,7 +636,7 @@ export default function UserManagementClient() {
                     >
                       生成随机密码
                     </Button>
-                    {editingUser.must_change_password && <Tag color="orange">待改密</Tag>}
+                    {editingUser.must_change_password && <Tag color="warning">待改密</Tag>}
                   </Space>
                   <div className="mt-2 text-[12px] text-[var(--color-steel)]">
                     飞书首次登录只自动分配用户名（
@@ -647,7 +651,7 @@ export default function UserManagementClient() {
                 <div>
                   {isFeishuUser ? (
                     <Space>
-                      <Tag color="green">已绑定飞书</Tag>
+                      <Tag color="success">已绑定飞书</Tag>
                       <Popconfirm
                         title="解绑后该账号将无法用飞书登录，确认解绑？"
                         onConfirm={handleUnbind}
@@ -696,13 +700,13 @@ export default function UserManagementClient() {
             我已保存
           </Button>,
         ]}
-        maskClosable={false}
+        mask={{ closable: false }}
         width="min(480px, calc(100vw - 24px))"
       >
         <Alert
           type="warning"
           showIcon
-          message="此密码只显示这一次，关闭后无法再次查看"
+          title="此密码只显示这一次，关闭后无法再次查看"
           description="数据库只保存密码哈希，管理员也无法再看到明文。请立即复制并通过可靠渠道发给本人。"
           className="mb-4"
         />
@@ -714,7 +718,7 @@ export default function UserManagementClient() {
                 {oneTimePassword.username}
               </Text>
             </div>
-            <div className="rounded-md border border-[var(--color-mist)] bg-[var(--color-cloud)] p-3 text-center">
+            <div className="rounded-md border border-[var(--color-hairline)] bg-[var(--color-surface-soft)] p-3 text-center">
               <Text
                 strong
                 className="text-[18px] tracking-wider"
@@ -729,6 +733,6 @@ export default function UserManagementClient() {
           </div>
         )}
       </Modal>
-    </div>
+    </>
   )
 }

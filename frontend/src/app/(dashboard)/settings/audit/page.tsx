@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/actions/auth'
-import { AuditLogsClient, NoAccessResult } from '@/components/settings'
+import { AuditLogsClient, NoAccessResult, SettingsPageHeader } from '@/components/settings'
 import { PERM } from '@/lib/permissions/codes'
 import { hasPermission } from '@/lib/permissions/server'
 
@@ -19,15 +19,11 @@ export default async function SettingsAuditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <div className="mb-5">
-        <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">
-          操作审计
-        </h1>
-        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          记录账号、角色与授权的关键变更（谁在何时改了什么，改前 / 改后值），用于合规追溯与定期审阅。
-        </p>
-      </div>
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+      <SettingsPageHeader
+        title="操作审计"
+        description="记录账号、角色与授权的关键变更（谁在何时改了什么，改前 / 改后值），用于合规追溯与定期审阅。"
+      />
       <AuditLogsClient />
     </div>
   )

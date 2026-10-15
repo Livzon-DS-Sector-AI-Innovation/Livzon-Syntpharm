@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   App,
   Button,
-  Card,
   Checkbox,
   Form,
   Input,
@@ -32,6 +31,7 @@ import {
 import type { DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 import { moduleMenus } from '@/lib/menu-config'
 import { MODULE_ACCESS_PERMS, SUBMENU_ACCESS_PERMS, canAccess } from '@/lib/permissions/modules'
 
@@ -342,50 +342,55 @@ export default function GrantManagementClient() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">授权管理</h2>
-          <Text className="text-[13px] text-[var(--color-steel)]">
-            给用户发角色，他就拥有该角色的全部权限；一次可选择多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
-          </Text>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="w-full sm:w-[240px]">
-            <Input.Search
-              allowClear
-              placeholder="搜索用户或角色"
-              style={{ width: '100%' }}
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
-            />
-          </div>
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['permission-grants'] })}
-          >
-            刷新
-          </Button>
-          <Button icon={<EyeOutlined />} onClick={() => setPreviewOpen(true)}>
-            生效预览
-          </Button>
-          {canManage && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              新建授权
-            </Button>
-          )}
-        </div>
+      <div>
+        <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">授权管理</h2>
+        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
+          给用户发角色，他就拥有该角色的全部权限；一次可选择多个角色。默认不限制可见数据；需要限制时勾选「限制可见数据」。
+        </p>
       </div>
 
-      <Card className="[&_.ant-table]:!m-0">
-      <Table
-        columns={columns}
-        dataSource={visibleGrants}
-        rowKey="id"
-        loading={isLoading}
-        scroll={{ x: 1000 }}
-        pagination={{ pageSize: 10 }}
-      />
-      </Card>
+      <SettingsListCard
+        toolbar={
+          <>
+            <div className="w-full sm:w-[240px]">
+              <Input.Search
+                allowClear
+                placeholder="搜索用户或角色"
+                style={{ width: '100%' }}
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </div>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['permission-grants'] })}
+            >
+              刷新
+            </Button>
+            <Button icon={<EyeOutlined />} onClick={() => setPreviewOpen(true)}>
+              生效预览
+            </Button>
+            {canManage && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                新建授权
+              </Button>
+            )}
+          </>
+        }
+      >
+        <Table
+          columns={columns}
+          dataSource={visibleGrants}
+          rowKey="id"
+          loading={isLoading}
+          scroll={{ x: 1000 }}
+          pagination={{
+            pageSize: 20,
+            showSizeChanger: true,
+            showTotal: (t) => `共 ${t} 条`,
+          }}
+        />
+      </SettingsListCard>
 
       <Modal
         title={editing ? '编辑该用户的角色授权' : '新建授权'}
@@ -435,7 +440,7 @@ export default function GrantManagementClient() {
             label="可见数据"
             extra="默认不限制（能看全部数据）。该限制会在各业务模块接入数据权限后生效。"
           >
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+            <Space orientation="vertical" size={8} style={{ width: '100%' }}>
               <Checkbox
                 checked={limitScope}
                 onChange={(event) => setLimitScope(event.target.checked)}
@@ -508,7 +513,7 @@ export default function GrantManagementClient() {
                     <Tag key={m} color="blue" className="mb-1">{m}</Tag>
                   ))
                 ) : (
-                  <Text type="secondary">无</Text>
+                  <span className="text-[12px] text-[var(--color-steel)]">无</span>
                 )}
               </div>
               <Text strong className="mt-3 block text-[13px]">可见后台页面：</Text>
@@ -518,7 +523,7 @@ export default function GrantManagementClient() {
                     <Tag key={s} color="green" className="mb-1">{s}</Tag>
                   ))
                 ) : (
-                  <Text type="secondary">无</Text>
+                  <span className="text-[12px] text-[var(--color-steel)]">无</span>
                 )}
               </div>
             </>

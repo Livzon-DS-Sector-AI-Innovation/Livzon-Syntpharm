@@ -6,6 +6,7 @@ import { PERM } from '@/lib/permissions/codes'
 import AgentSkillManagementClient from './AgentSkillManagementClient'
 import FeishuSettingsClient from './FeishuSettingsClient'
 import LLMConfigClient from './LLMConfigClient'
+import { SettingsPageHeader } from './SettingsPageHeader'
 
 /**
  * 系统设置：平台级配置（LLM / 飞书 / Livzon Skill）。
@@ -56,15 +57,11 @@ export default function SettingsAdminClient() {
   ]
 
   return (
-    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <div className="mb-5">
-        <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">
-          系统设置
-        </h1>
-        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          统一 LLM 模型配置、飞书设置与 Livzon Skill。用户管理、权限管理见左侧对应菜单。
-        </p>
-      </div>
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+      <SettingsPageHeader
+        title="系统设置"
+        description="统一 LLM 模型配置、飞书设置与 Livzon Skill。用户管理、权限管理见左侧对应菜单。"
+      />
       <Tabs defaultActiveKey={items[0]?.key} items={items} />
     </div>
   )

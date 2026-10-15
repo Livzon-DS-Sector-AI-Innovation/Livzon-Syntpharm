@@ -1,5 +1,5 @@
 import { getCurrentUser } from '@/actions/auth'
-import { LoginLogsClient, NoAccessResult } from '@/components/settings'
+import { LoginLogsClient, NoAccessResult, SettingsPageHeader } from '@/components/settings'
 import { PERM } from '@/lib/permissions/codes'
 import { hasPermission } from '@/lib/permissions/server'
 
@@ -19,15 +19,11 @@ export default async function SettingsLoginLogsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <div className="mb-5">
-        <h1 className="m-0 text-[24px] font-semibold text-[var(--color-charcoal)]">
-          登录记录
-        </h1>
-        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          查看用户登录历史，包括成功与失败的登录尝试、来源 IP 与失败原因。
-        </p>
-      </div>
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+      <SettingsPageHeader
+        title="登录记录"
+        description="查看用户登录历史，包括成功与失败的登录尝试、来源 IP 与失败原因。"
+      />
       <LoginLogsClient />
     </div>
   )

@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   App,
   Button,
-  Card,
   Form,
   Input,
   InputNumber,
@@ -29,6 +28,7 @@ import { isKnownRoute } from '@/lib/navigation/known-routes'
 import type { CustomMenuItem, MenuConfigData, MenuItemOverride } from '@/types/menu-admin'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 
 const { Text } = Typography
 const SORT_STEP = 10
@@ -475,7 +475,7 @@ export default function MenuManagerClient() {
       key: 'label',
       render: (_: unknown, row: MenuRow) => (
         <div className="flex items-center gap-2">
-          <span className="text-[var(--color-charcoal)]">{row.label}</span>
+          <span className="font-medium text-[var(--color-charcoal)]">{row.label}</span>
           {!row.isCustom && row.label !== row.defaultLabel && (
             <Text className="text-[12px] text-[var(--color-steel)]">（原名：{row.defaultLabel}）</Text>
           )}
@@ -497,7 +497,7 @@ export default function MenuManagerClient() {
       key: 'visible',
       width: 90,
       render: (_: unknown, row: MenuRow) =>
-        row.visible ? <Tag color="green">显示</Tag> : <Tag>隐藏</Tag>,
+        row.visible ? <Tag color="success">显示</Tag> : <Tag>隐藏</Tag>,
     },
     {
       title: '排列权重',
@@ -555,71 +555,71 @@ export default function MenuManagerClient() {
   ]
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <Text className="text-[13px] text-[var(--color-steel)]">
-          权重数字越小排越前；「显示」关掉后所有人（含超管）都看不到该项 —— 系统管理入口、系统设置与菜单管理本身受保护，不可隐藏。
-          {mode === 'view' ? '点「编辑」后可逐项修改（改完立即生效）。' : '编辑模式下逐项修改，改完立即生效。'}
-        </Text>
-        <Space wrap>
-          <Button
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => {
-              setExpandedKeys([])
-              void refetch()
-            }}
-          >
-            刷新
-          </Button>
-          {canManage && mode === 'edit' && (
+    <>
+      <p className="mb-3 text-[13px] text-[var(--color-steel)]">
+        权重数字越小排越前；「显示」关掉后所有人（含超管）都看不到该项 —— 系统管理入口、系统设置与菜单管理本身受保护，不可隐藏。
+        {mode === 'view' ? '点「编辑」后可逐项修改（改完立即生效）。' : '编辑模式下逐项修改，改完立即生效。'}
+      </p>
+
+      <SettingsListCard
+        toolbar={
+          <>
             <Button
-              icon={<PlusOutlined />}
+              icon={<ReloadOutlined />}
+              loading={isFetching}
               onClick={() => {
-                createForm.resetFields()
-                createForm.setFieldsValue({
-                  parent: '__root__',
-                  icon: 'link',
-                  visible: true,
-                  sort: CUSTOM_DEFAULT_SORT,
-                  perms: [],
-                })
-                setCreateOpen(true)
+                setExpandedKeys([])
+                void refetch()
               }}
             >
-              新增自定义菜单
+              刷新
             </Button>
-          )}
-          {canManage &&
-            (mode === 'view' ? (
-              <Button type="primary" icon={<EditOutlined />} onClick={() => setMode('edit')}>
-                编辑
+            {canManage && mode === 'edit' && (
+              <Button
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  createForm.resetFields()
+                  createForm.setFieldsValue({
+                    parent: '__root__',
+                    icon: 'link',
+                    visible: true,
+                    sort: CUSTOM_DEFAULT_SORT,
+                    perms: [],
+                  })
+                  setCreateOpen(true)
+                }}
+              >
+                新增自定义菜单
               </Button>
-            ) : (
-              <Button type="primary" icon={<CheckOutlined />} onClick={() => setMode('view')}>
-                完成
-              </Button>
-            ))}
-        </Space>
-      </div>
-
-      <Card className="[&_.ant-table]:!m-0">
-      <Table
-        rowKey="key"
-        columns={columns}
-        dataSource={rows}
-        loading={isLoading}
-        pagination={false}
-        size="small"
-        scroll={{ x: 1050 }}
-        expandable={{
-          // 默认全部折叠；展开状态受控（避免在 effect 里 setState）
-          expandedRowKeys: expandedKeys,
-          onExpandedRowsChange: (keys) => setExpandedKeys(keys.map(String)),
-          indentSize: 18,
-        }}
-      />
-      </Card>
+            )}
+            {canManage &&
+              (mode === 'view' ? (
+                <Button type="primary" icon={<EditOutlined />} onClick={() => setMode('edit')}>
+                  编辑
+                </Button>
+              ) : (
+                <Button type="primary" icon={<CheckOutlined />} onClick={() => setMode('view')}>
+                  完成
+                </Button>
+              ))}
+          </>
+        }
+      >
+        <Table
+          rowKey="key"
+          columns={columns}
+          dataSource={rows}
+          loading={isLoading}
+          pagination={false}
+          scroll={{ x: 1050 }}
+          expandable={{
+            // 默认全部折叠；展开状态受控（避免在 effect 里 setState）
+            expandedRowKeys: expandedKeys,
+            onExpandedRowsChange: (keys) => setExpandedKeys(keys.map(String)),
+            indentSize: 18,
+          }}
+        />
+      </SettingsListCard>
 
       {/* 行编辑：改完立即提交，无需全局保存 */}
       <Modal
@@ -661,12 +661,12 @@ export default function MenuManagerClient() {
             </Form.Item>
           )}
 
-          <Space size="large" align="start">
+          <Space size="large" align="start" wrap>
             <Form.Item name="visible" label="显示" valuePropName="checked">
               <Switch disabled={!!editRow && PROTECTED_MENU_KEYS.has(editRow.key)} />
             </Form.Item>
             <Form.Item name="sort" label="排列权重" extra={editRow?.isCustom ? undefined : '数字小排前面（-9999 ~ 9999）'}>
-              <InputNumber min={-9999} max={9999} style={{ width: 130 }} />
+              <InputNumber min={-9999} max={9999} style={{ width: '100%', maxWidth: 130 }} />
             </Form.Item>
           </Space>
 
@@ -722,7 +722,7 @@ export default function MenuManagerClient() {
             }
           >
             {createParentPath ? (
-              <Input addonBefore={createParentPath} placeholder="例如：test" />
+              <Input prefix={`${createParentPath}/`} placeholder="例如：test" />
             ) : (
               <Input placeholder="例如：/quality/dashboard" />
             )}
@@ -752,7 +752,7 @@ export default function MenuManagerClient() {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   )
 }
 

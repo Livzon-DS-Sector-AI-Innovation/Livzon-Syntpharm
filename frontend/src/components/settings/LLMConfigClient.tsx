@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import {
   App,
   Button,
-  Card,
   Form,
   Input,
   InputNumber,
@@ -38,6 +37,7 @@ import {
 import type { LLMConfig } from '@/types/settings'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 
 const { TextArea } = Input
 
@@ -259,50 +259,50 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
 
   return (
     <div className={embedded ? '' : 'p-6'}>
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-            <div>
-            {!embedded && (
-              <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} className="mr-4">
-                返回
-              </Button>
-            )}
-            <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
-          <SettingOutlined className="mr-3" />
-          LLM 模型配置
-        </h2>
-        <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
-          配置 AI 大模型 API 连接参数。同一时间仅一个配置生效。
-        </p>
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
+            <SettingOutlined className="mr-2" />
+            LLM 模型配置
+          </h2>
+          <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
+            配置 AI 大模型 API 连接参数。同一时间仅一个配置生效。
+          </p>
         </div>
-        <Space>
-          {canManage && (
+        {!embedded && (
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => router.back()}
+            className="shrink-0"
+          >
+            返回
+          </Button>
+        )}
+      </div>
+
+      <SettingsListCard
+        toolbar={
+          canManage ? (
             <>
               <Button icon={<ApiOutlined />} onClick={handleTestConnection}>
                 测试连接
               </Button>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-              >
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
                 新建配置
               </Button>
             </>
-          )}
-        </Space>
-      </div>
-
-      <Card className="[&_.ant-table]:!m-0">
+          ) : null
+        }
+      >
         <Table
           scroll={{ x: 1000 }}
           columns={columns}
           dataSource={configs}
           rowKey="id"
           loading={loading}
-          size="middle"
           pagination={false}
         />
-      </Card>
+      </SettingsListCard>
 
       <Modal
         title={editingConfig ? '编辑 LLM 配置' : '新建 LLM 配置'}
@@ -358,10 +358,10 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
 
           <Space size="large" wrap>
             <Form.Item name="temperature" label="Temperature">
-              <InputNumber min={0} max={2} step={0.1} style={{ width: 120 }} />
+              <InputNumber min={0} max={2} step={0.1} style={{ width: '100%', maxWidth: 120 }} />
             </Form.Item>
             <Form.Item name="timeout_seconds" label="超时(秒)">
-              <InputNumber min={10} max={600} style={{ width: 120 }} />
+              <InputNumber min={10} max={600} style={{ width: '100%', maxWidth: 120 }} />
             </Form.Item>
           </Space>
 

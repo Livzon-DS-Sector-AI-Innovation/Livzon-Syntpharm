@@ -66,7 +66,7 @@ export function ChangePasswordClient({ userName, forced = false }: ChangePasswor
             type="warning"
             showIcon
             className="mb-4"
-            message="当前密码由管理员重置（或为初始密码）"
+            title="当前密码由管理员重置（或为初始密码）"
             description="为保证账号安全，请先设置一个只有你知道的新密码，之后才能继续使用系统。"
           />
         )}
