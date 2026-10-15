@@ -53,9 +53,12 @@ from app.platform.permission.schemas import (
     RoleUpdate,
 )
 from app.platform.permission.service.catalog import build_permission_tree
+from app.platform.permission.cache import evict_user_permission_cache
+from app.platform.permission.service.authorization import is_superuser_with_cache
 from app.platform.permission.service.management import (
     assert_actor_can_grant_role,
     assert_actor_can_grant_scope,
+    effective_permission_codes,
     get_role,
     guard_last_superadmin,
     guard_manage_target,
@@ -63,6 +66,16 @@ from app.platform.permission.service.management import (
 )
 
 router = APIRouter(tags=["权限管理"])
+
+
+async def _evict_user_cache(user_id: uuid.UUID) -> None:
+    await evict_user_permission_cache(user_id)
+
+
+async def _evict_cache_for_role(db: AsyncSession, role_id: uuid.UUID) -> None:
+    user_ids = await GrantRepository().list_active_user_ids_by_role(db, role_id)
+    for user_id in user_ids:
+        await evict_user_permission_cache(user_id)
 
 
 # ── 角色 ──────────────────────────────────────────────────────────
@@ -194,6 +207,7 @@ async def update_role(
         },
     )
     await db.commit()
+    await _evict_cache_for_role(db, role.id)
 
     codes = await role_repo.list_role_permission_codes(db, role.id)
     return build_response(
@@ -237,6 +251,7 @@ async def delete_role(
         old_value={"code": role.code, "name": role.name},
     )
     await db.commit()
+    await _evict_cache_for_role(db, role.id)
     return build_response()
 
 
@@ -399,6 +414,7 @@ async def create_grant(
         },
     )
     await db.commit()
+    await _evict_user_cache(grant.user_id)
 
     return build_response(
         data=GrantResponse(
@@ -462,6 +478,7 @@ async def update_grant(
         },
     )
     await db.commit()
+    await _evict_user_cache(grant.user_id)
 
     role = await get_role(db, grant.role_id)
     return build_response(
@@ -514,6 +531,7 @@ async def delete_grant(
     )
     grant.is_deleted = True
     await db.commit()
+    await _evict_user_cache(grant.user_id)
     return build_response()
 
 
@@ -525,27 +543,9 @@ async def my_permissions(
     user: User = Depends(require_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    grant_repo = GrantRepository()
-    if await grant_repo.is_superuser(db, user):
-        perms = await PermissionRepository().list_permissions(db)
-        return build_response(data=MyPermissionsData(permissions=[p.code for p in perms], is_superuser=True))
-
-    stmt = (
-        select(RolePermission.permission_code)
-        .join(Role, Role.id == RolePermission.role_id)
-        .join(UserRoleGrant, UserRoleGrant.role_id == Role.id)
-        .where(
-            UserRoleGrant.user_id == user.id,
-            UserRoleGrant.status == GRANT_ACTIVE,
-            UserRoleGrant.is_deleted == False,  # noqa: E712
-            Role.status == GRANT_ACTIVE,
-            Role.is_deleted == False,  # noqa: E712
-            RolePermission.is_deleted == False,  # noqa: E712
-        )
-        .distinct()
-    )
-    codes = list((await db.execute(stmt)).scalars().all())
-    return build_response(data=MyPermissionsData(permissions=codes, is_superuser=False))
+    is_super = await is_superuser_with_cache(db, user)
+    codes = await effective_permission_codes(db, user)
+    return build_response(data=MyPermissionsData(permissions=sorted(codes), is_superuser=is_super))
 
 
 @router.get("/preview/{user_id}", response_model=MyPermissionsResponse)
@@ -562,27 +562,9 @@ async def preview_user_access(
     if target is None:
         raise NotFoundException("用户")
 
-    grant_repo = GrantRepository()
-    if await grant_repo.is_superuser(db, target):
-        perms = await PermissionRepository().list_permissions(db)
-        return build_response(data=MyPermissionsData(permissions=[p.code for p in perms], is_superuser=True))
-
-    stmt = (
-        select(RolePermission.permission_code)
-        .join(Role, Role.id == RolePermission.role_id)
-        .join(UserRoleGrant, UserRoleGrant.role_id == Role.id)
-        .where(
-            UserRoleGrant.user_id == target.id,
-            UserRoleGrant.status == GRANT_ACTIVE,
-            UserRoleGrant.is_deleted == False,  # noqa: E712
-            Role.status == GRANT_ACTIVE,
-            Role.is_deleted == False,  # noqa: E712
-            RolePermission.is_deleted == False,  # noqa: E712
-        )
-        .distinct()
-    )
-    codes = list((await db.execute(stmt)).scalars().all())
-    return build_response(data=MyPermissionsData(permissions=codes, is_superuser=False))
+    is_super = await is_superuser_with_cache(db, target)
+    codes = await effective_permission_codes(db, target)
+    return build_response(data=MyPermissionsData(permissions=sorted(codes), is_superuser=is_super))
 
 
 # ── 工具 ──────────────────────────────────────────────────────────

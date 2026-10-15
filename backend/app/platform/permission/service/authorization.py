@@ -4,6 +4,9 @@
 同一条用户角色授权内同时满足，禁止「先合并所有动作权限、再合并所有
 数据范围」的交叉组合。因此判定返回的 PermissionContext 只携带
 「授予了目标权限码」的那些授权，数据范围过滤只基于这些授权。
+
+2026-10: 接入 Redis 缓存（默认 60 秒 TTL），生效权限码集合与超管标记
+缓存到 `perm:user:{id}:codes/super`，变更接口主动驱逐。
 """
 
 import logging
@@ -54,6 +57,21 @@ def _detach_user(db: AsyncSession, user: User) -> None:
         logger.warning("detach user failed during permission degradation", exc_info=True)
 
 
+async def is_superuser_with_cache(db: AsyncSession, user: User) -> bool:
+    """带缓存的超管判定。"""
+    from app.platform.permission.cache import (
+        get_cached_is_superuser,
+        set_cached_is_superuser,
+    )
+
+    cached = await get_cached_is_superuser(user.id)
+    if cached is not None:
+        return cached
+    result = await GrantRepository().is_superuser(db, user)
+    await set_cached_is_superuser(user.id, result)
+    return result
+
+
 async def build_permission_context(
     db: AsyncSession,
     user: User,
@@ -64,17 +82,13 @@ async def build_permission_context(
     降级：权限表尚未迁移（权限体系未部署）时，退化为「仅登录」并记 ERROR 日志；
     迁移后自动恢复严格判定。不做静默放行——日志会明确提示需要执行的迁移。
     """
-    repo = GrantRepository()
-    try:
-        if await repo.is_superuser(db, user):
-            return PermissionContext(user=user, permission_code=permission_code, is_superuser=True)
+    from app.platform.permission.service.management import effective_permission_codes
 
-        grants = await repo.get_grants_for_permission(db, user.id, permission_code)
+    try:
+        is_superuser = await is_superuser_with_cache(db, user)
     except ProgrammingError as exc:
         if not _is_missing_permission_table(exc):
             raise
-        # 必须 rollback：asyncpg 事务已进入 aborted 状态，否则后续查询连锁失败；
-        # rollback 前先摘出 user，避免其属性被 expire（调用方仍要读 ctx.user.id）
         _detach_user(db, user)
         await db.rollback()
         logger.error(
@@ -83,6 +97,28 @@ async def build_permission_context(
         )
         return PermissionContext(user=user, permission_code=permission_code, degraded=True)
 
+    if is_superuser:
+        return PermissionContext(user=user, permission_code=permission_code, is_superuser=True)
+
+    try:
+        codes = await effective_permission_codes(db, user)
+    except ProgrammingError as exc:
+        if not _is_missing_permission_table(exc):
+            raise
+        _detach_user(db, user)
+        await db.rollback()
+        logger.error(
+            "权限表不存在（permission schema 未迁移），权限判定降级为仅登录；"
+            "请执行: alembic upgrade 0082_create_permission_schema",
+        )
+        return PermissionContext(user=user, permission_code=permission_code, degraded=True)
+
+    if permission_code not in codes:
+        raise ForbiddenException(f"缺少权限：{permission_code}")
+
+    # 缓存命中时仍需要具体授权以支持数据范围
+    repo = GrantRepository()
+    grants = await repo.get_grants_for_permission(db, user.id, permission_code)
     if not grants:
         raise ForbiddenException(f"缺少权限：{permission_code}")
 
@@ -91,11 +127,10 @@ async def build_permission_context(
 
 async def has_permission(db: AsyncSession, user: User, permission_code: str) -> bool:
     """布尔查询：用户是否拥有某权限码（不抛异常）。"""
-    repo = GrantRepository()
+    from app.platform.permission.service.management import effective_permission_codes
+
     try:
-        if await repo.is_superuser(db, user):
-            return True
-        grants = await repo.get_grants_for_permission(db, user.id, permission_code)
+        codes = await effective_permission_codes(db, user)
     except ProgrammingError as exc:
         if not _is_missing_permission_table(exc):
             raise
@@ -103,4 +138,4 @@ async def has_permission(db: AsyncSession, user: User, permission_code: str) -> 
         await db.rollback()
         logger.error("权限表不存在，has_permission 降级为 True（请执行迁移 0082）")
         return True
-    return bool(grants)
+    return permission_code in codes

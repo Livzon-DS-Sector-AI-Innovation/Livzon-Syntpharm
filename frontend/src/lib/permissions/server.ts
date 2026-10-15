@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { getMenuConfig } from '@/actions/menu'
 import { getMyPermissions } from '@/lib/api/server/permission'
@@ -19,8 +20,10 @@ export interface PermissionsSnapshot {
 
 /**
  * 拉取当前请求用户的权限快照。失败返回 null（由调用方按 fail-closed 处理）。
+ *
+ * 使用 React.cache 做单请求级去重：同一次渲染/请求中多次调用只会发一次后端请求。
  */
-export async function getPermissionsSnapshot(): Promise<PermissionsSnapshot | null> {
+export const getPermissionsSnapshot = cache(async (): Promise<PermissionsSnapshot | null> => {
   const token = (await cookies()).get('auth_token')?.value
   if (!token) return null
 
@@ -38,7 +41,7 @@ export async function getPermissionsSnapshot(): Promise<PermissionsSnapshot | nu
     // 后端不可用 / 权限未部署：视为拿不到权限
     return null
   }
-}
+})
 
 /**
  * 服务端检查当前请求用户是否拥有某权限（超管直接放行）。

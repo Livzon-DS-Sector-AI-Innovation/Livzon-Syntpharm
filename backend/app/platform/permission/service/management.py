@@ -256,12 +256,29 @@ async def effective_permission_codes(db: AsyncSession, user: User) -> set[str]:
     """用户当前有效权限码集合；超级管理员返回全部已登记权限码。
 
     用于「管理员分级」判定：下级管理员只能管理权限严格低于自己的账号。
+    结果会缓存到 Redis（默认 60 秒），减少每次请求都重查授权表的开销。
     """
-    if await GrantRepository().is_superuser(db, user):
+    from app.platform.permission.cache import (
+        get_cached_is_superuser,
+        get_cached_permission_codes,
+        set_cached_is_superuser,
+        set_cached_permission_codes,
+    )
+
+    cached_super = await get_cached_is_superuser(user.id)
+    if cached_super is None:
+        cached_super = await GrantRepository().is_superuser(db, user)
+        await set_cached_is_superuser(user.id, cached_super)
+
+    if cached_super:
         result = await db.execute(
             select(Permission.code).where(Permission.is_deleted == False)  # noqa: E712
         )
         return set(result.scalars().all())
+
+    cached_codes = await get_cached_permission_codes(user.id)
+    if cached_codes is not None:
+        return cached_codes
 
     result = await db.execute(
         select(RolePermission.permission_code)
@@ -277,7 +294,9 @@ async def effective_permission_codes(db: AsyncSession, user: User) -> set[str]:
         )
         .distinct()
     )
-    return set(result.scalars().all())
+    codes = set(result.scalars().all())
+    await set_cached_permission_codes(user.id, codes)
+    return codes
 
 
 async def guard_manage_target(
