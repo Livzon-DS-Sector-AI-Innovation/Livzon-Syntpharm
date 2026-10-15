@@ -30,6 +30,8 @@ import { StepGroupCard } from './StepGroupCard'
 import { ControlStrategy } from './ControlStrategy'
 import { TestingRecommendations } from './TestingRecommendations'
 import { analyzeICHFile, deleteICHRecord } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Text } = Typography
 const { Option: _Option } = Select
@@ -324,9 +326,11 @@ export function ICHAnalysisPage() {
       render: (_: unknown, record: HistoryRecord) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => viewRecord(record.id)}>查看</Button>
-          <Popconfirm title="确定删除此记录？" onConfirm={() => deleteRecord(record.id)}>
-            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchIchDelete}>
+            <Popconfirm title="确定删除此记录？" onConfirm={() => deleteRecord(record.id)}>
+              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -347,16 +351,18 @@ export function ICHAnalysisPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>ICH Q3C/Q3D 杂质识别</h1>
         <Space>
-          <Upload
-            accept=".docx,.doc"
-            showUploadList={false}
-            beforeUpload={handleUpload}
-            disabled={loading}
-          >
-            <Button type="primary" icon={<UploadOutlined />} loading={loading}>
-              上传工艺文件
-            </Button>
-          </Upload>
+          <PermissionGate code={PERM.researchIchCreate}>
+            <Upload
+              accept=".docx,.doc"
+              showUploadList={false}
+              beforeUpload={handleUpload}
+              disabled={loading}
+            >
+              <Button type="primary" icon={<UploadOutlined />} loading={loading}>
+                上传工艺文件
+              </Button>
+            </Upload>
+          </PermissionGate>
         </Space>
       </div>
 

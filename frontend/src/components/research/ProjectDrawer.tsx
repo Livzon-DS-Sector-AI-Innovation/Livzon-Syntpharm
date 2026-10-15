@@ -6,6 +6,8 @@ import dayjs from 'dayjs'
 import { useResearchStore } from '@/stores/research'
 import { ResearchProjectStage, ResearchProjectStatus } from '@/types/research'
 import { createResearchProject, updateResearchProject } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { TextArea } = Input
 
@@ -88,9 +90,13 @@ export function ProjectDrawer({ onRefresh }: ProjectDrawerProps) {
       open={drawerOpen}
       onClose={closeDrawer}
       extra={
-        <Button type="primary" onClick={handleSubmit} loading={submitting}>
-          保存
-        </Button>
+        <PermissionGate
+          code={editingProject ? PERM.researchProjectUpdate : PERM.researchProjectCreate}
+        >
+          <Button type="primary" onClick={handleSubmit} loading={submitting}>
+            保存
+          </Button>
+        </PermissionGate>
       }
     >
       <Form form={form} layout="vertical" autoComplete="off">

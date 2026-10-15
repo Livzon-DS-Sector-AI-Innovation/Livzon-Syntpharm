@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Form, Input, InputNumber, Select, Button, Card, Space, App } from 'antd'
 import { createPilotWorkflow } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const EQUIPMENT_TYPES = [
   { value: '反应釜', label: '反应釜' },
@@ -85,9 +87,11 @@ export function CreatePilotWorkflowForm() {
           </Form.Item>
 
           <Form.Item>
-            <Button type="primary" htmlType="submit" loading={loading} block>
-              创建工作流
-            </Button>
+            <PermissionGate code={PERM.researchPilotWorkflowCreate}>
+              <Button type="primary" htmlType="submit" loading={loading} block>
+                创建工作流
+              </Button>
+            </PermissionGate>
           </Form.Item>
         </Form>
       </Card>

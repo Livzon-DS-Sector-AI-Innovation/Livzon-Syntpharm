@@ -9,6 +9,8 @@ import { deleteReport } from '@/actions/research/modules'
 import type { components } from '@/types/generated/schema'
 type RdReportCreate = Omit<components['schemas']['RdReportCreate'], 'project_id'>
 import { createReport, updateReport } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import {
   RdReport, RdReportType, RdReportStatus,
   REPORT_TYPE_LABELS, REPORT_STATUS_LABELS, STAGE_LABELS,
@@ -140,10 +142,14 @@ export function ReportPage({ projectId }: Props) {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
       render: (_: unknown, record: RdReport) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
-          <Popconfirm title="确认删除此报告？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-          </Popconfirm>
+          <PermissionGate code={PERM.researchReportUpdate}>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchReportDelete}>
+            <Popconfirm title="确认删除此报告？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -232,7 +238,7 @@ export function ReportPage({ projectId }: Props) {
     <div>
       <Card
         title="研发报告"
-        extra={<Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建报告</Button>}
+        extra={<PermissionGate code={PERM.researchReportCreate}><Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建报告</Button></PermissionGate>}
       >
         <Table
           dataSource={reports}
@@ -253,7 +259,9 @@ export function ReportPage({ projectId }: Props) {
         extra={
           <Space>
             <Button onClick={() => { setDrawerOpen(false); form.resetFields() }}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
+            <PermissionGate code={editingRecord ? PERM.researchReportUpdate : PERM.researchReportCreate}>
+              <Button type="primary" onClick={handleSave}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >

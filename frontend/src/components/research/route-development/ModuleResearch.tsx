@@ -6,6 +6,8 @@ import {Card, Button, Space, Tag, Collapse, App, Alert, Progress, Spin, Tabs, De
 import { ExperimentOutlined, FileTextOutlined, DownloadOutlined, EditOutlined, SaveOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { CandidateRoute, ExperimentPlan } from '@/types/research'
 import { updateRouteAction } from '@/actions/research/route-development'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface ModuleResearchProps {
   routeId: string
@@ -290,9 +292,11 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
               重新上传
             </Button>
             {onSaveAndExit && (
-              <Button type="primary" onClick={handleSaveAndExit}>
-                保存并退出
-              </Button>
+              <PermissionGate code={PERM.researchRouteUpdate}>
+                <Button type="primary" onClick={handleSaveAndExit}>
+                  保存并退出
+                </Button>
+              </PermissionGate>
             )}
           </Space>
         </div>
@@ -598,24 +602,28 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
           </div>
           <Space>
             {onSaveAndExit && (
-              <Button 
-                icon={<SaveOutlined />} 
-                onClick={handleSaveAndExit}
+              <PermissionGate code={PERM.researchRouteUpdate}>
+                <Button 
+                  icon={<SaveOutlined />} 
+                  onClick={handleSaveAndExit}
+                  size="large"
+                  disabled={selectedRouteIds.length === 0}
+                >
+                  💾 保存并退出（稍后继续）
+                </Button>
+              </PermissionGate>
+            )}
+            <PermissionGate code={PERM.researchRouteUpdate}>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={handleConfirm}
                 size="large"
                 disabled={selectedRouteIds.length === 0}
               >
-                💾 保存并退出（稍后继续）
+                ✓ 方案确认，开始做实验 →
               </Button>
-            )}
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={handleConfirm}
-              size="large"
-              disabled={selectedRouteIds.length === 0}
-            >
-              ✓ 方案确认，开始做实验 →
-            </Button>
+            </PermissionGate>
           </Space>
         </div>
       </Card>

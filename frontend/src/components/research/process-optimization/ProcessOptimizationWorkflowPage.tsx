@@ -11,6 +11,8 @@ import { ModuleScaleUp } from './ModuleScaleUp'
 import { ModuleLabConfirmation } from './ModuleLabConfirmation'
 import { ModuleReport } from './ModuleReport'
 import { updateOptimizationAction } from '@/actions/research/process-optimization'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import type {
   OptimizationModule,
   DOEExperiment,
@@ -295,9 +297,11 @@ export function ProcessOptimizationWorkflowPage({
                 进入质量标准 →
               </Button>
             )}
-            <Button icon={<SaveOutlined />} onClick={handleSaveAndExit} type="dashed">
-              💾 保存并退出
-            </Button>
+            <PermissionGate code={PERM.researchOptimizationUpdate}>
+              <Button icon={<SaveOutlined />} onClick={handleSaveAndExit} type="dashed">
+                💾 保存并退出
+              </Button>
+            </PermissionGate>
           </Space>
         </Space>
       </Card>

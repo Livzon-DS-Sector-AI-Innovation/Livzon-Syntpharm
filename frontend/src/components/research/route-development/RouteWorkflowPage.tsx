@@ -10,6 +10,8 @@ import { ModuleConfirmation } from './ModuleConfirmation'
 import type { WorkflowModule, CandidateRoute, ExperimentRecord, DimensionAssessment, ExperimentPlan, RouteStatus } from '@/types/research'
 import { fetchRouteById } from '@/lib/api/client/research'
 import { updateRouteAction } from '@/actions/research/route-development'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface RouteWorkflowPageProps {
   routeId: string
@@ -292,13 +294,15 @@ export function RouteWorkflowPage({ routeId, routeName, literatureSource = '', l
             {currentStep >= 2 && (
               <Tag color="green">实验记录：{allExperiments.length}条</Tag>
             )}
-            <Button 
-              icon={<SaveOutlined />} 
-              onClick={handleSaveAndExit}
-              type="dashed"
-            >
-              💾 保存并退出
-            </Button>
+            <PermissionGate code={PERM.researchRouteUpdate}>
+              <Button 
+                icon={<SaveOutlined />} 
+                onClick={handleSaveAndExit}
+                type="dashed"
+              >
+                💾 保存并退出
+              </Button>
+            </PermissionGate>
           </Space>
         </Space>
       </Card>
