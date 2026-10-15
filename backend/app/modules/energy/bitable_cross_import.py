@@ -20,6 +20,22 @@ from app.platform.integrations.feishu.client import FeishuClient
 logger = logging.getLogger(__name__)
 _settings = get_settings()
 
+# 多维表格内维护车间映射时使用的表名
+MAPPING_TABLE_NAME = "车间映射"
+
+# 同一部门在 水/电/汽 三个 section 里的同义写法 → 规范名称。
+# 这些是业务事实（QC 与 质量控制部 无字面重叠），正则推不出来，只能显式登记。
+# 未登记会导致同一部门被建成两个车间，月度记录的车间筛选因此只能看到单一能源类型。
+# 多维表格存在「车间映射」表时以表为准，本常量作为兜底。详见 docs/energy-bitable-field-mapping.md
+WORKSHOP_ALIASES: dict[str, str] = {
+    "QC": "质量控制部",
+    "炊事班": "饭堂",
+    "生活办公": "办公楼",
+    "环保中心(含RTO)": "环保中心",
+    "废水站": "环保中心",
+    "303、106": "303、106车间",
+}
+
 
 class EnergyBitableCrossImport:
     """从飞书多维表格交叉表导入能源数据。"""
@@ -47,6 +63,37 @@ class EnergyBitableCrossImport:
     def __init__(self, app_token: str | None = None) -> None:
         self.client = FeishuClient()
         self.app_token = app_token or _settings.feishu.energy.app_token
+        self._alias_map: dict[str, str] | None = None
+
+    async def _get_alias_map(self) -> dict[str, str]:
+        """取别名表，每次导入只加载一次。"""
+        if self._alias_map is None:
+            self._alias_map = await self._load_workshop_alias_map()
+        return self._alias_map
+
+    async def _load_workshop_alias_map(self) -> dict[str, str]:
+        """读取「车间映射」表的别名列，缺表时回退内置常量。"""
+        alias_map = dict(WORKSHOP_ALIASES)
+
+        tables = await self.list_tables()
+        table_id = next((t.get("table_id") for t in tables if t.get("name") == MAPPING_TABLE_NAME), None)
+        if not table_id:
+            logger.warning(f"未找到「{MAPPING_TABLE_NAME}」表，使用内置车间别名 {len(alias_map)} 条")
+            return alias_map
+
+        for record in await self.list_records(table_id):
+            fields = record.get("fields", {})
+            canonical = str(fields.get("名称") or fields.get("name") or "").strip()
+            if not canonical:
+                continue
+            raw_alias = str(fields.get("别名") or fields.get("alias") or "")
+            for alias in re.split(r"[、,，]", raw_alias):
+                alias = alias.strip()
+                if alias:
+                    alias_map[alias] = canonical
+
+        logger.info(f"从「{MAPPING_TABLE_NAME}」表加载车间别名 {len(alias_map)} 条")
+        return alias_map
 
     async def list_tables(self) -> list[dict[str, Any]]:
         """获取多维表格中的所有数据表（自动分页）。"""
@@ -155,27 +202,44 @@ class EnergyBitableCrossImport:
     def _normalize_workshop_name(self, name: str) -> str:
         """标准化车间名称。"""
         name = name.strip()
-        # 处理 "303、106车间" 这种格式
-        if "、" in name:
-            name = name.split("、")[0]
         # 纯数字名称自动加"车间"后缀（如 "101" → "101车间"）
         if re.match(r"^\d+$", name):
             name = name + "车间"
         return name
 
+    async def _resolve_workshop_name(self, name: str) -> str:
+        """归一化并套用别名，得到规范车间名。"""
+        normalized = self._normalize_workshop_name(name)
+        return (await self._get_alias_map()).get(normalized, normalized)
+
     async def _get_or_create_workshop(self, db: AsyncSession, name: str, category: str = "workshop") -> EnergyWorkshop:
         """获取或创建车间。"""
-        normalized_name = self._normalize_workshop_name(name)
+        normalized_name = await self._resolve_workshop_name(name)
 
-        # 先按名称查找
-        result = await db.execute(select(EnergyWorkshop).where(EnergyWorkshop.name == normalized_name))
-        workshop = result.scalar_one_or_none()
+        # 先按名称查找。name 上没有唯一约束（models.py 只对 code 建了唯一约束），
+        # 历史数据里可能同名多行，取第一条而不是用 scalar_one_or_none 抛错
+        result = await db.execute(
+            select(EnergyWorkshop)
+            .where(
+                EnergyWorkshop.name == normalized_name,
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+            .order_by(EnergyWorkshop.id)
+        )
+        workshop = result.scalars().first()
         if workshop:
             return workshop
 
         # 按 code 查找
-        result = await db.execute(select(EnergyWorkshop).where(EnergyWorkshop.code == normalized_name))
-        workshop = result.scalar_one_or_none()
+        result = await db.execute(
+            select(EnergyWorkshop)
+            .where(
+                EnergyWorkshop.code == normalized_name,
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+            .order_by(EnergyWorkshop.id)
+        )
+        workshop = result.scalars().first()
         if workshop:
             return workshop
 

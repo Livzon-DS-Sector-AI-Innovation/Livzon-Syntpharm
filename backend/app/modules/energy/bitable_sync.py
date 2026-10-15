@@ -77,9 +77,14 @@ class EnergyBitableSync:
             if not code or not name:
                 continue
 
-            # 检查是否已存在
-            result = await db.execute(select(EnergyWorkshop).where(EnergyWorkshop.code == code))
-            workshop = result.scalar_one_or_none()
+            # 检查是否已存在（软删除的车间不复用，与 repository.get_workshop_by_code 口径一致）
+            result = await db.execute(
+                select(EnergyWorkshop).where(
+                    EnergyWorkshop.code == code,
+                    EnergyWorkshop.is_deleted == False,  # noqa: E712
+                )
+            )
+            workshop = result.scalars().first()
 
             if workshop:
                 # 更新
@@ -112,10 +117,18 @@ class EnergyBitableSync:
         created = 0
         updated = 0
 
-        # 先获取所有车间映射
-        result = await db.execute(select(EnergyWorkshop))
-        workshops = {w.name: w for w in result.scalars().all()}
-        workshops.update({w.code: w for w in workshops.values()})
+        # 先获取所有车间映射。名称与编码分开建索引：
+        # 混进同一个 dict 时，某个车间的编码会撞上另一个车间的名称，把记录挂错实体
+        result = await db.execute(
+            select(EnergyWorkshop).where(
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+        )
+        workshops_by_name: dict[str, EnergyWorkshop] = {}
+        workshops_by_code: dict[str, EnergyWorkshop] = {}
+        for ws in result.scalars().all():
+            workshops_by_name.setdefault(ws.name, ws)
+            workshops_by_code.setdefault(ws.code, ws)
 
         for record in records:
             fields = record.get("fields", {})
@@ -125,7 +138,7 @@ class EnergyBitableSync:
             if not workshop_ref:
                 continue
 
-            workshop = workshops.get(workshop_ref)
+            workshop = workshops_by_name.get(workshop_ref) or workshops_by_code.get(workshop_ref)
             if not workshop:
                 logger.warning(f"车间不存在: {workshop_ref}")
                 continue
