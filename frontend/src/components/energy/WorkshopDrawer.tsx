@@ -77,7 +77,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
       title={isEdit ? '编辑车间' : '新增车间'}
       open={open}
       onClose={onClose}
-      width={480}
+      size={480}
       extra={
         <Space>
           <Button onClick={onClose}>取消</Button>

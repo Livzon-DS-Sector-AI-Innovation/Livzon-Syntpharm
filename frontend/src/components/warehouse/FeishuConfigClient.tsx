@@ -548,7 +548,7 @@ export function FeishuConfigClient({
                       ? 'warning'
                       : 'error'
                 }
-                message={step.name}
+                title={step.name}
                 description={step.message}
                 showIcon
               />

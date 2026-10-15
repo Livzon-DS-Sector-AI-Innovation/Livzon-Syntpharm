@@ -596,7 +596,7 @@ export default function InspectionTableDetailPage({
         width={900}
         okText="添加数据"
         cancelText="取消"
-        maskClosable={false}
+        mask={{ closable: false }}
       >
         {recognizeResult && (
           <div>

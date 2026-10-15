@@ -217,7 +217,7 @@ export function SupplierManagementClient({
         <Alert
           showIcon
           type="warning"
-          message="供应商清单暂时无法加载"
+          title="供应商清单暂时无法加载"
           description="请确认后端服务和数据库迁移已完成，页面仍可在服务恢复后刷新。"
         />
       )}

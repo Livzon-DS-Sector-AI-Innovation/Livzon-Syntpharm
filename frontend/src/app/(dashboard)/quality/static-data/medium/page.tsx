@@ -591,7 +591,7 @@ export default function MediumPage() {
       <Drawer
         title={isNew ? '新建培养基' : '编辑培养基'}
         placement="right"
-        width={560}
+        size={560}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -746,7 +746,7 @@ export default function MediumPage() {
       <Drawer
         title="调整库存"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

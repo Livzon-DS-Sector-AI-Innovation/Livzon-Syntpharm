@@ -252,7 +252,7 @@ export default function TurnoverAnalysisPanel() {
 
           {stage === 'error' && (
             <Alert
-              message="分析失败"
+              title="分析失败"
               description={errorMsg}
               type="error"
               showIcon

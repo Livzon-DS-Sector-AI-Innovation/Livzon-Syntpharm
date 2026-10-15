@@ -258,7 +258,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     return (
       <div style={{ padding: 40 }}>
         <Alert
-          message="需要上传文献文件"
+          title="需要上传文献文件"
           description="请返回上一步上传文献文件，或重新开始工作流"
           type="warning"
           showIcon
@@ -278,7 +278,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     return (
       <div style={{ padding: 40 }}>
         <Alert
-          message="文献解析失败"
+          title="文献解析失败"
           description={parseError}
           type="error"
           showIcon
@@ -304,7 +304,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     <div>
       {parseError && (
         <Alert
-          message="解析警告"
+          title="解析警告"
           description={parseError}
           type="warning"
           showIcon
@@ -335,7 +335,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
               children: (
                 <div>
                   <Alert
-                    message="请评估并选择要实验验证的路线"
+                    title="请评估并选择要实验验证的路线"
                     description="系统已根据文献提取了所有合成路线，请根据反应安全性、放大可行性、质量可控性和成本经济性四个维度进行评估，选择 1-3 条路线进入实验验证阶段。"
                     type="info"
                     showIcon
@@ -406,7 +406,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
               children: (
                 <div>
                   <Alert
-                    message="实验方案已根据候选路线自动生成"
+                    title="实验方案已根据候选路线自动生成"
                     description="每个实验方案包含详细的操作步骤、所需物料、设备需求、分析方法和安全注意事项。可以下载方案文档用于实验操作。"
                     type="success"
                     showIcon

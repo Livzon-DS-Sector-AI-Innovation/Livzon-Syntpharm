@@ -44,7 +44,7 @@ export function AppShell({ children, permissionView }: AppShellProps) {
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               styles={{ body: { padding: 0 } }}
-              width={256}
+              size={256}
             >
               {sidebarContent}
             </Drawer>

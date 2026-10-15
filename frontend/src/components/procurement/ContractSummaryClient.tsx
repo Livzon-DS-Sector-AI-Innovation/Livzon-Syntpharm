@@ -201,7 +201,7 @@ export function ContractSummaryClient({
         <Alert
           type="warning"
           showIcon
-          message="合同汇总首屏加载失败"
+          title="合同汇总首屏加载失败"
           description="已显示空列表，可点击刷新或搜索重新加载。"
         />
       )}
@@ -323,7 +323,7 @@ export function ContractSummaryClient({
 
       <Drawer
         destroyOnHidden
-        width={920}
+        size={920}
         title={detail?.title || '合同详情'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
@@ -370,7 +370,7 @@ export function ContractSummaryClient({
                   className="m-4"
                   type="warning"
                   showIcon
-                  message={previewError}
+                  title={previewError}
                 />
               )}
               <div className="max-h-[68vh] overflow-auto p-4">

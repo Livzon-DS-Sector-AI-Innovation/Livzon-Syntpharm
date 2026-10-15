@@ -109,7 +109,7 @@ export function InspectionCompleteDrawer({ onRefresh }: InspectionCompleteDrawer
   return (
     <Drawer
       title={`巡检完成 - ${completingTemplateName || ''}`}
-      width={900}
+      size={900}
       open={inspectionCompleteDrawerOpen}
       onClose={closeInspectionCompleteDrawer}
       destroyOnHidden

@@ -286,7 +286,7 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
           </Tag>
         </div>
       }
-      width={520}
+      size={520}
       open={workOrderDetailOpen}
       onClose={closeWorkOrderDetail}
       destroyOnHidden

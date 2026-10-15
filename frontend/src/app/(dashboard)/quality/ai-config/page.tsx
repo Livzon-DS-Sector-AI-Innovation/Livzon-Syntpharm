@@ -182,7 +182,7 @@ export default function AiConfigPage() {
         }
       >
         <Alert
-          message="配置说明"
+          title="配置说明"
           description="AI功能使用 MiniMax API 服务。请确保已配置有效的 API Key，不同模型适用于不同场景：Text-01 用于文本生成，VL-01 用于图片识别。"
           type="info"
           showIcon

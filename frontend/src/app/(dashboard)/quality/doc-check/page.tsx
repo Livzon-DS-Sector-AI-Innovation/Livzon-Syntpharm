@@ -962,7 +962,7 @@ export default function DocCheckPage() {
           <Form form={handleForm} layout="vertical">
             <Alert
               type={selectedProblem.risk_level === 'high' ? 'error' : 'warning'}
-              message={`风险等级: ${RISK_LABELS[selectedProblem.risk_level]}`}
+              title={`风险等级: ${RISK_LABELS[selectedProblem.risk_level]}`}
               style={{ marginBottom: 16 }}
             />
 

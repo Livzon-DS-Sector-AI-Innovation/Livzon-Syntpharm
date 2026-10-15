@@ -609,7 +609,7 @@ export default function HplcReferencePage() {
           showIcon
           icon={<WarningOutlined />}
           style={{ marginBottom: 16, borderLeft: '4px solid #ef4444' }}
-          message={
+          title={
             <span>
               <strong>复标提醒：</strong>
               当前有 <strong style={{ color: '#ef4444' }}>{recalAlertCount}</strong> 个对照品剩余量低于复标阈值，请及时处理。
@@ -954,7 +954,7 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        width={680}
+        size={680}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         destroyOnHidden
@@ -1166,7 +1166,7 @@ export default function HplcReferencePage() {
       <Drawer
         title="批量导入"
         placement="right"
-        width={480}
+        size={480}
         open={importModalOpen}
         onClose={() => setImportModalOpen(false)}
         destroyOnHidden
@@ -1191,7 +1191,7 @@ export default function HplcReferencePage() {
       <Drawer
         title="调整数量"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         destroyOnHidden
@@ -1247,7 +1247,7 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        width={480}
+        size={480}
         open={usageDrawerOpen}
         onClose={() => setUsageDrawerOpen(false)}
         destroyOnHidden
@@ -1350,7 +1350,7 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        width={720}
+        size={720}
         open={usageHistoryOpen}
         onClose={() => setUsageHistoryOpen(false)}
         destroyOnHidden

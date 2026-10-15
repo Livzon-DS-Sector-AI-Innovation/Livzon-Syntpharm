@@ -974,7 +974,7 @@ export default function RegulationPage() {
         title={editingRegulation ? '编辑操规' : '新建操规'}
         open={regDrawerOpen}
         onClose={() => setRegDrawerOpen(false)}
-        width={480}
+        size={480}
         destroyOnHidden
         extra={
           <Space>
@@ -1029,7 +1029,7 @@ export default function RegulationPage() {
         title="新建修订记录"
         open={revDrawerOpen}
         onClose={() => setRevDrawerOpen(false)}
-        width={480}
+        size={480}
         destroyOnHidden
         extra={
           <Space>

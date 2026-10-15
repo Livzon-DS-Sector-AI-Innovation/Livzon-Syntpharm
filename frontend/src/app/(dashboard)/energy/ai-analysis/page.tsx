@@ -297,7 +297,7 @@ const handleAnalyze = async () => {
             </div>
             
             <Alert
-              message={`${getStatusIcon(result.deviation_status)} 状态：${
+              title={`${getStatusIcon(result.deviation_status)} 状态：${
                 result.deviation_status === 'normal' ? '正常' :
                 result.deviation_status === 'warning' ? '警告（超出目标 5%-15%）' :
                 result.deviation_status === 'critical' ? '严重超标（超出目标 &gt;15%）' :
@@ -328,7 +328,7 @@ const handleAnalyze = async () => {
               </ul>
               
               <Alert
-                message={`置信度：${
+                title={`置信度：${
                   result.ai_suggestion.confidence_level === 'high' ? '高' :
                   result.ai_suggestion.confidence_level === 'medium' ? '中' :
                   '低'

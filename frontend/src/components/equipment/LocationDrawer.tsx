@@ -88,7 +88,7 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <Drawer
       title={editingLocation ? '编辑位置' : '新增位置'}
-      width={400}
+      size={400}
       open={locationDrawerOpen}
       onClose={closeLocationDrawer}
       destroyOnHidden

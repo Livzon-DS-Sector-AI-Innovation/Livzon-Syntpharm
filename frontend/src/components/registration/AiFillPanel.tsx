@@ -346,7 +346,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKe
         <Alert
           type="warning"
           showIcon
-          message="有素材未分类"
+          title="有素材未分类"
           description="请在素材 Tab 中为每个素材指定分类，否则 AI 提取可能不准确。"
           className="text-xs"
         />
@@ -356,7 +356,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKe
         <Alert
           type="error"
           showIcon
-          message="LLM 服务未配置"
+          title="LLM 服务未配置"
           description="文本字段的 AI 提取将不可用。请在系统设置中配置 LLM 或设置 LLM_API_KEY 环境变量。"
           className="text-xs"
         />
@@ -381,7 +381,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKe
             <Alert
               type="error"
               showIcon
-              message="LLM 提取失败"
+              title="LLM 提取失败"
               description="AI 文本字段提取失败。请检查系统设置中的 LLM 配置是否正确。"
               className="text-xs"
             />
@@ -463,7 +463,7 @@ export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKe
       {fillDone && (
         <Alert
           type="success"
-          message="填充完成"
+          title="填充完成"
           description={(() => {
             const textFilled = fillResults.filter(r => r.status === 'filled').filter(r => !r.message.includes('图片')).length
             const imgFilled = fillResults.filter(r => r.status === 'filled' && r.message.includes('图片')).length

@@ -522,7 +522,7 @@ export default function StorageConditionPage() {
         title={isNew ? '新建贮存条件' : '编辑贮存条件'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        width={520}
+        size={520}
         destroyOnHidden
         extra={
           <Space>
