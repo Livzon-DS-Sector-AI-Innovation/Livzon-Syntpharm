@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Card } from 'antd'
 import { Pie } from '@ant-design/charts'
 import { DistributionDataPoint } from '@/types/energy'
@@ -9,40 +10,57 @@ interface DistributionChartProps {
   loading?: boolean
 }
 
+// 扇区切片：在数据点基础上补一个唯一的图例/标签文本
+type Slice = DistributionDataPoint & { label: string }
+
+// 首尾交替排序：最大、最小、次大、次小...让标签均匀分布
+function alternateSort(arr: Slice[]): Slice[] {
+  const sorted = [...arr].sort((a, b) => b.value - a.value)
+  const result: Slice[] = []
+  let left = 0
+  let right = sorted.length - 1
+
+  while (left <= right) {
+    if (left === right) {
+      result.push(sorted[left])
+    } else {
+      result.push(sorted[left])
+      result.push(sorted[right])
+    }
+    left++
+    right--
+  }
+
+  return result
+}
+
 export function DistributionChart({
   data,
   loading = false,
 }: DistributionChartProps) {
 
-  const total = data.reduce((sum, d) => sum + d.value, 0)
-  
-  // 首尾交替排序：最大、最小、次大、次小...让标签均匀分布
-  const alternateSort = (arr: DistributionDataPoint[]) => {
-    const sorted = [...arr].sort((a, b) => b.value - a.value)
-    const result: DistributionDataPoint[] = []
-    let left = 0
-    let right = sorted.length - 1
-    
-    while (left <= right) {
-      if (left === right) {
-        result.push(sorted[left])
-      } else {
-        result.push(sorted[left])
-        result.push(sorted[right])
-      }
-      left++
-      right--
+  const { total, sortedData } = useMemo(() => {
+    // 后端按 (车间名, 单位) 分组，同名车间的电/水/蒸汽会是多个切片。
+    // 直接用 name 做标签会重复、做 colorField 会让重复项共享颜色，
+    // 所以同名多项时把单位并进标签，保证每张切片标识唯一。
+    const countByName = new Map<string, number>()
+    data.forEach((d) => countByName.set(d.name, (countByName.get(d.name) ?? 0) + 1))
+
+    const slices: Slice[] = data.map((d) => ({
+      ...d,
+      label: (countByName.get(d.name) ?? 0) > 1 ? `${d.name}（${d.unit}）` : d.name,
+    }))
+
+    return {
+      total: slices.reduce((sum, d) => sum + d.value, 0),
+      sortedData: alternateSort(slices),
     }
-    
-    return result
-  }
-  
-  const sortedData = alternateSort(data)
+  }, [data])
 
   const config = {
     data: sortedData,
     angleField: 'value',
-    colorField: 'name',
+    colorField: 'label',
     radius: 0.6,
     innerRadius: 0.35,
     scale: {
@@ -56,9 +74,9 @@ export function DistributionChart({
       },
     },
     label: {
-      text: (d: DistributionDataPoint) => {
+      text: (d: Slice) => {
         const pct = total > 0 ? ((d.value / total) * 100).toFixed(1) : '0'
-        return `${d.name}: ${pct}%`
+        return `${d.label}: ${pct}%`
       },
       position: 'outside' as const,
       transform: [{ type: 'overlapDodgeY' }],
@@ -67,11 +85,11 @@ export function DistributionChart({
     legend: false,
     
     tooltip: {
-      title: 'name',
+      title: 'label',
       items: [
-        (d: DistributionDataPoint) => ({
-          name: d.name,
-          value: `${d.value.toFixed(2)}`,
+        (d: Slice) => ({
+          name: d.label,
+          value: `${d.value.toFixed(2)} ${d.unit}`,
         }),
       ],
     },

@@ -123,9 +123,12 @@ export interface RecordQueryParams {
 }
 
 // 分布数据点（图表输入，由总览 distribution 映射而来）
+// unit 必带：后端按 (车间名, 单位) 分组，同一车间的电/水/蒸汽会是多个数据点，
+// 只用车间名做标签会导致扇区标签重复且颜色互相覆盖
 export interface DistributionDataPoint {
   name: string
   value: number
+  unit: string
 }
 
 // ── 车间管理 ──

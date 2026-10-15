@@ -1,18 +1,35 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { App, Select, Button, Segmented } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
+import { useQuery } from '@tanstack/react-query'
 import { StatsCards } from './StatsCards'
 import { TrendChart } from './TrendChart'
 import { DistributionChart } from './DistributionChart'
 import { useEnergyStore } from '@/stores/energy'
-import {
-  EnergyStatistics,
-  TrendDataPoint,
-  DistributionDataPoint,
-} from '@/types/energy'
+import { EnergyOverviewData, EnergyStatistics, TrendDataPoint } from '@/types/energy'
 import { fetchEnergyOverviewClient } from '@/lib/api/client/energy'
+
+type OverviewTimeRange = 'today' | 'week' | 'month'
+
+const EMPTY_STATISTICS: EnergyStatistics = {
+  total_electricity: 0,
+  total_water: 0,
+  total_steam: 0,
+  total_natural_gas: 0,
+}
+const EMPTY_TREND: TrendDataPoint[] = []
+const EMPTY_DISTRIBUTION: EnergyOverviewData['distribution'] = []
+
+// 时间窗随挂载日固化进 queryKey：若把 new Date() 直接放进 key，每次渲染 key 都变，会导致无限重取
+function resolveStartTime(range: OverviewTimeRange, now: Date): Date {
+  if (range === 'today') {
+    return new Date(new Date(now).setHours(0, 0, 0, 0))
+  }
+  const days = range === 'week' ? 7 : 30
+  return new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+}
 
 export function EnergyOverview() {
   const { message } = App.useApp()
@@ -23,51 +40,38 @@ export function EnergyOverview() {
     setSelectedEnergyType,
   } = useEnergyStore()
 
-  const [loading, setLoading] = useState(false)
-  const [statistics, setStatistics] = useState<EnergyStatistics>({
-    total_electricity: 0,
-    total_water: 0,
-    total_steam: 0,
-    total_natural_gas: 0,
+  const [today] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`
   })
-  const [trendData, setTrendData] = useState<TrendDataPoint[]>([])
-  const [distributionData, setDistributionData] = useState<DistributionDataPoint[]>([])
 
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const now = new Date()
-      const endTime = now.toISOString()
-      let startTime: string
-      if (overviewTimeRange === 'today') {
-        startTime = new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-      } else if (overviewTimeRange === 'week') {
-        startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      } else {
-        startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      }
-
-      const overview = await fetchEnergyOverviewClient({
-        start_time: startTime,
-        end_time: endTime,
+  const { data, isFetching, isLoading, refetch, error } = useQuery({
+    queryKey: ['energy-overview', overviewTimeRange, selectedEnergyType, today],
+    queryFn: () => {
+      const endTime = new Date()
+      return fetchEnergyOverviewClient({
+        start_time: resolveStartTime(overviewTimeRange, endTime).toISOString(),
+        end_time: endTime.toISOString(),
         energy_type: selectedEnergyType === 'all' ? undefined : selectedEnergyType,
       })
+    },
+  })
 
-      setStatistics(overview.summary)
-      setTrendData(overview.trend)
-      setDistributionData(
-        overview.distribution.map((d: { name?: string; group_key?: string; value?: number; total_value?: number }) => ({
-          name: d.name || d.group_key || '',
-          value: d.value ?? d.total_value ?? 0,
-        })),
-      )
-    } catch (error) {
-      console.error('获取能源数据失败:', error)
-      message.error('获取能源数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [overviewTimeRange, selectedEnergyType, message])
+  useEffect(() => {
+    if (error) message.error('获取能源数据失败')
+  }, [error, message])
+
+  const statistics = data?.summary ?? EMPTY_STATISTICS
+  const trendData = data?.trend ?? EMPTY_TREND
+  const distributionData = useMemo(
+    () =>
+      (data?.distribution ?? EMPTY_DISTRIBUTION).map((d) => ({
+        name: d.group_key,
+        value: d.total_value,
+        unit: d.unit,
+      })),
+    [data?.distribution],
+  )
 
   return (
     <div
@@ -130,9 +134,7 @@ export function EnergyOverview() {
       >
         <Segmented
           value={overviewTimeRange}
-          onChange={(value) =>
-            setOverviewTimeRange(value as 'today' | 'week' | 'month')
-          }
+          onChange={(value) => setOverviewTimeRange(value as OverviewTimeRange)}
           options={[
             { label: '今日', value: 'today' },
             { label: '近7天', value: 'week' },
@@ -178,8 +180,8 @@ export function EnergyOverview() {
 
         <Button
           icon={<ReloadOutlined />}
-          onClick={fetchData}
-          loading={loading}
+          onClick={() => refetch()}
+          loading={isFetching}
           style={{
             color: '#787671',
             borderColor: '#c8c4be',
@@ -194,7 +196,7 @@ export function EnergyOverview() {
       </div>
 
       {/* ════ 统计卡片 ════ */}
-      <StatsCards statistics={statistics} loading={loading} />
+      <StatsCards statistics={statistics} loading={isLoading} />
 
       {/* ════ 图表区 ════ */}
       <div
@@ -204,8 +206,8 @@ export function EnergyOverview() {
           gap: 16,
         }}
       >
-        <TrendChart data={trendData} loading={loading} />
-        <DistributionChart data={distributionData} loading={loading} />
+        <TrendChart data={trendData} loading={isLoading} />
+        <DistributionChart data={distributionData} loading={isLoading} />
       </div>
     </div>
   )

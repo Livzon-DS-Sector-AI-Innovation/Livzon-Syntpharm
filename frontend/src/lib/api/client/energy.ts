@@ -80,6 +80,11 @@ export async function fetchWorkshopsClient(params?: WorkshopQueryParams): Promis
   return apiGet<EnergyWorkshop[]>(`${API_BASE}/energy/workshops${query}`)
 }
 
+export async function fetchWorkshopsPageClient(params?: WorkshopQueryParams): Promise<PaginatedResponse<EnergyWorkshop>> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiFetchPaginated<EnergyWorkshop>(`${API_BASE}/energy/workshops${query}`)
+}
+
 export async function fetchMonthlySummaryClient(params?: MonthlyRecordQueryParams): Promise<MonthlySummary> {
   const query = buildQueryString(params as Record<string, unknown>)
   return apiGet<MonthlySummary>(`${API_BASE}/energy/monthly/summary${query}`)
