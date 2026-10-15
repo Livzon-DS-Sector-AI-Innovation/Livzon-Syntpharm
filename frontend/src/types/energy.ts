@@ -123,12 +123,14 @@ export interface RecordQueryParams {
 }
 
 // 分布数据点（图表输入，由总览 distribution 映射而来）
-// unit 必带：后端按 (车间名, 单位) 分组，同一车间的电/水/蒸汽会是多个数据点，
+// unit 必带：后端按 (车间名, 单位, 能源类型) 分组，同一车间的电/水/蒸汽会是多个数据点，
 // 只用车间名做标签会导致扇区标签重复且颜色互相覆盖
+// energyType 用于把饼图按能源分类画：跨单位把 value 加在一起算百分比是没有意义的
 export interface DistributionDataPoint {
   name: string
   value: number
   unit: string
+  energyType: EnergyType
 }
 
 // ── 车间管理 ──

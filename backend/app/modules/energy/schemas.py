@@ -539,11 +539,12 @@ class EnergyOverviewTrendPoint(BaseModel):
 
 
 class EnergyOverviewDistributionPoint(BaseModel):
-    """总览分布数据点（按车间分组）"""
+    """总览分布数据点（按车间 + 能源类型分组）"""
 
     group_key: str
     total_value: float
     unit: str
+    energy_type: str = Field(description="能源类型，前端据此把电/水/汽/气分开画饼图")
     data_count: int
 
 

@@ -8,7 +8,7 @@ import { StatsCards } from './StatsCards'
 import { TrendChart } from './TrendChart'
 import { DistributionChart } from './DistributionChart'
 import { useEnergyStore } from '@/stores/energy'
-import { EnergyOverviewData, EnergyStatistics, TrendDataPoint } from '@/types/energy'
+import { EnergyOverviewData, EnergyStatistics, EnergyType, TrendDataPoint } from '@/types/energy'
 import { fetchEnergyOverviewClient } from '@/lib/api/client/energy'
 
 type OverviewTimeRange = 'today' | 'week' | 'month'
@@ -69,6 +69,7 @@ export function EnergyOverview() {
         name: d.group_key,
         value: d.total_value,
         unit: d.unit,
+        energyType: d.energy_type as EnergyType,
       })),
     [data?.distribution],
   )

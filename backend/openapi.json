@@ -105827,6 +105827,11 @@
             "type": "string",
             "title": "Unit"
           },
+          "energy_type": {
+            "type": "string",
+            "title": "Energy Type",
+            "description": "\u80fd\u6e90\u7c7b\u578b\uff0c\u524d\u7aef\u636e\u6b64\u628a\u7535/\u6c34/\u6c7d/\u6c14\u5206\u5f00\u753b\u997c\u56fe"
+          },
           "data_count": {
             "type": "integer",
             "title": "Data Count"
@@ -105837,10 +105842,11 @@
           "group_key",
           "total_value",
           "unit",
+          "energy_type",
           "data_count"
         ],
         "title": "EnergyOverviewDistributionPoint",
-        "description": "\u603b\u89c8\u5206\u5e03\u6570\u636e\u70b9\uff08\u6309\u8f66\u95f4\u5206\u7ec4\uff09"
+        "description": "\u603b\u89c8\u5206\u5e03\u6570\u636e\u70b9\uff08\u6309\u8f66\u95f4 + \u80fd\u6e90\u7c7b\u578b\u5206\u7ec4\uff09"
       },
       "EnergyOverviewResponse": {
         "properties": {

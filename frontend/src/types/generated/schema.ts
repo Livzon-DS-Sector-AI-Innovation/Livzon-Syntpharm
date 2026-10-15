@@ -26206,7 +26206,7 @@ export interface components {
         };
         /**
          * EnergyOverviewDistributionPoint
-         * @description 总览分布数据点（按车间分组）
+         * @description 总览分布数据点（按车间 + 能源类型分组）
          */
         EnergyOverviewDistributionPoint: {
             /** Group Key */
@@ -26215,6 +26215,11 @@ export interface components {
             total_value: number;
             /** Unit */
             unit: string;
+            /**
+             * Energy Type
+             * @description 能源类型，前端据此把电/水/汽/气分开画饼图
+             */
+            energy_type: string;
             /** Data Count */
             data_count: number;
         };

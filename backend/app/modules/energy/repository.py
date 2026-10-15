@@ -242,6 +242,7 @@ async def get_energy_statistics(
                 EnergyWorkshop.name.label("group_key"),
                 func.sum(EnergyMonthlyRecord.value).label("total_value"),
                 EnergyMonthlyRecord.unit,
+                EnergyMonthlyRecord.energy_type,
                 func.count(EnergyMonthlyRecord.id).label("data_count"),
             )
             .join(
@@ -254,7 +255,7 @@ async def get_energy_statistics(
                 EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
                 EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
             )
-            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit, EnergyMonthlyRecord.energy_type)
         )
     else:
         # 对于其他分组方式，暂时按车间分组
@@ -263,6 +264,7 @@ async def get_energy_statistics(
                 EnergyWorkshop.name.label("group_key"),
                 func.sum(EnergyMonthlyRecord.value).label("total_value"),
                 EnergyMonthlyRecord.unit,
+                EnergyMonthlyRecord.energy_type,
                 func.count(EnergyMonthlyRecord.id).label("data_count"),
             )
             .join(
@@ -275,7 +277,7 @@ async def get_energy_statistics(
                 EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
                 EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
             )
-            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit, EnergyMonthlyRecord.energy_type)
         )
 
     if energy_type:
@@ -288,6 +290,7 @@ async def get_energy_statistics(
             "group_key": row.group_key,
             "total_value": float(row.total_value or 0),
             "unit": row.unit,
+            "energy_type": row.energy_type,
             "data_count": row.data_count,
         }
         for row in rows
