@@ -95,6 +95,53 @@ async def test_environment_center_water_and_electricity_labels_resolve_to_one_en
     assert await _active_total(db_session) == before
 
 
+def _cross_records() -> list[dict]:
+    """最小可用的月度交叉表：电 section + 汽 section，气数据挂在汽 section 尾部。"""
+    return [
+        {"fields": {"各车间电用量明细": "日期", "列1": "2026-10-01"}},
+        {"fields": {"各车间电用量明细": "车间", "列1": "kWh"}},
+        {"fields": {"各车间电用量明细": "环保中心(含RTO)", "列1": 100}},
+        {"fields": {"各车间电用量明细": "RTO用电", "列1": 200}},
+        {"fields": {"各车间电用量明细": "合计", "列1": 300}},
+        {"fields": {"各车间蒸汽用量明细": "各车间蒸汽用量明细"}},
+        {"fields": {"各车间蒸汽用量明细": "日期", "列1": "2026-10-01"}},
+        {"fields": {"各车间蒸汽用量明细": "车间", "列1": "t"}},
+        {"fields": {"各车间蒸汽用量明细": "环保中心", "列1": 5}},
+        {"fields": {"各车间蒸汽用量明细": "RTO(天然气）", "列1": 300}},
+        {"fields": {"各车间蒸汽用量明细": "天然气总表（Nm³）", "列1": 305}},
+    ]
+
+
+def test_rto_electricity_row_is_not_dropped(cross_import):
+    """RTO用电 是 RTO 设备的电耗，必须作为电力数据入库，不能当汇总行跳过。"""
+    parsed = {(p["workshop_name"], p["energy_type"]): p for p in cross_import._parse_cross_table(_cross_records())}
+
+    rto_elec = parsed[("RTO用电", "electricity")]
+    assert float(rto_elec["value"]) == 200
+    assert rto_elec["unit"] == "kWh"
+
+    # 同一张表里 环保中心(含RTO) 的电、环保中心 的汽、RTO(天然气） 的气互不串台
+    assert float(parsed[("环保中心(含RTO)", "electricity")]["value"]) == 100
+    assert float(parsed[("环保中心", "steam")]["value"]) == 5
+    assert parsed[("RTO(天然气）", "natural_gas")]["unit"] == "Nm³"
+    assert ("合计", "electricity") not in parsed
+    assert ("天然气总表（Nm³）", "natural_gas") not in parsed
+
+
+async def test_rto_electricity_and_gas_labels_resolve_to_one_entity(cross_import, db_session):
+    """RTO 是一台部门设备，电耗与气耗必须落在同一个车间实体上。"""
+    from_elec = await cross_import._get_or_create_workshop(db_session, "RTO用电")
+    from_gas = await cross_import._get_or_create_workshop(db_session, "RTO(天然气）")
+    await db_session.flush()
+
+    assert from_elec.id == from_gas.id
+    assert from_elec.name == "RTO"
+
+    # 两种叫法都不该各自建出一个车间
+    assert await _active_count(db_session, "RTO用电") == 0
+    assert await _active_count(db_session, "RTO(天然气）") == 0
+
+
 async def test_mapping_sheet_overrides_builtin_constant(cross_import, monkeypatch):
     async def fake_tables():
         return [{"name": bci.MAPPING_TABLE_NAME, "table_id": "tbl-map"}]

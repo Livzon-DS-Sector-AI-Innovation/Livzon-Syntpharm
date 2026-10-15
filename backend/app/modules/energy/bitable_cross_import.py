@@ -34,6 +34,11 @@ WORKSHOP_ALIASES: dict[str, str] = {
     "环保中心(含RTO)": "环保中心",
     "废水站": "环保中心",
     "303、106": "303、106车间",
+    # 2024/2025 的历史月份表里 303 写成 303车间，与 303、106车间 是同一个车间
+    "303车间": "303、106车间",
+    # RTO 是一台独立的部门设备，电和气分开两处记录，必须归到同一个车间实体
+    "RTO用电": "RTO",
+    "RTO(天然气）": "RTO",
 }
 
 
@@ -340,11 +345,7 @@ class EnergyBitableCrossImport:
             if main_value == "车间":
                 continue
 
-            # 检查是否是RTO用电行（跳过，但保留RTO天然气）
-            if main_value == "RTO用电":
-                continue
-
-            # 检测天然气相关行
+            # 检测天然气相关行（天然气数据挂在汽 section 尾部，没有独立 section 标题）
             if "天然气" in main_value:
                 if "总表" in main_value or "合计" in main_value or "总量" in main_value:
                     # 跳过汇总行
