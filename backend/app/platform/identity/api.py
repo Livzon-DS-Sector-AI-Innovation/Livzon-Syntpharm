@@ -621,7 +621,7 @@ async def update_user_management(
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    from app.core.exceptions import DuplicateException, ForbiddenException, NotFoundException
+    from app.core.exceptions import ForbiddenException, NotFoundException
 
     repo = UserRepository()
     user = await repo.get_by_id(db, user_id)
@@ -638,7 +638,7 @@ async def update_user_management(
         raise ForbiddenException("不能修改自己的状态")
 
     # 已绑定飞书的账号：人员资料以飞书为准（每次登录自动同步，手工改了也会被覆盖），
-    # 因此禁止手工修改；用户名 / 状态属于平台侧管理字段，仍允许修改
+    # 因此禁止手工修改；状态属于平台侧管理字段，仍允许修改
     # （状态另有表格上的「启用 / 禁用」按钮）。
     if user.feishu_open_id or user.feishu_user_id:
         managed_fields = {
@@ -659,14 +659,9 @@ async def update_user_management(
                 f"该账号已绑定飞书，{'、'.join(changed_labels)}由飞书自动同步，不能手工修改",
             )
 
-    # 修改登录用户名（唯一，大小写不敏感；改后旧用户名不能再登录）
-    if payload.username is not None:
-        new_username = payload.username.strip()
-        if new_username and new_username != (user.username or ""):
-            existing = await repo.get_by_username(db, new_username)
-            if existing is not None and existing.id != user.id:
-                raise DuplicateException("用户名", new_username)
-            user.username = new_username
+    # 登录用户名创建后不允许修改：它是登录凭据与审计追溯的锚点，改名会让历史记录难以对应
+    if payload.username is not None and payload.username.strip() != (user.username or ""):
+        raise ForbiddenException("账号创建后不允许修改，如需更换请新建账号")
 
     if payload.name is not None:
         user.name = payload.name
@@ -691,7 +686,7 @@ async def update_user_management(
         resource_id=user.id,
         old_value={"username": user.username, "name": user.name, "status": user.status},
         new_value={
-            "username": payload.username if payload.username is not None else user.username,
+            "username": user.username,
             "name": payload.name if payload.name is not None else user.name,
             "status": payload.status if payload.status is not None else user.status,
         },

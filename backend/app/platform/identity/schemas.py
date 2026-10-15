@@ -99,7 +99,7 @@ class LocalUserCreate(BaseModel):
 
 
 class UserManagementUpdate(BaseModel):
-    username: str | None = Field(None, min_length=2, max_length=64, description="登录用户名（修改后旧用户名立即失效）")
+    username: str | None = Field(None, min_length=2, max_length=64, description="登录用户名（创建后不可修改）")
     name: str | None = Field(None, min_length=1, max_length=100)
     email: str | None = Field(None, max_length=255)
     mobile: str | None = Field(None, max_length=32)

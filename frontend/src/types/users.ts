@@ -53,7 +53,7 @@ export interface LocalUserCreate {
 }
 
 export interface UserManagementUpdate {
-  username?: string
+  /** 登录用户名创建后不可修改，更新请求不提交该字段 */
   name?: string
   email?: string | null
   mobile?: string | null
