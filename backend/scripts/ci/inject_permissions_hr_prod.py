@@ -63,7 +63,7 @@ def has_permission_injection(source, func_node):
     # Check function parameters for ctx with require_permission
     start = func_node.lineno - 1
     end = func_node.body[0].lineno if func_node.body else start + 20
-    func_text = "\n".join(lines[start:min(end, len(lines))])
+    func_text = "\n".join(lines[start : min(end, len(lines))])
     return "require_permission" in func_text
 
 
@@ -153,7 +153,7 @@ def inject_into_file(filepath, prefix_parts, dry_run=False):
                 break
 
         # Get the signature text
-        sig_lines = lines[sig_start:sig_end + 1]
+        sig_lines = lines[sig_start : sig_end + 1]
         sig_text = "\n".join(sig_lines)
 
         # Check if it's a single-line signature
@@ -167,8 +167,8 @@ def inject_into_file(filepath, prefix_parts, dry_run=False):
 
         if is_single_line:
             # Single-line: async def func(params) -> Any:
-            func_prefix = sig_text[:open_paren + 1]
-            params_part = sig_text[open_paren + 1:close_paren]
+            func_prefix = sig_text[: open_paren + 1]
+            params_part = sig_text[open_paren + 1 : close_paren]
             suffix = sig_text[close_paren:]
 
             # Parse parameters
@@ -178,16 +178,18 @@ def inject_into_file(filepath, prefix_parts, dry_run=False):
             # Insert ctx after the last non-default param
             insert_idx = len(non_defaults) if non_defaults else 0
 
-            new_params = params[:insert_idx] + [
-                f"ctx: PermissionContext = Depends(require_permission(\"{perm}\"))"
-            ] + params[insert_idx:]
+            new_params = (
+                params[:insert_idx]
+                + [f'ctx: PermissionContext = Depends(require_permission("{perm}"))']
+                + params[insert_idx:]
+            )
 
             new_sig = func_prefix + ", ".join(new_params) + suffix
             lines[sig_start] = new_sig
         else:
             # Multi-line signature: need to find where to insert ctx
             base_indent = get_indent(lines[sig_start])
-            ctx_line = " " * (base_indent + 4) + f"ctx: PermissionContext = Depends(require_permission(\"{perm}\")),"
+            ctx_line = " " * (base_indent + 4) + f'ctx: PermissionContext = Depends(require_permission("{perm}")),'
 
             # Collect all parameters from all lines
             all_params = []
@@ -198,7 +200,7 @@ def inject_into_file(filepath, prefix_parts, dry_run=False):
                 if stripped.startswith("def ") or stripped.startswith("async def "):
                     # Extract parameters after "("
                     if "(" in stripped:
-                        p = stripped[stripped.index("(")+1:]
+                        p = stripped[stripped.index("(") + 1 :]
                         if p.strip():
                             all_params.extend([x.strip() for x in p.split(",") if x.strip()])
                     param_line_indices.append(i)
@@ -289,6 +291,7 @@ def main():
         except Exception as e:
             print(f"  ERROR {filepath}: {e}")
             import traceback
+
             traceback.print_exc()
 
 

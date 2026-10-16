@@ -46,14 +46,10 @@ async def list_audit_logs(
     if keyword:
         base = base.where(User.name.ilike(f"%{keyword}%") | User.username.ilike(f"%{keyword}%"))
 
-    total = int(
-        (await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one()
-    )
+    total = int((await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one())
 
     rows = (
-        await db.execute(
-            base.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
-        )
+        await db.execute(base.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size))
     ).all()
 
     data = [
@@ -73,6 +69,4 @@ async def list_audit_logs(
         )
         for log, user_name, username in rows
     ]
-    return build_response(
-        data=AuditLogListData(items=data, total=total, page=page, page_size=page_size).model_dump()
-    )
+    return build_response(data=AuditLogListData(items=data, total=total, page=page, page_size=page_size).model_dump())  # type: ignore[return-value]

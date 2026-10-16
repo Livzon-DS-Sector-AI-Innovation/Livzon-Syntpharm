@@ -672,8 +672,8 @@ export type CreateInspectionTemplateItemInput = InspectionTemplateItemCreate
 export type UpdateInspectionTemplateItemInput = InspectionTemplateItemUpdate
 export type InspectionCompleteInput = components['schemas']['InspectionCompleteRequest']
 export type MaterialConsumeInput = components['schemas']['MaterialConsumeRequest']
-export type CreateRoleInput = components['schemas']['RoleCreate']
-export type UpdateRoleInput = components['schemas']['RoleUpdate']
+export type CreateRoleInput = components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate']
+export type UpdateRoleInput = components['schemas']['app__modules__equipment__schemas__personnel__RoleUpdate']
 export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 
 export type AssignRolesInput = components["schemas"]["PersonnelRoleAssign"]

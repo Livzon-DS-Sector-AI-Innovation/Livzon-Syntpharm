@@ -11,9 +11,7 @@ from pydantic import BaseModel, Field
 class MenuItemOverride(BaseModel):
     """内置菜单项的覆盖配置。"""
 
-    label: str | None = Field(
-        None, max_length=64, description="菜单显示名；None/空 = 按代码默认（菜单管理里可改）"
-    )
+    label: str | None = Field(None, max_length=64, description="菜单显示名；None/空 = 按代码默认（菜单管理里可改）")
     visible: bool | None = Field(None, description="是否显示；None = 按代码默认（显示）")
     sort: int | None = Field(None, description="排列权重，数字小排前面；None = 按代码顺序")
     perms: list[str] | None = Field(

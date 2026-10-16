@@ -362,15 +362,11 @@ PROCUREMENT_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("procurement:purchase-order:export", "导出采购订单", "procurement", "purchase-order", "export"),
     PermissionDef("procurement:purchase-request:read", "查看采购申请", "procurement", "purchase-request", "read"),
     PermissionDef("procurement:purchase-request:create", "创建采购申请", "procurement", "purchase-request", "create"),
-    PermissionDef(
-        "procurement:purchase-request:update", "更新采购申请", "procurement", "purchase-request", "update"
-    ),
+    PermissionDef("procurement:purchase-request:update", "更新采购申请", "procurement", "purchase-request", "update"),
     PermissionDef(
         "procurement:purchase-request:submit", "提交/驳回采购申请", "procurement", "purchase-request", "submit"
     ),
-    PermissionDef(
-        "procurement:purchase-request:approve", "审批采购申请", "procurement", "purchase-request", "approve"
-    ),
+    PermissionDef("procurement:purchase-request:approve", "审批采购申请", "procurement", "purchase-request", "approve"),
     PermissionDef("procurement:contract:read", "查看采购合同", "procurement", "contract", "read"),
     PermissionDef("procurement:contract:create", "生成采购合同", "procurement", "contract", "create"),
 )
@@ -450,7 +446,9 @@ EQUIPMENT_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("equipment:work-order:read", "查看维修工单", "equipment", "work-order", "read"),
     PermissionDef("equipment:work-order:create", "创建维修工单", "equipment", "work-order", "create"),
     PermissionDef("equipment:work-order:update", "更新维修工单", "equipment", "work-order", "update"),
-    PermissionDef("equipment:work-order:manage", "管理维修工单（分配/开始/完成/验证/关闭）", "equipment", "work-order", "manage"),
+    PermissionDef(
+        "equipment:work-order:manage", "管理维修工单（分配/开始/完成/验证/关闭）", "equipment", "work-order", "manage"
+    ),
     # calibration（校准管理）
     PermissionDef("equipment:calibration:read", "查看校准记录", "equipment", "calibration", "read"),
     PermissionDef("equipment:calibration:create", "创建校准记录", "equipment", "calibration", "create"),
@@ -487,7 +485,9 @@ EQUIPMENT_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("equipment:maintenance-staff:read", "查看维护人员", "equipment", "maintenance-staff", "read"),
     PermissionDef("equipment:maintenance-staff:update", "刷新维护人员", "equipment", "maintenance-staff", "update"),
     PermissionDef("equipment:work-order:delete", "删除工单附件图片", "equipment", "work-order", "delete"),
-    PermissionDef("equipment:inspection:manage", "管理巡检任务（开始/完成/关闭等）", "equipment", "inspection", "manage"),
+    PermissionDef(
+        "equipment:inspection:manage", "管理巡检任务（开始/完成/关闭等）", "equipment", "inspection", "manage"
+    ),
     PermissionDef("equipment:batch-import:read", "下载导入模板", "equipment", "batch-import", "read"),
 )
 
@@ -510,22 +510,44 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("registration:certificate:update", "更新注册证书", "registration", "certificate", "update"),
     PermissionDef("registration:certificate:delete", "删除注册证书", "registration", "certificate", "delete"),
     # authorization-letter（授权书）
-    PermissionDef("registration:authorization-letter:read", "查看授权书", "registration", "authorization-letter", "read"),
-    PermissionDef("registration:authorization-letter:create", "生成授权书", "registration", "authorization-letter", "create"),
-    PermissionDef("registration:authorization-letter:delete", "删除授权书", "registration", "authorization-letter", "delete"),
+    PermissionDef(
+        "registration:authorization-letter:read", "查看授权书", "registration", "authorization-letter", "read"
+    ),
+    PermissionDef(
+        "registration:authorization-letter:create", "生成授权书", "registration", "authorization-letter", "create"
+    ),
+    PermissionDef(
+        "registration:authorization-letter:delete", "删除授权书", "registration", "authorization-letter", "delete"
+    ),
     # reference-standard（对照物质说明表）
     PermissionDef("registration:reference-standard:read", "查看对照物质", "registration", "reference-standard", "read"),
-    PermissionDef("registration:reference-standard:create", "创建对照物质", "registration", "reference-standard", "create"),
-    PermissionDef("registration:reference-standard:delete", "删除对照物质", "registration", "reference-standard", "delete"),
+    PermissionDef(
+        "registration:reference-standard:create", "创建对照物质", "registration", "reference-standard", "create"
+    ),
+    PermissionDef(
+        "registration:reference-standard:delete", "删除对照物质", "registration", "reference-standard", "delete"
+    ),
     # reference-substance（对照品说明表）
     PermissionDef("registration:reference-substance:read", "查看对照品", "registration", "reference-substance", "read"),
-    PermissionDef("registration:reference-substance:create", "创建对照品", "registration", "reference-substance", "create"),
-    PermissionDef("registration:reference-substance:update", "更新对照品", "registration", "reference-substance", "update"),
-    PermissionDef("registration:reference-substance:delete", "删除对照品", "registration", "reference-substance", "delete"),
+    PermissionDef(
+        "registration:reference-substance:create", "创建对照品", "registration", "reference-substance", "create"
+    ),
+    PermissionDef(
+        "registration:reference-substance:update", "更新对照品", "registration", "reference-substance", "update"
+    ),
+    PermissionDef(
+        "registration:reference-substance:delete", "删除对照品", "registration", "reference-substance", "delete"
+    ),
     # supplementary-reply（发补回复）
-    PermissionDef("registration:supplementary-reply:read", "查看发补回复", "registration", "supplementary-reply", "read"),
-    PermissionDef("registration:supplementary-reply:create", "生成发补回复", "registration", "supplementary-reply", "create"),
-    PermissionDef("registration:supplementary-reply:delete", "删除发补回复", "registration", "supplementary-reply", "delete"),
+    PermissionDef(
+        "registration:supplementary-reply:read", "查看发补回复", "registration", "supplementary-reply", "read"
+    ),
+    PermissionDef(
+        "registration:supplementary-reply:create", "生成发补回复", "registration", "supplementary-reply", "create"
+    ),
+    PermissionDef(
+        "registration:supplementary-reply:delete", "删除发补回复", "registration", "supplementary-reply", "delete"
+    ),
     # holiday（节假日管理）
     PermissionDef("registration:holiday:read", "查看节假日", "registration", "holiday", "read"),
     PermissionDef("registration:holiday:create", "创建节假日", "registration", "holiday", "create"),
@@ -543,7 +565,9 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("registration:dossier:delete", "删除申报资料", "registration", "dossier", "delete"),
     # regulatory-tracker（法规追踪）
     PermissionDef("registration:regulatory-tracker:read", "查看法规追踪", "registration", "regulatory-tracker", "read"),
-    PermissionDef("registration:regulatory-tracker:manage", "管理法规追踪同步", "registration", "regulatory-tracker", "manage"),
+    PermissionDef(
+        "registration:regulatory-tracker:manage", "管理法规追踪同步", "registration", "regulatory-tracker", "manage"
+    ),
     # dashboard（注册看板）
     PermissionDef("registration:dashboard:read", "查看注册看板", "registration", "dashboard", "read"),
     # ledger（注册台账-审批记录）
@@ -684,8 +708,12 @@ HR_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("hr:onboarding-evaluation:create", "上岗评估 - 新增", "hr", "onboarding-evaluation", "create"),
     PermissionDef("hr:onboarding-records:read", "入职记录 - 查看", "hr", "onboarding-records", "read"),
     PermissionDef("hr:onboarding-records:sync", "入职记录 - 同步", "hr", "onboarding-records", "sync"),
-    PermissionDef("hr:prejob-training-templates:read", "岗前培训模板 - 查看", "hr", "prejob-training-templates", "read"),
-    PermissionDef("hr:prejob-training-templates:update", "岗前培训模板 - 编辑", "hr", "prejob-training-templates", "update"),
+    PermissionDef(
+        "hr:prejob-training-templates:read", "岗前培训模板 - 查看", "hr", "prejob-training-templates", "read"
+    ),
+    PermissionDef(
+        "hr:prejob-training-templates:update", "岗前培训模板 - 编辑", "hr", "prejob-training-templates", "update"
+    ),
     PermissionDef("hr:system-settings:read", "系统设置 - 查看", "hr", "system-settings", "read"),
     PermissionDef("hr:system-settings:update", "系统设置 - 编辑", "hr", "system-settings", "update"),
     PermissionDef("hr:teams:create", "班组管理 - 新增", "hr", "teams", "create"),
@@ -734,20 +762,64 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("production:plans:read", "生产计划 - 查看", "production", "plans", "read"),
     PermissionDef("production:plans:update", "生产计划 - 编辑", "production", "plans", "update"),
     PermissionDef("production:pressure-audit:read", "压差审核 - 查看", "production", "pressure-audit", "read"),
-    PermissionDef("production:pressure-dashboard:read", "压差仪表盘 - 查看", "production", "pressure-dashboard", "read"),
-    PermissionDef("production:pressure-data-master:create", "压差数据管理 - 新增", "production", "pressure-data-master", "create"),
-    PermissionDef("production:pressure-data-master:delete", "压差数据管理 - 删除", "production", "pressure-data-master", "delete"),
-    PermissionDef("production:pressure-data-master:read", "压差数据管理 - 查看", "production", "pressure-data-master", "read"),
-    PermissionDef("production:pressure-data-master:update", "压差数据管理 - 编辑", "production", "pressure-data-master", "update"),
-    PermissionDef("production:pressure-notifications:read", "压差通知 - 查看", "production", "pressure-notifications", "read"),
-    PermissionDef("production:pressure-notifications:update", "压差通知 - 编辑", "production", "pressure-notifications", "update"),
-    PermissionDef("production:pressure-ocr-tasks:create", "压差OCR任务 - 新增", "production", "pressure-ocr-tasks", "create"),
-    PermissionDef("production:pressure-ocr-tasks:read", "压差OCR任务 - 查看", "production", "pressure-ocr-tasks", "read"),
-    PermissionDef("production:pressure-ocr-tasks:update", "压差OCR任务 - 编辑", "production", "pressure-ocr-tasks", "update"),
-    PermissionDef("production:pressure-point-mappings:create", "压差点位映射 - 新增", "production", "pressure-point-mappings", "create"),
-    PermissionDef("production:pressure-point-mappings:delete", "压差点位映射 - 删除", "production", "pressure-point-mappings", "delete"),
-    PermissionDef("production:pressure-point-mappings:read", "压差点位映射 - 查看", "production", "pressure-point-mappings", "read"),
-    PermissionDef("production:pressure-point-mappings:update", "压差点位映射 - 编辑", "production", "pressure-point-mappings", "update"),
+    PermissionDef(
+        "production:pressure-dashboard:read", "压差仪表盘 - 查看", "production", "pressure-dashboard", "read"
+    ),
+    PermissionDef(
+        "production:pressure-data-master:create", "压差数据管理 - 新增", "production", "pressure-data-master", "create"
+    ),
+    PermissionDef(
+        "production:pressure-data-master:delete", "压差数据管理 - 删除", "production", "pressure-data-master", "delete"
+    ),
+    PermissionDef(
+        "production:pressure-data-master:read", "压差数据管理 - 查看", "production", "pressure-data-master", "read"
+    ),
+    PermissionDef(
+        "production:pressure-data-master:update", "压差数据管理 - 编辑", "production", "pressure-data-master", "update"
+    ),
+    PermissionDef(
+        "production:pressure-notifications:read", "压差通知 - 查看", "production", "pressure-notifications", "read"
+    ),
+    PermissionDef(
+        "production:pressure-notifications:update", "压差通知 - 编辑", "production", "pressure-notifications", "update"
+    ),
+    PermissionDef(
+        "production:pressure-ocr-tasks:create", "压差OCR任务 - 新增", "production", "pressure-ocr-tasks", "create"
+    ),
+    PermissionDef(
+        "production:pressure-ocr-tasks:read", "压差OCR任务 - 查看", "production", "pressure-ocr-tasks", "read"
+    ),
+    PermissionDef(
+        "production:pressure-ocr-tasks:update", "压差OCR任务 - 编辑", "production", "pressure-ocr-tasks", "update"
+    ),
+    PermissionDef(
+        "production:pressure-point-mappings:create",
+        "压差点位映射 - 新增",
+        "production",
+        "pressure-point-mappings",
+        "create",
+    ),
+    PermissionDef(
+        "production:pressure-point-mappings:delete",
+        "压差点位映射 - 删除",
+        "production",
+        "pressure-point-mappings",
+        "delete",
+    ),
+    PermissionDef(
+        "production:pressure-point-mappings:read",
+        "压差点位映射 - 查看",
+        "production",
+        "pressure-point-mappings",
+        "read",
+    ),
+    PermissionDef(
+        "production:pressure-point-mappings:update",
+        "压差点位映射 - 编辑",
+        "production",
+        "pressure-point-mappings",
+        "update",
+    ),
     PermissionDef("production:pressure-records:create", "压差记录 - 新增", "production", "pressure-records", "create"),
     PermissionDef("production:pressure-records:delete", "压差记录 - 删除", "production", "pressure-records", "delete"),
     PermissionDef("production:pressure-records:export", "压差记录 - 导出", "production", "pressure-records", "export"),
@@ -763,11 +835,21 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("production:product-output:import", "产量记录 - 导入", "production", "product-output", "import"),
     PermissionDef("production:product-output:read", "产量记录 - 查看", "production", "product-output", "read"),
     PermissionDef("production:product-output:update", "产量记录 - 编辑", "production", "product-output", "update"),
-    PermissionDef("production:product-sync-config:create", "同步配置 - 新增", "production", "product-sync-config", "create"),
-    PermissionDef("production:product-sync-config:delete", "同步配置 - 删除", "production", "product-sync-config", "delete"),
-    PermissionDef("production:product-sync-config:read", "同步配置 - 查看", "production", "product-sync-config", "read"),
-    PermissionDef("production:product-sync-config:sync", "同步配置 - 同步", "production", "product-sync-config", "sync"),
-    PermissionDef("production:product-sync-config:update", "同步配置 - 编辑", "production", "product-sync-config", "update"),
+    PermissionDef(
+        "production:product-sync-config:create", "同步配置 - 新增", "production", "product-sync-config", "create"
+    ),
+    PermissionDef(
+        "production:product-sync-config:delete", "同步配置 - 删除", "production", "product-sync-config", "delete"
+    ),
+    PermissionDef(
+        "production:product-sync-config:read", "同步配置 - 查看", "production", "product-sync-config", "read"
+    ),
+    PermissionDef(
+        "production:product-sync-config:sync", "同步配置 - 同步", "production", "product-sync-config", "sync"
+    ),
+    PermissionDef(
+        "production:product-sync-config:update", "同步配置 - 编辑", "production", "product-sync-config", "update"
+    ),
     PermissionDef("production:products:create", "产品定义 - 新增", "production", "products", "create"),
     PermissionDef("production:products:delete", "产品定义 - 删除", "production", "products", "delete"),
     PermissionDef("production:products:read", "产品定义 - 查看", "production", "products", "read"),
@@ -785,10 +867,20 @@ PRODUCTION_PERMISSIONS: tuple[PermissionDef, ...] = (
 )
 
 
-
 # 全部权限码（业务模块接入存量接口时，把业务权限码合并进来即可，权限树会自动生长）
 ALL_PERMISSIONS: tuple[PermissionDef, ...] = (
-    PLATFORM_PERMISSIONS + BUSINESS_MODULE_PERMISSIONS + RESEARCH_PERMISSIONS + WAREHOUSE_PERMISSIONS + PROCUREMENT_PERMISSIONS + ADMINISTRATION_PERMISSIONS + ENERGY_PERMISSIONS + EQUIPMENT_PERMISSIONS + REGISTRATION_PERMISSIONS + QUALITY_PERMISSIONS + HR_PERMISSIONS + PRODUCTION_PERMISSIONS
+    PLATFORM_PERMISSIONS
+    + BUSINESS_MODULE_PERMISSIONS
+    + RESEARCH_PERMISSIONS
+    + WAREHOUSE_PERMISSIONS
+    + PROCUREMENT_PERMISSIONS
+    + ADMINISTRATION_PERMISSIONS
+    + ENERGY_PERMISSIONS
+    + EQUIPMENT_PERMISSIONS
+    + REGISTRATION_PERMISSIONS
+    + QUALITY_PERMISSIONS
+    + HR_PERMISSIONS
+    + PRODUCTION_PERMISSIONS
 )
 
 
@@ -1037,18 +1129,10 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # ── administration 业务接口 ──
     ApiBindingDef("administration:vehicle:read", "GET", "/api/v1/administration/vehicles"),
     ApiBindingDef("administration:vehicle:create", "POST", "/api/v1/administration/vehicles"),
-    ApiBindingDef(
-        "administration:vehicle:read", "GET", "/api/v1/administration/vehicles/{vehicle_id}"
-    ),
-    ApiBindingDef(
-        "administration:vehicle:update", "PUT", "/api/v1/administration/vehicles/{vehicle_id}"
-    ),
-    ApiBindingDef(
-        "administration:vehicle:delete", "DELETE", "/api/v1/administration/vehicles/{vehicle_id}"
-    ),
-    ApiBindingDef(
-        "administration:vehicle:read", "GET", "/api/v1/administration/vehicles/template/download"
-    ),
+    ApiBindingDef("administration:vehicle:read", "GET", "/api/v1/administration/vehicles/{vehicle_id}"),
+    ApiBindingDef("administration:vehicle:update", "PUT", "/api/v1/administration/vehicles/{vehicle_id}"),
+    ApiBindingDef("administration:vehicle:delete", "DELETE", "/api/v1/administration/vehicles/{vehicle_id}"),
+    ApiBindingDef("administration:vehicle:read", "GET", "/api/v1/administration/vehicles/template/download"),
     ApiBindingDef("warehouse:module:read", "GET", "/api/v1/warehouse"),
     ApiBindingDef("warehouse:module:read", "GET", "/api/v1/warehouse/"),
     ApiBindingDef("procurement:module:read", "GET", "/api/v1/procurement"),
@@ -1068,15 +1152,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("warehouse:feishu-table:create", "POST", "/api/v1/warehouse/feishu/tables/refresh"),
     ApiBindingDef("warehouse:feishu-table:update", "POST", "/api/v1/warehouse/feishu/tables/enabled/batch"),
     ApiBindingDef("warehouse:feishu-table:update", "PATCH", "/api/v1/warehouse/feishu/tables/{table_id}/enabled"),
-    ApiBindingDef(
-        "warehouse:feishu-table:submit", "POST", "/api/v1/warehouse/feishu/tables/{table_id}/sync"
-    ),
-    ApiBindingDef(
-        "warehouse:feishu-record:read", "GET", "/api/v1/warehouse/feishu/tables/{table_id}/records"
-    ),
-    ApiBindingDef(
-        "warehouse:feishu-record:read", "GET", "/api/v1/warehouse/feishu/domains/{business_domain}/records"
-    ),
+    ApiBindingDef("warehouse:feishu-table:submit", "POST", "/api/v1/warehouse/feishu/tables/{table_id}/sync"),
+    ApiBindingDef("warehouse:feishu-record:read", "GET", "/api/v1/warehouse/feishu/tables/{table_id}/records"),
+    ApiBindingDef("warehouse:feishu-record:read", "GET", "/api/v1/warehouse/feishu/domains/{business_domain}/records"),
     ApiBindingDef("warehouse:feishu-ws:read", "GET", "/api/v1/warehouse/feishu/ws/status"),
     ApiBindingDef("warehouse:feishu-ws:submit", "POST", "/api/v1/warehouse/feishu/ws/restart"),
     # ── procurement 业务接口 ──
@@ -1094,12 +1172,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("procurement:purchase-order:export", "GET", "/api/v1/procurement/purchase-orders/export"),
     ApiBindingDef("procurement:purchase-request:read", "GET", "/api/v1/procurement/purchase-requests"),
     ApiBindingDef("procurement:purchase-request:create", "POST", "/api/v1/procurement/purchase-requests"),
-    ApiBindingDef(
-        "procurement:purchase-request:read", "GET", "/api/v1/procurement/purchase-requests/{request_id}"
-    ),
-    ApiBindingDef(
-        "procurement:purchase-request:update", "PUT", "/api/v1/procurement/purchase-requests/{request_id}"
-    ),
+    ApiBindingDef("procurement:purchase-request:read", "GET", "/api/v1/procurement/purchase-requests/{request_id}"),
+    ApiBindingDef("procurement:purchase-request:update", "PUT", "/api/v1/procurement/purchase-requests/{request_id}"),
     ApiBindingDef(
         "procurement:purchase-request:submit", "POST", "/api/v1/procurement/purchase-requests/{request_id}/submit"
     ),
@@ -1110,14 +1184,10 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "procurement:purchase-request:submit", "POST", "/api/v1/procurement/purchase-requests/{request_id}/reject"
     ),
     ApiBindingDef("procurement:contract:read", "GET", "/api/v1/procurement/contracts"),
-    ApiBindingDef(
-        "procurement:contract:read", "GET", "/api/v1/procurement/contracts/templates/{category}"
-    ),
+    ApiBindingDef("procurement:contract:read", "GET", "/api/v1/procurement/contracts/templates/{category}"),
     ApiBindingDef("procurement:contract:create", "POST", "/api/v1/procurement/contracts/generate"),
     ApiBindingDef("procurement:contract:read", "GET", "/api/v1/procurement/contracts/{contract_id}"),
-    ApiBindingDef(
-        "procurement:contract:read", "GET", "/api/v1/procurement/contracts/{contract_id}/file"
-    ),
+    ApiBindingDef("procurement:contract:read", "GET", "/api/v1/procurement/contracts/{contract_id}/file"),
     # ── energy 业务接口 ──
     ApiBindingDef("energy:platform:read", "GET", "/api/v1/energy/platforms"),
     ApiBindingDef("energy:overview:read", "GET", "/api/v1/energy/overview"),
@@ -1128,9 +1198,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("energy:sync:create", "POST", "/api/v1/energy/sync/bitable/daily-import"),
     ApiBindingDef("energy:job:read", "GET", "/api/v1/energy/jobs/{job_id}"),
     ApiBindingDef("energy:target:create", "POST", "/api/v1/energy/targets"),
-    ApiBindingDef(
-        "energy:target:read", "GET", "/api/v1/energy/targets/{workshop_id}/{target_month}"
-    ),
+    ApiBindingDef("energy:target:read", "GET", "/api/v1/energy/targets/{workshop_id}/{target_month}"),
     ApiBindingDef("energy:target:update", "PUT", "/api/v1/energy/targets/{target_id}"),
     ApiBindingDef("energy:analysis:create", "POST", "/api/v1/energy/ai-analysis-v2"),
     # devices
@@ -1144,9 +1212,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("energy:data:read", "GET", "/api/v1/energy/data/statistics"),
     # collect
     ApiBindingDef("energy:collect:read", "GET", "/api/v1/energy/collect/logs"),
-    ApiBindingDef(
-        "energy:collect:read", "GET", "/api/v1/energy/collect/logs/{log_id}/detail"
-    ),
+    ApiBindingDef("energy:collect:read", "GET", "/api/v1/energy/collect/logs/{log_id}/detail"),
     ApiBindingDef("energy:collect:create", "POST", "/api/v1/energy/collect/trigger"),
     # alert rules
     ApiBindingDef("energy:alert-rule:read", "GET", "/api/v1/energy/alerts/rules"),
@@ -1156,9 +1222,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("energy:alert-rule:delete", "DELETE", "/api/v1/energy/alerts/rules/{rule_id}"),
     # alert records
     ApiBindingDef("energy:alert-record:read", "GET", "/api/v1/energy/alerts/records"),
-    ApiBindingDef(
-        "energy:alert-record:update", "PUT", "/api/v1/energy/alerts/records/{record_id}/process"
-    ),
+    ApiBindingDef("energy:alert-record:update", "PUT", "/api/v1/energy/alerts/records/{record_id}/process"),
     # workshops
     ApiBindingDef("energy:workshop:read", "GET", "/api/v1/energy/workshops"),
     ApiBindingDef("energy:workshop:create", "POST", "/api/v1/energy/workshops"),
@@ -1175,15 +1239,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("energy:monthly-record:create", "POST", "/api/v1/energy/monthly/import/feishu"),
     # ── equipment ──
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/categories"),
-    ApiBindingDef(
-        "equipment:equipment:read", "GET", "/api/v1/equipment/categories/{category_id}"
-    ),
-    ApiBindingDef(
-        "equipment:equipment:update", "PUT", "/api/v1/equipment/categories/{category_id}"
-    ),
-    ApiBindingDef(
-        "equipment:equipment:delete", "DELETE", "/api/v1/equipment/categories/{category_id}"
-    ),
+    ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/categories/{category_id}"),
+    ApiBindingDef("equipment:equipment:update", "PUT", "/api/v1/equipment/categories/{category_id}"),
+    ApiBindingDef("equipment:equipment:delete", "DELETE", "/api/v1/equipment/categories/{category_id}"),
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/departments"),
     ApiBindingDef("equipment:equipment:create", "POST", "/api/v1/equipment/equipments"),
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/equipments"),
@@ -1194,159 +1252,121 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("equipment:batch-import:read", "GET", "/api/v1/equipment/equipments/import/template"),
     ApiBindingDef("equipment:batch-import:create", "POST", "/api/v1/equipment/equipments/import/test-validation"),
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/equipments/statistics"),
-    ApiBindingDef(
-        "equipment:equipment:read", "GET", "/api/v1/equipment/equipments/{equipment_id}"
-    ),
-    ApiBindingDef(
-        "equipment:equipment:update", "PUT", "/api/v1/equipment/equipments/{equipment_id}"
-    ),
-    ApiBindingDef(
-        "equipment:equipment:delete", "DELETE", "/api/v1/equipment/equipments/{equipment_id}"
-    ),
+    ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/equipments/{equipment_id}"),
+    ApiBindingDef("equipment:equipment:update", "PUT", "/api/v1/equipment/equipments/{equipment_id}"),
+    ApiBindingDef("equipment:equipment:delete", "DELETE", "/api/v1/equipment/equipments/{equipment_id}"),
     ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/history"),
-    ApiBindingDef(
-        "equipment:inspection:read", "GET", "/api/v1/equipment/inspection/history/{task_id}"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:read", "GET", "/api/v1/equipment/inspection/photos/{photo_id}/file"
-    ),
+    ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/history/{task_id}"),
+    ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/photos/{photo_id}/file"),
     ApiBindingDef("equipment:inspection:create", "POST", "/api/v1/equipment/inspection/routes"),
     ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/routes"),
-    ApiBindingDef(
-        "equipment:inspection:read", "GET", "/api/v1/equipment/inspection/routes/{route_id}"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:update", "PUT", "/api/v1/equipment/inspection/routes/{route_id}"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:delete", "DELETE", "/api/v1/equipment/inspection/routes/{route_id}"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:create", "POST", "/api/v1/equipment/inspection/routes/{route_id}/locations"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:read", "GET", "/api/v1/equipment/inspection/routes/{route_id}/schedules"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:create", "POST", "/api/v1/equipment/inspection/routes/{route_id}/schedules"
-    ),
+    ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/routes/{route_id}"),
+    ApiBindingDef("equipment:inspection:update", "PUT", "/api/v1/equipment/inspection/routes/{route_id}"),
+    ApiBindingDef("equipment:inspection:delete", "DELETE", "/api/v1/equipment/inspection/routes/{route_id}"),
+    ApiBindingDef("equipment:inspection:create", "POST", "/api/v1/equipment/inspection/routes/{route_id}/locations"),
+    ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/routes/{route_id}/schedules"),
+    ApiBindingDef("equipment:inspection:create", "POST", "/api/v1/equipment/inspection/routes/{route_id}/schedules"),
     ApiBindingDef(
         "equipment:inspection:update", "PUT", "/api/v1/equipment/inspection/routes/{route_id}/schedules/{schedule_id}"
     ),
     ApiBindingDef(
-        "equipment:inspection:delete", "DELETE", "/api/v1/equipment/inspection/routes/{route_id}/schedules/{schedule_id}"
+        "equipment:inspection:delete",
+        "DELETE",
+        "/api/v1/equipment/inspection/routes/{route_id}/schedules/{schedule_id}",
     ),
     ApiBindingDef("equipment:inspection:create", "POST", "/api/v1/equipment/inspection/tasks"),
     ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/tasks"),
+    ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/tasks/{task_id}"),
+    ApiBindingDef("equipment:inspection:manage", "PUT", "/api/v1/equipment/inspection/tasks/{task_id}/close"),
+    ApiBindingDef("equipment:inspection:manage", "PUT", "/api/v1/equipment/inspection/tasks/{task_id}/complete"),
     ApiBindingDef(
-        "equipment:inspection:read", "GET", "/api/v1/equipment/inspection/tasks/{task_id}"
+        "equipment:inspection:create",
+        "POST",
+        "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/ai-analyze",
     ),
     ApiBindingDef(
-        "equipment:inspection:manage", "PUT", "/api/v1/equipment/inspection/tasks/{task_id}/close"
+        "equipment:inspection:create",
+        "POST",
+        "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/check",
     ),
     ApiBindingDef(
-        "equipment:inspection:manage", "PUT", "/api/v1/equipment/inspection/tasks/{task_id}/complete"
+        "equipment:inspection:create",
+        "POST",
+        "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/photos",
     ),
-    ApiBindingDef(
-        "equipment:inspection:create", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/ai-analyze"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:create", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/check"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:create", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/photos"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:create", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/photos"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:read", "GET", "/api/v1/equipment/inspection/tasks/{task_id}/photos"
-    ),
+    ApiBindingDef("equipment:inspection:create", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/photos"),
+    ApiBindingDef("equipment:inspection:read", "GET", "/api/v1/equipment/inspection/tasks/{task_id}/photos"),
     ApiBindingDef(
         "equipment:inspection:delete", "DELETE", "/api/v1/equipment/inspection/tasks/{task_id}/photos/{photo_id}"
     ),
-    ApiBindingDef(
-        "equipment:inspection:manage", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/route-check"
-    ),
-    ApiBindingDef(
-        "equipment:inspection:manage", "PUT", "/api/v1/equipment/inspection/tasks/{task_id}/start"
-    ),
+    ApiBindingDef("equipment:inspection:manage", "POST", "/api/v1/equipment/inspection/tasks/{task_id}/route-check"),
+    ApiBindingDef("equipment:inspection:manage", "PUT", "/api/v1/equipment/inspection/tasks/{task_id}/start"),
     ApiBindingDef("equipment:equipment:create", "POST", "/api/v1/equipment/locations"),
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/locations"),
-    ApiBindingDef(
-        "equipment:equipment:read", "GET", "/api/v1/equipment/locations/{location_id}"
-    ),
-    ApiBindingDef(
-        "equipment:equipment:update", "PUT", "/api/v1/equipment/locations/{location_id}"
-    ),
-    ApiBindingDef(
-        "equipment:equipment:delete", "DELETE", "/api/v1/equipment/locations/{location_id}"
-    ),
+    ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/locations/{location_id}"),
+    ApiBindingDef("equipment:equipment:update", "PUT", "/api/v1/equipment/locations/{location_id}"),
+    ApiBindingDef("equipment:equipment:delete", "DELETE", "/api/v1/equipment/locations/{location_id}"),
     ApiBindingDef("equipment:calibration:create", "POST", "/api/v1/equipment/maintenance/calibration/plans"),
     ApiBindingDef("equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/plans"),
     ApiBindingDef("equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/plans/overdue"),
-    ApiBindingDef(
-        "equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/plans/{plan_id}"
-    ),
-    ApiBindingDef(
-        "equipment:calibration:update", "PUT", "/api/v1/equipment/maintenance/calibration/plans/{plan_id}"
-    ),
+    ApiBindingDef("equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/plans/{plan_id}"),
+    ApiBindingDef("equipment:calibration:update", "PUT", "/api/v1/equipment/maintenance/calibration/plans/{plan_id}"),
     ApiBindingDef(
         "equipment:calibration:delete", "DELETE", "/api/v1/equipment/maintenance/calibration/plans/{plan_id}"
     ),
     ApiBindingDef("equipment:calibration:create", "POST", "/api/v1/equipment/maintenance/calibration/records"),
     ApiBindingDef("equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/records"),
-    ApiBindingDef(
-        "equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/records/{record_id}"
-    ),
+    ApiBindingDef("equipment:calibration:read", "GET", "/api/v1/equipment/maintenance/calibration/records/{record_id}"),
     ApiBindingDef("equipment:maintenance-config:read", "GET", "/api/v1/equipment/maintenance/config/claim-timeout"),
     ApiBindingDef("equipment:maintenance-config:update", "PUT", "/api/v1/equipment/maintenance/config/claim-timeout"),
     ApiBindingDef("equipment:inspection-template:create", "POST", "/api/v1/equipment/maintenance/inspection-templates"),
     ApiBindingDef("equipment:inspection-template:read", "GET", "/api/v1/equipment/maintenance/inspection-templates"),
     ApiBindingDef(
-        "equipment:inspection-template:create", "POST", "/api/v1/equipment/maintenance/inspection-templates/complete/{work_order_id}"
+        "equipment:inspection-template:create",
+        "POST",
+        "/api/v1/equipment/maintenance/inspection-templates/complete/{work_order_id}",
     ),
     ApiBindingDef(
-        "equipment:inspection-template:update", "PUT", "/api/v1/equipment/maintenance/inspection-templates/items/{item_id}"
+        "equipment:inspection-template:update",
+        "PUT",
+        "/api/v1/equipment/maintenance/inspection-templates/items/{item_id}",
     ),
     ApiBindingDef(
-        "equipment:inspection-template:delete", "DELETE", "/api/v1/equipment/maintenance/inspection-templates/items/{item_id}"
+        "equipment:inspection-template:delete",
+        "DELETE",
+        "/api/v1/equipment/maintenance/inspection-templates/items/{item_id}",
     ),
     ApiBindingDef(
         "equipment:inspection-template:read", "GET", "/api/v1/equipment/maintenance/inspection-templates/{template_id}"
     ),
     ApiBindingDef(
-        "equipment:inspection-template:update", "PUT", "/api/v1/equipment/maintenance/inspection-templates/{template_id}"
+        "equipment:inspection-template:update",
+        "PUT",
+        "/api/v1/equipment/maintenance/inspection-templates/{template_id}",
     ),
     ApiBindingDef(
-        "equipment:inspection-template:delete", "DELETE", "/api/v1/equipment/maintenance/inspection-templates/{template_id}"
+        "equipment:inspection-template:delete",
+        "DELETE",
+        "/api/v1/equipment/maintenance/inspection-templates/{template_id}",
     ),
     ApiBindingDef(
-        "equipment:inspection-template:create", "POST", "/api/v1/equipment/maintenance/inspection-templates/{template_id}/items"
+        "equipment:inspection-template:create",
+        "POST",
+        "/api/v1/equipment/maintenance/inspection-templates/{template_id}/items",
     ),
     ApiBindingDef("equipment:maintenance-plan:create", "POST", "/api/v1/equipment/maintenance/plans"),
     ApiBindingDef("equipment:maintenance-plan:read", "GET", "/api/v1/equipment/maintenance/plans"),
     ApiBindingDef("equipment:maintenance-plan:read", "GET", "/api/v1/equipment/maintenance/plans/overdue"),
-    ApiBindingDef(
-        "equipment:maintenance-plan:read", "GET", "/api/v1/equipment/maintenance/plans/{plan_id}"
-    ),
-    ApiBindingDef(
-        "equipment:maintenance-plan:update", "PUT", "/api/v1/equipment/maintenance/plans/{plan_id}"
-    ),
-    ApiBindingDef(
-        "equipment:maintenance-plan:delete", "DELETE", "/api/v1/equipment/maintenance/plans/{plan_id}"
-    ),
+    ApiBindingDef("equipment:maintenance-plan:read", "GET", "/api/v1/equipment/maintenance/plans/{plan_id}"),
+    ApiBindingDef("equipment:maintenance-plan:update", "PUT", "/api/v1/equipment/maintenance/plans/{plan_id}"),
+    ApiBindingDef("equipment:maintenance-plan:delete", "DELETE", "/api/v1/equipment/maintenance/plans/{plan_id}"),
     ApiBindingDef("equipment:maintenance-staff:read", "GET", "/api/v1/equipment/maintenance/staff/all-users"),
     ApiBindingDef("equipment:maintenance-staff:read", "GET", "/api/v1/equipment/maintenance/staff/maintainers"),
     ApiBindingDef("equipment:work-order:create", "POST", "/api/v1/equipment/maintenance/work-orders"),
     ApiBindingDef("equipment:work-order:read", "GET", "/api/v1/equipment/maintenance/work-orders"),
     ApiBindingDef("equipment:work-order:read", "GET", "/api/v1/equipment/maintenance/work-orders/statistics"),
-    ApiBindingDef(
-        "equipment:work-order:update", "PUT", "/api/v1/equipment/maintenance/work-orders/{work_order_id}"
-    ),
-    ApiBindingDef(
-        "equipment:work-order:read", "GET", "/api/v1/equipment/maintenance/work-orders/{work_order_id}"
-    ),
+    ApiBindingDef("equipment:work-order:update", "PUT", "/api/v1/equipment/maintenance/work-orders/{work_order_id}"),
+    ApiBindingDef("equipment:work-order:read", "GET", "/api/v1/equipment/maintenance/work-orders/{work_order_id}"),
     ApiBindingDef(
         "equipment:work-order:manage", "PUT", "/api/v1/equipment/maintenance/work-orders/{work_order_id}/assign"
     ),
@@ -1366,10 +1386,14 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "equipment:work-order:read", "GET", "/api/v1/equipment/maintenance/work-orders/{work_order_id}/images"
     ),
     ApiBindingDef(
-        "equipment:work-order:delete", "DELETE", "/api/v1/equipment/maintenance/work-orders/{work_order_id}/images/{image_id}"
+        "equipment:work-order:delete",
+        "DELETE",
+        "/api/v1/equipment/maintenance/work-orders/{work_order_id}/images/{image_id}",
     ),
     ApiBindingDef(
-        "equipment:work-order:read", "GET", "/api/v1/equipment/maintenance/work-orders/{work_order_id}/images/{image_id}/file"
+        "equipment:work-order:read",
+        "GET",
+        "/api/v1/equipment/maintenance/work-orders/{work_order_id}/images/{image_id}/file",
     ),
     ApiBindingDef(
         "equipment:work-order:create", "POST", "/api/v1/equipment/maintenance/work-orders/{work_order_id}/materials"
@@ -1389,77 +1413,65 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("equipment:personnel:create", "POST", "/api/v1/equipment/personnel/refresh-feishu"),
     ApiBindingDef("equipment:personnel:create", "POST", "/api/v1/equipment/personnel/roles"),
     ApiBindingDef("equipment:personnel:read", "GET", "/api/v1/equipment/personnel/roles"),
-    ApiBindingDef(
-        "equipment:personnel:read", "GET", "/api/v1/equipment/personnel/roles/{role_id}"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/roles/{role_id}"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:delete", "DELETE", "/api/v1/equipment/personnel/roles/{role_id}"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:read", "GET", "/api/v1/equipment/personnel/{personnel_id}"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/{personnel_id}"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:delete", "DELETE", "/api/v1/equipment/personnel/{personnel_id}"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:create", "POST", "/api/v1/equipment/personnel/{personnel_id}/categories"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/{personnel_id}/categories"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:create", "POST", "/api/v1/equipment/personnel/{personnel_id}/roles"
-    ),
-    ApiBindingDef(
-        "equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/{personnel_id}/roles"
-    ),
+    ApiBindingDef("equipment:personnel:read", "GET", "/api/v1/equipment/personnel/roles/{role_id}"),
+    ApiBindingDef("equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/roles/{role_id}"),
+    ApiBindingDef("equipment:personnel:delete", "DELETE", "/api/v1/equipment/personnel/roles/{role_id}"),
+    ApiBindingDef("equipment:personnel:read", "GET", "/api/v1/equipment/personnel/{personnel_id}"),
+    ApiBindingDef("equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/{personnel_id}"),
+    ApiBindingDef("equipment:personnel:delete", "DELETE", "/api/v1/equipment/personnel/{personnel_id}"),
+    ApiBindingDef("equipment:personnel:create", "POST", "/api/v1/equipment/personnel/{personnel_id}/categories"),
+    ApiBindingDef("equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/{personnel_id}/categories"),
+    ApiBindingDef("equipment:personnel:create", "POST", "/api/v1/equipment/personnel/{personnel_id}/roles"),
+    ApiBindingDef("equipment:personnel:update", "PUT", "/api/v1/equipment/personnel/{personnel_id}/roles"),
     ApiBindingDef("equipment:spare-part:create", "POST", "/api/v1/equipment/spare-parts"),
     ApiBindingDef("equipment:spare-part:read", "GET", "/api/v1/equipment/spare-parts"),
     ApiBindingDef("equipment:spare-part:read", "GET", "/api/v1/equipment/spare-parts/stock/warnings"),
-    ApiBindingDef(
-        "equipment:spare-part:read", "GET", "/api/v1/equipment/spare-parts/{spare_part_id}"
-    ),
-    ApiBindingDef(
-        "equipment:spare-part:update", "PUT", "/api/v1/equipment/spare-parts/{spare_part_id}"
-    ),
-    ApiBindingDef(
-        "equipment:spare-part:delete", "DELETE", "/api/v1/equipment/spare-parts/{spare_part_id}"
-    ),
-    ApiBindingDef(
-        "equipment:spare-part:read", "GET", "/api/v1/equipment/spare-parts/{spare_part_id}/stock"
-    ),
-    ApiBindingDef(
-        "equipment:spare-part:create", "POST", "/api/v1/equipment/spare-parts/{spare_part_id}/stock/adjust"
-    ),
-    ApiBindingDef(
-        "equipment:spare-part:create", "POST", "/api/v1/equipment/spare-parts/{spare_part_id}/stock/inbound"
-    ),
+    ApiBindingDef("equipment:spare-part:read", "GET", "/api/v1/equipment/spare-parts/{spare_part_id}"),
+    ApiBindingDef("equipment:spare-part:update", "PUT", "/api/v1/equipment/spare-parts/{spare_part_id}"),
+    ApiBindingDef("equipment:spare-part:delete", "DELETE", "/api/v1/equipment/spare-parts/{spare_part_id}"),
+    ApiBindingDef("equipment:spare-part:read", "GET", "/api/v1/equipment/spare-parts/{spare_part_id}/stock"),
+    ApiBindingDef("equipment:spare-part:create", "POST", "/api/v1/equipment/spare-parts/{spare_part_id}/stock/adjust"),
+    ApiBindingDef("equipment:spare-part:create", "POST", "/api/v1/equipment/spare-parts/{spare_part_id}/stock/inbound"),
     # failure-codes (dynamic f-string routes, 3 groups × 5 CRUD)
     ApiBindingDef("equipment:failure-code:create", "POST", "/api/v1/equipment/maintenance/failure-codes/symptoms"),
     ApiBindingDef("equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/symptoms"),
-    ApiBindingDef("equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"),
-    ApiBindingDef("equipment:failure-code:update", "PUT", "/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"),
-    ApiBindingDef("equipment:failure-code:delete", "DELETE", "/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"),
+    ApiBindingDef(
+        "equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"
+    ),
+    ApiBindingDef(
+        "equipment:failure-code:update", "PUT", "/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"
+    ),
+    ApiBindingDef(
+        "equipment:failure-code:delete", "DELETE", "/api/v1/equipment/maintenance/failure-codes/symptoms/{code_id}"
+    ),
     ApiBindingDef("equipment:failure-code:create", "POST", "/api/v1/equipment/maintenance/failure-codes/causes"),
     ApiBindingDef("equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/causes"),
     ApiBindingDef("equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/causes/{code_id}"),
-    ApiBindingDef("equipment:failure-code:update", "PUT", "/api/v1/equipment/maintenance/failure-codes/causes/{code_id}"),
-    ApiBindingDef("equipment:failure-code:delete", "DELETE", "/api/v1/equipment/maintenance/failure-codes/causes/{code_id}"),
+    ApiBindingDef(
+        "equipment:failure-code:update", "PUT", "/api/v1/equipment/maintenance/failure-codes/causes/{code_id}"
+    ),
+    ApiBindingDef(
+        "equipment:failure-code:delete", "DELETE", "/api/v1/equipment/maintenance/failure-codes/causes/{code_id}"
+    ),
     ApiBindingDef("equipment:failure-code:create", "POST", "/api/v1/equipment/maintenance/failure-codes/actions"),
     ApiBindingDef("equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/actions"),
-    ApiBindingDef("equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/actions/{code_id}"),
-    ApiBindingDef("equipment:failure-code:update", "PUT", "/api/v1/equipment/maintenance/failure-codes/actions/{code_id}"),
-    ApiBindingDef("equipment:failure-code:delete", "DELETE", "/api/v1/equipment/maintenance/failure-codes/actions/{code_id}"),
+    ApiBindingDef(
+        "equipment:failure-code:read", "GET", "/api/v1/equipment/maintenance/failure-codes/actions/{code_id}"
+    ),
+    ApiBindingDef(
+        "equipment:failure-code:update", "PUT", "/api/v1/equipment/maintenance/failure-codes/actions/{code_id}"
+    ),
+    ApiBindingDef(
+        "equipment:failure-code:delete", "DELETE", "/api/v1/equipment/maintenance/failure-codes/actions/{code_id}"
+    ),
     # ── registration ──
     ApiBindingDef("registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters"),
-    ApiBindingDef("registration:authorization-letter:create", "POST", "/api/v1/registration/authorization-letters/generate"),
-    ApiBindingDef("registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/products"),
+    ApiBindingDef(
+        "registration:authorization-letter:create", "POST", "/api/v1/registration/authorization-letters/generate"
+    ),
+    ApiBindingDef(
+        "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/products"
+    ),
     ApiBindingDef(
         "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/{letter_id}"
     ),
@@ -1467,59 +1479,57 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:authorization-letter:delete", "DELETE", "/api/v1/registration/authorization-letters/{letter_id}"
     ),
     ApiBindingDef(
-        "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/{letter_id}/download"
+        "registration:authorization-letter:read",
+        "GET",
+        "/api/v1/registration/authorization-letters/{letter_id}/download",
     ),
     ApiBindingDef(
-        "registration:authorization-letter:read", "GET", "/api/v1/registration/authorization-letters/{letter_id}/download-url"
+        "registration:authorization-letter:read",
+        "GET",
+        "/api/v1/registration/authorization-letters/{letter_id}/download-url",
     ),
     ApiBindingDef("registration:certificate:read", "GET", "/api/v1/registration/certificates"),
     ApiBindingDef("registration:certificate:create", "POST", "/api/v1/registration/certificates"),
-    ApiBindingDef(
-        "registration:certificate:read", "GET", "/api/v1/registration/certificates/{certificate_id}"
-    ),
-    ApiBindingDef(
-        "registration:certificate:update", "PUT", "/api/v1/registration/certificates/{certificate_id}"
-    ),
-    ApiBindingDef(
-        "registration:certificate:delete", "DELETE", "/api/v1/registration/certificates/{certificate_id}"
-    ),
+    ApiBindingDef("registration:certificate:read", "GET", "/api/v1/registration/certificates/{certificate_id}"),
+    ApiBindingDef("registration:certificate:update", "PUT", "/api/v1/registration/certificates/{certificate_id}"),
+    ApiBindingDef("registration:certificate:delete", "DELETE", "/api/v1/registration/certificates/{certificate_id}"),
     ApiBindingDef("registration:dashboard:read", "GET", "/api/v1/registration/dashboard/summary"),
     ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs"),
     ApiBindingDef("registration:drug:create", "POST", "/api/v1/registration/drugs"),
     ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs/nodes"),
-    ApiBindingDef(
-        "registration:drug:read", "GET", "/api/v1/registration/drugs/{drug_id}"
-    ),
-    ApiBindingDef(
-        "registration:drug:update", "PUT", "/api/v1/registration/drugs/{drug_id}"
-    ),
-    ApiBindingDef(
-        "registration:drug:delete", "DELETE", "/api/v1/registration/drugs/{drug_id}"
-    ),
+    ApiBindingDef("registration:drug:read", "GET", "/api/v1/registration/drugs/{drug_id}"),
+    ApiBindingDef("registration:drug:update", "PUT", "/api/v1/registration/drugs/{drug_id}"),
+    ApiBindingDef("registration:drug:delete", "DELETE", "/api/v1/registration/drugs/{drug_id}"),
     ApiBindingDef("registration:holiday:read", "GET", "/api/v1/registration/holidays"),
     ApiBindingDef("registration:holiday:create", "POST", "/api/v1/registration/holidays"),
-    ApiBindingDef(
-        "registration:holiday:update", "PUT", "/api/v1/registration/holidays/{holiday_id}"
-    ),
-    ApiBindingDef(
-        "registration:holiday:delete", "DELETE", "/api/v1/registration/holidays/{holiday_id}"
-    ),
+    ApiBindingDef("registration:holiday:update", "PUT", "/api/v1/registration/holidays/{holiday_id}"),
+    ApiBindingDef("registration:holiday:delete", "DELETE", "/api/v1/registration/holidays/{holiday_id}"),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/copp-certificates"),
     ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/copp-certificates"),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/copp-certificates/export"),
-    ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/copp-certificates/import"),
+    ApiBindingDef(
+        "registration:approval-record:create", "POST", "/api/v1/registration/ledger/copp-certificates/import"
+    ),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/domestic-approvals"),
     ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/domestic-approvals"),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/domestic-approvals/export"),
-    ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/domestic-approvals/import"),
+    ApiBindingDef(
+        "registration:approval-record:create", "POST", "/api/v1/registration/ledger/domestic-approvals/import"
+    ),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/international-reviews"),
     ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/international-reviews"),
-    ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/international-reviews/export"),
-    ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/international-reviews/import"),
+    ApiBindingDef(
+        "registration:approval-record:read", "GET", "/api/v1/registration/ledger/international-reviews/export"
+    ),
+    ApiBindingDef(
+        "registration:approval-record:create", "POST", "/api/v1/registration/ledger/international-reviews/import"
+    ),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/overseas-approvals"),
     ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/overseas-approvals"),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/overseas-approvals/export"),
-    ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/overseas-approvals/import"),
+    ApiBindingDef(
+        "registration:approval-record:create", "POST", "/api/v1/registration/ledger/overseas-approvals/import"
+    ),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/reviewing"),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/summary"),
     ApiBindingDef("registration:approval-record:read", "GET", "/api/v1/registration/ledger/wc-certificates"),
@@ -1528,18 +1538,16 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("registration:approval-record:create", "POST", "/api/v1/registration/ledger/wc-certificates/import"),
     ApiBindingDef("registration:project:read", "GET", "/api/v1/registration/projects"),
     ApiBindingDef("registration:project:create", "POST", "/api/v1/registration/projects"),
-    ApiBindingDef(
-        "registration:project:read", "GET", "/api/v1/registration/projects/{project_id}"
-    ),
-    ApiBindingDef(
-        "registration:project:update", "PUT", "/api/v1/registration/projects/{project_id}"
-    ),
-    ApiBindingDef(
-        "registration:project:delete", "DELETE", "/api/v1/registration/projects/{project_id}"
-    ),
+    ApiBindingDef("registration:project:read", "GET", "/api/v1/registration/projects/{project_id}"),
+    ApiBindingDef("registration:project:update", "PUT", "/api/v1/registration/projects/{project_id}"),
+    ApiBindingDef("registration:project:delete", "DELETE", "/api/v1/registration/projects/{project_id}"),
     ApiBindingDef("registration:reference-standard:read", "GET", "/api/v1/registration/reference-standards"),
-    ApiBindingDef("registration:reference-standard:create", "POST", "/api/v1/registration/reference-standards/generate"),
-    ApiBindingDef("registration:reference-standard:create", "POST", "/api/v1/registration/reference-standards/parse-coa"),
+    ApiBindingDef(
+        "registration:reference-standard:create", "POST", "/api/v1/registration/reference-standards/generate"
+    ),
+    ApiBindingDef(
+        "registration:reference-standard:create", "POST", "/api/v1/registration/reference-standards/parse-coa"
+    ),
     ApiBindingDef(
         "registration:reference-standard:read", "GET", "/api/v1/registration/reference-standards/{record_id}"
     ),
@@ -1550,7 +1558,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:reference-standard:read", "GET", "/api/v1/registration/reference-standards/{record_id}/download"
     ),
     ApiBindingDef(
-        "registration:reference-standard:read", "GET", "/api/v1/registration/reference-standards/{record_id}/download-url"
+        "registration:reference-standard:read",
+        "GET",
+        "/api/v1/registration/reference-standards/{record_id}/download-url",
     ),
     ApiBindingDef("registration:reference-substance:read", "GET", "/api/v1/registration/reference-substances"),
     ApiBindingDef("registration:reference-substance:create", "POST", "/api/v1/registration/reference-substances"),
@@ -1564,7 +1574,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:reference-substance:delete", "DELETE", "/api/v1/registration/reference-substances/{substance_id}"
     ),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-documents"),
-    ApiBindingDef("registration:regulatory-tracker:manage", "POST", "/api/v1/registration/regulatory-documents/batch-read"),
+    ApiBindingDef(
+        "registration:regulatory-tracker:manage", "POST", "/api/v1/registration/regulatory-documents/batch-read"
+    ),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-documents/export"),
     ApiBindingDef(
         "registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-documents/{doc_id}/detail"
@@ -1575,7 +1587,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-tracker/dashboard"),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/regulatory-tracker/summary"),
     ApiBindingDef("registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies"),
-    ApiBindingDef("registration:supplementary-reply:create", "POST", "/api/v1/registration/supplementary-replies/generate"),
+    ApiBindingDef(
+        "registration:supplementary-reply:create", "POST", "/api/v1/registration/supplementary-replies/generate"
+    ),
     ApiBindingDef(
         "registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies/{reply_id}"
     ),
@@ -1586,15 +1600,15 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies/{reply_id}/download"
     ),
     ApiBindingDef(
-        "registration:supplementary-reply:read", "GET", "/api/v1/registration/supplementary-replies/{reply_id}/download-url"
+        "registration:supplementary-reply:read",
+        "GET",
+        "/api/v1/registration/supplementary-replies/{reply_id}/download-url",
     ),
     ApiBindingDef("registration:regulatory-tracker:read", "GET", "/api/v1/registration/sync-jobs"),
     ApiBindingDef("registration:regulatory-tracker:manage", "POST", "/api/v1/registration/sync-jobs/trigger"),
     ApiBindingDef("registration:validation-audit:create", "POST", "/api/v1/registration/validation-audit/tasks"),
     ApiBindingDef("registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks"),
-    ApiBindingDef(
-        "registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}"
-    ),
+    ApiBindingDef("registration:validation-audit:read", "GET", "/api/v1/registration/validation-audit/tasks/{task_id}"),
     ApiBindingDef(
         "registration:validation-audit:update", "PUT", "/api/v1/registration/validation-audit/tasks/{task_id}"
     ),
@@ -1657,8 +1671,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/auto-triggers"),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/auto-triggers"),
     ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/auto-triggers/{id}"),
-    ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/auto-triggers/{id}"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/auto-triggers/{id}/toggle"),
+    ApiBindingDef(
+        "quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/auto-triggers/{id}"
+    ),
+    ApiBindingDef(
+        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/auto-triggers/{id}/toggle"
+    ),
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/feishu-bot"),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/feishu-bot"),
     ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/feishu-bot"),
@@ -1672,16 +1690,28 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/leaders/{id}/toggle"),
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/message-templates"),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/message-templates"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}"),
-    ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/message-templates/{id}"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}/set-default"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}/toggle"),
+    ApiBindingDef(
+        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}"
+    ),
+    ApiBindingDef(
+        "quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/message-templates/{id}"
+    ),
+    ApiBindingDef(
+        "quality:deviation-settings:update",
+        "PUT",
+        "/api/v1/quality/deviation-settings/message-templates/{id}/set-default",
+    ),
+    ApiBindingDef(
+        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/message-templates/{id}/toggle"
+    ),
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/options"),
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/qa-users"),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/qa-users"),
     ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/qa-users/{id}"),
     ApiBindingDef("quality:deviation-settings:delete", "DELETE", "/api/v1/quality/deviation-settings/qa-users/{id}"),
-    ApiBindingDef("quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/qa-users/{id}/toggle"),
+    ApiBindingDef(
+        "quality:deviation-settings:update", "PUT", "/api/v1/quality/deviation-settings/qa-users/{id}/toggle"
+    ),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/reminder/trigger"),
     ApiBindingDef("quality:deviation-settings:read", "GET", "/api/v1/quality/deviation-settings/rules"),
     ApiBindingDef("quality:deviation-settings:create", "POST", "/api/v1/quality/deviation-settings/rules"),
@@ -1711,7 +1741,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/correction/progress"),
     ApiBindingDef("quality:deviation:create", "POST", "/api/v1/quality/deviation/{deviation_id}/investigation"),
     ApiBindingDef("quality:deviation:update", "PUT", "/api/v1/quality/deviation/{deviation_id}/investigation"),
-    ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/investigation/complete"),
+    ApiBindingDef(
+        "quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/investigation/complete"
+    ),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/lock-batch"),
     ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/{deviation_id}/submit"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/unlock-batch"),
@@ -1784,7 +1816,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:label-verification:read", "GET", "/api/v1/quality/label-verifications/statistics"),
     ApiBindingDef("quality:label-verification:read", "GET", "/api/v1/quality/label-verifications/{verification_id}"),
     ApiBindingDef("quality:label-verification:update", "PUT", "/api/v1/quality/label-verifications/{verification_id}"),
-    ApiBindingDef("quality:label-verification:delete", "DELETE", "/api/v1/quality/label-verifications/{verification_id}"),
+    ApiBindingDef(
+        "quality:label-verification:delete", "DELETE", "/api/v1/quality/label-verifications/{verification_id}"
+    ),
     ApiBindingDef("quality:label-verification:create", "POST", "/api/v1/quality/label-verifications/upload-video"),
     ApiBindingDef("quality:label-verification:create", "POST", "/api/v1/quality/label-verifications/analyze-video"),
     ApiBindingDef("quality:label-verification:create", "POST", "/api/v1/quality/label-verifications/auto-compare"),
@@ -1796,7 +1830,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:material-report:read", "GET", "/api/v1/quality/material-report/template/{template_id}"),
     ApiBindingDef("quality:material-report:read", "PUT", "/api/v1/quality/material-report/template/{template_id}"),
     ApiBindingDef("quality:material-report:read", "DELETE", "/api/v1/quality/material-report/template/{template_id}"),
-    ApiBindingDef("quality:material-report:read", "GET", "/api/v1/quality/material-report/template/{template_id}/preview"),
+    ApiBindingDef(
+        "quality:material-report:read", "GET", "/api/v1/quality/material-report/template/{template_id}/preview"
+    ),
     ApiBindingDef("quality:material-report:read", "GET", "/api/v1/quality/material-report/{report_id}"),
     ApiBindingDef("quality:material-report:update", "PUT", "/api/v1/quality/material-report/{report_id}"),
     ApiBindingDef("quality:material-report:delete", "DELETE", "/api/v1/quality/material-report/{report_id}"),
@@ -1813,7 +1849,9 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:reagent-reminder:read", "GET", "/api/v1/quality/reagent-reminder/config"),
     ApiBindingDef("quality:reagent-reminder:create", "POST", "/api/v1/quality/reagent-reminder/config"),
     ApiBindingDef("quality:reagent-reminder:create", "POST", "/api/v1/quality/reagent-reminder/item-reminder"),
-    ApiBindingDef("quality:reagent-reminder:read", "GET", "/api/v1/quality/reagent-reminder/item-reminder/{reagent_name}"),
+    ApiBindingDef(
+        "quality:reagent-reminder:read", "GET", "/api/v1/quality/reagent-reminder/item-reminder/{reagent_name}"
+    ),
     ApiBindingDef("quality:reagent-reminder:read", "GET", "/api/v1/quality/reagent-reminder/low-stock"),
     ApiBindingDef("quality:reagent:export", "GET", "/api/v1/quality/reagent/export"),
     ApiBindingDef("quality:reagent:read", "GET", "/api/v1/quality/reagent/list"),
@@ -1901,8 +1939,6 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/unit/options"),
     ApiBindingDef("quality:doc-check:create", "POST", "/api/v1/quality/upload"),
     ApiBindingDef("quality:doc-check:read", "GET", "/api/v1/quality/vector-cache"),
-
-
     ApiBindingDef("hr:employees:read", "GET", "/api/v1/hr/employees"),
     ApiBindingDef("hr:employees:create", "POST", "/api/v1/hr/employees"),
     ApiBindingDef("hr:employees:sync", "POST", "/api/v1/hr/employees/sync-from-feishu"),
@@ -2072,20 +2108,48 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("production:product-sync-config:read", "GET", "/api/v1/production/product-sync-config/{product_id}"),
     ApiBindingDef("production:product-sync-config:create", "POST", "/api/v1/production/product-sync-config"),
     ApiBindingDef("production:product-sync-config:update", "PUT", "/api/v1/production/product-sync-config/{config_id}"),
-    ApiBindingDef("production:product-sync-config:delete", "DELETE", "/api/v1/production/product-sync-config/{config_id}"),
-    ApiBindingDef("production:product-sync-config:sync", "POST", "/api/v1/production/product-sync-config/{product_id}/push"),
-    ApiBindingDef("production:product-sync-config:sync", "POST", "/api/v1/production/product-sync-config/{product_id}/pull"),
-    ApiBindingDef("production:product-sync-config:sync", "POST", "/api/v1/production/product-sync-config/{product_id}/sync"),
-    ApiBindingDef("production:product-sync-config:read", "POST", "/api/v1/production/product-sync-config/{product_id}/preview-push"),
-    ApiBindingDef("production:product-sync-config:read", "POST", "/api/v1/production/product-sync-config/{product_id}/preview-pull"),
-    ApiBindingDef("production:product-sync-config:update", "POST", "/api/v1/production/product-sync-config/{product_id}/undo-last-sync"),
+    ApiBindingDef(
+        "production:product-sync-config:delete", "DELETE", "/api/v1/production/product-sync-config/{config_id}"
+    ),
+    ApiBindingDef(
+        "production:product-sync-config:sync", "POST", "/api/v1/production/product-sync-config/{product_id}/push"
+    ),
+    ApiBindingDef(
+        "production:product-sync-config:sync", "POST", "/api/v1/production/product-sync-config/{product_id}/pull"
+    ),
+    ApiBindingDef(
+        "production:product-sync-config:sync", "POST", "/api/v1/production/product-sync-config/{product_id}/sync"
+    ),
+    ApiBindingDef(
+        "production:product-sync-config:read",
+        "POST",
+        "/api/v1/production/product-sync-config/{product_id}/preview-push",
+    ),
+    ApiBindingDef(
+        "production:product-sync-config:read",
+        "POST",
+        "/api/v1/production/product-sync-config/{product_id}/preview-pull",
+    ),
+    ApiBindingDef(
+        "production:product-sync-config:update",
+        "POST",
+        "/api/v1/production/product-sync-config/{product_id}/undo-last-sync",
+    ),
     ApiBindingDef("production:pressure-dashboard:read", "GET", "/api/v1/production/pressure/dashboard"),
     ApiBindingDef("production:pressure-point-mappings:read", "GET", "/api/v1/production/pressure/point-mappings"),
-    ApiBindingDef("production:pressure-point-mappings:read", "GET", "/api/v1/production/pressure/point-mappings/check-unique"),
+    ApiBindingDef(
+        "production:pressure-point-mappings:read", "GET", "/api/v1/production/pressure/point-mappings/check-unique"
+    ),
     ApiBindingDef("production:pressure-point-mappings:create", "POST", "/api/v1/production/pressure/point-mappings"),
-    ApiBindingDef("production:pressure-point-mappings:read", "GET", "/api/v1/production/pressure/point-mappings/{mapping_id}"),
-    ApiBindingDef("production:pressure-point-mappings:update", "PUT", "/api/v1/production/pressure/point-mappings/{mapping_id}"),
-    ApiBindingDef("production:pressure-point-mappings:delete", "DELETE", "/api/v1/production/pressure/point-mappings/{mapping_id}"),
+    ApiBindingDef(
+        "production:pressure-point-mappings:read", "GET", "/api/v1/production/pressure/point-mappings/{mapping_id}"
+    ),
+    ApiBindingDef(
+        "production:pressure-point-mappings:update", "PUT", "/api/v1/production/pressure/point-mappings/{mapping_id}"
+    ),
+    ApiBindingDef(
+        "production:pressure-point-mappings:delete", "DELETE", "/api/v1/production/pressure/point-mappings/{mapping_id}"
+    ),
     ApiBindingDef("production:pressure-records:read", "GET", "/api/v1/production/pressure/records"),
     ApiBindingDef("production:pressure-records:read", "GET", "/api/v1/production/pressure/records/merged"),
     ApiBindingDef("production:pressure-records:export", "GET", "/api/v1/production/pressure/records/export/by-area"),
@@ -2093,10 +2157,14 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("production:pressure-records:create", "POST", "/api/v1/production/pressure/records/manual/batch"),
     ApiBindingDef("production:pressure-records:create", "POST", "/api/v1/production/pressure/records/ocr"),
     ApiBindingDef("production:pressure-records:create", "POST", "/api/v1/production/pressure/records/merged/delete"),
-    ApiBindingDef("production:pressure-records:delete", "POST", "/api/v1/production/pressure/records/merged/batch-delete"),
+    ApiBindingDef(
+        "production:pressure-records:delete", "POST", "/api/v1/production/pressure/records/merged/batch-delete"
+    ),
     ApiBindingDef("production:pressure-records:create", "POST", "/api/v1/production/pressure/records/merged/update"),
     ApiBindingDef("production:pressure-records:read", "GET", "/api/v1/production/pressure/records/{record_id}"),
-    ApiBindingDef("production:pressure-records:update", "PATCH", "/api/v1/production/pressure/records/{record_id}/audit"),
+    ApiBindingDef(
+        "production:pressure-records:update", "PATCH", "/api/v1/production/pressure/records/{record_id}/audit"
+    ),
     ApiBindingDef("production:pressure-records:update", "PATCH", "/api/v1/production/pressure/records/batch-audit"),
     ApiBindingDef("production:pressure-records:delete", "DELETE", "/api/v1/production/pressure/records/{record_id}"),
     ApiBindingDef("production:pressure-records:delete", "POST", "/api/v1/production/pressure/records/batch-delete"),
@@ -2104,17 +2172,29 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("production:pressure-ocr-tasks:read", "GET", "/api/v1/production/pressure/ocr-tasks"),
     ApiBindingDef("production:pressure-ocr-tasks:create", "POST", "/api/v1/production/pressure/ocr-tasks"),
     ApiBindingDef("production:pressure-ocr-tasks:read", "GET", "/api/v1/production/pressure/ocr-tasks/{task_id}"),
-    ApiBindingDef("production:pressure-ocr-tasks:update", "POST", "/api/v1/production/pressure/ocr-tasks/{task_id}/submit"),
+    ApiBindingDef(
+        "production:pressure-ocr-tasks:update", "POST", "/api/v1/production/pressure/ocr-tasks/{task_id}/submit"
+    ),
     ApiBindingDef("production:pressure-data-master:read", "GET", "/api/v1/production/pressure/data-master"),
     ApiBindingDef("production:pressure-data-master:create", "POST", "/api/v1/production/pressure/data-master"),
     ApiBindingDef("production:pressure-data-master:create", "POST", "/api/v1/production/pressure/data-master/batch"),
     ApiBindingDef("production:pressure-data-master:read", "GET", "/api/v1/production/pressure/data-master/{item_id}"),
     ApiBindingDef("production:pressure-data-master:update", "PUT", "/api/v1/production/pressure/data-master/{item_id}"),
-    ApiBindingDef("production:pressure-data-master:delete", "DELETE", "/api/v1/production/pressure/data-master/{item_id}"),
-    ApiBindingDef("production:pressure-data-master:delete", "POST", "/api/v1/production/pressure/data-master/batch-delete"),
+    ApiBindingDef(
+        "production:pressure-data-master:delete", "DELETE", "/api/v1/production/pressure/data-master/{item_id}"
+    ),
+    ApiBindingDef(
+        "production:pressure-data-master:delete", "POST", "/api/v1/production/pressure/data-master/batch-delete"
+    ),
     ApiBindingDef("production:pressure-notifications:read", "GET", "/api/v1/production/pressure/notifications"),
-    ApiBindingDef("production:pressure-notifications:update", "PATCH", "/api/v1/production/pressure/notifications/{notification_id}/read"),
-    ApiBindingDef("production:pressure-notifications:update", "PATCH", "/api/v1/production/pressure/notifications/read-all"),
+    ApiBindingDef(
+        "production:pressure-notifications:update",
+        "PATCH",
+        "/api/v1/production/pressure/notifications/{notification_id}/read",
+    ),
+    ApiBindingDef(
+        "production:pressure-notifications:update", "PATCH", "/api/v1/production/pressure/notifications/read-all"
+    ),
 )
 
 
@@ -2136,8 +2216,6 @@ EXEMPT_ROUTES: tuple[tuple[str, str], ...] = (
     ("POST", "/api/v1/identity/me/password"),
     # 菜单栏配置读取：每个登录用户的导航渲染都要读，只要求已登录（写操作用 ops:manage）
     ("GET", "/api/v1/system/menus/config"),
-
-
 )
 
 
@@ -2184,7 +2262,20 @@ ENFORCEABLE_MODULE_CODES: frozenset[str] = frozenset(_PREFIX_TO_MODULE.values())
 # - scripts/ci/check_permissions.py 会对它执行完整性校验
 #   （每个路由都有绑定或豁免、每个 require_permission 码都存在）；
 # - 此后才允许把该模块码加入部署配置的 PERMISSION_ENFORCE_MODULES 开强制。
-ENFORCE_READY_MODULES: tuple[str, ...] = ("research", "environment", "administration", "warehouse", "procurement", "safety", "energy", "equipment", "registration", "quality", "hr", "production")
+ENFORCE_READY_MODULES: tuple[str, ...] = (
+    "research",
+    "environment",
+    "administration",
+    "warehouse",
+    "procurement",
+    "safety",
+    "energy",
+    "equipment",
+    "registration",
+    "quality",
+    "hr",
+    "production",
+)
 
 
 def module_for_path(path: str) -> str | None:

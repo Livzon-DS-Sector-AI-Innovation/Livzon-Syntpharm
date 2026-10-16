@@ -364,7 +364,7 @@ export async function refreshFeishu() {
   return result
 }
 
-export async function createRole(data: components['schemas']['RoleCreate']) {
+export async function createRole(data: components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate']) {
   const result = await createPersonnelRoleApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result

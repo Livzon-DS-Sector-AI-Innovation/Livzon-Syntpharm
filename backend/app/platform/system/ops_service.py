@@ -9,6 +9,7 @@ import os
 import shutil
 import time
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import text
 
@@ -160,7 +161,7 @@ def get_system_info() -> SystemInfoData:
         app_name=settings.APP_NAME,
         app_env=settings.APP_ENV,
         version=APP_VERSION,
-        python_version=f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
+        python_version=f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",  # type: ignore[attr-defined]
         started_at=_STARTED_AT.isoformat(),
         uptime_seconds=_uptime_seconds(),
         dependencies=deps,
@@ -330,7 +331,7 @@ def set_task_enabled(name: str, enabled: bool) -> bool:
     return True
 
 
-def _describe_schedule(schedule) -> str:  # noqa: ANN001 - ScheduleConfig
+def _describe_schedule(schedule: Any) -> str:  # noqa: ANN001 - ScheduleConfig
     strategy = getattr(schedule, "strategy", None)
     value = getattr(strategy, "value", str(strategy))
     if value == "cron":

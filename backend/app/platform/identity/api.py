@@ -411,7 +411,7 @@ async def trigger_sync_departments(
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    spawn_task(sync_departments(root_id), name="identity.sync_departments")
+    spawn_task(sync_departments(root_id), name="identity.sync_departments")  # type: ignore[arg-type]
     logger.info("Department sync triggered for root=%s", root_id or "(自动：可见范围内的部门)")
     return success_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id or "auto"},
@@ -429,7 +429,7 @@ async def trigger_sync_members(
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    spawn_task(sync_members(target_id), name="identity.sync_members")
+    spawn_task(sync_members(target_id), name="identity.sync_members")  # type: ignore[arg-type]
     logger.info("Member sync triggered for target=%s", target_id or "(自动)")
     return success_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id or "auto"},

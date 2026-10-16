@@ -7,6 +7,8 @@
 core.deps 的 re-export 形成循环依赖。
 """
 
+from typing import Any
+
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +21,7 @@ from app.platform.permission.service.authorization import (
 )
 
 
-def require_permission(permission_code: str):
+def require_permission(permission_code: str) -> Any:
     """依赖工厂：要求当前用户拥有指定权限码（单条授权判定）。"""
 
     async def _dependency(

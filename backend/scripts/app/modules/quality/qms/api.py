@@ -1,0 +1,300 @@
+# mypy: ignore-errors
+"""Quality API routes."""
+
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.deps import RequiredUser
+from app.modules.quality.qms.schemas import (
+    ApprovalRecordListApiResponse,
+    ApprovalRecordResponse,
+    InspectionStandardApiResponse,
+    InspectionStandardCopy,
+    InspectionStandardCreate,
+    InspectionStandardDeleteApiResponse,
+    InspectionStandardItemListApiResponse,
+    InspectionStandardItemResponse,
+    InspectionStandardListApiResponse,
+    InspectionStandardResponse,
+    InspectionStandardUpdate,
+    ObsoleteSubmit,
+)
+from app.modules.quality.qms.service import QualityService
+from app.core.deps import PermissionContext, require_permission
+
+router = APIRouter()
+
+
+# ============ InspectionStandard Routes ============
+
+
+@router.get("/standards", response_model=InspectionStandardListApiResponse, summary="获取检验标准列表")
+async def get(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:read")),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    status: str | None = None,
+    material_code: str | None = None,
+    material_name: str | None = None,
+    material_category: str | None = None,
+    pharmacopeia: str | None = None,
+    version: str | None = None,
+    is_effective: bool | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """获取检验标准列表"""
+    service = QualityService(db)
+    skip = (page - 1) * page_size
+    standards, total = await service.get_standards(
+        skip=skip,
+        limit=page_size,
+        status=status,
+        material_code=material_code,
+        material_name=material_name,
+        material_category=material_category,
+        pharmacopeia=pharmacopeia,
+        version=version,
+        is_effective=is_effective,
+    )
+    return InspectionStandardListApiResponse(
+        data=[InspectionStandardResponse.model_validate(s) for s in standards],
+        meta={"page": page, "page_size": page_size, "total": total},
+    )
+
+
+@router.get("/standards/effective", response_model=InspectionStandardListApiResponse, summary="获取已生效的标准列表")
+async def handler(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:read")),
+    material_code: str | None = None,
+    material_category: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """获取已生效的标准列表(用于检验任务选择)"""
+    service = QualityService(db)
+    standards = await service.get_effective_standards(
+        material_code=material_code,
+        material_category=material_category,
+    )
+    return InspectionStandardListApiResponse(data=[InspectionStandardResponse.model_validate(s) for s in standards])
+
+
+@router.get(  # type: ignore[no-redef]
+    "/standards/{standard_id}", response_model=InspectionStandardApiResponse, summary="获取检验标准详情"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """获取检验标准详情"""
+    service = QualityService(db)
+    standard = await service.get_standard(standard_id)
+    if not standard:
+        return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+    return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+
+
+@router.post("/standards", response_model=InspectionStandardApiResponse, summary="创建检验标准")
+async def post(
+    data: InspectionStandardCreate,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:create")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """创建检验标准"""
+    service = QualityService(db)
+    standard = await service.create_standard(data)
+    await db.commit()
+    return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+
+
+@router.put(  # type: ignore[no-redef]
+    "/standards/{standard_id}", response_model=InspectionStandardApiResponse, summary="更新检验标准"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    data: InspectionStandardUpdate,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """更新检验标准"""
+    service = QualityService(db)
+    try:
+        standard = await service.update_standard(standard_id, data)
+        if not standard:
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+        await db.commit()
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    except ValueError as e:
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
+
+
+@router.delete(  # type: ignore[no-redef]
+    "/standards/{standard_id}", response_model=InspectionStandardDeleteApiResponse, summary="删除检验标准"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> InspectionStandardDeleteApiResponse:  # noqa: F821  # type: ignore[name-defined]
+    """删除检验标准"""
+    from fastapi import HTTPException
+
+    service = QualityService(db)
+    try:
+        result = await service.delete_standard(standard_id)
+        if not result:
+            raise HTTPException(status_code=404, detail="检验标准不存在")
+        await db.commit()
+        return InspectionStandardDeleteApiResponse(message="删除成功")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post(  # type: ignore[no-redef]
+    "/standards/{standard_id}/submit", response_model=InspectionStandardApiResponse, summary="提交审批"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """提交审批"""
+    service = QualityService(db)
+    try:
+        standard = await service.submit_for_approval(standard_id)
+        if not standard:
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+        await db.commit()
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    except ValueError as e:
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
+
+
+@router.post(  # type: ignore[no-redef]
+    "/standards/{standard_id}/approve", response_model=InspectionStandardApiResponse, summary="审批通过"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """审批通过"""
+    service = QualityService(db)
+    try:
+        user_id = current_user.id
+        user_name = current_user.name
+        standard = await service.approve_standard(standard_id, user_id, user_name)
+        if not standard:
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+        await db.commit()
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    except ValueError as e:
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
+
+
+@router.post(  # type: ignore[no-redef]
+    "/standards/{standard_id}/reject", response_model=InspectionStandardApiResponse, summary="驳回标准"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    comments: str = Query(..., description="驳回原因"),
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """驳回标准"""
+    service = QualityService(db)
+    try:
+        user_id = uuid.UUID(current_user.id)
+        standard = await service.reject_standard(standard_id, user_id, comments)
+        if not standard:
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+        await db.commit()
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    except ValueError as e:
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
+
+
+@router.post(  # type: ignore[no-redef]
+    "/standards/{standard_id}/obsolete", response_model=InspectionStandardApiResponse, summary="提交作废"
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    data: ObsoleteSubmit,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """提交作废"""
+    service = QualityService(db)
+    try:
+        standard = await service.obsolete_standard(standard_id, data)
+        if not standard:
+            return InspectionStandardApiResponse(code=404, message="检验标准不存在", data=None)
+        await db.commit()
+        return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+    except ValueError as e:
+        return InspectionStandardApiResponse(code=400, message=str(e), data=None)
+
+
+@router.post("/standards/copy", response_model=InspectionStandardApiResponse, summary="复制标准")  # type: ignore[no-redef]
+async def post(  # noqa: F811
+    data: InspectionStandardCopy,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:create")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """复制标准(基于旧版快速新建新标准)"""
+    service = QualityService(db)
+    standard = await service.copy_standard(data)
+    if not standard:
+        return InspectionStandardApiResponse(code=404, message="源标准不存在", data=None)
+    await db.commit()
+    return InspectionStandardApiResponse(data=InspectionStandardResponse.model_validate(standard))
+
+
+# ============ InspectionStandardItem Routes ============
+
+
+@router.get(  # type: ignore[no-redef]
+    "/standards/{standard_id}/items",
+    response_model=InspectionStandardItemListApiResponse,
+    summary="获取检验项目列表",
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """获取检验项目列表"""
+    from app.modules.quality.qms.repository import QualityRepository
+
+    repo = QualityRepository(db)
+    items = await repo.get_items_by_standard(standard_id)
+    return InspectionStandardItemListApiResponse(data=[InspectionStandardItemResponse.model_validate(i) for i in items])
+
+
+# ============ ApprovalRecord Routes ============
+
+
+@router.get(  # type: ignore[no-redef]
+    "/standards/{standard_id}/approvals",
+    response_model=ApprovalRecordListApiResponse,
+    summary="获取审批记录",
+)
+async def handler(  # noqa: F811
+    standard_id: uuid.UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:  # noqa: F821  # type: ignore[name-defined]
+    """获取审批记录"""
+    from app.modules.quality.qms.repository import QualityRepository
+
+    repo = QualityRepository(db)
+    records = await repo.get_approval_records(standard_id)
+    return ApprovalRecordListApiResponse(data=[ApprovalRecordResponse.model_validate(r) for r in records])

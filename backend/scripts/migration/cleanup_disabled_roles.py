@@ -43,9 +43,7 @@ async def main(dry_run: bool = False) -> None:
         unsafe: list[tuple[str, int]] = []
         deletable: list[tuple[object, str]] = []
         for role_id, code in disabled:
-            count_result = await db.execute(
-                select(UserRoleGrant.id).where(UserRoleGrant.role_id == role_id)
-            )
+            count_result = await db.execute(select(UserRoleGrant.id).where(UserRoleGrant.role_id == role_id))
             grants = list(count_result.scalars().all())
             if grants:
                 unsafe.append((code, len(grants)))
