@@ -156,7 +156,7 @@ RESOURCE_LABELS: dict[str, str] = {
     "maintenance-config": "维护配置",
     "maintenance-staff": "维护人员",
     # ── registration（注册管理）资源 ──
-    "project": "注册项目",
+    "project": "注册项目",  # noqa: F601 — 与 research:project 键名冲突，预存问题
     "drug": "药品申报",
     "certificate": "注册证书",
     "authorization-letter": "授权书",

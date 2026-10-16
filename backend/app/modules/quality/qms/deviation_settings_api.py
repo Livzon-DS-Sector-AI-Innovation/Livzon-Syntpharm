@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import PermissionContext, require_permission
 from app.modules.quality.qms.deviation_settings_schemas import (
     AutoTriggerRequest,
     FeishuBotConfigRequest,
@@ -18,7 +19,6 @@ from app.modules.quality.qms.deviation_settings_schemas import (
 )
 from app.modules.quality.qms.feishu_service import get_feishu_service
 from app.platform.database import get_db_session
-from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/deviation-settings", tags=["偏差提醒设置"])
 

@@ -19,7 +19,6 @@ from app.platform.identity.models import User
 from app.platform.permission.models import (
     GRANT_ACTIVE,
     Role,
-    RolePermission,
     UserRoleGrant,
 )
 from app.platform.permission.repository import (

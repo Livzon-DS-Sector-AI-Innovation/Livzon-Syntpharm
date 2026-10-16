@@ -77,7 +77,7 @@ async def main(dry_run: bool = False) -> None:
             return
 
         if rp_counts:
-            print(f"\n清理 role_permissions 残留：")
+            print("\n清理 role_permissions 残留：")
             print(_fmt(rp_counts))
             role_ids = [role_id for role_id, _ in deletable]
             await db.execute(delete(RolePermission).where(RolePermission.role_id.in_(role_ids)))

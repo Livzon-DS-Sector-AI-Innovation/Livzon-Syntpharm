@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import paginated_response, success_response
 from app.modules.procurement.contract_generator import (
     get_contract_template_metadata,

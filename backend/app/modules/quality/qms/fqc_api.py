@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.qms.fqc_schemas import (
     FQCApprovalCreate,
     FQCApprovalRecordResponse,
@@ -22,7 +22,6 @@ from app.modules.quality.qms.fqc_schemas import (
     FQCPaginatedListResponse,
 )
 from app.modules.quality.qms.fqc_service import FQCInspectionService
-from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/fqc", tags=["FQC检验"])
 

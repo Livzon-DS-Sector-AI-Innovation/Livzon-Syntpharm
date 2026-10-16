@@ -17,10 +17,10 @@ from app.core.exceptions import BadRequestException, DuplicateException, Forbidd
 from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
+from app.platform.permission.cache import evict_user_permission_cache
 from app.platform.permission.models import (
     GRANT_ACTIVE,
     Role,
-    RolePermission,
     UserRoleGrant,
 )
 from app.platform.permission.repository import (
@@ -53,9 +53,8 @@ from app.platform.permission.schemas import (
     RoleListResponse,
     RoleUpdate,
 )
-from app.platform.permission.service.catalog import build_permission_tree
-from app.platform.permission.cache import evict_user_permission_cache
 from app.platform.permission.service.authorization import is_superuser_with_cache
+from app.platform.permission.service.catalog import build_permission_tree
 from app.platform.permission.service.management import (
     assert_actor_can_grant_role,
     assert_actor_can_grant_scope,

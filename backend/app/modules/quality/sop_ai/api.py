@@ -11,11 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.schemas import ApiResponse
 from app.modules.quality.sop_ai.service import SopAiCheckService
-from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 

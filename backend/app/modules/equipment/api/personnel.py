@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, require_permission, CurrentUser, RequiredUser
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException
 from app.core.response import success_response
 from app.modules.equipment import service

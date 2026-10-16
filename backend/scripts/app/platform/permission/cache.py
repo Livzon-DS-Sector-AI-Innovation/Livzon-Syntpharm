@@ -13,7 +13,6 @@
 
 import json
 import logging
-from typing import cast
 
 from app.core.redis import cache_delete, cache_get, cache_set
 

@@ -2,10 +2,7 @@
 """Generate HR + Production permission codes and API bindings for registry.py."""
 
 import ast
-import re
 import os
-import sys
-from collections import OrderedDict
 
 BACKEND = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
