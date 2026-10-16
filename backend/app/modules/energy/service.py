@@ -433,6 +433,13 @@ async def process_alert_record(
     return result
 
 
+async def delete_alert_record(db: AsyncSession, record_id: UUID) -> None:
+    obj = await repo.get_alert_record_by_id(db, record_id)
+    if obj is None:
+        raise NotFoundException("预警记录", str(record_id))
+    await repo.delete_alert_record(db, record_id)
+
+
 # ── 车间管理 ──
 
 

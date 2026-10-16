@@ -11,6 +11,7 @@ export type CreateWorkshopInput = components['schemas']['EnergyWorkshopCreate']
 export type UpdateWorkshopInput = components['schemas']['EnergyWorkshopUpdate']
 export type CreateMonthlyRecordInput = components['schemas']['EnergyMonthlyRecordCreate']
 export type FeishuImportRequest = components['schemas']['FeishuEnergyImportRequest']
+export type BitableCrossImportRequest = components['schemas']['BitableCrossImportRequest']
 
 // Type aliases for response types (now available in generated schema)
 export type EnergyDeviceConfig = components['schemas']['EnergyDeviceConfigResponse']
@@ -32,6 +33,8 @@ export type CollectLog = components['schemas']['CollectLogResponse']
 export type CollectLogDeviceDetail = components['schemas']['CollectLogDeviceDetail']
 export type CollectLogDetail = components['schemas']['CollectLogDetailResponse']
 export type FeishuImportResult = components['schemas']['FeishuEnergyImportResponse']
+export type SyncJobStatus = components['schemas']['SyncJobStatus']
+export type SyncJobResult = components['schemas']['SyncJobResult']
 
 // ── UI 类型（用于入参、表单状态、组件 props、本地状态；非 API 契约）──
 

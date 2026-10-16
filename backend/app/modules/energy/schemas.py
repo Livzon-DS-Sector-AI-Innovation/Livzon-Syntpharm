@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, BeforeValidator, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field
 
 StrUUID = Annotated[str, BeforeValidator(str)]
 EnergyType = Literal["electricity", "water", "steam", "natural_gas"]
@@ -573,10 +573,85 @@ class FeishuImportApiResponse(BaseModel):
     data: FeishuEnergyImportResponse
 
 
+class SyncJobResultDetail(BaseModel):
+    """按年导入时 `details` 的单月条目。"""
+
+    model_config = ConfigDict(extra="ignore")
+
+    table: str | None = None
+    status: str | None = None
+    message: str | None = None
+    total_created: int | None = None
+    total_updated: int | None = None
+    total_parsed: int | None = None
+    total_errors: int | None = None
+    errors: list[str] | None = None
+    rollup_warnings: list[str] | None = None
+
+
+class SyncJobSection(BaseModel):
+    """`/sync/bitable` 的分项结果（车间、月度记录各自计数）。"""
+
+    model_config = ConfigDict(extra="ignore")
+
+    status: str | None = None
+    message: str | None = None
+    created: int | None = None
+    updated: int | None = None
+    total: int | None = None
+
+
+class SyncJobResult(BaseModel):
+    """6 个 `/sync*` 任务结果的并集。
+
+    字段为 None 表示该任务类型不产出它。这里刻意保留两套命名
+    （`bitable_sync` 用 `created`/`updated`/`total`，两个 bitable 导入器用
+    `total_created`/`total_updated`），因为统一命名要改导入器返回值和它们的
+    既有断言；`D-49` 正是这两套命名混用造成的。
+    `extra="ignore"` 是必需的：导入器会加 `rollup_warnings` 等键，且 `details`
+    条目键集随月份变化。
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    status: str | None = None
+    message: str | None = None
+    table: str | None = None
+    year: int | None = None
+    months_imported: int | None = None
+    tables_imported: int | None = None
+    total_created: int | None = None
+    total_updated: int | None = None
+    total_parsed: int | None = None
+    total_errors: int | None = None
+    auto_check_alerts: int | None = None
+    errors: list[str] | None = None
+    rollup_warnings: list[str] | None = None
+    details: list[SyncJobResultDetail] | None = None
+    created: int | None = None
+    updated: int | None = None
+    total: int | None = None
+    workshops: SyncJobSection | None = None
+    monthly_records: SyncJobSection | None = None
+
+
+class SyncJobStatus(BaseModel):
+    """异步导入任务的状态句柄。
+
+    提交端点只回 `status="running"` + `job_id`，计数必须轮询
+    `GET /api/v1/energy/jobs/{job_id}` 才能拿到（`D-48`）。
+    """
+
+    job_id: str
+    status: Literal["running", "done", "failed"]
+    result: SyncJobResult | None = None
+    error: str | None = None
+
+
 class SyncJobApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
-    data: dict[str, Any]
+    data: SyncJobStatus
 
 
 class UnitConsumptionTargetApiResponse(BaseModel):

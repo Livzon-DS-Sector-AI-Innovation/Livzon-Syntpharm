@@ -12,6 +12,8 @@ import type {
   CreateRuleInput,
   UpdateRuleInput,
   ProcessRecordInput,
+  SyncJobStatus,
+  BitableCrossImportRequest,
 } from '@/types/energy'
 import { apiFetchRaw, getApiBaseUrl, apiFetch as baseApiFetch } from './base'
 
@@ -181,6 +183,12 @@ export async function deleteAlertRule(id: string) {
   })
 }
 
+export async function deleteAlertRecord(id: string): Promise<void> {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/alerts/records/${id}`, {
+    method: 'DELETE',
+  })
+}
+
 // ── 预警记录写操作 ──
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
@@ -266,14 +274,16 @@ export async function importFromFeishu(data: Record<string, unknown>): Promise<F
   })
 }
 
-export async function crossImportFromBitable(data: Record<string, unknown>): Promise<{ status: string; year?: number; months_imported?: number; total_created?: number; total_updated?: number; total_errors?: number }> {
+export async function crossImportFromBitable(
+  data: BitableCrossImportRequest,
+): Promise<SyncJobStatus> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/cross-import`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
 }
 
-export async function syncBitableDailyData(): Promise<{ total_created: number; total_updated: number; auto_check_alerts: number }> {
+export async function syncBitableDailyData(): Promise<SyncJobStatus> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/sync/bitable/daily-import`, {
     method: 'POST',
   })

@@ -6636,6 +6636,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/energy/alerts/records/{record_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 删除预警记录 */
+        delete: operations["delete_alert_record_api_v1_energy_alerts_records__record_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/energy/workshops": {
         parameters: {
             query?: never;
@@ -43302,10 +43319,115 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+            data: components["schemas"]["SyncJobStatus"];
+        };
+        /**
+         * SyncJobResult
+         * @description 6 个 `/sync*` 任务结果的并集。
+         *
+         *     字段为 None 表示该任务类型不产出它。这里刻意保留两套命名
+         *     （`bitable_sync` 用 `created`/`updated`/`total`，两个 bitable 导入器用
+         *     `total_created`/`total_updated`），因为统一命名要改导入器返回值和它们的
+         *     既有断言；`D-49` 正是这两套命名混用造成的。
+         *     `extra="ignore"` 是必需的：导入器会加 `rollup_warnings` 等键，且 `details`
+         *     条目键集随月份变化。
+         */
+        SyncJobResult: {
+            /** Status */
+            status?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Table */
+            table?: string | null;
+            /** Year */
+            year?: number | null;
+            /** Months Imported */
+            months_imported?: number | null;
+            /** Tables Imported */
+            tables_imported?: number | null;
+            /** Total Created */
+            total_created?: number | null;
+            /** Total Updated */
+            total_updated?: number | null;
+            /** Total Parsed */
+            total_parsed?: number | null;
+            /** Total Errors */
+            total_errors?: number | null;
+            /** Auto Check Alerts */
+            auto_check_alerts?: number | null;
+            /** Errors */
+            errors?: string[] | null;
+            /** Rollup Warnings */
+            rollup_warnings?: string[] | null;
+            /** Details */
+            details?: components["schemas"]["SyncJobResultDetail"][] | null;
+            /** Created */
+            created?: number | null;
+            /** Updated */
+            updated?: number | null;
+            /** Total */
+            total?: number | null;
+            workshops?: components["schemas"]["SyncJobSection"] | null;
+            monthly_records?: components["schemas"]["SyncJobSection"] | null;
+        };
+        /**
+         * SyncJobResultDetail
+         * @description 按年导入时 `details` 的单月条目。
+         */
+        SyncJobResultDetail: {
+            /** Table */
+            table?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Total Created */
+            total_created?: number | null;
+            /** Total Updated */
+            total_updated?: number | null;
+            /** Total Parsed */
+            total_parsed?: number | null;
+            /** Total Errors */
+            total_errors?: number | null;
+            /** Errors */
+            errors?: string[] | null;
+            /** Rollup Warnings */
+            rollup_warnings?: string[] | null;
+        };
+        /**
+         * SyncJobSection
+         * @description `/sync/bitable` 的分项结果（车间、月度记录各自计数）。
+         */
+        SyncJobSection: {
+            /** Status */
+            status?: string | null;
+            /** Message */
+            message?: string | null;
+            /** Created */
+            created?: number | null;
+            /** Updated */
+            updated?: number | null;
+            /** Total */
+            total?: number | null;
+        };
+        /**
+         * SyncJobStatus
+         * @description 异步导入任务的状态句柄。
+         *
+         *     提交端点只回 `status="running"` + `job_id`，计数必须轮询
+         *     `GET /api/v1/energy/jobs/{job_id}` 才能拿到（`D-48`）。
+         */
+        SyncJobStatus: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed";
+            result?: components["schemas"]["SyncJobResult"] | null;
+            /** Error */
+            error?: string | null;
         };
         /** SyncTriggerRequest */
         SyncTriggerRequest: {
@@ -61919,6 +62041,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EnergyAlertRecordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_alert_record_api_v1_energy_alerts_records__record_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */

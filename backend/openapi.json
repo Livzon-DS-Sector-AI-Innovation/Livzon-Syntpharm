@@ -32703,6 +32703,65 @@
         }
       }
     },
+    "/api/v1/energy/alerts/records/{record_id}": {
+      "delete": {
+        "tags": [
+          "\u80fd\u6e90\u7ba1\u7406"
+        ],
+        "summary": "\u5220\u9664\u9884\u8b66\u8bb0\u5f55",
+        "operationId": "delete_alert_record_api_v1_energy_alerts_records__record_id__delete",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnergyDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/energy/workshops": {
       "post": {
         "tags": [
@@ -146083,9 +146142,7 @@
             "default": "success"
           },
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+            "$ref": "#/components/schemas/SyncJobStatus"
           }
         },
         "type": "object",
@@ -146093,6 +146150,448 @@
           "data"
         ],
         "title": "SyncJobApiResponse"
+      },
+      "SyncJobResult": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "table": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          },
+          "months_imported": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Months Imported"
+          },
+          "tables_imported": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tables Imported"
+          },
+          "total_created": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Created"
+          },
+          "total_updated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Updated"
+          },
+          "total_parsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Parsed"
+          },
+          "total_errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Errors"
+          },
+          "auto_check_alerts": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auto Check Alerts"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          },
+          "rollup_warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rollup Warnings"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SyncJobResultDetail"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "created": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created"
+          },
+          "updated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          },
+          "workshops": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncJobSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "monthly_records": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncJobSection"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "SyncJobResult",
+        "description": "6 \u4e2a `/sync*` \u4efb\u52a1\u7ed3\u679c\u7684\u5e76\u96c6\u3002\n\n\u5b57\u6bb5\u4e3a None \u8868\u793a\u8be5\u4efb\u52a1\u7c7b\u578b\u4e0d\u4ea7\u51fa\u5b83\u3002\u8fd9\u91cc\u523b\u610f\u4fdd\u7559\u4e24\u5957\u547d\u540d\n\uff08`bitable_sync` \u7528 `created`/`updated`/`total`\uff0c\u4e24\u4e2a bitable \u5bfc\u5165\u5668\u7528\n`total_created`/`total_updated`\uff09\uff0c\u56e0\u4e3a\u7edf\u4e00\u547d\u540d\u8981\u6539\u5bfc\u5165\u5668\u8fd4\u56de\u503c\u548c\u5b83\u4eec\u7684\n\u65e2\u6709\u65ad\u8a00\uff1b`D-49` \u6b63\u662f\u8fd9\u4e24\u5957\u547d\u540d\u6df7\u7528\u9020\u6210\u7684\u3002\n`extra=\"ignore\"` \u662f\u5fc5\u9700\u7684\uff1a\u5bfc\u5165\u5668\u4f1a\u52a0 `rollup_warnings` \u7b49\u952e\uff0c\u4e14 `details`\n\u6761\u76ee\u952e\u96c6\u968f\u6708\u4efd\u53d8\u5316\u3002"
+      },
+      "SyncJobResultDetail": {
+        "properties": {
+          "table": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Table"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "total_created": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Created"
+          },
+          "total_updated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Updated"
+          },
+          "total_parsed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Parsed"
+          },
+          "total_errors": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Errors"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors"
+          },
+          "rollup_warnings": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rollup Warnings"
+          }
+        },
+        "type": "object",
+        "title": "SyncJobResultDetail",
+        "description": "\u6309\u5e74\u5bfc\u5165\u65f6 `details` \u7684\u5355\u6708\u6761\u76ee\u3002"
+      },
+      "SyncJobSection": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "created": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created"
+          },
+          "updated": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "title": "SyncJobSection",
+        "description": "`/sync/bitable` \u7684\u5206\u9879\u7ed3\u679c\uff08\u8f66\u95f4\u3001\u6708\u5ea6\u8bb0\u5f55\u5404\u81ea\u8ba1\u6570\uff09\u3002"
+      },
+      "SyncJobStatus": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "done",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SyncJobResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "SyncJobStatus",
+        "description": "\u5f02\u6b65\u5bfc\u5165\u4efb\u52a1\u7684\u72b6\u6001\u53e5\u67c4\u3002\n\n\u63d0\u4ea4\u7aef\u70b9\u53ea\u56de `status=\"running\"` + `job_id`\uff0c\u8ba1\u6570\u5fc5\u987b\u8f6e\u8be2\n`GET /api/v1/energy/jobs/{job_id}` \u624d\u80fd\u62ff\u5230\uff08`D-48`\uff09\u3002"
       },
       "SyncTriggerRequest": {
         "properties": {

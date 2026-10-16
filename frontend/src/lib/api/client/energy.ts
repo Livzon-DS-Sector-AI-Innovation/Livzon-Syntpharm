@@ -7,6 +7,7 @@ import type {
   EnergyMonthlyRecord,
   EnergyWorkshop,
   MonthlySummary,
+  SyncJobStatus,
   RuleQueryParams,
   RecordQueryParams,
   MonthlyRecordQueryParams,
@@ -88,6 +89,18 @@ export async function fetchWorkshopsPageClient(params?: WorkshopQueryParams): Pr
 export async function fetchMonthlySummaryClient(params?: MonthlyRecordQueryParams): Promise<MonthlySummary> {
   const query = buildQueryString(params as Record<string, unknown>)
   return apiGet<MonthlySummary>(`${API_BASE}/energy/monthly/summary${query}`)
+}
+
+// ═══════════════════════════════════════════════════════════
+//  异步导入任务状态
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 查异步导入任务状态。`/sync/bitable*` 只回受理句柄，计数必须靠这里轮询（`D-48`）。
+ * 任务状态存在后端进程内（`D-11`），重启即丢，因此 404 是「状态不可查」而不是「任务失败」。
+ */
+export async function fetchSyncJobClient(jobId: string): Promise<SyncJobStatus> {
+  return apiGet<SyncJobStatus>(`${API_BASE}/energy/jobs/${jobId}`)
 }
 
 // ═══════════════════════════════════════════════════════════

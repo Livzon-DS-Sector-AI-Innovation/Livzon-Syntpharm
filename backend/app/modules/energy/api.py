@@ -64,6 +64,8 @@ from app.modules.energy.schemas import (
     MonthlySummaryApiResponse,
     MonthlySummaryItem,
     SyncJobApiResponse,
+    SyncJobResult,
+    SyncJobStatus,
     UnitConsumptionTargetApiResponse,
     UnitConsumptionTargetCreate,
     UnitConsumptionTargetResponse,
@@ -638,6 +640,17 @@ async def process_alert_record(
     )
 
 
+@alert_record_router.delete("/{record_id}", summary="删除预警记录")
+async def delete_alert_record(
+    record_id: UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> EnergyDeleteResponse:
+    await service.delete_alert_record(db, record_id)
+    await db.commit()
+    return EnergyDeleteResponse()
+
+
 router.include_router(device_router, prefix="/devices")
 router.include_router(data_router, prefix="/data")
 router.include_router(collect_router, prefix="/collect")
@@ -983,7 +996,7 @@ async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
@@ -1003,7 +1016,7 @@ async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiR
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
@@ -1023,7 +1036,7 @@ async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
@@ -1049,7 +1062,7 @@ async def cross_import_from_bitable(body: BitableCrossImportRequest, current_use
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
@@ -1087,15 +1100,16 @@ async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.get("/jobs/{job_id}", summary="查询异步任务状态")
 async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiResponse:
     job = sync_job_store.get(job_id)
-    if not job:
+    if job is None:
         raise NotFoundException("job", job_id)
-    return SyncJobApiResponse(data=job)
+    result = SyncJobResult.model_validate(job.result) if job.result is not None else None
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job.job_id, status=job.status, result=result, error=job.error))
 
 
 # ── 单耗目标 ──────────────────────────────────────────────────────────────

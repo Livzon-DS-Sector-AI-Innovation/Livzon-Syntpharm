@@ -464,6 +464,14 @@ class EnergyBitableCrossImport:
                 existing = result.scalar_one_or_none()
 
                 if existing:
+                    if existing.is_deleted:
+                        # 唯一约束 uq_energy_monthly_record 不含 is_deleted，命中软删行只能复活，
+                        # 否则插入分支会撞 UniqueViolation
+                        logger.info(
+                            "Reviving soft-deleted monthly record",
+                            extra={"record_id": str(existing.id), "record_date": str(existing.record_date)},
+                        )
+                        existing.is_deleted = False
                     existing.value = parsed["value"]
                     existing.unit = parsed["unit"]
                     existing.date_range_end = parsed["date_range_end"]
@@ -570,8 +578,8 @@ class EnergyBitableCrossImport:
         for table_name in year_tables:
             result = await self.import_month(db, table_name)
             results.append(result)
-            total_created += result.get("created", 0)
-            total_updated += result.get("updated", 0)
+            total_created += result.get("total_created", 0)
+            total_updated += result.get("total_updated", 0)
             total_errors.extend(result.get("errors", []))
 
         return {

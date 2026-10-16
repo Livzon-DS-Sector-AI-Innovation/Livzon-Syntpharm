@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
@@ -15,12 +16,15 @@ from app.modules.energy.models import (
     EnergyAlertRecord,
     EnergyAlertRule,
     EnergyCollectLog,
+    EnergyDailyData,
     EnergyData,
     EnergyDeviceConfig,
     EnergyMonthlyRecord,
     EnergyUnitConsumptionTarget,
     EnergyWorkshop,
 )
+
+logger = logging.getLogger(__name__)
 
 # ── 设备配置 ──
 
@@ -219,7 +223,7 @@ async def list_energy_data(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyData.timestamp.desc())
+    query = query.order_by(EnergyData.timestamp.desc(), EnergyData.device_config_id, EnergyData.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -433,7 +437,7 @@ async def list_collect_logs(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyCollectLog.collect_time.desc())
+    query = query.order_by(EnergyCollectLog.collect_time.desc(), EnergyCollectLog.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -530,7 +534,8 @@ async def list_alert_rules(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyAlertRule.created_at.desc())
+    # 同一事务批量写入的行 created_at 完全相同，必须补 id 才能保证翻页不重不漏
+    query = query.order_by(EnergyAlertRule.created_at.desc(), EnergyAlertRule.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -587,6 +592,24 @@ async def get_alert_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyAle
     return result.scalar_one_or_none()
 
 
+async def delete_alert_record(db: AsyncSession, record_id: UUID) -> bool:
+    """软删除预警记录，并清掉日数据行上的反向引用。
+
+    清 `energy_daily_data.alert_record_id` 是让「删除 → 重导入」能拿回这条预警：`check_alerts`
+    只处理 `alert_record_id IS NULL` 的行，留着引用就等于永久屏蔽。多维表格的日数据每天会被修正，
+    改对之后重新导入应当按新的 `is_alert` 重新判定——仍然超线就再生成，已被改到线下就不再生成。
+    """
+    obj = await get_alert_record_by_id(db, record_id)
+    if obj is None:
+        return False
+    obj.is_deleted = True
+    await db.execute(
+        sa.update(EnergyDailyData).where(EnergyDailyData.alert_record_id == record_id).values(alert_record_id=None)
+    )
+    await db.flush()
+    return True
+
+
 async def list_alert_records(
     db: AsyncSession,
     *,
@@ -615,7 +638,8 @@ async def list_alert_records(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyAlertRecord.alert_time.desc())
+    # alert_time 只到日，同一天必然并列；不补决胜位会让同一行在翻页时重复出现
+    query = query.order_by(EnergyAlertRecord.alert_time.desc(), EnergyAlertRecord.energy_type, EnergyAlertRecord.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -782,6 +806,14 @@ async def batch_upsert_monthly_records(
         )
         existing = result.scalar_one_or_none()
         if existing:
+            if existing.is_deleted:
+                # 唯一约束 uq_energy_monthly_record 不含 is_deleted，命中软删行只能复活，
+                # 否则插入分支会撞 UniqueViolation
+                logger.info(
+                    "Reviving soft-deleted monthly record",
+                    extra={"record_id": str(existing.id), "record_date": str(existing.record_date)},
+                )
+                existing.is_deleted = False
             existing.value = r["value"]
             existing.unit = r.get("unit", existing.unit)
             existing.source = r.get("source", existing.source)
@@ -824,7 +856,12 @@ async def list_monthly_records(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyMonthlyRecord.record_date.desc())
+    # record_date 在同一批次里大量并列，并列行的顺序 Postgres 不保证稳定 → 翻页会重复显示同一车间；补唯一键其余两列决胜
+    query = query.order_by(
+        EnergyMonthlyRecord.record_date.desc(),
+        EnergyMonthlyRecord.workshop_id,
+        EnergyMonthlyRecord.energy_type,
+    )
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
