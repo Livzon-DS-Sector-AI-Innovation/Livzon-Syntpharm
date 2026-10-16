@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.production.product.schemas import (
     ProductApiResponse,
     ProductCreate,
@@ -24,6 +24,7 @@ router = APIRouter()
 @router.get("/products", summary="获取所有产品列表")
 async def get(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取所有产品，按车间分组"""
@@ -36,6 +37,7 @@ async def get(
 async def get(  # noqa: F811
     workshop: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取指定车间的所有产品"""
@@ -48,6 +50,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     product_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取产品详情"""
@@ -62,6 +65,7 @@ async def get(  # noqa: F811
 async def post(
     data: ProductCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建新产品"""
@@ -77,6 +81,7 @@ async def put(
     product_id: uuid.UUID,
     data: ProductUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新产品信息"""
@@ -91,6 +96,7 @@ async def put(
 async def delete(
     product_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除产品"""

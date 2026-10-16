@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.response import paginated_response, success_response
 from app.modules.procurement.contract_generator import (
     get_contract_template_metadata,
@@ -81,7 +81,8 @@ INVOICE_UPLOAD_CHUNK_SIZE = 1024 * 1024
     response_model=InvoiceRecognitionResponse,
 )
 async def recognize_invoice(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:invoice:create")),
     include_details: bool = Form(False, description="是否识别发票明细"),
     file: UploadFile = File(..., description="电子发票 PDF 文件"),
     db: AsyncSession = Depends(get_db),
@@ -139,7 +140,8 @@ async def _read_upload_file_with_limit(
     response_model=SupplierListResponse,
 )
 async def list_supplier_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:supplier:read")),
     keyword: str | None = Query(None, description="跨字段关键词"),
     supplier_name: str | None = Query(None, description="供应商名称"),
     material_name: str | None = Query(None, description="物料名称"),
@@ -176,7 +178,8 @@ async def list_supplier_records(  # type: ignore[no-untyped-def]
     response_model=SupplierImportResponse,
 )
 async def import_supplier_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:supplier:create")),
     file: UploadFile = File(..., description="供应商清单表格文件"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -211,7 +214,8 @@ async def import_supplier_records(  # type: ignore[no-untyped-def]
     response_model=InvoiceRecognitionRecordListResponse,
 )
 async def list_invoice_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:invoice-record:read")),
     keyword: str | None = Query(None, description="文件名、发票号码或销售方关键词"),
     seller_name: str | None = Query(None, description="销售方名称"),
     invoice_number: str | None = Query(None, description="发票号码"),
@@ -238,8 +242,9 @@ async def list_invoice_records(  # type: ignore[no-untyped-def]
     response_model=InvoiceRecognitionRecordDeleteResponse,
 )
 async def delete_invoice_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("procurement:invoice-record:delete")),
     db: AsyncSession = Depends(get_db),
 ):
     deleted = await delete_invoice_recognition_record(db, record_id)
@@ -262,8 +267,9 @@ async def delete_invoice_record(  # type: ignore[no-untyped-def]
     response_model=InvoiceRecognitionRecordDeleteResponse,
 )
 async def batch_delete_invoice_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     payload: InvoiceRecognitionRecordDeleteRequest,
+    ctx: PermissionContext = Depends(require_permission("procurement:invoice-record:delete")),
     db: AsyncSession = Depends(get_db),
 ):
     deleted_count = await batch_delete_invoice_recognition_records(db, payload.ids)
@@ -283,7 +289,8 @@ async def batch_delete_invoice_records(  # type: ignore[no-untyped-def]
     response_model=PurchaseOrderListResponse,
 )
 async def list_purchase_order_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-order:read")),
     category: PurchaseRequestCategory | None = Query(None, description="采购分类"),
     year: int = Query(..., ge=2000, le=2100, description="年份"),
     month: int = Query(..., ge=1, le=12, description="月份"),
@@ -309,7 +316,8 @@ async def list_purchase_order_records(  # type: ignore[no-untyped-def]
     description="按采购分类、年份和月份导出整月已审批通过的采购申请明细 Excel。",
 )
 async def export_purchase_order_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-order:export")),
     category: PurchaseRequestCategory | None = Query(None, description="采购分类"),
     year: int = Query(..., ge=2000, le=2100, description="年份"),
     month: int = Query(..., ge=1, le=12, description="月份"),
@@ -338,7 +346,8 @@ async def export_purchase_order_records(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestListResponse,
 )
 async def list_purchase_request_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:read")),
     category: PurchaseRequestCategory | None = Query(None, description="采购分类"),
     status: PurchaseRequestStatus | None = Query(None, description="流程状态"),
     approval_role: PurchaseApprovalRole | None = Query(
@@ -375,8 +384,9 @@ async def list_purchase_request_records(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestApiResponse,
 )
 async def create_purchase_request_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     payload: PurchaseRequestCreate,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:create")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -395,8 +405,9 @@ async def create_purchase_request_record(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestApiResponse,
 )
 async def get_purchase_request_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:read")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -413,9 +424,10 @@ async def get_purchase_request_record(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestApiResponse,
 )
 async def update_purchase_request_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request_id: UUID,
     payload: PurchaseRequestUpdate,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:update")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -435,8 +447,9 @@ async def update_purchase_request_record(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestApiResponse,
 )
 async def submit_purchase_request_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:submit")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -455,9 +468,10 @@ async def submit_purchase_request_record(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestApiResponse,
 )
 async def approve_purchase_request_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request_id: UUID,
     payload: PurchaseApprovalRequest,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:approve")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -473,9 +487,10 @@ async def approve_purchase_request_record(  # type: ignore[no-untyped-def]
     response_model=PurchaseRequestApiResponse,
 )
 async def reject_purchase_request_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request_id: UUID,
     payload: PurchaseApprovalRequest,
+    ctx: PermissionContext = Depends(require_permission("procurement:purchase-request:submit")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -492,7 +507,8 @@ async def reject_purchase_request_record(  # type: ignore[no-untyped-def]
     response_model=ContractRecordListResponse,
 )
 async def list_contract_generation_records(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("procurement:contract:read")),
     keyword: str | None = Query(None, description="合同标题、编号或卖方关键词"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=20, ge=1, le=100, description="每页条数"),
@@ -515,8 +531,9 @@ async def list_contract_generation_records(  # type: ignore[no-untyped-def]
     response_model=ContractTemplateMetadata,
 )
 async def get_contract_template(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     category: ContractCategory,
+    ctx: PermissionContext = Depends(require_permission("procurement:contract:read")),
 ):
     metadata = get_contract_template_metadata(category)
     return success_response(data=metadata.model_dump(mode="json"))
@@ -528,8 +545,9 @@ async def get_contract_template(  # type: ignore[no-untyped-def]
     description="根据合同分类、基础信息、供应商信息和明细行生成 Word 合同。",
 )
 async def create_contract(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     payload: ContractGenerateRequest,
+    ctx: PermissionContext = Depends(require_permission("procurement:contract:create")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -559,8 +577,9 @@ async def create_contract(  # type: ignore[no-untyped-def]
     response_model=ContractRecordApiResponse,
 )
 async def get_contract_generation_record(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     contract_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("procurement:contract:read")),
     db: AsyncSession = Depends(get_db),
 ):
     try:
@@ -575,8 +594,9 @@ async def get_contract_generation_record(  # type: ignore[no-untyped-def]
     summary="查看采购合同文件",
 )
 async def get_contract_file(  # type: ignore[no-untyped-def]
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     contract_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("procurement:contract:read")),
     db: AsyncSession = Depends(get_db),
 ):
     try:

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import ApiResponse, build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
@@ -76,6 +76,7 @@ router = create_module_router(MODULES_BY_CODE["research"])
 async def create_project(
     data: ResearchProjectCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -87,6 +88,7 @@ async def create_project(
 @router.get("/projects", summary="获取研发项目列表")
 async def get_projects(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     stage: str | None = Query(None, description="项目阶段"),
     status: str | None = Query(None, description="项目状态"),
     keyword: str | None = Query(None, description="搜索项目编号或名称"),
@@ -118,6 +120,7 @@ async def get_projects(
 async def get_project(
     project_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -131,6 +134,7 @@ async def update_project(
     project_id: uuid.UUID,
     data: ResearchProjectUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -143,6 +147,7 @@ async def update_project(
 async def delete_project(
     project_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -154,6 +159,7 @@ async def delete_project(
 @router.post("/ich/q3c/analyze", summary="ICH Q3C 溶剂残留分析")
 async def analyze_ich_q3c(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:ich:create")),
     file: UploadFile = File(...),
     route: str = Query("oral", description="给药途径"),
     db: AsyncSession = Depends(get_db),
@@ -171,6 +177,7 @@ async def analyze_ich_q3c(
 @router.post("/ich/analyze", summary="ICH Q3C/Q3D 联合分析")
 async def analyze_ich_combined(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:ich:create")),
     file: UploadFile = File(...),
     route: str = Query("oral", description="给药途径"),
     use_llm: bool = Query(False, description="是否使用 LLM 增强"),
@@ -189,6 +196,7 @@ async def analyze_ich_combined(
 @router.get("/ich/records", summary="获取 ICH Q3C/Q3D 杂质识别记录列表")
 async def get_ich_records(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:ich:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -220,6 +228,7 @@ async def get_ich_records(
 async def get_ich_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:ich:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -243,6 +252,7 @@ async def get_ich_record(
 async def delete_ich_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:ich:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -254,6 +264,7 @@ async def delete_ich_record(
 @router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=EDBOOptimizeApiResponse)
 async def edbo_optimize(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:create")),
     file: UploadFile = File(..., description="反应范围 CSV 文件"),
     objectives: str = Body(..., description="目标列名，逗号分隔"),
     objective_modes: str = Body("max", description="目标方向，逗号分隔（max/min）"),
@@ -321,6 +332,7 @@ async def edbo_optimize(
 @router.post("/edbo/generate-scope", summary="生成反应范围")
 async def edbo_generate_scope(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:create")),
     components: dict = Body(  # type: ignore[type-arg]
         ...,
         description="组件定义，支持两种格式：1) 直接值列表 {name: [v1,v2,...]} 2) 范围定义 {name: {type: 'numeric', lower: x, upper: y, data_points: n}} 或 {name: {type: 'categorical', values: [...]}}",
@@ -679,6 +691,7 @@ from app.modules.research.pilot_workflow.engine import (  # noqa: E402
 async def create_pilot_workflow(
     data: PilotWorkflowCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -700,6 +713,7 @@ async def create_pilot_workflow(
 @router.get("/pilot/workflow", summary="获取中试研究列表")
 async def get_pilot_workflows(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:read")),
     status: str | None = Query(None, description="状态筛选"),
     keyword: str | None = Query(None, description="搜索产品名称"),
     page: int = Query(1, ge=1),
@@ -740,6 +754,7 @@ async def get_pilot_workflows(
 async def get_pilot_workflow_detail(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -761,6 +776,7 @@ async def get_pilot_workflow_detail(
 async def start_pilot_workflow(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:submit")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -783,6 +799,7 @@ async def start_pilot_workflow(
 async def approve_pilot_workflow_step(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:approve")),
 ) -> ApiResponse:
 
     result = await approve_step_engine(workflow_id)
@@ -798,6 +815,7 @@ async def get_pilot_workflow_step(
     workflow_id: uuid_module.UUID,
     step_id: uuid_module.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -813,6 +831,7 @@ async def get_pilot_workflow_step(
 async def upload_pilot_document(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -858,6 +877,7 @@ async def upload_pilot_document(
 async def delete_pilot_workflow(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-workflow:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -880,6 +900,7 @@ async def delete_pilot_workflow(
 @router.post("/literature/analyze", summary="AI 文献解析（流式）")
 async def analyze_literature(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:literature:create")),
     file: UploadFile = File(...),
 ):
     """解析上传的文献文件（PDF/TXT），提取合成路线 - SSE 流式响应"""
@@ -1012,6 +1033,7 @@ async def analyze_literature(  # type: ignore[no-untyped-def]
 @router.get("/routes", summary="获取打通路线列表")
 async def get_routes(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:read")),
     project_id: str | None = Query(None),
     status: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -1094,6 +1116,7 @@ async def get_routes(
 async def get_route(
     route_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -1176,6 +1199,7 @@ async def get_route(
 @router.post("/routes", summary="创建路线")
 async def create_route(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:create")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -1212,6 +1236,7 @@ async def create_route(
 async def update_route(
     route_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:update")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -1265,6 +1290,7 @@ async def update_route(
 async def delete_route(
     route_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -1304,6 +1330,7 @@ async def delete_route(
 async def create_experiment(
     route_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:create")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -1356,6 +1383,7 @@ async def create_experiment(
 async def update_experiment(
     exp_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:update")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -1413,6 +1441,7 @@ async def update_experiment(
 async def delete_experiment(
     exp_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:route:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -1445,6 +1474,7 @@ async def delete_experiment(
 @router.get("/optimizations", summary="获取工艺优化列表")
 async def get_optimizations(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:read")),
     project_id: str | None = Query(None),
     status: str | None = Query(None),
     keyword: str | None = Query(None),
@@ -1520,6 +1550,7 @@ async def get_optimizations(
 async def get_optimization(
     optimization_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -1559,6 +1590,7 @@ async def get_optimization(
 @router.post("/optimizations", summary="创建工艺优化")
 async def create_optimization(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:create")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -1602,6 +1634,7 @@ async def create_optimization(
 async def update_optimization(
     optimization_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:update")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -1657,6 +1690,7 @@ async def update_optimization(
 async def delete_optimization(
     optimization_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:optimization:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -1698,6 +1732,7 @@ async def create_milestone(  # type: ignore[no-untyped-def]
     project_id: UUID,
     data: RdMilestoneCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:create")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1712,7 +1747,10 @@ async def create_milestone(  # type: ignore[no-untyped-def]
     summary="获取里程碑列表",
 )
 async def get_milestones(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser,
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
 ):
 
     return await service.get_milestones(db, project_id)
@@ -1727,6 +1765,7 @@ async def update_milestone(  # type: ignore[no-untyped-def]
     milestone_id: UUID,
     data: RdMilestoneUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:update")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1747,6 +1786,7 @@ async def create_stage_record(  # type: ignore[no-untyped-def]
     project_id: UUID,
     data: RdStageRecordCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:create")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1761,7 +1801,10 @@ async def create_stage_record(  # type: ignore[no-untyped-def]
     summary="获取阶段记录列表",
 )
 async def get_stage_records(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser,
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
 ):
 
     return await service.get_stage_records(db, project_id)
@@ -1776,6 +1819,7 @@ async def update_stage_record(  # type: ignore[no-untyped-def]
     record_id: UUID,
     data: RdStageRecordUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:update")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1796,6 +1840,7 @@ async def create_research_track(  # type: ignore[no-untyped-def]
     project_id: UUID,
     data: RdResearchTrackCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:create")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1807,6 +1852,7 @@ async def create_research_track(  # type: ignore[no-untyped-def]
 @router.get("/tracks", summary="获取所有研究项列表")
 async def get_all_research_tracks(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:read")),
     project_id: str | None = Query(None, description="按项目ID筛选"),
     track_type: str | None = Query(None, description="按研究项类型筛选"),
     db: AsyncSession = Depends(get_db),
@@ -1870,7 +1916,10 @@ async def get_all_research_tracks(  # type: ignore[no-untyped-def]
     summary="获取研究项列表",
 )
 async def get_research_tracks(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser,
+    project_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
 ):
 
     return await service.get_research_tracks(db, project_id)
@@ -1885,6 +1934,7 @@ async def update_research_track(  # type: ignore[no-untyped-def]
     track_id: UUID,
     data: RdResearchTrackUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:update")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1905,6 +1955,7 @@ async def create_research_finding(  # type: ignore[no-untyped-def]
     track_id: UUID,
     data: RdResearchFindingCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:create")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1919,7 +1970,10 @@ async def create_research_finding(  # type: ignore[no-untyped-def]
     summary="获取研究发现列表",
 )
 async def get_research_findings(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser, track_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser,
+    track_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("research:track:read")),
 ):
 
     return await service.get_research_findings(db, track_id)
@@ -1934,6 +1988,7 @@ async def update_research_finding(  # type: ignore[no-untyped-def]
     finding_id: UUID,
     data: RdResearchFindingUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:update")),
     db: AsyncSession = Depends(get_db),
 ):
 
@@ -1950,6 +2005,7 @@ async def publish_conclusion_version(  # type: ignore[no-untyped-def]
     track_id: UUID,
     data: dict,  # type: ignore[type-arg]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:create")),
     db: AsyncSession = Depends(get_db),
 ):
     """发布新的结论版本，更新研究项的当前结论"""
@@ -1965,7 +2021,10 @@ async def publish_conclusion_version(  # type: ignore[no-untyped-def]
 
 @router.get("/tracks/{track_id}/conclusions", summary="获取结论历史")
 async def get_conclusion_history(  # type: ignore[no-untyped-def]
-    current_user: RequiredUser, track_id: UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser,
+    track_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    ctx: PermissionContext = Depends(require_permission("research:track:read")),
 ):
     """获取研究项的结论版本历史"""
 
@@ -1978,6 +2037,7 @@ async def get_conclusion_history(  # type: ignore[no-untyped-def]
 @router.get("/rd-projects", summary="获取研发项目列表(RdProject)")
 async def get_rd_projects(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     stage: str | None = Query(None, description="当前阶段"),
     status: str | None = Query(None, description="状态"),
     keyword: str | None = Query(None, description="搜索关键词"),
@@ -2009,6 +2069,7 @@ async def get_rd_projects(
 async def get_rd_project(
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2021,6 +2082,7 @@ async def get_rd_project(
 async def create_rd_project(
     data: RdProjectCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2039,6 +2101,7 @@ async def update_rd_project(
     project_id: UUID,
     data: RdProjectUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2056,6 +2119,7 @@ async def update_rd_project(
 async def delete_rd_project(
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2073,6 +2137,7 @@ async def delete_rd_project(
 async def transition_stage(
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:submit")),
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2102,6 +2167,7 @@ async def transition_stage(
 async def check_stage_transition(
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     target_stage: str = Query(..., description="目标阶段"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2117,6 +2183,7 @@ async def check_stage_transition(
 @router.get("/pilot-studies", summary="获取中试研究记录列表")
 async def get_pilot_studies(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:read")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2130,6 +2197,7 @@ async def get_pilot_studies(
 async def create_pilot_study(
     data: RdPilotStudyCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2148,6 +2216,7 @@ async def update_pilot_study(
     study_id: UUID,
     data: RdPilotStudyUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2167,6 +2236,7 @@ async def update_pilot_study(
 @router.get("/process-validations", summary="获取工艺验证记录列表")
 async def get_validations(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:read")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2180,6 +2250,7 @@ async def get_validations(
 async def create_validation(
     data: RdProcessValidationCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2198,6 +2269,7 @@ async def update_validation(
     validation_id: UUID,
     data: RdProcessValidationUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2217,6 +2289,7 @@ async def update_validation(
 @router.get("/registration-filings", summary="获取申报资料记录列表")
 async def get_filings(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:read")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2230,6 +2303,7 @@ async def get_filings(
 async def create_filing(
     data: RdRegistrationFilingCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2248,6 +2322,7 @@ async def update_filing(
     filing_id: UUID,
     data: RdRegistrationFilingUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2272,6 +2347,7 @@ async def update_filing(
 async def create_rd_stage_deliverable_api(
     data: RdStageDeliverableCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:create")),
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
 
@@ -2290,6 +2366,7 @@ async def create_rd_stage_deliverable_api(
 async def get_rd_stage_deliverable_api(
     deliverable_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
 
@@ -2304,6 +2381,7 @@ async def get_rd_stage_deliverable_api(
 )
 async def list_rd_stage_deliverables_api(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
     project_id: UUID | None = None,
     stage: str | None = None,
     deliverable_type: str | None = None,
@@ -2334,6 +2412,7 @@ async def update_rd_stage_deliverable_api(
     deliverable_id: UUID,
     data: RdStageDeliverableUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:update")),
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
 
@@ -2351,6 +2430,7 @@ async def update_rd_stage_deliverable_api(
 async def delete_rd_stage_deliverable_api(
     deliverable_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2368,6 +2448,7 @@ async def delete_rd_stage_deliverable_api(
 async def upload_deliverable_file(
     deliverable_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
@@ -2419,6 +2500,7 @@ async def upload_deliverable_file(
 async def download_deliverable_file(  # type: ignore[no-untyped-def]
     deliverable_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:stage-deliverable:read")),
     db: AsyncSession = Depends(get_db),
 ):
     """下载交付物附件文件（本地存储）"""
@@ -2449,6 +2531,7 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
 async def get_pilot_studies(  # noqa: F811
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:read")),
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2461,6 +2544,7 @@ async def get_pilot_studies(  # noqa: F811
 async def create_pilot_study_api(
     data: RdPilotStudyCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:create")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2476,6 +2560,7 @@ async def update_pilot_study_api(
     study_id: UUID,
     data: RdPilotStudyUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:update")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2490,6 +2575,7 @@ async def update_pilot_study_api(
 async def delete_pilot_study_api(
     study_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:pilot-study:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2507,6 +2593,7 @@ async def delete_pilot_study_api(
 async def get_validations(  # noqa: F811
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:read")),
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2519,6 +2606,7 @@ async def get_validations(  # noqa: F811
 async def create_validation_api(
     data: RdProcessValidationCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:create")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2534,6 +2622,7 @@ async def update_validation_api(
     validation_id: UUID,
     data: RdProcessValidationUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:update")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2548,6 +2637,7 @@ async def update_validation_api(
 async def delete_validation_api(
     validation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:process-validation:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2565,6 +2655,7 @@ async def delete_validation_api(
 async def get_filings(  # noqa: F811
     project_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:read")),
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
 
@@ -2577,6 +2668,7 @@ async def get_filings(  # noqa: F811
 async def create_filing_api(
     data: RdRegistrationFilingCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:create")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2592,6 +2684,7 @@ async def update_filing_api(
     filing_id: UUID,
     data: RdRegistrationFilingUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:update")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2606,6 +2699,7 @@ async def update_filing_api(
 async def delete_filing_api(
     filing_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:registration-filing:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2622,6 +2716,7 @@ async def delete_filing_api(
 @router.get("/experiment-logs", summary="获取实验记录列表")
 async def get_experiment_logs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:experiment-log:read")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2635,6 +2730,7 @@ async def get_experiment_logs(
 async def create_experiment_log(
     data: RdExperimentLogCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:experiment-log:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2655,6 +2751,7 @@ async def update_experiment_log(
     log_id: UUID,
     data: RdExperimentLogUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:experiment-log:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2674,6 +2771,7 @@ async def update_experiment_log(
 async def delete_experiment_log(
     log_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:experiment-log:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2690,6 +2788,7 @@ async def delete_experiment_log(
 @router.get("/reports", summary="获取研发报告列表")
 async def get_reports(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2703,6 +2802,7 @@ async def get_reports(
 async def create_report(
     data: RdReportCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2723,6 +2823,7 @@ async def update_report(
     report_id: UUID,
     data: RdReportUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2742,6 +2843,7 @@ async def update_report(
 async def delete_report(
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2758,6 +2860,7 @@ async def delete_report(
 @router.get("/initiations", summary="获取立项申请列表")
 async def get_initiations(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:initiation:read")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -2771,6 +2874,7 @@ async def get_initiations(
 async def create_initiation(
     data: RdInitiationCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:initiation:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2791,6 +2895,7 @@ async def update_initiation(
     initiation_id: UUID,
     data: RdInitiationUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:initiation:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -2810,6 +2915,7 @@ async def update_initiation(
 async def delete_initiation(
     initiation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:initiation:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -2827,6 +2933,7 @@ async def delete_initiation(
 async def delete_research_track(
     track_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
     """软删除研究项"""
@@ -2858,6 +2965,7 @@ async def delete_research_track(
 async def delete_research_finding(
     finding_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
     """软删除研究发现"""
@@ -2892,6 +3000,7 @@ async def delete_research_finding(
 async def get_track_detail(
     track_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取研究项详情，包含研究发现和结论历史"""
@@ -2937,6 +3046,7 @@ async def create_conclusion_version_api(
     track_id: UUID,
     data: RdTrackConclusionVersionCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """发布新的结论版本"""
@@ -2968,6 +3078,7 @@ async def create_conclusion_version_api(
 async def get_conclusion_versions_api(
     track_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取研究项的结论版本历史"""
@@ -2987,6 +3098,7 @@ import io  # noqa: E402
 @router.get("/export/projects", summary="导出项目列表 CSV")
 async def export_projects_csv(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:export")),
     db: AsyncSession = Depends(get_db),
 ):
     """导出所有研发项目为 CSV 文件"""
@@ -3066,6 +3178,7 @@ async def export_projects_csv(  # type: ignore[no-untyped-def]
 @router.get("/export/tracks", summary="导出研究项 CSV")
 async def export_tracks_csv(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:track:export")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -3137,6 +3250,7 @@ async def export_tracks_csv(  # type: ignore[no-untyped-def]
 @router.get("/export/experiment-logs", summary="导出实验记录 CSV")
 async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:experiment-log:export")),
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ):
@@ -3213,6 +3327,7 @@ async def export_experiment_logs_csv(  # type: ignore[no-untyped-def]
 @router.get("/stats/overview", summary="研发概览统计")
 async def get_stats_overview(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取研发模块概览统计数据"""
@@ -3322,6 +3437,7 @@ async def get_stats_overview(
 @router.get("/stats/project-progress", summary="项目进度统计")
 async def get_project_progress(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取各项目进度统计"""
@@ -3387,6 +3503,7 @@ async def get_project_progress(
 @router.get("/deliverable-templates", summary="获取交付物模板列表")
 async def get_deliverable_templates(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:read")),
     stage: str | None = Query(None, description="阶段"),
     deliverable_type: str | None = Query(None, description="交付物类型"),
     is_active: bool | None = Query(None, description="是否启用"),
@@ -3402,6 +3519,7 @@ async def get_deliverable_templates(
 async def create_deliverable_template(
     data: RdDeliverableTemplateCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -3422,6 +3540,7 @@ async def update_deliverable_template(
     template_id: UUID,
     data: RdDeliverableTemplateUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 
@@ -3441,6 +3560,7 @@ async def update_deliverable_template(
 async def delete_deliverable_template(
     template_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:deliverable-template:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
 
@@ -3458,6 +3578,7 @@ async def delete_deliverable_template(
 async def generate_report(
     data: RdReportGenerateRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
 

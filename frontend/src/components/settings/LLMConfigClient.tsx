@@ -4,21 +4,19 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
-  Card,
-  Table,
+  App,
   Button,
-  Modal,
   Form,
   Input,
-  Select,
-  Switch,
   InputNumber,
-  Typography,
-  Space,
-  Tag,
+  Modal,
   Popconfirm,
+  Select,
+  Space,
+  Switch,
+  Table,
+  Tag,
   Tooltip,
-  App,
 } from 'antd'
 import {
   PlusOutlined,
@@ -37,8 +35,10 @@ import {
   testLLMConnection,
 } from '@/actions/settings'
 import type { LLMConfig } from '@/types/settings'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
 
-const { Title, Text } = Typography
 const { TextArea } = Input
 
 const CONFIG_TYPE_OPTIONS = [
@@ -52,6 +52,12 @@ interface LLMConfigClientProps {
 
 export default function LLMConfigClient({ embedded = false }: LLMConfigClientProps) {
   const { message } = App.useApp()
+
+  // 权限：无「配置管理」权限时隐藏全部写操作入口
+  // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
+  // 注意：必须放在任何 early return 之前
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.configManage)
   const router = useRouter()
   const queryClient = useQueryClient()
   const [modalOpen, setModalOpen] = useState(false)
@@ -101,8 +107,8 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       await deleteLLMConfig(id)
       message.success('删除成功')
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
-    } catch {
-      message.error('删除失败')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '删除失败')
     }
   }
 
@@ -125,6 +131,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
     } catch (error) {
       console.error('Save failed:', error)
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -136,8 +143,8 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       await updateLLMConfig(id, { is_active: true })
       message.success('已激活，所有 AI 调用将使用此配置')
       queryClient.invalidateQueries({ queryKey: ['llm-configs'] })
-    } catch {
-      message.error('激活失败')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '激活失败')
     } finally {
       setTestingId(null)
     }
@@ -151,8 +158,8 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       } else {
         message.error(res.data?.detail || '连接测试失败')
       }
-    } catch {
-      message.error('连接测试失败')
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '连接测试失败')
     }
   }
 
@@ -205,94 +212,97 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
       key: 'timeout_seconds',
       width: 100,
     },
-    {
-      title: '操作',
-      key: 'actions',
-      width: 200, fixed: "right" as const,
-      render: (_: unknown, record: LLMConfig) => (
-        <Space>
-          {!record.is_active && (
-            <Tooltip title="激活此配置">
-              <Button
-                type="link"
-                size="small"
-                icon={<CheckCircleOutlined />}
-                loading={testingId === record.id}
-                onClick={() => handleActivate(record.id)}
-              />
-            </Tooltip>
-          )}
-          <Tooltip title="编辑">
-            <Button
-              type="link"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
-          <Popconfirm
-            title="确定删除此配置？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Tooltip title="删除">
-              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-            </Tooltip>
-          </Popconfirm>
-        </Space>
-      ),
-    },
+    // 操作列：无配置管理权限时整列不出现
+    ...(canManage
+      ? [
+          {
+            title: '操作',
+            key: 'actions',
+            width: 200, fixed: "right" as const,
+            render: (_: unknown, record: LLMConfig) => (
+              <Space>
+                {!record.is_active && (
+                  <Tooltip title="激活此配置">
+                    <Button
+                      type="link"
+                      size="small"
+                      icon={<CheckCircleOutlined />}
+                      loading={testingId === record.id}
+                      onClick={() => handleActivate(record.id)}
+                    />
+                  </Tooltip>
+                )}
+                <Tooltip title="编辑">
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(record)}
+                  />
+                </Tooltip>
+                <Popconfirm
+                  title="确定删除此配置？"
+                  onConfirm={() => handleDelete(record.id)}
+                  okText="确定"
+                  cancelText="取消"
+                >
+                  <Tooltip title="删除">
+                    <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                  </Tooltip>
+                </Popconfirm>
+              </Space>
+            ),
+          },
+        ]
+      : []),
   ]
 
   return (
-    <div style={{ maxWidth: 1300, margin: '0 auto', padding: embedded ? 0 : '24px' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-        }}
-      >
+    <div className={embedded ? '' : 'p-6'}>
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
+          <h2 className="m-0 text-[20px] font-semibold text-[var(--color-charcoal)]">
+            <SettingOutlined className="mr-2" />
+            LLM 模型配置
+          </h2>
+          <p className="m-0 mt-1 text-[13px] text-[var(--color-steel)]">
+            配置 AI 大模型 API 连接参数。同一时间仅一个配置生效。
+          </p>
+        </div>
         {!embedded && (
-          <Button icon={<ArrowLeftOutlined />} onClick={() => router.back()} style={{ marginRight: 16 }}>
+          <Button
+            icon={<ArrowLeftOutlined />}
+            onClick={() => router.back()}
+            className="shrink-0"
+          >
             返回
           </Button>
         )}
-          <Title level={3} style={{ margin: 0 }}>
-            <SettingOutlined style={{ marginRight: 12 }} />
-            LLM 模型配置
-          </Title>
-          <Text style={{ fontSize: 14, color: '#666', marginTop: 8, display: 'block' }}>
-            配置 AI 大模型 API 连接参数。同一时间仅一个配置生效。
-          </Text>
-        </div>
-        <Space>
-          <Button icon={<ApiOutlined />} onClick={handleTestConnection}>
-            测试连接
-          </Button>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            新建配置
-          </Button>
-        </Space>
       </div>
 
-      <Card>
-        <Table scroll={{ x: 1000 }}
+      <SettingsListCard
+        toolbar={
+          canManage ? (
+            <>
+              <Button icon={<ApiOutlined />} onClick={handleTestConnection}>
+                测试连接
+              </Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+                新建配置
+              </Button>
+            </>
+          ) : null
+        }
+      >
+        <Table
+          scroll={{ x: 1000 }}
           columns={columns}
           dataSource={configs}
           rowKey="id"
           loading={loading}
-          size="middle"
           pagination={false}
         />
-      </Card>
+      </SettingsListCard>
 
       <Modal
         title={editingConfig ? '编辑 LLM 配置' : '新建 LLM 配置'}
@@ -300,7 +310,7 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
         confirmLoading={saving}
-        width={640}
+        width="min(640px, calc(100vw - 24px))"
         okText="保存"
         cancelText="取消"
       >
@@ -346,12 +356,12 @@ export default function LLMConfigClient({ embedded = false }: LLMConfigClientPro
             <Input placeholder="gpt-4o" />
           </Form.Item>
 
-          <Space size="large">
+          <Space size="large" wrap>
             <Form.Item name="temperature" label="Temperature">
-              <InputNumber min={0} max={2} step={0.1} style={{ width: 120 }} />
+              <InputNumber min={0} max={2} step={0.1} style={{ width: '100%', maxWidth: 120 }} />
             </Form.Item>
             <Form.Item name="timeout_seconds" label="超时(秒)">
-              <InputNumber min={10} max={600} style={{ width: 120 }} />
+              <InputNumber min={10} max={600} style={{ width: '100%', maxWidth: 120 }} />
             </Form.Item>
           </Space>
 

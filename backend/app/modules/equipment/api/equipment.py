@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, require_permission, RequiredUser
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
@@ -64,6 +64,7 @@ async def _equipment_to_response(equipment: Equipment, db: AsyncSession | None =
 async def create_equipment_category(
     data: EquipmentCategoryCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """创建设备分类"""
@@ -88,6 +89,7 @@ async def get_equipment_categories(
 @router.get("/categories/{category_id}", summary="获取设备分类详情")
 async def get_equipment_category(
     category_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取设备分类详情"""
@@ -111,6 +113,7 @@ async def update_equipment_category(
 async def delete_equipment_category(
     category_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """删除设备分类"""
@@ -132,6 +135,7 @@ async def create_location(
 
 @router.get("/locations", summary="获取位置列表")
 async def get_locations(
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     parent_id: uuid.UUID | None = Query(None, description="父位置ID"),
     tree: bool = Query(False, description="是否返回树形结构"),
     db: AsyncSession = Depends(get_db),
@@ -159,6 +163,7 @@ async def update_location(
     location_id: uuid.UUID,
     data: LocationUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """更新位置"""
@@ -180,6 +185,7 @@ async def delete_location(
 # ==================== 部门列表（供设备表单下拉使用） ====================
 @router.get("/departments", summary="获取部门列表（供设备表单下拉使用）")
 async def get_departments_list(
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取可选部门列表，含部门名称和负责人姓名"""
@@ -201,6 +207,7 @@ async def create_equipment(
 
 @router.get("/equipments", summary="获取设备列表")
 async def get_equipments(
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
     location_id: uuid.UUID | None = Query(None, description="设备位置ID"),
     department_id: uuid.UUID | None = Query(None, description="归属部门ID"),
@@ -227,6 +234,7 @@ async def get_equipments(
 
 @router.get("/equipments/statistics", summary="获取设备统计")
 async def get_equipment_statistics(
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
     location_id: uuid.UUID | None = Query(None, description="设备位置ID"),
     department_id: uuid.UUID | None = Query(None, description="归属部门ID"),
@@ -253,6 +261,7 @@ async def update_equipment(
     equipment_id: uuid.UUID,
     data: EquipmentUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """更新设备"""
@@ -275,6 +284,7 @@ async def delete_equipment(
 async def batch_delete_equipments(
     data: BatchDeleteRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """批量删除设备"""

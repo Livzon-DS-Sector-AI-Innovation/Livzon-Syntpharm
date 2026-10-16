@@ -110,6 +110,8 @@ class SchedulerEngine:
         """Check if *task* is due and execute it."""
         if not task.enabled:
             return
+        if self._registry.is_disabled(task.name):
+            return
         if task.settings_toggle_key:
             if not getattr(settings, task.settings_toggle_key, True):
                 return
@@ -146,6 +148,8 @@ class SchedulerEngine:
     ) -> None:
         """Check if *gen* is due, scan the DB, and process due items."""
         if not gen.enabled:
+            return
+        if self._registry.is_disabled(gen.name):
             return
         if gen.settings_toggle_key:
             if not getattr(settings, gen.settings_toggle_key, True):

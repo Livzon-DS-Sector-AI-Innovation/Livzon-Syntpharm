@@ -164,7 +164,7 @@ export function BalancePageClient() {
                 value={minBalanceRate}
                 onChange={(v) => setMinBalanceRate(v || 95)}
                 style={{ width: '70%' }}
-                addonAfter="%"
+                suffix="%"
               />
               <Button
                 icon={<CalculatorOutlined />}
@@ -195,7 +195,7 @@ export function BalancePageClient() {
           <>
             <Alert
               type={materialBalance.is_balanced ? 'success' : 'warning'}
-              message={materialBalance.is_balanced ? '物料平衡合格' : '物料平衡不合格'}
+              title={materialBalance.is_balanced ? '物料平衡合格' : '物料平衡不合格'}
               description={`平衡率 ${materialBalance.balance_rate?.toFixed(2)}% ${
                 materialBalance.is_balanced
                   ? '满足最低要求'
@@ -210,7 +210,7 @@ export function BalancePageClient() {
             {editMode && (
               <Alert
                 type="info"
-                message="编辑模式"
+                title="编辑模式"
                 description="您可以手动修改投入总量和产出总量，系统将自动计算平衡率"
                 style={{ marginBottom: 16 }}
                 showIcon

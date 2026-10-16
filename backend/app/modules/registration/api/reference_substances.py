@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.repository import reference_substance as repo
 from app.modules.registration.schemas.reference_substance import (
@@ -22,6 +22,7 @@ router = APIRouter()
 @router.get("/", summary="获取对照品列表")
 async def list_reference_substances(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有对照品记录"""
@@ -46,6 +47,7 @@ async def create_reference_substance(
 async def get_reference_substance(
     current_user: CurrentUser,
     substance_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取单个对照品记录"""
@@ -75,6 +77,7 @@ async def update_reference_substance(
 async def delete_reference_substance(
     current_user: CurrentUser,
     substance_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """软删除对照品记录"""

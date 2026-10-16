@@ -88,13 +88,13 @@ const AutoCompareResultPanel = ({ result }: { result: AutoCompareResult }) => {
       </Descriptions>
 
       {result.notes && (
-        <Alert type="info" message={result.notes} style={{ marginTop: 8 }} showIcon />
+        <Alert type="info" title={result.notes} style={{ marginTop: 8 }} showIcon />
       )}
 
       {result.confidence < 70 && (
         <Alert
           type="warning"
-          message="置信度较低，建议人工复核"
+          title="置信度较低，建议人工复核"
           description="AI 识别不够清晰，已自动降低帧率多次尝试，但仍建议人工确认结果。"
           style={{ marginTop: 8 }}
           showIcon

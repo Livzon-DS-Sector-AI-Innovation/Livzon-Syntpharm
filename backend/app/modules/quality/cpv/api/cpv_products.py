@@ -22,6 +22,7 @@ from app.modules.quality.cpv.schemas import (
     CpvProductUpdate,
 )
 from app.shared.schemas import ApiResponse
+from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ router = APIRouter()
 async def create_product(
     current_user: CurrentUser,
     data: CpvProductCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """创建CPV产品"""
@@ -47,6 +49,7 @@ async def create_product(
 @router.get("/products", summary="获取产品列表", response_model=CpvProductListApiResponse)
 async def get_products(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     keyword: str | None = Query(None, description="关键词搜索"),
     status: str | None = Query(None, description="状态筛选"),
     page: int = Query(1, ge=1, description="页码"),
@@ -98,6 +101,7 @@ async def get_products(
 async def get_product(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取CPV产品详情"""
@@ -112,6 +116,7 @@ async def update_product(
     current_user: CurrentUser,
     product_id: uuid.UUID,
     data: CpvProductUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """更新CPV产品"""
@@ -125,6 +130,7 @@ async def update_product(
 async def delete_product(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """删除CPV产品（软删除）"""
@@ -141,6 +147,7 @@ async def delete_product(
 async def get_parameters(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     type: str | None = Query(None, description="参数类型: CPP/CQA"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -156,6 +163,7 @@ async def create_parameter(
     current_user: CurrentUser,
     product_id: uuid.UUID,
     data: CpvParameterCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """新增产品参数"""
@@ -170,6 +178,7 @@ async def update_parameter(
     current_user: CurrentUser,
     parameter_id: uuid.UUID,
     data: CpvParameterUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """更新参数"""
@@ -183,6 +192,7 @@ async def update_parameter(
 async def delete_parameter(
     current_user: CurrentUser,
     parameter_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """删除参数（软删除）"""
@@ -199,6 +209,7 @@ async def delete_parameter(
 async def get_batches(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:create")),
     data_type: str | None = Query(None, description="数据类型: CPP/CQA"),
     batch_no: str | None = Query(None, description="批号"),
     start_date: date | None = Query(None, description="开始日期"),
@@ -227,6 +238,7 @@ async def get_batches(
 async def get_cpp_batches(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     batch_no: str | None = Query(None, description="批号"),
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
@@ -252,6 +264,7 @@ async def get_cpp_batches(
 async def get_cqa_batches(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     batch_no: str | None = Query(None, description="批号"),
     start_date: date | None = Query(None, description="开始日期"),
     end_date: date | None = Query(None, description="结束日期"),
@@ -280,6 +293,7 @@ async def get_cqa_batches(
 async def get_statistics(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     parameter_id: uuid.UUID = Query(..., description="参数ID"),
     batch_no: str | None = Query(None, description="批号"),
     start_date: date | None = Query(None, description="开始日期"),
@@ -297,6 +311,7 @@ async def get_statistics(
 async def get_trend(
     current_user: CurrentUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:read")),
     parameter_id: uuid.UUID = Query(..., description="参数ID"),
     batch_no: str | None = Query(None, description="批号"),
     start_date: date | None = Query(None, description="开始日期"),

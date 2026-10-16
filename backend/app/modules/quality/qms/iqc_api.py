@@ -21,6 +21,7 @@ from app.modules.quality.qms.iqc_schemas import (
     IQCInspectionUpdate,
 )
 from app.modules.quality.qms.iqc_service import IQCInspectionService
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/iqc", tags=["IQC检验"])
 
@@ -32,6 +33,7 @@ def get_iqc_service(session: AsyncSession = Depends(get_db)) -> IQCInspectionSer
 @router.post("/inspections", response_model=IQCInspectionApiResponse, status_code=201)
 async def post(
     data: IQCInspectionCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:create")),
     service: IQCInspectionService = Depends(get_iqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -49,6 +51,7 @@ async def post(
 
 @router.get("/inspections", response_model=dict)
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:read")),
     inspection_no: str | None = Query(None, description="检验单号"),
     material_code: str | None = Query(None, description="物料编码"),
     material_name: str | None = Query(None, description="物料名称"),
@@ -87,6 +90,7 @@ async def get(
 @router.get("/inspections/{inspection_id}", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:read")),
     service: IQCInspectionService = Depends(get_iqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -102,6 +106,7 @@ async def get(  # noqa: F811
 async def put(
     inspection_id: UUID,
     data: IQCInspectionUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:update")),
     service: IQCInspectionService = Depends(get_iqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -120,6 +125,7 @@ async def put(
 @router.delete("/inspections/{inspection_id}")
 async def delete(
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:delete")),
     service: IQCInspectionService = Depends(get_iqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -135,6 +141,7 @@ async def delete(
 @router.post("/inspections/{inspection_id}/submit", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:submit")),
     service: IQCInspectionService = Depends(get_iqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -154,6 +161,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: IQCApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:iqc:approve")),
     service: IQCInspectionService = Depends(get_iqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]

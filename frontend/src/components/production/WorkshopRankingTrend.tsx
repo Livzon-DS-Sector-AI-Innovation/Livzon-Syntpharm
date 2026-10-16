@@ -184,7 +184,7 @@ export default function WorkshopRankingTrend({ year }: Props) {
     return (
       <Card variant="borderless" className="shadow-sm">
         <Alert
-          message="加载失败"
+          title="加载失败"
           description={error}
           type="warning"
           showIcon

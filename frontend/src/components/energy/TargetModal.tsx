@@ -114,7 +114,7 @@ export default function TargetModal({
             step={0.1}
             placeholder="请输入目标单耗"
             style={{ width: '100%', marginTop: 8 }}
-            addonAfter="kWh/kg"
+            suffix="kWh/kg"
           />
           <Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
             💡 建议参考过去 3 个月平均值

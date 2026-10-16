@@ -6,6 +6,8 @@ import { EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { ResearchProject, ResearchProjectStage, ResearchProjectStatus } from '@/types/research'
 import { useResearchStore } from '@/stores/research'
 import { deleteResearchProject } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const stageConfig: Record<ResearchProjectStage, { color: string; bgColor: string }> = {
   '立项': { color: '#1677ff', bgColor: '#e6f4ff' },
@@ -185,12 +187,16 @@ export function ProjectTable({ loading = false, onRefresh }: ProjectTableProps) 
       fixed: 'right' as const,
       render: (_: unknown, record: ResearchProject) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openDrawer(record)} style={{ padding: 0 }}>
-            编辑
-          </Button>
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} style={{ padding: 0 }}>
-            删除
-          </Button>
+          <PermissionGate code={PERM.researchProjectUpdate}>
+            <Button type="link" icon={<EditOutlined />} onClick={() => openDrawer(record)} style={{ padding: 0 }}>
+              编辑
+            </Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchProjectDelete}>
+            <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDelete(record)} style={{ padding: 0 }}>
+              删除
+            </Button>
+          </PermissionGate>
         </Space>
       )
     },

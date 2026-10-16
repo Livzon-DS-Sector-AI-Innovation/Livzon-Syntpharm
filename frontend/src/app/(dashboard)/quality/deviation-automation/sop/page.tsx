@@ -588,7 +588,7 @@ export default function SopManagementPage() {
             {parseResult && (
               <Alert
                 type="info"
-                message="AI解析结果"
+                title="AI解析结果"
                 description={
                   <pre style={{ maxHeight: 200, overflow: 'auto', fontSize: 12, whiteSpace: 'pre-wrap' }}>
                     {parseResult}

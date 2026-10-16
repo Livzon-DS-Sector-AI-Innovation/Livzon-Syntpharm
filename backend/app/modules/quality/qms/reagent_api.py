@@ -22,6 +22,7 @@ from app.modules.quality.qms.reagent_schemas import (
 )
 from app.modules.quality.qms.reagent_service import ReagentService
 from app.platform.database import get_db_session
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/reagent", tags=["质量检验-试剂管理"])
 
@@ -56,6 +57,7 @@ def dict_to_response(data: dict[str, Any]) -> ReagentResponse:
 
 @router.post("/recognize", response_model=dict, summary="AI识别试剂标签图片")
 async def post(
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:create")),
     files: list[UploadFile] = File(..., description="试剂标签图片（支持多张）"),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -107,6 +109,7 @@ async def post(
 
 @router.get("/next-lot-no", response_model=dict, summary="获取下一个入场批号")
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:read")),
     date_str: str | None = Query(None, description="日期(YYYY-MM-DD)，默认今天"),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -143,6 +146,7 @@ async def get(
 
 @router.get("/list", response_model=dict, summary="获取试剂台账列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:read")),
     keyword: str | None = Query(None, description="关键词搜索"),
     category: str | None = Query(None, description="分类（试剂/标准品）"),
     status: str | None = Query(None, description="状态"),
@@ -177,6 +181,7 @@ async def get(  # noqa: F811
 
 @router.get("/export", summary="导出试剂台账Excel")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:export")),
     keyword: str | None = Query(None, description="关键词搜索"),
     category: str | None = Query(None, description="分类"),
     status: str | None = Query(None, description="状态"),
@@ -313,6 +318,7 @@ async def get(  # noqa: F811
 @router.get("/{reagent_id}", response_model=dict, summary="获取试剂详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     reagent_id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """根据ID获取试剂详情"""
@@ -336,6 +342,7 @@ async def get(  # noqa: F811
 @router.post("", response_model=dict, summary="创建试剂记录")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: CreateReagentRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """创建新的试剂记录"""
@@ -383,6 +390,7 @@ async def post(  # noqa: F811
 async def put(
     reagent_id: str,
     request: UpdateReagentRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新试剂记录"""
@@ -417,6 +425,7 @@ async def put(
 @router.delete("/{reagent_id}", response_model=dict, summary="删除试剂记录")
 async def delete(
     reagent_id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除试剂记录"""

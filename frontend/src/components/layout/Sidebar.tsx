@@ -1,19 +1,16 @@
 'use client'
-"use client"
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { Menu } from "antd"
 import type { MenuProps } from "antd"
-import { getModuleByKey } from "@/lib/menu-config"
-import { usePermission } from "@/hooks/usePermission"
 import type { SubMenuItem } from "@/lib/menu-config"
+import { resolveMenus } from "@/lib/menu/resolve"
+import type { PermissionView } from "@/lib/permissions/modules"
 import { fetchWarehouseFeishuTablesByParams } from "@/lib/api/client/warehouse"
 import type { WarehouseFeishuBusinessDomain, WarehouseFeishuTable } from "@/types/warehouse"
 import { SettingOutlined } from "@ant-design/icons"
 import { useSidebarStore } from "@/stores/sidebar"
-import { getCurrentUser } from "@/actions/auth"
-import type { User } from "@/types/user"
 
 type MenuItem = Required<MenuProps>['items'][number]
 
@@ -129,6 +126,8 @@ function collectLeaves(items: SubMenuItem[]): SubMenuItem[] {
   })
 }
 
+/** 子菜单的过滤 + 排序 + 自定义项合并，统一由 `resolveMenus` 完成（见 lib/menu/resolve.ts）。 */
+
 function findSelectedKey(
   items: SubMenuItem[],
   pathname: string,
@@ -174,25 +173,26 @@ interface SidebarProps {
   onNavigate?: () => void
   /** 移动端抽屉内使用：强制展开，忽略桌面折叠状态 */
   forceExpanded?: boolean
+  permissionView: PermissionView
 }
 
-export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
+export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { collapsed: collapsedState } = useSidebarStore()
   const collapsed = collapsedState && !forceExpanded
   const router = useRouter()
-  const { user: _currentUser } = usePermission()
   const moduleKey = pathname.split("/")[1] || "production"
-  const currentModule = getModuleByKey(moduleKey)
-  const [_user, setUser] = useState<User | null>(null)
   const [warehouseTables, setWarehouseTables] = useState<WarehouseFeishuTable[]>([])
   const queryString = searchParams.toString()
   const query = useMemo(() => new URLSearchParams(queryString), [queryString])
-
-  useEffect(() => {
-    getCurrentUser().then(setUser)
-  }, [])
+  const granted = useMemo(() => new Set(permissionView.granted), [permissionView.granted])
+  // 菜单树 = 代码结构 + 服务端下发的菜单配置（显隐 / 权重 / 权限 / 自定义项）
+  const resolvedModules = useMemo(
+    () => resolveMenus(permissionView.menuConfig, granted, permissionView.isSuperuser),
+    [permissionView, granted],
+  )
+  const currentModule = resolvedModules.find((mod) => mod.key === moduleKey)
 
   useEffect(() => {
     if (moduleKey !== "warehouse") {
@@ -216,9 +216,9 @@ export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
 
   const moduleChildren = useMemo(() => {
     if (!currentModule) return []
-    const filtered = currentModule.children
-    if (moduleKey !== "warehouse") return filtered
-    return withWarehouseTables(filtered, warehouseTables)
+    return moduleKey === "warehouse"
+      ? withWarehouseTables(currentModule.children, warehouseTables)
+      : currentModule.children
   }, [currentModule, moduleKey, warehouseTables])
 
   const menuItems = buildMenuItems(moduleChildren)
@@ -292,13 +292,15 @@ export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
         <p className="text-[12px] text-[var(--color-stone)]">
           v0.1.1
         </p>
-        <button
-          onClick={() => router.push("/settings")}
-          className="text-[var(--color-stone)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-          title="系统设置"
-        >
-          <SettingOutlined style={{ fontSize: 16 }} />
-        </button>
+        {permissionView.visibleModuleKeys.includes("settings") && (
+          <button
+            onClick={() => router.push("/settings")}
+            className="text-[var(--color-stone)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
+            title="系统设置"
+          >
+            <SettingOutlined style={{ fontSize: 16 }} />
+          </button>
+        )}
       </div>
     </aside>
   )

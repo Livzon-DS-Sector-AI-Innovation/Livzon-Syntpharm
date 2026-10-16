@@ -10,6 +10,7 @@ import {
   startImpersonateApi,
   getImpersonationStatusApi,
 } from '@/lib/api/server/auth'
+import { resolveLandingPath } from '@/lib/permissions/server'
 
 export interface LoginActionState {
   error?: string
@@ -69,7 +70,9 @@ export async function loginWithPassword(
   }
 
   revalidatePath('/')
-  redirect('/production')
+  // 落地页 = 第一个「可见」模块（未接入权限控制的模块恒可见，见 lib/permissions/modules.ts）
+  const landingPath = await resolveLandingPath()
+  redirect(landingPath ?? '/')
 }
 
 export async function logout() {

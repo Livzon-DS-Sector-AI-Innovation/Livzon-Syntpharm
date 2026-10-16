@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
+from app.core.deps import PermissionContext, require_permission, CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -45,6 +45,7 @@ async def create_inspection_template(
 @router.get("/", summary="巡检模板列表")
 async def list_inspection_templates(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:read")),
     equipment_category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
     is_active: bool | None = Query(None, description="是否启用"),
     keyword: str | None = Query(None, description="关键词搜索"),
@@ -73,6 +74,7 @@ async def list_inspection_templates(
 async def get_inspection_template(
     template_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -96,6 +98,7 @@ async def update_inspection_template(
 async def delete_inspection_template(
     template_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -121,6 +124,7 @@ async def update_template_item(
     item_id: uuid.UUID,
     data: InspectionTemplateItemUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -145,6 +149,7 @@ async def complete_inspection(
     work_order_id: uuid.UUID,
     data: InspectionCompleteRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)

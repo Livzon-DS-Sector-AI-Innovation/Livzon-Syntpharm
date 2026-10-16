@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.service import SupplementaryReplyService
@@ -25,6 +25,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> SupplementaryReplySe
 async def post(
     current_user: CurrentUser,
     notice: UploadFile,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:create")),
     template: UploadFile | None = None,
     drug_name: str | None = Form(None, description="药品名称（可选，默认从PDF提取）"),
     registration_number: str | None = Form(None, description="登记号（可选）"),
@@ -63,6 +64,7 @@ async def post(
 @router.get("", summary="发补回复记录列表")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: SupplementaryReplyService = Depends(get_service),
@@ -95,6 +97,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     reply_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     reply_model = await service.repo.get_by_id(reply_id)
@@ -112,6 +115,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     reply_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     reply_model = await service.repo.get_by_id(reply_id)
@@ -133,6 +137,7 @@ async def get(  # noqa: F811
 async def delete(
     current_user: CurrentUser,
     reply_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:delete")),
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     await service.delete_reply(reply_id)

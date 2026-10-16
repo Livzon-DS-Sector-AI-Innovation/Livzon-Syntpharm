@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import {Drawer, Form, Input, Select, Button, Space, App} from 'antd'
 import { createRouteAction, updateRouteAction } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import {RouteCreate, RouteUpdate, RouteDevelopment} from '@/types/research'
 import dayjs from 'dayjs'
 
@@ -79,9 +81,11 @@ export function RouteDrawer({ open, route, onClose, onRefresh }: RouteDrawerProp
       extra={
         <Space>
           <Button onClick={onClose}>取消</Button>
-          <Button type="primary" onClick={handleSubmit} loading={submitting}>
-            保存
-          </Button>
+          <PermissionGate code={isEditing ? PERM.researchRouteUpdate : PERM.researchRouteCreate}>
+            <Button type="primary" onClick={handleSubmit} loading={submitting}>
+              保存
+            </Button>
+          </PermissionGate>
         </Space>
       }
     >

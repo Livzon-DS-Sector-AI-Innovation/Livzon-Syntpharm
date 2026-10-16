@@ -13,6 +13,8 @@ import { createDeliverable, updateDeliverable, deleteDeliverable, uploadDelivera
 import { VersionHistoryDrawer } from './VersionHistoryDrawer'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
 import { generateReport } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props {
 
@@ -374,14 +376,18 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
                     const hasMultiple = allVersions.length > 1
                     return (
                       <>
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<EditOutlined />}
-                          onClick={() => row.record ? handleEdit(row.record) : handleCreate(stage as RdProjectStage, row.type, row.label)}
+                        <PermissionGate
+                          code={row.record ? PERM.researchStageDeliverableUpdate : PERM.researchStageDeliverableCreate}
                         >
-                          {row.record ? '编辑' : '创建'}
-                        </Button>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => row.record ? handleEdit(row.record) : handleCreate(stage as RdProjectStage, row.type, row.label)}
+                          >
+                            {row.record ? '编辑' : '创建'}
+                          </Button>
+                        </PermissionGate>
                         {hasMultiple && (
                           <Button
                             type="link"
@@ -414,23 +420,27 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
                         >
                           导出
                         </Button>
-                      <Upload
-                        showUploadList={false}
-                        beforeUpload={(file) => { if (row.record) handleUpload(file, row.record.id); return false }}
-                        disabled={!row.record || uploadingId === row.record.id}
-                      >
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<UploadOutlined />}
-                          loading={!!row.record && uploadingId === row.record.id}
+                      <PermissionGate code={PERM.researchStageDeliverableCreate}>
+                        <Upload
+                          showUploadList={false}
+                          beforeUpload={(file) => { if (row.record) handleUpload(file, row.record.id); return false }}
+                          disabled={!row.record || uploadingId === row.record.id}
                         >
-                          上传
-                        </Button>
-                      </Upload>
-                      <Popconfirm title="确认删除？" onConfirm={() => row.record && handleDelete(row.record.id)} okText="删除" cancelText="取消">
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                      </Popconfirm>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<UploadOutlined />}
+                            loading={!!row.record && uploadingId === row.record.id}
+                          >
+                            上传
+                          </Button>
+                        </Upload>
+                      </PermissionGate>
+                      <PermissionGate code={PERM.researchStageDeliverableDelete}>
+                        <Popconfirm title="确认删除？" onConfirm={() => row.record && handleDelete(row.record.id)} okText="删除" cancelText="取消">
+                          <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                      </PermissionGate>
                     </>
                   )}
                 </Space>
@@ -519,10 +529,14 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
         footer={[
           <Button key="cancel" onClick={() => setAiGenerateModalOpen(false)}>取消</Button>,
           <Button key="export" disabled={!aiResult} onClick={handleExportAiResult} icon={<DownloadOutlined />}>导出文件</Button>,
-          <Button key="save" disabled={!aiResult} loading={savingAi} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>,
-          <Button key="generate" type="primary" loading={aiGenerating} onClick={doAiGenerate} icon={<RobotOutlined />}>
-            {aiResult ? '重新生成' : '生成报告'}
-          </Button>,
+          <PermissionGate key="save" code={PERM.researchStageDeliverableCreate}>
+            <Button disabled={!aiResult} loading={savingAi} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>
+          </PermissionGate>,
+          <PermissionGate key="generate" code={PERM.researchReportCreate}>
+            <Button type="primary" loading={aiGenerating} onClick={doAiGenerate} icon={<RobotOutlined />}>
+              {aiResult ? '重新生成' : '生成报告'}
+            </Button>
+          </PermissionGate>,
         ]}
       >
         <div style={{ marginBottom: 16 }}>

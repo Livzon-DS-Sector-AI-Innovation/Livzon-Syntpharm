@@ -45,9 +45,11 @@ async def member_sync_loop() -> None:
 
         if not stop_member_sync_flag.is_set() and target:
             try:
+                from app.platform.identity.service import record_member_sync_result
                 from app.platform.integrations.feishu.sync import sync_members
 
-                await sync_members(target)
+                result = await sync_members(target)
+                await record_member_sync_result(result)
             except Exception:
                 logger.exception("Member sync failed")
 

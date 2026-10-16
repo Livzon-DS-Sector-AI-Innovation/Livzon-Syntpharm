@@ -1,5 +1,41 @@
 import { redirect } from 'next/navigation'
+import { getCurrentUser } from '@/actions/auth'
+import { NoAccessResult } from '@/components/settings'
+import { resolveLandingPath } from '@/lib/permissions/server'
 
-export default function RootPage() {
-  redirect('/production')
+export const dynamic = 'force-dynamic'
+
+/**
+ * 根路径 = 登录后的落地页。
+ *
+ * 跳转到「第一个可见模块」的首页；未接入权限控制的模块恒可见，
+ * 因此只要还有未接入的模块（当前除系统管理外的 12 个），落地页行为与以前一致。
+ */
+export default async function RootPage() {
+  const user = await getCurrentUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  // 强制改密优先于落地页：否则「无任何模块权限」的账号会卡在「暂无可访问的模块」，
+  // 拿不到去改密页的入口（(dashboard)/layout.tsx 的拦截在这条路径上不生效）
+  if (user.must_change_password) {
+    redirect('/change-password')
+  }
+
+  const landingPath = await resolveLandingPath()
+
+  if (landingPath) {
+    redirect(landingPath)
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-surface)] p-6">
+      <NoAccessResult
+        title="暂无可访问的模块"
+        subTitle="当前账号还没有分配任何模块权限，请联系管理员为你的账号授权。"
+      />
+    </div>
+  )
 }

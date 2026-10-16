@@ -11,6 +11,8 @@ import {
 import { fetchRdProjects } from '@/lib/api/client/research/rd-project'
 import { createRdProject, deleteRdProject } from '@/actions/research/rd-project'
 import { createKnowledgeBase } from '@/actions/research/knowledge-base'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props {
   initialProjects: RdProject[]
@@ -207,7 +209,9 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
       render: (_: unknown, record: RdProject) => (
         <Space>
           <a onClick={() => router.push(`/research/projects/${record.id}`)}>详情</a>
-          <a onClick={() => handleDelete(record)} style={{ color: '#e03131' }}>删除</a>
+          <PermissionGate code={PERM.researchProjectDelete}>
+            <a onClick={() => handleDelete(record)} style={{ color: '#e03131' }}>删除</a>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -218,8 +222,12 @@ export function ProjectListPage({ initialProjects, initialTotal }: Props) {
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: 22, fontWeight: 600, margin: 0 }}>研发项目</h1>
         <Space>
-          <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>新建项目</Button>
+          <PermissionGate code={PERM.researchProjectExport}>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchProjectCreate}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>新建项目</Button>
+          </PermissionGate>
         </Space>
       </div>
 

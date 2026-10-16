@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Card,
   Table,
   Button,
   Modal,
@@ -22,8 +21,12 @@ import {
   updateModuleSetting,
 } from '@/actions/module-settings'
 import type { ModuleSetting } from '@/types/module-settings'
+import { usePermission } from '@/hooks/usePermission'
+import { PERM } from '@/lib/permissions/codes'
+import { SettingsListCard } from './SettingsListCard'
+import { SettingsPageHeader } from './SettingsPageHeader'
 
-const { Title, Text } = Typography
+const { Text } = Typography
 const { TextArea } = Input
 
 interface ModuleSettingsClientProps {
@@ -38,6 +41,13 @@ export default function ModuleSettingsClient({
   moduleDescription,
 }: ModuleSettingsClientProps) {
   const { message } = App.useApp()
+
+  // 权限：无「平台配置管理」权限时隐藏编辑入口
+  // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
+  // 注意：hook 必须写在任何 early return 之前
+  const { can, loading: permissionLoading } = usePermission()
+  const canManage = !permissionLoading && can(PERM.configManage)
+
   const queryClient = useQueryClient()
   const [editingSetting, setEditingSetting] = useState<ModuleSetting | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -76,7 +86,7 @@ export default function ModuleSettingsClient({
       queryClient.invalidateQueries({ queryKey: ['module-settings', moduleCode] })
     } catch (error) {
       console.error('Failed to save setting:', error)
-      message.error('保存失败')
+      message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
       setSaving(false)
     }
@@ -93,9 +103,15 @@ export default function ModuleSettingsClient({
       case 'int':
         return <Text code>{setting.value}</Text>
       case 'json':
-        return <Text code style={{ fontSize: 12 }}>{setting.value}</Text>
+        return <Text code className="text-[12px]">{setting.value}</Text>
       default:
-        return <Text>{setting.value || <Text type="secondary">未设置</Text>}</Text>
+        return (
+          <Text>
+            {setting.value || (
+              <span className="text-[12px] text-[var(--color-steel)]">未设置</span>
+            )}
+          </Text>
+        )
     }
   }
 
@@ -136,11 +152,9 @@ export default function ModuleSettingsClient({
       width: 300,
       render: (key: string, setting: ModuleSetting) => (
         <Space orientation="vertical" size={0}>
-          <Text strong>{key}</Text>
+          <span className="font-medium text-[var(--color-charcoal)]">{key}</span>
           {setting.description && (
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {setting.description}
-            </Text>
+            <span className="text-[12px] text-[var(--color-steel)]">{setting.description}</span>
           )}
         </Space>
       ),
@@ -162,40 +176,41 @@ export default function ModuleSettingsClient({
       key: 'value',
       render: (_: unknown, setting: ModuleSetting) => renderValue(setting),
     },
-    {
-      title: '操作',
-      key: 'action',
-      width: 100,
-      render: (_: unknown, setting: ModuleSetting) => (
-        <Button
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => handleEdit(setting)}
-        >
-          编辑
-        </Button>
-      ),
-    },
+    // 操作列：无「平台配置管理」权限时整列不出现
+    ...(canManage
+      ? [
+          {
+            title: '操作',
+            key: 'action',
+            width: 100,
+            render: (_: unknown, setting: ModuleSetting) => (
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => handleEdit(setting)}
+              >
+                编辑
+              </Button>
+            ),
+          },
+        ]
+      : []),
   ]
 
   return (
-    <>
-      <Card>
-        <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <Title level={4}>{moduleName}配置</Title>
-            <Text type="secondary">{moduleDescription}</Text>
-          </div>
+    <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
+      <SettingsPageHeader title={moduleName} description={moduleDescription} />
 
-          <Table
-            dataSource={settings}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            pagination={false}
-          />
-        </Space>
-      </Card>
+      <SettingsListCard>
+        <Table
+          dataSource={settings}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={false}
+          scroll={{ x: 'max-content' }}
+        />
+      </SettingsListCard>
 
       <Modal
         title={`编辑配置: ${editingSetting?.key}`}
@@ -205,11 +220,12 @@ export default function ModuleSettingsClient({
         confirmLoading={saving}
         okText="保存"
         cancelText="取消"
+        width="min(520px, calc(100vw - 24px))"
       >
         <Form form={form} layout="vertical">
           {editingSetting && renderEditInput(editingSetting)}
         </Form>
       </Modal>
-    </>
+    </div>
   )
 }

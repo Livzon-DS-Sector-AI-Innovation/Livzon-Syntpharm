@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import success_response
 from app.modules.hr.ai_exam.schemas import ExamExportRequest
 from app.modules.hr.ai_exam.service import export_exam, generate_exam
@@ -17,6 +17,7 @@ router = APIRouter(tags=["AI 出题"])
 async def post(
     current_user: CurrentUser,
     file: UploadFile,
+    ctx: PermissionContext = Depends(require_permission("hr:ai-exam:generate")),
     choice_count: int = Form(5),
     true_false_count: int = Form(5),
     multi_choice_count: int = Form(0),
@@ -47,7 +48,7 @@ async def post(
 
 
 @router.post("/export", summary="导出考试试卷")
-async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser) -> Any:
+async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser, ctx: PermissionContext = Depends(require_permission("hr:ai-exam:export"))) -> Any:
     """将试卷导出为 Word 文档。"""
     try:
         buffer = export_exam(data.model_dump())
