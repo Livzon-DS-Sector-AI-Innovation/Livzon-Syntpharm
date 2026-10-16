@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from fastapi import APIRouter, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.deps import CurrentUser, PermissionContext, require_permission

@@ -6,7 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.deviation_schemas import (
     AIAnalysisApiResponse,
     BatchLockRequest,
