@@ -22,6 +22,8 @@ import {
 import { importSupplierTable } from '@/actions/procurement'
 import { fetchSuppliers } from '@/lib/api/client/procurement'
 import type { SupplierListResponse, SupplierResponse } from '@/types/procurement'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Dragger } = Upload
 const { Search } = Input
@@ -258,6 +260,7 @@ export function SupplierManagementClient({
           </div>
         </div>
         <div className="p-4">
+          <PermissionGate code={PERM.procurementSupplierCreate}>
           <Dragger
             accept=".xlsx,.xlsm,.csv,.tsv"
             beforeUpload={handleImport}
@@ -273,6 +276,7 @@ export function SupplierManagementClient({
               系统将按第一行表头读取字段，并保留原始列顺序。
             </p>
           </Dragger>
+        </PermissionGate>
         </div>
       </section>
 

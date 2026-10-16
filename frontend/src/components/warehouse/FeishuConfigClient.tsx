@@ -38,6 +38,8 @@ import type {
   WarehouseFeishuConnectivityResult,
   WarehouseFeishuTable,
 } from '@/types/warehouse'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Text } = Typography
 const { TextArea } = Input
@@ -358,15 +360,17 @@ export function FeishuConfigClient({
       key: 'actions',
       width: 120,
       render: (_, table) => (
-        <Button
-          size="small"
-          icon={<SyncOutlined />}
-          loading={tableBusyId === table.id}
-          disabled={!table.is_enabled}
-          onClick={() => handleSync(table)}
-        >
-          同步
-        </Button>
+        <PermissionGate code={PERM.warehouseFeishuTableSubmit}>
+          <Button
+            size="small"
+            icon={<SyncOutlined />}
+            loading={tableBusyId === table.id}
+            disabled={!table.is_enabled}
+            onClick={() => handleSync(table)}
+          >
+            同步
+          </Button>
+        </PermissionGate>
       ),
     },
   ]
@@ -385,23 +389,31 @@ export function FeishuConfigClient({
           </div>
         </div>
         <Space wrap>
-          <Button icon={<SyncOutlined />} loading={testing} onClick={handleTest}>
-            测试连通性
-          </Button>
-          <Button loading={refreshing} onClick={handleRefreshTables}>
-            刷新表目录
-          </Button>
-          <Button loading={restarting} onClick={handleRestartWs}>
-            重启长连接
-          </Button>
-          <Button
-            type="primary"
-            icon={<SaveOutlined />}
-            loading={saving}
-            onClick={handleSave}
-          >
-            保存配置
-          </Button>
+          <PermissionGate code={PERM.warehouseFeishuConfigCreate}>
+            <Button icon={<SyncOutlined />} loading={testing} onClick={handleTest}>
+              测试连通性
+            </Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.warehouseFeishuTableCreate}>
+            <Button loading={refreshing} onClick={handleRefreshTables}>
+              刷新表目录
+            </Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.warehouseFeishuWsSubmit}>
+            <Button loading={restarting} onClick={handleRestartWs}>
+              重启长连接
+            </Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.warehouseFeishuConfigUpdate}>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={saving}
+              onClick={handleSave}
+            >
+              保存配置
+            </Button>
+          </PermissionGate>
         </Space>
       </div>
 

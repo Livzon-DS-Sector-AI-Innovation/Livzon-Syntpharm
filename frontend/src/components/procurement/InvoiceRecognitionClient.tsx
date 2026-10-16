@@ -29,6 +29,8 @@ import {
 import { fetchInvoiceRecognitionRecords } from '@/lib/api/client/procurement'
 import { isPresentDecimal, sumMoney, sumQuantity } from '@/components/procurement/utils/decimal'
 import type { InvoiceLineItem, InvoiceRecognitionRecordResponse } from '@/types/procurement'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Dragger } = Upload
 const { Search } = Input
@@ -514,25 +516,27 @@ export function InvoiceRecognitionClient({
         const recordDeleting = Boolean(record.recordId && deletingRecordIds.includes(record.recordId))
         const disabled = !record.canDelete || deleting || isFetching
         return (
-          <Popconfirm
-            title="确认删除该识别历史？"
-            okText="删除"
-            cancelText="取消"
-            okButtonProps={{ danger: true, loading: recordDeleting }}
-            disabled={disabled}
-            onConfirm={() => record.recordId && handleDeleteRecords([record.recordId])}
-          >
-            <Button
-              danger
-              type="link"
-              size="small"
-              icon={<DeleteOutlined />}
+          <PermissionGate code={PERM.procurementInvoiceRecordDelete}>
+            <Popconfirm
+              title="确认删除该识别历史？"
+              okText="删除"
+              cancelText="取消"
+              okButtonProps={{ danger: true, loading: recordDeleting }}
               disabled={disabled}
-              loading={recordDeleting}
+              onConfirm={() => record.recordId && handleDeleteRecords([record.recordId])}
             >
-              删除
-            </Button>
-          </Popconfirm>
+              <Button
+                danger
+                type="link"
+                size="small"
+                icon={<DeleteOutlined />}
+                disabled={disabled}
+                loading={recordDeleting}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          </PermissionGate>
         )
       },
     },
@@ -654,6 +658,7 @@ export function InvoiceRecognitionClient({
           />
         </div>
 
+        <PermissionGate code={PERM.procurementInvoiceCreate}>
         <Dragger {...uploadProps} disabled={loading} className="invoice-upload">
           <p className="ant-upload-drag-icon">
             <InboxOutlined />
@@ -663,6 +668,7 @@ export function InvoiceRecognitionClient({
             支持批量上传电子发票 PDF，单个文件不超过 {MAX_INVOICE_UPLOAD_SIZE_MB}MB。
           </p>
         </Dragger>
+        </PermissionGate>
 
         {uploadRecords.length > 0 && (
           <div className="mt-4 flex items-center justify-between rounded-[8px] border border-[var(--color-hairline-soft)] bg-[var(--color-surface-soft)] px-4 py-3">
@@ -701,17 +707,19 @@ export function InvoiceRecognitionClient({
               }}
             />
             {selectedRecordIds.length > 0 && (
-              <Popconfirm
-                title={`确认删除选中的 ${selectedRecordIds.length} 条识别历史？`}
-                okText="删除"
-                cancelText="取消"
-                okButtonProps={{ danger: true, loading: deleting }}
-                onConfirm={() => handleDeleteRecords(selectedRecordIds)}
-              >
-                <Button danger icon={<DeleteOutlined />} loading={deleting}>
-                  批量删除 ({selectedRecordIds.length})
-                </Button>
-              </Popconfirm>
+              <PermissionGate code={PERM.procurementInvoiceRecordDelete}>
+                <Popconfirm
+                  title={`确认删除选中的 ${selectedRecordIds.length} 条识别历史？`}
+                  okText="删除"
+                  cancelText="取消"
+                  okButtonProps={{ danger: true, loading: deleting }}
+                  onConfirm={() => handleDeleteRecords(selectedRecordIds)}
+                >
+                  <Button danger icon={<DeleteOutlined />} loading={deleting}>
+                    批量删除 ({selectedRecordIds.length})
+                  </Button>
+                </Popconfirm>
+              </PermissionGate>
             )}
             <Button icon={<ReloadOutlined />} loading={isFetching} onClick={() => refetch()}>
               刷新历史

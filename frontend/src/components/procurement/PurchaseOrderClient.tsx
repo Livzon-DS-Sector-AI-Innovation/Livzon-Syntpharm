@@ -16,6 +16,8 @@ import type {
   PurchaseOrderLineResponse,
   PurchaseRequestCategory,
 } from '@/types/procurement'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import {
   formatMoney,
   purchaseCategories,
@@ -235,6 +237,7 @@ export function PurchaseOrderClient({
           >
             刷新
           </Button>
+          <PermissionGate code={PERM.procurementPurchaseOrderExport}>
           <Button
             type="primary"
             icon={<DownloadOutlined />}
@@ -243,6 +246,7 @@ export function PurchaseOrderClient({
           >
             导出 Excel
           </Button>
+        </PermissionGate>
         </Space>
       </div>
 
