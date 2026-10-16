@@ -260,7 +260,7 @@ export async function deleteMonthlyRecord(id: string): Promise<void> {
 // ─── Feishu Import ───
 
 export async function importFromFeishu(data: Record<string, unknown>): Promise<FeishuImportResult> {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/import/feishu`, {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly/import/feishu`, {
     method: 'POST',
     body: JSON.stringify(data),
   })

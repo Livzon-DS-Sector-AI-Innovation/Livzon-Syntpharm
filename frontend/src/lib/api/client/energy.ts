@@ -41,7 +41,7 @@ export async function fetchEnergyOverviewClient(params: {
 }
 
 export async function fetchCollectLogDetailClient(logId: string): Promise<CollectLogDetail> {
-  return apiGet<CollectLogDetail>(`${API_BASE}/energy/collect-logs/${logId}`)
+  return apiGet<CollectLogDetail>(`${API_BASE}/energy/collect/logs/${logId}/detail`)
 }
 
 export async function fetchPlatformsClient(): Promise<EnergyPlatform[]> {
