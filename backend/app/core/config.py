@@ -189,6 +189,12 @@ class Settings(BaseSettings):
     ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
     ENERGY_BITABLE_SYNC_HOUR: int = 17
     DEBUG: bool = False
+    # 权限：是否强制执行「接口精确绑定兜底」（未登记绑定的受保护接口一律 403）。
+    # 默认关闭，待存量业务接口全部接入绑定登记后再开启。
+    PERMISSION_ENFORCE_ENABLED: bool = False
+    # 权限灰度：逗号分隔的模块码（业务模块码 + 平台域 identity/permission/system/audit）。
+    # 空字符串 = 对所有受保护前缀强制（最终态）；非空 = 仅所列模块强制（灰度节奏：接入一个开一个）。
+    PERMISSION_ENFORCE_MODULES: str = ""
 
     @field_validator("DEBUG", mode="before")
     @classmethod
@@ -254,6 +260,9 @@ class Settings(BaseSettings):
     BOOTSTRAP_USER_PASSWORD: str = ""
     BOOTSTRAP_USER_NAME: str = "普通用户"
     BOOTSTRAP_USER_EMAIL: str = ""
+    # 默认 false：启动时只补建缺失的引导账号，不覆盖已存在账号的密码
+    # （用户自行修改过的密码必须活过容器重启）。需要回灌初始密码时显式打开。
+    BOOTSTRAP_ADMIN_FORCE_RESET: bool = False
     LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED: bool = False
 
     # AI — HR 离职分析

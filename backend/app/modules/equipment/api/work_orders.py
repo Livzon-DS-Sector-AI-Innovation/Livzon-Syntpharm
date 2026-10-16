@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -75,6 +75,7 @@ router = APIRouter()
 async def create_work_order(
     data: WorkOrderCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     reporter_id = _require_user(current_user)
@@ -97,6 +98,7 @@ async def update_work_order(
 @router.get("/", summary="工单列表")
 async def list_work_orders(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     status: str | None = Query(None, description="工单状态"),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     priority: str | None = Query(None, description="优先级"),
@@ -126,6 +128,7 @@ async def list_work_orders(
 @router.get("/statistics", summary="工单统计")
 async def get_work_order_statistics(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -149,6 +152,7 @@ async def assign_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderAssign,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -172,6 +176,7 @@ async def complete_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderComplete,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -195,6 +200,7 @@ async def verify_work_order(
 async def close_work_order(
     work_order_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -219,6 +225,7 @@ async def consume_materials(
 async def get_material_consumptions(
     work_order_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
@@ -35,6 +35,7 @@ async def create_calibration_plan(
 @router.get("/plans", summary="校准计划列表")
 async def list_calibration_plans(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:read")),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     status: str | None = Query(None, description="状态"),
     page: int = Query(1, ge=1, description="页码"),
@@ -70,6 +71,7 @@ async def get_overdue_plans(
 async def get_calibration_plan(
     plan_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.get_calibration_plan_by_id(db, plan_id)
@@ -91,6 +93,7 @@ async def update_calibration_plan(
 async def delete_calibration_plan(
     plan_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await service.delete_calibration_plan(db, plan_id)
@@ -111,6 +114,7 @@ async def create_calibration_record(
 @router.get("/records", summary="校准记录列表")
 async def list_calibration_records(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:read")),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     plan_id: uuid.UUID | None = Query(None, description="计划ID"),
     page: int = Query(1, ge=1, description="页码"),
@@ -136,6 +140,7 @@ async def list_calibration_records(
 async def get_calibration_record(
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     record = await service.get_calibration_record_by_id(db, record_id)

@@ -11,7 +11,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException
 from app.core.response import ApiResponse, build_response
 from app.modules.equipment import repository as repo
@@ -227,6 +227,7 @@ async def download_template() -> ApiResponse:
 async def preview_import(
     data: list[EquipmentImportRow],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     import logging
@@ -305,6 +306,7 @@ async def preview_import(
 async def batch_import(
     data: list[EquipmentImportRow],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     created = 0

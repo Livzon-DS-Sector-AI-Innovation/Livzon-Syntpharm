@@ -1,0 +1,468 @@
+# mypy: ignore-errors
+# ruff: noqa: E402, I001
+import asyncio
+import logging
+import os
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import IntegrityError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+import app.platform.audit.models  # noqa: F401
+
+# Ensure platform models are registered in SQLAlchemy metadata
+import app.platform.identity.models  # noqa: F401
+import app.platform.permission.models  # noqa: F401
+from app.api.router import api_router
+from app.core.config import get_settings
+from app.core.exceptions import AppException
+from app.core.response import error_response
+from app.platform.audit import AuditMiddleware
+from app.platform.permission.middleware import PermissionBindingMiddleware
+from app.platform.system.api_switch_middleware import ApiSwitchMiddleware
+from app.shared.ocr_service import init_ocr
+from app.shared.file_conversion import init_file_conversion
+
+settings = get_settings()
+
+logging.basicConfig(
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+
+# 运行日志内存环形缓冲（供「系统运维 → 日志管理」查看，不落盘）
+from app.shared.log_buffer import install_log_buffer  # noqa: E402
+
+install_log_buffer()
+
+# 抑制第三方库的 DEBUG 日志噪音
+logging.getLogger("sqlalchemy").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("websockets").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
+
+# ── MCP 服务初始化（模块级别，确保 lifespan 可合并）──
+from app.modules.equipment import mcp_tools  # noqa: E402, F401 — 触发 @mcp.tool() 注册
+from app.platform.mcp.middleware import build_mcp_middleware  # noqa: E402
+from app.platform.mcp.server import get_mcp_app  # noqa: E402
+
+mcp_middleware = build_mcp_middleware()
+mcp_asgi = get_mcp_app(path="/", middleware=mcp_middleware)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Application lifespan — auto-start all registered background workers."""
+    logger.info("Starting %s (%s)", settings.APP_NAME, settings.APP_ENV)
+
+    # Initialize OCR service in background (model loading is heavy)
+    # 可通过 OCR_ENABLED=false 环境变量禁用（PaddleOCR 在某些环境会段错误）
+    if os.environ.get("OCR_ENABLED", "true").lower() not in ("false", "0", "no"):
+        asyncio.create_task(asyncio.to_thread(init_ocr))
+    else:
+        logger.info("OCR service disabled by OCR_ENABLED environment variable")
+
+    # Initialize file conversion service (libreoffice CLI wrapper, no-op)
+    init_file_conversion()
+
+    # Import all modules to trigger their __init__.py and register workers
+    import app.modules.energy  # noqa: F401
+    import app.modules.equipment  # noqa: F401
+    import app.modules.registration.regulatory_tracker  # noqa: F401
+    import app.modules.safety  # noqa: F401
+    import app.platform.identity  # noqa: F401
+    import app.platform.integrations.feishu  # noqa: F401
+
+    # Auto-seed required configuration data
+    from app.core.seed import run_seeds
+
+    await run_seeds()
+
+    # 同步权限注册表（权限码 / 内置角色 / 接口绑定）
+    # 权限表尚未迁移时降级为告警，不阻塞启动
+    from app.platform.permission.service.management import sync_registry
+
+    try:
+        await sync_registry()
+    except Exception:
+        logger.exception("Permission registry sync failed (non-fatal, 权限表可能未迁移)")
+
+    # 加载 API 启停开关（禁用清单，内存判定）
+    from app.platform.system.api_switch_service import load_switches
+
+    try:
+        await load_switches()
+    except Exception:
+        logger.exception("API 开关加载失败 (non-fatal)")
+
+    # Start all registered background workers
+    from app.shared.lifecycle import get_all_workers
+
+    workers = get_all_workers()
+    tasks = []
+
+    for worker in workers:
+        logger.info("Starting background worker: %s", worker.name)
+        task = asyncio.create_task(worker.start())
+        tasks.append((worker, task))
+
+    # Start unified scheduler engine (for DB-driven generators)
+    from app.platform.identity.service import bootstrap_local_users
+
+    await bootstrap_local_users()
+
+    # 给初始管理员挂 super_admin 角色
+    from app.platform.permission.service.management import bootstrap_initial_superadmin
+
+    try:
+        await bootstrap_initial_superadmin()
+    except Exception:
+        logger.exception("Bootstrap superadmin failed (non-fatal)")
+
+    from app.modules.warehouse.feishu_events import register_feishu_event_handlers
+
+    register_feishu_event_handlers()
+
+    from app.modules.energy.scheduler import (
+        energy_collection_loop,
+    )
+    from app.modules.equipment.scheduler import (
+        maintenance_plan_loop,
+        timeout_scan_loop,
+    )
+    from app.platform.identity.scheduler import (
+        member_sync_loop,
+    )
+
+    # regulatory_tracker 的调度引擎由其 background worker（regulatory_tracker.scheduler）
+    # 负责初始化并运行；这里不再重复启动，避免定时任务被执行两遍。
+    energy_task = asyncio.ensure_future(energy_collection_loop())
+    maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
+    timeout_task = asyncio.ensure_future(timeout_scan_loop())
+    member_task = asyncio.ensure_future(member_sync_loop())
+
+    # Start reagent reminder scheduler
+    try:
+        from app.modules.quality.qms.reagent_reminder_scheduler import register
+
+        register()
+        logger.info("Reagent reminder scheduler registered")
+    except Exception as e:
+        logger.warning(f"Failed to register reagent reminder scheduler: {e}")
+
+    # Start deviation reporter reminder scheduler
+    try:
+        from app.modules.quality.qms.deviation_reporter_reminder_scheduler import (
+            register as register_deviation_reminder,
+        )
+
+        register_deviation_reminder()
+        logger.info("Deviation reporter reminder scheduler registered")
+    except Exception as e:
+        logger.warning(f"Failed to start deviation reporter reminder scheduler: {e}")
+
+    # ── 平台级飞书 WebSocket 长连接 ──
+    if settings.feishu.platform.ws_enabled:
+        from app.platform.integrations.feishu.event_handler import set_main_loop
+        from app.platform.integrations.feishu.ws_client import start_ws_client
+
+        set_main_loop(asyncio.get_running_loop())
+        start_ws_client()
+
+    # ── 仓储模块飞书 WebSocket 长连接（模块独立应用凭据） ──
+    from app.modules.warehouse.ws_client import (
+        set_main_loop as set_warehouse_ws_main_loop,
+    )
+    from app.modules.warehouse.ws_client import (
+        start_ws_from_db as start_warehouse_ws,
+    )
+
+    set_warehouse_ws_main_loop(asyncio.get_running_loop())
+    await start_warehouse_ws()
+
+    # ── 设备模块飞书 WebSocket 长连接（独立交互机器人，原生 WebSocket） ──
+    equipment_ws_task: asyncio.Task | None = None
+    if settings.feishu.equipment.credentials.app_id and settings.feishu.equipment.credentials.app_secret:
+        from app.modules.equipment.feishu.ws_client import start_equipment_ws
+
+        equipment_ws_task = asyncio.create_task(start_equipment_ws())
+
+    # ── 安全模块专属飞书事件订阅（WebSocket 长连接，独立应用凭据）──
+    from app.modules.safety.feishu.event_client import start_ws
+
+    asyncio.create_task(start_ws())
+
+    # ── Livzon 助手飞书交互卡片回调（开发环境可用 WebSocket 长连接）──
+    if settings.LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED:
+        from app.platform.identity.feishu_card_ws import start_livzon_card_ws
+
+        asyncio.create_task(start_livzon_card_ws())
+
+    # ── 统一调度引擎 ──
+    # 定时任务由各模块的 background worker 注册并运行：regulatory_tracker.scheduler
+    # 已把 daily_sync_task / daily_ai_analysis_task / InspectionScheduleGenerator 登记到
+    # 全局注册表并启动引擎。这里**不再重复创建引擎**，否则这些任务会被执行两遍。
+    from app.platform.scheduler.registry import get_global_registry
+
+    _global_registry = get_global_registry()
+
+    logger.info(
+        "Background tasks started (%d workers, %d generators)",
+        len(workers),
+        len(_global_registry.generators) if _global_registry else 0,
+    )
+
+    yield
+
+    # Shutdown: stop all workers in reverse order
+    logger.info("Shutting down %s", settings.APP_NAME)
+
+    # 调度引擎由 regulatory_tracker.scheduler 这个 background worker 负责停止
+    # （见下方 worker 循环），这里不再单独停引擎。
+
+    # Stop all background workers
+    for worker, task in reversed(tasks):
+        logger.info("Stopping background worker: %s", worker.name)
+        if worker.stop:
+            try:
+                result = worker.stop()
+                # Check if it's an awaitable (async function)
+                if asyncio.iscoroutine(result):
+                    await asyncio.wait_for(result, timeout=5)
+            except (TimeoutError, asyncio.CancelledError):
+                logger.warning("Worker %s stop timed out", worker.name)
+        task.cancel()
+
+    logger.info("Shutdown complete")
+
+    # 停止设备模块 WebSocket
+    if equipment_ws_task:
+        from app.modules.equipment.feishu.ws_client import stop_equipment_ws
+
+        await stop_equipment_ws()
+        equipment_ws_task.cancel()
+
+    from app.modules.warehouse.ws_client import stop_ws as stop_warehouse_ws
+
+    await stop_warehouse_ws()
+
+    energy_task.cancel()
+    maintenance_plan_task.cancel()
+    timeout_task.cancel()
+    member_task.cancel()
+
+    # 停止平台级飞书 WebSocket
+    from app.platform.integrations.feishu.ws_client import stop_ws_client
+
+    stop_ws_client()
+
+    logger.info("Shutting down %s", settings.APP_NAME)
+
+
+from fastmcp.utilities.lifespan import combine_lifespans  # noqa: E402
+
+
+class UTF8JSONResponse(JSONResponse):
+    """统一声明 UTF-8 的 JSON 响应。
+
+    FastAPI 默认响应头是 `application/json`（不带 charset）；响应体含中文时
+    （例如错误提示「数据重复，该记录已存在」），部分客户端 / 代理会按
+    ISO-8859-1 解析 → 显示成「æ•°æ®é‡å¤」这类乱码。显式带 charset 可避免。
+    """
+
+    media_type = "application/json; charset=utf-8"
+
+
+app: FastAPI = FastAPI(
+    title=settings.APP_NAME,
+    description="原料药事业部工厂基座系统",
+    version="0.1.0",
+    lifespan=combine_lifespans(lifespan, mcp_asgi.lifespan),
+    docs_url="/docs" if not settings.is_production else None,
+    redoc_url="/redoc" if not settings.is_production else None,
+    default_response_class=UTF8JSONResponse,
+)
+
+__all__ = ["app"]
+
+# CORS configuration: explicit origins, no silent fallbacks in production
+if settings.is_production:
+    if not settings.FRONTEND_URL:
+        raise RuntimeError("FRONTEND_URL must be set in production")
+    allow_origins = [settings.FRONTEND_URL]
+else:
+    # Development: allow configured frontend URL or localhost:3000
+    allow_origins = [settings.FRONTEND_URL] if settings.FRONTEND_URL else ["http://localhost:3000"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.add_middleware(AuditMiddleware)
+app.add_middleware(PermissionBindingMiddleware)
+# 最后 add = 最外层 = 最先执行：被禁用的接口直接 403，不再走后续判定
+app.add_middleware(ApiSwitchMiddleware)
+
+app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+# 挂载静态文件目录（图片上传等）
+uploads_dir = os.path.abspath(settings.UPLOAD_DIR)
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
+
+# ── 挂载 MCP 服务（AI Agent 协议入口）──
+app.mount("/mcp", mcp_asgi, name="mcp")
+logger.info("MCP server mounted at /mcp")
+
+
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "HTTP %d on %s %s: %s",
+            exc.status_code,
+            request.method,
+            request.url.path,
+            exc.message,
+        )
+    return error_response(
+        message=exc.message,
+        detail=exc.detail_msg,
+        status_code=exc.status_code,
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    if exc.status_code >= 500:
+        logger.exception(
+            "HTTP %d on %s %s: %s",
+            exc.status_code,
+            request.method,
+            request.url.path,
+            exc.detail,
+        )
+    return error_response(
+        message=str(exc.detail),
+        status_code=exc.status_code,
+    )
+
+
+# Add middleware to log all POST requests with body
+@app.middleware("http")
+async def log_request_body(request: Request, call_next):
+    if request.method == "POST" and "/import/" in str(request.url.path):
+        import logging
+
+        logger = logging.getLogger(__name__)
+        body = await request.body()
+        logger.error(f"[REQUEST LOGGER] Path: {request.url.path}")
+        logger.error(f"[REQUEST LOGGER] Body length: {len(body)}")
+        if len(body) < 5000:
+            logger.error(f"[REQUEST LOGGER] Body: {body.decode('utf-8', errors='ignore')}")
+        else:
+            logger.error(f"[REQUEST LOGGER] Body (first 5000 chars): {body[:5000].decode('utf-8', errors='ignore')}")
+
+        # Create a new request with the same body
+        async def receive():
+            return {"type": "http.request", "body": body, "more_body": False}
+
+        request = Request(request.scope, receive)
+
+    response = await call_next(request)
+    return response
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    import logging
+
+    logger = logging.getLogger(__name__)
+    errors = exc.errors()
+    logger.error(f"[VALIDATION ERROR] Path: {request.url.path}")
+    logger.error(f"[VALIDATION ERROR] Errors: {errors}")
+    logger.error(f"[VALIDATION ERROR] Body type: {type(exc.body)}")
+    if exc.body:
+        # Try to get more details about the body
+        if isinstance(exc.body, list):
+            logger.error(f"[VALIDATION ERROR] Body is list with {len(exc.body)} items")
+            if exc.body:
+                logger.error(f"[VALIDATION ERROR] First item: {exc.body[0]}")
+                logger.error(f"[VALIDATION ERROR] First item type: {type(exc.body[0])}")
+        body_str = str(exc.body)[:2000]
+        logger.error(f"[VALIDATION ERROR] Body: {body_str}")
+    detail = "; ".join(f"{e.get('loc', [''])[-1]}: {e.get('msg', '')}" for e in errors)
+    return error_response(
+        message="请求参数校验失败",
+        detail=detail,
+        status_code=422,
+    )
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
+    # Extract constraint info for a user-friendly message
+    if "duplicate key" in msg or "unique constraint" in msg:
+        return error_response(
+            message="数据重复，该记录已存在",
+            detail=msg,
+            status_code=409,
+        )
+    return error_response(
+        message="数据完整性错误",
+        detail=msg,
+        status_code=400,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    request_id = getattr(request.state, "request_id", None)
+    logger.exception(
+        "Unhandled exception on %s %s [request_id=%s]: %s",
+        request.method,
+        request.url.path,
+        request_id,
+        exc,
+    )
+    return error_response(
+        message="服务内部错误",
+        detail=f"请联系管理员，错误编号: {request_id}" if request_id else None,
+        status_code=500,
+        request_id=request_id,
+    )
+
+
+@app.get("/health")
+async def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/health/live")
+async def health_live() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@app.get("/health/ready")
+async def health_ready() -> dict[str, str]:
+    from sqlalchemy import text
+
+    from app.core.database import engine
+
+    async with engine.connect() as conn:
+        await conn.execute(text("SELECT 1"))
+
+    return {"status": "ok"}

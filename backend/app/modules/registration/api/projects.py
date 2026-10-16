@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import success_response
 from app.modules.registration.schemas.project import (
     ProjectCreate,
@@ -22,6 +22,7 @@ router = APIRouter()
 @router.get("/", summary="获取注册项目列表")
 async def list_projects(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     projects = await project_service.get_projects(db)
@@ -43,6 +44,7 @@ async def create_project(
 async def get_project(
     current_user: CurrentUser,
     project_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     project = await project_service.get_project(db, project_id)
@@ -64,6 +66,7 @@ async def update_project(
 async def delete_project(
     current_user: CurrentUser,
     project_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:project:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     await project_service.delete_project(db, project_id)

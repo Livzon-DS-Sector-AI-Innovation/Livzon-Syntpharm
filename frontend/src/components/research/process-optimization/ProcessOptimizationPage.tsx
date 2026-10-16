@@ -7,6 +7,8 @@ import {PlayCircleOutlined, DeleteOutlined, PlusOutlined} from '@ant-design/icon
 import { ProcessOptimizationWorkflowPage } from './ProcessOptimizationWorkflowPage'
 import { fetchOptimizations } from '@/lib/api/client/research'
 import { createOptimizationAction, deleteOptimizationAction } from '@/actions/research/process-optimization'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 import {ProcessOptimization, OptimizationStatus, OptimizationModule} from '@/types/research'
 
@@ -209,37 +211,39 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
             >
               {hasSaved ? '继续' : '开始'}
             </Button>
-            <Popconfirm
-              title="确认删除"
-              description="删除后无法恢复，确认删除？"
-              onConfirm={async () => {
-                try {
-                  await deleteOptimizationAction(record.id)
-                  localStorage.removeItem(`optimization-workflow-${record.id}`)
-                  setSavedWorkflows(prev => {
-                    const next = new Map(prev)
-                    next.delete(record.id)
-                    return next
-                  })
-                  invalidateOptimizations()
-                  message.success('已删除')
-                } catch (error) {
-                  // If record is already deleted (404), just refresh and show success
-                  if (error instanceof Error && error.message.includes('404')) {
+            <PermissionGate code={PERM.researchOptimizationDelete}>
+              <Popconfirm
+                title="确认删除"
+                description="删除后无法恢复，确认删除？"
+                onConfirm={async () => {
+                  try {
+                    await deleteOptimizationAction(record.id)
+                    localStorage.removeItem(`optimization-workflow-${record.id}`)
+                    setSavedWorkflows(prev => {
+                      const next = new Map(prev)
+                      next.delete(record.id)
+                      return next
+                    })
                     invalidateOptimizations()
-                    message.success('记录已删除')
-                  } else {
-                    message.error('删除失败')
+                    message.success('已删除')
+                  } catch (error) {
+                    // If record is already deleted (404), just refresh and show success
+                    if (error instanceof Error && error.message.includes('404')) {
+                      invalidateOptimizations()
+                      message.success('记录已删除')
+                    } else {
+                      message.error('删除失败')
+                    }
                   }
-                }
-              }}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                删除
-              </Button>
-            </Popconfirm>
+                }}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                  删除
+                </Button>
+              </Popconfirm>
+            </PermissionGate>
             {hasSaved && (
               <Tag color="orange" style={{ fontSize: 11 }}>有未完成的进度</Tag>
             )}
@@ -254,16 +258,18 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
 
       <Card title="🔬 创建新优化任务" style={{ marginBottom: 16 }}>
         {!showCreateForm ? (
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            size="large"
-            onClick={() => {
-              setShowCreateForm(true)
-            }}
-          >
-            🚀 创建优化任务
-          </Button>
+          <PermissionGate code={PERM.researchOptimizationCreate}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              size="large"
+              onClick={() => {
+                setShowCreateForm(true)
+              }}
+            >
+              🚀 创建优化任务
+            </Button>
+          </PermissionGate>
         ) : (
           <div>
 
@@ -287,15 +293,17 @@ export function ProcessOptimizationPage({ initialOptimizations, initialTotal, pr
             </div>
 
             <Space>
-              <Button
-                type="primary"
-                icon={<PlayCircleOutlined />}
-                onClick={handleCreateOptimization}
-                loading={creating}
-                disabled={creating || !newName.trim()}
-              >
-                🚀 创建并开始
-              </Button>
+              <PermissionGate code={PERM.researchOptimizationCreate}>
+                <Button
+                  type="primary"
+                  icon={<PlayCircleOutlined />}
+                  onClick={handleCreateOptimization}
+                  loading={creating}
+                  disabled={creating || !newName.trim()}
+                >
+                  🚀 创建并开始
+                </Button>
+              </PermissionGate>
               <Button onClick={() => {
                 setShowCreateForm(false)
                 setNewName('')

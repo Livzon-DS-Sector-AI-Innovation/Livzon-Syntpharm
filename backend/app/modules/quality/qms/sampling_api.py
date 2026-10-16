@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.qms.sampling_schemas import (
     RetentionLedgerFilter,
     SampleRetentionLedgerResponse,
@@ -34,6 +34,7 @@ def get_sampling_service(session: AsyncSession = Depends(get_db)) -> SamplingSer
 @router.post("/orders", response_model=SamplingOrderApiResponse, status_code=201)
 async def post(
     data: SamplingOrderCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:create")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -51,6 +52,7 @@ async def post(
 
 @router.get("/orders", response_model=dict)
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     material_code: str | None = Query(None, description="物料编码"),
     material_name: str | None = Query(None, description="物料名称"),
     sampling_source: str | None = Query(None, description="取样来源"),
@@ -87,6 +89,7 @@ async def get(
 @router.get("/orders/{order_id}", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     order_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -102,6 +105,7 @@ async def get(  # noqa: F811
 async def put(
     order_id: UUID,
     data: SamplingOrderUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:update")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -120,6 +124,7 @@ async def put(
 @router.delete("/orders/{order_id}")
 async def delete(
     order_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:delete")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -135,6 +140,7 @@ async def delete(
 @router.post("/orders/{order_id}/submit", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     order_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:submit")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -154,6 +160,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     order_id: UUID,
     data: SamplingApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:approve")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -174,6 +181,7 @@ async def post(  # noqa: F811
 @router.get("/orders/{order_id}/approvals", response_model=list[SamplingApprovalRecordResponse])
 async def handler(
     order_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -184,6 +192,7 @@ async def handler(
 
 @router.get("/retention-ledger", response_model=dict)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     material_code: str | None = Query(None, description="物料编码"),
     material_name: str | None = Query(None, description="物料名称"),
     retention_status: str | None = Query(None, description="留样状态"),

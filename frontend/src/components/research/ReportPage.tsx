@@ -17,6 +17,8 @@ import {
 import { CreateReportModal } from './CreateReportModal'
 import { deleteReport } from '@/actions/research/modules'
 import { updateReport } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import {
   RdReport, RdReportType, RdReportStatus,
   REPORT_TYPE_LABELS, REPORT_STATUS_LABELS, STAGE_LABELS,
@@ -210,16 +212,20 @@ export function ReportPage({ projectId }: Props) {
         const docReady = hasCompletedDoc(record)
         return (
           <Space size="small" wrap>
-            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+            <PermissionGate code={PERM.researchReportUpdate}>
+              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+            </PermissionGate>
             {docReady && (
               <>
                 <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handlePreview(record)}>预览</Button>
                 <Button type="link" size="small" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>下载</Button>
               </>
             )}
-            <Popconfirm title="确认删除此报告？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-            </Popconfirm>
+            <PermissionGate code={PERM.researchReportDelete}>
+              <Popconfirm title="确认删除此报告？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
+                <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+              </Popconfirm>
+            </PermissionGate>
             <Switch
               size="small"
               checkedChildren="启用"
@@ -238,7 +244,7 @@ export function ReportPage({ projectId }: Props) {
     <div>
       <Card
         title="研发报告"
-        extra={<Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建报告</Button>}
+        extra={<PermissionGate code={PERM.researchReportCreate}><Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建报告</Button></PermissionGate>}
       >
         <Table
           dataSource={reports}

@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
@@ -102,6 +102,7 @@ async def create_route(
 @router.get("/routes", summary="巡检路线列表")
 async def list_routes(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     is_active: bool | None = Query(None, description="是否启用"),
     location_id: uuid.UUID | None = Query(None, description="按地点筛选"),
     keyword: str | None = Query(None, description="关键词搜索"),
@@ -139,6 +140,7 @@ async def list_routes(
 async def get_route(
     route_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     route = await inspection_svc.get_route_by_id(db, route_id)
@@ -180,6 +182,7 @@ async def update_route(
     route_id: uuid.UUID,
     data: InspectionRouteUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     update_data = data.model_dump(exclude_unset=True)
@@ -202,6 +205,7 @@ async def set_route_locations(
     route_id: uuid.UUID,
     data: RouteLocationsBatch,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     items = [item.model_dump() for item in data.locations]
@@ -250,6 +254,7 @@ async def create_task(
 @router.get("/tasks", summary="巡检任务列表")
 async def list_tasks(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     status: str | None = Query(None, description="任务状态"),
     exclude_status: str | None = Query(None, description="排除的任务状态"),
     route_id: uuid.UUID | None = Query(None, description="路线ID"),
@@ -292,6 +297,7 @@ async def list_tasks(
 async def get_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.get_task_by_id(db, task_id)
@@ -317,6 +323,7 @@ async def start_task(
 async def complete_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.complete_task(db, task_id)
@@ -338,6 +345,7 @@ async def submit_route_check(
 async def close_task(
     task_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:manage")),
     data: InspectionTaskClose | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -355,6 +363,7 @@ async def submit_equipment_check(
     equipment_id: uuid.UUID,
     data: EquipmentCheckResult,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     records = [r.model_dump() for r in data.records]
@@ -384,6 +393,7 @@ async def upload_equipment_photo(
 async def upload_task_photo(
     task_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     file: UploadFile = File(..., description="照片文件"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
@@ -405,6 +415,7 @@ async def get_task_photos(
 async def serve_photo(
     photo_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     from app.core.storage import get_object
@@ -432,6 +443,7 @@ async def remove_photo(
     task_id: uuid.UUID,
     photo_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     await inspection_svc.delete_photo(db, photo_id)
@@ -448,6 +460,7 @@ async def ai_analyze_photo(
     equipment_id: uuid.UUID,
     data: InspectionAIAnalyzeRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     from app.modules.equipment.service.ai import analyze_inspection_photo
@@ -478,6 +491,7 @@ async def ai_analyze_photo(
 @router.get("/history", summary="巡检历史记录")
 async def get_history(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     date_from: str | None = Query(None, description="起始日期"),
     date_to: str | None = Query(None, description="截止日期"),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
@@ -516,6 +530,7 @@ async def get_history(
 async def get_history_detail(
     task_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     detail = await inspection_svc.get_task_detail(db, task_id)
@@ -576,6 +591,7 @@ async def create_schedule(
     route_id: uuid.UUID,
     body: InspectionScheduleCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     data = body.model_dump(exclude_unset=True)
@@ -592,6 +608,7 @@ async def update_schedule(
     schedule_id: uuid.UUID,
     body: InspectionScheduleUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     data = body.model_dump(exclude_unset=True)
@@ -609,6 +626,7 @@ async def delete_schedule(
     route_id: uuid.UUID,
     schedule_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     schedule = await repo.get_schedule_by_id(db, schedule_id)

@@ -154,7 +154,7 @@ export default function HazardAIResultPanel({
         <Alert
           type="warning"
           showIcon
-          message="AI 处理警告"
+          title="AI 处理警告"
           description={hazard.ai_error_message}
           style={{ marginBottom: 16, borderRadius: 8 }}
         />

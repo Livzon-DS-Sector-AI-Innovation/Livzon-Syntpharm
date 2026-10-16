@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.qms.ipqc_schemas import (
     IPQCApprovalCreate,
     IPQCApprovalRecordResponse,
@@ -32,6 +32,7 @@ def get_ipqc_service(session: AsyncSession = Depends(get_db)) -> IPQCInspectionS
 @router.post("/inspections", response_model=IPQCInspectionApiResponse, status_code=201)
 async def post(
     data: IPQCInspectionCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:create")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -49,6 +50,7 @@ async def post(
 
 @router.get("/inspections", response_model=dict)
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:read")),
     inspection_no: str | None = Query(None, description="检验单号"),
     batch_no: str | None = Query(None, description="批次号"),
     product_code: str | None = Query(None, description="产品编码"),
@@ -89,6 +91,7 @@ async def get(
 @router.get("/inspections/{inspection_id}", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:read")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -104,6 +107,7 @@ async def get(  # noqa: F811
 async def put(
     inspection_id: UUID,
     data: IPQCInspectionUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:update")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -122,6 +126,7 @@ async def put(
 @router.delete("/inspections/{inspection_id}")
 async def delete(
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:delete")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -137,6 +142,7 @@ async def delete(
 @router.post("/inspections/{inspection_id}/submit", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:submit")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -156,6 +162,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: IPQCApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:approve")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -190,6 +197,7 @@ async def handler(
 @router.post("/inspections/{inspection_id}/lock-batch", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:update")),
     reason: str = Query(..., description="锁定原因"),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
@@ -209,6 +217,7 @@ async def post(  # noqa: F811
 @router.post("/inspections/{inspection_id}/unlock-batch", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:ipqc:update")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]

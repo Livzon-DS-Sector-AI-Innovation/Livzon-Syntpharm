@@ -1,3 +1,5 @@
+import { PermissionDeniedError } from '@/lib/api/errors'
+
 export function getApiBaseUrl(): string {
   if (process.env.API_BASE_URL) {
     return process.env.API_BASE_URL
@@ -52,13 +54,18 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
     cache: options?.cache ?? 'no-store',
   })
   if (!response.ok) {
-    const _errorBody = await response.text().catch(() => '')
     let errorMessage = `请求失败: ${response.status} ${response.statusText}`
     try {
       const errorJson = await response.json()
       if (errorJson.message) errorMessage = errorJson.message
       else if (errorJson.detail) errorMessage = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail)
-    } catch {}
+    } catch {
+      // 非 JSON 响应，保留默认文案
+    }
+    // 403 单独语义化：由调用方统一提示「当前用户权限不足」，不把技术状态码抛给用户
+    if (response.status === 403) {
+      throw new PermissionDeniedError(errorMessage)
+    }
     throw new Error(errorMessage)
   }
   const result = await response.json()

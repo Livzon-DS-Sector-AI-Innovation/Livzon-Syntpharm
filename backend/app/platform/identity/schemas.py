@@ -1,4 +1,5 @@
 import json
+from datetime import UTC, datetime, timedelta, timezone
 from typing import Any, Literal
 from uuid import UUID
 
@@ -7,11 +8,22 @@ from pydantic import BaseModel, Field, field_validator
 UserStatus = Literal["active", "disabled"]
 AuthSource = Literal["local", "feishu"]
 
+# 中国标准时间（UTC+8）：登录记录属审计信息，统一按北京时间展示
+CST = timezone(timedelta(hours=8))
+
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "Bearer"
     user: "UserResponse | None" = None
+
+
+class LocalLoginApiResponse(BaseModel):
+    """本地账号密码登录响应（完整信封）。"""
+
+    code: int = 200
+    message: str = "success"
+    data: TokenResponse
 
 
 class LocalLoginRequest(BaseModel):
@@ -44,14 +56,20 @@ class UserResponse(BaseModel):
     feishu_open_id: str | None = None
     feishu_union_id: str | None = None
     tenant_key: str | None = None
+    # 强制改密标记：登录后前端据此把用户挡在 /change-password（管理员重置密码后为 true）
+    must_change_password: bool = False
 
     model_config = {"from_attributes": True}
 
 
 class UserManagementItem(UserResponse):
+    status: str = "active"  # 用户状态（active / disabled）；用户管理列表的「状态」列依赖该字段
     last_login_at: str | None = None
+    password_updated_at: str | None = None  # 密码最后修改时间（管理员重置后更新）
+    # 有效角色名列表（来自权限管理的授权，非 User.role 之类的历史字段）
+    roles: list[str] = Field(default_factory=list)
 
-    @field_validator("last_login_at", mode="before")
+    @field_validator("last_login_at", "password_updated_at", mode="before")
     @classmethod
     def datetime_to_str(cls, v: object) -> str | None:
         if v is None:
@@ -81,6 +99,7 @@ class LocalUserCreate(BaseModel):
 
 
 class UserManagementUpdate(BaseModel):
+    username: str | None = Field(None, min_length=2, max_length=64, description="登录用户名（创建后不可修改）")
     name: str | None = Field(None, min_length=1, max_length=100)
     email: str | None = Field(None, max_length=255)
     mobile: str | None = Field(None, max_length=32)
@@ -91,7 +110,48 @@ class UserManagementUpdate(BaseModel):
 
 
 class PasswordResetRequest(BaseModel):
-    password: str = Field(..., min_length=6, max_length=255)
+    """管理员重置密码。
+
+    `password` 留空 = 随机生成：生成的明文密码只在响应里返回一次（一次性展示），
+    数据库仍只存哈希，之后无法再次查看。两种情况都会把账号标记为「首登需改密」。
+    """
+
+    password: str | None = Field(None, min_length=6, max_length=255)
+
+
+class PasswordResetData(BaseModel):
+    message: str
+    # 仅「随机生成」时返回，供管理员当场抄给用户；不落库
+    password: str | None = None
+
+
+class PasswordResetApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: PasswordResetData
+
+
+class ChangePasswordRequest(BaseModel):
+    """当前登录用户自助改密。"""
+
+    old_password: str = Field(..., min_length=1, max_length=255)
+    new_password: str = Field(..., min_length=6, max_length=255)
+
+
+class ChangePasswordData(BaseModel):
+    message: str
+
+
+class ChangePasswordApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ChangePasswordData
+
+
+class FeishuBindRequest(BaseModel):
+    """绑定飞书用户：把库里已存在的飞书用户记录合并进目标账号。"""
+
+    source_user_id: UUID = Field(..., description="飞书用户记录的 ID（auth_source=feishu）")
 
 
 # ── Department ──────────────────────────────────────────────────────
@@ -206,6 +266,14 @@ class LoginLogResponse(BaseModel):
     @field_validator("created_at", mode="before")
     @classmethod
     def format_created_at(cls, v: object) -> str:
+        """统一转成北京时间字符串。
+
+        库里存的是 UTC（`timestamptz`），直接 `strftime` 会得到 UTC 时间、
+        页面上比北京时间少 8 小时（曾导致「刚登录但记录里看不到」的误判）。
+        """
+        if isinstance(v, datetime):
+            aware = v if v.tzinfo else v.replace(tzinfo=UTC)
+            return aware.astimezone(CST).strftime("%Y-%m-%d %H:%M:%S")
         if hasattr(v, "strftime"):
             return v.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore[no-any-return]
         return str(v)

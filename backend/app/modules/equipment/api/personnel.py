@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException
 from app.core.response import success_response
 from app.modules.equipment import service
@@ -46,6 +46,7 @@ async def create_role(
 @router.get("/roles", summary="角色列表")
 async def list_roles(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:read")),
     scope: str | None = Query(None, description="作用域筛选"),
     is_active: bool | None = Query(None, description="启用状态筛选"),
     page: int = Query(1, ge=1),
@@ -70,6 +71,7 @@ async def list_roles(
 async def get_role(
     role_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)
@@ -93,6 +95,7 @@ async def update_role(
 async def delete_role(
     role_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)
@@ -117,6 +120,7 @@ async def add_personnel(
 @router.get("", summary="人员列表")
 async def list_personnel(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:read")),
     role_id: list[uuid.UUID] | None = Query(None, description="按角色 ID 筛选"),
     is_active: bool | None = Query(None, description="在岗状态筛选"),
     keyword: str | None = Query(None, description="姓名搜索"),
@@ -146,6 +150,7 @@ async def list_personnel(
 @router.get("/candidates", summary="按角色查询可分配人员")
 async def get_candidates(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:read")),
     role_codes: list[str] = Query(
         ...,
         description="角色编码列表，如 maintenance_tech",
@@ -178,6 +183,7 @@ async def update_personnel(
     personnel_id: uuid.UUID,
     data: PersonnelUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)
@@ -201,6 +207,7 @@ async def assign_roles(
     personnel_id: uuid.UUID,
     data: PersonnelRoleAssign,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)
@@ -225,6 +232,7 @@ async def assign_categories(
     personnel_id: uuid.UUID,
     data: PersonnelCategoryAssign,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)
@@ -247,6 +255,7 @@ async def update_categories(
 @router.post("/refresh-feishu", summary="手动刷新飞书信息")
 async def refresh_feishu(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
 from app.modules.equipment import service
@@ -30,6 +30,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 async def claim_work_order(
     work_order_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:update")),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:

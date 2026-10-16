@@ -124,6 +124,8 @@ class SchedulerRegistry:
     def __init__(self) -> None:
         self._tasks: dict[str, TaskDefinition] = {}
         self._generators: dict[str, TaskGenerator] = {}
+        # 运行时临时禁用集合（系统运维页可启停；内存态，容器重启后恢复默认）
+        self._disabled: set[str] = set()
 
     # ── registration ──────────────────────────────────────────
 
@@ -153,6 +155,21 @@ class SchedulerRegistry:
         """Shallow copy of the generator map."""
         return dict(self._generators)
 
+    # ── 运行时临时启停（内存态） ──────────────────────────────────
+
+    def disable(self, name: str) -> None:
+        self._disabled.add(name)
+
+    def enable(self, name: str) -> None:
+        self._disabled.discard(name)
+
+    def is_disabled(self, name: str) -> bool:
+        return name in self._disabled
+
+    @property
+    def disabled_names(self) -> set[str]:
+        return set(self._disabled)
+
 
 # ═══════════════════════════════════════════════════════════════
 # Action handler registry — for future ScheduledJob DB table
@@ -179,3 +196,21 @@ def get_action_handler(
 ) -> Callable[..., Awaitable[Any]] | None:
     """Return the handler registered for *action_type*, or None."""
     return _ACTION_HANDLERS.get(action_type)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Global registry reference — 供系统运维页只读introspection
+# ═══════════════════════════════════════════════════════════════
+
+_GLOBAL_REGISTRY: SchedulerRegistry | None = None
+
+
+def set_global_registry(registry: SchedulerRegistry) -> None:
+    """应用启动时登记全局注册表（main.py 调用）。"""
+    global _GLOBAL_REGISTRY
+    _GLOBAL_REGISTRY = registry
+
+
+def get_global_registry() -> SchedulerRegistry | None:
+    """返回全局注册表；未初始化时为 None。"""
+    return _GLOBAL_REGISTRY

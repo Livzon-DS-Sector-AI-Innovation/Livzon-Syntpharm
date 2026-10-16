@@ -1,3 +1,10 @@
+/**
+ * Livzon Skill 接口封装（**待后端接入**）。
+ *
+ * 后端 agent 模块已于迁移 `0035_drop_agent_tables`（2026-07-14）下线，
+ * `/api/v1/agent/skills` 已不存在 —— 现在调用这里必然 404。
+ * 入口已在系统设置页置灰，后端恢复后再放开。
+ */
 import type {
   AgentSkill,
   AgentSkillPayload,

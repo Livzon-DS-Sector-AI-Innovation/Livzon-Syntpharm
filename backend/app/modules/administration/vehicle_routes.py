@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import success_response
 from app.modules.administration.schemas import (  # type: ignore[attr-defined]
     VehicleCreate,
@@ -25,6 +26,8 @@ def get_vehicle_service(session: AsyncSession = Depends(get_db)) -> VehicleServi
 
 @router.get("/vehicles", summary="车辆列表")
 async def get(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("administration:vehicle:read")),
     keyword: str | None = None,
     status: str | None = None,
     page_params: PageParams = Depends(),
@@ -51,7 +54,9 @@ async def get(
 
 @router.post("/vehicles", summary="创建车辆")
 async def post(
+    current_user: RequiredUser,
     payload: VehicleCreate,
+    ctx: PermissionContext = Depends(require_permission("administration:vehicle:create")),
     service: VehicleService = Depends(get_vehicle_service),
 ) -> Any:
     vehicle = await service.create_vehicle(payload)
@@ -64,7 +69,9 @@ async def post(
 
 @router.get("/vehicles/{vehicle_id}", summary="车辆详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     vehicle_id: str,
+    ctx: PermissionContext = Depends(require_permission("administration:vehicle:read")),
     service: VehicleService = Depends(get_vehicle_service),
 ) -> Any:
     vehicle = await service.get_vehicle(vehicle_id)  # type: ignore[arg-type]
@@ -75,8 +82,10 @@ async def get(  # noqa: F811
 
 @router.put("/vehicles/{vehicle_id}", summary="更新车辆")
 async def put(
+    current_user: RequiredUser,
     vehicle_id: str,
     payload: VehicleUpdate,
+    ctx: PermissionContext = Depends(require_permission("administration:vehicle:update")),
     service: VehicleService = Depends(get_vehicle_service),
 ) -> Any:
     vehicle = await service.update_vehicle(vehicle_id, payload)  # type: ignore[arg-type]
@@ -88,7 +97,9 @@ async def put(
 
 @router.delete("/vehicles/{vehicle_id}", summary="删除车辆")
 async def delete(
+    current_user: RequiredUser,
     vehicle_id: str,
+    ctx: PermissionContext = Depends(require_permission("administration:vehicle:delete")),
     service: VehicleService = Depends(get_vehicle_service),
 ) -> Any:
     await service.delete_vehicle(vehicle_id)  # type: ignore[arg-type]
@@ -96,7 +107,10 @@ async def delete(
 
 
 @router.get("/vehicles/template/download", summary="下载车辆导入模板")
-async def download_vehicle_template() -> Any:
+async def download_vehicle_template(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("administration:vehicle:read")),
+) -> Any:
     """提供车辆批量导入模板下载."""
     template_path = os.path.join(
         os.path.dirname(__file__),

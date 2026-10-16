@@ -13,13 +13,13 @@ async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${await getServerToken()}` }
 }
 
-export async function createRole(data: components['schemas']['RoleCreate']) {
+export async function createRole(data: components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate']) {
   const result = await createRoleApi(data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result
 }
 
-export async function updateRole(id: string, data: components['schemas']['RoleUpdate']) {
+export async function updateRole(id: string, data: components['schemas']['app__modules__equipment__schemas__personnel__RoleUpdate']) {
   const result = await updateRoleApi(id, data, await authHeaders())
   revalidatePath('/equipment/personnel')
   return result

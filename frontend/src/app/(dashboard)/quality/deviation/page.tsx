@@ -97,7 +97,7 @@ const DEPARTMENT_LIST = [
 // ============ GMP免责声明组件 ============
 const GMPDisclaimer: React.FC = () => (
   <Alert
-    message="GMP合规提示"
+    title="GMP合规提示"
     description="AI生成内容仅供参考，最终以人工审核确认。生成的描述和分析需符合企业SOP及GMP法规要求，人工对最终内容的合规性和完整性负责。"
     type="warning"
     showIcon
@@ -164,7 +164,7 @@ const AIResultModal: React.FC<AIResultModalProps> = ({
     ) : (
       <div>
         <Alert
-          message="免责声明"
+          title="免责声明"
           description="以下内容由AI辅助生成，仅供参考，最终以人工审核确认。"
           type="info"
           showIcon
@@ -989,7 +989,7 @@ const InvestigationTab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) =>
     <div>
       <GMPDisclaimer />
       <Alert
-        message="偏差调查说明"
+        title="偏差调查说明"
         description="对已提交的偏差进行调查，使用5M1E方法分析根本原因，形成调查结论。"
         type="info"
         showIcon
@@ -1575,7 +1575,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
     <div>
       <GMPDisclaimer />
       <Alert
-        message="CAPA管理说明"
+        title="CAPA管理说明"
         description="针对偏差调查发现的根本原因，制定纠正措施（CA）和预防措施（PA），跟踪整改进度和效果验证。"
         type="info"
         showIcon
@@ -1771,7 +1771,7 @@ const CAPATab: React.FC<{ onRefresh: () => void }> = ({ onRefresh }) => {
         width={700}
       >
         <Alert
-          message="完成整改确认"
+          title="完成整改确认"
           description="请确认整改措施已全部落实，确认后偏差将关闭。"
           type="info"
           showIcon
@@ -2018,7 +2018,7 @@ const DeviationDetailModal: React.FC<{
         okButtonProps={{ danger: true }}
       >
         <Alert
-          message="GMP合规提示"
+          title="GMP合规提示"
           description="偏差涉及批次需立即锁定，防止不合格产品流入下一工序。锁定后批次将被隔离，直至偏差处理完成。"
           type="warning"
           showIcon

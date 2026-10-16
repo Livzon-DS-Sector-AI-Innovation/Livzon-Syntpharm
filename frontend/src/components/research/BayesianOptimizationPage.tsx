@@ -25,6 +25,8 @@ import {
   ThunderboltOutlined
 } from '@ant-design/icons'
 import { runEDBOOptimize, generateReactionScope } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Title, Text } = Typography
 const { Option } = Select
@@ -210,7 +212,9 @@ export function BayesianOptimizationPage() {
       ...resultData.map(row => headers.map(h => row[h]).join(','))
     ].join('\n')
     
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    // 加 BOM：否则 Excel 打开中文列会乱码（与批次 / 检验标准导出的做法一致）
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = 'optimization_results.csv'
@@ -219,7 +223,9 @@ export function BayesianOptimizationPage() {
 
   const handleDownloadPrediction = () => {
     if (!predictionData || !predictionFilename) return
-    const blob = new Blob([predictionData], { type: 'text/csv;charset=utf-8;' })
+    // 加 BOM：否则 Excel 打开中文列会乱码
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + predictionData], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.download = predictionFilename
@@ -577,15 +583,17 @@ export function BayesianOptimizationPage() {
                 表示同时进行的实验数量
               </Text>
             </div>
-            <Button
-              type="primary"
-              icon={generatingScope ? <LoadingOutlined /> : <ThunderboltOutlined />}
-              onClick={handleGenerateScope}
-              loading={generatingScope}
-              disabled={scopeObjectives.filter(o => o.column).length === 0}
-            >
-              生成反应范围
-            </Button>
+            <PermissionGate code={PERM.researchOptimizationCreate}>
+              <Button
+                type="primary"
+                icon={generatingScope ? <LoadingOutlined /> : <ThunderboltOutlined />}
+                onClick={handleGenerateScope}
+                loading={generatingScope}
+                disabled={scopeObjectives.filter(o => o.column).length === 0}
+              >
+                生成反应范围
+              </Button>
+            </PermissionGate>
           </>
         ) : objectives.length > 0 ? (
           <>
@@ -629,17 +637,19 @@ export function BayesianOptimizationPage() {
               表示同时进行的实验数量
             </Text>
           </div>
-          <Button
-            type="primary"
-            size="large"
-            icon={loading ? <LoadingOutlined /> : <ExperimentOutlined />}
-            onClick={handleOptimize}
-            loading={loading}
-            disabled={!file || objectives.every((o) => !o.column)}
-            block
-          >
-            {loading ? '正在优化中（可能需要 30-60 秒）...' : '运行贝叶斯优化'}
-          </Button>
+          <PermissionGate code={PERM.researchOptimizationCreate}>
+            <Button
+              type="primary"
+              size="large"
+              icon={loading ? <LoadingOutlined /> : <ExperimentOutlined />}
+              onClick={handleOptimize}
+              loading={loading}
+              disabled={!file || objectives.every((o) => !o.column)}
+              block
+            >
+              {loading ? '正在优化中（可能需要 30-60 秒）...' : '运行贝叶斯优化'}
+            </Button>
+          </PermissionGate>
         </Card>
       )}
 

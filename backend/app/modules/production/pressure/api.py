@@ -8,7 +8,7 @@ from fastapi import Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import paginated_response, success_response
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
@@ -54,6 +54,7 @@ def get_pressure_service(
 @router.get("/pressure/dashboard", summary="压差统计仪表盘")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-dashboard:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -72,6 +73,7 @@ async def get(
 @router.get("/pressure/point-mappings", summary="位点映射列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:read")),
     area: str | None = Query(None, description="区域筛选"),
     keyword: str | None = Query(None, description="位点编号搜索"),
     page_params: PageParams = Depends(),
@@ -93,6 +95,7 @@ async def get(  # noqa: F811
 @router.get("/pressure/point-mappings/check-unique", summary="检查位点编号唯一性")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:read")),
     point_id: str = Query(..., description="位点编号"),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
@@ -106,6 +109,7 @@ async def get(  # noqa: F811
 async def post(
     current_user: CurrentUser,
     payload: PointMappingCreate,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -118,6 +122,7 @@ async def post(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     mapping_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -131,6 +136,7 @@ async def put(
     current_user: CurrentUser,
     mapping_id: UUID,
     payload: PointMappingUpdate,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -143,6 +149,7 @@ async def put(
 async def delete(
     current_user: CurrentUser,
     mapping_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -161,6 +168,7 @@ async def delete(
 @router.get("/pressure/records", summary="压差记录列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:read")),
     area: str | None = Query(None),
     point_id: str | None = Query(None),
     input_type: str | None = Query(None),
@@ -190,6 +198,7 @@ async def get(  # noqa: F811
 @router.get("/pressure/records/merged", summary="合并压差记录列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:read")),
     area: str | None = Query(None),
     point_id: str | None = Query(None),
     input_type: str | None = Query(None),
@@ -220,6 +229,7 @@ async def get(  # noqa: F811
 @router.get("/pressure/records/export/by-area", summary="按区域导出压差记录")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:export")),
     area: str | None = Query(None),
     start_date: datetime | None = Query(None),
     end_date: datetime | None = Query(None),
@@ -236,6 +246,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: CreateManualRecordRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -248,6 +259,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: BatchManualEntryRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -260,6 +272,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: CreateOcrRecordRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -272,6 +285,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: DeleteMergedRowRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -284,6 +298,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: BatchDeleteMergedRowsRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -296,6 +311,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: UpdateMergedRowRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -308,6 +324,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -321,6 +338,7 @@ async def patch(
     current_user: CurrentUser,
     record_id: UUID,
     payload: AuditRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -333,6 +351,7 @@ async def patch(
 async def patch(  # noqa: F811
     current_user: CurrentUser,
     payload: BatchAuditRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -345,6 +364,7 @@ async def patch(  # noqa: F811
 async def delete(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -357,6 +377,7 @@ async def delete(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: DeleteRecordsRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-records:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -375,6 +396,7 @@ async def post(  # noqa: F811
 @router.get("/pressure/audit/stats", summary="审核统计")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-audit:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -393,6 +415,7 @@ async def get(  # noqa: F811
 @router.get("/pressure/ocr-tasks", summary="OCR 任务列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:read")),
     status: str | None = Query(None),
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
@@ -409,6 +432,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: CreateOcrTaskRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -421,6 +445,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -434,6 +459,7 @@ async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
     payload: SubmitOcrTaskResultRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -452,6 +478,7 @@ async def post(  # noqa: F811
 @router.get("/pressure/data-master", summary="数据总表列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:read")),
     material_name: str | None = Query(None),
     supplier: str | None = Query(None),
     start_date: date | None = Query(None),
@@ -480,6 +507,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: DataMasterCreate,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -492,6 +520,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: BatchCreateDataMasterRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -506,6 +535,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     item_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -519,6 +549,7 @@ async def put(  # noqa: F811
     current_user: CurrentUser,
     item_id: UUID,
     payload: DataMasterUpdate,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -531,6 +562,7 @@ async def put(  # noqa: F811
 async def delete(  # noqa: F811
     current_user: CurrentUser,
     item_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -543,6 +575,7 @@ async def delete(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     payload: DeleteRecordsRequest,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -561,6 +594,7 @@ async def post(  # noqa: F811
 @router.get("/pressure/notifications", summary="通知列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-notifications:read")),
     user_id: str | None = Query(None),
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
@@ -575,6 +609,7 @@ async def get(  # noqa: F811
 async def patch(  # noqa: F811
     current_user: CurrentUser,
     notification_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-notifications:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
 
@@ -586,6 +621,7 @@ async def patch(  # noqa: F811
 @router.patch("/pressure/notifications/read-all", summary="全部标记已读")  # type: ignore[no-redef]
 async def patch(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("production:pressure-notifications:update")),
     user_id: str | None = Query(None),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:

@@ -1,0 +1,107 @@
+"""Product API routes."""
+
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.modules.production.product.schemas import (
+    ProductApiResponse,
+    ProductCreate,
+    ProductListApiResponse,
+    ProductResponse,
+    ProductUpdate,
+)
+from app.modules.production.product.service import ProductService
+from app.shared.schemas import MessageApiResponse
+
+router = APIRouter()
+
+
+@router.get("/products", summary="获取所有产品列表")
+async def get(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """获取所有产品，按车间分组"""
+    service = ProductService(db)
+    products = await service.get_all_products()
+    return ProductListApiResponse(data=[ProductResponse.model_validate(p) for p in products])
+
+
+@router.get("/products/workshop/{workshop}", summary="获取指定车间的产品列表")  # type: ignore[no-redef]
+async def get(  # noqa: F811
+    workshop: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """获取指定车间的所有产品"""
+    service = ProductService(db)
+    products = await service.get_products_by_workshop(workshop)
+    return ProductListApiResponse(data=[ProductResponse.model_validate(p) for p in products])
+
+
+@router.get("/products/{product_id}", summary="获取产品详情")  # type: ignore[no-redef]
+async def get(  # noqa: F811
+    product_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """获取产品详情"""
+    service = ProductService(db)
+    product = await service.get_product(product_id)
+    if not product:
+        return MessageApiResponse(code=404, message="产品不存在", data=None)
+    return ProductApiResponse(data=ProductResponse.model_validate(product))
+
+
+@router.post("/products", summary="创建产品")
+async def post(
+    data: ProductCreate,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:create")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """创建新产品"""
+    service = ProductService(db)
+    product, error = await service.create_product(data)
+    if error:
+        return MessageApiResponse(code=400, message=error, data=None)
+    return ProductApiResponse(data=ProductResponse.model_validate(product))
+
+
+@router.put("/products/{product_id}", summary="更新产品")
+async def put(
+    product_id: uuid.UUID,
+    data: ProductUpdate,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:update")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """更新产品信息"""
+    service = ProductService(db)
+    product = await service.update_product(product_id, data)
+    if not product:
+        return MessageApiResponse(code=404, message="产品不存在", data=None)
+    return ProductApiResponse(data=ProductResponse.model_validate(product))
+
+
+@router.delete("/products/{product_id}", summary="删除产品")
+async def delete(
+    product_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:products:delete")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """删除产品"""
+    service = ProductService(db)
+    result = await service.delete_product(product_id)
+    if not result:
+        return MessageApiResponse(code=404, message="产品不存在", data=None)
+    return MessageApiResponse(message="删除成功", data=None)

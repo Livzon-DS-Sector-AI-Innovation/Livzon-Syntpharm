@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import success_response
 from app.modules.registration.schemas.certificate import (
     CertificateCreate,
@@ -22,6 +22,7 @@ router = APIRouter()
 @router.get("/", summary="获取注册证书列表")
 async def list_certificates(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     certs = await cert_service.get_certificates(db)
@@ -43,6 +44,7 @@ async def create_certificate(
 async def get_certificate(
     current_user: CurrentUser,
     certificate_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     cert = await cert_service.get_certificate(db, certificate_id)
@@ -64,6 +66,7 @@ async def update_certificate(
 async def delete_certificate(
     current_user: CurrentUser,
     certificate_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     await cert_service.delete_certificate(db, certificate_id)

@@ -7,12 +7,12 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-COMPOSE_FILES="-f docker-compose.local-dev.yml"
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.dev.yml"
 
 # 检查配置
 if [ ! -f .env.local ]; then
     echo "❌ 请先配置 .env.local"
-    echo "   cp .env.local.example .env.local && vim .env.local"
+    echo "   cp .env.dev.example .env.local && vim .env.local"
     exit 1
 fi
 

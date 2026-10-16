@@ -1,0 +1,117 @@
+# mypy: ignore-errors
+"""Safety API — special_ops_personnel endpoints."""
+
+import uuid
+from typing import Any
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.deps import RequiredUser
+from app.core.exceptions import NotFoundException
+from app.modules.safety.schemas import (
+    SpecialOperationPersonnelApiResponse,
+    SpecialOperationPersonnelCreate,
+    SpecialOperationPersonnelListApiResponse,
+    SpecialOperationPersonnelResponse,
+    SpecialOperationPersonnelUpdate,
+)
+from app.modules.safety.service import (
+    SpecialOperationService,
+)
+
+special_ops_personnel_router = APIRouter()
+
+
+@special_ops_personnel_router.get(
+    "/special-operation-personnel",
+    response_model=SpecialOperationPersonnelListApiResponse,
+    summary="获取特殊作业人员资质列表",
+)
+async def handler(
+    current_user: RequiredUser,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=200),
+    status: str | None = None,
+    certificate_type: str | None = None,
+    department: str | None = None,
+    keyword: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """获取特殊作业人员资质列表"""
+    service = SpecialOperationService(db)
+    skip = (page - 1) * page_size
+    items, total = await service.get_personnel(skip, page_size, status, certificate_type, department, keyword)
+    return SpecialOperationPersonnelListApiResponse(
+        data=[SpecialOperationPersonnelResponse.model_validate(p) for p in items],
+        meta={"page": page, "page_size": page_size, "total": total},
+    )
+
+
+@special_ops_personnel_router.post(  # type: ignore[no-redef]
+    "/special-operation-personnel",
+    response_model=SpecialOperationPersonnelApiResponse,
+    summary="创建特殊作业人员资质",
+)
+async def handler(  # noqa: F811
+    current_user: RequiredUser, data: SpecialOperationPersonnelCreate, db: AsyncSession = Depends(get_db)
+) -> Any:
+    """创建特殊作业人员资质"""
+    service = SpecialOperationService(db)
+    item = await service.create_personnel(data)
+    await db.commit()
+    return SpecialOperationPersonnelApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
+
+
+@special_ops_personnel_router.get(  # type: ignore[no-redef]
+    "/special-operation-personnel/{personnel_id}",
+    response_model=SpecialOperationPersonnelApiResponse,
+    summary="获取特殊作业人员资质详情",
+)
+async def handler(  # noqa: F811
+    current_user: RequiredUser, personnel_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
+    """获取特殊作业人员资质详情"""
+    service = SpecialOperationService(db)
+    item = await service.get_personnel_by_id(personnel_id)
+    if not item:
+        raise NotFoundException(resource="人员资质")
+    return SpecialOperationPersonnelApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
+
+
+@special_ops_personnel_router.put(  # type: ignore[no-redef]
+    "/special-operation-personnel/{personnel_id}",
+    response_model=SpecialOperationPersonnelApiResponse,
+    summary="更新特殊作业人员资质",
+)
+async def handler(  # noqa: F811
+    current_user: RequiredUser,
+    personnel_id: uuid.UUID,
+    data: SpecialOperationPersonnelUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """更新特殊作业人员资质"""
+    service = SpecialOperationService(db)
+    item = await service.update_personnel(personnel_id, data)
+    if not item:
+        raise NotFoundException(resource="人员资质")
+    await db.commit()
+    return SpecialOperationPersonnelApiResponse(data=SpecialOperationPersonnelResponse.model_validate(item))
+
+
+@special_ops_personnel_router.delete(  # type: ignore[no-redef]
+    "/special-operation-personnel/{personnel_id}",
+    response_model=SpecialOperationPersonnelApiResponse,
+    summary="删除特殊作业人员资质",
+)
+async def handler(  # noqa: F811
+    current_user: RequiredUser, personnel_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+) -> Any:
+    """删除特殊作业人员资质"""
+    service = SpecialOperationService(db)
+    result = await service.delete_personnel(personnel_id)
+    if not result:
+        raise NotFoundException(resource="人员资质")
+    await db.commit()
+    return SpecialOperationPersonnelApiResponse(code=200, message="删除成功", data=None)
