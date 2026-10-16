@@ -91,7 +91,7 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title="报故障维修"
       size={480}
       open={repairDrawerOpen}

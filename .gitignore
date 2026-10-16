@@ -38,7 +38,6 @@ fix-any-progress.json
 fix-any-types.sh
 fix-any.log
 lint-output.txt
-CONTEXT.md
 .env.local
 
 # ai files

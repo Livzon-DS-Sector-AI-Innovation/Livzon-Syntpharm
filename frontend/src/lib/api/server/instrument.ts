@@ -226,19 +226,15 @@ export async function getRecordsForReminder(days: number = 30): Promise<RecordsF
 }
 
 export async function sendCalibrationReminder(
-  chatId: string,
-  receiveIdType: 'chat_id' | 'open_id' = 'chat_id',
-  days: number = 30,
-  feishuAppId?: string,
-  feishuAppSecret?: string
+  configId: string,
+  days: number = 30
 ): Promise<ReminderResponse> {
+  // Only the config id travels. The credentials are read from the stored config
+  // server-side — a secret in a query string lands in access logs and history.
   const params = new URLSearchParams({
-    chat_id: chatId,
-    receive_id_type: receiveIdType,
+    config_id: configId,
     days: String(days),
   })
-  if (feishuAppId) params.set('feishu_app_id', feishuAppId)
-  if (feishuAppSecret) params.set('feishu_app_secret', feishuAppSecret)
   const result = await apiFetch<ReminderResponse>(`/api/v1/quality/instrument/record/remind?${params}`, {
     method: 'POST',
   })

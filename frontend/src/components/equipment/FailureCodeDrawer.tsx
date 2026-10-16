@@ -70,7 +70,7 @@ export function FailureCodeDrawer({ onRefresh }: FailureCodeDrawerProps) {
   const title = `${editingFailureCode ? '编辑' : '新增'}${typeLabels[failureCodeDrawerType] || '故障代码'}`
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={title}
       size={420}
       open={failureCodeDrawerOpen}

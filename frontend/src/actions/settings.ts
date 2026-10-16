@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import type { LLMConfig, LLMConfigFormData, LLMConfigUpdate, FeishuConfig, FeishuConfigUpsert, FeishuDiagnosticResult } from '@/types/settings'
+import type { ApiResponse } from '@/types/common'
 import {
   getLLMConfigs as getLLMConfigsServer,
   getLLMConfig as getLLMConfigServer,
@@ -20,14 +21,11 @@ async function getAuthToken(): Promise<string | undefined> {
   return cookieStore.get('auth_token')?.value
 }
 
-interface ApiResponse<T> {
-  code: number
-  data: T
-  message?: string
-}
-
 function wrap<T>(data: unknown): ApiResponse<T> {
-  return { code: 0, data: data as T }
+  // Include `message` — the shared envelope marks it required, and the backend
+  // always returns one (build_response defaults it to "success"). The previous
+  // local type made it optional, which let this envelope be built incomplete.
+  return { code: 0, message: 'success', data: data as T }
 }
 
 export async function getLLMConfigs(configType?: string) {

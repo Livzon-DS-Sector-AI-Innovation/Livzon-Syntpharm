@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Tests for equipment repository layer."""
 
 from typing import Any

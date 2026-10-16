@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 from dataclasses import dataclass
 
 import pytest

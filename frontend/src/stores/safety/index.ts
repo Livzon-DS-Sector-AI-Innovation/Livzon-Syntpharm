@@ -27,5 +27,4 @@ export { useOhHealthExamStore } from './ohHealthExamStore'
 // ============================================================
 // Legacy monolithic store (backward compatibility)
 // ============================================================
-export { useSafetyStore } from './deprecatedStore'
 export type { SafetyState } from './types'

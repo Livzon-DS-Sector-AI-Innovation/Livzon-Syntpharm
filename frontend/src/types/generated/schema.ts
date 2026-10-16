@@ -13883,9 +13883,37 @@ export interface paths {
         put?: never;
         /**
          * Batch import HPLC reference substances
-         * @description Import HPLC reference substances from Excel file
+         * @description Import HPLC reference substances from Excel file.
+         *
+         *     Returns immediately with a job id; the rows are created off the request path —
+         *     `AGENTS.md:310` forbids running an operation over 5 seconds inside a request.
+         *     Poll `GET /jobs/{job_id}` for the counts.
          */
         post: operations["handler_api_v1_quality_static_data_hplc_reference_batch_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/static-data/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Query a batch-import job
+         * @description Poll a batch import started by `batch-import`.
+         *
+         *     `result` is present only once `status` is `done`; `error` only once it is
+         *     `failed`. The job is a row, so this answers **after** a restart — unlike the
+         *     in-memory store this replaced (`AGENTS.md:308`, 重启后丢失).
+         */
+        get: operations["get_import_job_api_v1_quality_static_data_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14055,7 +14083,11 @@ export interface paths {
         put?: never;
         /**
          * Batch import chromatography columns
-         * @description Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)
+         * @description Import chromatography columns from Excel (液相 and 气相 sheets).
+         *
+         *     Returns immediately with a job id; the rows are created off the request path —
+         *     `AGENTS.md:310` forbids an operation over 5 seconds inside a request. Poll
+         *     `GET /jobs/{job_id}` for the counts.
          */
         post: operations["handler_api_v1_quality_static_data_chrom_column_batch_import_post"];
         delete?: never;
@@ -14094,6 +14126,29 @@ export interface paths {
         put?: never;
         /** Increment column usage count */
         post: operations["handler_api_v1_quality_static_data_chrom_column__id__increment_usage_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/static-data/medium/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Counts for the mediums page
+         * @description Counts the mediums page renders, in one request.
+         *
+         *     The page fetched every row and counted in JavaScript; as the table grew the
+         *     stats got slower with it (#103).
+         */
+        get: operations["get_medium_stats_api_v1_quality_static_data_medium_stats_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14148,6 +14203,26 @@ export interface paths {
         put?: never;
         /** Adjust medium stock quantity */
         post: operations["post_api_v1_quality_static_data_medium__id__adjust_stock_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/static-data/standard/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Counts for the standards page
+         * @description Counts the standards page renders, in one request (see #103).
+         */
+        get: operations["get_standard_stats_api_v1_quality_static_data_standard_stats_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14337,7 +14412,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 获取单个试剂的提醒配置
+         * 单个试剂提醒配置
          * @description 获取单个试剂的提醒配置
          */
         get: operations["get_api_v1_quality_reagent_reminder_item_reminder__reagent_name__get"];
@@ -14800,7 +14875,11 @@ export interface paths {
         put?: never;
         /**
          * Post
-         * @description 发送校准记录到期提醒到飞书
+         * @description 发送校准记录到期提醒到飞书。
+         *
+         *     Credentials come from the selected reminder config, decrypted server-side.
+         *     They are deliberately NOT accepted as parameters: a secret in a query string
+         *     is written to every access log, proxy log and browser history along the way.
          */
         post: operations["post_api_v1_quality_instrument_record_remind_post"];
         delete?: never;
@@ -18440,10 +18519,7 @@ export interface components {
             message: string;
             /** Data */
             data?: unknown;
-            /** Meta */
-            meta?: {
-                [key: string]: unknown;
-            } | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /**
          * ApprovalRecordListApiResponse
@@ -18730,7 +18806,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["BatchResponse"];
+            data?: components["schemas"]["BatchResponse"] | null;
         };
         /** BatchAuditRequest */
         BatchAuditRequest: {
@@ -18839,6 +18915,43 @@ export interface components {
             ids: string[];
         };
         /**
+         * BatchImportJobApiResponse
+         * @description Batch import job response wrapper
+         */
+        BatchImportJobApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["BatchImportJobData"];
+        };
+        /**
+         * BatchImportJobData
+         * @description Handle for a running batch import.
+         *
+         *     `result` is populated only once `status` is `done`; `error` only once it is
+         *     `failed`. Typed deliberately rather than `dict[str, Any]` — an untyped payload
+         *     is what let an earlier caller read fields the response never contained.
+         */
+        BatchImportJobData: {
+            /** Job Id */
+            job_id: string;
+            /** Status */
+            status: string;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
+        };
+        /**
          * BatchListApiResponse
          * @description 批次列表响应包装
          */
@@ -18923,7 +19036,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["BatchMaterialResponse"];
+            data?: components["schemas"]["BatchMaterialResponse"] | null;
         };
         /**
          * BatchMaterialCreate
@@ -20255,7 +20368,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["CapaResponse"];
+            data?: components["schemas"]["CapaResponse"] | null;
         };
         /**
          * CapaCategory
@@ -20838,7 +20951,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ClosingResponse"];
+            data?: components["schemas"]["ClosingResponse"] | null;
         };
         /**
          * ClosingCreate
@@ -22293,7 +22406,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["CorrectionResponse"];
+            data?: components["schemas"]["CorrectionResponse"] | null;
         };
         /**
          * CorrectionCreate
@@ -23296,7 +23409,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["DepartmentLeaderResponse"];
+            data?: components["schemas"]["DepartmentLeaderResponse"] | null;
         };
         /**
          * DepartmentLeaderResponse
@@ -23334,7 +23447,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["DepartmentSafetyOfficerResponse"];
+            data?: components["schemas"]["DepartmentSafetyOfficerResponse"] | null;
         };
         /**
          * DepartmentSafetyOfficerResponse
@@ -23649,7 +23762,8 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["DeviationResponse"];
+            /** Data */
+            data?: unknown;
         };
         /**
          * DeviationCreate
@@ -27284,65 +27398,6 @@ export interface components {
             updated_by?: string | null;
         };
         /**
-         * FQCInspectionListApiResponse
-         * @description FQC检验单列表响应包装
-         */
-        FQCInspectionListApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["FQCInspectionListResponse"] | null;
-        };
-        /**
-         * FQCInspectionListResponse
-         * @description FQC检验单列表响应
-         */
-        FQCInspectionListResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Inspection No */
-            inspection_no: string;
-            /** Batch No */
-            batch_no?: string | null;
-            /** Product Code */
-            product_code: string;
-            /** Product Name */
-            product_name?: string | null;
-            /** Production Workshop */
-            production_workshop?: string | null;
-            /** Batch Quantity */
-            batch_quantity?: string | null;
-            /** Manufacturing Date */
-            manufacturing_date?: string | null;
-            /** Inspector Name */
-            inspector_name?: string | null;
-            /** Inspection Date */
-            inspection_date?: string | null;
-            status: components["schemas"]["FQCInspectionStatus"];
-            inspection_conclusion?: components["schemas"]["FQCInspectionConclusion"] | null;
-            release_status?: components["schemas"]["FQCReleaseStatus"] | null;
-            /**
-             * Batch Locked
-             * @default false
-             */
-            batch_locked: boolean;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-        };
-        /**
          * FQCInspectionResponse
          * @description FQC检验单响应
          */
@@ -27602,6 +27657,37 @@ export interface components {
          * @enum {string}
          */
         FQCItemResult: "pass" | "fail" | "na";
+        /**
+         * FQCPaginatedListApiResponse
+         * @description FQC paginated list API response wrapper
+         */
+        FQCPaginatedListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["FQCPaginatedListResponse"] | null;
+        };
+        /**
+         * FQCPaginatedListResponse
+         * @description FQC paginated list response
+         */
+        FQCPaginatedListResponse: {
+            /** Items */
+            items: components["schemas"]["FQCInspectionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
         /**
          * FQCReleaseStatus
          * @description FQC放行状态
@@ -28074,7 +28160,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["HazardIdentificationResponse"];
+            data?: components["schemas"]["HazardIdentificationResponse"] | null;
         };
         /**
          * HazardIdentificationBatchApiResponse
@@ -29291,12 +29377,6 @@ export interface components {
              * @description Attachments
              */
             attach_file?: string | null;
-            /**
-             * Create By
-             * @description Creator
-             * @default 0
-             */
-            create_by: number;
         };
         /**
          * HplcReferenceUpdate
@@ -30580,7 +30660,8 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["InspectionStandardResponse"];
+            /** Data */
+            data?: unknown;
         };
         /**
          * InspectionStandardCopy
@@ -31595,7 +31676,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["InvestigationResponse"];
+            data?: components["schemas"]["InvestigationResponse"] | null;
         };
         /**
          * InvestigationCreate
@@ -31915,6 +31996,35 @@ export interface components {
          */
         ItemCategory: "physical_chemical" | "related_substances" | "residual_solvents" | "microbial";
         /**
+         * ItemReminderConfigResponse
+         * @description `GET /item-reminder/{reagent_name}` — defaults to enabled when unset.
+         */
+        ItemReminderConfigResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ItemReminderData"];
+        };
+        /**
+         * ItemReminderData
+         * @description `POST /item-reminder` returns no `data` key at all — hence the optional.
+         */
+        ItemReminderData: {
+            /** Id */
+            id?: string | null;
+            /** Reagent Name */
+            reagent_name?: string | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /**
          * ItemReminderRequest
          * @description 单个试剂提醒配置请求
          */
@@ -31930,6 +32040,23 @@ export interface components {
              * @default true
              */
             is_enabled: boolean;
+        };
+        /**
+         * ItemReminderResponse
+         * @description `POST /item-reminder`
+         */
+        ItemReminderResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default 设置成功
+             */
+            message: string;
+            data?: components["schemas"]["ItemReminderData"] | null;
         };
         /**
          * ItemResult
@@ -32372,6 +32499,51 @@ export interface components {
              */
             description?: string | null;
         };
+        /** LowStockData */
+        LowStockData: {
+            /** Count */
+            count: number;
+            /** Items */
+            items: components["schemas"]["LowStockItem"][];
+        };
+        /**
+         * LowStockItem
+         * @description One reagent below the threshold, with its reminder toggle state.
+         */
+        LowStockItem: {
+            /** Reagent Name */
+            reagent_name: string;
+            /** Count */
+            count: number;
+            /** Statuses */
+            statuses?: string | null;
+            /** Units */
+            units?: string | null;
+            /** Latest Arrival */
+            latest_arrival?: string | null;
+            /**
+             * Is Enabled
+             * @default true
+             */
+            is_enabled: boolean;
+        };
+        /**
+         * LowStockResponse
+         * @description `GET /low-stock`
+         */
+        LowStockResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["LowStockData"];
+        };
         /**
          * MaintenancePlanCreate
          * @description 创建维护计划请求
@@ -32713,6 +32885,39 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * MediumStatsData
+         * @description Counts the mediums page renders.
+         */
+        MediumStatsData: {
+            /** All */
+            all: number;
+            /** Verified */
+            verified: number;
+            /** Pending */
+            pending: number;
+            /** Expired */
+            expired: number;
+            /** Lowstock */
+            lowStock: number;
+        };
+        /**
+         * MediumStatsResponse
+         * @description Mediums stats response wrapper
+         */
+        MediumStatsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["MediumStatsData"];
+        };
+        /**
          * MediumUpdate
          * @description Update Medium
          */
@@ -32950,7 +33155,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["OhHazardMonitorResponse"];
+            data?: components["schemas"]["OhHazardMonitorResponse"] | null;
         };
         /**
          * OhHazardMonitorCreate
@@ -33980,6 +34185,27 @@ export interface components {
             appendix_slot?: string | null;
         };
         /**
+         * PaginationMeta
+         * @description Pagination envelope carried in ApiResponse.meta.
+         *
+         *     Mirrors what app/core/response.py:paginated_response() emits, so the
+         *     OpenAPI contract names these fields instead of leaving meta an opaque dict.
+         *
+         *     Deliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta
+         *     into a model instance, and the ~73 module envelopes that declare
+         *     `meta: dict[...]` would then fail `response_model` validation with
+         *     "Input should be a valid dictionary". A TypedDict keeps meta a plain dict
+         *     while still generating a named schema for the frontend.
+         */
+        PaginationMeta: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
+        /**
          * PartComplete
          * @description 完成部分
          */
@@ -34134,7 +34360,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["PlanTaskResponse"];
+            data?: components["schemas"]["PlanTaskResponse"] | null;
         };
         /**
          * PlanTaskCreate
@@ -34540,7 +34766,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProcessParameterResponse"];
+            data?: components["schemas"]["ProcessParameterResponse"] | null;
         };
         /**
          * ProcessParameterCreate
@@ -34704,7 +34930,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProcessSpecResponse"];
+            data?: components["schemas"]["ProcessSpecResponse"] | null;
         };
         /**
          * ProcessSpecCreate
@@ -34923,7 +35149,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProcessStepResponse"];
+            data?: components["schemas"]["ProcessStepResponse"] | null;
         };
         /**
          * ProcessStepCreate
@@ -35434,7 +35660,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProductionPlanResponse"];
+            data?: components["schemas"]["ProductionPlanResponse"] | null;
         };
         /**
          * ProductionPlanCreate
@@ -35588,7 +35814,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["ProductionRecordResponse"];
+            data?: components["schemas"]["ProductionRecordResponse"] | null;
         };
         /**
          * ProductionRecordCreate
@@ -37705,6 +37931,82 @@ export interface components {
             } | null;
         };
         /**
+         * ReagentReminderConfigData
+         * @description The reminder config as the page reads it.
+         *
+         *     `feishu_app_secret` is masked server-side — the column holds ciphertext, so the
+         *     plaintext is never returned.
+         */
+        ReagentReminderConfigData: {
+            /** Feishu App Id */
+            feishu_app_id?: string | null;
+            /** Feishu App Secret */
+            feishu_app_secret?: string | null;
+            /** Feishu Chat Id */
+            feishu_chat_id?: string | null;
+            /** Low Stock Threshold */
+            low_stock_threshold?: number | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+            /** Last Remind Time */
+            last_remind_time?: string | null;
+            /** Last Remind Content */
+            last_remind_content?: string | null;
+        };
+        /**
+         * ReagentReminderConfigResponse
+         * @description `GET /config` — data is null until a config exists.
+         */
+        ReagentReminderConfigResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentReminderConfigData"] | null;
+        };
+        /**
+         * ReagentReminderSavedData
+         * @description The subset returned after saving — deliberately excludes the secret.
+         */
+        ReagentReminderSavedData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Feishu App Id */
+            feishu_app_id?: string | null;
+            /** Feishu Chat Id */
+            feishu_chat_id?: string | null;
+            /** Low Stock Threshold */
+            low_stock_threshold?: number | null;
+            /** Is Enabled */
+            is_enabled?: boolean | null;
+        };
+        /**
+         * ReagentReminderSavedResponse
+         * @description `POST /config`
+         */
+        ReagentReminderSavedResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default 保存成功
+             */
+            message: string;
+            data: components["schemas"]["ReagentReminderSavedData"];
+        };
+        /**
          * RectificationReplyRequest
          * @description 整改回复请求（合并了原 complete_rectification 步骤）
          */
@@ -38085,7 +38387,7 @@ export interface components {
              * @default success
              */
             message: string;
-            data: components["schemas"]["RegulationStagesResponse"];
+            data?: components["schemas"]["RegulationStagesResponse"] | null;
         };
         /**
          * RegulationStagesResponse
@@ -38101,6 +38403,38 @@ export interface components {
             regulation_name?: string | null;
             /** Stages */
             stages?: components["schemas"]["RegulationStageInfo"][];
+        };
+        /**
+         * ReminderCheckData
+         * @description `/check` payload — varies by branch, so every field is optional.
+         *
+         *     The service returns `data: null` for the early exits (no config, disabled,
+         *     incomplete Feishu settings) and a count otherwise.
+         */
+        ReminderCheckData: {
+            /** Count */
+            count?: number | null;
+            /** Total */
+            total?: number | null;
+            /** Filtered */
+            filtered?: boolean | null;
+        };
+        /**
+         * ReminderCheckResponse
+         * @description `POST /check`
+         */
+        ReminderCheckResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReminderCheckData"] | null;
         };
         /**
          * ReminderConfigCreate
@@ -42422,6 +42756,57 @@ export interface components {
             sample_nodes?: components["schemas"]["StabilitySampleNodeCreate"][] | null;
         };
         /**
+         * StabilityTrendApiResponse
+         * @description 稳定性趋势响应包装
+         */
+        StabilityTrendApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["StabilityTrendResponse"] | null;
+        };
+        /**
+         * StabilityTrendDataPoint
+         * @description 趋势分析数据点
+         */
+        StabilityTrendDataPoint: {
+            /** Inspection Item */
+            inspection_item: string;
+            /** Node Month */
+            node_month: number;
+            /** Measured Value */
+            measured_value?: string | null;
+            result?: components["schemas"]["StabilityItemResult"] | null;
+            /** Inspection Date */
+            inspection_date?: string | null;
+        };
+        /**
+         * StabilityTrendResponse
+         * @description 趋势分析响应
+         */
+        StabilityTrendResponse: {
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no: string;
+            study_type: components["schemas"]["StabilityStudyType"];
+            /** Inspection Items */
+            inspection_items: string[];
+            /** Data Points */
+            data_points: {
+                [key: string]: components["schemas"]["StabilityTrendDataPoint"][];
+            };
+        };
+        /**
          * StandardCreate
          * @description Create Standard
          */
@@ -42529,6 +42914,42 @@ export interface components {
              * @description Remark
              */
             remark?: string | null;
+        };
+        /**
+         * StandardStatsData
+         * @description Counts the standards page renders.
+         *
+         *     A concrete model rather than `DataApiResponse`'s `data: Any`, so the generated
+         *     OpenAPI describes the fields the frontend actually reads (`AGENTS.md:133`).
+         */
+        StandardStatsData: {
+            /** All */
+            all: number;
+            /** Active */
+            active: number;
+            /** Expired */
+            expired: number;
+            /** Lowstock */
+            lowStock: number;
+            /** National */
+            national: number;
+        };
+        /**
+         * StandardStatsResponse
+         * @description Standards stats response wrapper
+         */
+        StandardStatsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["StandardStatsData"];
         };
         /**
          * StandardStatus
@@ -42658,11 +43079,6 @@ export interface components {
              * @default 0
              */
             status: number;
-            /**
-             * Create By
-             * @description Creator
-             */
-            create_by: number;
         };
         /**
          * StorageConditionUpdate
@@ -67323,7 +67739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67358,7 +67774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67391,7 +67807,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67428,7 +67844,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67461,7 +67877,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67499,7 +67915,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67539,7 +67955,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67573,7 +67989,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67606,7 +68022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67639,7 +68055,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67747,7 +68163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67782,7 +68198,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67815,7 +68231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67848,7 +68264,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67881,7 +68297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67914,7 +68330,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67948,7 +68364,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -67985,7 +68401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68057,7 +68473,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68094,7 +68510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68127,7 +68543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68166,7 +68582,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68199,7 +68615,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68238,7 +68654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68277,7 +68693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68310,7 +68726,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68347,7 +68763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68384,7 +68800,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68417,7 +68833,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68456,7 +68872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68489,7 +68905,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69137,7 +69553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69172,7 +69588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69205,7 +69621,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69242,7 +69658,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69275,7 +69691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69314,7 +69730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69350,7 +69766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69384,7 +69800,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69419,7 +69835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69456,7 +69872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69490,7 +69906,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69525,7 +69941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69562,7 +69978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69596,7 +70012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69631,7 +70047,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69668,7 +70084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70380,7 +70796,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70415,7 +70831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70452,7 +70868,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70521,7 +70937,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70556,7 +70972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70593,7 +71009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70662,7 +71078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70697,7 +71113,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70734,7 +71150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70802,7 +71218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70835,7 +71251,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70872,7 +71288,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71002,7 +71418,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71033,7 +71449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71071,7 +71487,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71106,7 +71522,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71143,7 +71559,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71213,7 +71629,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75514,7 +75930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionListApiResponse"];
+                    "application/json": components["schemas"]["FQCPaginatedListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76451,7 +76867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json": components["schemas"]["StabilityTrendApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79635,7 +80051,9 @@ export interface operations {
             path: {
                 dict_type: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79664,7 +80082,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79675,6 +80095,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79684,7 +80113,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79697,6 +80128,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     download_hplc_reference_template_api_v1_quality_static_data_hplc_reference_template_get: {
@@ -79704,7 +80144,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79715,6 +80157,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79735,12 +80186,45 @@ export interface operations {
         };
         responses: {
             /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_import_job_api_v1_quality_static_data_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79772,7 +80256,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79836,7 +80322,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79849,6 +80337,15 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_api_v1_quality_static_data_hplc_reference__id__get: {
@@ -79856,9 +80353,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79887,7 +80386,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -79924,9 +80423,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79955,7 +80456,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -79992,7 +80493,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80032,9 +80533,11 @@ export interface operations {
             };
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80078,7 +80581,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80142,35 +80647,11 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-        };
-    };
-    handler_api_v1_quality_static_data_chrom_column_batch_import_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
             cookie?: {
                 auth_token?: string | null;
             };
         };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_handler_api_v1_quality_static_data_chrom_column_batch_import_post"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -80192,14 +80673,51 @@ export interface operations {
             };
         };
     };
+    handler_api_v1_quality_static_data_chrom_column_batch_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_handler_api_v1_quality_static_data_chrom_column_batch_import_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_api_v1_quality_static_data_chrom_column__id__get: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80228,7 +80746,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80265,9 +80783,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80296,7 +80816,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80311,6 +80831,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_medium_stats_api_v1_quality_static_data_medium_stats_get: {
+        parameters: {
+            query?: {
+                /** @description Medium type, when one is chosen */
+                medium_type?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MediumStatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80344,7 +80898,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80408,9 +80964,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80439,7 +80997,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80476,7 +81034,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80509,7 +81067,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80541,6 +81099,37 @@ export interface operations {
             };
         };
     };
+    get_standard_stats_api_v1_quality_static_data_standard_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StandardStatsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_api_v1_quality_static_data_standard_get: {
         parameters: {
             query?: {
@@ -80559,7 +81148,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80623,9 +81214,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80654,7 +81247,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80691,7 +81284,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80724,7 +81317,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80770,7 +81363,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80834,9 +81429,11 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80865,7 +81462,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80902,7 +81499,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: number;
+                id: string;
             };
             cookie?: {
                 auth_token?: string | null;
@@ -80935,7 +81532,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80945,7 +81544,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReagentReminderConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -80955,7 +81563,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -80969,7 +81579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReagentReminderSavedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80988,7 +81598,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -80998,7 +81610,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReminderCheckResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -81010,7 +81631,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81020,7 +81643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["LowStockResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81039,7 +81662,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -81053,7 +81678,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ItemReminderResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81074,7 +81699,9 @@ export interface operations {
             path: {
                 reagent_name: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81084,7 +81711,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ItemReminderConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81103,7 +81730,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: {
             content: {
@@ -81136,7 +81765,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81149,6 +81780,15 @@ export interface operations {
                     "application/json": components["schemas"]["InstrumentReminderConfigListApiResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     post_api_v1_quality_instrument_reminder_config_post: {
@@ -81156,7 +81796,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -81191,7 +81833,9 @@ export interface operations {
             path: {
                 config_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -81226,7 +81870,9 @@ export interface operations {
             path: {
                 config_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81272,7 +81918,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81481,7 +82129,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81547,7 +82197,9 @@ export interface operations {
             path: {
                 instrument_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81615,7 +82267,9 @@ export interface operations {
             path: {
                 rule_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81625,7 +82279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81647,7 +82301,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81697,7 +82353,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81763,7 +82421,9 @@ export interface operations {
             path: {
                 record_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81831,7 +82491,9 @@ export interface operations {
             path: {
                 record_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -81841,7 +82503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81935,7 +82597,9 @@ export interface operations {
             path: {
                 instrument_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -82003,7 +82667,9 @@ export interface operations {
             path: {
                 instrument_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -82013,7 +82679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82032,7 +82698,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -82068,7 +82736,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -82100,7 +82770,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -82127,22 +82799,18 @@ export interface operations {
     post_api_v1_quality_instrument_record_remind_post: {
         parameters: {
             query: {
-                /** @description 飞书群ID或用户ID或open_id */
-                chat_id: string;
-                /** @description 接收者类型: chat_id/user_id/open_id */
-                receive_id_type?: string;
+                /** @description 提醒配置ID */
+                config_id: string;
                 /** @description 提前提醒天数 */
                 days?: number;
                 /** @description 是否包含超期记录 */
                 include_overdue?: boolean;
-                /** @description 飞书应用AppID */
-                feishu_app_id?: string | null;
-                /** @description 飞书应用AppSecret */
-                feishu_app_secret?: string | null;
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -82171,7 +82839,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -82182,6 +82852,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

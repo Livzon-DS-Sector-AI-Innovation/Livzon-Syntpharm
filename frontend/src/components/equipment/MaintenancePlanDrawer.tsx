@@ -101,7 +101,7 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingMaintenancePlan ? '编辑维护计划' : '新建维护计划'}
       size={480}
       open={maintenancePlanDrawerOpen}

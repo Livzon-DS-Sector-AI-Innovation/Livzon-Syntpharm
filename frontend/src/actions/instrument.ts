@@ -203,14 +203,8 @@ export async function getRecordsForReminder(days: number = 30) {
   return apiGetRecordsForReminder(days)
 }
 
-export async function sendCalibrationReminder(
-  chatId: string,
-  receiveIdType: 'chat_id' | 'open_id' = 'chat_id',
-  days: number = 30,
-  feishuAppId?: string,
-  feishuAppSecret?: string
-) {
-  return apiSendCalibrationReminder(chatId, receiveIdType, days, feishuAppId, feishuAppSecret)
+export async function sendCalibrationReminder(configId: string, days: number = 30) {
+  return apiSendCalibrationReminder(configId, days)
 }
 
 export async function getReminderConfigs() {

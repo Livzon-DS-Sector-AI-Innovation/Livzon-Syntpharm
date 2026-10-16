@@ -71,6 +71,14 @@ export default function NewHazardIdentificationPage() {
         return
       }
 
+      // The contract types `data` as optional; a 200 with no payload would
+      // otherwise throw on the next line.
+      if (!createRes.data) {
+        message.error('创建失败：响应缺少数据')
+        setLoading(false)
+        return
+      }
+
       const recordId = createRes.data.id
 
       if (!saveOnly) {
@@ -148,9 +156,11 @@ export default function NewHazardIdentificationPage() {
         >
           <BankOutlined style={{ color: '#5645d4', fontSize: 18 }} />
           <div>
-            <span style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a' }}>
+            {/* The page's title. Was a <span>; the tag is the only change —
+                a page needs one top-level heading (#102). */}
+            <h1 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
               登记危险源基础信息
-            </span>
+            </h1>
             <Text type="secondary" style={{ display: 'block', fontSize: 13, color: '#5d5b54' }}>
               填写岗位基本信息并引用安全操作规程，AI 将自动辨识危险源
             </Text>

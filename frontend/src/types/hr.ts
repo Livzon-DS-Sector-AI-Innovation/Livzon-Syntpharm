@@ -837,8 +837,12 @@ export type SendTrainingNotificationResponse = { code: number; message: string; 
 // ─── Generic Response Types ───
 
 export type DeleteResponse = { code: number; message: string }
-export type GenericDataResponse = { code: number; message: string; data: unknown }
-export type GenericDataListResponse = { code: number; message: string; data: unknown[] }
+// Generic where callers know the payload shape; the default keeps the previous
+// `unknown` behaviour for the untyped call sites. These are not duplicates of
+// ApiResponse — they exist because the backend returns dict payloads here that
+// the generated schema does not describe.
+export type GenericDataResponse<T = unknown> = { code: number; message: string; data: T }
+export type GenericDataListResponse<T = unknown> = { code: number; message: string; data: T[] }
 
 // ─── Training Ledger Page Types ───
 

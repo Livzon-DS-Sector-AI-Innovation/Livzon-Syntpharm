@@ -31,11 +31,10 @@ async function getImpersonationStatus(): Promise<ImpersonationStatus | null> {
 
 interface TopNavProps {
   onMenuClick?: () => void
-  showMenuButton?: boolean
   permissionView: PermissionView
 }
 
-export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavProps) {
+export function TopNav({ onMenuClick, permissionView }: TopNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const activeModule = pathname.split("/")[1] || "production"
@@ -71,14 +70,12 @@ export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavPr
   return (
     <header className="h-16 bg-[var(--color-canvas)] border-b border-[var(--color-hairline)] flex items-center px-5 shrink-0">
       {/* Mobile menu button */}
-      {showMenuButton && (
-        <button
-          onClick={onMenuClick}
-          className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors mr-2 md:hidden"
-        >
-          <MenuOutlined style={{ fontSize: 18 }} />
-        </button>
-      )}
+      <button
+        onClick={onMenuClick}
+        className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors mr-2 md:hidden"
+      >
+        <MenuOutlined style={{ fontSize: 18 }} />
+      </button>
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 mr-6 shrink-0">
@@ -89,14 +86,33 @@ export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavPr
           <span className="text-[var(--color-charcoal)] text-[15px] font-semibold tracking-tight leading-tight">
             原料药
           </span>
-          <span className="text-[var(--color-steel)] text-[11px] leading-tight">
+          <span className="text-[var(--color-steel)] text-[11px] leading-tight hidden md:block">
             珠海保税区丽珠合成制药有限公司
           </span>
         </div>
       </div>
 
-      {/* Module Tabs */}
-      <nav className="flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide h-full ml-8">
+      {/* 移动端：当前模块名（点击下拉切换模块） */}
+      <Dropdown
+        trigger={["click"]}
+        placement="bottomLeft"
+        menu={{
+          items: visibleMenus.map((mod) => ({
+            key: mod.key,
+            label: <Link href={mod.path}>{mod.label}</Link>,
+            icon: <ModuleIcon name={mod.icon} className="w-4 h-4" />,
+          })),
+          selectedKeys: [activeModule],
+        }}
+      >
+        <button className="md:hidden flex items-center gap-1 ml-2 mr-auto text-[15px] font-semibold text-[var(--color-ink)]">
+          {visibleMenus.find((m) => m.key === activeModule)?.label || ""}
+          <span className="text-[10px] text-[var(--color-steel)]">▾</span>
+        </button>
+      </Dropdown>
+
+      {/* Module Tabs（仅桌面显示；移动端模块切换走导航抽屉） */}
+      <nav className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide h-full ml-8">
         {visibleMenus.map((mod) => {
           const isActive = activeModule === mod.key
           return (
@@ -125,7 +141,7 @@ export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavPr
       <div className="flex items-center gap-1 ml-4 shrink-0">
         <button
           onClick={toggleSidebar}
-          className="w-8 h-8 flex items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors"
+          className="w-8 h-8 items-center justify-center rounded-[var(--rounded-sm)] text-[var(--color-steel)] hover:text-[var(--color-charcoal)] hover:bg-[var(--color-surface)] transition-colors hidden md:flex"
           title={collapsed ? "展开侧边栏" : "收起侧边栏"}
         >
           {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -169,7 +185,7 @@ export function TopNav({ onMenuClick, showMenuButton, permissionView }: TopNavPr
             ) : (
               <Avatar size={28} icon={<UserOutlined />} />
             )}
-            <span className="text-[13px] text-[var(--color-ink)]">
+            <span className="text-[13px] text-[var(--color-ink)] hidden md:inline">
               {displayName}
             </span>
           </button>

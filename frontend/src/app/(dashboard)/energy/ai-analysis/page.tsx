@@ -1,6 +1,7 @@
 'use client'
 
 type ProductionItem = {
+  id: string;
   product_name: string;
   quantity: number;
   unit: string;
@@ -64,7 +65,7 @@ export default function AIAnalysisPage() {
 
   
   const handleAddItem = () => {
-    setProductionItems([...productionItems, { product_name: '', quantity: 0, unit: 'kg' }])
+    setProductionItems([...productionItems, { id: crypto.randomUUID(), product_name: '', quantity: 0, unit: 'kg' }])
   }
 
   const handleRemoveItem = (index: number) => {
@@ -87,7 +88,7 @@ export default function AIAnalysisPage() {
         workshop_id: workshopId,
         month: analysisMonth,
       })
-      setProductionItems(result.items)
+      setProductionItems(result.items.map(item => ({ ...item, id: crypto.randomUUID() })))
       message.success('同步成功')
     } catch (_error) {
       message.error('同步失败')
@@ -113,7 +114,7 @@ const handleAnalyze = async () => {
       const data = await analyzeEnergyV2({
         workshop_id: workshopId,
         analysis_month: analysisMonth,
-        production_items: productionItems,
+        production_items: productionItems.map(({ product_name, quantity, unit }) => ({ product_name, quantity, unit })),
         include_ai_suggestion: true,
       })
       setResult(data)
@@ -184,6 +185,7 @@ const handleAnalyze = async () => {
             
             <Table 
               dataSource={productionItems}
+              rowKey="id"
               pagination={false}
               size="small"
               columns={[
@@ -300,7 +302,7 @@ const handleAnalyze = async () => {
               title={`${getStatusIcon(result.deviation_status)} 状态：${
                 result.deviation_status === 'normal' ? '正常' :
                 result.deviation_status === 'warning' ? '警告（超出目标 5%-15%）' :
-                result.deviation_status === 'critical' ? '严重超标（超出目标 &gt;15%）' :
+                result.deviation_status === 'critical' ? '严重超标（超出目标 >15%）' :
                 '未知（未设定目标）'
               }`}
               type={

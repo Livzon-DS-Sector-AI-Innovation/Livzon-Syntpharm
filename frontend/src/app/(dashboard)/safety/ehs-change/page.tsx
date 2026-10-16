@@ -459,7 +459,7 @@ export default function EhsChangePage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <Title level={4} className="mb-1">EHS变更管理</Title>
+          <Title level={1} className="mb-1">EHS变更管理</Title>
           <Text type="secondary">基于 T/CCSAS 007-2020 标准，管理工艺技术、设备设施、管理三类变更的全生命周期</Text>
         </div>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>

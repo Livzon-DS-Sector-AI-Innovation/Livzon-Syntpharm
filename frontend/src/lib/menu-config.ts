@@ -320,7 +320,6 @@ export const moduleMenus: ModuleMenu[] = [
         path: "",
         children: [
           { key: "static-data-overview", label: "业务静态数据", path: "/quality/static-data" },
-          { key: "static-data-audit", label: "审计数据", path: "/quality/static-data/audit" },
           { key: "static-data-chrom-column", label: "色谱柱管理", path: "/quality/static-data/chrom-column" },
           { key: "static-data-hplc-reference", label: "液相对照品", path: "/quality/static-data/hplc-reference" },
           { key: "static-data-medium", label: "培养基管理", path: "/quality/static-data/medium" },

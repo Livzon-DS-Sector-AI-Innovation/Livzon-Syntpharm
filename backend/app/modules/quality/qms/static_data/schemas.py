@@ -3,10 +3,14 @@
 Pydantic validation schemas for API request/response.
 """
 
+import logging
 from datetime import date, datetime
 from typing import Any
+from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 # ========== Common Fields ==========
 
@@ -14,10 +18,10 @@ from pydantic import BaseModel, Field
 class AuditFields(BaseModel):
     """Common audit fields for response"""
 
-    create_by: int = Field(..., description="Creator")
-    create_time: datetime = Field(..., description="Create time")
-    update_by: int | None = Field(None, description="Updater")
-    update_time: datetime | None = Field(None, description="Update time")
+    created_by: UUID | None = Field(None, description="Creator")
+    created_at: datetime = Field(..., description="Create time")
+    updated_by: UUID | None = Field(None, description="Updater")
+    updated_at: datetime | None = Field(None, description="Update time")
 
 
 # ========== 1. Storage Condition ==========
@@ -38,7 +42,7 @@ class StorageConditionBase(BaseModel):
 class StorageConditionCreate(StorageConditionBase):
     """Create Storage Condition"""
 
-    create_by: int = Field(..., description="Creator")
+    pass
 
 
 class StorageConditionUpdate(BaseModel):
@@ -55,7 +59,7 @@ class StorageConditionUpdate(BaseModel):
 class StorageConditionResponse(StorageConditionBase, AuditFields):
     """Storage Condition Response"""
 
-    id: int
+    id: UUID
 
     class Config:
         from_attributes = True
@@ -78,7 +82,7 @@ class UnitBase(BaseModel):
 class UnitCreate(UnitBase):
     """Create Unit"""
 
-    create_by: int = Field(..., description="Creator")
+    pass
 
 
 class UnitUpdate(BaseModel):
@@ -94,7 +98,7 @@ class UnitUpdate(BaseModel):
 class UnitResponse(UnitBase, AuditFields):
     """Unit Response"""
 
-    id: int
+    id: UUID
 
     class Config:
         from_attributes = True
@@ -143,7 +147,7 @@ class HplcReferenceBase(BaseModel):
 class HplcReferenceCreate(HplcReferenceBase):
     """Create HPLC Reference Substance"""
 
-    create_by: int = Field(0, description="Creator")
+    pass
 
 
 class HplcReferenceUpdate(BaseModel):
@@ -185,7 +189,7 @@ class HplcReferenceUpdate(BaseModel):
 class HplcReferenceResponse(HplcReferenceBase, AuditFields):
     """HPLC Reference Substance Response"""
 
-    id: int
+    id: UUID
 
     class Config:
         from_attributes = True
@@ -206,13 +210,13 @@ class HplcReferenceUsageBase(BaseModel):
 class HplcReferenceUsageCreate(HplcReferenceUsageBase):
     """Create HPLC Reference Usage"""
 
-    create_by: int = Field(0, description="Creator")
+    pass
 
 
 class HplcReferenceUsageResponse(HplcReferenceUsageBase, AuditFields):
     """HPLC Reference Usage Response"""
 
-    id: int
+    id: UUID
     ref_code: str
     ref_name: str
     remaining_after: float
@@ -274,7 +278,7 @@ class ChromColumnUpdate(BaseModel):
 class ChromColumnResponse(ChromColumnBase, AuditFields):
     """Chromatography Column Response"""
 
-    id: int
+    id: UUID
 
     class Config:
         from_attributes = True
@@ -333,7 +337,7 @@ class MediumUpdate(BaseModel):
 class MediumResponse(MediumBase, AuditFields):
     """Medium Response"""
 
-    id: int
+    id: UUID
 
     class Config:
         from_attributes = True
@@ -400,7 +404,7 @@ class StandardUpdate(BaseModel):
 class StandardResponse(StandardBase, AuditFields):
     """Standard Response"""
 
-    id: int
+    id: UUID
 
     class Config:
         from_attributes = True
@@ -458,6 +462,70 @@ class HplcReferenceListApiResponse(BaseModel):
     message: str = "success"
     data: list[HplcReferenceResponse]
     meta: dict[str, Any] | None = None
+
+
+class BatchImportJobData(BaseModel):
+    """Handle for a running batch import.
+
+    `result` is populated only once `status` is `done`; `error` only once it is
+    `failed`. Typed deliberately rather than `dict[str, Any]` — an untyped payload
+    is what let an earlier caller read fields the response never contained.
+    """
+
+    job_id: str
+    status: str  # running | done | failed
+    result: dict[str, Any] | None = None
+    error: str | None = None
+
+
+class BatchImportJobApiResponse(BaseModel):
+    """Batch import job response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: BatchImportJobData
+
+
+class StandardStatsData(BaseModel):
+    """Counts the standards page renders.
+
+    A concrete model rather than `DataApiResponse`'s `data: Any`, so the generated
+    OpenAPI describes the fields the frontend actually reads (`AGENTS.md:133`).
+    """
+
+    all: int
+    active: int
+    expired: int
+    # camelCase because the frontend reads `stats.lowStock` directly — renaming it
+    # would break the page. Same convention as capa_schemas.py uses for its fields.
+    lowStock: int  # noqa: N815
+    national: int
+
+
+class StandardStatsResponse(BaseModel):
+    """Standards stats response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: StandardStatsData
+
+
+class MediumStatsData(BaseModel):
+    """Counts the mediums page renders."""
+
+    all: int
+    verified: int
+    pending: int
+    expired: int
+    lowStock: int  # noqa: N815
+
+
+class MediumStatsResponse(BaseModel):
+    """Mediums stats response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: MediumStatsData
 
 
 class ChromColumnApiResponse(BaseModel):

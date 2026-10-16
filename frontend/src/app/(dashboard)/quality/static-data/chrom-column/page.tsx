@@ -105,11 +105,18 @@ export default function ChromColumnPage() {
     if (categoryFilter !== 'all') {
       params.column_category = categoryFilter
     }
-    const adv = advancedForm.getFieldsValue()
-    if (adv.manufacturer) params.manufacturer = adv.manufacturer
-    if (adv.spec) params.spec = adv.spec
+    // Only read the instance while its <Form> is mounted. advancedForm is behind
+    // {showAdvanced && ...}, which starts false; calling getFieldsValue() on an
+    // unmounted form returns {} anyway, but it makes antd's useForm warn
+    // ("Instance created by `useForm` is not connected to any Form element"),
+    // because this useCallback runs on mount via react-query, before any Form exists.
+    if (showAdvanced) {
+      const adv = advancedForm.getFieldsValue()
+      if (adv.manufacturer) params.manufacturer = adv.manufacturer
+      if (adv.spec) params.spec = adv.spec
+    }
     return params
-  }, [page, pageSize, searchText, statusFilter, categoryFilter, advancedForm])
+  }, [page, pageSize, searchText, statusFilter, categoryFilter, advancedForm, showAdvanced])
 
   const { data: queryResult, isLoading: loading, refetch } = useQuery({
     queryKey: ['chrom-column-list', page, pageSize, searchText, statusFilter, categoryFilter],
