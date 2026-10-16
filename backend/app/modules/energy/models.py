@@ -65,6 +65,25 @@ ROLLUP_WORKSHOPS: dict[str, tuple[str, ...]] = {
 }
 
 
+# AI 能耗分析的生产车间白名单（口径见 docs/energy-module-prd.md 5.6）：单耗 = 车间电耗 / 折算产量，
+# 只有能对上产品产量的生产车间才算得出来，辅助部门与机组的「单耗」没有业务含义。
+# 粒度是车间名（与 EnergyWorkshop.name 精确相等），所以 `103车间` 不会命中 `103冷水机组`。
+# `303、106车间` 是多维表格里的一个实体（两个车间合并报数），保持一行不拆。
+PRODUCTION_WORKSHOPS: frozenset[str] = frozenset(
+    {
+        "101车间",
+        "102车间",
+        "103车间",
+        "105车间",
+        "201车间",
+        "202车间",
+        "301车间",
+        "302车间",
+        "303、106车间",
+    }
+)
+
+
 class EnergyWorkshop(BaseModel):
     """车间/部门配置表"""
 

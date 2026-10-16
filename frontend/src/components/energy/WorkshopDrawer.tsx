@@ -37,9 +37,9 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
   const [form] = Form.useForm()
   const isEdit = !!workshopId
 
-  // 使用 useQuery 获取车间数据
+  // 使用 useQuery 获取车间数据（挂在 ['energy-workshops'] 前缀下，车间保存后随列表一并失效）
   const { data: workshopData, isLoading: loading } = useQuery({
-    queryKey: ['workshop', workshopId],
+    queryKey: ['energy-workshops', 'detail', workshopId],
     queryFn: async () => {
       if (!workshopId) return null
       const data = await getWorkshopById(workshopId)

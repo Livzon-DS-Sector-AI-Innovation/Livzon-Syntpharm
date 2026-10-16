@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.modules.energy import repository as repo
 
@@ -17,18 +18,19 @@ async def test_create_and_get_device_config(db_session, sample_device_config_dat
 
 
 async def test_list_device_configs_with_filters(db_session, sample_device_config_data):
-    await repo.create_device_config(db_session, sample_device_config_data)
+    # 车间名带随机后缀：断言只覆盖本用例插入的行，与库里既有设备配置无关（D-32）
+    workshop = f"发酵车间-{uuid4().hex[:8]}"
+    other_workshop = f"合成车间-{uuid4().hex[:8]}"
 
-    other = {
-        **sample_device_config_data,
-        "platform_device_code": "WD-002",
-        "workshop": "合成车间",
-    }
-    await repo.create_device_config(db_session, other)
+    await repo.create_device_config(db_session, {**sample_device_config_data, "workshop": workshop})
+    await repo.create_device_config(
+        db_session,
+        {**sample_device_config_data, "platform_device_code": "WD-002", "workshop": other_workshop},
+    )
 
-    items, total = await repo.list_device_configs(db_session, workshop="发酵车间")
+    items, total = await repo.list_device_configs(db_session, workshop=workshop)
     assert total == 1
-    assert items[0].workshop == "发酵车间"
+    assert items[0].workshop == workshop
 
 
 async def test_update_device_config(db_session, sample_device_config_data):
@@ -79,15 +81,15 @@ async def test_upsert_energy_data(db_session, sample_device_config_data):
 
 
 async def test_get_enabled_devices_by_platform(db_session, sample_device_config_data):
-    await repo.create_device_config(db_session, sample_device_config_data)
+    # 随机平台编码：既有的 zhiheng 种子数据不能污染这条「只返回启用设备」的断言（D-32）
+    platform = f"zhiheng-{uuid4().hex[:8]}"
 
-    disabled = {
-        **sample_device_config_data,
-        "platform_device_code": "WD-003",
-        "is_enabled": False,
-    }
-    await repo.create_device_config(db_session, disabled)
+    await repo.create_device_config(db_session, {**sample_device_config_data, "platform_code": platform})
+    await repo.create_device_config(
+        db_session,
+        {**sample_device_config_data, "platform_device_code": "WD-003", "platform_code": platform, "is_enabled": False},
+    )
 
-    devices = await repo.get_enabled_devices_by_platform(db_session, "zhiheng")
+    devices = await repo.get_enabled_devices_by_platform(db_session, platform)
     assert len(devices) == 1
     assert devices[0].is_enabled is True

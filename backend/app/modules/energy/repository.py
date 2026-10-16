@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
@@ -25,6 +26,21 @@ from app.modules.energy.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def apply_changed_fields(obj: Any, values: dict[str, Any]) -> bool:
+    """逐字段按需赋值，返回是否真的有字段发生变化。
+
+    SQLAlchemy 只对值真变了的属性发 UPDATE，所以「匹配到已有行」不等于「更新了该行」；
+    导入器用返回值计数（`D-51`）。
+    """
+    changed = False
+    for field, value in values.items():
+        if getattr(obj, field) != value:
+            setattr(obj, field, value)
+            changed = True
+    return changed
+
 
 # ── 设备配置 ──
 
@@ -714,6 +730,7 @@ async def list_workshops(
     *,
     category: str | None = None,
     is_active: bool | None = None,
+    name_in: Sequence[str] | None = None,
     page: int = 1,
     page_size: int = 100,
 ) -> tuple[list[EnergyWorkshop], int]:
@@ -726,6 +743,8 @@ async def list_workshops(
         query = query.where(EnergyWorkshop.category == category)
     if is_active is not None:
         query = query.where(EnergyWorkshop.is_active == is_active)
+    if name_in is not None:
+        query = query.where(EnergyWorkshop.name.in_(list(name_in)))
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
@@ -789,7 +808,7 @@ async def batch_upsert_monthly_records(
 ) -> tuple[list[EnergyMonthlyRecord], int]:
     """批量 upsert 月度记录，遇到唯一约束冲突时更新 value。
 
-    返回 (新建列表, 更新数量)。
+    返回 (新建列表, 变更数量)——只匹配到已有行但值没变的不计入变更（`D-51`）。
     """
     from app.modules.energy.models import EnergyMonthlyRecord
 
@@ -813,13 +832,18 @@ async def batch_upsert_monthly_records(
                     "Reviving soft-deleted monthly record",
                     extra={"record_id": str(existing.id), "record_date": str(existing.record_date)},
                 )
-                existing.is_deleted = False
-            existing.value = r["value"]
-            existing.unit = r.get("unit", existing.unit)
-            existing.source = r.get("source", existing.source)
-            existing.remark = r.get("remark")
-            existing.date_range_end = r.get("date_range_end")
-            updated_count += 1
+            if apply_changed_fields(
+                existing,
+                {
+                    "is_deleted": False,
+                    "value": r["value"],
+                    "unit": r.get("unit", existing.unit),
+                    "source": r.get("source", existing.source),
+                    "remark": r.get("remark"),
+                    "date_range_end": r.get("date_range_end"),
+                },
+            ):
+                updated_count += 1
         else:
             obj = EnergyMonthlyRecord(**r)
             db.add(obj)
@@ -937,8 +961,13 @@ async def get_monthly_energy_total(
     workshop_id: UUID,
     start_date: date,
     end_date: date,
+    energy_type: str | None = None,
 ) -> Decimal | None:
-    """获取指定车间在指定时间范围内的总能耗"""
+    """获取指定车间在指定时间范围内的总能耗。
+
+    `energy_type` 传值时只统计该类型。`value` 是各能源的裸值（kWh / m³ / t / Nm³），
+    不加过滤把四类相加得到的数没有单位含义（单耗口径见 docs/energy-module-prd.md 6.4）。
+    """
     from decimal import Decimal
 
     from sqlalchemy import func, select
@@ -949,6 +978,8 @@ async def get_monthly_energy_total(
         EnergyMonthlyRecord.record_date < end_date,  # 不包含结束日期
         EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
     )
+    if energy_type is not None:
+        query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
 
     result = await db.execute(query)
     total = result.scalar()

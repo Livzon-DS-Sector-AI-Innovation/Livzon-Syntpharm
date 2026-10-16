@@ -28042,7 +28042,14 @@ export interface components {
              */
             records_created: number;
             /**
+             * Records Updated
+             * @description 值真发生变化的已有记录数（与 records_skipped 区分）
+             * @default 0
+             */
+            records_updated: number;
+            /**
              * Records Skipped
+             * @description 因找不到车间而未写入的记录数
              * @default 0
              */
             records_skipped: number;
@@ -62094,6 +62101,8 @@ export interface operations {
                 category?: string | null;
                 /** @description 是否启用 */
                 is_active?: boolean | null;
+                /** @description 仅生产车间（AI 能耗分析用），按名字白名单过滤 */
+                production_only?: boolean;
                 /** @description 页码 */
                 page?: number;
                 /** @description 每页条数 */

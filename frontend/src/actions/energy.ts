@@ -114,19 +114,19 @@ export async function getAlertRuleById(id: string) {
 
 export async function createAlertRule(data: CreateRuleInput) {
   const result = await apiCreateAlertRule(data)
-  revalidatePath('/energy/alert-rules')
+  revalidatePath('/energy/alerts')
   return result
 }
 
 export async function updateAlertRule(id: string, data: UpdateRuleInput) {
   const result = await apiUpdateAlertRule(id, data)
-  revalidatePath('/energy/alert-rules')
+  revalidatePath('/energy/alerts')
   return result
 }
 
 export async function deleteAlertRule(id: string) {
   await apiDeleteAlertRule(id)
-  revalidatePath('/energy/alert-rules')
+  revalidatePath('/energy/alerts')
 }
 
 // 预警记录 Server Actions
@@ -137,7 +137,7 @@ export async function getAlertRecords(params?: RuleQueryParams) {
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
   const result = await apiProcessAlertRecord(id, data)
-  revalidatePath('/energy/alert-records')
+  revalidatePath('/energy/alerts')
   return result
 }
 

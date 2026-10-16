@@ -32866,6 +32866,18 @@
             "description": "\u662f\u5426\u542f\u7528"
           },
           {
+            "name": "production_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u4ec5\u751f\u4ea7\u8f66\u95f4\uff08AI \u80fd\u8017\u5206\u6790\u7528\uff09\uff0c\u6309\u540d\u5b57\u767d\u540d\u5355\u8fc7\u6ee4",
+              "default": false,
+              "title": "Production Only"
+            },
+            "description": "\u4ec5\u751f\u4ea7\u8f66\u95f4\uff08AI \u80fd\u8017\u5206\u6790\u7528\uff09\uff0c\u6309\u540d\u5b57\u767d\u540d\u5355\u8fc7\u6ee4"
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -110013,9 +110025,16 @@
             "title": "Records Created",
             "default": 0
           },
+          "records_updated": {
+            "type": "integer",
+            "title": "Records Updated",
+            "description": "\u503c\u771f\u53d1\u751f\u53d8\u5316\u7684\u5df2\u6709\u8bb0\u5f55\u6570\uff08\u4e0e records_skipped \u533a\u5206\uff09",
+            "default": 0
+          },
           "records_skipped": {
             "type": "integer",
             "title": "Records Skipped",
+            "description": "\u56e0\u627e\u4e0d\u5230\u8f66\u95f4\u800c\u672a\u5199\u5165\u7684\u8bb0\u5f55\u6570",
             "default": 0
           },
           "errors": {

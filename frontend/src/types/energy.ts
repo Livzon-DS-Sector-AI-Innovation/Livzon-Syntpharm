@@ -145,6 +145,8 @@ export type WorkshopCategory = 'workshop' | 'position' | 'support' | 'utility'
 export interface WorkshopQueryParams {
   category?: WorkshopCategory
   is_active?: boolean
+  /** 仅生产车间（AI 能耗分析用） */
+  production_only?: boolean
   page?: number
   page_size?: number
 }

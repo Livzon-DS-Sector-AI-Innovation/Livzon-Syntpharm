@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.repository import apply_changed_fields
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -87,12 +88,17 @@ class EnergyBitableSync:
             workshop = result.scalars().first()
 
             if workshop:
-                # 更新
-                workshop.name = name
-                workshop.category = category
-                workshop.sort_order = sort_order
-                workshop.is_active = is_active
-                updated += 1
+                # 只统计值真变化的行（D-51）
+                if apply_changed_fields(
+                    workshop,
+                    {
+                        "name": name,
+                        "category": category,
+                        "sort_order": sort_order,
+                        "is_active": is_active,
+                    },
+                ):
+                    updated += 1
             else:
                 # 创建
                 workshop = EnergyWorkshop(
@@ -192,11 +198,16 @@ class EnergyBitableSync:
             existing = result.scalar_one_or_none()
 
             if existing:
-                # 更新
-                existing.value = value  # type: ignore[attr-defined]
-                existing.unit = unit  # type: ignore[attr-defined]
-                existing.remark = remark  # type: ignore[attr-defined]
-                updated += 1
+                # 只统计值真变化的行（D-51）
+                if apply_changed_fields(
+                    existing,
+                    {
+                        "value": value,
+                        "unit": unit,
+                        "remark": remark,
+                    },
+                ):
+                    updated += 1
             else:
                 # 创建
                 new_record = EnergyMonthlyRecord(

@@ -312,7 +312,8 @@ class FeishuEnergyImportResponse(BaseModel):
     workshops_created: int = 0
     workshops_existing: int = 0
     records_created: int = 0
-    records_skipped: int = 0
+    records_updated: int = Field(default=0, description="值真发生变化的已有记录数（与 records_skipped 区分）")
+    records_skipped: int = Field(default=0, description="因找不到车间而未写入的记录数")
     errors: list[str] = Field(default_factory=list)
 
 

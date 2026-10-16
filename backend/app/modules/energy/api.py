@@ -689,6 +689,7 @@ async def list_workshops(
     current_user: RequiredUser,
     category: str | None = Query(default=None, description="分类"),
     is_active: bool | None = Query(default=None, description="是否启用"),
+    production_only: bool = Query(default=False, description="仅生产车间（AI 能耗分析用），按名字白名单过滤"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=100, ge=1, le=500, description="每页条数"),
     db: AsyncSession = Depends(get_db),
@@ -697,6 +698,7 @@ async def list_workshops(
         db,
         category=category,
         is_active=is_active,
+        production_only=production_only,
         page=page,
         page_size=page_size,
     )
@@ -967,6 +969,7 @@ async def import_from_feishu(
             workshops_created=result.workshops_created,
             workshops_existing=result.workshops_existing,
             records_created=result.records_created,
+            records_updated=result.records_updated,
             records_skipped=result.records_skipped,
             errors=result.errors,
         )

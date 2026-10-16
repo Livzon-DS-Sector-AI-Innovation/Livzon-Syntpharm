@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.modules.energy.models import EnergyAlertRecord, EnergyDailyData
+from app.modules.energy.repository import apply_changed_fields
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -168,15 +169,20 @@ class EnergyBitableDailyImport:
                             "Reviving soft-deleted daily record",
                             extra={"record_id": str(existing.id), "date": str(existing.date)},
                         )
-                        existing.is_deleted = False
-                    # 更新现有记录
-                    existing.total_value = parsed["total_value"]
-                    existing.alert_threshold = parsed["alert_threshold"]
-                    existing.cost = parsed["cost"]
-                    existing.municipal_meter = parsed["municipal_meter"]
-                    existing.error_value = parsed["error_value"]
-                    existing.is_alert = parsed["is_alert"]
-                    updated += 1
+                    # 只统计值真变化的行，否则每次都把整表匹配数报成「更新 N 条」（D-51）
+                    if apply_changed_fields(
+                        existing,
+                        {
+                            "is_deleted": False,
+                            "total_value": parsed["total_value"],
+                            "alert_threshold": parsed["alert_threshold"],
+                            "cost": parsed["cost"],
+                            "municipal_meter": parsed["municipal_meter"],
+                            "error_value": parsed["error_value"],
+                            "is_alert": parsed["is_alert"],
+                        },
+                    ):
+                        updated += 1
                 else:
                     # 创建新记录
                     new_record = EnergyDailyData(**parsed)

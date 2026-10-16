@@ -58,6 +58,7 @@ class _FakeResult:
     workshops_created: int = 1
     workshops_existing: int = 2
     records_created: int = 3
+    records_updated: int = 5
     records_skipped: int = 4
     errors: list[str] = None  # type: ignore[assignment]
 
@@ -84,6 +85,9 @@ async def test_feishu_import_uses_real_backend_path(auth_client):
     assert response.status_code == 200, response.text
     data = response.json()["data"]
     assert data["workshops_created"] == 1
+    assert data["records_created"] == 3
+    # 变更数与跳过数是两个口径：前者是值真变化的已有行，后者是找不到车间没写入的行（D-51）
+    assert data["records_updated"] == 5
     assert data["records_skipped"] == 4
     assert data["errors"] == []
 

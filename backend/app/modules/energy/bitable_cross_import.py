@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.repository import apply_changed_fields
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -471,11 +472,17 @@ class EnergyBitableCrossImport:
                             "Reviving soft-deleted monthly record",
                             extra={"record_id": str(existing.id), "record_date": str(existing.record_date)},
                         )
-                        existing.is_deleted = False
-                    existing.value = parsed["value"]
-                    existing.unit = parsed["unit"]
-                    existing.date_range_end = parsed["date_range_end"]
-                    updated += 1
+                    # 只统计值真变化的行，否则每次都把整表匹配数报成「更新 N 条」（D-51）
+                    if apply_changed_fields(
+                        existing,
+                        {
+                            "is_deleted": False,
+                            "value": parsed["value"],
+                            "unit": parsed["unit"],
+                            "date_range_end": parsed["date_range_end"],
+                        },
+                    ):
+                        updated += 1
                 else:
                     new_record = EnergyMonthlyRecord(
                         workshop_id=workshop.id,
