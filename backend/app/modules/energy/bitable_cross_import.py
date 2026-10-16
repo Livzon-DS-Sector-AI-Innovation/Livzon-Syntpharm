@@ -10,11 +10,11 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.modules.energy.models import EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,29 @@ WORKSHOP_ALIASES: dict[str, str] = {
     "RTO用电": "RTO",
     "RTO(天然气）": "RTO",
 }
+
+# 一致性校验：合计行与其构成项（同一月份导入批次内比对）
+ROLLUP_COMPONENTS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "动力运行": (
+        "electricity",
+        (
+            "201盐水机组",
+            "103冷水机组",
+            "4号楼冷水机组",
+            "500T冷水机组",
+            "500T盐水机组",
+            "空压氮气系统",
+        ),
+    ),
+}
+
+# 包含关系校验：容器实体的数值应不小于被包含实体（环保中心（含RTO） ⊇ RTO）
+ROLLUP_CONTAINERS: dict[str, tuple[str, str]] = {
+    "环保中心": ("electricity", "RTO"),
+}
+
+# 容差：合计行与构成项之和的相对偏差超过该比例即告警
+ROLLUP_TOLERANCE = 0.01
 
 
 class EnergyBitableCrossImport:
@@ -255,6 +278,8 @@ class EnergyBitableCrossImport:
             category=category,
             sort_order=0,
             is_active=True,
+            # 只在新建时打标：已存在的车间以车间管理页的人工配置为准
+            excluded_energy_types=list(ROLLUP_WORKSHOPS.get(normalized_name, ())),
         )
         db.add(workshop)
         await db.flush()
@@ -462,6 +487,8 @@ class EnergyBitableCrossImport:
 
         await db.commit()
 
+        warnings = await self._check_rollup_consistency(db, all_parsed)
+
         return {
             "status": "success",
             "table": table_name,
@@ -469,7 +496,56 @@ class EnergyBitableCrossImport:
             "total_updated": updated,
             "total_parsed": len(all_parsed),
             "errors": errors[:10],
+            "rollup_warnings": warnings,
         }
+
+    async def _check_rollup_consistency(self, db: AsyncSession, parsed: list[dict[str, Any]]) -> list[str]:
+        """比对合计行与其构成项、容器与被包含项，偏差超容差时告警。
+
+        只告警不改数：多维表格里的行名可能变化，静默修数会掩盖源表问题。
+        """
+        dates = [p["record_date"] for p in parsed if p.get("record_date")]
+        if not dates:
+            return []
+
+        result = await db.execute(
+            select(EnergyWorkshop.name, EnergyMonthlyRecord.energy_type, func.sum(EnergyMonthlyRecord.value))
+            .join(EnergyMonthlyRecord, EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id)
+            .where(
+                EnergyMonthlyRecord.record_date >= min(dates),
+                EnergyMonthlyRecord.record_date <= max(dates),
+                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            )
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.energy_type)
+        )
+        totals: dict[tuple[str, str], float] = {(r[0], r[1]): float(r[2] or 0) for r in result.all()}
+
+        warnings: list[str] = []
+        for rollup_name, (energy_type, components) in ROLLUP_COMPONENTS.items():
+            rollup_total = totals.get((rollup_name, energy_type))
+            component_sum = sum(totals.get((c, energy_type), 0.0) for c in components)
+            if rollup_total is None or component_sum <= 0:
+                continue
+            deviation = abs(rollup_total - component_sum) / component_sum
+            if deviation > ROLLUP_TOLERANCE:
+                warnings.append(
+                    f"{rollup_name}({energy_type})={rollup_total:.2f} 与构成项之和={component_sum:.2f} "
+                    f"偏差 {deviation * 100:.2f}%"
+                )
+
+        for container, (energy_type, member) in ROLLUP_CONTAINERS.items():
+            container_total = totals.get((container, energy_type))
+            member_total = totals.get((member, energy_type))
+            if container_total is None or member_total is None:
+                continue
+            if member_total > container_total:
+                warnings.append(
+                    f"{container}({energy_type})={container_total:.2f} 小于 {member}={member_total:.2f}，容器应包含成员"
+                )
+
+        for msg in warnings:
+            logger.warning(f"能耗合计行一致性校验: {msg}")
+        return warnings
 
     async def import_year(self, db: AsyncSession, year: int) -> dict[str, Any]:
         """导入一整年的数据。"""

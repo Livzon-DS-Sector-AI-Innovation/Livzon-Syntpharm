@@ -664,6 +664,7 @@ async def create_workshop(
             parent_id=str(obj.parent_id) if obj.parent_id else None,
             sort_order=obj.sort_order,
             is_active=obj.is_active,
+            excluded_energy_types=list(obj.excluded_energy_types),
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -696,6 +697,7 @@ async def list_workshops(
                 parent_id=str(i.parent_id) if i.parent_id else None,
                 sort_order=i.sort_order,
                 is_active=i.is_active,
+                excluded_energy_types=list(i.excluded_energy_types),
                 created_at=i.created_at,
                 updated_at=i.updated_at,
             )
@@ -721,6 +723,7 @@ async def get_workshop(
             parent_id=str(obj.parent_id) if obj.parent_id else None,
             sort_order=obj.sort_order,
             is_active=obj.is_active,
+            excluded_energy_types=list(obj.excluded_energy_types),
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -745,6 +748,7 @@ async def update_workshop(
             parent_id=str(obj.parent_id) if obj.parent_id else None,
             sort_order=obj.sort_order,
             is_active=obj.is_active,
+            excluded_energy_types=list(obj.excluded_energy_types),
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )

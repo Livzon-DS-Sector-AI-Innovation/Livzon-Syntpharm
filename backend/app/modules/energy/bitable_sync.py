@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.modules.energy.models import EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -101,6 +101,7 @@ class EnergyBitableSync:
                     category=category,
                     sort_order=sort_order,
                     is_active=is_active,
+                    excluded_energy_types=list(ROLLUP_WORKSHOPS.get(name, ())),
                 )
                 db.add(workshop)
                 created += 1

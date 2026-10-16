@@ -106102,6 +106102,20 @@
             "title": "Is Active",
             "description": "\u662f\u5426\u542f\u7528",
             "default": true
+          },
+          "excluded_energy_types": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "electricity",
+                "water",
+                "steam",
+                "natural_gas"
+              ]
+            },
+            "type": "array",
+            "title": "Excluded Energy Types",
+            "description": "\u4e0d\u8ba1\u5165\u5168\u5382\u6c47\u603b\u7684\u80fd\u6e90\u7c7b\u578b\uff08\u5408\u8ba1\u884c\uff09"
           }
         },
         "type": "object",
@@ -106187,6 +106201,19 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "excluded_energy_types": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "electricity",
+                "water",
+                "steam",
+                "natural_gas"
+              ]
+            },
+            "type": "array",
+            "title": "Excluded Energy Types"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -106207,6 +106234,7 @@
           "parent_id",
           "sort_order",
           "is_active",
+          "excluded_energy_types",
           "created_at",
           "updated_at"
         ],
@@ -106289,6 +106317,27 @@
               }
             ],
             "title": "Is Active"
+          },
+          "excluded_energy_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "electricity",
+                    "water",
+                    "steam",
+                    "natural_gas"
+                  ]
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excluded Energy Types",
+            "description": "\u4e0d\u8ba1\u5165\u5168\u5382\u6c47\u603b\u7684\u80fd\u6e90\u7c7b\u578b"
           }
         },
         "type": "object",

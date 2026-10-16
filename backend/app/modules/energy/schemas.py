@@ -24,6 +24,9 @@ class EnergyWorkshopCreate(BaseModel):
     parent_id: StrUUID | None = Field(default=None, description="父级车间ID")
     sort_order: int = Field(default=0, description="排序")
     is_active: bool = Field(default=True, description="是否启用")
+    excluded_energy_types: list[EnergyType] = Field(
+        default_factory=list, description="不计入全厂汇总的能源类型（合计行）"
+    )
 
 
 class EnergyWorkshopUpdate(BaseModel):
@@ -33,6 +36,7 @@ class EnergyWorkshopUpdate(BaseModel):
     parent_id: StrUUID | None = Field(default=None)
     sort_order: int | None = Field(default=None)
     is_active: bool | None = Field(default=None)
+    excluded_energy_types: list[EnergyType] | None = Field(default=None, description="不计入全厂汇总的能源类型")
 
 
 class EnergyWorkshopResponse(BaseModel):
@@ -43,6 +47,7 @@ class EnergyWorkshopResponse(BaseModel):
     parent_id: StrUUID | None
     sort_order: int
     is_active: bool
+    excluded_energy_types: list[EnergyType]
     created_at: datetime
     updated_at: datetime
 

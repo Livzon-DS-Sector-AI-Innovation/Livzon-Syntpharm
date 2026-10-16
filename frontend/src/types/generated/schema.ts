@@ -26381,6 +26381,11 @@ export interface components {
              * @default true
              */
             is_active: boolean;
+            /**
+             * Excluded Energy Types
+             * @description 不计入全厂汇总的能源类型（合计行）
+             */
+            excluded_energy_types?: ("electricity" | "water" | "steam" | "natural_gas")[];
         };
         /** EnergyWorkshopListApiResponse */
         EnergyWorkshopListApiResponse: {
@@ -26417,6 +26422,8 @@ export interface components {
             sort_order: number;
             /** Is Active */
             is_active: boolean;
+            /** Excluded Energy Types */
+            excluded_energy_types: ("electricity" | "water" | "steam" | "natural_gas")[];
             /**
              * Created At
              * Format: date-time
@@ -26442,6 +26449,11 @@ export interface components {
             sort_order?: number | null;
             /** Is Active */
             is_active?: boolean | null;
+            /**
+             * Excluded Energy Types
+             * @description 不计入全厂汇总的能源类型
+             */
+            excluded_energy_types?: ("electricity" | "water" | "steam" | "natural_gas")[] | null;
         };
         /**
          * EquipmentCategoryCreate

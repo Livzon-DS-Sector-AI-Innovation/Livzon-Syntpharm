@@ -7,7 +7,8 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+import sqlalchemy as sa
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.energy.models import (
@@ -224,6 +225,29 @@ async def list_energy_data(
     return list(result.scalars().all()), total
 
 
+# ── 全厂汇总口径 ──
+
+
+def _not_rollup_record() -> ColumnElement[bool]:
+    """剔除车间已标记的合计行能源类型，避免全厂汇总与其构成项重复计数。
+
+    粒度是 (车间, 能源类型)：RTO 的电已含在「环保中心（含RTO）」内，但其天然气是全厂唯一气源，仍须计入。
+    """
+    marked = (
+        select(sa.literal(1))
+        .where(EnergyWorkshop.id == EnergyMonthlyRecord.workshop_id)
+        .where(
+            func.array_position(
+                EnergyWorkshop.excluded_energy_types,
+                EnergyMonthlyRecord.energy_type,
+            ).is_not(None)
+        )
+        .correlate(EnergyMonthlyRecord)
+        .scalar_subquery()
+    )
+    return ~sa.exists(marked)
+
+
 async def get_energy_statistics(
     db: AsyncSession,
     *,
@@ -283,6 +307,9 @@ async def get_energy_statistics(
     if energy_type:
         query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
 
+    # 区域分布/按车间汇总属全厂口径，剔除合计行避免重复计数
+    query = query.where(_not_rollup_record())
+
     result = await db.execute(query)
     rows = result.all()
     return [
@@ -323,6 +350,7 @@ async def get_overview_summary(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
             EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+            _not_rollup_record(),
         )
         .group_by(EnergyMonthlyRecord.energy_type, EnergyMonthlyRecord.unit)
     )
@@ -364,6 +392,9 @@ async def get_overview_trend(
     )
     if energy_type:
         query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
+
+    # 趋势曲线属全厂口径，剔除合计行避免重复计数
+    query = query.where(_not_rollup_record())
 
     result = await db.execute(query)
     return [
@@ -832,10 +863,13 @@ async def get_monthly_summary(
         EnergyMonthlyRecord.energy_type,
         func.sum(EnergyMonthlyRecord.value).label("total_value"),
         EnergyMonthlyRecord.unit,
-    )
+    ).where(EnergyMonthlyRecord.is_deleted == False)  # noqa: E712
 
     if workshop_id:
         query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
+    else:
+        # 全公司口径才剔除合计行；指定车间时保留其自身上报值
+        query = query.where(_not_rollup_record())
     if energy_type:
         query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
     if start_date:

@@ -23,7 +23,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.shared.base_model import BaseModel
@@ -54,6 +54,17 @@ class WorkshopCategory(enum.StrEnum):
     UTILITY = "utility"  # 动力设施
 
 
+# 合计行实体：数值等于其他实体之和，计入全厂汇总会重复计数，因此写入
+# EnergyWorkshop.excluded_energy_types，聚合查询据此剔除（口径见 docs/energy-module-prd.md 6.1）。
+# 粒度是 (车间, 能源类型)：RTO 只剔电，其天然气是全厂唯一气源，必须保留。
+ROLLUP_WORKSHOPS: dict[str, tuple[str, ...]] = {
+    # 动力运行 = 201盐水/103冷水/4号楼冷水/500T冷水/500T盐水/空压氮气 用电之和
+    "动力运行": ("electricity",),
+    # RTO 用电已含在「环保中心（含RTO）」内
+    "RTO": ("electricity",),
+}
+
+
 class EnergyWorkshop(BaseModel):
     """车间/部门配置表"""
 
@@ -74,6 +85,13 @@ class EnergyWorkshop(BaseModel):
     )
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="排序")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, comment="是否启用")
+    excluded_energy_types: Mapped[list[str]] = mapped_column(
+        ARRAY(String(20)),
+        nullable=False,
+        default=list,
+        server_default=sa.text("'{}'::varchar[]"),
+        comment="不计入全厂汇总的能源类型（合计行与其构成项重复上报时标记）",
+    )
 
 
 class EnergyDeviceConfig(BaseModel):

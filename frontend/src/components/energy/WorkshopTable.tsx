@@ -32,6 +32,14 @@ const categoryConfig: Record<WorkshopCategory, { label: string; pill: ReturnType
 
 const activePill = luxuryPill('#1aae39', '#d9f3e1')
 const inactivePill = luxuryPill('#787671', '#f0eeec')
+const rollupPill = luxuryPill('#b63a00', '#ffe3d6')
+
+const excludedTypeShortLabel: Record<string, string> = {
+  electricity: '电',
+  water: '水',
+  steam: '汽',
+  natural_gas: '气',
+}
 
 const tableStyles = `
 .luxury-workshop-table .ant-table-thead > tr > th {
@@ -153,6 +161,18 @@ export function WorkshopTable() {
       dataIndex: 'name',
       key: 'name',
       width: 200,
+      render: (name: string, record: EnergyWorkshop) => {
+        const excluded = record.excluded_energy_types ?? []
+        if (excluded.length === 0) return name
+        return (
+          <Space size={6}>
+            <span>{name}</span>
+            <span style={rollupPill} title="合计行：全厂汇总已剔除该能源类型，避免与其构成项重复计数">
+              合计行·{excluded.map((t) => excludedTypeShortLabel[t] ?? t).join('/')}
+            </span>
+          </Space>
+        )
+      },
     },
     {
       title: '分类',
