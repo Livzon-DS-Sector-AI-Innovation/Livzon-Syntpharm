@@ -1,6 +1,7 @@
 # 能源车间实体统一与总览分布拆分 · 变更说明
 
-> 状态：已落地并本地实测通过，待手动验证后提交
+> 状态：已落地并本地实测通过，已随 `386c23c8` 提交，待 UAT/生产手动验证
+> 模块级规格见 [energy-module-prd.md](./energy-module-prd.md)（本文只覆盖这一个工作包）
 > 分支：`lzhc-zhuang-energy`
 > 相关：[energy-bitable-field-mapping.md](./energy-bitable-field-mapping.md)（字段契约与叫法对照表）
 > 关联提交：`4d936c37 fix(energy): 三个页面冷加载不取数`、`d976e3b0 fix(energy): 合并多维表格里的同义车间名`
