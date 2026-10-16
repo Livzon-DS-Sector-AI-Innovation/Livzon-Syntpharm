@@ -141,7 +141,7 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 | 1 | **月度交叉表导入** | `bitable_cross_import.py` | `POST /api/v1/energy/sync/bitable/cross-import`（后台任务） | `energy_monthly_records` | 表名**全等**匹配 `YYYY-MM`；车间名三步解析（归一化 → 别名 → 查/建）；只有 `value > 0` 落库；按 `(workshop_id, energy_type, record_date)` 存在即更新 |
 | 2 | **日表导入 + 预警** | `bitable_daily_import.py` | `POST /api/v1/energy/sync/bitable/daily-import`，页面文案「导入每日数据并检查预警」 | `energy_daily_data` → `energy_alert_records` | 读取源表「总数」「警戒线」；`is_alert = total_value > alert_threshold`；随后 `check_alerts` 按 1.1/1.2 倍分档生成记录 |
 | 3 | **车间主数据同步** | `bitable_sync.py` | `POST /api/v1/energy/sync/bitable/workshops` | `energy_workshops` | 源表列 `编码/名称/分类/排序/启用`；name 与 code 分别建两个字典、都带 `is_deleted == false` |
-| 4 | **飞书表格导入（旧链路）** | `feishu_import.py` | `POST /api/v1/energy/monthly/import/feishu` | `energy_monthly_records`（`source='feishu'`） | 与链路 1 并存；前端按钮实际打到的路径是错的（`D-17`） |
+| 4 | **飞书表格导入（旧链路）** | `feishu_import.py` | `POST /api/v1/energy/monthly/import/feishu` | `energy_monthly_records`（`source='feishu'`） | 与链路 1 并存；前端按钮曾打错路径（`D-17`，已修） |
 | 5 | **三方平台采集** | `adapters/*` + `scheduler.py` | 后台 worker `energy.collection`；手动 `POST /api/v1/energy/collect/trigger` | `energy_data` + `energy_collect_logs` | `TICK_INTERVAL=300` 秒轮询、按设备 `collection_interval` 判定到期、**支持补采**（`MAX_BACKFILL_HOURS=168`）、平台 A 真·指数退避重试 |
 
 ### 4.2 链路 1 的解析链（唯一必须三步同时成立的口径）
@@ -188,12 +188,12 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 |---|---|
 | 目的 | 明细级核对与人工修正：查看/新增/删除某车间某能源某日的能耗值，并从飞书来源批量导入 |
 | 路由与入口 | `/energy/monthly`；菜单「月度记录」；副标题「支持从飞书表格批量导入」（`app/(dashboard)/energy/monthly/page.tsx:19,29`） |
-| 依赖接口 | 读 `GET /monthly`、`GET /monthly/summary`、`GET /workshops`（均 `lib/api/client/`）；删除走 Server Action `deleteMonthlyRecordAction`；导入走 `crossImportFromBitableAction`（`POST /sync/bitable/cross-import`）与 `importFromFeishuAction`（`POST /import/feishu` — **路径错，见 `D-17`**），导入后轮询 `GET /jobs/{job_id}` |
+| 依赖接口 | 读 `GET /monthly`、`GET /monthly/summary`、`GET /workshops`（均 `lib/api/client/`）；删除走 Server Action `deleteMonthlyRecordAction`；导入走 `crossImportFromBitableAction`（`POST /sync/bitable/cross-import`）与 `importFromFeishuAction`（`POST /monthly/import/feishu`，`D-17` 已修），导入后轮询 `GET /jobs/{job_id}` |
 | 取数与缓存 key | 列表 `['energy-monthly-records', {workshopFilter, energyTypeFilter, startDate, endDate, page, pageSize}]`（`MonthlyRecordTable.tsx:105`）；汇总 `['energy-monthly-summary', {...}]`（`:121`）；车间下拉 `['energy-workshops']`（`:132`）。日期在进 key 前格式化成字符串（`:96-98`），否则 dayjs 对象每次渲染重建导致缓存永不命中。写操作后按前缀显式失效两个 key（`:148-151`） |
 | 交互与口径 | 筛选：车间（单选）、能源类型、RangePicker；分页默认 20 条可改（`:89,322`）；两个导入按钮（`:272-277`）；表格列展示 `value`+`unit`，跨天记录显示 `record_date` ~ `date_range_end`。筛选按 `workshop_id` 精确匹配 —— 这就是历史上「选质量控制部看不到水量」的根因，现由车间实体统一解决 |
 | 边界与空态 | 空结果渲染空表；删除有 `modal.confirm` 二次确认；导入任务失败在 Modal 内显示 `errors[:10]`；`value` 改成 0 **不会**删除既有记录，也不会新增（第 6 章 6.6） |
 | 验收用例 | ① 选车间「质量控制部」→ 同屏应同时出现电与水的记录（历史上水记在 `QC` 上）；② 筛选后卡片汇总与列表逐行求和一致；③ 「交叉表导入」按 `2026-09` 走完「预览 → 确认」→ 任务 `done`，重查该月出现新记录且车间总数仍为 30；④ 删除一条记录 → 列表与汇总同步减少；⑤ 按年导入统计数字当前恒为 0（`D-04`），验收只看库内行数不看它 |
-| 已知缺陷 | `D-17` 飞书导入按钮 404；`D-04` 年度合计恒 0；`page.tsx` 只是 `'use client'` 套壳，未走 Server Component 取数 |
+| 已知缺陷 | `D-04` 年度合计恒 0；`page.tsx` 只是 `'use client'` 套壳，未走 Server Component 取数。（`D-17` 飞书导入按钮 404 已修） |
 
 ### 5.3 车间管理 `/energy/workshops`（菜单不可达）
 
@@ -245,7 +245,7 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 | 交互与口径 | 筛选：采集状态（成功/部分成功/失败）；「手动采集」触发全部平台，行内「重试」按该行 `platform_code` 触发（`:57-64,162`）；详情抽屉展示应采数、成功数与设备级明细表 |
 | 边界与空态 | 详情无关联数据 → Empty「暂无数据 / 未找到关联的设备采集数据」（Drawer `:401-409`）；触发采集失败只 `console.error`，**没有任何用户提示**（`:50-52`） |
 | 验收用例 | ① 点「手动采集」→ 列表新增一条本轮日志；② 打开该日志详情 → 设备行与 `energy_data` 里 `collected_at` 落在该日志 ±30 秒的记录一致；③ 状态筛选「失败」→ 只出现 `status='failed'` 的批次且 `error_message` 非空 |
-| 已知缺陷 | `D-26`：详情抽屉请求的是 `${API_BASE}/energy/collect-logs/${logId}`（`lib/api/client/energy.ts:44`），后端真实路径是 `/api/v1/energy/collect/logs/{log_id}/detail`（`api.py:362` + 前缀装配），**没有对应的代理路由，必然 404**；`D-12`：日志与数据无外键，靠 `repository.py:411-452` 的 ±30 秒时间窗反推，补采（多小时批量 upsert）会漏或串；触发失败静默；`CollectLogsPageClient.tsx` 孤儿 |
+| 已知缺陷 | `D-12`：日志与数据无外键，靠 `repository.py:411-452` 的 ±30 秒时间窗反推，补采（多小时批量 upsert）会漏或串；触发失败静默；`CollectLogsPageClient.tsx` 孤儿。（`D-26` 详情抽屉路径已修：原请求 `/energy/collect-logs/${logId}`，后端真实是 `/api/v1/energy/collect/logs/{log_id}/detail`） |
 
 ### 5.7 AI 分析 `/energy/ai-analysis`
 
@@ -383,7 +383,7 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 | `/api/v1/energy/devices/{config_id}` | GET / PUT / DELETE | 单条读写与软删除 | 数据源配置 |
 | `/api/v1/energy/collect/trigger` | POST | 手动触发采集（同步端点） | 采集日志 |
 | `/api/v1/energy/collect/logs` | GET | 采集批次日志列表 | 采集日志 |
-| `/api/v1/energy/collect/logs/{log_id}/detail` | GET | 单批日志的设备级明细 | 采集日志（前端路径写错，`D-26`） |
+| `/api/v1/energy/collect/logs/{log_id}/detail` | GET | 单批日志的设备级明细 | 采集日志详情抽屉（`D-26` 已修，路径此前写错） |
 | `/api/v1/energy/data` | GET | 查 `energy_data` 原始采集值 | 无页面（运维核对用） |
 
 ### 7.2 车间与月度记录
@@ -396,7 +396,7 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 | `/api/v1/energy/monthly/{record_id}` | GET / DELETE | 单条读 / 软删除 | 删除由月度记录页使用；`GET` 无 UI 入口。**后端没有 PUT** —— 修正数值只能删除重建或改源表重导入（6.6） |
 | `/api/v1/energy/monthly/batch` | POST | 批量新增 | 无前端调用（预留） |
 | `/api/v1/energy/monthly/summary` | GET | 按能源类型汇总 | 月度记录页卡片 |
-| `/api/v1/energy/monthly/import/feishu` | POST | 飞书表格导入（链路 4） | 月度记录的「飞书导入」—— 前端请求路径缺 `/monthly` 段，`D-17` |
+| `/api/v1/energy/monthly/import/feishu` | POST | 飞书表格导入（链路 4） | 月度记录的「飞书导入」（`D-17` 已修，前端曾少 `/monthly` 段） |
 
 ### 7.3 多维表格同步与异步任务
 
@@ -439,10 +439,12 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 | 前端调用位置 | 路径 | 状态 |
 |---|---|---|
 | `lib/api/client/energy.ts:194` | `GET /energy/production/output` | 不存在，`D-02`；真实来源为 `GET /api/v1/production/product-output`（production 模块） |
-| `lib/api/server/energy.ts:263` | `POST /energy/import/feishu` | 少 `/monthly` 段，应为 `/energy/monthly/import/feishu`，`D-17` |
-| `lib/api/server/energy.ts:285` | `POST /energy/alerts/check` | 不存在，且只有 `actions/energy.ts:223` 的孤儿包装引用 |
-| `lib/api/server/energy.ts:292` | `GET /energy/alerts/dates` | 不存在，同上孤儿包装 |
-| `lib/api/client/energy.ts:44` | `GET /energy/collect-logs/{logId}` | 路径写错，`D-26` |
+| `lib/api/server/energy.ts:263` | ~~`POST /energy/import/feishu`~~ | **已修**：改为 `/energy/monthly/import/feishu`，见 `D-17` |
+| `lib/api/server/energy.ts:285` | `POST /energy/alerts/check` | 不存在，且只有 `actions/energy.ts:223` 的孤儿包装引用，`D-45` |
+| `lib/api/server/energy.ts:292` | `GET /energy/alerts/dates` | 不存在，同上孤儿包装，`D-45` |
+| `lib/api/client/energy.ts:44` | ~~`GET /energy/collect-logs/{logId}`~~ | **已修**：改为 `/energy/collect/logs/{logId}/detail`，见 `D-26` |
+
+对账方法（可复跑）：把 `openapi.json` 的 `/energy` 路径参数段归一为通配，再扫 `lib/api/{client,server}/energy.ts` 里每个函数体的模板串与 `method:`，比对「路径不存在」与「路径存在但方法不符」。修完后该模块仅剩 `D-02` 与 `D-45` 两组不匹配。
 
 ## 8. 配置项
 
@@ -482,7 +484,7 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 
 | 文件 | 是否含 `FEISHU__ENERGY__*` |
 |---|---|
-| 仓库根 `.env` | 含两个 `APP_TOKEN`（**且为真实值，属违规提交，见 `D-34`**），缺 `WORKSHOP_TABLE_ID` / `MONTHLY_TABLE_ID` |
+| 仓库根 `.env` | 含两个非空 `APP_TOKEN`（本地开发用，**该文件从未提交进 Git**，由 `.gitignore:2` 覆盖），缺 `WORKSHOP_TABLE_ID` / `MONTHLY_TABLE_ID` |
 | `.env.example` | 8 项齐全（`WORKSHOP_TABLE_ID`/`MONTHLY_TABLE_ID` 留空） |
 | `.env.dev.example`、`.env.uat.example` | 8 项齐全 |
 | `backend/.env.development`、`backend/.env.ci.example` | **无 ENERGY 项** |
@@ -546,15 +548,16 @@ Schema 统一为 `energy`，均继承 `app/shared/base_model.py` 的 `BaseModel`
 
 ### R9 点「飞书导入」按钮报错
 
-- 先定位：`lib/api/server/energy.ts:263` 请求 `/api/v1/energy/import/feishu`，后端实际是 `/api/v1/energy/monthly/import/feishu`（`api.py:932`）—— 固定 404，`D-17`。
-- 校验：浏览器 Network 面板看状态码；`grep -n "import/feishu" backend/app/modules/energy/api.py`。
+- 现状：`D-17` 已修（`lib/api/server/energy.ts:263` 现请求 `/api/v1/energy/monthly/import/feishu`）。若又报 404，先确认这条路径没被改回去。
+- 先定位：`grep -n "import/feishu" frontend/src/lib/api/server/energy.ts backend/app/modules/energy/api.py` 两边对一遍；后端路由是 `@monthly_router.post("/import/feishu")` + `include_router(prefix="/monthly")` 装配出来的，直接搜完整路径搜不到。
+- 校验：浏览器 Network 看状态码；`curl -X POST` 该路径，**401 = 路由存在只缺认证，404 = 路径错**，405 = 方法不对。
 - 修复：改前端路径一处即可（属缺陷修复，不属口径变更）。急用时改用「交叉表导入」按钮走链路 1。
 
 ### R10 采集日志详情抽屉空白
 
-- 先定位：`lib/api/client/energy.ts:44` 的 `/energy/collect-logs/{logId}` 与后端 `/energy/collect/logs/{log_id}/detail`（`api.py:362`）不一致，`D-26`。
-- 校验：直接 `GET /api/v1/energy/collect/logs/{log_id}/detail` 对比页面请求路径。
-- 修复：改前端路径；改完后若详情仍空，是 `±30` 秒时间窗对补采串数据（`D-12`），需要按 `energy_data.collected_at` 核对。
+- 现状：`D-26` 已修（`lib/api/client/energy.ts:44` 现请求 `/energy/collect/logs/${logId}/detail`）。
+- 先定位：直接 `GET /api/v1/energy/collect/logs/{log_id}/detail` 与页面实际请求对比；同样用 401/404 区分「认证缺失」与「路径错」。
+- 修复：若路径已对但详情仍空，是 `±30` 秒时间窗对补采串数据（`D-12`），需要按 `energy_data.collected_at` 核对。
 
 ### R11 设置页改了开关不生效
 
@@ -686,7 +689,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | D-14 | 通知四字段无任何消费方 | 「配置了通知」是假象 | `models.py:246-253` | 非目标（已确认） |
 | D-15 | 预警记录无车间维度、`unit=""`、`rule_id=None` | 预警只能按能源类型看，定位不到车间；页面单位空白 | `bitable_daily_import.py:235-245` | 待修 |
 | D-16 | 设备与预警的能源类型下拉缺天然气 | 气类配置无法录入 | `DeviceDrawer.tsx:322-328`、`alerts/page.tsx:15-19` | 待修 |
-| D-17 | 飞书导入按钮请求路径少一段，固定 404 | 月度页「飞书导入」不可用 | `lib/api/server/energy.ts:263` vs `api.py:932` | 待修 |
+| D-17 | 飞书导入按钮请求路径少一段，固定 404 | 月度页「飞书导入」不可用 | `lib/api/server/energy.ts:263` vs `api.py:936` | **已修**（路径改为 `/monthly/import/feishu`；请求体与响应本就是生成类型，无需改） |
 | D-18 | 重试策略三处不统一：平台 A 指数退避、飞书月度 `sleep(60)`×3、每日同步无重试 | 与 AGENTS.md 重试约定不符；失败行为不可预期 | `adapters/platform_a.py:126`、`scheduler.py:259-296/323-362` | 待修 |
 | D-19 | 假种子脚本污染本地库 | 直接导致 D-32；本地对账数字失真 | `scripts/seed/seed_energy_data.py` | 需用户决定（不入库；本地是否清理待批） |
 | D-20 | 导入行级异常只回调用方，不落任何日志表 | 事后无法追溯某行为什么没进来 | `bitable_cross_import.py:460,471`、`bitable_daily_import.py:174,185` | 待修 |
@@ -695,7 +698,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | D-23 | 三个抽屉用 `useEffect` + `setState` 取数填表 | 违反 React Hooks 规范与 React Compiler 前提 | `WorkshopDrawer.tsx:43-56`、`DeviceDrawer.tsx:119-128`、`AlertConfigDrawer.tsx:82-112` | 待修（计划 PR6） |
 | D-24 | 孤儿代码 | 死代码误导维护 | `AlertsPageClient.tsx`、`CollectLogsPageClient.tsx`、`DevicesPageClient.tsx`、`actions/energy.ts:144 getWorkshops`、`lib/api/server/energy.ts:195 fetchWorkshops` | 待修（计划 PR4） |
 | D-25 | `revalidatePath` 指向不存在的路由 `/energy/alert-rules`、`/energy/alert-records` | 写操作后页面缓存不失效 | `actions/energy.ts:115,127,138` | 待修 |
-| D-26 | 采集日志详情前端路径与后端不一致，必然 404 | 排障主入口不可用 | `lib/api/client/energy.ts:44` vs `api.py:362` | 待修 |
+| D-26 | 采集日志详情前端路径与后端不一致，必然 404 | 排障主入口不可用 | `lib/api/client/energy.ts:44` vs `api.py:362` | **已修**（路径改为 `/collect/logs/{logId}/detail`；`apiGet` 已解 `data` 信封，`CollectLogDetail` 为生成类型） |
 | D-27 | 目标单耗上限前后端不一致（100 vs 9999.9999） | 提交大值报 422，用户不知原因 | `schemas.py:322` vs `TargetModal.tsx:108-118` | 待修 |
 | D-28 | 单耗分子把四类能源裸值相加当 kWh | 与 6.4 口径冲突，单耗与偏差值不可信 | `repository.py:864-885` | 待修（口径已确认：只算电） |
 | D-29 | 偏差分档取绝对值，节能 20% 也判 critical | 与 6.4 分档口径冲突 | `service.py:782-793` | 待修（口径已确认：只算超标） |
@@ -703,7 +706,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | D-31 | 两个 Bitable 自动同步开关未进种子表 | 只能在设置页外部配置，UI 看不到 | `scripts/seed/seed_module_settings.py:63-69` | 待修 |
 | D-32 | 3 个既有失败用例假设设备配置表为空 | 模块测试不绿，CI 判定被稀释 | `test_repository.py:30,92`、`test_service.py:58` | 待修（11.2 修法） |
 | D-33 | `category` 从未被导入器设置，四值形同虚设 | 分类筛选无业务含义（6.7） | `bitable_cross_import.py`、映射文档缺陷 2 | 待修（依赖 D-38） |
-| D-34 | 仓库根 `.env` 提交了**真实 `app_token` 值** | 违反 AGENTS.md「禁止提交 .env / 凭证不入 Git」；凭证应视为已泄露 | 仓库根 `.env`（值不在本文出现） | 需审批（轮换凭证 + 从历史清除） |
+| D-34 | `.env.local` 曾提交进 Git 历史，后被删除 | 现工作树无此文件、`.gitignore:41` 已覆盖，但历史 blob 仍可检出（`A dfcd952d` 2026-06-22 → `M 845cb8e9` 06-27 → `D 18a66339` 07-01 / `D 62037cab` 07-06）。若其中的凭证是真实值，须视为已泄露 | 历史提交里的 `.env.local`（值不在本文出现）。**注**：本文曾误记为「仓库根 `.env` 被提交」——根 `.env` 从未进 Git（`git log -- .env` 为 0，`.gitignore:2` 覆盖），已更正 | 需核实 + 审批（先确认历史 blob 是否含真实凭证，再决定轮换与历史清除） |
 | D-35 | `data/statistics` 的 `group_by` 非 `workshop` 时静默按车间 | 产线/设备维度统计不可用且不报错 | `repository.py:260-262` | 待修 |
 | D-36 | 前端手写 API 类型（4 个响应模型） | 与 OpenAPI 漂移，违反契约条款 | `lib/api/client/energy.ts:97-194` | 待修（改用生成类型） |
 | D-37 | AI 分析页三个写接口从浏览器直接 fetch | 绕过 CSRF/revalidation/错误边界 | `ai-analysis/page.tsx`、`TargetModal.tsx` | 待修（迁 Server Actions） |
@@ -714,6 +717,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | D-42 | 采集链路（`energy_data`）与填报链路（`energy_monthly_records`）无对账机制 | 两个数据源各说各话，总览只认填报值 | 6.3、第 4 章链路 5 | 待修（需业务定谁为准） |
 | D-43 | 合计行与构成项同时入库，全厂电耗重复计数 | 全厂电虚高 33~35%（近 30 天重复 790,739 kWh）；饼图与汇总卡片与源表对不上 | `models.py` `ROLLUP_WORKSHOPS`、`repository.py` `_not_rollup_record`、迁移 `0069` | 已修（列 + 四处聚合口径剔除 + 导入期一致性告警，见 6.1、6.8.1） |
 | D-44 | `get_monthly_summary` 按 `(energy_type, unit)` 分组，却用 `energy_type` 作结果 dict 的键 | 同一能源类型出现多种单位时后一行**静默覆盖**前一行，总量偏小且不报错 | `repository.py`（分组 `group_by(energy_type, unit)` / `summary[row.energy_type] = …`） | 待修（需与业务确认跨单位是否分别返回或强制换算，不宜静默相加） |
+| D-45 | 两个前端函数指向后端从未存在的路由：`POST /energy/alerts/check`、`GET /energy/alerts/dates` | 目前**无用户可见影响** —— 只有 `actions/energy.ts:223/229` 的包装引用它们，没有任何页面调用；但一旦有人接上按钮就是必现 404，且会被误认为后端故障 | `lib/api/server/energy.ts:285,292`、`actions/energy.ts:223,229` | 待修（二选一：删掉这两个死包装，或在 `alerts` 路由补上等价端点；需业务确认是否要「按日期手动触发预警」能力） |
 
 ## 13. 变更记录
 
@@ -732,7 +736,9 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | 2026-10-15 | `ea51d979` | RTO 电耗与气耗归到同一车间实体：去掉 `RTO用电` 跳过（每月约 16,834 kWh 曾被整行丢弃）+ 补 `303车间` 别名。**⚠ 方向有误，见下方 `b34d7f25`** | 6.8、R3 |
 | 2026-10-15 | `386c23c8` | 补两份文档：月度交叉表字段映射、车间统一变更说明 | 0、4.2、10.1 |
 | 2026-10-16 | `b34d7f25` | **更正 `ea51d979` 的方向 + 落地合计行剔除**。`ea51d979` 把 `RTO用电` 与 `RTO(天然气）` 合成一个实体，只解决了「电耗被整行丢弃」，却让 `RTO` 的电与容器 `环保中心(含RTO)` 的电同时计入全厂，重复计数由此重新引入；同理 `动力运行` 本来就是 6 台机组用电之和，一直与机组并计。正确做法是保留单一实体 + 按 `(车间, 能源类型)` 剔除：`energy_workshops.excluded_energy_types varchar[]` + 迁移 `0069`（建列并给 `动力运行`/`RTO` 打 `electricity` 标）；`ROLLUP_WORKSHOPS` 常量作为三种新建车间路径的唯一打标源；`repository.py` 新增 `_not_rollup_record()`，四处全厂口径接入（`get_overview_summary`、`get_energy_statistics`、`get_overview_trend`、`get_monthly_summary`），单车间口径不动；顺带修 `get_monthly_summary` 漏 `is_deleted`；交叉表导入新增 `_check_rollup_consistency`（容差 1%，只告警不改数，随 job 结果返回 `rollup_warnings`）；前端车间抽屉多选 + 列表「合计行」徽标，类型重生成；新增 `test_rollup_exclusion.py` 15 例 | 3.2、5.3、6.1、6.2、6.8.1、10.1、11.1、11.3、11.4、R3、D-39/D-43/D-44 |
+| 2026-10-16 | `e86e2f7c` | 修掉两处必然 404 的前端端点路径（`D-17` 飞书导入少 `/monthly` 段、`D-26` 采集日志详情写成 `/energy/collect-logs/{id}`）。只改路径——请求体与响应都是生成类型，`apiGet` 已解 `data` 信封。后端路由由 `@monthly_router.post(...)` + `include_router(prefix="/monthly")` 装配，全文搜路径搜不到，这是当初写错没被发现的原因。同时把 `alerts/check` 与 `alerts/dates` 两个死包装登记为 `D-45` | 4、5.2、5.6、7、7.7、R9、R10、D-17/D-26/D-45 |
+| 2026-10-16 | 本文更正 | **`D-34` 原判定有误**：本文曾记为「仓库根 `.env` 提交了真实 `app_token`」，实际根 `.env` 从未进 Git（`git log -- .env` 为 0 个提交，`.gitignore:2` 覆盖）。真实的历史暴露面是 `.env.local`：`A dfcd952d` → `M 845cb8e9` → `D 18a66339`/`D 62037cab`，工作树已无、`.gitignore:41` 已覆盖，但历史 blob 仍可检出。是否含真实凭证**未经核实**，故状态从「需审批」降为「需核实 + 审批」 | 8.4、D-34、13 待办 |
 | 2026-10-16 | 本文 v1.0 | 首版模块 PRD：8 项业务口径经能源模块负责人确认（单耗只算电、预警以警戒线为准、产量本期手填、通知非目标、偏差只算超标、权限只写现状、`category` 写为目标口径、0 视为未填报） | 全文 |
 
-**待办**（不属于文档缺陷，属工程排期）：车间实体统一的 UAT/生产执行由模块负责人完成；`D-34` 凭证轮换需尽快定责。
+**待办**（不属于文档缺陷，属工程排期）：车间实体统一的 UAT/生产执行由模块负责人完成；`D-34` 需先核实历史 `.env.local` blob 是否含真实凭证，再定责轮换/清除。
 
