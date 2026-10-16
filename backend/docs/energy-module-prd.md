@@ -625,10 +625,11 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 
 ### 11.1 现有用例
 
-`backend/tests/modules/energy/` 共 7 个文件 86 例（83 passed / 3 failed，3 例即 `D-32`）：
+`backend/tests/modules/energy/` 共 8 个文件 90 例（87 passed / 3 failed，3 例即 `D-32`）：
 
 | 文件 | 例数 | 覆盖面 |
 |---|---|---|
+| `test_endpoint_paths.py` | 4 | `D-17`/`D-26` 回归护栏：正确路径可用（详情返回结构完整、导入 mock 掉飞书后按 `FeishuImportModal` 的真实载荷打通）**且**错误路径确实 404。模板串里的路径是运行时字符串，静态类型检查发现不了，所以两侧都要断言 |
 | `test_bitable_workshop_alias.py` | 9 | 导入器别名解析、软删除不重用、水电气三叫法归一、RTO 电耗不被当汇总行丢弃、`车间映射` sheet 覆盖常量、缺表回退。飞书客户端 monkeypatch |
 | `test_rollup_exclusion.py` | 15 | 合计行剔除：四个聚合口径只剔标记的能源类型、单车间口径不剔、软删除计入、导入器新建打标 / 不覆盖人工取消打标、一致性告警三态、`/overview` 与 `/workshops` 契约、生产叫法登记表守护。用 `2001-05` 独立日期 + `合计行甲` 等自造名，monkeypatch 三个常量，与库内数据解耦 |
 | `test_unit_consumption.py` | 32 | 单耗计算 6 + 偏差率 5 + 偏差状态 4 + AI prompt 构造 3 + AI 数据契约 3 + LLM 降级 11。LLM 用 `patch(... llm_client.chat_json, AsyncMock)` |
@@ -689,7 +690,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | D-14 | 通知四字段无任何消费方 | 「配置了通知」是假象 | `models.py:246-253` | 非目标（已确认） |
 | D-15 | 预警记录无车间维度、`unit=""`、`rule_id=None` | 预警只能按能源类型看，定位不到车间；页面单位空白 | `bitable_daily_import.py:235-245` | 待修 |
 | D-16 | 设备与预警的能源类型下拉缺天然气 | 气类配置无法录入 | `DeviceDrawer.tsx:322-328`、`alerts/page.tsx:15-19` | 待修 |
-| D-17 | 飞书导入按钮请求路径少一段，固定 404 | 月度页「飞书导入」不可用 | `lib/api/server/energy.ts:263` vs `api.py:936` | **已修**（路径改为 `/monthly/import/feishu`；请求体与响应本就是生成类型，无需改） |
+| D-17 | 飞书导入按钮请求路径少一段，固定 404 | 月度页「飞书导入」不可用 | `lib/api/server/energy.ts:263` vs `api.py:936` | **已修**（路径改为 `/monthly/import/feishu`；请求体与响应本就是生成类型，无需改。回归护栏见 `test_endpoint_paths.py`） |
 | D-18 | 重试策略三处不统一：平台 A 指数退避、飞书月度 `sleep(60)`×3、每日同步无重试 | 与 AGENTS.md 重试约定不符；失败行为不可预期 | `adapters/platform_a.py:126`、`scheduler.py:259-296/323-362` | 待修 |
 | D-19 | 假种子脚本污染本地库 | 直接导致 D-32；本地对账数字失真 | `scripts/seed/seed_energy_data.py` | 需用户决定（不入库；本地是否清理待批） |
 | D-20 | 导入行级异常只回调用方，不落任何日志表 | 事后无法追溯某行为什么没进来 | `bitable_cross_import.py:460,471`、`bitable_daily_import.py:174,185` | 待修 |
@@ -698,7 +699,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | D-23 | 三个抽屉用 `useEffect` + `setState` 取数填表 | 违反 React Hooks 规范与 React Compiler 前提 | `WorkshopDrawer.tsx:43-56`、`DeviceDrawer.tsx:119-128`、`AlertConfigDrawer.tsx:82-112` | 待修（计划 PR6） |
 | D-24 | 孤儿代码 | 死代码误导维护 | `AlertsPageClient.tsx`、`CollectLogsPageClient.tsx`、`DevicesPageClient.tsx`、`actions/energy.ts:144 getWorkshops`、`lib/api/server/energy.ts:195 fetchWorkshops` | 待修（计划 PR4） |
 | D-25 | `revalidatePath` 指向不存在的路由 `/energy/alert-rules`、`/energy/alert-records` | 写操作后页面缓存不失效 | `actions/energy.ts:115,127,138` | 待修 |
-| D-26 | 采集日志详情前端路径与后端不一致，必然 404 | 排障主入口不可用 | `lib/api/client/energy.ts:44` vs `api.py:362` | **已修**（路径改为 `/collect/logs/{logId}/detail`；`apiGet` 已解 `data` 信封，`CollectLogDetail` 为生成类型） |
+| D-26 | 采集日志详情前端路径与后端不一致，必然 404 | 排障主入口不可用 | `lib/api/client/energy.ts:44` vs `api.py:362` | **已修**（路径改为 `/collect/logs/{logId}/detail`；`apiGet` 已解 `data` 信封，`CollectLogDetail` 为生成类型。回归护栏见 `test_endpoint_paths.py`） |
 | D-27 | 目标单耗上限前后端不一致（100 vs 9999.9999） | 提交大值报 422，用户不知原因 | `schemas.py:322` vs `TargetModal.tsx:108-118` | 待修 |
 | D-28 | 单耗分子把四类能源裸值相加当 kWh | 与 6.4 口径冲突，单耗与偏差值不可信 | `repository.py:864-885` | 待修（口径已确认：只算电） |
 | D-29 | 偏差分档取绝对值，节能 20% 也判 critical | 与 6.4 分档口径冲突 | `service.py:782-793` | 待修（口径已确认：只算超标） |
@@ -736,7 +737,7 @@ CI 约束：`scripts/ci/check_migration_numbers.py`（`:92-135`，四位顺序�
 | 2026-10-15 | `ea51d979` | RTO 电耗与气耗归到同一车间实体：去掉 `RTO用电` 跳过（每月约 16,834 kWh 曾被整行丢弃）+ 补 `303车间` 别名。**⚠ 方向有误，见下方 `b34d7f25`** | 6.8、R3 |
 | 2026-10-15 | `386c23c8` | 补两份文档：月度交叉表字段映射、车间统一变更说明 | 0、4.2、10.1 |
 | 2026-10-16 | `b34d7f25` | **更正 `ea51d979` 的方向 + 落地合计行剔除**。`ea51d979` 把 `RTO用电` 与 `RTO(天然气）` 合成一个实体，只解决了「电耗被整行丢弃」，却让 `RTO` 的电与容器 `环保中心(含RTO)` 的电同时计入全厂，重复计数由此重新引入；同理 `动力运行` 本来就是 6 台机组用电之和，一直与机组并计。正确做法是保留单一实体 + 按 `(车间, 能源类型)` 剔除：`energy_workshops.excluded_energy_types varchar[]` + 迁移 `0069`（建列并给 `动力运行`/`RTO` 打 `electricity` 标）；`ROLLUP_WORKSHOPS` 常量作为三种新建车间路径的唯一打标源；`repository.py` 新增 `_not_rollup_record()`，四处全厂口径接入（`get_overview_summary`、`get_energy_statistics`、`get_overview_trend`、`get_monthly_summary`），单车间口径不动；顺带修 `get_monthly_summary` 漏 `is_deleted`；交叉表导入新增 `_check_rollup_consistency`（容差 1%，只告警不改数，随 job 结果返回 `rollup_warnings`）；前端车间抽屉多选 + 列表「合计行」徽标，类型重生成；新增 `test_rollup_exclusion.py` 15 例 | 3.2、5.3、6.1、6.2、6.8.1、10.1、11.1、11.3、11.4、R3、D-39/D-43/D-44 |
-| 2026-10-16 | `e86e2f7c` | 修掉两处必然 404 的前端端点路径（`D-17` 飞书导入少 `/monthly` 段、`D-26` 采集日志详情写成 `/energy/collect-logs/{id}`）。只改路径——请求体与响应都是生成类型，`apiGet` 已解 `data` 信封。后端路由由 `@monthly_router.post(...)` + `include_router(prefix="/monthly")` 装配，全文搜路径搜不到，这是当初写错没被发现的原因。同时把 `alerts/check` 与 `alerts/dates` 两个死包装登记为 `D-45` | 4、5.2、5.6、7、7.7、R9、R10、D-17/D-26/D-45 |
+| 2026-10-16 | `e86e2f7c` | 修掉两处必然 404 的前端端点路径（`D-17` 飞书导入少 `/monthly` 段、`D-26` 采集日志详情写成 `/energy/collect-logs/{id}`）。只改路径——请求体与响应都是生成类型，`apiGet` 已解 `data` 信封。后端路由由 `@monthly_router.post(...)` + `include_router(prefix="/monthly")` 装配，全文搜路径搜不到，这是当初写错没被发现的原因。同时把 `alerts/check` 与 `alerts/dates` 两个死包装登记为 `D-45`。配套 `test_endpoint_paths.py` 4 例（正确路径可用 + 错误路径确实 404，飞书按 AGENTS.md 必须 mock）；`FeishuImportModal` 的真实载荷即 mock 的入参，顺带锁住请求体契约 | 4、5.2、5.6、7、7.7、R9、R10、11.1、D-17/D-26/D-45 |
 | 2026-10-16 | 本文更正 | **`D-34` 原判定有误**：本文曾记为「仓库根 `.env` 提交了真实 `app_token`」，实际根 `.env` 从未进 Git（`git log -- .env` 为 0 个提交，`.gitignore:2` 覆盖）。真实的历史暴露面是 `.env.local`：`A dfcd952d` → `M 845cb8e9` → `D 18a66339`/`D 62037cab`，工作树已无、`.gitignore:41` 已覆盖，但历史 blob 仍可检出。是否含真实凭证**未经核实**，故状态从「需审批」降为「需核实 + 审批」 | 8.4、D-34、13 待办 |
 | 2026-10-16 | 本文 v1.0 | 首版模块 PRD：8 项业务口径经能源模块负责人确认（单耗只算电、预警以警戒线为准、产量本期手填、通知非目标、偏差只算超标、权限只写现状、`category` 写为目标口径、0 视为未填报） | 全文 |
 
