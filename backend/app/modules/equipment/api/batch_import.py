@@ -11,7 +11,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, require_permission, RequiredUser
 from app.core.exceptions import BadRequestException
 from app.core.response import ApiResponse, build_response
 from app.modules.equipment import repository as repo
@@ -209,6 +209,7 @@ async def download_template() -> ApiResponse:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:read")),
     wb = Workbook()
     ws = wb.active
     ws.title = "设备台账"
@@ -227,6 +228,7 @@ async def download_template() -> ApiResponse:
 async def preview_import(
     data: list[EquipmentImportRow],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     import logging
@@ -305,6 +307,7 @@ async def preview_import(
 async def batch_import(
     data: list[EquipmentImportRow],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     created = 0
@@ -393,6 +396,7 @@ async def import_excel(current_user: RequiredUser, file: UploadFile = File(...))
         raise BadRequestException(message="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook
 
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     content_bytes = await file.read()
     try:
         wb = load_workbook(io.BytesIO(content_bytes))
@@ -423,6 +427,7 @@ async def test_validation(data: list[EquipmentImportRow]) -> dict[str, Any]:
     """Test endpoint to debug validation errors without authentication."""
     import logging
 
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     logger = logging.getLogger(__name__)
     logger.error(f"[TEST] Received {len(data)} rows")
     if data:

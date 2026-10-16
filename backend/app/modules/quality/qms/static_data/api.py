@@ -35,6 +35,7 @@ from app.modules.quality.qms.static_data.schemas import (
 )
 from app.modules.quality.qms.static_data.service import StaticDataService
 from app.shared.schemas import DataApiResponse, MessageApiResponse
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/static-data", tags=["Static Data"])
 
@@ -140,7 +141,10 @@ DICT_OPTIONS = {
 
 
 @router.get("/dict/{dict_type}", summary="Get dictionary options by type")
-async def get_dict_options(dict_type: str) -> Any:
+async def get_dict_options(
+    dict_type: str,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
+) -> Any:
     """Get dictionary options - returns hardcoded options for various dict types"""
     if dict_type in DICT_OPTIONS:
         return DataApiResponse(data=DICT_OPTIONS[dict_type])
@@ -148,7 +152,10 @@ async def get_dict_options(dict_type: str) -> Any:
 
 
 @router.get("/storage-condition/options", summary="Get storage condition options")
-async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_storage_condition_options(
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
     """Get storage condition options for dropdown selection"""
     from sqlalchemy import and_, select
 
@@ -164,7 +171,10 @@ async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> A
 
 
 @router.get("/unit/options", summary="Get unit options")
-async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_unit_options(
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
     """Get unit options for dropdown selection"""
     from sqlalchemy import and_, select
 
@@ -179,7 +189,9 @@ async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
 
 
 @router.get("/hplc-reference/template", summary="Download HPLC reference template")
-async def download_hplc_reference_template() -> Any:
+async def download_hplc_reference_template(
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
+) -> Any:
     """Download Excel template for HPLC reference substance import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -271,6 +283,7 @@ async def download_hplc_reference_template() -> Any:
 
 @router.post("/hplc-reference/batch-import", summary="Batch import HPLC reference substances")
 async def handler(
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     file: UploadFile = File(...),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
@@ -378,6 +391,7 @@ async def handler(
 
 @router.get("/hplc-reference", summary="List HPLC reference substances")
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     ref_code: str | None = Query(None, description="Reference code"),
@@ -405,6 +419,7 @@ async def get(
 
 @router.get("/hplc-reference/need-recal", summary="查询需要复标的对照品")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
@@ -418,6 +433,7 @@ async def get(  # noqa: F811
 @router.get("/hplc-reference/{id}", summary="Get HPLC reference substance by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_hplc_reference(id)
@@ -429,6 +445,7 @@ async def get(  # noqa: F811
 @router.post("/hplc-reference", summary="Create HPLC reference substance")
 async def post(
     data: s.HplcReferenceCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -446,6 +463,7 @@ async def post(
 async def put(
     id: int,
     data: s.HplcReferenceUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -462,6 +480,7 @@ async def put(
 @router.delete("/hplc-reference/{id}", summary="Delete HPLC reference substance")
 async def delete(
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:delete")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
@@ -495,6 +514,7 @@ async def handler(  # noqa: F811
 async def post(  # noqa: F811
     id: int,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     usage_amount: float = Body(..., embed=True, description="领用量 (mg/g)"),
     usage_unit: str = Body("mg", embed=True, description="领用单位"),
     usage_person: str | None = Body(None, embed=True, description="领用人"),
@@ -528,6 +548,7 @@ async def post(  # noqa: F811
 @router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     service: StaticDataService = Depends(_get_service),
@@ -546,6 +567,7 @@ async def get(  # noqa: F811
 
 @router.get("/chrom-column", summary="List chromatography columns")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     col_code: str | None = Query(None, description="Column code"),
@@ -574,7 +596,9 @@ async def get(  # noqa: F811
 
 
 @router.get("/chrom-column/template", summary="Download chromatography column template")
-async def download_chrom_column_template() -> Any:
+async def download_chrom_column_template(
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
+) -> Any:
     """Download Excel template for chromatography column import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -895,6 +919,7 @@ async def handler(  # noqa: F811
 @router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_chrom_column(id)
@@ -906,6 +931,7 @@ async def get(  # noqa: F811
 @router.post("/chrom-column", summary="Create chromatography column")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.ChromColumnCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -923,6 +949,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: int,
     data: s.ChromColumnUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -939,6 +966,7 @@ async def put(  # noqa: F811
 @router.delete("/chrom-column/{id}", summary="Delete chromatography column")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:delete")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
@@ -968,6 +996,7 @@ async def handler(  # noqa: F811
 
 @router.get("/medium", summary="List medium")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     medium_code: str | None = Query(None, description="Medium code"),
@@ -998,6 +1027,7 @@ async def get(  # noqa: F811
 @router.get("/medium/{id}", summary="Get medium by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_medium(id)
@@ -1009,6 +1039,7 @@ async def get(  # noqa: F811
 @router.post("/medium", summary="Create medium")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.MediumCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1023,6 +1054,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: int,
     data: s.MediumUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1036,6 +1068,7 @@ async def put(  # noqa: F811
 @router.delete("/medium/{id}", summary="Delete medium")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:delete")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1049,6 +1082,7 @@ async def delete(  # noqa: F811
 @router.post("/medium/{id}/adjust-stock", summary="Adjust medium stock quantity")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
@@ -1065,6 +1099,7 @@ async def post(  # noqa: F811
 
 @router.get("/standard", summary="List standards")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     std_code: str | None = Query(None, description="Standard code"),
@@ -1093,6 +1128,7 @@ async def get(  # noqa: F811
 @router.get("/standard/{id}", summary="Get standard by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_standard(id)
@@ -1104,6 +1140,7 @@ async def get(  # noqa: F811
 @router.post("/standard", summary="Create standard")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.StandardCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1118,6 +1155,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: int,
     data: s.StandardUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1131,6 +1169,7 @@ async def put(  # noqa: F811
 @router.delete("/standard/{id}", summary="Delete standard")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:delete")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1144,6 +1183,7 @@ async def delete(  # noqa: F811
 @router.post("/standard/{id}/adjust-quantity", summary="Adjust standard quantity")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
@@ -1160,6 +1200,7 @@ async def post(  # noqa: F811
 
 @router.get("/storage-condition", summary="List storage conditions")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     cond_code: str | None = Query(None, description="Condition code"),
@@ -1184,6 +1225,7 @@ async def get(  # noqa: F811
 @router.get("/storage-condition/{id}", summary="Get storage condition by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_storage_condition(id)
@@ -1195,6 +1237,7 @@ async def get(  # noqa: F811
 @router.post("/storage-condition", summary="Create storage condition")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.StorageConditionCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1212,6 +1255,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: int,
     data: s.StorageConditionUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:
@@ -1228,6 +1272,7 @@ async def put(  # noqa: F811
 @router.delete("/storage-condition/{id}", summary="Delete storage condition")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: int,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:delete")),
     service: StaticDataService = Depends(_get_service),
     user_id: int = Depends(_user_id),
 ) -> Any:

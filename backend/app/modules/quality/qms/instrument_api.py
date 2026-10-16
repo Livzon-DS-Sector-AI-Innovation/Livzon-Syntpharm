@@ -14,7 +14,7 @@ from sqlalchemy import and_, select
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db
-from app.core.deps import get_current_user
+from app.core.deps import PermissionContext, get_current_user, require_permission
 from app.modules.quality.qms.instrument_models import InstrumentCalibrationRecord
 from app.modules.quality.qms.instrument_schemas import (
     # Approval
@@ -79,6 +79,7 @@ def get_reminder_config_service(session=Depends(get_db)) -> Any:  # type: ignore
 
 @router.post("/feishu-contacts/resolve-user", response_model=InstrumentFeishuUserApiResponse)
 async def post(
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     mobile: str = Body(None, description="手机号"),
     email: str = Body(None, description="邮箱"),
     service: ReminderConfigService = Depends(get_reminder_config_service),
@@ -119,6 +120,7 @@ async def post(
 
 @router.get("/reminder-config", response_model=InstrumentReminderConfigListApiResponse)
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
     """获取所有提醒配置"""
@@ -152,6 +154,7 @@ async def get(
 @router.post("/reminder-config", response_model=InstrumentReminderConfigApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: ReminderConfigCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
     """创建提醒配置"""
@@ -179,6 +182,7 @@ async def post(  # noqa: F811
 async def put(
     config_id: UUID,
     data: ReminderConfigUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:update")),
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
     """更新提醒配置"""
@@ -205,6 +209,7 @@ async def put(
 @router.delete("/reminder-config/{config_id}", response_model=InstrumentMessageApiResponse)
 async def delete(
     config_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:delete")),
     service: ReminderConfigService = Depends(get_reminder_config_service),
 ) -> Any:
     """删除提醒配置"""
@@ -218,6 +223,7 @@ async def delete(
 
 @router.get("", response_model=InstrumentListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     instrument_no: str | None = Query(None, description="仪器编号"),
     instrument_name: str | None = Query(None, description="仪器名称"),
     category: str | None = Query(None, description="仪器分类"),
@@ -254,6 +260,7 @@ async def get(  # noqa: F811
 @router.post("", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: InstrumentCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     service: InstrumentService = Depends(get_instrument_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -272,6 +279,7 @@ async def post(  # noqa: F811
 @router.post("/{instrument_id}/submit", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:submit")),
     service: InstrumentService = Depends(get_instrument_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -290,6 +298,7 @@ async def post(  # noqa: F811
 @router.post("/{instrument_id}/approve", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:approve")),
     approved: bool = Query(..., description="是否批准"),
     comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型：admin/qa"),
@@ -314,6 +323,7 @@ async def post(  # noqa: F811
 @router.post("/{instrument_id}/activate", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     service: InstrumentService = Depends(get_instrument_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -332,6 +342,7 @@ async def post(  # noqa: F811
 @router.post("/{instrument_id}/deactivate", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     reason: str = Query(..., description="停用原因"),
     service: InstrumentService = Depends(get_instrument_service),
     current_user=Depends(get_current_user),
@@ -353,6 +364,7 @@ async def post(  # noqa: F811
 
 @router.get("/rules", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     instrument_id: str | None = Query(None, description="仪器ID"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -366,6 +378,7 @@ async def get(  # noqa: F811
 @router.get("/rules/{instrument_id}", response_model=InstrumentRuleListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
     """获取仪器校准规则"""
@@ -378,6 +391,7 @@ async def get(  # noqa: F811
 @router.post("/rules", response_model=InstrumentRuleApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     data: CalibrationRuleCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     service: CalibrationRuleService = Depends(get_rule_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -397,6 +411,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     rule_id: UUID,
     data: CalibrationRuleUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:update")),
     service: CalibrationRuleService = Depends(get_rule_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -415,6 +430,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
 @router.delete("/rules/{rule_id}")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     rule_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:delete")),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
     """删除校准规则"""
@@ -427,6 +443,7 @@ async def delete(  # noqa: F811
 
 @router.get("/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     days: int = Query(30, description="提前预警天数"),
     service: CalibrationRuleService = Depends(get_rule_service),
 ) -> Any:
@@ -452,6 +469,7 @@ async def get(  # noqa: F811
 
 @router.get("/records", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     instrument_id: str | None = Query(None, description="仪器ID"),
     rule_id: str | None = Query(None, description="校准规则ID"),
     calibration_no: str | None = Query(None, description="校准单据编号"),
@@ -514,6 +532,7 @@ async def get(  # noqa: F811
 @router.get("/records/{record_id}", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
     """获取校准记录详情"""
@@ -527,6 +546,7 @@ async def get(  # noqa: F811
 @router.post("/records", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     data: CalibrationRecordCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     service: CalibrationRecordService = Depends(get_record_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -546,6 +566,7 @@ async def post(  # noqa: F811  # type: ignore[no-untyped-def]
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     record_id: UUID,
     data: CalibrationRecordUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:update")),
     service: CalibrationRecordService = Depends(get_record_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -564,6 +585,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
 @router.delete("/records/{record_id}")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:delete")),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
     """删除校准记录"""
@@ -577,6 +599,7 @@ async def delete(  # noqa: F811
 @router.post("/records/{record_id}/submit", response_model=InstrumentRecordApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:submit")),
     service: CalibrationRecordService = Depends(get_record_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -595,6 +618,7 @@ async def post(  # noqa: F811
 @router.post("/records/{record_id}/approve", response_model=InstrumentApprovalApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:approve")),
     approved: bool = Query(..., description="是否批准"),
     comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型：admin/qa"),
@@ -620,6 +644,7 @@ async def post(  # noqa: F811
 @router.get("/{instrument_id}", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Any:
     """获取仪器详情"""
@@ -634,6 +659,7 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811  # type: ignore[no-untyped-def]
     instrument_id: UUID,
     data: InstrumentUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:update")),
     service: InstrumentService = Depends(get_instrument_service),
     current_user=Depends(get_current_user),
 ) -> Any:
@@ -652,6 +678,7 @@ async def put(  # noqa: F811  # type: ignore[no-untyped-def]
 @router.delete("/{instrument_id}")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     instrument_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:delete")),
     service: InstrumentService = Depends(get_instrument_service),
 ) -> Any:
     """删除仪器设备"""
@@ -667,6 +694,7 @@ async def delete(  # noqa: F811
 
 @router.post("/recognize", response_model=InstrumentApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     file: UploadFile = File(..., description="仪器标签图片"),
 ) -> Any:
     """AI识别仪器标签图片，提取设备信息"""
@@ -782,6 +810,7 @@ async def post(  # noqa: F811
 
 @router.get("/record/upcoming", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -824,6 +853,7 @@ async def get(  # noqa: F811
 
 @router.get("/record/for-reminder", response_model=InstrumentRecordListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:read")),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
     service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:
@@ -834,6 +864,7 @@ async def get(  # noqa: F811
 
 @router.post("/record/remind", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     chat_id: str = Query(..., description="飞书群ID或用户ID或open_id"),
     receive_id_type: str = Query("chat_id", description="接收者类型: chat_id/user_id/open_id"),
     days: int = Query(30, ge=1, le=365, description="提前提醒天数"),
@@ -964,6 +995,7 @@ async def post(  # noqa: F811
 
 @router.post("/reminder/auto-trigger", response_model=InstrumentMessageApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:instrument:create")),
     service: ReminderConfigService = Depends(get_reminder_config_service),
     record_service: CalibrationRecordService = Depends(get_record_service),
 ) -> Any:

@@ -8,7 +8,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import RequiredUser, PermissionContext, require_permission
+
 from app.modules.production.product.output_schemas import UndoSyncResponse
 from app.modules.production.product.sync_config_schemas import (
     ProductSyncConfigApiResponse,
@@ -26,6 +27,7 @@ router = APIRouter()
 async def get_sync_config(
     product_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -39,6 +41,7 @@ async def get_sync_config(
 async def create_sync_config(
     data: ProductSyncConfigCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -54,6 +57,7 @@ async def update_sync_config(
     config_id: uuid.UUID,
     data: ProductSyncConfigUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -67,6 +71,7 @@ async def update_sync_config(
 async def delete_sync_config(
     config_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -80,6 +85,7 @@ async def delete_sync_config(
 async def push_to_feishu(
     product_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:sync")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -91,6 +97,7 @@ async def push_to_feishu(
 async def pull_from_feishu(
     product_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:sync")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -102,6 +109,7 @@ async def pull_from_feishu(
 async def bidirectional_sync(
     product_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:sync")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ProductSyncConfigService(db)
@@ -113,6 +121,7 @@ async def bidirectional_sync(
 async def preview_push(
     current_user: RequiredUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """预览推送到飞书的操作，不实际执行"""
@@ -136,6 +145,7 @@ async def preview_push(
 async def preview_pull(
     current_user: RequiredUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """预览从飞书拉取的操作，不实际执行"""
@@ -159,6 +169,7 @@ async def preview_pull(
 async def undo_last_sync(
     current_user: RequiredUser,
     product_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("production:product-sync-config:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """撤销上次同步操作"""

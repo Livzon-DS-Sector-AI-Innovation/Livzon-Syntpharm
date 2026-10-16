@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.response import success_response
 from app.modules.registration import service
 from app.modules.registration.models.review import ReviewNode
@@ -37,6 +37,7 @@ async def list_drugs(
 async def create_drug(
     current_user: CurrentUser,
     data: DrugCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """创建新药品"""
@@ -57,6 +58,7 @@ async def get_review_nodes(
 async def get_drug(
     current_user: CurrentUser,
     drug_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取单个药品及其审评节点"""
@@ -80,6 +82,7 @@ async def update_drug(
 async def delete_drug(
     current_user: CurrentUser,
     drug_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """删除药品"""

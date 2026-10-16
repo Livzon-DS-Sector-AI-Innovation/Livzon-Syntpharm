@@ -22,6 +22,7 @@ from app.modules.quality.qms.material_report_service import (
     ReportTemplateService,
 )
 from app.modules.quality.qms.schemas import InspectionStandardApiResponse
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
@@ -32,6 +33,7 @@ router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 @router.get("/", summary="获取报告单列表")
 async def get(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     template_id: str | None = None,
     status: str | None = None,
     start_date: str | None = None,
@@ -76,6 +78,7 @@ async def get(
 async def post(
     data: ReportCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:create")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建报告单"""
@@ -87,6 +90,7 @@ async def post(
 @router.get("/statistics", summary="获取统计数据")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取统计数据"""
@@ -98,6 +102,7 @@ async def get(  # noqa: F811
 @router.get("/template", summary="获取模板列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     is_active: bool | None = None,
     page: int = 1,
     page_size: int = 20,
@@ -124,6 +129,7 @@ async def get(  # noqa: F811
 @router.post("/template/", summary="上传Word模板")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     file: UploadFile = File(..., description="Word模板文件"),
     template_name: str = Form(..., description="模板名称"),
     template_description: str | None = Form(None, description="模板描述"),
@@ -176,6 +182,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     template_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取模板详情"""
@@ -193,6 +200,7 @@ async def put(  # noqa: F811
     template_id: UUID,
     data: TemplateUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新模板"""
@@ -209,6 +217,7 @@ async def put(  # noqa: F811
 async def delete(  # noqa: F811
     template_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除模板"""
@@ -225,6 +234,7 @@ async def delete(  # noqa: F811
 async def get(  # noqa: F811
     template_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:create")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """解析模板获取字段配置"""
@@ -244,6 +254,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单详情"""
@@ -261,6 +272,7 @@ async def put(  # noqa: F811
     report_id: UUID,
     data: ReportUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:update")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新报告单"""
@@ -277,6 +289,7 @@ async def put(  # noqa: F811
 async def delete(  # noqa: F811
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:delete")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除报告单"""
@@ -294,6 +307,7 @@ async def post(  # noqa: F811
     report_id: UUID,
     data: ReportItemsBatchSave,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:create")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """批量保存明细数据"""
@@ -312,6 +326,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:create")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """生成报告单Word文件并下载"""
@@ -337,6 +352,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:submit")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """提交报告单"""
@@ -357,6 +373,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:create")),
     field_key: str | None = Form(None, description="对应字段key"),
     row_index: int | None = Form(None, description="对应行序号"),
     file: UploadFile = File(..., description="图片文件"),
@@ -386,6 +403,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     report_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:material-report:read")),
     session: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取报告单的所有图片记录"""

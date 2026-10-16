@@ -15,6 +15,7 @@ from app.core.deps import CurrentUser
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.schemas import ApiResponse
 from app.modules.quality.sop_ai.service import SopAiCheckService
+from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +28,7 @@ router = APIRouter()
 @router.get("/config", summary="获取配置列表")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取所有配置"""
@@ -39,6 +41,7 @@ async def get(
 async def get_config(
     current_user: CurrentUser,
     config_key: str,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
     """获取指定配置"""
@@ -52,6 +55,7 @@ async def update_config(
     current_user: CurrentUser,
     config_key: str,
     request: schemas.SopAiConfigUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:update")),
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
     """更新配置"""
@@ -72,6 +76,7 @@ async def update_config(
 async def single_check(
     current_user: CurrentUser,
     request: schemas.SingleCheckRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """对单个文件进行预审校验"""
@@ -92,6 +97,7 @@ async def single_check(
 async def batch_check(
     current_user: CurrentUser,
     request: schemas.BatchCheckRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """对多个文件进行批量巡检"""
@@ -110,6 +116,7 @@ async def batch_check(
 @router.get("/records", summary="获取校验记录列表")
 async def list_records(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     status: str | None = Query(None, description="状态过滤"),
     file_code: str | None = Query(None, description="文件编号过滤"),
     start_date: datetime | None = Query(None, description="开始时间"),
@@ -163,6 +170,7 @@ async def list_records(
 async def get_record(
     current_user: CurrentUser,
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
     """获取校验记录详情"""
@@ -183,6 +191,7 @@ async def handle_problem(
     current_user: CurrentUser,
     problem_id: str,
     request: schemas.ProblemHandleRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:update")),
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
     """处理问题"""
@@ -212,6 +221,7 @@ async def handle_problem(
 @router.get("/jobs", summary="获取定时任务列表")
 async def list_jobs(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     """获取定时任务列表"""
@@ -238,6 +248,7 @@ async def list_jobs(
 async def create_job(
     current_user: CurrentUser,
     request: schemas.ScheduledJobCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
     """创建定时任务"""
@@ -268,6 +279,7 @@ async def create_job(
 async def delete_job(
     current_user: CurrentUser,
     job_id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> dict():  # type: ignore[valid-type]
     """删除定时任务"""
@@ -289,6 +301,7 @@ async def delete_job(
 async def export_report(
     current_user: CurrentUser,
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:sop-ai:export")),
     format: str = Query("excel", description="导出格式: excel/pdf"),
     include_problems: bool = Query(True, description="是否包含问题明细"),
     db: AsyncSession = Depends(get_db),

@@ -18,6 +18,7 @@ from app.modules.quality.qms.deviation_settings_schemas import (
 )
 from app.modules.quality.qms.feishu_service import get_feishu_service
 from app.platform.database import get_db_session
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/deviation-settings", tags=["偏差提醒设置"])
 
@@ -50,7 +51,10 @@ URGENCY_LEVELS = [
 
 
 @router.get("/qa-users", summary="获取QA人员列表")
-async def get_qa_users(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_qa_users(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+    session: AsyncSession = Depends(get_db_session),
+) -> Any:
     """获取所有QA人员配置"""
     result = await session.execute(
         text("""
@@ -76,6 +80,7 @@ async def get_qa_users(session: AsyncSession = Depends(get_db_session)) -> Any:
 @router.post("/qa-users", summary="添加QA人员")
 async def post(
     request: QAUserRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """添加QA人员配置"""
@@ -110,6 +115,7 @@ async def post(
 async def put(
     id: str,
     request: QAUserRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新QA人员配置"""
@@ -135,6 +141,7 @@ async def put(
 @router.delete("/qa-users/{id}", summary="删除QA人员")
 async def delete(
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除QA人员（软删除）"""
@@ -150,6 +157,7 @@ async def delete(
 @router.put("/qa-users/{id}/toggle", summary="启用/禁用QA人员")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """切换QA人员启用状态"""
@@ -166,7 +174,10 @@ async def put(  # noqa: F811
 
 
 @router.get("/leaders", summary="获取部门负责人列表")
-async def get_leaders(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_leaders(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有部门负责人配置"""
     result = await session.execute(
         text("""
@@ -192,6 +203,7 @@ async def get_leaders(session: AsyncSession = Depends(get_db_session)) -> Any:
 @router.post("/leaders", summary="添加部门负责人")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: LeaderRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """添加部门负责人配置"""
@@ -226,6 +238,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: str,
     request: LeaderRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新部门负责人配置"""
@@ -251,6 +264,7 @@ async def put(  # noqa: F811
 @router.delete("/leaders/{id}", summary="删除部门负责人")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除部门负责人（软删除）"""
@@ -266,6 +280,7 @@ async def delete(  # noqa: F811
 @router.put("/leaders/{id}/toggle", summary="启用/禁用部门负责人")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """切换部门负责人启用状态"""
@@ -282,7 +297,10 @@ async def put(  # noqa: F811
 
 
 @router.get("/rules", summary="获取提醒规则列表")
-async def get_rules(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_rules(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有提醒规则配置"""
     result = await session.execute(
         text("""
@@ -309,6 +327,7 @@ async def get_rules(session: AsyncSession = Depends(get_db_session)) -> Any:
 @router.post("/rules", summary="添加提醒规则")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: ReminderRuleRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """添加提醒规则配置"""
@@ -340,6 +359,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: str,
     request: ReminderRuleRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新提醒规则配置"""
@@ -369,6 +389,7 @@ async def put(  # noqa: F811
 @router.delete("/rules/{id}", summary="删除提醒规则")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除提醒规则（软删除）"""
@@ -384,6 +405,7 @@ async def delete(  # noqa: F811
 @router.put("/rules/{id}/toggle", summary="启用/禁用提醒规则")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """切换提醒规则启用状态"""
@@ -409,7 +431,10 @@ TRIGGER_TYPES = [
 
 
 @router.get("/auto-triggers", summary="获取自动提醒触发列表")
-async def get_auto_triggers(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_auto_triggers(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有自动提醒触发配置"""
     result = await session.execute(
         text("""
@@ -437,6 +462,7 @@ async def get_auto_triggers(session: AsyncSession = Depends(get_db_session)) -> 
 @router.post("/auto-triggers", summary="添加自动提醒触发")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: AutoTriggerRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """添加自动提醒触发配置"""
@@ -480,6 +506,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: str,
     request: AutoTriggerRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新自动提醒触发配置"""
@@ -511,6 +538,7 @@ async def put(  # noqa: F811
 @router.delete("/auto-triggers/{id}", summary="删除自动提醒触发")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除自动提醒触发（软删除）"""
@@ -526,6 +554,7 @@ async def delete(  # noqa: F811
 @router.put("/auto-triggers/{id}/toggle", summary="启用/禁用自动提醒触发")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """切换自动提醒触发启用状态"""
@@ -551,7 +580,10 @@ TEMPLATE_TYPES = [
 
 
 @router.get("/message-templates", summary="获取消息模板列表")
-async def get_message_templates(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_message_templates(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有消息模板配置"""
     result = await session.execute(
         text("""
@@ -578,6 +610,7 @@ async def get_message_templates(session: AsyncSession = Depends(get_db_session))
 @router.post("/message-templates", summary="添加消息模板")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: MessageTemplateRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """添加消息模板配置"""
@@ -618,6 +651,7 @@ async def post(  # noqa: F811
 async def put(  # noqa: F811
     id: str,
     request: MessageTemplateRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新消息模板配置"""
@@ -658,6 +692,7 @@ async def put(  # noqa: F811
 @router.delete("/message-templates/{id}", summary="删除消息模板")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除消息模板（软删除）"""
@@ -673,6 +708,7 @@ async def delete(  # noqa: F811
 @router.put("/message-templates/{id}/toggle", summary="启用/禁用消息模板")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """切换消息模板启用状态"""
@@ -688,6 +724,7 @@ async def put(  # noqa: F811
 @router.put("/message-templates/{id}/set-default", summary="设为默认模板")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     id: str,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """将模板设为默认"""
@@ -722,7 +759,10 @@ async def put(  # noqa: F811
 
 
 @router.get("/feishu-bot", summary="获取飞书机器人配置")
-async def get_feishu_bot_config(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_feishu_bot_config(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取飞书机器人配置（只返回一条）"""
     result = await session.execute(
         text("""
@@ -753,6 +793,7 @@ async def get_feishu_bot_config(session: AsyncSession = Depends(get_db_session))
 @router.post("/feishu-bot", summary="创建飞书机器人配置")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: FeishuBotConfigRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """创建飞书机器人配置（只允许一条）"""
@@ -793,6 +834,7 @@ async def post(  # noqa: F811
 @router.put("/feishu-bot", summary="更新飞书机器人配置")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     request: FeishuBotConfigRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """更新飞书机器人配置"""
@@ -838,6 +880,7 @@ async def put(  # noqa: F811
 
 @router.put("/feishu-bot/toggle", summary="启用/禁用机器人")  # type: ignore[no-redef]
 async def put(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:update")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """切换机器人启用状态"""
@@ -858,6 +901,7 @@ async def put(  # noqa: F811
 
 @router.delete("/feishu-bot", summary="删除飞书机器人配置")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:delete")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """删除飞书机器人配置（软删除）"""
@@ -880,7 +924,9 @@ async def delete(  # noqa: F811
 
 
 @router.get("/options", summary="获取选项列表")
-async def get_options() -> Any:
+async def get_options(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
+) -> Any:
     """获取偏差类型、紧急等级等选项"""
     return {
         "code": 200,
@@ -907,6 +953,7 @@ async def get_options() -> Any:
 
 @router.get("/feishu-user/by-mobile", summary="根据手机号查询飞书用户")
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
     mobile: str = Query(..., description="手机号"),
     country_code: str = Query("86", description="国家码"),
 ) -> Any:
@@ -925,7 +972,10 @@ async def get(
 
 
 @router.post("/reminder/trigger", summary="手动触发偏差提醒")
-async def trigger_deviation_reminder(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def trigger_deviation_reminder(
+    ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """手动触发偏差填报人提醒检查并发送飞书消息"""
     from app.modules.quality.qms.deviation_reporter_reminder_service import (
         DeviationReporterReminderService,

@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.validation_audit import (
     ValidationAuditFileListItem,
@@ -47,6 +47,7 @@ async def post(
 @router.get("/tasks", response_model=dict, summary="任务列表")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
     product_name: str | None = Query(None),
     source_company: str | None = Query(None),
     status: str | None = Query(None),
@@ -76,6 +77,7 @@ async def get(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -93,6 +95,7 @@ async def put(
     current_user: CurrentUser,
     task_id: UUID,
     data: ValidationAuditTaskUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -110,6 +113,7 @@ async def put(
 async def delete(
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -127,6 +131,7 @@ async def delete(
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     files: list[UploadFile] = File(...),
     file_type: str = Form(...),
     db: AsyncSession = Depends(get_db),
@@ -179,6 +184,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -199,6 +205,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -222,6 +229,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -251,6 +259,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
     issue_type: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -269,6 +278,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)
@@ -288,6 +298,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)

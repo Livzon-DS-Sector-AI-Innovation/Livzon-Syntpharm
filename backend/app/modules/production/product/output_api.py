@@ -12,7 +12,8 @@ from sqlalchemy import and_, not_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import RequiredUser, PermissionContext, require_permission
+
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (
@@ -35,7 +36,7 @@ router = APIRouter()
 
 
 @router.get("/product-output/workshops", summary="获取车间列表")
-async def get_workshops() -> Any:
+async def get_workshops(ctx: PermissionContext = Depends(require_permission("production:product-output:read"))) -> Any:
     """获取所有车间列表"""
     return DataApiResponse(data=WORKSHOP_CHOICES)
 
@@ -43,6 +44,7 @@ async def get_workshops() -> Any:
 @router.get("/product-output", summary="获取产量记录列表")
 async def get_product_outputs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=5000),
     workshop: str | None = None,
@@ -79,6 +81,7 @@ async def get_product_outputs(
 @router.get("/product-output/summary", summary="获取汇总统计")
 async def get_product_outputs_summary(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:read")),
     target_date: date | None = Query(None, description="查询日期"),
     month: str | None = Query(None, description="查询月份 YYYY-MM"),
     year: int | None = Query(None, description="查询年份"),
@@ -103,6 +106,7 @@ async def get_product_outputs_summary(
 @router.get("/product-output/batch-count", summary="获取批次统计")
 async def get_product_outputs_batch_count(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:read")),
     target_date: date | None = Query(None, description="查询日期"),
     month: str | None = Query(None, description="查询月份 YYYY-MM"),
     year: int | None = Query(None, description="查询年份"),
@@ -127,6 +131,7 @@ async def get_product_outputs_batch_count(
 @router.get("/product-output/export", summary="导出产量记录")
 async def export_product_outputs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:export")),
     workshop: str | None = None,
     product_id: uuid.UUID | None = None,
     product_name: str | None = None,
@@ -201,6 +206,7 @@ async def export_product_outputs(
 @router.get("/product-output/annual-review", summary="获取年度回顾数据")
 async def get_annual_review(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:read")),
     year: int = Query(..., description="年份"),
     db: AsyncSession = Depends(get_db),
 ) -> AnnualReviewResponse:
@@ -212,6 +218,7 @@ async def get_annual_review(
 @router.get("/product-output/annual-review/export", summary="导出年度回顾Excel")
 async def export_annual_review(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:export")),
     year: int = Query(..., description="年份"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -273,6 +280,7 @@ async def export_annual_review(
 async def get_product_output(
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取单条产量记录"""
@@ -287,6 +295,7 @@ async def get_product_output(
 async def create_product_output(
     data: ProductOutputCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """新建产量记录"""
@@ -303,6 +312,7 @@ async def update_product_output(
     record_id: uuid.UUID,
     data: ProductOutputUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新产量记录"""
@@ -320,6 +330,7 @@ async def update_product_output(
 @router.delete("/product-output/batch", summary="批量删除产量记录")
 async def batch_delete_product_outputs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:delete")),
     ids: str = Query(..., description="逗号分隔的记录 ID 列表"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -340,6 +351,7 @@ async def batch_delete_product_outputs(
 async def delete_product_output(
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """软删除产量记录"""
@@ -455,6 +467,7 @@ async def parse_import_file(file: UploadFile, db: AsyncSession) -> tuple[list[di
 @router.post("/product-output/import/preview", summary="预览导入文件")
 async def preview_import(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:import")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -493,6 +506,7 @@ async def preview_import(
 @router.post("/product-output/import", summary="导入产量记录")
 async def import_product_outputs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:import")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -544,6 +558,7 @@ async def import_product_outputs(
 async def undo_import(
     current_user: RequiredUser,
     batch_id: str,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:import")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """撤销指定批次的导入记录"""
@@ -570,6 +585,7 @@ async def undo_import(
 @router.post("/product-output/import-from-bitable", summary="从飞书多维表格导入产量记录")
 async def import_from_bitable(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("production:product-output:import")),
     app_token: str = Query(..., description="飞书多维表格 app_token"),
     table_id: str = Query("", description="飞书多维表格 table_id（不填则自动获取第一个表）"),
     db: AsyncSession = Depends(get_db),

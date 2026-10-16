@@ -40,6 +40,7 @@ from app.modules.quality.qms.doc_check.schemas import (
     ProblemUpdate,
 )
 from app.modules.quality.qms.doc_check.service import DocCheckService
+from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ _upload_store: dict[str, dict[str, Any]] = {}
 @router.get("/config", response_model=DocCheckConfigListApiResponse, summary="获取配置列表")
 async def get(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取配置列表"""
@@ -75,6 +77,7 @@ async def get(
 async def get(  # noqa: F811
     config_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取配置详情"""
@@ -89,6 +92,7 @@ async def get(  # noqa: F811
 async def post(
     data: DocCheckConfigCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建配置"""
@@ -103,6 +107,7 @@ async def put(
     config_id: uuid.UUID,
     data: DocCheckConfigUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新配置"""
@@ -121,6 +126,7 @@ async def put(
 async def post(  # noqa: F811
     data: DocCheckCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建校验任务"""
@@ -150,6 +156,7 @@ async def post(  # noqa: F811
 async def handler(
     check_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:execute")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """执行校验（调用 AI）"""
@@ -169,6 +176,7 @@ async def handler(
 @router.get("/check", response_model=DocCheckListApiResponse, summary="获取校验列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     status: str | None = Query(None, description="校验状态"),
@@ -196,6 +204,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     check_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取校验详情"""
@@ -211,6 +220,7 @@ async def put(  # noqa: F811
     check_id: uuid.UUID,
     data: DocCheckUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新校验任务"""
@@ -229,6 +239,7 @@ async def put(  # noqa: F811
 async def delete(
     check_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """删除校验任务"""
@@ -249,6 +260,7 @@ async def delete(
 @router.get("/problems", response_model=DocCheckProblemListApiResponse, summary="获取问题列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:problem:read")),
     check_main_id: uuid.UUID = Query(..., description="校验主表ID"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -264,6 +276,7 @@ async def get(  # noqa: F811
 @router.get("/vector-cache", response_model=DocCheckVectorCacheListApiResponse, summary="获取向量缓存列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     doc_type: str | None = Query(None, description="文档类型"),
     doc_hash: str | None = Query(None, description="文档哈希"),
     db: AsyncSession = Depends(get_db),
@@ -280,6 +293,7 @@ async def get(  # noqa: F811
 @router.post("/upload", response_model=DocCheckUploadApiResponse, summary="上传文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:create")),
     file: UploadFile = File(...),
     file_name: str = Form(..., description="文件名"),
     file_no: str | None = Form(None, description="文件编号"),
@@ -418,6 +432,7 @@ async def handler(  # noqa: F811
 async def post(  # noqa: F811
     check_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:cancel")),
     operator: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -445,6 +460,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     file_ids: list[str],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:create")),
     check_config: dict[str, Any] | None = None,
     operator: str | None = None,
     db: AsyncSession = Depends(get_db),
@@ -493,6 +509,7 @@ async def post(  # noqa: F811
 @router.get("/records", response_model=DocCheckRecordsApiResponse, summary="获取校验记录列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:record:read")),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     status: str | None = Query(None, description="校验状态"),
@@ -636,6 +653,7 @@ async def put(  # noqa: F811
     problem_id: uuid.UUID,
     data: ProblemUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:problem:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新问题"""
@@ -687,6 +705,7 @@ async def put(  # noqa: F811
     problem_ids: list[str],
     handle_status: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:problem:create")),
     ignore_reason: str | None = None,
     operator: str | None = None,
     db: AsyncSession = Depends(get_db),
@@ -727,6 +746,7 @@ async def put(  # noqa: F811
 async def get(  # noqa: F811
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:export:read")),
     format: str = Query("pdf", description="导出格式"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:

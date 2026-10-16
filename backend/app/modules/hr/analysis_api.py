@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import success_response
 from app.modules.hr.analysis_service import TurnoverAnalysisService
 
@@ -22,6 +22,7 @@ def get_turnover_analysis_service(
 @router.get("", summary="人员流动分析")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("hr:turnover-analysis:read")),
     service: TurnoverAnalysisService = Depends(get_turnover_analysis_service),
 ) -> Any:
     """分析最近6个月老厂人员流动数据并生成AI报告."""

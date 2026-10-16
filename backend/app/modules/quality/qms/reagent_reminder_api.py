@@ -12,6 +12,7 @@ from app.core.response import success_response
 from app.modules.quality.qms.reagent_reminder_schemas import ItemReminderRequest, ReminderConfigRequest
 from app.modules.quality.qms.reagent_reminder_service import ReagentReminderService
 from app.platform.database import get_db_session
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/reagent-reminder", tags=["试剂提醒管理"])
 
@@ -20,7 +21,10 @@ router = APIRouter(prefix="/reagent-reminder", tags=["试剂提醒管理"])
 
 
 @router.get("/config", summary="获取提醒配置")
-async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_config(
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:read")),
+    session: AsyncSession = Depends(get_db_session),
+) -> Any:
     """获取当前的提醒配置"""
     service = ReagentReminderService(session)
     config = await service.get_config()
@@ -46,6 +50,7 @@ async def get_config(session: AsyncSession = Depends(get_db_session)) -> Any:
 @router.post("/config", summary="保存提醒配置")
 async def post(
     request: ReminderConfigRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """保存提醒配置"""
@@ -72,7 +77,10 @@ async def post(
 
 
 @router.post("/check", summary="手动检查并发送提醒")
-async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> Any:
+async def check_and_remind(
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:create")),
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """手动触发库存检查和提醒"""
     service = ReagentReminderService(session)
     result = await service.check_and_remind()
@@ -81,6 +89,7 @@ async def check_and_remind(session: AsyncSession = Depends(get_db_session)) -> A
 
 @router.get("/low-stock", summary="获取库存不足的试剂列表")
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:read")),
     threshold: int = 2,
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -101,6 +110,7 @@ async def get(
 @router.post("/item-reminder", summary="设置单个试剂的提醒开关")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: ItemReminderRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """设置单个试剂的提醒开关（启用/禁用）"""
@@ -112,6 +122,7 @@ async def post(  # noqa: F811
 @router.get("/item-reminder/{reagent_name}", summary="获取单个试剂的提醒配置")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     reagent_name: str,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """获取单个试剂的提醒配置"""
