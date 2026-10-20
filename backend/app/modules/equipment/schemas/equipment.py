@@ -10,6 +10,19 @@ EquipmentStatus = Literal["在用", "备用", "维修中", "停用", "报废"]
 EquipmentImportance = Literal["高", "中", "低"]
 EquipmentClass = Literal["A", "B", "C"]
 
+# 排序白名单（spec D2）：与前端可点列严格一一对应，未列出的列不渲染排序入口
+EquipmentSortBy = Literal[
+    "asset_no",
+    "name",
+    "commissioning_date",
+    "current_cost",
+    "book_value",
+    "department_name",
+    "status",
+    "created_at",
+]
+EquipmentSortOrder = Literal["asc", "desc"]
+
 
 # ==================== 设备分类 ====================
 class EquipmentCategoryCreate(BaseModel):
@@ -251,3 +264,19 @@ class EquipmentImportRow(BaseModel):
         if self.资产说明 is None and self.设备名称 is not None:
             self.资产说明 = self.设备名称
         return self
+
+
+class EquipmentSyncResult(BaseModel):
+    warnings: list[str] = Field(default_factory=list, description="同步过程中的警告信息")
+    """设备同步结果统计"""
+    updated: int = Field(0, description="更新的设备数量")
+    inserted: int = Field(0, description="新增的设备数量")
+    migrated: int = Field(0, description="迁移位置的设备数量")
+    deleted: int = Field(0, description="停用的设备数量")
+
+
+class EquipmentSyncResponse(BaseModel):
+    code: int = Field(200, description="响应状态码")
+    message: str = Field("success", description="响应消息")
+    data: EquipmentSyncResult
+    meta: dict[str, Any] | None = None

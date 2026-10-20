@@ -6,7 +6,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { CalibrationRecord } from '@/types/equipment/generated-bridge'
 import { CalibrationType, CalibrationResult } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
-import {pillSuccess, pillError, pillPurple, pillWarning} from '@/components/equipment/shared-styles'
+import {pillSuccess, pillError, pillPurple, pillWarning} from '@/components/equipment/shared/shared-styles'
 
 interface Props { onRefresh?: () => void }
 

@@ -37,7 +37,6 @@ router = create_module_router(MODULES_BY_CODE["warehouse"])
 def get_warehouse_service(
     session: AsyncSession = Depends(get_db),
 ) -> WarehouseService:
-
     return WarehouseService(session)
 
 
@@ -51,7 +50,6 @@ async def handler(
     ctx: PermissionContext = Depends(require_permission("warehouse:raw-material:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     items = await service.list_raw_materials()
 
     data = [RawMaterialResponse.model_validate(item).model_dump(mode="json") for item in items]
@@ -69,7 +67,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:packaging-material:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     items = await service.list_packaging_materials()
 
     data = [PackagingMaterialResponse.model_validate(item).model_dump(mode="json") for item in items]
@@ -87,7 +84,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:product:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     items = await service.list_products()
 
     data = [ProductInventoryResponse.model_validate(item).model_dump(mode="json") for item in items]
@@ -105,7 +101,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:feishu-config:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     data = await service.get_feishu_config_response()
 
     return success_response(data=data.model_dump(mode="json"))
@@ -122,7 +117,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:feishu-config:update")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     data = await service.save_feishu_config(payload)
 
     return success_response(data=data.model_dump(mode="json"))
@@ -139,7 +133,6 @@ async def handler(  # noqa: F811
     payload: WarehouseFeishuConfigUpsert | None = None,
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     data = await service.test_feishu_connectivity(payload)
 
     return success_response(data=data.model_dump(mode="json"))
@@ -158,7 +151,6 @@ async def handler(  # noqa: F811
     enabled: bool | None = None,
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     items = await service.list_feishu_tables(
         business_domain=business_domain,
         keyword=keyword,
@@ -180,7 +172,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:create")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     items = await service.refresh_feishu_tables()
 
     data = [WarehouseFeishuTableResponse.model_validate(item).model_dump(mode="json") for item in items]
@@ -199,7 +190,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:update")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     items = await service.set_feishu_tables_enabled(
         payload.table_ids,
         payload.is_enabled,
@@ -222,7 +212,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:update")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     table = await service.set_feishu_table_enabled(table_id, payload.is_enabled)
 
     data = WarehouseFeishuTableResponse.model_validate(table).model_dump(mode="json")
@@ -241,7 +230,6 @@ async def handler(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:submit")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     data = await service.sync_feishu_table(table_id)
 
     return success_response(data=data.model_dump(mode="json"))
@@ -267,7 +255,6 @@ async def handler(  # noqa: F811
     page_size: int = Query(default=50, ge=1, le=200),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     data = await service.get_feishu_table_records(
         table_id,
         keyword=keyword,
@@ -302,7 +289,6 @@ async def handler(  # noqa: F811
     page_size: int = Query(default=50, ge=1, le=200),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
-
     data = await service.get_feishu_domain_records(
         business_domain,
         table_id=table_id,

@@ -10,6 +10,9 @@ import { deleteCategory } from '@/actions/equipment'
 
 interface CategoryTreeProps {
   categories: EquipmentCategory[]
+  /** 当前 URL 上选中的分类（空串 = 不限） */
+  selectedId: string
+  onSelect: (id: string) => void
   onRefresh?: () => void
 }
 
@@ -186,14 +189,10 @@ function TreeNode({
 
 // ==================== 分类树主组件 ====================
 
-export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
+export function CategoryTree({ categories, selectedId, onSelect, onRefresh }: CategoryTreeProps) {
   const [editorOpen, setEditorOpen] = useState(false)
   const { message } = App.useApp()
-  const {
-    selectedCategory,
-    setSelectedCategory,
-    openCategoryDrawer,
-  } = useEquipmentStore()
+  const { openCategoryDrawer } = useEquipmentStore()
 
   const handleDelete = async (node: TreeNodeData) => {
     try {
@@ -312,8 +311,8 @@ export function CategoryTree({ categories, onRefresh }: CategoryTreeProps) {
             key={cat.id}
             node={cat}
             level={0}
-            selectedId={selectedCategory}
-            onSelect={(id) => setSelectedCategory(id || null)}
+            selectedId={selectedId}
+            onSelect={onSelect}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onRefresh={onRefresh}

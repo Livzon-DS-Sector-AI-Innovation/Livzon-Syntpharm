@@ -40,7 +40,6 @@ router = create_module_router(MODULES_BY_CODE["production"])
 def get_pressure_service(
     session: AsyncSession = Depends(get_db),
 ) -> PressureService:
-
     return PressureService(session)
 
 
@@ -57,7 +56,6 @@ async def get(
     ctx: PermissionContext = Depends(require_permission("production:pressure-dashboard:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     stats = await service.get_dashboard_stats()
 
     return success_response(data=stats.model_dump(mode="json"))
@@ -79,7 +77,6 @@ async def get(  # noqa: F811
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     mappings, total = await service.list_point_mappings(
         area=area,
         keyword=keyword,
@@ -99,7 +96,6 @@ async def get(  # noqa: F811
     point_id: str = Query(..., description="位点编号"),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.check_unique(point_id)
 
     return success_response(data=result.model_dump(mode="json"))
@@ -112,7 +108,6 @@ async def post(
     ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     mapping = await service.create_point_mapping(payload)
 
     return success_response(data=mapping.model_dump(mode="json"), message="位点创建成功", status_code=201)
@@ -125,7 +120,6 @@ async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     mapping = await service.get_point_mapping(mapping_id)
 
     return success_response(data=mapping.model_dump(mode="json"))
@@ -139,7 +133,6 @@ async def put(
     ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     mapping = await service.update_point_mapping(mapping_id, payload)
 
     return success_response(data=mapping.model_dump(mode="json"), message="位点更新成功")
@@ -152,7 +145,6 @@ async def delete(
     ctx: PermissionContext = Depends(require_permission("production:pressure-point-mappings:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     await service.delete_point_mapping(mapping_id)
 
     return success_response(message="位点删除成功")
@@ -178,7 +170,6 @@ async def get(  # noqa: F811
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     records, total = await service.list_records(
         area=area,
         point_id=point_id,
@@ -207,7 +198,6 @@ async def get(  # noqa: F811
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.list_merged(
         area=area,
         point_id=point_id,
@@ -236,7 +226,6 @@ async def get(  # noqa: F811
     point_id: str | None = Query(None),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     data = await service.get_export_by_area(area=area, start_date=start_date, end_date=end_date, point_id=point_id)
 
     return success_response(data=[d.model_dump(mode="json") for d in data])
@@ -249,7 +238,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.create_manual_record(payload)
 
     return success_response(data=result, message="记录创建成功", status_code=201)
@@ -262,7 +250,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.create_batch_manual(payload)
 
     return success_response(data=result.model_dump(mode="json"), message="批量录入完成")
@@ -275,7 +262,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.create_ocr_records(payload)
 
     return success_response(data=result.model_dump(mode="json"), message="OCR 记录提交成功")
@@ -288,7 +274,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.delete_merged_row(payload)
 
     return success_response(data=result)
@@ -301,7 +286,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.batch_delete_merged_rows(payload)
 
     return success_response(data=result)
@@ -314,7 +298,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.update_merged_row(payload)
 
     return success_response(data=result.model_dump(mode="json"))
@@ -327,7 +310,6 @@ async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     record = await service.get_record(record_id)
 
     return success_response(data=record.model_dump(mode="json"))
@@ -341,7 +323,6 @@ async def patch(
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.audit_record(record_id, payload)
 
     return success_response(data=result, message="审核完成")
@@ -354,7 +335,6 @@ async def patch(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.batch_audit(payload)
 
     return success_response(data=result.model_dump(mode="json"), message="批量审核完成")
@@ -367,7 +347,6 @@ async def delete(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     await service.delete_record(record_id)
 
     return success_response(message="记录删除成功")
@@ -380,7 +359,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-records:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.batch_delete_records(payload.ids)
 
     return success_response(data=result.model_dump(mode="json"))
@@ -399,7 +377,6 @@ async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-audit:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     stats = await service.get_audit_stats()
 
     return success_response(data=stats.model_dump(mode="json"))
@@ -420,7 +397,6 @@ async def get(  # noqa: F811
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     tasks, total = await service.list_ocr_tasks(status=status, page=page_params.page, page_size=page_params.page_size)
 
     data = [t.model_dump(mode="json") for t in tasks]
@@ -435,7 +411,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     task = await service.create_ocr_task(payload)
 
     return success_response(data=task.model_dump(mode="json"), message="OCR 任务创建成功", status_code=201)
@@ -448,7 +423,6 @@ async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     task = await service.get_ocr_task(task_id)
 
     return success_response(data=task.model_dump(mode="json"))
@@ -462,7 +436,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-ocr-tasks:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.submit_ocr_task_result(task_id, payload)
 
     return success_response(data=result.model_dump(mode="json"), message="OCR 结果提交成功")
@@ -487,7 +460,6 @@ async def get(  # noqa: F811
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     items, total = await service.list_data_master(
         material_name=material_name,
         supplier=supplier,
@@ -510,7 +482,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     item = await service.create_data_master(payload)
 
     return success_response(data=item.model_dump(mode="json"), message="记录创建成功", status_code=201)
@@ -523,7 +494,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:create")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     items = await service.batch_create_data_master(payload)
 
     data = [i.model_dump(mode="json") for i in items]
@@ -538,7 +508,6 @@ async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:read")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     item = await service.get_data_master(item_id)
 
     return success_response(data=item.model_dump(mode="json"))
@@ -552,7 +521,6 @@ async def put(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     item = await service.update_data_master(item_id, payload.model_dump(exclude_unset=True))
 
     return success_response(data=item.model_dump(mode="json"), message="记录更新成功")
@@ -565,7 +533,6 @@ async def delete(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     await service.delete_data_master(item_id)
 
     return success_response(message="记录删除成功")
@@ -578,7 +545,6 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-data-master:delete")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.batch_delete_data_master(payload.ids)
 
     return success_response(data=result.model_dump(mode="json"))
@@ -599,7 +565,6 @@ async def get(  # noqa: F811
     page_params: PageParams = Depends(),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     result = await service.list_notifications(user_id=user_id, page=page_params.page, page_size=page_params.page_size)
 
     return success_response(data=result.model_dump(mode="json"))
@@ -612,7 +577,6 @@ async def patch(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("production:pressure-notifications:update")),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     await service.mark_notification_read(notification_id)
 
     return success_response(message="已标记为已读")
@@ -625,7 +589,6 @@ async def patch(  # noqa: F811
     user_id: str | None = Query(None),
     service: PressureService = Depends(get_pressure_service),
 ) -> Any:
-
     await service.mark_all_notifications_read(user_id)
 
     return success_response(message="全部标记已读")

@@ -35,6 +35,7 @@ from app.modules.equipment.service.equipment import (
     get_location_by_id,
     get_location_tree,
     get_locations,
+    sync_equipments_with_audit,
     update_equipment,
     update_equipment_category,
     update_location,
@@ -273,5 +274,7 @@ __all__ = [
     "update_categories",
     "update_personnel",
     "update_role",
+    # equipment sync
+    "sync_equipments_with_audit",
 ]
 # ruff: noqa: F401
