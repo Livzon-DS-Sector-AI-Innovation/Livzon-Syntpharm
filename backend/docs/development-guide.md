@@ -344,3 +344,5 @@ CI 会自动检查（`scripts/check_migration_scope.py`），违反会导致 PR 
 - [架构规范](architecture.md)
 - [模块结构示例](../examples/module-structure.md)
 - [常用命令](../examples/commands.md)
+- [能源月度交叉表字段映射对照表](energy-bitable-field-mapping.md)
+- [能源车间实体统一与总览分布拆分 · 变更说明](energy-workshop-unification.md)

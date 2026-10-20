@@ -11,7 +11,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.modules.energy.models import EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.repository import apply_changed_fields
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -77,17 +78,27 @@ class EnergyBitableSync:
             if not code or not name:
                 continue
 
-            # 检查是否已存在
-            result = await db.execute(select(EnergyWorkshop).where(EnergyWorkshop.code == code))
-            workshop = result.scalar_one_or_none()
+            # 检查是否已存在（软删除的车间不复用，与 repository.get_workshop_by_code 口径一致）
+            result = await db.execute(
+                select(EnergyWorkshop).where(
+                    EnergyWorkshop.code == code,
+                    EnergyWorkshop.is_deleted == False,  # noqa: E712
+                )
+            )
+            workshop = result.scalars().first()
 
             if workshop:
-                # 更新
-                workshop.name = name
-                workshop.category = category
-                workshop.sort_order = sort_order
-                workshop.is_active = is_active
-                updated += 1
+                # 只统计值真变化的行（D-51）
+                if apply_changed_fields(
+                    workshop,
+                    {
+                        "name": name,
+                        "category": category,
+                        "sort_order": sort_order,
+                        "is_active": is_active,
+                    },
+                ):
+                    updated += 1
             else:
                 # 创建
                 workshop = EnergyWorkshop(
@@ -96,6 +107,7 @@ class EnergyBitableSync:
                     category=category,
                     sort_order=sort_order,
                     is_active=is_active,
+                    excluded_energy_types=list(ROLLUP_WORKSHOPS.get(name, ())),
                 )
                 db.add(workshop)
                 created += 1
@@ -112,10 +124,18 @@ class EnergyBitableSync:
         created = 0
         updated = 0
 
-        # 先获取所有车间映射
-        result = await db.execute(select(EnergyWorkshop))
-        workshops = {w.name: w for w in result.scalars().all()}
-        workshops.update({w.code: w for w in workshops.values()})
+        # 先获取所有车间映射。名称与编码分开建索引：
+        # 混进同一个 dict 时，某个车间的编码会撞上另一个车间的名称，把记录挂错实体
+        result = await db.execute(
+            select(EnergyWorkshop).where(
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+        )
+        workshops_by_name: dict[str, EnergyWorkshop] = {}
+        workshops_by_code: dict[str, EnergyWorkshop] = {}
+        for ws in result.scalars().all():
+            workshops_by_name.setdefault(ws.name, ws)
+            workshops_by_code.setdefault(ws.code, ws)
 
         for record in records:
             fields = record.get("fields", {})
@@ -125,7 +145,7 @@ class EnergyBitableSync:
             if not workshop_ref:
                 continue
 
-            workshop = workshops.get(workshop_ref)
+            workshop = workshops_by_name.get(workshop_ref) or workshops_by_code.get(workshop_ref)
             if not workshop:
                 logger.warning(f"车间不存在: {workshop_ref}")
                 continue
@@ -178,11 +198,16 @@ class EnergyBitableSync:
             existing = result.scalar_one_or_none()
 
             if existing:
-                # 更新
-                existing.value = value  # type: ignore[attr-defined]
-                existing.unit = unit  # type: ignore[attr-defined]
-                existing.remark = remark  # type: ignore[attr-defined]
-                updated += 1
+                # 只统计值真变化的行（D-51）
+                if apply_changed_fields(
+                    existing,
+                    {
+                        "value": value,
+                        "unit": unit,
+                        "remark": remark,
+                    },
+                ):
+                    updated += 1
             else:
                 # 创建
                 new_record = EnergyMonthlyRecord(

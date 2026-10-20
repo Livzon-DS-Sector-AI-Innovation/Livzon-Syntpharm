@@ -4,7 +4,7 @@
 """
 
 import logging
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -13,10 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.modules.energy.models import EnergyAlertRecord, EnergyDailyData
+from app.modules.energy.repository import apply_changed_fields
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
+
+CST = timezone(timedelta(hours=8))
 
 # 飞书表格 ID 到能源类型的映射
 TABLE_MAPPING = {
@@ -57,9 +60,12 @@ class EnergyBitableDailyImport:
         return all_records
 
     def _parse_timestamp(self, timestamp_ms: int) -> date:
-        """将毫秒时间戳转换为日期"""
-        dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC)
-        return dt.date()
+        """把毫秒时间戳换算成**表格里显示的那一天**。
+
+        多维表格的日期列按东八区录入：单元格的原始 ms 恒为 16:00 UTC（= 东八区 00:00）。
+        按 UTC 取日期会让整张日数据表比表格早一天，所以这里必须换算到东八区再取日期。
+        """
+        return datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).astimezone(CST).date()
 
     def _parse_record(self, record: dict[str, Any], energy_type: str, source_table: str) -> dict[str, Any] | None:
         """解析单条记录"""
@@ -156,14 +162,27 @@ class EnergyBitableDailyImport:
                 existing = result.scalar_one_or_none()
 
                 if existing:
-                    # 更新现有记录
-                    existing.total_value = parsed["total_value"]
-                    existing.alert_threshold = parsed["alert_threshold"]
-                    existing.cost = parsed["cost"]
-                    existing.municipal_meter = parsed["municipal_meter"]
-                    existing.error_value = parsed["error_value"]
-                    existing.is_alert = parsed["is_alert"]
-                    updated += 1
+                    if existing.is_deleted:
+                        # 唯一约束 uq_energy_daily_data_date_type_category 不含 is_deleted，
+                        # 命中软删行只能复活，否则插入分支会撞 UniqueViolation
+                        logger.info(
+                            "Reviving soft-deleted daily record",
+                            extra={"record_id": str(existing.id), "date": str(existing.date)},
+                        )
+                    # 只统计值真变化的行，否则每次都把整表匹配数报成「更新 N 条」（D-51）
+                    if apply_changed_fields(
+                        existing,
+                        {
+                            "is_deleted": False,
+                            "total_value": parsed["total_value"],
+                            "alert_threshold": parsed["alert_threshold"],
+                            "cost": parsed["cost"],
+                            "municipal_meter": parsed["municipal_meter"],
+                            "error_value": parsed["error_value"],
+                            "is_alert": parsed["is_alert"],
+                        },
+                    ):
+                        updated += 1
                 else:
                     # 创建新记录
                     new_record = EnergyDailyData(**parsed)
@@ -240,7 +259,9 @@ class EnergyBitableDailyImport:
                 trigger_value=data.total_value,
                 threshold_value=data.alert_threshold,
                 unit="",  # TODO: 从 category 解析单位
-                alert_time=datetime.combine(data.date, datetime.max.time()),
+                # 预警是按天判定的，时刻没有业务含义：存成该数据日的 00:00 UTC。
+                # 此前写 naive 当日 23:59:59 被按 UTC 入库，前端按东八区渲染就整体晚了一天。
+                alert_time=datetime.combine(data.date, time.min, tzinfo=UTC),
                 status="pending",
             )
             db.add(alert_record)

@@ -11,7 +11,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import DuplicateException, NotFoundException
+from app.core.exceptions import BadRequestException, DuplicateException, NotFoundException
 from app.core.llm import LLMError, LLMOutputError, llm_client
 from app.core.llm.client import LLMClient
 from app.modules.energy import repository as repo
@@ -433,6 +433,13 @@ async def process_alert_record(
     return result
 
 
+async def delete_alert_record(db: AsyncSession, record_id: UUID) -> None:
+    obj = await repo.get_alert_record_by_id(db, record_id)
+    if obj is None:
+        raise NotFoundException("预警记录", str(record_id))
+    await repo.delete_alert_record(db, record_id)
+
+
 # ── 车间管理 ──
 
 
@@ -456,13 +463,21 @@ async def list_workshops(
     *,
     category: str | None = None,
     is_active: bool | None = None,
+    production_only: bool = False,
     page: int = 1,
     page_size: int = 100,
 ) -> tuple[list[EnergyWorkshop], int]:
+    """车间列表；`production_only` 供 AI 能耗分析按名字白名单只取生产车间，不动主数据。
+
+    辅助部门/机组必须留在库里——它们是全厂汇总的组成行，剔掉总览就对不上多维表格。
+    """
+    from app.modules.energy.models import PRODUCTION_WORKSHOPS
+
     return await repo.list_workshops(
         db,
         category=category,
         is_active=is_active,
+        name_in=sorted(PRODUCTION_WORKSHOPS) if production_only else None,
         page=page,
         page_size=page_size,
     )
@@ -780,14 +795,16 @@ def calculate_deviation_rate(actual: float, target: float) -> float:
 
 
 def determine_deviation_status(deviation_rate: float | None) -> str:
-    """判定偏差状态"""
+    """判定偏差状态：分档只算超标（正向），低于目标一律 normal。
+
+    口径见 docs/energy-module-prd.md 6.4——异常偏低（漏报产量等）由人工在分析里判读，不用分档表达。
+    """
     if deviation_rate is None:
         return "unknown"
 
-    abs_rate = abs(deviation_rate)
-    if abs_rate <= 5:
+    if deviation_rate <= 5:
         return "normal"
-    elif abs_rate <= 15:
+    elif deviation_rate <= 15:
         return "warning"
     else:
         return "critical"
@@ -803,7 +820,13 @@ async def prepare_ai_analysis_data(
     if not workshop:
         raise NotFoundException("车间", str(workshop_id))
 
-    # 2. 查询当月总能耗
+    # 单耗 = 车间电耗 / 折算产量，对不上产品产量的辅助部门与机组算出来没有业务含义
+    from app.modules.energy.models import PRODUCTION_WORKSHOPS, EnergyType
+
+    if workshop.name not in PRODUCTION_WORKSHOPS:
+        raise BadRequestException(f"AI 能耗分析仅支持生产车间：{'、'.join(sorted(PRODUCTION_WORKSHOPS))}")
+
+    # 2. 查询当月电耗（口径 6.4：分子只算电，水/汽/气的裸值不可与 kWh 相加）
     year, month = map(int, analysis_month.split("-"))
     month_start = date(year, month, 1)
     if month == 12:
@@ -811,10 +834,12 @@ async def prepare_ai_analysis_data(
     else:
         month_end = date(year, month + 1, 1)
 
-    total_energy = await repo.get_monthly_energy_total(db, workshop_id, month_start, month_end)
+    total_energy = await repo.get_monthly_energy_total(
+        db, workshop_id, month_start, month_end, energy_type=EnergyType.ELECTRICITY
+    )
 
     if total_energy is None or total_energy == 0:
-        raise NotFoundException("能耗数据", f"{workshop.name}在{analysis_month}无能耗数据")
+        raise NotFoundException("能耗数据", f"{workshop.name}在{analysis_month}无电耗数据")
 
     total_energy_kwh = float(total_energy)
 
@@ -846,7 +871,7 @@ async def prepare_ai_analysis_data(
         )
 
     if converted_production <= 0:
-        raise ValueError("折算后总产量不能为 0")
+        raise BadRequestException("折算后总产量必须大于 0，请填写每个产品的产量")
 
     # 4. 计算实际单耗
     actual_unit_consumption = await calculate_unit_consumption(total_energy_kwh, converted_production)
@@ -898,7 +923,7 @@ def construct_ai_prompt(analysis_data: dict[str, Any]) -> str:
 {product_details}
 
 【能耗数据】
-- 当月总能耗：{analysis_data["total_energy_kwh"]:.2f} kWh
+- 当月电耗：{analysis_data["total_energy_kwh"]:.2f} kWh
 - 折算总产量：{analysis_data["converted_production"]:.2f} kg
 - 实际单耗：{analysis_data["actual_unit_consumption"]:.4f} kWh/kg
 

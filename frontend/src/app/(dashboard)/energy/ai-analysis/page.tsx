@@ -3,7 +3,8 @@
 type ProductionItem = {
   id: string;
   product_name: string;
-  quantity: number;
+  /** 未填写时为 undefined —— 新增行不该预填 0 让人先删再输 */
+  quantity?: number;
   unit: string;
 }
 
@@ -37,11 +38,12 @@ export default function AIAnalysisPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const queryClient = useQueryClient()
 
-  // 获取车间列表
+  // 获取车间列表（与车间管理页共用 ['energy-workshops'] 前缀，改完车间即失效）
+  // 单耗只对得上产品产量的生产车间，辅助部门与机组由后端白名单挡在分析范围之外
   const { data: workshopsData } = useQuery({
-    queryKey: ['workshops'],
+    queryKey: ['energy-workshops', 'ai-analysis-options'],
     queryFn: async () => {
-      const data = await fetchWorkshopsClient({ category: 'workshop' })
+      const data = await fetchWorkshopsClient({ production_only: true })
       return data.map((w: EnergyWorkshop) => ({ value: w.id, label: w.name }))
     },
   })
@@ -65,7 +67,7 @@ export default function AIAnalysisPage() {
 
   
   const handleAddItem = () => {
-    setProductionItems([...productionItems, { id: crypto.randomUUID(), product_name: '', quantity: 0, unit: 'kg' }])
+    setProductionItems([...productionItems, { id: crypto.randomUUID(), product_name: '', unit: 'kg' }])
   }
 
   const handleRemoveItem = (index: number) => {
@@ -74,7 +76,7 @@ export default function AIAnalysisPage() {
     setProductionItems(newItems)
   }
 
-  const handleItemChange = (index: number, field: keyof ProductionItem, value: string | number) => {
+  const handleItemChange = (index: number, field: keyof ProductionItem, value: string | number | undefined) => {
     const newItems = [...productionItems]
     newItems[index] = { ...newItems[index], [field]: value }
     setProductionItems(newItems)
@@ -109,12 +111,26 @@ const handleAnalyze = async () => {
       return
     }
 
+    // 后端拿 0 产量会直接抛「折算后总产量不能为 0」，所以逐行卡住空值与 0
+    const items: { product_name: string; quantity: number; unit: string }[] = []
+    for (const item of productionItems) {
+      if (!item.product_name.trim()) {
+        message.warning('产品名称不能为空')
+        return
+      }
+      if (item.quantity === undefined || item.quantity <= 0) {
+        message.warning(`产品「${item.product_name}」的产量需大于 0`)
+        return
+      }
+      items.push({ product_name: item.product_name, quantity: item.quantity, unit: item.unit })
+    }
+
     setLoading(true)
     try {
       const data = await analyzeEnergyV2({
         workshop_id: workshopId,
         analysis_month: analysisMonth,
-        production_items: productionItems.map(({ product_name, quantity, unit }) => ({ product_name, quantity, unit })),
+        production_items: items,
         include_ai_suggestion: true,
       })
       setResult(data)
@@ -198,12 +214,20 @@ const handleAnalyze = async () => {
                   )
                 },
                 { 
-                  title: '产量', 
+                  title: '产量（kg）', 
                   dataIndex: 'quantity', 
                   key: 'qty', 
-                  width: 100, 
-                  render: (val: number, _: unknown, index: number) => (
-                    <InputNumber value={val} onChange={v => handleItemChange(index, 'quantity', v || 0)} style={{ width: '100%' }} size="small" min={0} />
+                  width: 150, 
+                  render: (val: number | undefined, _: unknown, index: number) => (
+                    <InputNumber
+                      value={val}
+                      onChange={v => handleItemChange(index, 'quantity', v ?? undefined)}
+                      style={{ width: '100%' }}
+                      size="small"
+                      min={0}
+                      placeholder="产量"
+                      addonAfter="kg"
+                    />
                   )
                 },
                 { 

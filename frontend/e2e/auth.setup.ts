@@ -68,7 +68,9 @@ async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string
         'Authorization': `Bearer ${token}`
       },
       data: {
-        name: 'E2E测试车间',
+        // AI 分析页的车间列表按 production_only 过滤，只认 models.PRODUCTION_WORKSHOPS 里的名字，
+        // 自定义名字会让下拉框恒为「暂无数据」，TC1 选不到车间。
+        name: '101车间',
         code: 'E2E-001',
         location: '测试地点',
         is_active: true,
