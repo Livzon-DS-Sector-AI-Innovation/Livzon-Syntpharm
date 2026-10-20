@@ -22,6 +22,17 @@ function getErrorMessage(value: unknown): string {
   return payload.detail || payload.message || '登录失败，请重试'
 }
 
+/**
+ * 当前请求是否走 HTTPS。
+ * 不能只看 NODE_ENV：UAT/生产镜像固定 NODE_ENV=production，但入口 nginx 是 HTTP，
+ * 若给 cookie 打 Secure 标记，浏览器会直接丢弃，表现为「登录后仍提示未登录」。
+ */
+async function isHttpsRequest(): Promise<boolean> {
+  const headersList = await headers()
+  const proto = (headersList.get('x-forwarded-proto') || 'http').split(',')[0].trim()
+  return proto === 'https'
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')
@@ -55,7 +66,7 @@ export async function loginWithPassword(
     const cookieStore = await cookies()
     cookieStore.set('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: await isHttpsRequest(),
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
@@ -92,12 +103,9 @@ export async function startImpersonate(targetUserId: string): Promise<void> {
 
   const impersonateToken = await startImpersonateApi(token.value, targetUserId)
 
-  const headersList = await headers()
-  const proto = headersList.get('x-forwarded-proto') || 'http'
-  const isHttps = proto === 'https'
   cookieStore.set('impersonate_token', impersonateToken, {
     httpOnly: true,
-    secure: isHttps,
+    secure: await isHttpsRequest(),
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 2,
