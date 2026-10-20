@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api/server/base'
-import type { ModuleSetting, ModuleSettingUpdate, ModuleSettingCreate } from '@/types/module-settings'
+import type { ModuleSetting, ModuleSettingUpdate } from '@/types/module-settings'
 
 export async function getModuleSettings(
   headers: Record<string, string>,
@@ -30,24 +30,3 @@ export async function updateModuleSetting(
   })
 }
 
-export async function createModuleSetting(
-  headers: Record<string, string>,
-  data: ModuleSettingCreate
-): Promise<{ data: ModuleSetting }> {
-  return apiFetch('/api/v1/module-settings', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteModuleSetting(
-  headers: Record<string, string>,
-  module: string,
-  key: string
-): Promise<{ message: string }> {
-  return apiFetch(`/api/v1/module-settings/${module}/${key}`, {
-    method: 'DELETE',
-    headers,
-  })
-}

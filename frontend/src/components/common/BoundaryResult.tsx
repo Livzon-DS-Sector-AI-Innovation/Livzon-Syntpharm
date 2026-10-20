@@ -3,6 +3,7 @@
 import { Button, Result, Space } from 'antd'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { logout } from '@/actions/auth'
 import { PERMISSION_DENIED_HINT, PERMISSION_DENIED_TITLE } from '@/lib/permissions/codes'
 
 /**
@@ -122,10 +123,27 @@ export function BoundaryResult({
     )
   }
 
+  // 无权限时给出「退出登录」：当前账号没有该权限时，回首页往往还是无权限，
+  // 换账号登录才是有效出路。
+  if (kind === 'forbidden') {
+    actions.push(
+      <Button
+        key="logout"
+        type="primary"
+        danger
+        onClick={() => {
+          void logout()
+        }}
+      >
+        退出登录
+      </Button>,
+    )
+  }
+
   if (kind !== 'unauthorized') {
     actions.push(
       <Link key="home" href="/">
-        <Button type={onRetry ? 'default' : 'primary'}>返回首页</Button>
+        <Button type={kind === 'forbidden' || onRetry ? 'default' : 'primary'}>返回首页</Button>
       </Link>,
     )
   }

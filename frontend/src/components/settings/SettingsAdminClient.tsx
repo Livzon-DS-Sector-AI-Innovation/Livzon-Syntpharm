@@ -59,8 +59,8 @@ export default function SettingsAdminClient() {
   return (
     <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
       <SettingsPageHeader
-        title="系统设置"
-        description="统一 LLM 模型配置、飞书设置与 Livzon Skill。用户管理、权限管理见左侧对应菜单。"
+        title="系统配置"
+        description="统一 LLM 模型配置、飞书设置与 Livzon Skill。用户与权限相关功能见左侧对应菜单。"
       />
       <Tabs defaultActiveKey={items[0]?.key} items={items} />
     </div>

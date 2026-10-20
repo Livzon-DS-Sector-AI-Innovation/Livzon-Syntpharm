@@ -21,17 +21,21 @@ import type { PermissionCode } from '@/lib/permissions/codes'
  * 否则会出现「先显示、拿到权限后再消失」的闪烁。
  */
 export function usePermission() {
+  // 权限不做客户端长久缓存：切换账号 / 管理员刚改了授权后，必须按当前 cookie
+  // 重新取，否则会出现「菜单和按钮还是上一个账号的权限，刷新后才正常」。
   const { data: user = null, isLoading: userLoading } = useQuery<User | null>({
     queryKey: ['current-user'],
     queryFn: () => getCurrentUser(),
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const { data, isLoading: permissionLoading } = useQuery({
     queryKey: ['my-permissions'],
     queryFn: fetchMyPermissions,
     enabled: !!user,
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const permissions = useMemo(() => new Set<string>(data?.permissions ?? []), [data?.permissions])

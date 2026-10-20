@@ -721,11 +721,12 @@ export default function MenuManagerClient() {
                 : '以 / 开头的站内路径，或 http(s):// 外部链接'
             }
           >
-            {createParentPath ? (
-              <Input prefix={`${createParentPath}/`} placeholder="例如：test" />
-            ) : (
-              <Input placeholder="例如：/quality/dashboard" />
-            )}
+            {/* 必须始终是同一个 Input、prefix 始终存在：antd 在聚焦时检测到
+                prefix/suffix 被动态增删会重建 DOM 结构，导致输入框失焦并告警。 */}
+            <Input
+              prefix={<span>{createParentPath ? `${createParentPath}/` : ''}</span>}
+              placeholder={createParentPath ? '例如：test' : '例如：/quality/dashboard'}
+            />
           </Form.Item>
           <Space size="large" align="start" wrap>
             <Form.Item name="icon" label="图标" style={{ width: '100%', maxWidth: 160 }}>
