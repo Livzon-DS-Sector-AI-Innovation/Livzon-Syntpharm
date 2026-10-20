@@ -94,6 +94,7 @@ class ImportResult:
     workshops_created: int = 0
     workshops_existing: int = 0
     records_created: int = 0
+    records_updated: int = 0
     records_skipped: int = 0
     errors: list[str] = field(default_factory=list)
 
@@ -480,7 +481,7 @@ class FeishuEnergyImporter:
             try:
                 created, updated = await repo.batch_upsert_monthly_records(db, [r.model_dump() for r in record_data])
                 result.records_created = len(created)
-                result.records_skipped = updated
+                result.records_updated = updated
             except Exception as exc:
                 result.errors.append(f"Batch upsert failed: {exc}")
                 logger.exception("Batch upsert failed")
@@ -515,13 +516,14 @@ class FeishuEnergyImporter:
                 workshop_map[name] = by_code
                 continue
 
-            from app.modules.energy.models import EnergyWorkshop
+            from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyWorkshop
 
             new_ws = EnergyWorkshop(
                 code=code,
                 name=name,
                 category="workshop",
                 sort_order=0,
+                excluded_energy_types=list(ROLLUP_WORKSHOPS.get(name, ())),
             )
             db.add(new_ws)
             await db.flush()

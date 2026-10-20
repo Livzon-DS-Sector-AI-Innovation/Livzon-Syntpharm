@@ -1,8 +1,9 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { App, Table, Button, Space, Select, DatePicker } from 'antd'
 import {DeleteOutlined, ImportOutlined} from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TableColumnsType } from 'antd'
 import type { EnergyMonthlyRecord, EnergyType } from '@/types/energy'
 import { deleteMonthlyRecordAction } from '@/actions/energy'
@@ -81,17 +82,9 @@ const actionLink = {
   padding: '0 4px',
 }
 
-interface WorkshopOption {
-  id: string
-  name: string
-}
-
 export function MonthlyRecordTable() {
   const { message, modal } = App.useApp()
-  const [records, setRecords] = useState<EnergyMonthlyRecord[]>([])
-  const [workshops, setWorkshops] = useState<WorkshopOption[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [workshopFilter, setWorkshopFilter] = useState<string | undefined>()
@@ -99,50 +92,63 @@ export function MonthlyRecordTable() {
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [bitableImportModalOpen, setBitableImportModalOpen] = useState(false)
-  const [summary, setSummary] = useState<Record<string, { total_value: number; unit: string }>>({})
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await fetchMonthlyRecordsClient({
+  // queryKey 用格式化后的日期字符串：dayjs 对象进 key 会随每次渲染重建，缓存永不命中
+  const startDate = dateRange?.[0]?.format('YYYY-MM-DD')
+  const endDate = dateRange?.[1]?.format('YYYY-MM-DD')
+
+  const {
+    data: recordsData,
+    isFetching: recordsLoading,
+    error: recordsError,
+  } = useQuery({
+    queryKey: [
+      'energy-monthly-records',
+      { workshopFilter, energyTypeFilter, startDate, endDate, page, pageSize },
+    ],
+    queryFn: () =>
+      fetchMonthlyRecordsClient({
         workshop_id: workshopFilter,
         energy_type: energyTypeFilter,
-        start_date: dateRange?.[0]?.format('YYYY-MM-DD'),
-        end_date: dateRange?.[1]?.format('YYYY-MM-DD'),
+        start_date: startDate,
+        end_date: endDate,
         page,
         page_size: pageSize,
-      })
-      setRecords(result.items || [])
-      setTotal(result.total || 0)
-    } catch {
-      message.error('加载月度记录失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [workshopFilter, energyTypeFilter, dateRange, page, pageSize, message])
+      }),
+  })
 
-  const _loadSummary = useCallback(async () => {
-    try {
-      const result = await fetchMonthlySummaryClient({
+  const { data: summary } = useQuery({
+    queryKey: ['energy-monthly-summary', { workshopFilter, energyTypeFilter, startDate, endDate }],
+    queryFn: () =>
+      fetchMonthlySummaryClient({
         workshop_id: workshopFilter,
         energy_type: energyTypeFilter,
-        start_date: dateRange?.[0]?.format('YYYY-MM-DD'),
-        end_date: dateRange?.[1]?.format('YYYY-MM-DD'),
-      })
-      setSummary(result)
-    } catch {
-      // ignore
-    }
-  }, [workshopFilter, energyTypeFilter, dateRange])
+        start_date: startDate,
+        end_date: endDate,
+      }),
+  })
 
-  const _loadWorkshops = useCallback(async () => {
-    try {
-      const result = await fetchWorkshopsClient()
-      setWorkshops((Array.isArray(result) ? result : []).map((w: { id: string; name: string }) => ({ id: w.id, name: w.name })))
-    } catch {
-      // ignore
-    }
-  }, [])
+  const { data: workshopsData } = useQuery({
+    queryKey: ['energy-workshops'],
+    // 后端 page_size 默认 100，真实车间表已接近该上限；不传会静默截断下拉选项
+    queryFn: () => fetchWorkshopsClient({ page: 1, page_size: 500 }),
+  })
+
+  useEffect(() => {
+    if (recordsError) message.error('加载月度记录失败')
+  }, [recordsError, message])
+
+  const records = recordsData?.items ?? []
+  const total = recordsData?.total ?? 0
+  const workshops = workshopsData ?? []
+
+  // 月度记录与汇总同源，写入后一并失效。
+  // React Query 的 queryKey 匹配按数组元素逐个比较、不做字符串前缀匹配，
+  // 所以 ['energy-monthly'] 匹配不到 'energy-monthly-records'，必须逐个显式失效。
+  const refreshMonthly = () => {
+    queryClient.invalidateQueries({ queryKey: ['energy-monthly-records'] })
+    queryClient.invalidateQueries({ queryKey: ['energy-monthly-summary'] })
+  }
 
   const handleDelete = (record: EnergyMonthlyRecord) => {
     modal.confirm({
@@ -155,7 +161,7 @@ export function MonthlyRecordTable() {
         try {
           await deleteMonthlyRecordAction(record.id)
           message.success('删除成功')
-          loadData()
+          refreshMonthly()
         } catch {
           message.error('删除失败')
         }
@@ -273,7 +279,7 @@ export function MonthlyRecordTable() {
       </div>
 
       {/* 汇总显示 */}
-      {Object.keys(summary).length > 0 && (
+      {summary && Object.keys(summary).length > 0 && (
         <div style={{ 
           marginBottom: 16, 
           padding: '12px 16px', 
@@ -312,7 +318,7 @@ export function MonthlyRecordTable() {
         columns={columns}
         dataSource={records}
         rowKey="id"
-        loading={loading}
+        loading={recordsLoading}
         pagination={{
           current: page,
           pageSize,
@@ -327,13 +333,13 @@ export function MonthlyRecordTable() {
         onClose={() => setImportModalOpen(false)}
         onSuccess={() => {
           setImportModalOpen(false)
-          loadData()
+          refreshMonthly()
         }}
       />
       <BitableCrossImportModal
         open={bitableImportModalOpen}
         onClose={() => setBitableImportModalOpen(false)}
-        onSuccess={() => loadData()}
+        onSuccess={() => refreshMonthly()}
       />
     </>
   )

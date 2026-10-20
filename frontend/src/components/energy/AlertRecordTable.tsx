@@ -15,6 +15,7 @@ interface AlertRecordTableProps {
   onPageChange: (page: number, pageSize: number) => void
   onRefresh: () => void
   onProcess: (record: AlertRecord) => void
+  onDelete: (record: AlertRecord) => void
 }
 
 const alertLevelLabels: Record<AlertLevel, { text: string; color: string }> = {
@@ -39,14 +40,16 @@ export function AlertRecordTable({
   onPageChange,
   onRefresh: _onRefresh,
   onProcess,
+  onDelete,
 }: AlertRecordTableProps) {
   const columns: TableColumnsType<AlertRecord> = [
     {
-      title: '预警时间',
+      title: '预警日期',
       dataIndex: 'alert_time',
       key: 'alert_time',
-      width: 180,
-      render: (time: string) => new Date(time).toLocaleString('zh-CN'),
+      width: 140,
+      // 预警按天判定，取 UTC 日期部分即数据日期（东八区渲染会整体晚一天）
+      render: (time: string) => new Date(time).toISOString().slice(0, 10),
     },
     {
       title: '能源类型',
@@ -105,7 +108,7 @@ export function AlertRecordTable({
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 140,
       render: (_, record) => (
         <Space>
           {record.status === 'pending' && (
@@ -113,6 +116,9 @@ export function AlertRecordTable({
               处理
             </Button>
           )}
+          <Button type="link" danger onClick={() => onDelete(record)}>
+            删除
+          </Button>
         </Space>
       ),
     },

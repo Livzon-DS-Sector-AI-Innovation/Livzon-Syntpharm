@@ -3,15 +3,16 @@
 
 import type { Dayjs } from 'dayjs'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {Button, Space, App, Tabs, DatePicker, Select, Card, Modal, Form, Input} from 'antd'
 import type { FormInstance } from 'antd'
 import { PlusOutlined, ReloadOutlined, ImportOutlined } from '@ant-design/icons'
 import { AlertRuleTable, AlertConfigDrawer, AlertRecordTable } from '@/components/energy'
 import { AlertRule, AlertRecord, RecordQueryParams, EnergyType } from '@/types/energy'
-import { deleteAlertRule, syncBitableDailyDataAction, processAlertRecord } from '@/actions/energy'
+import { deleteAlertRule, deleteAlertRecord, syncBitableDailyDataAction, processAlertRecord } from '@/actions/energy'
 import { fetchAlertRecords as fetchAlertRecordsAPI, fetchAlertRules as fetchAlertRulesAPI } from '@/lib/api/client/energy'
+import { useEnergySyncJob } from '@/hooks/useEnergySyncJob'
 import { useEnergyStore } from '@/stores/energy'
 
 // 处理预警记录弹窗组件
@@ -48,7 +49,7 @@ const ProcessModal = ({
           <div>预警等级：{processingRecord?.alert_level}</div>
           <div>触发值：{processingRecord?.trigger_value} {processingRecord?.unit}</div>
           <div>阈值：{processingRecord?.threshold_value} {processingRecord?.unit}</div>
-          <div>预警时间：{processingRecord?.alert_time ? new Date(processingRecord.alert_time).toLocaleString('zh-CN') : '-'}</div>
+          <div>预警日期：{processingRecord?.alert_time ? new Date(processingRecord.alert_time).toISOString().slice(0, 10) : '-'}</div>
         </div>
       </Form.Item>
       
@@ -80,7 +81,7 @@ const ProcessModal = ({
 )
 
 export default function AlertsPage() {
-  const { message } = App.useApp()
+  const { message, modal } = App.useApp()
   const { openAlertConfigDrawer } = useEnergyStore()
   
   // 预警规则状态
@@ -121,8 +122,11 @@ export default function AlertsPage() {
     queryFn: async () => {
       const params: RecordQueryParams = { page: recordsPage, page_size: recordsPageSize }
       if (filterDate) {
-        params.start_time = filterDate.startOf('day').toISOString()
-        params.end_time = filterDate.endOf('day').toISOString()
+        // alert_time 按「数据日的 00:00 UTC」存储，筛选窗口也必须按 UTC 日切，否则跨日漏记录
+        params.start_time = new Date(Date.UTC(filterDate.year(), filterDate.month(), filterDate.date())).toISOString()
+        params.end_time = new Date(
+          Date.UTC(filterDate.year(), filterDate.month(), filterDate.date(), 23, 59, 59, 999),
+        ).toISOString()
       }
       if (filterEnergyType) {
         params.energy_type = filterEnergyType as EnergyType
@@ -167,6 +171,25 @@ export default function AlertsPage() {
     }
   }
 
+  const handleDeleteRecord = (record: AlertRecord) => {
+    modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这条预警记录吗？原始能耗数据不受影响；下次「导入数据」时若该日仍然超线，会重新生成一条预警。',
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await deleteAlertRecord(record.id)
+          message.success('删除成功')
+          fetchRecords()
+        } catch {
+          message.error('删除失败')
+        }
+      },
+    })
+  }
+
   const [processModalOpen, setProcessModalOpen] = useState(false)
   const [processingRecord, setProcessingRecord] = useState<AlertRecord | null>(null)
   const [processForm] = Form.useForm()
@@ -201,27 +224,49 @@ export default function AlertsPage() {
     }
   }
 
-  const [syncLoading, setSyncLoading] = useState(false)
   const [recordsRefreshing, setRecordsRefreshing] = useState(false)
   const [rulesRefreshing, setRulesRefreshing] = useState(false)
 
+  // 「导入数据」是异步任务：提交只拿到 job_id，计数必须轮询到 done 才存在（`D-48`）
+  const [syncJobId, setSyncJobId] = useState<string | null>(null)
+  const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
+  const syncNotifiedJob = useRef<string | null>(null)
+  const { phase: syncPhase, result: syncResult, errorMessage: syncError } = useEnergySyncJob(syncJobId, syncStartedAt)
+  const syncLoading = syncPhase === 'running'
+
   const handleSyncData = async () => {
-    setSyncLoading(true)
     try {
-      const result = await syncBitableDailyDataAction()
-      const alertCount = result.auto_check_alerts || 0
-      if (alertCount > 0) {
-        message.success(`数据导入成功！新增 ${result.total_created} 条，更新 ${result.total_updated} 条，自动生成 ${alertCount} 条预警记录`)
-      } else {
-        message.success(`数据导入成功！新增 ${result.total_created} 条，更新 ${result.total_updated} 条，无新增预警`)
-      }
-      fetchRecords()
-    } catch (_error) {
-      message.error('数据导入失败')
-    } finally {
-      setSyncLoading(false)
+      const job = await syncBitableDailyDataAction()
+      setSyncJobId(job.job_id)
+      setSyncStartedAt(Date.now())
+    } catch (error: unknown) {
+      message.error('导入任务提交失败：' + (error instanceof Error ? error.message : '未知错误'))
     }
   }
+
+  useEffect(() => {
+    if (!syncJobId || syncNotifiedJob.current === syncJobId) return
+    if (syncPhase === 'idle' || syncPhase === 'running') return
+    syncNotifiedJob.current = syncJobId
+    if (syncPhase === 'done') {
+      const created = syncResult?.total_created ?? 0
+      const updated = syncResult?.total_updated ?? 0
+      const alertCount = syncResult?.auto_check_alerts ?? 0
+      message.success(
+        alertCount > 0
+          ? `数据导入成功！新增 ${created} 条，更新 ${updated} 条，自动生成 ${alertCount} 条预警记录`
+          : `数据导入成功！新增 ${created} 条，更新 ${updated} 条，无新增预警`,
+      )
+      refetchRecords()
+    } else if (syncPhase === 'failed') {
+      message.error(`数据导入失败：${syncError || '后台任务执行出错'}`)
+    } else if (syncPhase === 'unavailable') {
+      message.warning('导入状态已不可查（后端重启或换实例），请稍后刷新列表确认')
+      refetchRecords()
+    } else {
+      message.info('导入仍在后台进行，已超过 3 分钟未返回结果，请稍后刷新查看')
+    }
+  }, [syncPhase, syncJobId, syncResult, syncError, message, refetchRecords])
 
   const handleFilterDateChange = (date: Dayjs | null) => {
     setFilterDate(date)
@@ -297,6 +342,7 @@ export default function AlertsPage() {
             onPageChange={handleRecordsPageChange}
             onRefresh={() => fetchRecords()}
             onProcess={handleProcessRecord}
+            onDelete={handleDeleteRecord}
           />
         </Card>
       ),

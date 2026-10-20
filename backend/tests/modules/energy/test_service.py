@@ -1,6 +1,7 @@
 # mypy: ignore-errors
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
@@ -52,8 +53,10 @@ async def test_delete_device_config_service(db_session, sample_device_config_dat
 
 
 async def test_trigger_collection_no_devices(db_session):
+    # 设备查询必须 mock：库里可能已有 zhiheng 设备，否则断言的是环境而不是「无设备」分支（D-32）
     request = CollectTriggerRequest(platform_code="zhiheng")
-    result = await service.trigger_collection(db_session, request)
+    with patch.object(service.repo, "get_enabled_devices_by_platform", AsyncMock(return_value=[])):
+        result = await service.trigger_collection(db_session, request)
     assert result["zhiheng"]["status"] == "success"
     assert result["zhiheng"]["device_count"] == 0
 
