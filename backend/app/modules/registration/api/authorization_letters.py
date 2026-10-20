@@ -24,7 +24,11 @@ def get_service(session: AsyncSession = Depends(get_db)) -> AuthorizationLetterS
 
 
 @router.get("/products", summary="获取品种登记号对照表")
-async def list_products(current_user: CurrentUser, service: AuthorizationLetterService = Depends(get_service)) -> Any:
+async def list_products(
+    current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
+    service: AuthorizationLetterService = Depends(get_service),
+) -> Any:
     products = service.get_product_list()
     return success_response(data=[p.model_dump() for p in products])
 
@@ -103,6 +107,7 @@ async def post(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     letter_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
 ) -> Any:
     letter = await service.get_letter(letter_id)

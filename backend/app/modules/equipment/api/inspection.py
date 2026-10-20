@@ -93,6 +93,7 @@ async def _enrich_multi_device_names(db: AsyncSession, responses: list[Inspectio
 async def create_route(
     data: InspectionRouteCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     route = await inspection_svc.create_route(db, data.model_dump())
@@ -245,6 +246,7 @@ async def set_route_locations(
 async def create_task(
     data: InspectionTaskCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     task = await inspection_svc.create_task(db, data.model_dump())

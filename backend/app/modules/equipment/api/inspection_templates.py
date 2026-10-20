@@ -35,6 +35,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 async def create_inspection_template(
     data: InspectionTemplateCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)

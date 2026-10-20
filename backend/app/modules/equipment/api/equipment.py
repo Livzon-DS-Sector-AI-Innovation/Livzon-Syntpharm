@@ -76,6 +76,7 @@ async def create_equipment_category(
 async def get_equipment_categories(
     parent_id: uuid.UUID | None = Query(None, description="父分类ID"),
     tree: bool = Query(False, description="是否返回树形结构"),
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取设备分类列表"""
@@ -126,6 +127,7 @@ async def delete_equipment_category(
 async def create_location(
     data: LocationCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """创建位置"""
@@ -198,6 +200,7 @@ async def get_departments_list(
 async def create_equipment(
     data: EquipmentCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """创建设备"""

@@ -135,6 +135,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         maintenance_plan_loop,
         timeout_scan_loop,
     )
+    from app.platform.audit.cleanup import audit_cleanup_loop
     from app.platform.identity.scheduler import (
         member_sync_loop,
     )
@@ -145,6 +146,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
+    audit_cleanup_task = asyncio.ensure_future(audit_cleanup_loop())
 
     # Start reagent reminder scheduler
     try:

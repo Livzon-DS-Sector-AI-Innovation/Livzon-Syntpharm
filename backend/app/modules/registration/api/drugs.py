@@ -25,6 +25,7 @@ router = APIRouter()
 @router.get("/", summary="获取药品列表")
 async def list_drugs(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有药品及其审评节点"""
@@ -48,6 +49,7 @@ async def create_drug(
 @router.get("/nodes", summary="获取审评节点配置")
 async def get_review_nodes(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
 ) -> JSONResponse:
     """获取10个审评节点的配置信息"""
     nodes = [ReviewNodeConfig(**n) for n in ReviewNode.get_all()]
@@ -71,6 +73,7 @@ async def update_drug(
     current_user: CurrentUser,
     drug_id: uuid.UUID,
     data: DrugUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """更新药品信息及审评节点"""

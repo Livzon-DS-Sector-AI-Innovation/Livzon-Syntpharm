@@ -53,6 +53,7 @@ async def get(
 async def post(
     current_user: CurrentUser,
     data: DomesticApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_domestic_approval(db, data)
@@ -172,6 +173,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: OverseasApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_overseas_approval(db, data)
@@ -288,6 +290,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: InternationalReviewCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_international_review(db, data)
@@ -389,6 +392,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: CoppCertificateCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_copp_certificate(db, data)
@@ -490,6 +494,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: WcCertificateCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_wc_certificate(db, data)
@@ -576,6 +581,7 @@ async def get(  # noqa: F811
 @router.get("/summary")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     summary = await ledger_service.get_ledger_summary(db)

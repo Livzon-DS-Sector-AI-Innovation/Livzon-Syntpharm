@@ -37,6 +37,27 @@ class GrantRepository:
         result = await db.execute(stmt)
         return result.scalar_one_or_none() is not None
 
+    async def list_superuser_user_ids(self, db: AsyncSession) -> list[uuid.UUID]:
+        """所有持有 active 超级管理员角色的用户 id。
+
+        用户管理列表用它把超管账号对非超管隐藏：即使对方有
+        `platform:user:read`，也不应该看到超管的资料与角色。
+        """
+        stmt = (
+            select(UserRoleGrant.user_id)
+            .join(Role, Role.id == UserRoleGrant.role_id)
+            .where(
+                UserRoleGrant.status == GRANT_ACTIVE,
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+                Role.is_superuser.is_(True),
+                Role.status == GRANT_ACTIVE,
+                Role.is_deleted == False,  # noqa: E712
+            )
+            .distinct()
+        )
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
+
     async def get_grants_for_permission(
         self,
         db: AsyncSession,

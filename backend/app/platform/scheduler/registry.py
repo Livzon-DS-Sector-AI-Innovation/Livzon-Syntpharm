@@ -214,3 +214,10 @@ def set_global_registry(registry: SchedulerRegistry) -> None:
 def get_global_registry() -> SchedulerRegistry | None:
     """返回全局注册表；未初始化时为 None。"""
     return _GLOBAL_REGISTRY
+
+
+# 模块级单例：SchedulerEngine 启动方与各模块定时任务共享同一个注册表。
+# 历史遗留：多个模块直接 `from ...registry import scheduler_registry`，但该符号曾缺失，
+# 导致这些模块的 register() 运行时 ImportError（被 main.py 的 try/except 吞掉、静默失败）。
+# 统一单例后，无论启动方还是各模块的 register() 都操作同一对象，无时序竞态。
+scheduler_registry = SchedulerRegistry()

@@ -554,6 +554,12 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
 
 
 QUALITY_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef("quality:capa:approve", "CAPA管理 - 审批", "quality", "capa", "approve"),
+    PermissionDef("quality:capa:create", "CAPA管理 - 新增", "quality", "capa", "create"),
+    PermissionDef("quality:capa:delete", "CAPA管理 - 删除", "quality", "capa", "delete"),
+    PermissionDef("quality:capa:read", "CAPA管理 - 查看", "quality", "capa", "read"),
+    PermissionDef("quality:capa:submit", "CAPA管理 - 提交", "quality", "capa", "submit"),
+    PermissionDef("quality:capa:update", "CAPA管理 - 编辑", "quality", "capa", "update"),
     PermissionDef("quality:cpv:create", "持续工艺验证(CPV) - 新增", "quality", "cpv", "create"),
     PermissionDef("quality:cpv:delete", "持续工艺验证(CPV) - 删除", "quality", "cpv", "delete"),
     PermissionDef("quality:cpv:import", "持续工艺验证(CPV) - 导入", "quality", "cpv", "import"),

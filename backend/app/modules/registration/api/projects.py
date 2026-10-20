@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,6 +34,7 @@ async def list_projects(
 async def create_project(
     current_user: CurrentUser,
     data: ProjectCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:project:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     project = await project_service.create_project(db, data)
@@ -47,7 +48,10 @@ async def get_project(
     ctx: PermissionContext = Depends(require_permission("registration:project:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    project = await project_service.get_project(db, project_id)
+    try:
+        project = await project_service.get_project(db, project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return success_response(data=ProjectResponse.model_validate(project))
 
 
@@ -56,9 +60,13 @@ async def update_project(
     current_user: CurrentUser,
     project_id: uuid.UUID,
     data: ProjectUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:project:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    project = await project_service.update_project(db, project_id, data)
+    try:
+        project = await project_service.update_project(db, project_id, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return success_response(data=ProjectResponse.model_validate(project))
 
 
@@ -69,5 +77,8 @@ async def delete_project(
     ctx: PermissionContext = Depends(require_permission("registration:project:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    await project_service.delete_project(db, project_id)
+    try:
+        await project_service.delete_project(db, project_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return success_response(message="删除成功")
