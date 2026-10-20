@@ -271,7 +271,7 @@ class AssetTextExtractor:
     def _extract_xls(file_path: Path) -> dict[str, Any]:
         """从 xls 提取表格数据"""
         try:
-            import pandas as pd  # type: ignore[import-untyped]
+            import pandas as pd
 
             excel_file = pd.ExcelFile(str(file_path), engine="xlrd")
             tables = []

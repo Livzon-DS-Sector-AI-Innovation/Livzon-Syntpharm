@@ -8,7 +8,7 @@ import { MaintenancePlan } from '@/types/equipment/generated-bridge'
 import { MaintenancePlanStatus } from '@/types/equipment/generated-bridge'
 import { useEquipmentStore } from '@/stores/equipment'
 import { deleteMaintenancePlan } from '@/actions/equipment'
-import { pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrimary, linkDanger } from '@/components/equipment/shared-styles'
+import { pillSuccess, pillNeutral, pillPurple, pillWarning, pillError, linkPrimary, linkDanger } from '@/components/equipment/shared/shared-styles'
 
 const statusMap: Record<MaintenancePlanStatus, React.CSSProperties> = {
   '启用': pillSuccess,

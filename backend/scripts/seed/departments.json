@@ -1,29 +1,110 @@
 [
-  {"id": "550e8400-e29b-41d4-a716-446655440001", "name": "人事行政部", "code": "DEPT0001", "description": "人事行政部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440002", "name": "设备工程部", "code": "DEPT0002", "description": "设备工程部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440003", "name": "动力部", "code": "DEPT0003", "description": "动力部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440004", "name": "技术研发部", "code": "DEPT0004", "description": "技术研发部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440005", "name": "质量控制部", "code": "DEPT0005", "description": "质量控制部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440006", "name": "质量保证部", "code": "DEPT0006", "description": "质量保证部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440007", "name": "采购部", "code": "DEPT0007", "description": "采购部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440008", "name": "注册部", "code": "DEPT0008", "description": "注册部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440009", "name": "财务部", "code": "DEPT0009", "description": "财务部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440010", "name": "仓储部", "code": "DEPT0010", "description": "仓储部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440011", "name": "安全环保部", "code": "DEPT0011", "description": "安全环保部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440012", "name": "生产部", "code": "DEPT0012", "description": "生产部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440013", "name": "头孢无菌制造部", "code": "DEPT0013", "description": "头孢无菌制造部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440014", "name": "非头孢制造部", "code": "DEPT0014", "description": "非头孢制造部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440015", "name": "头孢销售部", "code": "DEPT0015", "description": "头孢销售部"},
-  {"id": "550e8400-e29b-41d4-a716-446655440016", "name": "溶剂回收车间", "code": "DEPT0016", "description": "溶剂回收车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440017", "name": "101车间", "code": "DEPT0017", "description": "101车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440018", "name": "102车间", "code": "DEPT0018", "description": "102车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440019", "name": "103车间", "code": "DEPT0019", "description": "103车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440020", "name": "105车间", "code": "DEPT0020", "description": "105车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440021", "name": "106车间", "code": "DEPT0021", "description": "106车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440022", "name": "107车间", "code": "DEPT0022", "description": "107车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440023", "name": "201车间", "code": "DEPT0023", "description": "201车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440024", "name": "202车间", "code": "DEPT0024", "description": "202车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440025", "name": "301车间", "code": "DEPT0025", "description": "301车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440026", "name": "302车间", "code": "DEPT0026", "description": "302车间"},
-  {"id": "550e8400-e29b-41d4-a716-446655440027", "name": "303车间", "code": "DEPT0027", "description": "303车间"}
+  {
+    "id": "7d74e5ed-a3e0-48dc-81e3-1b4023ee575b",
+    "name": "101车间",
+    "code": "DEPT0001",
+    "description": "101车间部门"
+  },
+  {
+    "id": "96d596df-f190-4ca1-82c9-94e6d458efb2",
+    "name": "201车间",
+    "code": "DEPT0002",
+    "description": "201车间部门"
+  },
+  {
+    "id": "1d54d7a0-9ccb-4819-aeb3-5bba4be43d4a",
+    "name": "202车间",
+    "code": "DEPT0003",
+    "description": "202车间部门"
+  },
+  {
+    "id": "33eb6818-bad0-4952-8646-2b756c7a38de",
+    "name": "人事行政部",
+    "code": "DEPT0004",
+    "description": "人事行政部部门"
+  },
+  {
+    "id": "b6497f3c-516c-4cdd-936d-38a42ed10392",
+    "name": "仓储部",
+    "code": "DEPT0005",
+    "description": "仓储部部门"
+  },
+  {
+    "id": "36a56ec9-124b-4e60-976f-cbd4e248e709",
+    "name": "动力部",
+    "code": "DEPT0006",
+    "description": "动力部部门"
+  },
+  {
+    "id": "4acf63fa-9cc1-4722-a3a8-8616d5041827",
+    "name": "头孢销售部",
+    "code": "DEPT0007",
+    "description": "头孢销售部部门"
+  },
+  {
+    "id": "e282d224-2e6c-4d47-86f2-7bdea0c68a5b",
+    "name": "安全环保部",
+    "code": "DEPT0008",
+    "description": "安全环保部部门"
+  },
+  {
+    "id": "1321b706-56e2-4ef1-9a14-63feb5c0e46c",
+    "name": "技术研发部",
+    "code": "DEPT0009",
+    "description": "技术研发部部门"
+  },
+  {
+    "id": "2ffef639-ff7d-4c09-9383-88a1a0aa9149",
+    "name": "注册部",
+    "code": "DEPT0010",
+    "description": "注册部部门"
+  },
+  {
+    "id": "5201565c-daef-48c8-8fd6-fca702f05fac",
+    "name": "溶剂回收车间",
+    "code": "DEPT0011",
+    "description": "溶剂回收车间部门"
+  },
+  {
+    "id": "c2aafcfa-c744-4f64-8961-972591b6fb50",
+    "name": "生产部",
+    "code": "DEPT0012",
+    "description": "生产部部门"
+  },
+  {
+    "id": "14cb9911-b5ca-4725-a6b8-e7cd804c49fb",
+    "name": "设备工程部",
+    "code": "DEPT0013",
+    "description": "设备工程部部门"
+  },
+  {
+    "id": "74c45d35-26f8-41e6-be67-7611f1f939be",
+    "name": "财务部",
+    "code": "DEPT0014",
+    "description": "财务部部门"
+  },
+  {
+    "id": "2b556c4f-9a12-43e3-a48e-a172d3f5e0d7",
+    "name": "质量保证部",
+    "code": "DEPT0015",
+    "description": "质量保证部部门"
+  },
+  {
+    "id": "bd825c95-2ff0-4589-884c-590a1bb8f19d",
+    "name": "质量控制部",
+    "code": "DEPT0016",
+    "description": "质量控制部部门"
+  },
+  {
+    "id": "e5e7182e-efeb-4be8-8102-b0f49f7c54fa",
+    "name": "采购部",
+    "code": "DEPT0017",
+    "description": "采购部部门"
+  },
+  {
+    "id": "ea8a222c-325f-4008-9529-c680513851d3",
+    "name": "非头孢制造部",
+    "code": "DEPT0018",
+    "description": "非头孢制造部部门"
+  }
 ]

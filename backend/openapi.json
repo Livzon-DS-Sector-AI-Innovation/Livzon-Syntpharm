@@ -6850,6 +6850,44 @@
             "description": "\u5173\u952e\u8bcd\u641c\u7d22"
           },
           {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asset_no",
+                "name",
+                "commissioning_date",
+                "current_cost",
+                "book_value",
+                "department_name",
+                "status",
+                "created_at"
+              ],
+              "type": "string",
+              "description": "\u6392\u5e8f\u5b57\u6bb5",
+              "default": "asset_no",
+              "title": "Sort By"
+            },
+            "description": "\u6392\u5e8f\u5b57\u6bb5"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string",
+              "description": "\u6392\u5e8f\u65b9\u5411",
+              "default": "asc",
+              "title": "Sort Order"
+            },
+            "description": "\u6392\u5e8f\u65b9\u5411"
+          },
+          {
             "name": "page",
             "in": "query",
             "required": false,
@@ -7223,6 +7261,78 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/sync-excel": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u667a\u80fd\u540c\u6b65 Excel \u8bbe\u5907\u6570\u636e",
+        "description": "\u4e0a\u4f20 Excel \u6587\u4ef6\u5e76\u6267\u884c\u667a\u80fd\u540c\u6b65",
+        "operationId": "sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post",
+        "parameters": [
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "\u662f\u5426\u4ec5\u9884\u89c8\u4e0d\u6267\u884c",
+              "default": false,
+              "title": "Dry Run"
+            },
+            "description": "\u662f\u5426\u4ec5\u9884\u89c8\u4e0d\u6267\u884c"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquipmentSyncResponse"
                 }
               }
             }
@@ -14881,6 +14991,126 @@
                   "additionalProperties": true,
                   "type": "object",
                   "title": "Response Test Validation Api V1 Equipment Equipments Import Test Validation Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import-v4/batch": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u6267\u884c\u6279\u91cf\u5bfc\u5165 (v4)",
+        "operationId": "batch_import_v4_api_v1_equipment_equipments_import_v4_batch_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Request"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportV4BatchApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/equipments/import-v4/preview": {
+      "post": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u9884\u89c8\u5bfc\u5165\u7ed3\u679c (v4)",
+        "operationId": "preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportV4PreviewApiResponse"
                 }
               }
             }
@@ -90772,6 +91002,28 @@
         ],
         "title": "Body_preview_import_api_v1_quality_cpv_import_preview_post"
       },
+      "Body_preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post": {
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "force_override": {
+            "type": "boolean",
+            "title": "Force Override",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "Body_preview_import_v4_api_v1_equipment_equipments_import_v4_preview_post"
+      },
       "Body_preview_resume_parse_api_v1_hr_candidates_parse_preview_post": {
         "properties": {
           "resume": {
@@ -90814,6 +91066,20 @@
           "file"
         ],
         "title": "Body_recognize_invoice_api_v1_procurement_invoices_recognize_post"
+      },
+      "Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_sync_equipments_excel_api_v1_equipment_equipments_sync_excel_post"
       },
       "Body_upload_asset_api_v1_registration_dossier_writer_chapters__chapter_id__assets_post": {
         "properties": {
@@ -106891,6 +107157,80 @@
         "title": "EquipmentImportRow",
         "description": "\u8bbe\u5907\u5bfc\u5165\u884c\u6570\u636e"
       },
+      "EquipmentSyncResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/EquipmentSyncResult"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "EquipmentSyncResponse"
+      },
+      "EquipmentSyncResult": {
+        "properties": {
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings",
+            "description": "\u540c\u6b65\u8fc7\u7a0b\u4e2d\u7684\u8b66\u544a\u4fe1\u606f"
+          },
+          "updated": {
+            "type": "integer",
+            "title": "Updated",
+            "description": "\u66f4\u65b0\u7684\u8bbe\u5907\u6570\u91cf",
+            "default": 0
+          },
+          "inserted": {
+            "type": "integer",
+            "title": "Inserted",
+            "description": "\u65b0\u589e\u7684\u8bbe\u5907\u6570\u91cf",
+            "default": 0
+          },
+          "migrated": {
+            "type": "integer",
+            "title": "Migrated",
+            "description": "\u8fc1\u79fb\u4f4d\u7f6e\u7684\u8bbe\u5907\u6570\u91cf",
+            "default": 0
+          },
+          "deleted": {
+            "type": "integer",
+            "title": "Deleted",
+            "description": "\u505c\u7528\u7684\u8bbe\u5907\u6570\u91cf",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "EquipmentSyncResult"
+      },
       "EquipmentUpdate": {
         "properties": {
           "name": {
@@ -116530,6 +116870,179 @@
         ],
         "title": "IQStatus",
         "description": "IQ\u786e\u8ba4\u72b6\u6001"
+      },
+      "ImportErrorItem": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "error"
+        ],
+        "title": "ImportErrorItem"
+      },
+      "ImportV4BatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ImportV4BatchResponse"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ImportV4BatchApiResponse"
+      },
+      "ImportV4BatchResponse": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "created_count": {
+            "type": "integer",
+            "title": "Created Count",
+            "default": 0
+          },
+          "updated_count": {
+            "type": "integer",
+            "title": "Updated Count",
+            "default": 0
+          },
+          "skipped_count": {
+            "type": "integer",
+            "title": "Skipped Count",
+            "default": 0
+          },
+          "error_count": {
+            "type": "integer",
+            "title": "Error Count",
+            "default": 0
+          },
+          "unmapped_departments": {
+            "additionalProperties": {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Unmapped Departments"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ImportErrorItem"
+            },
+            "type": "array",
+            "title": "Errors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batch_id"
+        ],
+        "title": "ImportV4BatchResponse",
+        "description": "\u6279\u91cf\u5bfc\u5165\u63a5\u53e3\u54cd\u5e94\u6a21\u578b"
+      },
+      "ImportV4PreviewApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "description": "\u54cd\u5e94\u72b6\u6001\u7801",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "\u54cd\u5e94\u6d88\u606f",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ImportV4PreviewResponse"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ImportV4PreviewApiResponse"
+      },
+      "ImportV4PreviewResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "headers": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Headers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "headers"
+        ],
+        "title": "ImportV4PreviewResponse",
+        "description": "\u9884\u89c8\u63a5\u53e3\u54cd\u5e94\u6a21\u578b"
       },
       "InspectionAIAnalyzeRequest": {
         "properties": {

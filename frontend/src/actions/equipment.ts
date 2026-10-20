@@ -382,18 +382,13 @@ export async function deleteRole(id: string) {
   return result
 }
 
-export async function previewEquipmentImport(data: EquipmentImportRow[]) {
-  console.log('[DEBUG] previewEquipmentImport called with:', {
-    dataLength: data?.length,
-    firstItem: data?.[0],
-    firstItemType: typeof data?.[0],
-  })
-  const result = await previewEquipmentImportApiTyped(data, await authHeaders())
+export async function previewEquipmentImport(data: EquipmentImportRow[], forceOverride: boolean = false) {
+  const result = await previewEquipmentImportApiTyped(data, await authHeaders(), forceOverride)
   return result
 }
 
-export async function batchImportEquipment(data: EquipmentImportRow[]) {
-  const result = await batchImportEquipmentApiTyped(data, await authHeaders())
+export async function batchImportEquipment(data: EquipmentImportRow[], forceOverride: boolean = false) {
+  const result = await batchImportEquipmentApiTyped(data, await authHeaders(), forceOverride)
   revalidatePath('/equipment')
   return result
 }

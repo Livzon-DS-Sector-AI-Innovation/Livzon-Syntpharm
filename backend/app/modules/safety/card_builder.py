@@ -189,7 +189,7 @@ async def _count_pending_hazards(repo: Any) -> int:
         select(func.count())
         .select_from(HazardReport)
         .where(
-            not HazardReport.is_deleted,  # type: ignore[arg-type]
+            HazardReport.is_deleted.is_(False),
             HazardReport.status == "open",
         )
     )
@@ -206,7 +206,7 @@ async def _fetch_open_hazards_details(repo: Any) -> str:
     query = (
         select(HazardReport)
         .where(
-            not HazardReport.is_deleted,  # type: ignore[arg-type]
+            HazardReport.is_deleted.is_(False),
             HazardReport.status == "open",
         )
         .order_by(HazardReport.hazard_level.desc(), HazardReport.discovered_at.desc())
@@ -252,7 +252,7 @@ async def _count_total_hazards(repo: Any) -> int:
 
     from app.modules.safety.models import HazardReport
 
-    query = select(func.count()).select_from(HazardReport).where(not HazardReport.is_deleted)  # type: ignore[arg-type]
+    query = select(func.count()).select_from(HazardReport).where(HazardReport.is_deleted.is_(False))
     result = await repo.session.execute(query)
     return result.scalar() or 0
 
@@ -266,7 +266,7 @@ async def _count_checks_since(repo: Any, since_date: date) -> int:
         select(func.count())
         .select_from(SafetyCheck)
         .where(
-            not SafetyCheck.is_deleted,  # type: ignore[arg-type]
+            SafetyCheck.is_deleted.is_(False),
             SafetyCheck.created_at >= since_date,
         )
     )
@@ -283,7 +283,7 @@ async def _count_accidents_since(repo: Any, since_date: date) -> int:
         select(func.count())
         .select_from(Accident)
         .where(
-            not Accident.is_deleted,  # type: ignore[arg-type]
+            Accident.is_deleted.is_(False),
             Accident.created_at >= since_date,
         )
     )
@@ -300,7 +300,7 @@ async def _count_due_trainings(repo: Any) -> int:
         select(func.count())
         .select_from(SafetyTraining)
         .where(
-            not SafetyTraining.is_deleted,  # type: ignore[arg-type]
+            SafetyTraining.is_deleted.is_(False),
             SafetyTraining.status == "pending",
         )
     )
@@ -317,7 +317,7 @@ async def _count_trainings_since(repo: Any, since_date: date) -> int:
         select(func.count())
         .select_from(SafetyTraining)
         .where(
-            not SafetyTraining.is_deleted,  # type: ignore[arg-type]
+            SafetyTraining.is_deleted.is_(False),
             SafetyTraining.created_at >= since_date,
         )
     )
@@ -334,7 +334,7 @@ async def _count_pending_ehs_changes(repo: Any) -> int:
         select(func.count())
         .select_from(EhsChange)
         .where(
-            not EhsChange.is_deleted,  # type: ignore[arg-type]
+            EhsChange.is_deleted.is_(False),
             EhsChange.status == "pending_approval",
         )
     )
@@ -351,7 +351,7 @@ async def _count_active_special_ops(repo: Any) -> int:
         select(func.count())
         .select_from(SpecialOperationPermit)
         .where(
-            not SpecialOperationPermit.is_deleted,  # type: ignore[arg-type]
+            SpecialOperationPermit.is_deleted.is_(False),
             SpecialOperationPermit.status.in_(["pending", "in_progress"]),
         )
     )
@@ -368,7 +368,7 @@ async def _count_active_contractors(repo: Any) -> int:
         select(func.count())
         .select_from(Contractor)
         .where(
-            not Contractor.is_deleted,  # type: ignore[arg-type]
+            Contractor.is_deleted.is_(False),
             Contractor.status == "active",
         )
     )
@@ -387,7 +387,7 @@ async def _count_due_oh_exams(repo: Any) -> int:
         select(func.count())
         .select_from(OhHealthExam)
         .where(
-            not OhHealthExam.is_deleted,  # type: ignore[arg-type]
+            OhHealthExam.is_deleted.is_(False),
             OhHealthExam.next_exam_date <= date.today(),  # type: ignore[attr-defined]
         )
     )
