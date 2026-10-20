@@ -36303,7 +36303,7 @@
           "200": {
             "description": "Successful Response",
             "content": {
-              "application/json": {
+              "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/EnergyDeleteResponse"
                 }

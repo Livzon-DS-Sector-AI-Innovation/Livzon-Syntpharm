@@ -66151,7 +66151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
