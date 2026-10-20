@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.doc_check.schemas import (
     DocCheckBatchUpdateApiResponse,
     DocCheckConfigApiResponse,
@@ -40,7 +40,6 @@ from app.modules.quality.qms.doc_check.schemas import (
     ProblemUpdate,
 )
 from app.modules.quality.qms.doc_check.service import DocCheckService
-from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 

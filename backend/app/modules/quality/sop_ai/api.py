@@ -11,11 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.schemas import ApiResponse
 from app.modules.quality.sop_ai.service import SopAiCheckService
-from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +86,7 @@ async def single_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)  # type: ignore[return-value]
+    return ApiResponse(data=result)
 
 
 # ============ 批量巡检接口 ============
@@ -107,7 +106,7 @@ async def batch_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)  # type: ignore[return-value]
+    return ApiResponse(data=result)
 
 
 # ============ 记录查询接口 ============
@@ -156,7 +155,7 @@ async def list_records(
         for r in records
     ]
 
-    return ApiResponse(  # type: ignore[return-value]
+    return ApiResponse(
         data={
             "items": items,
             "total": total,
@@ -230,7 +229,7 @@ async def list_jobs(
     scheduler = get_sop_ai_scheduler()
     jobs = scheduler.list_jobs()
 
-    return ApiResponse(  # type: ignore[return-value]
+    return ApiResponse(
         data=[
             {
                 "job_id": job.job_id,

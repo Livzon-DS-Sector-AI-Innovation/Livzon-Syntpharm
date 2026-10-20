@@ -6,7 +6,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import delete, select
 
@@ -33,16 +33,16 @@ async def cleanup_expired_audit_logs(retention_days: int | None = None) -> int:
         logger.warning("AUDIT_RETENTION_DAYS=%d，跳过清理（保留期须为正数）", retention_days)
         return 0
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
+    cutoff = datetime.now(UTC) - timedelta(days=retention_days)
     total_deleted = 0
 
     async with async_session_factory() as session:
         while True:
             ids = (
-                await session.execute(
-                    select(AuditLog.id).where(AuditLog.created_at < cutoff).limit(_BATCH_SIZE)
-                )
-            ).scalars().all()
+                (await session.execute(select(AuditLog.id).where(AuditLog.created_at < cutoff).limit(_BATCH_SIZE)))
+                .scalars()
+                .all()
+            )
             if not ids:
                 break
             await session.execute(delete(AuditLog).where(AuditLog.id.in_(ids)))

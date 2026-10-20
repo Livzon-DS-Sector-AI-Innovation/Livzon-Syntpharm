@@ -8,8 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser, PermissionContext, require_permission
-
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.production.product.output_schemas import UndoSyncResponse
 from app.modules.production.product.sync_config_schemas import (
     ProductSyncConfigApiResponse,

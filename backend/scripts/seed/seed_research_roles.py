@@ -55,8 +55,7 @@ RESEARCH_ROLE_TEMPLATES: list[dict] = [
         "code": "research_approver",
         "name": "研发审批",
         "description": "审批角色：全部资源只读 + 中试工作流审批。",
-        "permission_codes": _codes(actions={"read"})
-        + ["research:pilot-workflow:approve"],
+        "permission_codes": _codes(actions={"read"}) + ["research:pilot-workflow:approve"],
     },
     {
         "code": "research_viewer",

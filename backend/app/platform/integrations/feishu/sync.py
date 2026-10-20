@@ -203,7 +203,7 @@ async def _get_existing_user(open_id: str) -> Any:
 
 
 async def sync_departments(
-    root_dept_id: str,
+    root_dept_id: str | None,
     *,
     app_id: str | None = None,
     app_secret: str | None = None,

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.schemas import (
     ApprovalRecordListApiResponse,
     ApprovalRecordResponse,
@@ -24,7 +24,6 @@ from app.modules.quality.qms.schemas import (
     ObsoleteSubmit,
 )
 from app.modules.quality.qms.service import QualityService
-from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter()
 

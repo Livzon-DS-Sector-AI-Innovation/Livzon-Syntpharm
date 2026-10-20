@@ -317,7 +317,7 @@ class LLMClient:
         except Exception as e:
             return {"status": "error", "detail": str(e)}
 
-    async def _func_l309(
+    async def stream_chat(
         self,
         messages: list[dict[str, Any]],
         temperature: float | None = None,

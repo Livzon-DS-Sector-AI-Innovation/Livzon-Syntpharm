@@ -83,8 +83,8 @@
 每个迁移文件声明两个标识：
 
 ```python
-revision: str = '0082_create_permission_schema'
-down_revision: Union[str, None] = '0066_add_knowledge_article_document_fields'
+revision: str = "0082_create_permission_schema"
+down_revision: Union[str, None] = "0066_add_knowledge_article_document_fields"
 ```
 
 - `revision` 是自己这一段的名字
@@ -191,7 +191,7 @@ CI 自动执行，违反会导致 PR 无法合并。
 merge 迁移本身不含任何 DDL，只声明"把这两个 head 合成一个"：
 
 ```python
-down_revision = ('0081_add_doc_gen_caches', '0083_create_dictionary_tables')
+down_revision = ("0081_add_doc_gen_caches", "0083_create_dictionary_tables")
 ```
 
 ---

@@ -5,6 +5,7 @@ sync_registry 是「代码注册表为唯一权威、DB 只读镜像」的落地
 """
 
 import logging
+import uuid
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -209,7 +210,7 @@ async def bootstrap_initial_superadmin() -> None:
 # ── 防自我提权 guard ─────────────────────────────────────────────
 
 
-async def get_role(db: AsyncSession, role_id) -> Role | None:
+async def get_role(db: AsyncSession, role_id: uuid.UUID) -> Role | None:
     result = await db.execute(
         select(Role).where(
             Role.id == role_id,
@@ -234,7 +235,7 @@ async def count_active_superadmins(db: AsyncSession) -> int:
     return int((await db.execute(stmt)).scalar_one())
 
 
-def guard_self_escalation(actor_id, grant: UserRoleGrant) -> None:
+def guard_self_escalation(actor_id: uuid.UUID | None, grant: UserRoleGrant) -> None:
     """禁止修改 / 删除自己的授权。"""
     if grant.user_id == actor_id:
         raise ForbiddenException("不能修改自己的授权")
@@ -382,9 +383,7 @@ async def assert_actor_can_grant_scope(
     if await GrantRepository().is_superuser(db, actor):
         return
 
-    grants = await GrantRepository().get_grants_for_permission(
-        db, actor.id, "platform:grant:manage"
-    )
+    grants = await GrantRepository().get_grants_for_permission(db, actor.id, "platform:grant:manage")
     if not grants:
         raise ForbiddenException("无法确定你的数据范围，拒绝授权")
 

@@ -68,8 +68,6 @@ def _migrate_items(items: dict) -> tuple[dict, list[str]]:
     for key in _AMBIGUOUS_KEYS & set(new_items.keys()):
         logs.append(f"警告：'{key}' 存在歧义（平台 settings / equipment-settings），未自动迁移，请人工核对")
 
-
-
     return new_items, logs
 
 
@@ -80,9 +78,7 @@ def _migrate_custom(custom: list[dict], new_items: dict) -> tuple[list[dict], li
 
     # 建立单值反向映射（优先用第一个新 key），仅用于无歧义的 parent 引用
     single_reverse: dict[str, str] = {
-        old_key: new_keys[0]
-        for old_key, new_keys in _KEY_RENAME_MAP.items()
-        if len(new_keys) == 1
+        old_key: new_keys[0] for old_key, new_keys in _KEY_RENAME_MAP.items() if len(new_keys) == 1
     }
 
     for item in custom:
@@ -93,9 +89,7 @@ def _migrate_custom(custom: list[dict], new_items: dict) -> tuple[list[dict], li
             new_item["parent"] = new_parent
             logs.append(f"custom 项 '{item.get('id')}' parent '{parent}' -> '{new_parent}'")
         elif parent and parent in _KEY_RENAME_MAP:
-            logs.append(
-                f"custom 项 '{item.get('id')}' parent '{parent}' 为歧义旧 key，未自动迁移，请人工核对"
-            )
+            logs.append(f"custom 项 '{item.get('id')}' parent '{parent}' 为歧义旧 key，未自动迁移，请人工核对")
         new_custom.append(new_item)
 
     return new_custom, logs

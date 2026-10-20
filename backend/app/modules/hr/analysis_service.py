@@ -277,7 +277,7 @@ class TurnoverAnalysisService:
 
         async def _consume() -> str:
             content_parts: list[str] = []
-            async for chunk in llm_client._func_l309(messages=messages):
+            async for chunk in llm_client.stream_chat(messages=messages):
                 if chunk.get("type") == "content":
                     content_parts.append(chunk.get("text", ""))
             return "".join(content_parts)
