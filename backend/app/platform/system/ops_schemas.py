@@ -253,7 +253,7 @@ class DbOverview(BaseModel):
 class DbTableItem(BaseModel):
     """一张业务表的元信息（不含数据内容）。"""
 
-    schema: str
+    schema: str  # type: ignore[assignment]  # 字段名与 BaseModel.schema 方法同名
     table: str
     est_rows: int = Field(..., description="估算行数（统计收集器，ANALYZE 后准确）")
     total_bytes: int = Field(..., description="表 + 索引占用字节数")
@@ -284,7 +284,7 @@ class DbColumnItem(BaseModel):
 
 
 class DbColumnsData(BaseModel):
-    schema: str
+    schema: str  # type: ignore[assignment]  # 字段名与 BaseModel.schema 方法同名
     table: str
     est_rows: int
     total_bytes: int

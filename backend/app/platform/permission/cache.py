@@ -13,7 +13,7 @@
 
 import json
 import logging
-from typing import cast
+from uuid import UUID
 
 from app.core.redis import cache_delete, cache_get, cache_set
 
@@ -25,15 +25,15 @@ _SUPER_SUFFIX = "super"
 _DEFAULT_TTL = 60
 
 
-def _codes_key(user_id) -> str:
+def _codes_key(user_id: str | UUID) -> str:
     return f"{_CACHE_PREFIX}:{user_id}:{_CODES_SUFFIX}"
 
 
-def _super_key(user_id) -> str:
+def _super_key(user_id: str | UUID) -> str:
     return f"{_CACHE_PREFIX}:{user_id}:{_SUPER_SUFFIX}"
 
 
-async def get_cached_permission_codes(user_id) -> set[str] | None:
+async def get_cached_permission_codes(user_id: str | UUID) -> set[str] | None:
     try:
         raw = await cache_get(_codes_key(user_id))
     except Exception:  # noqa: BLE001 - Redis 故障时降级
@@ -49,14 +49,14 @@ async def get_cached_permission_codes(user_id) -> set[str] | None:
         return None
 
 
-async def set_cached_permission_codes(user_id, codes: set[str]) -> None:
+async def set_cached_permission_codes(user_id: str | UUID, codes: set[str]) -> None:
     try:
         await cache_set(_codes_key(user_id), json.dumps(sorted(codes)), ex=_DEFAULT_TTL)
     except Exception:  # noqa: BLE001
         logger.warning("写入权限码缓存失败", exc_info=True)
 
 
-async def get_cached_is_superuser(user_id) -> bool | None:
+async def get_cached_is_superuser(user_id: str | UUID) -> bool | None:
     try:
         raw = await cache_get(_super_key(user_id))
     except Exception:  # noqa: BLE001
@@ -68,14 +68,14 @@ async def get_cached_is_superuser(user_id) -> bool | None:
     return raw == "1"
 
 
-async def set_cached_is_superuser(user_id, value: bool) -> None:
+async def set_cached_is_superuser(user_id: str | UUID, value: bool) -> None:
     try:
         await cache_set(_super_key(user_id), "1" if value else "0", ex=_DEFAULT_TTL)
     except Exception:  # noqa: BLE001
         logger.warning("写入超管缓存失败", exc_info=True)
 
 
-async def evict_user_permission_cache(user_id) -> None:
+async def evict_user_permission_cache(user_id: str | UUID) -> None:
     """驱逐单个用户的权限缓存。"""
     try:
         await cache_delete(_codes_key(user_id))

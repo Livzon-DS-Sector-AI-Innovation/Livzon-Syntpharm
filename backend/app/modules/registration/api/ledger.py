@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, require_permission, CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.ledger import (
     CoppCertificateCreate,

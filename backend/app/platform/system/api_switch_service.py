@@ -9,8 +9,10 @@
 
 import json
 import logging
+import uuid
 from dataclasses import dataclass
 
+from fastapi import FastAPI
 from sqlalchemy import select
 
 # 确保 identity.users 表注册（ModuleSetting 的 created_by/updated_by 外键目标），
@@ -96,7 +98,7 @@ async def load_switches() -> None:
     logger.info("API 开关已加载：%d 条禁用", len(_DISABLED))
 
 
-async def _persist(actor_id) -> None:  # noqa: ANN001 - uuid.UUID | None
+async def _persist(actor_id: uuid.UUID | None) -> None:
     payload = [
         {"method": method, "route": route, "reason": reason} for (method, route), reason in sorted(_DISABLED.items())
     ]
@@ -135,7 +137,7 @@ async def _persist(actor_id) -> None:  # noqa: ANN001 - uuid.UUID | None
 _HTTP_METHODS = ("GET", "POST", "PUT", "DELETE", "PATCH")
 
 
-def list_api_routes(app) -> list[ApiRouteItem]:  # noqa: ANN001 - fastapi.FastAPI
+def list_api_routes(app: FastAPI) -> list[ApiRouteItem]:
     """从 OpenAPI schema 导出全部接口（自动跟随代码，无需维护清单）。
 
     不用 `app.routes`：FastAPI 新版用 _IncludedRouter 懒包装 include_router 的路由，
@@ -179,7 +181,7 @@ async def set_switch(
     route: str,
     enabled: bool,
     reason: str | None,
-    actor_id,  # noqa: ANN001 - uuid.UUID
+    actor_id: uuid.UUID | None,
 ) -> None:
     """启用 / 禁用某接口：更新内存 + 持久化 + 写审计。"""
     method = method.upper()

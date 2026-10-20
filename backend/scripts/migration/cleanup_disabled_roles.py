@@ -43,9 +43,7 @@ async def main(dry_run: bool = False) -> None:
         unsafe: list[tuple[str, int]] = []
         deletable: list[tuple[object, str]] = []
         for role_id, code in disabled:
-            count_result = await db.execute(
-                select(UserRoleGrant.id).where(UserRoleGrant.role_id == role_id)
-            )
+            count_result = await db.execute(select(UserRoleGrant.id).where(UserRoleGrant.role_id == role_id))
             grants = list(count_result.scalars().all())
             if grants:
                 unsafe.append((code, len(grants)))
@@ -79,7 +77,7 @@ async def main(dry_run: bool = False) -> None:
             return
 
         if rp_counts:
-            print(f"\n清理 role_permissions 残留：")
+            print("\n清理 role_permissions 残留：")
             print(_fmt(rp_counts))
             role_ids = [role_id for role_id, _ in deletable]
             await db.execute(delete(RolePermission).where(RolePermission.role_id.in_(role_ids)))

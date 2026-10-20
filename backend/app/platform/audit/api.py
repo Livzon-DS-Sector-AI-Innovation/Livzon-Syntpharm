@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import PermissionContext, require_permission
-from app.core.response import build_response
+from app.core.response import ApiResponse, build_response
 from app.platform.audit.models import AuditLog
 from app.platform.audit.schemas import AuditLogItem, AuditLogListData, AuditLogListResponse
 from app.platform.identity.models import User
@@ -36,7 +36,7 @@ async def list_audit_logs(
     keyword: str | None = Query(None, description="按操作者姓名/用户名模糊搜索"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-) -> AuditLogListResponse:
+) -> ApiResponse:
     """分页查询操作审计日志，按时间倒序。"""
     base = (
         select(AuditLog, User.name, User.username)
@@ -52,14 +52,10 @@ async def list_audit_logs(
     if keyword:
         base = base.where(User.name.ilike(f"%{keyword}%") | User.username.ilike(f"%{keyword}%"))
 
-    total = int(
-        (await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one()
-    )
+    total = int((await db.execute(select(func.count()).select_from(base.subquery()))).scalar_one())
 
     rows = (
-        await db.execute(
-            base.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
-        )
+        await db.execute(base.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size))
     ).all()
 
     data = [
@@ -79,9 +75,7 @@ async def list_audit_logs(
         )
         for log, user_name, username in rows
     ]
-    return build_response(
-        data=AuditLogListData(items=data, total=total, page=page, page_size=page_size).model_dump()
-    )
+    return build_response(data=AuditLogListData(items=data, total=total, page=page, page_size=page_size).model_dump())
 
 
 @router.get("/logs/export", summary="导出操作审计日志（CSV）")

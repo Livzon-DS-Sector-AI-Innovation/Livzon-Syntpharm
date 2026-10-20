@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.qms.ipqc_schemas import (
     IPQCApprovalCreate,
     IPQCApprovalRecordResponse,
@@ -21,7 +21,6 @@ from app.modules.quality.qms.ipqc_schemas import (
     IPQCInspectionUpdate,
 )
 from app.modules.quality.qms.ipqc_service import IPQCInspectionService
-from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/ipqc", tags=["IPQC检验"])
 

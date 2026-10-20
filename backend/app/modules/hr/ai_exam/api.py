@@ -48,7 +48,11 @@ async def post(
 
 
 @router.post("/export", summary="导出考试试卷")
-async def api_export_exam(data: ExamExportRequest, current_user: CurrentUser, ctx: PermissionContext = Depends(require_permission("hr:ai-exam:export"))) -> Any:
+async def api_export_exam(
+    data: ExamExportRequest,
+    current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("hr:ai-exam:export")),
+) -> Any:
     """将试卷导出为 Word 文档。"""
     try:
         buffer = export_exam(data.model_dump())

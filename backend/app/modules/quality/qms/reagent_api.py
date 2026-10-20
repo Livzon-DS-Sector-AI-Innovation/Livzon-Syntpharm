@@ -24,7 +24,6 @@ from app.modules.quality.qms.reagent_schemas import (
 )
 from app.modules.quality.qms.reagent_service import ReagentService
 from app.platform.database import get_db_session
-from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 

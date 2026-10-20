@@ -111,9 +111,7 @@ class GrantRepository:
         )
         return result.scalar_one_or_none()
 
-    async def list_active_user_ids_by_role(
-        self, db: AsyncSession, role_id: uuid.UUID
-    ) -> list[uuid.UUID]:
+    async def list_active_user_ids_by_role(self, db: AsyncSession, role_id: uuid.UUID) -> list[uuid.UUID]:
         """查询拥有某角色 active 授权的用户 ID（用于权限缓存失效）。"""
         result = await db.execute(
             select(UserRoleGrant.user_id)

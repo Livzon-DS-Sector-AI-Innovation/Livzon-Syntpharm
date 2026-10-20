@@ -261,6 +261,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     maintenance_plan_task.cancel()
     timeout_task.cancel()
     member_task.cancel()
+    audit_cleanup_task.cancel()
 
     # 停止平台级飞书 WebSocket
     from app.platform.integrations.feishu.ws_client import stop_ws_client
