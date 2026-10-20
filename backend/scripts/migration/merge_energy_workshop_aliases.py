@@ -23,6 +23,7 @@ from typing import Any
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from sqlalchemy import text  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.core.database import async_session_factory  # noqa: E402
 
@@ -58,7 +59,7 @@ CONFLICT_COLUMNS: dict[str, tuple[str, ...]] = {
 NAME_STRING_TABLES: tuple[tuple[str, str], ...] = (("energy_device_configs", "workshop"),)
 
 
-async def _find_active(db, name: str):
+async def _find_active(db: AsyncSession, name: str) -> Any:
     row = (
         await db.execute(
             text(
@@ -71,21 +72,22 @@ async def _find_active(db, name: str):
     return row[0] if row else None
 
 
-async def _find_conflicts(db, table: str, src_id: str, tgt_id: str) -> list[Any]:
+async def _find_conflicts(db: AsyncSession, table: str, src_id: str, tgt_id: str) -> list[Any]:
     cols = CONFLICT_COLUMNS[table]
     on_clause = " and ".join(f"t.{c} = m.{c}" for c in cols)
     sql = (
-        f"select {', '.join('m.' + c for c in cols)} from energy.{table} m "  # noqa: S608
+        f"select {', '.join('m.' + c for c in cols)} from energy.{table} m "
         f"join energy.{table} t on t.workshop_id = cast(:tgt as uuid) and {on_clause} "
         "where m.workshop_id = cast(:src as uuid)"
     )
-    return (await db.execute(text(sql), {"src": str(src_id), "tgt": str(tgt_id)})).fetchall()
+    rows = (await db.execute(text(sql), {"src": str(src_id), "tgt": str(tgt_id)})).fetchall()
+    return list(rows)
 
 
-async def _repoint(db, table: str, src_id: str, tgt_id: str, apply: bool) -> int:
+async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply: bool) -> int:
     row = (
         await db.execute(
-            text(f"select count(*) from energy.{table} where workshop_id = cast(:src as uuid)"),  # noqa: S608
+            text(f"select count(*) from energy.{table} where workshop_id = cast(:src as uuid)"),
             {"src": str(src_id)},
         )
     ).one()
@@ -93,7 +95,7 @@ async def _repoint(db, table: str, src_id: str, tgt_id: str, apply: bool) -> int
     if count and apply:
         await db.execute(
             text(
-                f"update energy.{table} set workshop_id = cast(:tgt as uuid), updated_at = now() "  # noqa: S608
+                f"update energy.{table} set workshop_id = cast(:tgt as uuid), updated_at = now() "
                 "where workshop_id = cast(:src as uuid)"
             ),
             {"src": str(src_id), "tgt": str(tgt_id)},
@@ -101,7 +103,7 @@ async def _repoint(db, table: str, src_id: str, tgt_id: str, apply: bool) -> int
     return count
 
 
-async def _totals(db) -> dict[str, tuple[int, str]]:
+async def _totals(db: AsyncSession) -> dict[str, tuple[int, str]]:
     rows = (
         await db.execute(
             text(
@@ -157,10 +159,7 @@ async def run(apply: bool, audit_path: str | None) -> int:
                     )
                     for table, column in NAME_STRING_TABLES:
                         await db.execute(
-                            text(
-                                f"update energy.{table} set {column} = :name "  # noqa: S608
-                                f"where {column} = :old"
-                            ),
+                            text(f"update energy.{table} set {column} = :name where {column} = :old"),
                             {"name": canonical, "old": alias},
                         )
                 actions.append({"type": "rename", "from": alias, "to": canonical, "workshop_id": str(src.id)})

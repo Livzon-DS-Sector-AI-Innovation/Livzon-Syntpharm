@@ -110,7 +110,7 @@ async def run(apply: bool) -> None:
         deleted = await db.execute(MARK_DELETED_SQL)
         cleared = await db.execute(CLEAR_REFS_SQL)
         await db.commit()
-        print(f"已软删 {deleted.rowcount} 条预警，清空 {cleared.rowcount} 条反向引用。")
+        print(f"已软删 {deleted.rowcount} 条预警，清空 {cleared.rowcount} 条反向引用。")  # type: ignore[attr-defined]
         print("下一步：点页面「导入数据」按当日实际用量重建预警，历史漏报会一并补回。")
 
 
