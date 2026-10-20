@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useQuery, } from '@tanstack/react-query'
 import { Button, Input, Tag, Modal, Form, message, Popconfirm, Upload, Image, Card, Empty } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined, UploadOutlined, ImportOutlined, DownloadOutlined } from '@ant-design/icons'
+import { DevelopmentNotice } from '@/components/administration'
 import { fetchVehicles } from '@/lib/api/client/administration/vehicle'
 import { batchImportVehicles } from '@/actions/administration'
 import { createVehicle, updateVehicle, deleteVehicle } from '@/actions/administration'
@@ -205,6 +206,7 @@ export default function VehiclePage() {
   return (
     <div className="p-6">
       <h1 className="text-[22px] font-semibold text-[var(--color-charcoal)] mb-4">车辆信息</h1>
+      <DevelopmentNotice feature="车辆管理" />
       <div className="flex gap-2 mb-6">
         <Input
           placeholder="搜索车牌号或品牌"

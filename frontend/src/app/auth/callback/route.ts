@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
 
   const baseUrl = getBaseUrl(request)
   const isSecure = baseUrl.startsWith("https:")
-  const response = NextResponse.redirect(`${baseUrl}/production`)
+  // 登录成功统一进入首页工作台（不再固定落到生产管理）
+  const response = NextResponse.redirect(`${baseUrl}/home`)
   response.cookies.set("auth_token", token, {
     httpOnly: true,
     secure: isSecure,
