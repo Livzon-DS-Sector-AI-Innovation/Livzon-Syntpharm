@@ -22,6 +22,8 @@ export interface UserManagementItem {
   must_change_password?: boolean
   /** 密码最后修改时间 */
   password_updated_at?: string | null
+  /** 解绑飞书时该账号是否被一并软删除（仅解绑响应返回） */
+  account_deleted?: boolean
   created_at: string
   updated_at: string
 }
@@ -78,4 +80,15 @@ export interface PasswordResetResult {
 export interface ChangePasswordRequest {
   old_password: string
   new_password: string
+}
+
+/** 在线会话（来自 GET /identity/sessions，Redis 会话索引）。 */
+export interface UserSession {
+  jti: string
+  user_id: string
+  name: string
+  username: string
+  ip_address: string | null
+  user_agent: string | null
+  created_at: string
 }

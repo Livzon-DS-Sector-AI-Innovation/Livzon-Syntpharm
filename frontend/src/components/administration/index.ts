@@ -2,3 +2,4 @@
 
 // Administration module components
 export { default as RegulationClient } from './RegulationClient'
+export { default as DevelopmentNotice } from './DevelopmentNotice'

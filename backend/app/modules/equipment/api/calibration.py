@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, require_permission, RequiredUser
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
@@ -26,6 +26,7 @@ router = APIRouter()
 async def create_calibration_plan(
     data: CalibrationPlanCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     plan = await service.create_calibration_plan(db, data)
@@ -105,6 +106,7 @@ async def delete_calibration_plan(
 async def create_calibration_record(
     data: CalibrationRecordCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:calibration:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     record = await service.create_calibration_record(db, data)

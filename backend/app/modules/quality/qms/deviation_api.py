@@ -1183,3 +1183,4 @@ async def post(  # noqa: F811
 
 # 添加 HTTPException 导入
 from fastapi import HTTPException  # noqa: E402
+from app.core.deps import PermissionContext, require_permission

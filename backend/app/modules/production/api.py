@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import RequiredUser, PermissionContext, require_permission
+
 from app.modules.production.schemas import (
     BatchApiResponse,
     BatchCreate,
@@ -502,7 +503,7 @@ async def get(  # noqa: F811
 
     specs, total = await service.get_process_specs(skip, page_size, status, product_code)
 
-    return ProcessSpecApiResponse(
+    return ProcessSpecListApiResponse(
         data=[ProcessSpecResponse.model_validate(s) for s in specs],
         meta={"page": page, "page_size": page_size, "total": total},
     )

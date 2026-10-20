@@ -2,14 +2,16 @@
 """Generate HR + Production permission codes and API bindings for registry.py."""
 
 import ast
+import re
 import os
+import sys
+from collections import OrderedDict
 
 BACKEND = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ============================================================
 # Route extraction
 # ============================================================
-
 
 def extract_routes(filepath, prefix_parts):
     """Extract (method, path_suffix, func_name, line) from a Python API file."""
@@ -31,7 +33,7 @@ def extract_routes(filepath, prefix_parts):
                                 path = arg.value
                                 # skip factory endpoints
                                 if path == "/":
-                                    continue
+                                                                continue
                                 # build full path
                                 full_parts = prefix_parts + [path.lstrip("/")]
                                 full_path = "/" + "/".join(p for p in full_parts if p)
@@ -39,11 +41,9 @@ def extract_routes(filepath, prefix_parts):
                                 break
     return routes
 
-
 # ============================================================
 # Resource/Action mapping
 # ============================================================
-
 
 def classify_route(method, full_path):
     """Classify a route into (module, resource, action)."""
@@ -198,7 +198,6 @@ def _determine_action(method, rest, resource, module):
 # Generate registry entries
 # ============================================================
 
-
 def generate_permissions(module, resource_actions):
     """Generate PermissionDef entries."""
     lines = []
@@ -217,7 +216,9 @@ def generate_bindings(all_routes):
     """Generate ApiBindingDef entries."""
     lines = []
     for method, path, module, resource, action in all_routes:
-        lines.append(f'    ApiBindingDef("{module}:{resource}:{action}", "{method}", "{path}"),')
+        lines.append(
+            f'    ApiBindingDef("{module}:{resource}:{action}", "{method}", "{path}"),'
+        )
     return lines
 
 
@@ -341,16 +342,12 @@ def main():
 
     # Print stats
     print(f"# Total routes: {len(all_routes)}")
-    print(
-        f"# HR: {sum(1 for r in all_routes if r[2] == 'hr')} routes, "
-        f"{len(resource_actions['hr'])} resources, "
-        f"{sum(len(v) for v in resource_actions['hr'].values())} permission codes"
-    )
-    print(
-        f"# Production: {sum(1 for r in all_routes if r[2] == 'production')} routes, "
-        f"{len(resource_actions['production'])} resources, "
-        f"{sum(len(v) for v in resource_actions['production'].values())} permission codes"
-    )
+    print(f"# HR: {sum(1 for r in all_routes if r[2]=='hr')} routes, "
+          f"{len(resource_actions['hr'])} resources, "
+          f"{sum(len(v) for v in resource_actions['hr'].values())} permission codes")
+    print(f"# Production: {sum(1 for r in all_routes if r[2]=='production')} routes, "
+          f"{len(resource_actions['production'])} resources, "
+          f"{sum(len(v) for v in resource_actions['production'].values())} permission codes")
     print()
 
     # Generate output

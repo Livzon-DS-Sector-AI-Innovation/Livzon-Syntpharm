@@ -5,14 +5,18 @@
 """
 
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, require_current_user, require_permission
+from app.core.deps import (
+    PermissionContext,
+    require_any_permission,
+    require_current_user,
+    require_permission,
+)
 from app.core.exceptions import BadRequestException, DuplicateException, ForbiddenException, NotFoundException
 from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
@@ -85,11 +89,15 @@ async def _evict_cache_for_role(db: AsyncSession, role_id: uuid.UUID) -> None:
 async def list_roles(
     ctx: PermissionContext = Depends(require_permission("platform:role:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     role_repo = RoleRepository()
     roles = await role_repo.list_roles(db)
+    # 超级管理员角色只对超管可见：非超管不能在角色列表 / 授权下拉里看到它
+    actor_is_super = await is_superuser_with_cache(db, ctx.user)
     data = []
     for role in roles:
+        if role.is_superuser and not actor_is_super:
+            continue
         codes = await role_repo.list_role_permission_codes(db, role.id)
         data.append(
             RoleDetailResponse(
@@ -113,7 +121,7 @@ async def create_role(
     payload: RoleCreate,
     ctx: PermissionContext = Depends(require_permission("platform:role:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     role_repo = RoleRepository()
     existing = await role_repo.get_role_by_code(db, payload.code)
     if existing is not None:
@@ -168,7 +176,7 @@ async def update_role(
     payload: RoleUpdate,
     ctx: PermissionContext = Depends(require_permission("platform:role:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     role_repo = RoleRepository()
     role = await role_repo.get_role(db, role_id)
     if role is None:
@@ -231,7 +239,7 @@ async def delete_role(
     role_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:role:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     role_repo = RoleRepository()
     role = await role_repo.get_role(db, role_id)
     if role is None:
@@ -262,7 +270,7 @@ async def delete_role(
 async def list_permissions(
     ctx: PermissionContext = Depends(require_permission("platform:permission:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     repo = PermissionRepository()
     perms = await repo.list_permissions(db)
     return build_response(data=[PermissionResponse.model_validate(p).model_dump() for p in perms])
@@ -271,7 +279,7 @@ async def list_permissions(
 @router.get("/tree", response_model=PermissionTreeResponse)
 async def get_permission_tree(
     ctx: PermissionContext = Depends(require_permission("platform:role:read")),
-) -> Any:
+):
     """权限目录树（模块 → 资源 → 权限码），供角色管理按模块 / 功能勾选权限。
 
     权限码口径取 `platform:role:read` 而非 `platform:permission:read`：
@@ -296,7 +304,7 @@ async def get_permission_tree(
 async def list_api_bindings(
     ctx: PermissionContext = Depends(require_permission("platform:api-binding:read")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     repo = ApiBindingRepository()
     bindings = await repo.list_bindings(db)
     return build_response(data=[ApiBindingResponse.model_validate(b).model_dump() for b in bindings])
@@ -307,9 +315,12 @@ async def list_api_bindings(
 
 @router.get("/departments", response_model=DepartmentOptionListResponse)
 async def list_department_options(
-    ctx: PermissionContext = Depends(require_permission("platform:grant:read")),
+    # 只有 grant:manage 的管理员也要能用授权表单选部门
+    ctx: PermissionContext = Depends(
+        require_any_permission("platform:grant:read", "platform:grant:manage")
+    ),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     """授权管理「数据范围」选部门用的选项（hr.departments.code + name）。
 
     数据源是 hr.departments（部门唯一真理来源），通过 hr public_api 只读获取，
@@ -318,16 +329,22 @@ async def list_department_options(
     from app.modules.hr.public_api import list_all_departments
 
     departments = await list_all_departments(db)
-    data = [DepartmentOption(code=d.code, name=d.name) for d in departments if d.is_deleted is False]
+    data = [
+        DepartmentOption(code=d.code, name=d.name)
+        for d in departments
+        if d.is_deleted is False
+    ]
     return build_response(data=data)
 
 
 @router.get("/grants", response_model=GrantListResponse)
 async def list_grants(
     user_id: uuid.UUID | None = Query(None),
-    ctx: PermissionContext = Depends(require_permission("platform:grant:read")),
+    ctx: PermissionContext = Depends(
+        require_any_permission("platform:grant:read", "platform:grant:manage")
+    ),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     stmt = (
         select(UserRoleGrant, Role.code, Role.name, User.name)
         .join(Role, Role.id == UserRoleGrant.role_id)
@@ -363,7 +380,7 @@ async def create_grant(
     payload: GrantCreate,
     ctx: PermissionContext = Depends(require_permission("platform:grant:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     if payload.user_id == ctx.user.id:
         raise ForbiddenException("不能给自己授权")
 
@@ -434,7 +451,7 @@ async def update_grant(
     payload: GrantUpdate,
     ctx: PermissionContext = Depends(require_permission("platform:grant:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     grant_repo = GrantRepository()
     grant = await grant_repo.get_grant(db, grant_id)
     if grant is None:
@@ -498,7 +515,7 @@ async def delete_grant(
     grant_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:grant:manage")),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     grant_repo = GrantRepository()
     grant = await grant_repo.get_grant(db, grant_id)
     if grant is None:
@@ -538,7 +555,7 @@ async def delete_grant(
 async def my_permissions(
     user: User = Depends(require_current_user),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     is_super = await is_superuser_with_cache(db, user)
     codes = await effective_permission_codes(db, user)
     return build_response(data=MyPermissionsData(permissions=sorted(codes), is_superuser=is_super))
@@ -547,9 +564,11 @@ async def my_permissions(
 @router.get("/preview/{user_id}", response_model=MyPermissionsResponse)
 async def preview_user_access(
     user_id: uuid.UUID,
-    ctx: PermissionContext = Depends(require_permission("platform:grant:read")),
+    ctx: PermissionContext = Depends(
+        require_any_permission("platform:grant:read", "platform:grant:manage")
+    ),
     db: AsyncSession = Depends(get_db),
-) -> Any:
+):
     """预览某用户的生效权限（授权管理「生效预览」用）：返回权限码集合 + 是否超管。
 
     口径与 `my-permissions` 完全一致（超管返回全部权限码），只是针对任意目标用户。

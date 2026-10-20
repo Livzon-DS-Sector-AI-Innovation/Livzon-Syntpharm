@@ -6,7 +6,6 @@
 """
 
 from collections import Counter
-from typing import Any
 
 from app.platform.permission.registry import (
     ALL_PERMISSIONS,
@@ -20,7 +19,7 @@ from app.shared.module_registry import BUSINESS_MODULES
 _PLATFORM_MODULE = "platform"
 
 
-def _permission_node(definition: PermissionDef, binding_counts: Counter[str]) -> dict[str, Any]:
+def _permission_node(definition: PermissionDef, binding_counts: Counter[str]) -> dict:
     return {
         "key": f"perm:{definition.code}",
         "title": definition.name,
@@ -41,8 +40,8 @@ def _module_node(
     kind: str,
     resources: dict[str, list[PermissionDef]],
     binding_counts: Counter[str],
-) -> dict[str, Any]:
-    resource_nodes: list[dict[str, Any]] = []
+) -> dict:
+    resource_nodes: list[dict] = []
     for resource_code, definitions in resources.items():
         resource_nodes.append(
             {
@@ -72,7 +71,7 @@ def _module_node(
     }
 
 
-def build_permission_tree() -> tuple[list[dict[str, Any]], int]:
+def build_permission_tree() -> tuple[list[dict], int]:
     """构建权限目录树。
 
     返回 (tree, total_permissions)。模块顺序：平台域 → 已接入的业务模块 → 未接入的业务模块（置灰）。
@@ -83,7 +82,7 @@ def build_permission_tree() -> tuple[list[dict[str, Any]], int]:
 
     binding_counts: Counter[str] = Counter(binding.permission_code for binding in API_BINDINGS)
 
-    tree: list[dict[str, Any]] = []
+    tree: list[dict] = []
     if _PLATFORM_MODULE in grouped:
         tree.append(
             _module_node(

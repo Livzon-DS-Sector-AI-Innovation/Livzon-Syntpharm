@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, require_permission, RequiredUser
 from app.core.response import success_response
 from app.modules.equipment.models.personnel import EquipmentPersonnel
 from app.platform.identity.models import User

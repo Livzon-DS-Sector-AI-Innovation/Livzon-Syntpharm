@@ -11,10 +11,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import CurrentUser
 from app.modules.quality.sop_ai import schemas
 from app.modules.quality.sop_ai.schemas import ApiResponse
 from app.modules.quality.sop_ai.service import SopAiCheckService
+from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ async def single_check(
     request: schemas.SingleCheckRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """对单个文件进行预审校验"""
     service = SopAiCheckService(db)
     result = await service.single_check(
@@ -98,7 +99,7 @@ async def batch_check(
     request: schemas.BatchCheckRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """对多个文件进行批量巡检"""
     service = SopAiCheckService(db)
     result = await service.batch_check(
@@ -123,7 +124,7 @@ async def list_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """获取校验记录列表"""
     service = SopAiCheckService(db)
     records, total = await service.list_records(
@@ -222,7 +223,7 @@ async def list_jobs(
     current_user: CurrentUser,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """获取定时任务列表"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 

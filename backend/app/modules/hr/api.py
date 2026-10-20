@@ -16,7 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import RequiredUser, PermissionContext, require_permission
+
 from app.core.redis import cache_get, cache_set
 from app.core.response import paginated_response, success_response
 from app.modules.hr.schemas import (

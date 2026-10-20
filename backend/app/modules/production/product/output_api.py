@@ -12,7 +12,8 @@ from sqlalchemy import and_, not_, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import RequiredUser, PermissionContext, require_permission
+
 from app.modules.production.product.models import Product
 from app.modules.production.product.output_models import WORKSHOP_CHOICES, ProductOutput
 from app.modules.production.product.output_schemas import (

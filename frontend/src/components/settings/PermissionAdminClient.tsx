@@ -33,7 +33,13 @@ export default function PermissionAdminClient({ initialTab }: { initialTab?: str
     () =>
       [
         { key: 'roles', label: '角色管理', children: <RoleManagementClient />, visible: can(PERM.roleRead) },
-        { key: 'grants', label: '授权管理', children: <GrantManagementClient />, visible: can(PERM.grantRead) },
+        {
+          key: 'grants',
+          label: '授权管理',
+          children: <GrantManagementClient />,
+          // 有 grant:manage 必然需要进入授权管理（只读列表接口同样接受 manage）
+          visible: can(PERM.grantRead) || can(PERM.grantManage),
+        },
         { key: 'permissions', label: '权限目录', children: <PermissionCatalogClient />, visible: can(PERM.permissionRead) },
       ].filter((t) => t.visible),
     [can],

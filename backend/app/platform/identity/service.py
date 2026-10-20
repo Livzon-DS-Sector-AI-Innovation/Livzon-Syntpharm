@@ -1698,10 +1698,20 @@ async def unbind_feishu_user(
     *,
     user: User,
     operator_id: UUID | None = None,
+    delete_account: bool = False,
 ) -> None:
-    """解绑飞书身份：只清空飞书字段，账号本体与角色授权保留。"""
-    for field in FEISHU_IDENTITY_FIELDS:
-        setattr(user, field, None)
+    """解绑飞书身份。
+
+    - `delete_account=False`：只清空飞书字段，账号本体与角色授权保留；
+    - `delete_account=True`：该账号是飞书首次登录自动创建的（auth_source=feishu），
+      解绑后没有可用的登录身份，直接软删除并禁用。
+    """
+    if delete_account:
+        user.is_deleted = True
+        user.status = "disabled"
+    else:
+        for field in FEISHU_IDENTITY_FIELDS:
+            setattr(user, field, None)
     user.updated_by = operator_id
     await db.commit()
 

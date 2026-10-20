@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import CurrentUser
 from app.modules.quality.qms.sampling_schemas import (
     RetentionLedgerFilter,
     SampleRetentionLedgerResponse,
@@ -23,6 +23,7 @@ from app.modules.quality.qms.sampling_schemas import (
     SamplingOrderUpdate,
 )
 from app.modules.quality.qms.sampling_service import SamplingService
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/sampling", tags=["取样管理"])
 

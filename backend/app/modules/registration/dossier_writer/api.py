@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, require_permission
 from app.core.response import ApiResponse, build_response, error_response, success_response
 
 from .field_models import FieldFillResult, FieldMapping
@@ -37,7 +37,9 @@ from .service import DossierService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+# 申报资料撰写整体挂在 registration:dossier:read 下（粗粒度，读写共用）。
+# TODO: 后续按 create/update/delete 细分到具体路由。
+router = APIRouter(dependencies=[Depends(require_permission("registration:dossier:read"))])
 
 
 # ====== Product Dossier ======

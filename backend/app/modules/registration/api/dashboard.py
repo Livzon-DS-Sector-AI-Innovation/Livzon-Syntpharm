@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.response import success_response
 from app.modules.registration.service.dashboard import get_dashboard_summary
 

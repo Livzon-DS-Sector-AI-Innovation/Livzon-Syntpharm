@@ -7,7 +7,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import RequiredUser, PermissionContext, require_permission
+
 from app.modules.production.product.schemas import (
     ProductApiResponse,
     ProductCreate,

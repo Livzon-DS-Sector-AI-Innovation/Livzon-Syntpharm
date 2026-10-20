@@ -501,7 +501,8 @@ class InstrumentRuleListApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: dict[str, Any] | None = None
+    # 列表接口返回的是数组，声明为 dict 会触发 ResponseValidationError（500）
+    data: list[dict[str, Any]] | None = None
 
 
 class InstrumentRuleApiResponse(BaseModel):

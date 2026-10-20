@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.service import SupplementaryReplyService
@@ -87,6 +87,7 @@ async def get(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     reply_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     reply = await service.get_reply(reply_id)

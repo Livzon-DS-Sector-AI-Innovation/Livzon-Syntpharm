@@ -13,6 +13,7 @@ from app.modules.quality.cpv.schemas import (
     CpvImportConfirmRequest,
 )
 from app.shared.schemas import ApiResponse
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter()
 

@@ -10,7 +10,7 @@ from typing import Any
 
 from app.modules.quality.sop_ai.scheduler_models import ScheduledJob
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskGenerator
-from app.platform.scheduler.registry import scheduler_registry  # type: ignore[attr-defined]
+from app.platform.scheduler.registry import scheduler_registry
 
 logger = logging.getLogger(__name__)
 

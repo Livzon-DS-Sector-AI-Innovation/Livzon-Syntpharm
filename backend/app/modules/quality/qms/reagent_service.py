@@ -190,7 +190,7 @@ confidence 表示识别置信度（0-1之间）。
     async def create_reagent(
         self,
         data: dict[str, Any],
-        operator: str = "system",
+        operator: str | None = None,
     ) -> dict[str, Any]:
         """创建试剂记录"""
         reagent_id = str(uuid.uuid4())
@@ -202,7 +202,7 @@ confidence 表示识别置信度（0-1之间）。
                 specification, category, reagent_no, content, manufacturer,
                 quantity, unit, status, created_by
             ) VALUES (
-                :id, :reagent_label_urls, :reagent_name, :arrival_date,
+                :id, CAST(:reagent_label_urls AS jsonb), :reagent_name, :arrival_date,
                 :production_date, :lot_no, :incoming_lot_no, :expiration_date,
                 :specification, :category, :reagent_no, :content, :manufacturer,
                 :quantity, :unit, :status, :created_by
@@ -212,7 +212,8 @@ confidence 表示识别置信度（0-1之间）。
 
         params = {
             "id": reagent_id,
-            "reagent_label_urls": data.get("reagent_label_urls", []),
+            # 原生 SQL 无法推断 JSONB 目标类型，必须显式序列化 + CAST
+            "reagent_label_urls": json.dumps(data.get("reagent_label_urls") or [], ensure_ascii=False),
             "reagent_name": data["reagent_name"],
             "arrival_date": data["arrival_date"],
             "production_date": data.get("production_date"),
@@ -249,8 +250,13 @@ confidence 表示识别置信度（0-1之间）。
 
         for key, value in data.items():
             if value is not None and key not in ["id", "created_at"]:
-                update_fields.append(f"{key} = :{key}")
-                params[key] = value
+                if key == "reagent_label_urls":
+                    # JSONB 字段：原生 SQL 需要显式序列化 + CAST
+                    update_fields.append(f"{key} = CAST(:{key} AS jsonb)")
+                    params[key] = json.dumps(value, ensure_ascii=False)
+                else:
+                    update_fields.append(f"{key} = :{key}")
+                    params[key] = value
 
         if not update_fields:
             return await self.get_reagent_by_id(reagent_id)

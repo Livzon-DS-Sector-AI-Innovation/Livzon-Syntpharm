@@ -50,8 +50,7 @@ async def list_user_sessions(user_id: Any) -> list[dict[str, Any]]:
     r = await get_redis()
     jtis = await r.smembers(f"{USER_SESSIONS_PREFIX}{user_id}")
     sessions: list[dict[str, Any]] = []
-    for jti_raw in jtis:
-        jti = jti_raw.decode() if isinstance(jti_raw, bytes) else jti_raw
+    for jti in jtis:
         raw = await r.get(f"{SESSION_PREFIX}{jti}")
         if raw:
             sessions.append(json.loads(raw))
@@ -88,8 +87,7 @@ async def revoke_all_user_sessions(user_id: Any) -> int:
     """吊销某用户的全部会话，返回吊销数量。"""
     r = await get_redis()
     jtis = await r.smembers(f"{USER_SESSIONS_PREFIX}{user_id}")
-    for jti_raw in jtis:
-        jti = jti_raw.decode() if isinstance(jti_raw, bytes) else jti_raw
+    for jti in jtis:
         await revoke_session(jti)
     return len(jtis)
 

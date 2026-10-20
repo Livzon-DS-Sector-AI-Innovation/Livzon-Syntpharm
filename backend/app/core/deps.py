@@ -5,7 +5,11 @@ from app.platform.identity.deps import (
     get_current_user,
     require_current_user,
 )
-from app.platform.permission.deps import PermissionContext, require_permission
+from app.platform.permission.deps import (
+    PermissionContext,
+    require_any_permission,
+    require_permission,
+)
 
 __all__ = [
     "CurrentUser",
@@ -14,5 +18,6 @@ __all__ = [
     "PermissionContext",
     "get_current_user",
     "require_current_user",
+    "require_any_permission",
     "require_permission",
 ]

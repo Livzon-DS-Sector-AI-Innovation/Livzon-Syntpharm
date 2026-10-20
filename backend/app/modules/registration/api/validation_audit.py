@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.validation_audit import (
     ValidationAuditFileListItem,
@@ -34,6 +34,7 @@ router = APIRouter()
 async def post(
     current_user: CurrentUser,
     data: ValidationAuditTaskCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)

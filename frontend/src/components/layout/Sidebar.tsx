@@ -9,10 +9,32 @@ import { resolveMenus } from "@/lib/menu/resolve"
 import type { PermissionView } from "@/lib/permissions/modules"
 import { fetchWarehouseFeishuTablesByParams } from "@/lib/api/client/warehouse"
 import type { WarehouseFeishuBusinessDomain, WarehouseFeishuTable } from "@/types/warehouse"
-import { SettingOutlined } from "@ant-design/icons"
+import { HomeOutlined, IdcardOutlined, SettingOutlined } from "@ant-design/icons"
 import { useSidebarStore } from "@/stores/sidebar"
 
 type MenuItem = Required<MenuProps>['items'][number]
+
+/**
+ * 不属于任何业务模块的独立页面（/home、/profile）：
+ * 仍渲染简化的侧栏骨架，避免内容区宽度跳变。
+ */
+const SIMPLE_PAGES: Record<
+  string,
+  { title: string; selectedKey: string; path: string; items: MenuItem[] }
+> = {
+  home: {
+    title: "首页",
+    selectedKey: "home",
+    path: "/home",
+    items: [{ key: "home", label: "工作台", icon: <HomeOutlined /> }],
+  },
+  profile: {
+    title: "个人中心",
+    selectedKey: "profile",
+    path: "/profile",
+    items: [{ key: "profile", label: "个人信息", icon: <IdcardOutlined /> }],
+  },
+}
 
 const warehouseDomainMeta: Record<
   WarehouseFeishuBusinessDomain,
@@ -254,7 +276,40 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
     }
   }
 
-  if (!currentModule) return null
+  // 首页 / 个人中心不属于任何业务模块：渲染简化侧栏，避免内容区宽度跳变
+  if (!currentModule) {
+    const simple = SIMPLE_PAGES[moduleKey]
+    if (!simple) return null
+    return (
+      <aside
+        className={`bg-[var(--color-canvas)] border-r border-[var(--color-hairline)] flex flex-col shrink-0 overflow-hidden transition-all duration-200 ${
+          collapsed ? "w-0 border-r-0" : "w-56"
+        }`}
+      >
+        <div className="flex-1 overflow-y-auto min-w-[224px]">
+          <div className="px-4 pt-5 pb-3">
+            <h2 className="text-[18px] font-semibold text-[var(--color-charcoal)]">
+              {simple.title}
+            </h2>
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[simple.selectedKey]}
+            items={simple.items}
+            onClick={() => {
+              router.push(simple.path)
+              onNavigate?.()
+            }}
+            className="sidebar-menu"
+            style={{ borderInlineEnd: "none" }}
+          />
+        </div>
+        <div className="px-4 py-3 border-t border-[var(--color-hairline-soft)]">
+          <p className="text-[12px] text-[var(--color-stone)]">v0.1.1</p>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <aside

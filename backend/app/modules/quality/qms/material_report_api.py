@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, UploadFile
 from fastapi.responses import StreamingResponse
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import RequiredUser
 from app.core.exceptions import AppException, NotFoundException
 from app.core.storage import save_upload_file
 from app.modules.quality.qms.material_report_schemas import (
@@ -22,6 +22,7 @@ from app.modules.quality.qms.material_report_service import (
     ReportTemplateService,
 )
 from app.modules.quality.qms.schemas import InspectionStandardApiResponse
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 

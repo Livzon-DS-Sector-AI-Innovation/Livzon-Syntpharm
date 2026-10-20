@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Any
 
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskDefinition
-from app.platform.scheduler.registry import scheduler_registry  # type: ignore[attr-defined]
+from app.platform.scheduler.registry import scheduler_registry
 
 logger = logging.getLogger(__name__)
 

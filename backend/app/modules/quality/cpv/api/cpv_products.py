@@ -22,6 +22,7 @@ from app.modules.quality.cpv.schemas import (
     CpvProductUpdate,
 )
 from app.shared.schemas import ApiResponse
+from app.core.deps import PermissionContext, require_permission
 
 logger = logging.getLogger(__name__)
 

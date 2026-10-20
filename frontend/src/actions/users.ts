@@ -8,9 +8,10 @@ import {
   updateUser as updateUserServer,
   resetUserPassword as resetUserPasswordServer,
   changeMyPassword as changeMyPasswordServer,
-  bindFeishuUser as bindFeishuUserServer,
   unbindFeishuUser as unbindFeishuUserServer,
   revokeUserSessions as revokeUserSessionsServer,
+  listSessions as listSessionsServer,
+  revokeSession as revokeSessionServer,
 } from '@/lib/api/server/users'
 import type {
   UserManagementItem,
@@ -20,6 +21,7 @@ import type {
   PasswordResetRequest,
   PasswordResetResult,
   ChangePasswordRequest,
+  UserSession,
 } from '@/types/users'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -105,34 +107,6 @@ export async function changeMyPassword(
   }
 }
 
-/** 拉取可绑定的飞书用户（库里已有、且尚未绑定飞书身份的账号）。 */
-export async function getFeishuCandidates(
-  keyword?: string,
-): Promise<UserManagementListResponse> {
-  const token = await getAuthToken()
-  const res = (await getUsersServer(
-    { keyword, auth_source: 'feishu', limit: 100 },
-    token,
-  )) as { data: UserManagementListResponse }
-  return res.data ?? { items: [], total: 0 }
-}
-
-export async function bindFeishuUser(
-  id: string,
-  sourceUserId: string,
-): Promise<UsersActionResult<UserManagementItem>> {
-  const token = await getAuthToken()
-  try {
-    const res = (await bindFeishuUserServer(id, { source_user_id: sourceUserId }, token)) as {
-      data: UserManagementItem
-    }
-    revalidatePath('/settings/users')
-    return { ok: true, data: res.data }
-  } catch (error) {
-    return { ok: false, message: error instanceof Error ? error.message : '绑定飞书账号失败' }
-  }
-}
-
 export async function unbindFeishuUser(id: string): Promise<UsersActionResult<UserManagementItem>> {
   const token = await getAuthToken()
   try {
@@ -154,5 +128,23 @@ export async function revokeUserSessions(
     return { ok: true, data: res.data }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : '强制下线失败' }
+  }
+}
+
+/** 拉取全部在线会话（前端按 user_id 过滤到具体用户）。 */
+export async function listSessions(): Promise<UserSession[]> {
+  const token = await getAuthToken()
+  const res = (await listSessionsServer(token)) as { data: UserSession[] }
+  return res.data ?? []
+}
+
+/** 吊销单个在线会话（踢下线）。 */
+export async function revokeSession(jti: string): Promise<UsersActionResult<{ revoked: boolean }>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await revokeSessionServer(jti, token)) as { data: { revoked: boolean } }
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '踢下线失败' }
   }
 }

@@ -1,7 +1,7 @@
 import { getCurrentUser } from '@/actions/auth'
 import { NoAccessResult, PermissionAdminClient } from '@/components/settings'
 import { PERM } from '@/lib/permissions/codes'
-import { hasPermission } from '@/lib/permissions/server'
+import { hasAnyPermission } from '@/lib/permissions/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,9 +16,11 @@ export default async function PermissionPage({
     return <NoAccessResult title="请先登录" subTitle="登录后即可访问权限管理。" />
   }
 
-  if (!(await hasPermission(PERM.roleRead))) {
+  // 角色管理 / 授权管理 / 权限目录三个 Tab 各自有权限：只要有一个就放行，
+  // 具体 Tab 可见性由 PermissionAdminClient 按权限过滤。
+  if (!(await hasAnyPermission([PERM.roleRead, PERM.grantRead, PERM.grantManage]))) {
     return (
-      <NoAccessResult subTitle="访问权限管理需要「角色查看」权限，请联系管理员为你的账号分配。" />
+      <NoAccessResult subTitle="访问权限管理需要「角色查看」或「授权管理」权限，请联系管理员为你的账号分配。" />
     )
   }
 

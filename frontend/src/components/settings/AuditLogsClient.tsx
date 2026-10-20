@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button, Input, Result, Select, Space, Table, Tag } from 'antd'
-import { ReloadOutlined, SearchOutlined } from '@ant-design/icons'
+import { App, Button, Input, Result, Select, Space, Table, Tag } from 'antd'
+import { DownloadOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import { getAuditLogs } from '@/actions/audit'
 import type { AuditLogItem } from '@/types/audit'
 import { SettingsListCard } from './SettingsListCard'
@@ -46,6 +46,7 @@ function formatValue(value: Record<string, unknown> | null | undefined): string 
  * 页面级守卫在 `app/(dashboard)/settings/audit/page.tsx`（RSC）。
  */
 export default function AuditLogsClient() {
+  const { message } = App.useApp()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [action, setAction] = useState<string | undefined>()
@@ -65,6 +66,39 @@ export default function AuditLogsClient() {
       return result
     },
   })
+
+  const handleExport = async () => {
+    const params = new URLSearchParams()
+    if (action) params.set('action', action)
+    if (resourceType) params.set('resource_type', resourceType)
+    if (keyword) params.set('keyword', keyword)
+    const query = params.toString()
+    const url = `/api/v1/audit/logs/export${query ? `?${query}` : ''}`
+
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        message.error('导出失败，请确认账号拥有「审计日志查看」权限')
+        return
+      }
+      const blob = await res.blob()
+      const now = new Date()
+      const stamp = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+      ].join('')
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blob)
+      link.download = `audit_logs_${stamp}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(link.href)
+    } catch {
+      message.error('导出失败，请稍后重试')
+    }
+  }
 
   if (error) {
     return (
@@ -167,6 +201,9 @@ export default function AuditLogsClient() {
           </div>
           <Button icon={<ReloadOutlined />} onClick={() => refetch()} className="shrink-0">
             刷新
+          </Button>
+          <Button icon={<DownloadOutlined />} onClick={handleExport} className="shrink-0">
+            导出 CSV
           </Button>
         </>
       }

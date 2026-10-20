@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -30,6 +30,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 async def create_maintenance_plan(
     data: MaintenancePlanCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:maintenance-plan:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -68,6 +69,7 @@ async def list_maintenance_plans(
 @router.get("/overdue", summary="查询到期/逾期的维护计划")
 async def get_overdue_plans(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:maintenance-plan:read")),
     days: int = Query(0, ge=0, description="提前天数，0=仅逾期"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:

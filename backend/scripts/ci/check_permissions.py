@@ -67,7 +67,9 @@ def _check() -> list[str]:
     # 2. 前端权限码常量表与后端 registry 对齐
     #    前端用 lib/permissions/codes.ts 的 PERM.* 控制按钮显示/隐藏；
     #    两边不一致会出现「按钮显示了但接口 403」或「有权限却看不到按钮」。
-    codes_ts = Path(__file__).resolve().parents[3] / "frontend" / "src" / "lib" / "permissions" / "codes.ts"
+    codes_ts = (
+        Path(__file__).resolve().parents[3] / "frontend" / "src" / "lib" / "permissions" / "codes.ts"
+    )
     if codes_ts.exists():
         frontend_codes = set(
             # 匹配任意「模块:资源:动作」权限码。此前只匹配 `platform:` 前缀，

@@ -33,12 +33,12 @@ def _make_ctx(user_id: uuid.UUID, grants: list[UserRoleGrant], is_superuser: boo
     return PermissionContext(user=user, permission_code="x", grants=grants, is_superuser=is_superuser)
 
 
-def test_grant_condition_all_returns_none() -> None:
+def test_grant_condition_all_returns_none():
     grant = _make_grant(SCOPE_ALL)
     assert _grant_condition(grant, uuid.uuid4(), column("created_by"), column("dept")) is None
 
 
-def test_grant_condition_self_filters_by_owner() -> None:
+def test_grant_condition_self_filters_by_owner():
     user_id = uuid.uuid4()
     grant = _make_grant(SCOPE_SELF)
     cond = _grant_condition(grant, user_id, column("created_by"), column("dept"))
@@ -46,21 +46,21 @@ def test_grant_condition_self_filters_by_owner() -> None:
     assert "created_by" in str(cond)
 
 
-def test_grant_condition_department_empty_scope_is_fail_closed() -> None:
+def test_grant_condition_department_empty_scope_is_fail_closed():
     grant = _make_grant(SCOPE_DEPARTMENT, codes=[])
     cond = _grant_condition(grant, uuid.uuid4(), column("created_by"), column("dept"))
     assert cond is not None
     assert cond.compare(false())
 
 
-def test_grant_condition_department_with_codes_filters_in() -> None:
+def test_grant_condition_department_with_codes_filters_in():
     grant = _make_grant(SCOPE_DEPARTMENT, codes=["QA", "QC"])
     cond = _grant_condition(grant, uuid.uuid4(), column("created_by"), column("dept"))
     assert cond is not None
     assert "dept" in str(cond)
 
 
-def test_apply_scope_filter_superuser_unchanged() -> None:
+def test_apply_scope_filter_superuser_unchanged():
     t = table("t", column("created_by"), column("dept"))
     query = select(t)
     user_id = uuid.uuid4()
@@ -68,7 +68,7 @@ def test_apply_scope_filter_superuser_unchanged() -> None:
     assert apply_scope_filter(query, ctx, owner_field=t.c.created_by) is query
 
 
-def test_apply_scope_filter_empty_grants_fail_closed() -> None:
+def test_apply_scope_filter_empty_grants_fail_closed():
     t = table("t", column("created_by"), column("dept"))
     query = select(t)
     ctx = _make_ctx(uuid.uuid4(), [])
@@ -77,7 +77,7 @@ def test_apply_scope_filter_empty_grants_fail_closed() -> None:
     assert result.whereclause is not None
 
 
-def test_apply_scope_filter_any_all_grant_unchanged() -> None:
+def test_apply_scope_filter_any_all_grant_unchanged():
     t = table("t", column("created_by"), column("dept"))
     query = select(t)
     user_id = uuid.uuid4()

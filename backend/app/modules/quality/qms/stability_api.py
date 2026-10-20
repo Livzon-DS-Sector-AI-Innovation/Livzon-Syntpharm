@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import CurrentUser
 from app.modules.quality.qms.stability_schemas import (
     StabilityApprovalCreate,
     StabilityInspectionApiResponse,
@@ -30,6 +30,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityTrendResponse,
 )
 from app.modules.quality.qms.stability_service import StabilityStudyService
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/stability", tags=["稳定性试验管理"])
 

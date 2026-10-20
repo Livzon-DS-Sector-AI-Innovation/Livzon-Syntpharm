@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.response import error_response, success_response
 from app.modules.registration.repository import reference_substance as repo
 from app.modules.registration.schemas.reference_substance import (
@@ -35,6 +35,7 @@ async def list_reference_substances(
 async def create_reference_substance(
     current_user: CurrentUser,
     payload: ReferenceSubstanceCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """创建对照品记录"""
@@ -62,6 +63,7 @@ async def update_reference_substance(
     current_user: CurrentUser,
     substance_id: uuid.UUID,
     payload: ReferenceSubstanceUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """更新对照品记录"""

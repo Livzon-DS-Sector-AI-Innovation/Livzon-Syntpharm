@@ -7,9 +7,6 @@ fail-closed 细则（借鉴 NX）：
 - 缺少对应归属字段（owner_field / dept_code_field）时拒绝，而非放行。
 """
 
-import uuid
-from typing import Any
-
 from sqlalchemy import Select, false, or_
 
 from app.platform.permission.models import (
@@ -24,10 +21,10 @@ from app.platform.permission.service.authorization import PermissionContext
 
 def _grant_condition(
     grant: UserRoleGrant,
-    user_id: uuid.UUID,
-    owner_field: Any,
-    dept_code_field: Any,
-) -> Any:
+    user_id,
+    owner_field,
+    dept_code_field,
+):
     """单条授权生成过滤条件。返回 None 表示「该授权授予全部数据」。"""
     if grant.scope_type == SCOPE_ALL:
         return None
@@ -54,8 +51,8 @@ def apply_scope_filter(
     query: Select,  # type: ignore[type-arg]
     ctx: PermissionContext,
     *,
-    owner_field: Any = None,
-    dept_code_field: Any = None,
+    owner_field=None,
+    dept_code_field=None,
 ) -> Select:  # type: ignore[type-arg]
     """给查询添加数据范围过滤。
 

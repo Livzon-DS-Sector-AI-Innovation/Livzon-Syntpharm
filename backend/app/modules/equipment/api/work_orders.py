@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser, RequiredUser
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service

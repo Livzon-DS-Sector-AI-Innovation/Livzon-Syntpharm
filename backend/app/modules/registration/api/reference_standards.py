@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, require_permission, CurrentUser
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.service import ReferenceStandardService
@@ -115,6 +115,7 @@ async def get(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     record = await service.get_record(record_id)

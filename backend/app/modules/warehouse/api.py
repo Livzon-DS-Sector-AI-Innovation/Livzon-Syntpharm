@@ -5,7 +5,7 @@ from fastapi import Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.response import success_response
 from app.modules.warehouse.schemas import (
     PackagingMaterialListResponse,

@@ -199,7 +199,6 @@ async def auth_callback(
     code: str = Query(...),
     state: str = Query(""),
     db: AsyncSession = Depends(get_db),
-    settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
     """Handle the OAuth callback from Feishu.
 
@@ -215,7 +214,6 @@ async def auth_callback(
     ip_address = _client_ip(request)
     user_agent = request.headers.get("user-agent")
     log_repo = LoginLogRepository()
-    frontend_url = settings.FRONTEND_URL.rstrip("/")
 
     # Validate state for CSRF protection
     if state and not validate_state_token(state):
@@ -229,7 +227,7 @@ async def auth_callback(
         )
         await db.commit()
         return RedirectResponse(
-            url=f"{frontend_url}/login?error=invalid_state",
+            url="/login?error=invalid_state",
             status_code=302,
         )
 
@@ -252,7 +250,7 @@ async def auth_callback(
         except Exception as log_exc:
             logger.error("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url=f"{frontend_url}/login?error=callback_failed",
+            url="/login?error=callback_failed",
             status_code=302,
         )
 
@@ -273,17 +271,16 @@ async def auth_callback(
 
     # Redirect to frontend with token
     return RedirectResponse(
-        url=f"{frontend_url}/auth/callback?token={token}",
+        url=f"/auth/callback?token={token}",
         status_code=302,
     )
 
 
 @auth_router.get("/logout", summary="登出")
-async def logout(settings: Settings = Depends(get_settings)) -> RedirectResponse:
+async def logout() -> RedirectResponse:
     """Redirect to frontend login page (frontend handles cookie clearing)."""
-    frontend_url = settings.FRONTEND_URL.rstrip("/")
     return RedirectResponse(
-        url=f"{frontend_url}/login",
+        url="/login",
         status_code=302,
     )
 
@@ -401,7 +398,7 @@ async def list_personnel(
 
 @sync_router.post("/departments", summary="触发飞书组织架构同步（异步）")
 async def trigger_sync_departments(
-    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
@@ -411,7 +408,7 @@ async def trigger_sync_departments(
 
     from app.platform.integrations.feishu.sync import sync_departments
 
-    spawn_task(sync_departments(root_id), name="identity.sync_departments")  # type: ignore[arg-type]
+    spawn_task(sync_departments(root_id), name="identity.sync_departments")
     logger.info("Department sync triggered for root=%s", root_id or "(自动：可见范围内的部门)")
     return success_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id or "auto"},
@@ -420,7 +417,7 @@ async def trigger_sync_departments(
 
 @sync_router.post("/members", summary="触发飞书成员同步（异步）")
 async def trigger_sync_members(
-    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
@@ -429,7 +426,7 @@ async def trigger_sync_members(
 
     from app.platform.integrations.feishu.sync import sync_members
 
-    spawn_task(sync_members(target_id), name="identity.sync_members")  # type: ignore[arg-type]
+    spawn_task(sync_members(target_id), name="identity.sync_members")
     logger.info("Member sync triggered for target=%s", target_id or "(自动)")
     return success_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id or "auto"},
@@ -438,7 +435,7 @@ async def trigger_sync_members(
 
 @sync_router.post("/all", summary="同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）")
 async def trigger_sync_all(
-    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
 ) -> JSONResponse:
     """POST 触发一次「部门 + 成员」全量同步。
 
@@ -464,7 +461,7 @@ feishu_config_router = APIRouter(prefix="/feishu-config", tags=["Livzon 飞书�
 
 @feishu_config_router.get("", summary="获取 Livzon 飞书配置", response_model=FeishuConfigApiResponse)
 async def get_feishu_config(
-    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:config:read")),
     db: AsyncSession = Depends(get_db),
 ) -> FeishuConfigApiResponse:
     """获取当前 Livzon 飞书配置"""
@@ -476,8 +473,8 @@ async def get_feishu_config(
 
 @feishu_config_router.put("", summary="保存 Livzon 飞书配置", response_model=FeishuConfigApiResponse)
 async def save_feishu_config(
-    current_user: RequiredUser,
     payload: FeishuConfigUpsert,
+    ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> FeishuConfigApiResponse:
     """保存 Livzon 飞书配置"""
@@ -490,7 +487,7 @@ async def save_feishu_config(
 
 @feishu_config_router.post("/test", summary="测试 Livzon 飞书配置", response_model=FeishuDiagnosticApiResponse)
 async def test_feishu_config(
-    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     payload: FeishuConfigUpsert | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> FeishuDiagnosticApiResponse:
@@ -554,6 +551,14 @@ async def list_users_management(
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     repo = UserRepository()
+    # 超管账号只对超管可见：非超管即使有 platform:user:read，也不返回超管行
+    # （否则会泄露超管姓名、联系方式与所持角色）。
+    from app.platform.permission.public_api import list_superuser_user_ids, user_is_superuser
+
+    exclude_user_ids = None
+    if not await user_is_superuser(db, ctx.user):
+        exclude_user_ids = await list_superuser_user_ids(db)
+
     users, total = await repo.list_users(
         db,
         keyword=keyword,
@@ -561,6 +566,7 @@ async def list_users_management(
         auth_source=auth_source,
         unbound_only=unbound_only,
         must_change_password=must_change_password,
+        exclude_user_ids=exclude_user_ids,
         offset=offset,
         limit=limit,
     )
@@ -911,8 +917,13 @@ async def unbind_user_feishu(
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    """清空该账号的飞书身份；账号本体与角色授权保留。"""
-    from app.core.exceptions import BadRequestException, NotFoundException
+    """解绑飞书身份。
+
+    - 由飞书首次登录自动创建的账号（`auth_source=feishu`）：解绑即**软删除**该账号，
+      因为它没有本地密码，解绑后已无可用登录身份；
+    - 本地创建后绑定飞书的账号：只清空飞书字段，账号本体与角色授权保留。
+    """
+    from app.core.exceptions import BadRequestException, ForbiddenException, NotFoundException
     from app.platform.identity.service import unbind_feishu_user
 
     repo = UserRepository()
@@ -925,14 +936,32 @@ async def unbind_user_feishu(
     await guard_manage_target(db, actor=ctx.user, target=user)
     if not (user.feishu_open_id or user.feishu_user_id):
         raise BadRequestException("该账号未绑定飞书身份")
+    if user.id == ctx.user.id:
+        raise ForbiddenException("不能解绑当前登录账号的飞书身份，请让其他管理员操作")
 
-    await unbind_feishu_user(db, user=user, operator_id=ctx.user.id)
+    delete_account = user.auth_source == "feishu"
+    if delete_account:
+        from app.platform.permission.public_api import list_superuser_user_ids
+
+        super_ids = await list_superuser_user_ids(db)
+        if user.id in super_ids and len(super_ids) <= 1:
+            raise ForbiddenException("不能删除最后一个超级管理员账号")
+
+    await unbind_feishu_user(
+        db,
+        user=user,
+        operator_id=ctx.user.id,
+        delete_account=delete_account,
+    )
     await record_audit_log(
         db,
         user=ctx.user,
         action="user.unbind_feishu",
         resource_type="user",
         resource_id=user.id,
+        new_value={"account_deleted": delete_account},
     )
     await db.commit()
-    return success_response(data=UserManagementItem.model_validate(user).model_dump())
+    data = UserManagementItem.model_validate(user).model_dump()
+    data["account_deleted"] = delete_account
+    return success_response(data=data)

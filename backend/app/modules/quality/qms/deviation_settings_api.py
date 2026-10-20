@@ -8,7 +8,6 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import PermissionContext, require_permission
 from app.modules.quality.qms.deviation_settings_schemas import (
     AutoTriggerRequest,
     FeishuBotConfigRequest,
@@ -19,6 +18,7 @@ from app.modules.quality.qms.deviation_settings_schemas import (
 )
 from app.modules.quality.qms.feishu_service import get_feishu_service
 from app.platform.database import get_db_session
+from app.core.deps import PermissionContext, require_permission
 
 router = APIRouter(prefix="/deviation-settings", tags=["偏差提醒设置"])
 
@@ -176,10 +176,8 @@ async def put(  # noqa: F811
 @router.get("/leaders", summary="获取部门负责人列表")
 async def get_leaders(
     ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
-    session: AsyncSession = Depends(
-        get_db_session,
-    ),
-) -> Any:
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有部门负责人配置"""
     result = await session.execute(
         text("""
@@ -301,10 +299,8 @@ async def put(  # noqa: F811
 @router.get("/rules", summary="获取提醒规则列表")
 async def get_rules(
     ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
-    session: AsyncSession = Depends(
-        get_db_session,
-    ),
-) -> Any:
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有提醒规则配置"""
     result = await session.execute(
         text("""
@@ -437,10 +433,8 @@ TRIGGER_TYPES = [
 @router.get("/auto-triggers", summary="获取自动提醒触发列表")
 async def get_auto_triggers(
     ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
-    session: AsyncSession = Depends(
-        get_db_session,
-    ),
-) -> Any:
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有自动提醒触发配置"""
     result = await session.execute(
         text("""
@@ -588,10 +582,8 @@ TEMPLATE_TYPES = [
 @router.get("/message-templates", summary="获取消息模板列表")
 async def get_message_templates(
     ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
-    session: AsyncSession = Depends(
-        get_db_session,
-    ),
-) -> Any:
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取所有消息模板配置"""
     result = await session.execute(
         text("""
@@ -769,10 +761,8 @@ async def put(  # noqa: F811
 @router.get("/feishu-bot", summary="获取飞书机器人配置")
 async def get_feishu_bot_config(
     ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:read")),
-    session: AsyncSession = Depends(
-        get_db_session,
-    ),
-) -> Any:
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """获取飞书机器人配置（只返回一条）"""
     result = await session.execute(
         text("""
@@ -984,10 +974,8 @@ async def get(
 @router.post("/reminder/trigger", summary="手动触发偏差提醒")
 async def trigger_deviation_reminder(
     ctx: PermissionContext = Depends(require_permission("quality:deviation-settings:create")),
-    session: AsyncSession = Depends(
-        get_db_session,
-    ),
-) -> Any:
+    session: AsyncSession = Depends(get_db_session,
+)) -> Any:
     """手动触发偏差填报人提醒检查并发送飞书消息"""
     from app.modules.quality.qms.deviation_reporter_reminder_service import (
         DeviationReporterReminderService,

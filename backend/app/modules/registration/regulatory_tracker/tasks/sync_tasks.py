@@ -114,11 +114,15 @@ def start_scheduler() -> Any:
     """Initialize and start the scheduler engine with all registered tasks."""
     global _scheduler_engine
 
-    from app.modules.equipment.public_api import get_inspection_schedule_generator
-    from app.platform.scheduler import SchedulerEngine, SchedulerRegistry
-    from app.platform.scheduler.registry import set_global_registry
+    # 幂等：worker 重启或重复调用时不再重复注册（单例 registry 会抛 Duplicate task name）
+    if _scheduler_engine is not None:
+        return
 
-    registry = SchedulerRegistry()
+    from app.modules.equipment.public_api import get_inspection_schedule_generator
+    from app.platform.scheduler import SchedulerEngine
+    from app.platform.scheduler.registry import scheduler_registry, set_global_registry
+
+    registry = scheduler_registry
 
     # Register regulatory_tracker tasks
     registry.register_task(daily_sync_task)
