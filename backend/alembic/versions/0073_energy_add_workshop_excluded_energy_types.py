@@ -1,7 +1,7 @@
 """energy: add workshop excluded_energy_types and mark rollup workshops
 
-Revision ID: 0069_energy_add_workshop_excluded_energy_types
-Revises: 0068_add_background_jobs
+Revision ID: 0073_energy_add_workshop_excluded_energy_types
+Revises: 0072_add_equipment_quantity
 Create Date: 2026-10-15
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "0069_energy_add_workshop_excluded_energy_types"
-down_revision: Union[str, None] = "0068_add_background_jobs"
+revision: str = "0073_energy_add_workshop_excluded_energy_types"
+down_revision: Union[str, None] = "0072_add_equipment_quantity"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
