@@ -36,6 +36,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 async def create_role(
     data: RoleCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     _require_user(current_user)

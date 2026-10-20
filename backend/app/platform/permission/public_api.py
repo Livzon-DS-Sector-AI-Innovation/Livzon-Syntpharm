@@ -4,6 +4,8 @@
 不要直接 import permission 模块内部实现。
 """
 
+import uuid
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
@@ -21,10 +23,16 @@ async def user_is_superuser(db: AsyncSession, user: User) -> bool:
     return await GrantRepository().is_superuser(db, user)
 
 
+async def list_superuser_user_ids(db: AsyncSession) -> list[uuid.UUID]:
+    """所有超管用户 id（用户管理列表对非超管隐藏这些账号时使用）。"""
+    return await GrantRepository().list_superuser_user_ids(db)
+
+
 __all__ = [
     "PermissionContext",
     "build_permission_context",
     "has_permission",
     "guard_manage_target",
+    "list_superuser_user_ids",
     "user_is_superuser",
 ]

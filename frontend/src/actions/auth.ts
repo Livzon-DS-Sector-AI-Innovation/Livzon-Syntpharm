@@ -69,16 +69,19 @@ export async function loginWithPassword(
     }
   }
 
-  revalidatePath('/')
+  // 失效整棵 layout 树（不只是 `/`）：切换账号后 dashboard layout / 导航 / 权限
+  // 都必须按新 cookie 重新渲染，否则会复用上一个账号的 RSC 结果。
+  revalidatePath('/', 'layout')
   // 落地页 = 第一个「可见」模块（未接入权限控制的模块恒可见，见 lib/permissions/modules.ts）
   const landingPath = await resolveLandingPath()
-  redirect(landingPath ?? '/')
+  redirect(landingPath)
 }
 
 export async function logout() {
   const cookieStore = await cookies()
   cookieStore.delete('auth_token')
-  revalidatePath('/')
+  // 整棵 layout 失效：否则退出后仍可能命中带旧账号数据的 RSC 缓存
+  revalidatePath('/', 'layout')
   redirect('/login')
 }
 

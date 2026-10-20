@@ -87,6 +87,7 @@ async def get(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     reply_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
 ) -> Any:
     reply = await service.get_reply(reply_id)

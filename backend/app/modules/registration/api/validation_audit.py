@@ -34,6 +34,7 @@ router = APIRouter()
 async def post(
     current_user: CurrentUser,
     data: ValidationAuditTaskCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     service = ValidationAuditService(db)

@@ -7,6 +7,7 @@ import asyncio
 import importlib.metadata as md
 import os
 import shutil
+import sys
 import time
 from datetime import UTC, datetime
 from typing import Any
@@ -56,6 +57,7 @@ _STANDALONE_LOOPS: tuple[tuple[str, str, str], ...] = (
     ("maintenance_plan_loop", "interval 60s", "设备保养计划生成"),
     ("timeout_scan_loop", "interval 60s", "设备工单超时扫描"),
     ("member_sync_loop", "interval 按配置", "飞书组织成员同步"),
+    ("audit_cleanup_loop", "每天 04:00", "审计日志过期清理"),
 )
 
 
@@ -161,7 +163,7 @@ def get_system_info() -> SystemInfoData:
         app_name=settings.APP_NAME,
         app_env=settings.APP_ENV,
         version=APP_VERSION,
-        python_version=f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",  # type: ignore[attr-defined]
+        python_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
         started_at=_STARTED_AT.isoformat(),
         uptime_seconds=_uptime_seconds(),
         dependencies=deps,
@@ -331,7 +333,7 @@ def set_task_enabled(name: str, enabled: bool) -> bool:
     return True
 
 
-def _describe_schedule(schedule: Any) -> str:  # noqa: ANN001 - ScheduleConfig
+def _describe_schedule(schedule: Any) -> str:
     strategy = getattr(schedule, "strategy", None)
     value = getattr(strategy, "value", str(strategy))
     if value == "cron":

@@ -156,7 +156,8 @@ RESOURCE_LABELS: dict[str, str] = {
     "maintenance-config": "维护配置",
     "maintenance-staff": "维护人员",
     # ── registration（注册管理）资源 ──
-    "project": "注册项目",  # noqa: F601 — 与 research:project 键名冲突，预存问题
+    # 注：registration 与 research 共用 "project" 资源键（标签沿用上方「研发项目」，
+    # 权限码本身靠模块前缀区分），此处不再重复定义以免字典键冲突。
     "drug": "药品申报",
     "certificate": "注册证书",
     "authorization-letter": "授权书",
@@ -578,6 +579,12 @@ REGISTRATION_PERMISSIONS: tuple[PermissionDef, ...] = (
 
 
 QUALITY_PERMISSIONS: tuple[PermissionDef, ...] = (
+    PermissionDef("quality:capa:approve", "CAPA管理 - 审批", "quality", "capa", "approve"),
+    PermissionDef("quality:capa:create", "CAPA管理 - 新增", "quality", "capa", "create"),
+    PermissionDef("quality:capa:delete", "CAPA管理 - 删除", "quality", "capa", "delete"),
+    PermissionDef("quality:capa:read", "CAPA管理 - 查看", "quality", "capa", "read"),
+    PermissionDef("quality:capa:submit", "CAPA管理 - 提交", "quality", "capa", "submit"),
+    PermissionDef("quality:capa:update", "CAPA管理 - 编辑", "quality", "capa", "update"),
     PermissionDef("quality:cpv:create", "持续工艺验证(CPV) - 新增", "quality", "cpv", "create"),
     PermissionDef("quality:cpv:delete", "持续工艺验证(CPV) - 删除", "quality", "cpv", "delete"),
     PermissionDef("quality:cpv:import", "持续工艺验证(CPV) - 导入", "quality", "cpv", "import"),

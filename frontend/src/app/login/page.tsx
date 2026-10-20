@@ -1,9 +1,8 @@
 'use client'
 
 import { Suspense } from "react"
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Button, Card, Divider, Typography } from "antd"
+import { Button, Card, Typography } from "antd"
 
 const errorMessages: Record<string, string> = {
   invalid_state: "登录状态已过期，请重新登录",
@@ -15,7 +14,7 @@ const errorMessages: Record<string, string> = {
 /**
  * 默认登录页 = 飞书登录。
  *
- * 账号密码登录已拆到独立页面 `/login/password`（本页底部保留入口）。
+ * 账号密码登录已拆到独立页面 `/login/password`，本页不再暴露入口，需直接访问该 URL。
  */
 function FeishuLoginCard() {
   const searchParams = useSearchParams()
@@ -57,17 +56,6 @@ function FeishuLoginCard() {
         <p className="m-0 mt-3 text-center text-[12px] text-[var(--color-steel)]">
           使用企业飞书账号扫码 / 授权登录
         </p>
-
-        <Divider plain className="!my-5">
-          <span className="text-[12px] text-[var(--color-stone)]">或</span>
-        </Divider>
-
-        <Link
-          href="/login/password"
-          className="block text-center text-[13px] text-[var(--color-primary)] hover:underline"
-        >
-          使用账号密码登录
-        </Link>
       </Card>
     </div>
   )

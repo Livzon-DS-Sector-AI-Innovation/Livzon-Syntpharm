@@ -30,7 +30,9 @@ import {
 import {
   createUser,
   getUsers,
+  listSessions,
   resetUserPassword,
+  revokeSession,
   revokeUserSessions,
   unbindFeishuUser,
   updateUser,
@@ -40,6 +42,7 @@ import type {
   LocalUserCreate,
   UserManagementItem,
   UserManagementUpdate,
+  UserSession,
 } from '@/types/users'
 import type { RoleDetail } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
@@ -130,6 +133,10 @@ export default function UserManagementClient() {
   const [authSource, setAuthSource] = useState<AuthSourceValue | undefined>()
   // 运营筛选：待改密 / 未绑定飞书（互斥单选）
   const [pendingFilter, setPendingFilter] = useState<'pending_change' | 'unbound' | undefined>()
+  // 在线会话管理：查看某用户的会话列表 + 单条踢下线
+  const [sessionUser, setSessionUser] = useState<UserManagementItem | null>(null)
+  const [sessions, setSessions] = useState<UserSession[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(false)
   const [form] = Form.useForm()
 
   const { data: users = [], isLoading: loading, error, refetch: refetchUsers } = useQuery({
@@ -305,16 +312,28 @@ export default function UserManagementClient() {
 
   const handleUnbind = async () => {
     if (!editingUser) return
+    const userId = editingUser.id
     setUnbinding(true)
     try {
-      const result = await unbindFeishuUser(editingUser.id)
+      const result = await unbindFeishuUser(userId)
       if (!result.ok) {
         message.error(result.message)
         return
       }
-      message.success('已解绑飞书账号')
+      message.success(
+        result.data.account_deleted ? '已解绑并删除该飞书账号' : '已解绑飞书账号',
+      )
+      // 先把后端返回的最新行写回当前列表缓存，弹窗关闭后表格立即反映结果：
+      // 飞书创建的账号已被软删 → 移除该行；本地账号 → 更新为「未绑定」。
+      const listKey = ['users', keyword, authSource, pendingFilter] as const
+      queryClient.setQueryData<UserManagementItem[]>(listKey, (prev) =>
+        result.data.account_deleted
+          ? prev?.filter((row) => row.id !== userId)
+          : prev?.map((row) => (row.id === userId ? { ...row, ...result.data } : row)),
+      )
       setModalOpen(false)
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      setEditingUser(null)
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
     } finally {
       setUnbinding(false)
     }
@@ -335,6 +354,46 @@ export default function UserManagementClient() {
     } finally {
       setLoggingOut(false)
     }
+  }
+
+  /** 打开某用户的在线会话列表（拉全量会话后按 user_id 过滤）。 */
+  const handleOpenSessions = async (record: UserManagementItem) => {
+    setSessionUser(record)
+    setSessions([])
+    setSessionsLoading(true)
+    try {
+      const all = await listSessions()
+      setSessions(all.filter((s) => s.user_id === record.id))
+    } catch {
+      message.error('获取在线会话失败，请稍后重试')
+    } finally {
+      setSessionsLoading(false)
+    }
+  }
+
+  /** 踢掉单个会话。 */
+  const handleKickSession = async (jti: string) => {
+    const result = await revokeSession(jti)
+    if (!result.ok) {
+      message.error(result.message)
+      return
+    }
+    message.success('已踢下线')
+    setSessions((prev) => prev.filter((s) => s.jti !== jti))
+  }
+
+  /** 会话弹窗内的「全部下线」。 */
+  const handleKickAllSessions = async () => {
+    if (!sessionUser) return
+    const result = await revokeUserSessions(sessionUser.id)
+    if (!result.ok) {
+      message.error(result.message)
+      return
+    }
+    message.success(
+      result.data.revoked > 0 ? `已强制下线 ${result.data.revoked} 个会话` : '该用户当前无在线会话',
+    )
+    setSessions([])
   }
 
   // 已绑定飞书的账号：人员资料由飞书同步，编辑时置灰
@@ -421,12 +480,15 @@ export default function UserManagementClient() {
           {
             title: '操作',
             key: 'actions',
-            width: 180,
+            width: 240,
             fixed: 'right' as const,
             render: (_: unknown, record: UserManagementItem) => (
               <Space>
                 <Button size="small" onClick={() => handleEdit(record)}>
                   编辑
+                </Button>
+                <Button size="small" icon={<LogoutOutlined />} onClick={() => handleOpenSessions(record)}>
+                  会话
                 </Button>
                 <Popconfirm
                   title={
@@ -653,9 +715,14 @@ export default function UserManagementClient() {
                     <Space>
                       <Tag color="success">已绑定飞书</Tag>
                       <Popconfirm
-                        title="解绑后该账号将无法用飞书登录，确认解绑？"
+                        title={
+                          editingUser.auth_source === 'feishu'
+                            ? '该账号由飞书首次登录自动创建。解绑将删除此账号及其角色授权，且无法再用飞书登录。确认删除？'
+                            : '解绑后该账号将无法用飞书登录，账号本体与角色授权保留。确认解绑？'
+                        }
                         onConfirm={handleUnbind}
-                        okText="解绑"
+                        okText={editingUser.auth_source === 'feishu' ? '删除并解绑' : '解绑'}
+                        okButtonProps={{ danger: editingUser.auth_source === 'feishu' }}
                         cancelText="取消"
                       >
                         <Button danger loading={unbinding} icon={<UserSwitchOutlined />}>
@@ -732,6 +799,74 @@ export default function UserManagementClient() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* 在线会话管理：会话列表 + 单条踢下线 */}
+      <Modal
+        title={sessionUser ? `在线会话 — ${sessionUser.name}` : '在线会话'}
+        open={!!sessionUser}
+        onCancel={() => setSessionUser(null)}
+        footer={[
+          <Button key="close" onClick={() => setSessionUser(null)}>
+            关闭
+          </Button>,
+          <Popconfirm
+            key="kickall"
+            title="强制下线其全部会话？"
+            onConfirm={handleKickAllSessions}
+            okText="全部下线"
+            cancelText="取消"
+          >
+            <Button danger>全部下线</Button>
+          </Popconfirm>,
+        ]}
+        width="min(720px, calc(100vw - 24px))"
+      >
+        <Table
+          rowKey="jti"
+          dataSource={sessions}
+          loading={sessionsLoading}
+          pagination={false}
+          locale={{ emptyText: '该用户当前无在线会话' }}
+          scroll={{ x: 'max-content' }}
+          columns={[
+            {
+              title: '登录 IP',
+              dataIndex: 'ip_address',
+              width: 140,
+              render: (v: string | null) => v || '-',
+            },
+            {
+              title: '设备 / 浏览器',
+              dataIndex: 'user_agent',
+              ellipsis: true,
+              render: (v: string | null) => v || '-',
+            },
+            {
+              title: '登录时间',
+              dataIndex: 'created_at',
+              width: 180,
+              render: (v: string) => new Date(v).toLocaleString(),
+            },
+            {
+              title: '操作',
+              key: 'action',
+              width: 100,
+              render: (_: unknown, record: UserSession) => (
+                <Popconfirm
+                  title="确认踢下线该会话？对应设备将立即失效。"
+                  onConfirm={() => handleKickSession(record.jti)}
+                  okText="踢下线"
+                  cancelText="取消"
+                >
+                  <Button size="small" danger>
+                    踢下线
+                  </Button>
+                </Popconfirm>
+              ),
+            },
+          ]}
+        />
       </Modal>
     </>
   )

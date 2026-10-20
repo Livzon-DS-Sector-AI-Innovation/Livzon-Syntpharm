@@ -319,9 +319,9 @@ async def get(  # noqa: F811
     )
 
     if format == "xlsx":
-        excel_file = await generate_regulatory_excel(documents)
+        excel_file = generate_regulatory_excel(documents)
         return StreamingResponse(
-            excel_file,
+            iter([excel_file.getvalue()]),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": "attachment; filename=regulatory_documents.xlsx"},
         )

@@ -115,6 +115,7 @@ async def get(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     record = await service.get_record(record_id)

@@ -28,7 +28,14 @@ export default async function DashboardLayout({
 
   return (
     <AntdProvider>
-      <AppShell permissionView={permissionView}>{children}</AppShell>
+      <AppShell
+        permissionView={permissionView}
+        userId={user.id}
+        userName={user.name}
+        avatarUrl={user.avatar_url}
+      >
+        {children}
+      </AppShell>
     </AntdProvider>
   )
 }

@@ -37,26 +37,39 @@ export const MODULE_ACCESS_PERMS: Partial<Record<string, readonly PermissionCode
   research: [PERM.researchRead],
   registration: [PERM.registrationRead],
   quality: [PERM.qualityRead],
-  // 系统管理（首批接入）：取各子页守卫口径的并集，见下方 SUBMENU_ACCESS_PERMS
-  settings: [PERM.userRead, PERM.configRead, PERM.roleRead, PERM.opsRead, PERM.auditRead],
+  // 系统管理（首批接入）：取各子页守卫口径的并集，见下方 SUBMENU_ACCESS_PERMS。
+  // grant:read / grant:manage 必须在内：只被授予「授权管理」的账号（如 t-grant）
+  // 没有 user:read / role:read，但需要能进入系统管理 → 授权管理。
+  settings: [
+    PERM.userRead,
+    PERM.configRead,
+    PERM.roleRead,
+    PERM.opsRead,
+    PERM.auditRead,
+    PERM.grantRead,
+    PERM.grantManage,
+  ],
 }
 
 /**
  * 模块内子菜单的准入权限（未登记的菜单项不受影响）。
  *
  * 口径必须与对应页面的 RSC 守卫**严格一致**，否则会出现「看得到入口、点进去被拦」：
- * - settings-overview → app/(dashboard)/settings/page.tsx             （platform:config:read）
+ * - settings-overview → app/(dashboard)/settings/page.tsx             （不限制：概览页按权限渲染入口）
  * - users             → app/(dashboard)/settings/users/page.tsx       （platform:user:read）
  * - login-logs        → app/(dashboard)/settings/login-logs/page.tsx  （platform:audit:read）
  * - permission        → app/(dashboard)/settings/permission/page.tsx  （platform:role:read）
  * - ops               → app/(dashboard)/settings/ops/page.tsx         （platform:ops:read）
  */
 export const SUBMENU_ACCESS_PERMS: Record<string, readonly PermissionCode[]> = {
-  'settings-overview': [PERM.configRead],
+  // settings-overview 不再登记：概览页对「能进入系统管理模块」的账号一律开放，
+  // 页面内部再按权限渲染可用的功能卡片。
   users: [PERM.userRead],
   'login-logs': [PERM.auditRead],
   audit: [PERM.auditRead],
-  permission: [PERM.roleRead],
+  // 页面已支持按 Tab 权限过滤：只有 grant 权限的账号应看到「授权管理」Tab
+  permission: [PERM.roleRead, PERM.grantRead, PERM.grantManage],
+  platform: [PERM.configRead],
   ops: [PERM.opsRead],
   'settings-menus': [PERM.opsRead],
 }

@@ -3,7 +3,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import PermissionContext, RequiredUser, require_permission
@@ -1179,7 +1179,3 @@ async def post(  # noqa: F811
         return DeviationApiResponse(message="偏差已关闭")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-# 添加 HTTPException 导入
-from fastapi import HTTPException  # noqa: E402

@@ -205,7 +205,9 @@ def fuzzy_match_department(dept_name: str, departments: list[str], threshold: fl
 
 
 @router.get("/template", summary="下载导入模板")
-async def download_template() -> ApiResponse:
+async def download_template(
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:read")),
+) -> ApiResponse:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
@@ -390,7 +392,11 @@ async def batch_import(
 
 
 @router.post("/", summary="上传Excel文件并解析")
-async def import_excel(current_user: RequiredUser, file: UploadFile = File(...)) -> ApiResponse:
+async def import_excel(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
+    file: UploadFile = File(...),
+) -> ApiResponse:
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise BadRequestException(message="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook

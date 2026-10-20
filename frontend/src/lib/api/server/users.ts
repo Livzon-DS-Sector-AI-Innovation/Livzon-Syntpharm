@@ -58,14 +58,6 @@ export async function changeMyPassword(data: unknown, token?: string) {
   })
 }
 
-export async function bindFeishuUser(id: string, data: unknown, token?: string) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/bind-feishu`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify(data),
-  })
-}
-
 export async function unbindFeishuUser(id: string, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/bind-feishu`, {
     method: 'DELETE',
@@ -75,6 +67,19 @@ export async function unbindFeishuUser(id: string, token?: string) {
 
 export async function revokeUserSessions(id: string, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/sessions`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+}
+
+export async function listSessions(token?: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/sessions`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  })
+}
+
+export async function revokeSession(jti: string, token?: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/sessions/${jti}`, {
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   })

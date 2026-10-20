@@ -495,7 +495,7 @@ class HazardService:
 
         # 整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            spawn_task(self.run_rectification_review(hazard_id))  # type: ignore[arg-type]
+            spawn_task(self.run_rectification_review(hazard_id))
 
         return updated
 
@@ -624,7 +624,7 @@ class HazardService:
 
         # 重新整改回复后，异步触发 AI 初审（非阻塞），AI 结果将决定后续通知路由
         if updated:
-            spawn_task(self.run_rectification_review(hazard_id))  # type: ignore[arg-type]
+            spawn_task(self.run_rectification_review(hazard_id))
 
         return updated
 

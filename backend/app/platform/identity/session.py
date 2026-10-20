@@ -45,14 +45,18 @@ async def record_session(*, jti: str, user: User, ip_address: str | None, user_a
     await r.expire(f"{USER_SESSIONS_PREFIX}{user.id}", ttl)
 
 
+def _jti_str(value: bytes | str) -> str:
+    """Redis 集合成员可能是 bytes，统一转成 str 再拼 key。"""
+    return value.decode() if isinstance(value, bytes) else value
+
+
 async def list_user_sessions(user_id: Any) -> list[dict[str, Any]]:
     """列出某用户的在线会话（按登录时间倒序）。"""
     r = await get_redis()
     jtis = await r.smembers(f"{USER_SESSIONS_PREFIX}{user_id}")
     sessions: list[dict[str, Any]] = []
-    for jti_raw in jtis:
-        jti = jti_raw.decode() if isinstance(jti_raw, bytes) else jti_raw
-        raw = await r.get(f"{SESSION_PREFIX}{jti}")
+    for jti in jtis:
+        raw = await r.get(f"{SESSION_PREFIX}{_jti_str(jti)}")
         if raw:
             sessions.append(json.loads(raw))
     sessions.sort(key=lambda s: s.get("created_at", ""), reverse=True)
@@ -88,9 +92,8 @@ async def revoke_all_user_sessions(user_id: Any) -> int:
     """吊销某用户的全部会话，返回吊销数量。"""
     r = await get_redis()
     jtis = await r.smembers(f"{USER_SESSIONS_PREFIX}{user_id}")
-    for jti_raw in jtis:
-        jti = jti_raw.decode() if isinstance(jti_raw, bytes) else jti_raw
-        await revoke_session(jti)
+    for jti in jtis:
+        await revoke_session(_jti_str(jti))
     return len(jtis)
 
 

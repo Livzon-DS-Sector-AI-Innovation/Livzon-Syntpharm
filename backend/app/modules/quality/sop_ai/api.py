@@ -77,7 +77,7 @@ async def single_check(
     request: schemas.SingleCheckRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """对单个文件进行预审校验"""
     service = SopAiCheckService(db)
     result = await service.single_check(
@@ -86,7 +86,7 @@ async def single_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)  # type: ignore[return-value]
+    return ApiResponse(data=result)
 
 
 # ============ 批量巡检接口 ============
@@ -98,7 +98,7 @@ async def batch_check(
     request: schemas.BatchCheckRequest,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:create")),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """对多个文件进行批量巡检"""
     service = SopAiCheckService(db)
     result = await service.batch_check(
@@ -106,7 +106,7 @@ async def batch_check(
         check_type=request.check_type,
         operator=request.operator,
     )
-    return ApiResponse(data=result)  # type: ignore[return-value]
+    return ApiResponse(data=result)
 
 
 # ============ 记录查询接口 ============
@@ -123,7 +123,7 @@ async def list_records(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """获取校验记录列表"""
     service = SopAiCheckService(db)
     records, total = await service.list_records(
@@ -155,7 +155,7 @@ async def list_records(
         for r in records
     ]
 
-    return ApiResponse(  # type: ignore[return-value]
+    return ApiResponse(
         data={
             "items": items,
             "total": total,
@@ -222,14 +222,14 @@ async def list_jobs(
     current_user: CurrentUser,
     ctx: PermissionContext = Depends(require_permission("quality:sop-ai:read")),
     db: AsyncSession = Depends(get_db),
-) -> dict[str, Any]:
+) -> Any:
     """获取定时任务列表"""
     from app.modules.quality.sop_ai.scheduler import get_sop_ai_scheduler
 
     scheduler = get_sop_ai_scheduler()
     jobs = scheduler.list_jobs()
 
-    return ApiResponse(  # type: ignore[return-value]
+    return ApiResponse(
         data=[
             {
                 "job_id": job.job_id,

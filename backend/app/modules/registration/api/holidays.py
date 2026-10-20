@@ -21,6 +21,7 @@ router = APIRouter()
 @router.get("/", summary="获取节假日列表")
 async def list_holidays(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:holiday:read")),
     year: int | None = Query(None, description="年份筛选"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -47,6 +48,7 @@ async def update_holiday(
     current_user: CurrentUser,
     holiday_id: uuid.UUID,
     data: HolidayCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:holiday:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """更新节假日"""

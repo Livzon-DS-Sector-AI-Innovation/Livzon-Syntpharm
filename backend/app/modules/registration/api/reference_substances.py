@@ -35,6 +35,7 @@ async def list_reference_substances(
 async def create_reference_substance(
     current_user: CurrentUser,
     payload: ReferenceSubstanceCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """创建对照品记录"""
@@ -62,6 +63,7 @@ async def update_reference_substance(
     current_user: CurrentUser,
     substance_id: uuid.UUID,
     payload: ReferenceSubstanceUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-substance:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """更新对照品记录"""

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Table, Button, Input, Space, Modal, Form, message, Popconfirm } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
+import { DevelopmentNotice } from '@/components/administration'
 import { fetchGiftRequisitions } from '@/lib/api/client/administration/gift-requisition'
 import { createGiftRequisition, updateGiftRequisition, deleteGiftRequisition } from '@/actions/administration'
 
@@ -120,6 +121,7 @@ export default function RequisitionPage() {
   return (
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">领用记录</h1>
+      <DevelopmentNotice feature="物品领用" />
       <div className="flex flex-wrap gap-2 mb-4">
         <Input
           placeholder="费用所属部门"

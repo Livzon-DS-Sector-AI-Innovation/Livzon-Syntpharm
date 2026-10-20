@@ -235,7 +235,7 @@ async def count_active_superadmins(db: AsyncSession) -> int:
     return int((await db.execute(stmt)).scalar_one())
 
 
-def guard_self_escalation(actor_id: uuid.UUID, grant: UserRoleGrant) -> None:
+def guard_self_escalation(actor_id: uuid.UUID | None, grant: UserRoleGrant) -> None:
     """禁止修改 / 删除自己的授权。"""
     if grant.user_id == actor_id:
         raise ForbiddenException("不能修改自己的授权")

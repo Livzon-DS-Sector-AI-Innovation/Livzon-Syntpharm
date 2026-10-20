@@ -181,6 +181,7 @@ class UserRepository:
         auth_source: str | None = None,
         unbound_only: bool = False,
         must_change_password: bool | None = None,
+        exclude_user_ids: list[UUID] | None = None,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
@@ -192,6 +193,11 @@ class UserRepository:
                 User.is_deleted == False  # noqa: E712
             )
         )
+
+        # 对非超管隐藏超管账号（调用方传入超管 id 列表）
+        if exclude_user_ids:
+            base = base.where(User.id.not_in(exclude_user_ids))
+            count_stmt = count_stmt.where(User.id.not_in(exclude_user_ids))
 
         if keyword:
             pattern = f"%{keyword}%"

@@ -502,7 +502,7 @@ async def get(  # noqa: F811
 
     specs, total = await service.get_process_specs(skip, page_size, status, product_code)
 
-    return ProcessSpecApiResponse(
+    return ProcessSpecListApiResponse(
         data=[ProcessSpecResponse.model_validate(s) for s in specs],
         meta={"page": page, "page_size": page_size, "total": total},
     )

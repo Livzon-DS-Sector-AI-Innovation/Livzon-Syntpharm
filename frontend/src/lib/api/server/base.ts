@@ -68,8 +68,13 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
     }
     throw new Error(errorMessage)
   }
-  const result = await response.json()
-  return result
+  // 204 No Content（如软删除接口）或空响应体：没有 JSON 可解析，直接返回 null。
+  // 否则 response.json() 会抛 "Unexpected end of JSON input"，调用方误报「操作失败」，
+  // 而数据其实已经删除成功。
+  if (response.status === 204) return null as T
+  const text = await response.text()
+  if (!text) return null as T
+  return JSON.parse(text) as T
 }
 
 export async function apiFetchRaw(url: string, options?: RequestInit): Promise<Response> {

@@ -97,9 +97,10 @@ class ProductionService:
         }
 
         if data.status not in valid_transitions.get(batch.status, []):  # type: ignore[call-overload]
-            raise ValueError(
-                f"无效的状态转换: {batch.status.value} -> {data.status.value}"  # type: ignore[attr-defined]
-            )
+            # 数据库返回的 status 是字符串，直接访问 .value 会抛 AttributeError（500）
+            from_status = getattr(batch.status, "value", batch.status)
+            to_status = getattr(data.status, "value", data.status)
+            raise ValueError(f"无效的状态转换: {from_status} -> {to_status}")
 
         # 处理状态变更的副作用
         update_data: dict[str, Any] = {"status": data.status}
