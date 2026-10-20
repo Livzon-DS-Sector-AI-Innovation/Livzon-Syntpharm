@@ -3,6 +3,12 @@ on:
   push:
     branches:
       - uat
+  # 兜底触发：PR #116 合并进 uat 后 GitHub 没有派发任何 push 事件（该提交 0 条 run 记录），
+  # 导致合并后不部署。PR 正常合并时下面这个事件一定会到，作为 push 之外的第二条触发路径。
+  pull_request:
+    types: [closed]
+    branches:
+      - uat
   workflow_dispatch:
 
 concurrency:
@@ -11,6 +17,8 @@ concurrency:
 
 jobs:
   deploy:
+    # pull_request 事件只在「已合并」时部署，关闭未合并的 PR 不触发
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
