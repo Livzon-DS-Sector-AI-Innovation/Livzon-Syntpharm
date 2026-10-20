@@ -14,7 +14,11 @@ _BATCH = "/api/v1/equipment/equipments/import-v4/batch"
 
 
 def _response_ref(schema: dict[str, Any], path: str) -> str:
-    return str(schema["paths"][path]["post"]["responses"]["200"]["content"]["application/json"]["schema"]["$ref"])
+    # 应用层把默认响应 media type 设成了 ``application/json; charset=utf-8``
+    # （避免中文被按 ISO-8859-1 解析成乱码），这里按前缀匹配，两种写法都接受。
+    content = schema["paths"][path]["post"]["responses"]["200"]["content"]
+    key = next(k for k in content if k.split(";")[0].strip() == "application/json")
+    return str(content[key]["schema"]["$ref"])
 
 
 def test_openapi_declares_concrete_import_v4_envelopes():

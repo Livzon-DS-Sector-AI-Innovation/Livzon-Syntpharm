@@ -174,3 +174,22 @@ async def anonymous_client(db_session: AsyncSession) -> AsyncIterator[AsyncClien
 async def client(auth_client: AsyncClient) -> AsyncIterator[AsyncClient]:
     """Alias for ``auth_client`` (backward compatibility)."""
     yield auth_client
+
+
+@pytest.fixture(autouse=True)
+def _grant_all_permissions(monkeypatch: pytest.MonkeyPatch) -> None:
+    """集成测试默认放行权限判定。
+
+    权限体系落地后，业务接口统一挂了 ``require_permission(...)``；历史用例
+    （没有授权数据、直接用 ``client.get(...)``）会一律 403。这里把
+    ``permission.deps`` 里的判定函数替换为「恒通过」，让集成测试继续聚焦业务逻辑。
+
+    权限判定本身的正确性由 ``tests/unit/permission/`` 覆盖（那些用例直接调用
+    ``build_permission_context``，不经过本 fixture 打的补丁）。
+    """
+    from app.platform.permission.service.authorization import PermissionContext
+
+    async def _allow(db, user, permission_code):  # type: ignore[no-untyped-def]
+        return PermissionContext(user=user, permission_code=permission_code, is_superuser=True)
+
+    monkeypatch.setattr("app.platform.permission.deps.build_permission_context", _allow)
