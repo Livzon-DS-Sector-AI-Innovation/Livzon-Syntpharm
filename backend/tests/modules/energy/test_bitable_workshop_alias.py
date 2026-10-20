@@ -91,8 +91,9 @@ async def test_environment_center_water_and_electricity_labels_resolve_to_one_en
     assert from_water.id == from_elec.id == from_steam.id
     assert from_water.name == "环保中心"
 
-    # 三种叫法都不该催生新车间（废水站 这个实体由迁移脚本负责合并掉）
-    assert await _active_total(db_session) == before
+    # 三种叫法共用一个实体：本地库已有 环保中心 时新增 0 行，CI 空库时最多催生 1 行
+    # （废水站 这个旧实体由迁移脚本负责合并掉，不归导入器管）
+    assert await _active_total(db_session) - before <= 1
 
 
 def _cross_records() -> list[dict]:

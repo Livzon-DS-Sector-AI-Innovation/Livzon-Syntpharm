@@ -42,6 +42,18 @@ async def _live_production_names(db_session) -> set[str]:
     return {r[0] for r in rows}
 
 
+async def _ensure_production_rows(db_session) -> set[str]:
+    """补齐库里缺失的白名单车间，让本地（有全量主数据）与 CI（只跑迁移、表为空）都能跑。"""
+    existing = await _live_production_names(db_session)
+    missing = sorted(PRODUCTION_WORKSHOPS - existing)
+    db_session.add_all(
+        EnergyWorkshop(code=f"test-{name}", name=name, category="workshop", sort_order=0, is_active=True)
+        for name in missing
+    )
+    await db_session.flush()
+    return existing | set(missing)
+
+
 def test_production_workshop_registry_is_locked():
     """白名单是业务口径，改这行必须经负责人确认，所以先钉住。"""
     assert PRODUCTION_WORKSHOPS == frozenset(
@@ -75,8 +87,8 @@ async def test_production_only_filter_returns_only_whitelist(auth_client, db_ses
 
 async def test_production_only_filter_returns_all_live_production_rows(auth_client, db_session, support_workshop):
     await db_session.flush()
-    expected = await _live_production_names(db_session)
-    assert expected, "本地库应有生产车间行，否则这条断言是空转"
+    expected = await _ensure_production_rows(db_session)
+    assert expected == set(PRODUCTION_WORKSHOPS), "9 个生产车间都应能进单耗分析"
 
     response = await auth_client.get(WORKSHOPS_URL, params={"production_only": True})
     names = {item["name"] for item in response.json()["data"]}
