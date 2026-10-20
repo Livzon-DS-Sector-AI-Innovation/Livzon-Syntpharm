@@ -3,13 +3,14 @@
 提供质量检验模块试剂/标准品台账的增删改查和AI标签识别功能。
 """
 
+import logging
 from datetime import date, timedelta
 from io import BytesIO
 from typing import Any
 from urllib.parse import quote
 
 import openpyxl
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,8 @@ from app.modules.quality.qms.reagent_schemas import (
 from app.modules.quality.qms.reagent_service import ReagentService
 from app.platform.database import get_db_session
 from app.core.deps import PermissionContext, require_permission
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/reagent", tags=["质量检验-试剂管理"])
 
@@ -46,7 +49,7 @@ def dict_to_response(data: dict[str, Any]) -> ReagentResponse:
         quantity=float(data.get("quantity", 0)),
         unit=data.get("unit", "g"),
         status=data.get("status", "available"),
-        created_by=data.get("created_by"),
+        created_by=str(data["created_by"]) if data.get("created_by") else None,
         created_at=data.get("created_at"),
         updated_at=data.get("updated_at"),
     )
@@ -370,7 +373,7 @@ async def post(  # noqa: F811
                 "manufacturer": request.manufacturer,
                 "unit": request.unit,
             },
-            operator="system",
+            operator=str(ctx.user.id),
         )
 
         return {
@@ -379,11 +382,8 @@ async def post(  # noqa: F811
             "data": dict_to_response(reagent).model_dump(),
         }
     except Exception as e:
-        return {
-            "code": 500,
-            "message": f"创建失败: {str(e)}",
-            "data": None,
-        }
+        logger.exception("创建试剂失败")
+        raise HTTPException(status_code=500, detail=f"创建失败: {e}") from e
 
 
 @router.put("/{reagent_id}", response_model=dict, summary="更新试剂记录")

@@ -119,14 +119,11 @@ class FQCInspectionRepository:
         today = datetime.now()
         prefix = f"FQC{today.strftime('%Y%m%d')}"
         # 查找今天最大的序号
+        # 不排除软删除记录：唯一索引不过滤 is_deleted，软删记录仍占用单号，
+        # 若查询时排除会生成重复号并触发 UniqueViolationError。
         result = await self.session.execute(
             select(FQCInspection.inspection_no)
-            .where(
-                and_(
-                    FQCInspection.inspection_no.like(f"{prefix}%"),
-                    ~FQCInspection.is_deleted,
-                )
-            )
+            .where(FQCInspection.inspection_no.like(f"{prefix}%"))
             .order_by(FQCInspection.inspection_no.desc())
             .limit(1)
         )
@@ -144,12 +141,12 @@ class FQCInspectionRepository:
         """生成检验报告书编号"""
         today = datetime.now()
         prefix = f"COA{today.strftime('%Y%m%d')}"
+        # 同 generate_inspection_no：报告书编号唯一索引不过滤软删除，查询也不能排除
         result = await self.session.execute(
             select(FQCInspection.report_no)
             .where(
                 and_(
                     FQCInspection.report_no.like(f"{prefix}%"),
-                    ~FQCInspection.is_deleted,
                     FQCInspection.report_no.isnot(None),
                 )
             )

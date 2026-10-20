@@ -1424,7 +1424,7 @@ async def post(  # noqa: F811
     user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
-        obj = await service.create_storage_condition(data, user_id)  # type: ignore[attr-defined]
+        obj = await service.create_storage_condition(data, user_id)
         return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition created",
@@ -1442,7 +1442,7 @@ async def put(  # noqa: F811
     user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
-        obj = await service.update_storage_condition(id, data, user_id)  # type: ignore[attr-defined]
+        obj = await service.update_storage_condition(id, data, user_id)
         return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition updated",
