@@ -38,10 +38,7 @@ logger = logging.getLogger(__name__)
 
 # ── Date range parsing ──
 
-_DATE_RANGE_RE = re.compile(
-    r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})"
-    r"(?:\s*[-–~至]\s*(?:(\d{1,2})[/-])?(\d{1,2}))?"
-)
+_DATE_RANGE_RE = re.compile(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})" r"(?:\s*[-–~至]\s*(?:(\d{1,2})[/-])?(\d{1,2}))?")
 
 _ENERGY_TYPE_MAP: dict[str, str] = {
     "电": "electricity",
