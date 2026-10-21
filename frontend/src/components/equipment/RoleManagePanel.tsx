@@ -271,7 +271,7 @@ export function RoleManagePanel({ roles }: Props) {
       )}
 
       {/* Create/Edit Modal */}
-      <Modal
+      <Modal forceRender
         key={String(modalOpen)}
         open={modalOpen}
         onOk={handleSubmit}

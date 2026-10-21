@@ -478,7 +478,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
                   AI 正在分析中
                 </Title>
               </div>
-              <Space direction="vertical" size="middle" style={{ marginTop: 8 }}>
+              <Space orientation="vertical" size="middle" style={{ marginTop: 8 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {aiProgress === 'script1' ? (
                     <LoadingOutlined style={{ color: '#5645d4' }} />
@@ -547,7 +547,7 @@ export default function HazardInspectionFlow({ variant = 'page', onDone }: Props
         open={draftDrawerOpen}
         onClose={() => setDraftDrawerOpen(false)}
         styles={{ body: { padding: '16px 24px' } }}
-        width={420}
+        size={420}
       >
         {draftsLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>

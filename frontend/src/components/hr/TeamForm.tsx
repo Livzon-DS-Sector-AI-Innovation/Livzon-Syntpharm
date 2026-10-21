@@ -52,7 +52,7 @@ export default function TeamForm({ open, team, departmentId, onClose, onSuccess 
   }
 
   return (
-    <Modal
+    <Modal forceRender
       title={isEdit ? '编辑班组' : '新增班组'}
       open={open}
       onOk={handleSubmit}

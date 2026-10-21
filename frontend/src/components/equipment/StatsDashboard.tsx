@@ -191,7 +191,7 @@ function KpiCard({
               {typeof value === 'number' ? animatedValue.toLocaleString() : value}
             </span>
             {suffix && (
-              <span style={{ fontSize: 14, fontWeight: 500, color: '#787671', marginLeft: 2 }}>
+              <span style={{ fontSize: 14, fontWeight: 500, color: '#64748b', marginLeft: 2 }}>
                 {suffix}
               </span>
             )}
@@ -205,8 +205,8 @@ function KpiCard({
                 marginTop: 8,
                 fontSize: 12,
                 fontWeight: 500,
-                color: trend.direction === 'up' ? '#1aae39' : '#e03131',
-                background: trend.direction === 'up' ? '#e6f7e6' : '#fff1f0',
+                color: trend.direction === 'up' ? '#10b981' : '#e03131',
+                background: trend.direction === 'up' ? '#d1fae5' : '#fff1f0',
                 borderRadius: 4,
                 padding: '2px 8px',
               }}
@@ -241,11 +241,11 @@ function KpiCard({
 // 设备状态分布条
 // ============================================================
 const statusColorMap: Record<string, string> = {
-  '在用': '#1aae39',
-  '备用': '#0075de',
-  '维修中': '#dd5b00',
-  '停用': '#787671',
-  '报废': '#c8c4be',
+  '在用': '#10b981',
+  '备用': '#6366f1',
+  '维修中': '#f59e0b',
+  '停用': '#64748b',
+  '报废': '#ef4444',
 }
 
 function StatusDistribution({ statistics }: { statistics: EquipmentStatistics }) {
@@ -256,7 +256,7 @@ function StatusDistribution({ statistics }: { statistics: EquipmentStatistics })
 
   if (entries.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: '#787671', fontSize: 14 }}>
+      <div style={{ padding: 40, textAlign: 'center', color: '#64748b', fontSize: 14 }}>
         暂无设备数据
       </div>
     )
@@ -280,7 +280,7 @@ function StatusDistribution({ statistics }: { statistics: EquipmentStatistics })
             key={status}
             style={{
               width: `${(count / total) * 100}%`,
-              background: statusColorMap[status] || '#c8c4be',
+              background: statusColorMap[status] || '#ef4444',
               transition: 'width 0.8s cubic-bezier(0.22, 0.61, 0.36, 1)',
               minWidth: count > 0 ? 4 : 0,
             }}
@@ -309,7 +309,7 @@ function StatusDistribution({ statistics }: { statistics: EquipmentStatistics })
                   width: 10,
                   height: 10,
                   borderRadius: 3,
-                  background: statusColorMap[status] || '#c8c4be',
+                  background: statusColorMap[status] || '#ef4444',
                   flexShrink: 0,
                 }}
               />
@@ -319,7 +319,7 @@ function StatusDistribution({ statistics }: { statistics: EquipmentStatistics })
               <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a1a', fontFeatureSettings: '"tnum"' }}>
                 {count}
               </span>
-              <span style={{ fontSize: 13, color: '#787671', width: 48, textAlign: 'right', fontFeatureSettings: '"tnum"' }}>
+              <span style={{ fontSize: 13, color: '#64748b', width: 48, textAlign: 'right', fontFeatureSettings: '"tnum"' }}>
                 {pct}%
               </span>
               {/* 微型进度条 */}
@@ -328,7 +328,7 @@ function StatusDistribution({ statistics }: { statistics: EquipmentStatistics })
                   style={{
                     height: '100%',
                     width: `${pct}%`,
-                    background: statusColorMap[status] || '#c8c4be',
+                    background: statusColorMap[status] || '#ef4444',
                     borderRadius: 2,
                     transition: 'width 1s ease',
                   }}
@@ -345,7 +345,7 @@ function StatusDistribution({ statistics }: { statistics: EquipmentStatistics })
 // ============================================================
 // 分类分布水平条
 // ============================================================
-const categoryBarColors = ['#5645d4', '#7b3ff2', '#0075de', '#2a9d99', '#1aae39', '#dd5b00', '#ff64c8', '#f5d75e']
+const categoryBarColors = ['#10b981', '#7b3ff2', '#6366f1', '#2a9d99', '#10b981', '#f59e0b', '#ff64c8', '#f5d75e']
 
 function CategoryDistribution({ statistics }: { statistics: EquipmentStatistics }) {
   const maxVal = Math.max(...Object.values(statistics.by_category), 1)
@@ -355,7 +355,7 @@ function CategoryDistribution({ statistics }: { statistics: EquipmentStatistics 
 
   if (entries.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: '#787671', fontSize: 14 }}>
+      <div style={{ padding: 40, textAlign: 'center', color: '#64748b', fontSize: 14 }}>
         暂无分类数据
       </div>
     )
@@ -383,7 +383,7 @@ function CategoryDistribution({ statistics }: { statistics: EquipmentStatistics 
               }}
             >
               <span style={{ color: '#1a1a1a', fontWeight: 500 }}>{name}</span>
-              <span style={{ color: '#787671', fontWeight: 500, fontFeatureSettings: '"tnum"' }}>{count}</span>
+              <span style={{ color: '#64748b', fontWeight: 500, fontFeatureSettings: '"tnum"' }}>{count}</span>
             </div>
             <div
               style={{
@@ -415,17 +415,17 @@ function CategoryDistribution({ statistics }: { statistics: EquipmentStatistics 
 // ============================================================
 const orderPipelineStages = [
   { status: '待处理', color: '#e03131', bg: '#fff1f0', icon: <AlertOutlined /> },
-  { status: '执行中', color: '#dd5b00', bg: '#fff7e6', icon: <ToolFilled /> },
+  { status: '执行中', color: '#f59e0b', bg: '#fffbeb', icon: <ToolFilled /> },
   { status: '待验收', color: '#d4b106', bg: '#fffbe6', icon: <ClockCircleFilled /> },
-  { status: '已完成', color: '#1aae39', bg: '#e6f7e6', icon: <CheckCircleFilled /> },
-  { status: '已关闭', color: '#787671', bg: '#f0eeec', icon: <CheckCircleFilled /> },
+  { status: '已完成', color: '#10b981', bg: '#d1fae5', icon: <CheckCircleFilled /> },
+  { status: '已关闭', color: '#64748b', bg: '#f0eeec', icon: <CheckCircleFilled /> },
 ]
 
 const priorityConfig: Record<string, { color: string; bg: string; dot: string; label: string }> = {
   '紧急': { color: '#e03131', bg: '#fff1f0', dot: '#e03131', label: '紧急' },
-  '高': { color: '#dd5b00', bg: '#fff7e6', dot: '#dd5b00', label: '高' },
-  '中': { color: '#0075de', bg: '#e6f0fa', dot: '#0075de', label: '中' },
-  '低': { color: '#787671', bg: '#f0eeec', dot: '#787671', label: '低' },
+  '高': { color: '#f59e0b', bg: '#fffbeb', dot: '#f59e0b', label: '高' },
+  '中': { color: '#6366f1', bg: '#e0e7ff', dot: '#6366f1', label: '中' },
+  '低': { color: '#64748b', bg: '#f0eeec', dot: '#64748b', label: '低' },
 }
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -437,8 +437,8 @@ const typeIcons: Record<string, React.ReactNode> = {
 
 const typeColors: Record<string, string> = {
   '故障维修': '#e03131',
-  '计划维护': '#dd5b00',
-  '巡检': '#0075de',
+  '计划维护': '#f59e0b',
+  '巡检': '#6366f1',
   '校准': '#7b3ff2',
 }
 
@@ -500,7 +500,7 @@ function WorkOrderPipeline({ statistics }: { statistics: WorkOrderStatistics }) 
                       animation: count > 0 ? 'pulse 2s ease infinite' : 'none',
                     }}
                   />
-                  <span style={{ fontSize: 11, fontWeight: 500, color: '#787671', fontFeatureSettings: '"tnum"' }}>
+                  <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b', fontFeatureSettings: '"tnum"' }}>
                     {pct}%
                   </span>
                 </div>
@@ -510,7 +510,7 @@ function WorkOrderPipeline({ statistics }: { statistics: WorkOrderStatistics }) 
                   style={{
                     fontSize: 32,
                     fontWeight: 700,
-                    color: count > 0 ? stage.color : '#c8c4be',
+                    color: count > 0 ? stage.color : '#ef4444',
                     lineHeight: 1.1,
                     fontFeatureSettings: '"tnum"',
                     marginBottom: 6,
@@ -573,7 +573,7 @@ function WorkOrderPipeline({ statistics }: { statistics: WorkOrderStatistics }) 
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: 10,
-                      color: '#c8c4be',
+                      color: '#ef4444',
                     }}
                   >
                     <RightOutlined />
@@ -606,7 +606,7 @@ function WorkOrderPipeline({ statistics }: { statistics: WorkOrderStatistics }) 
               .map(([type, count], i) => {
                 const maxType = Math.max(...Object.values(statistics.by_type), 1)
                 const pct = (count / maxType) * 100
-                const accent = typeColors[type] || '#5645d4'
+                const accent = typeColors[type] || '#10b981'
                 return (
                   <div
                     key={type}
@@ -776,7 +776,7 @@ function WarningPanels({
         meta: (
           <span style={{ color: '#e03131', fontWeight: 600, fontSize: 13 }}>
             仅剩 {w.current_qty}{' '}
-            <span style={{ color: '#787671', fontWeight: 400 }}>/ 最低 {w.min_qty}</span>
+            <span style={{ color: '#64748b', fontWeight: 400 }}>/ 最低 {w.min_qty}</span>
           </span>
         ),
       })),
@@ -785,8 +785,8 @@ function WarningPanels({
       title: '逾期维护计划',
       count: overduePlans.length,
       icon: <ScheduleOutlined />,
-      accent: '#dd5b00',
-      bg: '#fff7e6',
+      accent: '#f59e0b',
+      bg: '#fffbeb',
       border: '#ffd591',
       emptyText: '暂无逾期计划',
       items: overduePlans.slice(0, 5).map(p => ({
@@ -794,7 +794,7 @@ function WarningPanels({
         label: p.plan_name || p.equipment_name || '',
         sub: p.equipment_name || p.asset_no || '',
         meta: (
-          <span style={{ color: '#dd5b00', fontWeight: 600, fontSize: 13 }}>
+          <span style={{ color: '#f59e0b', fontWeight: 600, fontSize: 13 }}>
             应于 {p.next_maintenance_date || '—'}
           </span>
         ),
@@ -819,7 +819,7 @@ function WarningPanels({
           meta: (
             <span
               style={{
-                color: daysLeft <= 7 ? '#e03131' : '#dd5b00',
+                color: daysLeft <= 7 ? '#e03131' : '#f59e0b',
                 fontWeight: 600,
                 fontSize: 13,
               }}
@@ -933,7 +933,7 @@ function WarningPanels({
                       {item.label}
                     </div>
                     {item.sub && (
-                      <div style={{ fontSize: 12, color: '#787671', marginTop: 1 }}>{item.sub}</div>
+                      <div style={{ fontSize: 12, color: '#64748b', marginTop: 1 }}>{item.sub}</div>
                     )}
                   </div>
                   <div style={{ flexShrink: 0, marginLeft: 12 }}>{item.meta}</div>
@@ -952,16 +952,16 @@ function WarningPanels({
 // ============================================================
 const workOrderStatusStyle: Record<string, { color: string; bg: string }> = {
   '待处理': { color: '#e03131', bg: '#fff1f0' },
-  '执行中': { color: '#dd5b00', bg: '#fff7e6' },
+  '执行中': { color: '#f59e0b', bg: '#fffbeb' },
   '待验收': { color: '#d4b106', bg: '#fffbe6' },
-  '已完成': { color: '#1aae39', bg: '#e6f7e6' },
-  '已关闭': { color: '#787671', bg: '#f0eeec' },
+  '已完成': { color: '#10b981', bg: '#d1fae5' },
+  '已关闭': { color: '#64748b', bg: '#f0eeec' },
 }
 
 function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
   if (orders.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: 'center', color: '#787671', fontSize: 14 }}>
+      <div style={{ padding: 40, textAlign: 'center', color: '#64748b', fontSize: 14 }}>
         暂无近期工单
       </div>
     )
@@ -970,7 +970,7 @@ function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       {orders.map((order, i) => {
-        const style = workOrderStatusStyle[order.status] || { color: '#787671', bg: '#f0eeec' }
+        const style = workOrderStatusStyle[order.status] || { color: '#64748b', bg: '#f0eeec' }
         return (
           <div
             key={order.id}
@@ -986,7 +986,7 @@ function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
               animationDelay: `${i * 60}ms`,
               transition: 'border-color 0.2s ease',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#c8c4be' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#ef4444' }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#ede9e4' }}
           >
             {/* 左侧优先级色条 */}
@@ -997,9 +997,9 @@ function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
                 borderRadius: 2,
                 background:
                   order.priority === '紧急' ? '#e03131'
-                  : order.priority === '高' ? '#dd5b00'
-                  : order.priority === '中' ? '#0075de'
-                  : '#c8c4be',
+                  : order.priority === '高' ? '#f59e0b'
+                  : order.priority === '中' ? '#6366f1'
+                  : '#ef4444',
                 flexShrink: 0,
               }}
             />
@@ -1010,7 +1010,7 @@ function RecentWorkOrders({ orders }: { orders: WorkOrder[] }) {
               <div
                 style={{
                   fontSize: 12,
-                  color: '#787671',
+                  color: '#64748b',
                   marginTop: 1,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
@@ -1064,10 +1064,10 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
   const urgentOrders = wo.by_priority['紧急'] || 0
 
   const quickLinks = [
-    { label: '设备台账', href: '/equipment/assets', icon: <ApartmentOutlined />, accent: '#5645d4', bg: '#ede9f8' },
-    { label: '维护管理', href: '/equipment/maintenance', icon: <ToolFilled />, accent: '#dd5b00', bg: '#fff7e6' },
-    { label: '备件管理', href: '/equipment/spare-parts', icon: <DashboardOutlined />, accent: '#0075de', bg: '#e6f0fa' },
-    { label: '巡检管理', href: '/equipment/inspection', icon: <AimOutlined />, accent: '#1aae39', bg: '#e6f7e6' },
+    { label: '设备台账', href: '/equipment/assets', icon: <ApartmentOutlined />, accent: '#10b981', bg: '#ecfdf5' },
+    { label: '维护管理', href: '/equipment/maintenance', icon: <ToolFilled />, accent: '#f59e0b', bg: '#fffbeb' },
+    { label: '备件管理', href: '/equipment/spare-parts', icon: <DashboardOutlined />, accent: '#6366f1', bg: '#e0e7ff' },
+    { label: '巡检管理', href: '/equipment/inspection', icon: <AimOutlined />, accent: '#10b981', bg: '#d1fae5' },
   ]
 
   return (
@@ -1130,7 +1130,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
           <p
             style={{
               fontSize: 14,
-              color: '#787671',
+              color: '#64748b',
               margin: '6px 0 0',
               lineHeight: 1.5,
             }}
@@ -1221,7 +1221,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
               <RightOutlined
                 style={{
                   fontSize: 11,
-                  color: '#c8c4be',
+                  color: '#ef4444',
                   transition: 'transform 0.25s ease, color 0.25s ease',
                   flexShrink: 0,
                 }}
@@ -1244,7 +1244,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
             value={eq.total}
             suffix="台"
             icon={<ApartmentOutlined />}
-            accentColor="#5645d4"
+            accentColor="#10b981"
             trend={{ direction: 'up', text: '设备台账' }}
             index={0}
           />
@@ -1252,7 +1252,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
             label="设备在线率"
             value={`${onlineRate}%`}
             icon={<CheckCircleFilled />}
-            accentColor="#1aae39"
+            accentColor="#10b981"
             trend={{ direction: 'up', text: `在线 ${onlineCount} 台` }}
             index={1}
           />
@@ -1270,7 +1270,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
             value={stockWarnings.length}
             suffix="项"
             icon={<WarningFilled />}
-            accentColor="#dd5b00"
+            accentColor="#f59e0b"
             trend={stockWarnings.length > 0 ? { direction: 'down', text: '需及时补货' } : undefined}
             index={3}
           />
@@ -1297,7 +1297,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-              <BarChartOutlined style={{ fontSize: 16, color: '#5645d4' }} />
+              <BarChartOutlined style={{ fontSize: 16, color: '#10b981' }} />
               <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
                 设备状态分布
               </h3>
@@ -1342,7 +1342,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <ThunderboltFilled style={{ fontSize: 16, color: '#dd5b00' }} />
+            <ThunderboltFilled style={{ fontSize: 16, color: '#f59e0b' }} />
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
               工单流转概览
             </h3>
@@ -1375,7 +1375,7 @@ export function StatsDashboard({ initialData }: StatsDashboardProps) {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-            <FileTextOutlined style={{ fontSize: 16, color: '#0075de' }} />
+            <FileTextOutlined style={{ fontSize: 16, color: '#6366f1' }} />
             <h3 style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
               近期工单
             </h3>

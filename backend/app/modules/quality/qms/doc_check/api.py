@@ -13,15 +13,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse
 from app.modules.quality.qms.doc_check.schemas import (
+    DocCheckBatchUpdateApiResponse,
+    DocCheckConfigApiResponse,
     DocCheckConfigCreate,
+    DocCheckConfigListApiResponse,
     DocCheckConfigResponse,
     DocCheckConfigUpdate,
     DocCheckCreate,
+    DocCheckDetailApiResponse,
     DocCheckDetailResponse,
+    DocCheckExportApiResponse,
+    DocCheckListApiResponse,
+    DocCheckMessageApiResponse,
+    DocCheckProblemListApiResponse,
+    DocCheckProblemUpdateApiResponse,
+    DocCheckProgressApiResponse,
+    DocCheckRecordsApiResponse,
     DocCheckResponse,
+    DocCheckSuccessApiResponse,
+    DocCheckTaskApiResponse,
     DocCheckUpdate,
+    DocCheckUploadApiResponse,
+    DocCheckVectorCacheListApiResponse,
     ProblemResponse,
     ProblemUpdate,
 )
@@ -39,7 +53,7 @@ _upload_store: dict[str, dict[str, Any]] = {}
 # ============ 配置接口 ============
 
 
-@router.get("/config", response_model=ApiResponse, summary="获取配置列表")
+@router.get("/config", response_model=DocCheckConfigListApiResponse, summary="获取配置列表")
 async def get(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
@@ -48,16 +62,16 @@ async def get(
     try:
         service = DocCheckService(db)
         configs = await service.get_configs()
-        return ApiResponse(data=[DocCheckConfigResponse.model_validate(c) for c in configs])
+        return DocCheckConfigListApiResponse(data=[DocCheckConfigResponse.model_validate(c) for c in configs])
     except Exception as e:
         logger.exception("Failed to get doc check configs")
         import traceback
 
         traceback.print_exc()
-        return ApiResponse(code=500, message=f"Error: {type(e).__name__}: {str(e)}")
+        return DocCheckConfigListApiResponse(code=500, message=f"Error: {type(e).__name__}: {str(e)}")
 
 
-@router.get("/config/{config_id}", response_model=ApiResponse, summary="获取配置详情")  # type: ignore[no-redef]
+@router.get("/config/{config_id}", response_model=DocCheckConfigApiResponse, summary="获取配置详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     config_id: uuid.UUID,
     current_user: RequiredUser,
@@ -67,11 +81,11 @@ async def get(  # noqa: F811
     service = DocCheckService(db)
     config = await service.get_config_by_key(str(config_id))
     if not config:
-        return ApiResponse(code=404, message="配置不存在")
-    return ApiResponse(data=DocCheckConfigResponse.model_validate(config))
+        return DocCheckConfigApiResponse(code=404, message="配置不存在")
+    return DocCheckConfigApiResponse(data=DocCheckConfigResponse.model_validate(config))
 
 
-@router.post("/config", response_model=ApiResponse, summary="创建配置")
+@router.post("/config", response_model=DocCheckConfigApiResponse, summary="创建配置")
 async def post(
     data: DocCheckConfigCreate,
     current_user: RequiredUser,
@@ -81,10 +95,10 @@ async def post(
     service = DocCheckService(db)
     config = await service.create_config(data)
     await db.commit()
-    return ApiResponse(data=DocCheckConfigResponse.model_validate(config))
+    return DocCheckConfigApiResponse(data=DocCheckConfigResponse.model_validate(config))
 
 
-@router.put("/config/{config_id}", response_model=ApiResponse, summary="更新配置")
+@router.put("/config/{config_id}", response_model=DocCheckConfigApiResponse, summary="更新配置")
 async def put(
     config_id: uuid.UUID,
     data: DocCheckConfigUpdate,
@@ -95,15 +109,15 @@ async def put(
     service = DocCheckService(db)
     config = await service.update_config(config_id, data)
     if not config:
-        return ApiResponse(code=404, message="配置不存在")
+        return DocCheckConfigApiResponse(code=404, message="配置不存在")
     await db.commit()
-    return ApiResponse(data=DocCheckConfigResponse.model_validate(config))
+    return DocCheckConfigApiResponse(data=DocCheckConfigResponse.model_validate(config))
 
 
 # ============ 校验接口 ============
 
 
-@router.post("/check", response_model=ApiResponse, summary="创建校验任务")  # type: ignore[no-redef]
+@router.post("/check", response_model=DocCheckTaskApiResponse, summary="创建校验任务")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: DocCheckCreate,
     current_user: RequiredUser,
@@ -116,7 +130,7 @@ async def post(  # noqa: F811
         check = await service.create_check(data, operator=operator)
         await db.commit()
         # 返回前端需要的格式
-        return ApiResponse(
+        return DocCheckTaskApiResponse(
             data={
                 "task_id": str(check.id),
                 "check_no": check.file_code,
@@ -129,10 +143,10 @@ async def post(  # noqa: F811
         import traceback
 
         traceback.print_exc()
-        return ApiResponse(code=500, message=f"{type(e).__name__}: {str(e)}")
+        return DocCheckTaskApiResponse(code=500, message=f"{type(e).__name__}: {str(e)}")
 
 
-@router.post("/check/{check_id}/execute", response_model=ApiResponse, summary="执行校验")
+@router.post("/check/{check_id}/execute", response_model=DocCheckDetailApiResponse, summary="执行校验")
 async def handler(
     check_id: uuid.UUID,
     current_user: RequiredUser,
@@ -144,15 +158,15 @@ async def handler(
     try:
         check = await service.execute_check(check_id, operator=operator)
         if not check:
-            return ApiResponse(code=404, message="校验任务不存在")
+            return DocCheckDetailApiResponse(code=404, message="校验任务不存在")
         await db.commit()
-        return ApiResponse(data=DocCheckDetailResponse.model_validate(check))
+        return DocCheckDetailApiResponse(data=DocCheckDetailResponse.model_validate(check))
     except Exception as e:
         logger.exception("Failed to execute doc check")
-        return ApiResponse(code=500, message=str(e))
+        return DocCheckDetailApiResponse(code=500, message=str(e))
 
 
-@router.get("/check", response_model=ApiResponse, summary="获取校验列表")  # type: ignore[no-redef]
+@router.get("/check", response_model=DocCheckListApiResponse, summary="获取校验列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     page: int = Query(1, ge=1, description="页码"),
@@ -172,13 +186,13 @@ async def get(  # noqa: F811
         doc_type=doc_type,
         operator=operator,
     )
-    return ApiResponse(
+    return DocCheckListApiResponse(
         data=[DocCheckResponse.model_validate(c) for c in checks],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
-@router.get("/check/{check_id}", response_model=ApiResponse, summary="获取校验详情")  # type: ignore[no-redef]
+@router.get("/check/{check_id}", response_model=DocCheckDetailApiResponse, summary="获取校验详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     check_id: uuid.UUID,
     current_user: RequiredUser,
@@ -188,11 +202,11 @@ async def get(  # noqa: F811
     service = DocCheckService(db)
     check = await service.get_check(check_id)
     if not check:
-        return ApiResponse(code=404, message="校验任务不存在")
-    return ApiResponse(data=DocCheckDetailResponse.model_validate(check))
+        return DocCheckDetailApiResponse(code=404, message="校验任务不存在")
+    return DocCheckDetailApiResponse(data=DocCheckDetailResponse.model_validate(check))
 
 
-@router.put("/check/{check_id}", response_model=ApiResponse, summary="更新校验任务")  # type: ignore[no-redef]
+@router.put("/check/{check_id}", response_model=DocCheckTaskApiResponse, summary="更新校验任务")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     check_id: uuid.UUID,
     data: DocCheckUpdate,
@@ -204,14 +218,14 @@ async def put(  # noqa: F811
     try:
         check = await service.update_check(check_id, data)
         if not check:
-            return ApiResponse(code=404, message="校验任务不存在")
+            return DocCheckTaskApiResponse(code=404, message="校验任务不存在")
         await db.commit()
-        return ApiResponse(data=DocCheckResponse.model_validate(check))
+        return DocCheckTaskApiResponse(data=DocCheckResponse.model_validate(check).model_dump())
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return DocCheckTaskApiResponse(code=400, message=str(e))
 
 
-@router.delete("/check/{check_id}", response_model=ApiResponse, summary="删除校验任务")
+@router.delete("/check/{check_id}", response_model=DocCheckMessageApiResponse, summary="删除校验任务")
 async def delete(
     check_id: uuid.UUID,
     current_user: RequiredUser,
@@ -222,17 +236,17 @@ async def delete(
     try:
         result = await service.delete_check(check_id)
         if not result:
-            return ApiResponse(code=404, message="校验任务不存在")
+            return DocCheckMessageApiResponse(code=404, message="校验任务不存在")
         await db.commit()
-        return ApiResponse(message="删除成功")
+        return DocCheckMessageApiResponse(message="删除成功")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        return DocCheckMessageApiResponse(code=400, message=str(e))
 
 
 # ============ 问题接口 ============
 
 
-@router.get("/problems", response_model=ApiResponse, summary="获取问题列表")  # type: ignore[no-redef]
+@router.get("/problems", response_model=DocCheckProblemListApiResponse, summary="获取问题列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     check_main_id: uuid.UUID = Query(..., description="校验主表ID"),
@@ -241,13 +255,13 @@ async def get(  # noqa: F811
     """获取问题列表"""
     service = DocCheckService(db)
     problems = await service.get_problems(check_main_id)
-    return ApiResponse(data=[ProblemResponse.model_validate(p) for p in problems])
+    return DocCheckProblemListApiResponse(data=[ProblemResponse.model_validate(p) for p in problems])
 
 
 # ============ 向量缓存接口 ============
 
 
-@router.get("/vector-cache", response_model=ApiResponse, summary="获取向量缓存列表")  # type: ignore[no-redef]
+@router.get("/vector-cache", response_model=DocCheckVectorCacheListApiResponse, summary="获取向量缓存列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     doc_type: str | None = Query(None, description="文档类型"),
@@ -257,13 +271,13 @@ async def get(  # noqa: F811
     """获取向量缓存列表"""
     service = DocCheckService(db)
     caches = await service.get_vector_cache(doc_type=doc_type, doc_hash=doc_hash)
-    return ApiResponse(data=caches)
+    return DocCheckVectorCacheListApiResponse(data=caches)
 
 
 # ============ 文件上传接口 ============
 
 
-@router.post("/upload", response_model=ApiResponse, summary="上传文件")  # type: ignore[no-redef]
+@router.post("/upload", response_model=DocCheckUploadApiResponse, summary="上传文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
     file: UploadFile = File(...),
@@ -318,7 +332,7 @@ async def post(  # noqa: F811
         "status": "uploaded",
     }
 
-    return ApiResponse(
+    return DocCheckUploadApiResponse(
         data={
             "file_id": file_id,
             "file_name": file_name,
@@ -330,7 +344,7 @@ async def post(  # noqa: F811
 
 
 @router.get(  # type: ignore[no-redef]
-    "/upload/{upload_id}/progress", response_model=ApiResponse, summary="获取上传进度"
+    "/upload/{upload_id}/progress", response_model=DocCheckProgressApiResponse, summary="获取上传进度"
 )
 async def handler(  # noqa: F811
     upload_id: str,
@@ -339,12 +353,12 @@ async def handler(  # noqa: F811
 ) -> Any:
     """获取上传进度"""
     if upload_id not in _upload_store:
-        return ApiResponse(code=404, message="上传记录不存在")
+        return DocCheckProgressApiResponse(code=404, message="上传记录不存在")
 
     upload_data = _upload_store[upload_id]
     progress = 100 if upload_data.get("status") == "uploaded" else 0
 
-    return ApiResponse(
+    return DocCheckProgressApiResponse(
         data={
             "progress": progress,
             "file_id": upload_id if progress == 100 else None,
@@ -356,7 +370,7 @@ async def handler(  # noqa: F811
 
 
 @router.get(  # type: ignore[no-redef]
-    "/check/{check_id}/progress", response_model=ApiResponse, summary="获取校验进度"
+    "/check/{check_id}/progress", response_model=DocCheckProgressApiResponse, summary="获取校验进度"
 )
 async def handler(  # noqa: F811
     check_id: uuid.UUID,
@@ -368,7 +382,7 @@ async def handler(  # noqa: F811
     check = await service.get_check(check_id)
 
     if not check:
-        return ApiResponse(code=404, message="校验任务不存在")
+        return DocCheckProgressApiResponse(code=404, message="校验任务不存在")
 
     # 计算进度
     status_map = {
@@ -389,7 +403,7 @@ async def handler(  # noqa: F811
         "cancelled": "已取消",
     }
 
-    return ApiResponse(
+    return DocCheckProgressApiResponse(
         data={
             "task_id": str(check.id),
             "status": check.status,
@@ -400,7 +414,7 @@ async def handler(  # noqa: F811
     )
 
 
-@router.post("/check/{check_id}/cancel", response_model=ApiResponse, summary="取消校验")  # type: ignore[no-redef]
+@router.post("/check/{check_id}/cancel", response_model=DocCheckSuccessApiResponse, summary="取消校验")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     check_id: uuid.UUID,
     current_user: RequiredUser,
@@ -413,21 +427,21 @@ async def post(  # noqa: F811
 
     check = await service.get_check(check_id)
     if not check:
-        return ApiResponse(code=404, message="校验任务不存在")
+        return DocCheckSuccessApiResponse(code=404, message="校验任务不存在")
 
     if check.status not in ["pending", "running"]:
-        return ApiResponse(code=400, message="只有待处理或处理中的任务才能取消")
+        return DocCheckSuccessApiResponse(code=400, message="只有待处理或处理中的任务才能取消")
 
     await service.update_check(check_id, DocCheckUpdate(status="cancelled"))
     await db.commit()
 
-    return ApiResponse(data={"success": True})
+    return DocCheckSuccessApiResponse(data={"success": True})
 
 
 # ============ 批量校验接口 ============
 
 
-@router.post("/batch", response_model=ApiResponse, summary="批量校验")  # type: ignore[no-redef]
+@router.post("/batch", response_model=DocCheckSuccessApiResponse, summary="批量校验")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     file_ids: list[str],
     current_user: RequiredUser,
@@ -465,7 +479,7 @@ async def post(  # noqa: F811
             }
         )
 
-    return ApiResponse(
+    return DocCheckSuccessApiResponse(
         data={
             "task_id": str(results[0]["task_id"]) if results else None,
             "status": "batch_created",
@@ -476,7 +490,7 @@ async def post(  # noqa: F811
 # ============ 记录列表接口 ============
 
 
-@router.get("/records", response_model=ApiResponse, summary="获取校验记录列表")  # type: ignore[no-redef]
+@router.get("/records", response_model=DocCheckRecordsApiResponse, summary="获取校验记录列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
     page: int = Query(1, ge=1, description="页码"),
@@ -522,7 +536,7 @@ async def get(  # noqa: F811
             }
         )
 
-    return ApiResponse(
+    return DocCheckRecordsApiResponse(
         data={
             "items": items,
             "total": total,
@@ -533,7 +547,7 @@ async def get(  # noqa: F811
 
 
 @router.get(  # type: ignore[no-redef]
-    "/records/{record_id}", response_model=ApiResponse, summary="获取校验记录详情"
+    "/records/{record_id}", response_model=DocCheckRecordsApiResponse, summary="获取校验记录详情"
 )
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
@@ -545,7 +559,7 @@ async def handler(  # noqa: F811
     check = await service.get_check(record_id)
 
     if not check:
-        return ApiResponse(code=404, message="校验记录不存在")
+        return DocCheckRecordsApiResponse(code=404, message="校验记录不存在")
 
     # 获取问题列表
     problems = await service.get_problems(record_id)
@@ -566,7 +580,7 @@ async def handler(  # noqa: F811
             }
         )
 
-    return ApiResponse(
+    return DocCheckRecordsApiResponse(
         data={
             "id": str(check.id),
             "file_name": check.file_name or "",
@@ -589,7 +603,7 @@ async def handler(  # noqa: F811
 
 
 @router.post(  # type: ignore[no-redef]
-    "/records/{record_id}/confirm", response_model=ApiResponse, summary="确认通过"
+    "/records/{record_id}/confirm", response_model=DocCheckSuccessApiResponse, summary="确认通过"
 )
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
@@ -603,21 +617,21 @@ async def handler(  # noqa: F811
 
     check = await service.get_check(record_id)
     if not check:
-        return ApiResponse(code=404, message="校验记录不存在")
+        return DocCheckSuccessApiResponse(code=404, message="校验记录不存在")
 
     if check.status != "completed":
-        return ApiResponse(code=400, message="只有已完成状态的校验才能确认")
+        return DocCheckSuccessApiResponse(code=400, message="只有已完成状态的校验才能确认")
 
     await service.update_check(record_id, DocCheckUpdate(status="confirmed"))
     await db.commit()
 
-    return ApiResponse(data={"success": True})
+    return DocCheckSuccessApiResponse(data={"success": True})
 
 
 # ============ 问题处理接口 ============
 
 
-@router.put("/problems/{problem_id}", response_model=ApiResponse, summary="更新问题")  # type: ignore[no-redef]
+@router.put("/problems/{problem_id}", response_model=DocCheckProblemUpdateApiResponse, summary="更新问题")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     problem_id: uuid.UUID,
     data: ProblemUpdate,
@@ -646,7 +660,7 @@ async def put(  # noqa: F811
     problem = result.scalar_one_or_none()
 
     if not problem:
-        return ApiResponse(code=404, message="问题不存在")
+        return DocCheckProblemUpdateApiResponse(code=404, message="问题不存在")
 
     # 更新问题
     if data.handle_status is not None:
@@ -659,7 +673,7 @@ async def put(  # noqa: F811
     await db.commit()
     await db.refresh(problem)
 
-    return ApiResponse(
+    return DocCheckProblemUpdateApiResponse(
         data={
             "id": str(problem.id),
             "handle_status": problem.handle_status,
@@ -668,7 +682,7 @@ async def put(  # noqa: F811
     )
 
 
-@router.put("/problems/batch", response_model=ApiResponse, summary="批量更新问题")  # type: ignore[no-redef]
+@router.put("/problems/batch", response_model=DocCheckBatchUpdateApiResponse, summary="批量更新问题")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     problem_ids: list[str],
     handle_status: str,
@@ -703,13 +717,13 @@ async def put(  # noqa: F811
 
     await db.commit()
 
-    return ApiResponse(data={"success_count": count})
+    return DocCheckBatchUpdateApiResponse(data={"success_count": count})
 
 
 # ============ 导出报告接口 ============
 
 
-@router.get("/export/{record_id}", response_model=ApiResponse, summary="导出校验报告")  # type: ignore[no-redef]
+@router.get("/export/{record_id}", response_model=DocCheckExportApiResponse, summary="导出校验报告")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     record_id: uuid.UUID,
     current_user: RequiredUser,
@@ -721,12 +735,12 @@ async def get(  # noqa: F811
     check = await service.get_check(record_id)
 
     if not check:
-        return ApiResponse(code=404, message="校验记录不存在")
+        return DocCheckExportApiResponse(code=404, message="校验记录不存在")
 
     # 生成报告（简化实现）
     file_name = f"{check.file_code or 'report'}_校验报告.{format}"
 
-    return ApiResponse(
+    return DocCheckExportApiResponse(
         data={
             "download_url": f"/api/v1/doc-check/download/{record_id}",
             "file_name": file_name,

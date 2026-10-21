@@ -50,6 +50,14 @@ export function HazardIdentificationNewPageClient() {
         return
       }
 
+      // The contract types `data` as optional; a 200 with no payload would
+      // otherwise throw on the next line.
+      if (!createRes.data) {
+        message.error('创建失败：响应缺少数据')
+        setLoading(false)
+        return
+      }
+
       const recordId = createRes.data.id
 
       if (values.attachment?.length > 0) {

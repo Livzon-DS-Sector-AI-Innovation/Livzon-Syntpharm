@@ -75,12 +75,12 @@ export function CalibrationPlanDrawer({ equipments, onRefresh }: CalibrationPlan
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingCalibrationPlan ? '编辑校准计划' : '新增校准计划'}
-      width={480}
+      size={480}
       open={calibrationPlanDrawerOpen}
       onClose={closeCalibrationPlanDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeCalibrationPlanDrawer}>取消</Button>

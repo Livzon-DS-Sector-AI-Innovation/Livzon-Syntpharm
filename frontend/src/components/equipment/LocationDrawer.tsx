@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
+import { useEquipmentTaxonomyQuery } from '@/hooks/useEquipmentLedger'
 import { createLocation, updateLocation } from '@/actions/equipment'
 
 const { TextArea } = Input
@@ -15,8 +16,9 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
     locationDrawerOpen,
     editingLocation,
     closeLocationDrawer,
-    locations,
   } = useEquipmentStore()
+  const { data: taxonomy } = useEquipmentTaxonomyQuery()
+  const locations = taxonomy?.locations ?? []
 
   useEffect(() => {
     if (!locationDrawerOpen) return
@@ -88,10 +90,10 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
   return (
     <Drawer
       title={editingLocation ? '编辑位置' : '新增位置'}
-      width={400}
+      size={400}
       open={locationDrawerOpen}
       onClose={closeLocationDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeLocationDrawer}>取消</Button>

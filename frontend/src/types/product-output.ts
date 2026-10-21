@@ -1,4 +1,5 @@
 import type { components } from '@/types/generated/schema'
+import type { ApiResponse } from '@/types/common'
 
 /**
  * Domain model types (ViewModels) — not in OpenAPI spec.
@@ -7,7 +8,6 @@ import type { components } from '@/types/generated/schema'
 
 // product-output module TypeScript types
 
-import type { ApiResponse } from '@/types/production'
 // Annual Review types (from generated schema)
 export type MonthlyTrend = components["schemas"]["MonthlyTrend"]
 export type WorkshopRanking = components["schemas"]["WorkshopRanking"]

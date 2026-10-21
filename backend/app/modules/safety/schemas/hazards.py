@@ -218,7 +218,7 @@ class DepartmentLeaderApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: DepartmentLeaderResponse
+    data: DepartmentLeaderResponse | None = None
 
 
 class DepartmentSafetyOfficerApiResponse(BaseModel):
@@ -226,4 +226,4 @@ class DepartmentSafetyOfficerApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: DepartmentSafetyOfficerResponse
+    data: DepartmentSafetyOfficerResponse | None = None

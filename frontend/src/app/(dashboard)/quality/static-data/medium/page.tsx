@@ -37,13 +37,15 @@ import {
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { Medium, MEDIUM_TYPE_OPTIONS, MEDIUM_VERIFY_STATUS_OPTIONS } from '@/types/static-data'
+// Reads stay on the browser client (`AGENTS.md:413`); writes go through the action
+// (`:443`), where the function names match.
+import { listMedium, getMediumStats } from '@/lib/api/client/static-data-api'
 import {
-  listMedium,
   createMedium,
   updateMedium,
   deleteMedium,
   adjustMediumStock,
-} from '@/lib/api/client/static-data-api'
+} from '@/actions/static-data'
 import './medium-style.css'
 
 const { Search } = Input
@@ -94,10 +96,15 @@ export default function MediumPage() {
     if (statusFilter !== 'all') {
       params.status = statusFilter
     }
-    const adv = advancedForm.getFieldsValue()
-    if (adv.manufacturer) params.manufacturer = adv.manufacturer
+    // Only read the instance while its <Form> is mounted — see chrom-column for
+    // the full explanation. advancedForm lives behind {showAdvanced && ...},
+    // and this useCallback runs on mount, which trips antd's "not connected" warning.
+    if (showAdvanced) {
+      const adv = advancedForm.getFieldsValue()
+      if (adv.manufacturer) params.manufacturer = adv.manufacturer
+    }
     return params
-  }, [page, pageSize, searchText, typeFilter, statusFilter, advancedForm])
+  }, [page, pageSize, searchText, typeFilter, statusFilter, advancedForm, showAdvanced])
 
   const { data: queryResult, isLoading: loading, refetch: fetchData } = useQuery({
     queryKey: ['medium-list', page, pageSize, searchText, typeFilter, statusFilter],
@@ -114,28 +121,8 @@ export default function MediumPage() {
   const { data: statsData = { all: 0, verified: 0, pending: 0, expired: 0, lowStock: 0 }, refetch: fetchStats } = useQuery({
     queryKey: ['medium-stats', typeFilter],
     queryFn: async () => {
-      let allData: Medium[] = []
-      let curPage = 1
-      while (true) {
-        const params: Record<string, unknown> = { page: curPage, page_size: 200 }
-        if (typeFilter !== 'all') {
-          params.medium_type = typeFilter
-        }
-        const res = await listMedium(params)
-        const batch = (res?.data ?? []) as Medium[]
-        allData = allData.concat(batch)
-        if (allData.length >= (res?.meta?.total ?? 0) || batch.length === 0) break
-        curPage++
-      }
-      let verified = 0, pending = 0, expired = 0, lowStock = 0
-      const today = dayjs()
-      allData.forEach(item => {
-        if (item.verify_status === '已验证') verified++
-        if (item.verify_status === '待验证') pending++
-        if (dayjs(item.expire_date).isBefore(today)) expired++
-        if (item.stock_num <= item.min_stock) lowStock++
-      })
-      return { all: allData.length, verified, pending, expired, lowStock }
+      // One request. The previous version paged the whole table and counted here.
+      return await getMediumStats(typeFilter !== 'all' ? typeFilter : undefined)
     },
   })
 
@@ -591,7 +578,7 @@ export default function MediumPage() {
       <Drawer
         title={isNew ? '新建培养基' : '编辑培养基'}
         placement="right"
-        width={560}
+        size={560}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         extra={
@@ -746,7 +733,7 @@ export default function MediumPage() {
       <Drawer
         title="调整库存"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
         extra={

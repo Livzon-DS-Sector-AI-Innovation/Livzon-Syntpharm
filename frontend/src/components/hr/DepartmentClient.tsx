@@ -194,7 +194,7 @@ export default function DepartmentClient({
         onCancel={() => setTeamModalOpen(false)}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         {selectedDepartment && (
           <TeamClient

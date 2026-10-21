@@ -5,6 +5,7 @@
 
 import enum
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -445,3 +446,99 @@ class ReminderConfigListResponse(BaseModel):
 
     items: list[ReminderConfigResponse]
     total: int
+
+
+class InstrumentFeishuUserApiResponse(BaseModel):
+    """飞书用户查询响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentReminderConfigListApiResponse(BaseModel):
+    """提醒配置列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentReminderConfigApiResponse(BaseModel):
+    """提醒配置响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentMessageApiResponse(BaseModel):
+    """消息响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None
+
+
+class InstrumentListApiResponse(BaseModel):
+    """仪器列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentApiResponse(BaseModel):
+    """仪器响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentRuleListApiResponse(BaseModel):
+    """校准规则列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentRuleApiResponse(BaseModel):
+    """校准规则响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentRecordListApiResponse(BaseModel):
+    """校准记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentRecordApiResponse(BaseModel):
+    """校准记录响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentApprovalApiResponse(BaseModel):
+    """审批响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class InstrumentExportApiResponse(BaseModel):
+    """导出响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None

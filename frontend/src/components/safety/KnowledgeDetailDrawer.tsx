@@ -314,7 +314,7 @@ export default function KnowledgeDetailDrawer({
         title={article?.title || '文档详情'}
         open={open}
         onClose={onClose}
-        width={800}
+        size={800}
         loading={loading}
         styles={{
           header: { borderBottom: '1px solid #e5e3df', padding: '16px 24px' },

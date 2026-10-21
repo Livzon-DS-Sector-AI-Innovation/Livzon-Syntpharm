@@ -646,7 +646,7 @@ export default function IQCPage() {
           open={createModalVisible}
           onCancel={() => setCreateModalVisible(false)}
           width={1000}
-          destroyOnClose
+          destroyOnHidden
           footer={
             <Space>
               <Button onClick={() => setCreateModalVisible(false)}>取消</Button>
@@ -896,7 +896,7 @@ export default function IQCPage() {
           open={editModalVisible}
           onCancel={() => setEditModalVisible(false)}
           width={1000}
-          destroyOnClose
+          destroyOnHidden
           footer={
             <Space>
               <Button onClick={() => setEditModalVisible(false)}>取消</Button>

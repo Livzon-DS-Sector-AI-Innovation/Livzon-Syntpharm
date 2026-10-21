@@ -1,5 +1,11 @@
 'use client'
-import {deleteDeviationTemplate, updateDeviationTemplateStatus, uploadDeviationTemplate} from '@/actions/quality'
+import {
+  createDeviationTemplate,
+  deleteDeviationTemplate,
+  updateDeviationTemplate,
+  updateDeviationTemplateStatus,
+  uploadDeviationTemplate,
+} from '@/actions/quality'
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
@@ -41,7 +47,6 @@ interface Template {
 
 
 export default function TemplateManagementPage() {
-  const [_form] = Form.useForm()
   const [modalForm] = Form.useForm()
   const [modalVisible, setModalVisible] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -124,28 +129,23 @@ export default function TemplateManagementPage() {
   const handleModalOk = async () => {
     try {
       const values = await modalForm.validateFields()
-      const url = editingId
-        ? `${API_BASE}/quality/deviation-automation/templates/${editingId}`
-        : `${API_BASE}/quality/deviation-automation/templates`
-      const method = editingId ? 'PUT' : 'POST'
+      const payload = { ...values, is_active: values.is_active ? 1 : 0 }
 
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...values,
-          is_active: values.is_active ? 1 : 0,
-        }),
-      })
-      if (!response.ok) throw new Error(editingId ? '更新失败' : '创建失败')
+      // The write goes through a Server Action (`AGENTS.md:443` — 禁止在 Client 组件里
+      // 直接 fetch 写接口). The action validates the payload and revalidates the route.
+      const result = editingId
+        ? await updateDeviationTemplate(String(editingId), payload)
+        : await createDeviationTemplate(payload)
 
-      const result = await response.json()
       message.success(editingId ? '更新成功' : '创建成功')
       setModalVisible(false)
 
       // 如果是新建模板，打开上传弹窗
-      if (!editingId && result.data?.id) {
-        setUploadingTemplateId(result.data.id)
+      // `Template.id` is a number, and `uploadingTemplateId` holds one — the cast
+      // names the body's shape, since `apiFetch` returns `any`.
+      const createdId = (result as { data?: { id?: number } })?.data?.id
+      if (!editingId && createdId) {
+        setUploadingTemplateId(createdId)
         setUploadFileList([])
         setUploadModalVisible(true)
       }
@@ -298,7 +298,15 @@ export default function TemplateManagementPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <Card title="报告模板管理">
+      {/* The card header doubles as the page's top-level heading (#102). Inline
+          styles reset so the visible title is unchanged. */}
+      <Card
+        title={
+          <h1 style={{ margin: 0, fontSize: 'inherit', fontWeight: 'inherit', lineHeight: 'inherit' }}>
+            报告模板管理
+          </h1>
+        }
+      >
         {/* 操作区 */}
         <div style={{ marginBottom: 16 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
@@ -328,7 +336,7 @@ export default function TemplateManagementPage() {
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={500}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={modalForm} layout="vertical">
           <Form.Item

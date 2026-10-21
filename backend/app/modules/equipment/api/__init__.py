@@ -61,3 +61,8 @@ router.include_router(inspection_router, prefix="/inspection")
 from app.modules.equipment.api.batch_import import router as import_router  # noqa: E402
 
 router.include_router(import_router, prefix="/equipments/import")
+
+# 导入模块路由（V4 - 新功能）
+from app.modules.equipment.api.batch_import_v4 import router as import_v4_router  # noqa: E402
+
+router.include_router(import_v4_router, prefix="/equipments/import-v4")

@@ -781,7 +781,7 @@ export default function FQCPage() {
         title="新建FQC检验单"
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
-        destroyOnClose
+        destroyOnHidden
         width={1200}
         footer={
           <Space>

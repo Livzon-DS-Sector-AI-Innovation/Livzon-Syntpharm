@@ -432,3 +432,54 @@ class StabilityTrendResponse(BaseModel):
     study_type: StabilityStudyType
     inspection_items: list[str]
     data_points: dict[int, list[StabilityTrendDataPoint]]  # node_month -> data points
+
+
+# ========== API Response Wrappers ==========
+
+
+class StabilityStudyApiResponse(BaseModel):
+    """稳定性研究响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: StabilityStudyResponse | None = None
+
+
+class StabilityStudyListApiResponse(BaseModel):
+    """稳定性研究列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: StabilityStudyListResponse | None = None
+
+
+class StabilityInspectionApiResponse(BaseModel):
+    """稳定性检验响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: StabilityInspectionResponse | None = None
+
+
+class StabilityInspectionListApiResponse(BaseModel):
+    """稳定性检验列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: StabilityInspectionListResponse | None = None
+
+
+class StabilityApprovalRecordListApiResponse(BaseModel):
+    """稳定性审批记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[StabilityApprovalRecordResponse] | None = None
+
+
+class StabilityTrendApiResponse(BaseModel):
+    """稳定性趋势响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: StabilityTrendResponse | None = None

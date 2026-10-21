@@ -49,7 +49,7 @@ export default function DepartmentForm({ open, department, onClose, onSuccess }:
   }
 
   return (
-    <Modal
+    <Modal forceRender
       title={isEdit ? '编辑部门' : '新增部门'}
       open={open}
       onOk={handleSubmit}

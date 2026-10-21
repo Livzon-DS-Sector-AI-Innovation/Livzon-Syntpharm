@@ -265,3 +265,46 @@ class RetentionLedgerFilter(BaseModel):
     retention_status: RetentionStatus | None = None
     order_no: str | None = None
     sample_no: str | None = None
+
+
+# ========== API Response Wrappers ==========
+
+
+class SamplingOrderApiResponse(BaseModel):
+    """取样单响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: SamplingOrderResponse | None = None
+
+
+class SamplingOrderListApiResponse(BaseModel):
+    """取样单列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: SamplingOrderListResponse | None = None
+
+
+class SamplingApprovalRecordListApiResponse(BaseModel):
+    """取样审批记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[SamplingApprovalRecordResponse] | None = None
+
+
+class SampleRetentionLedgerApiResponse(BaseModel):
+    """留样台账响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: SampleRetentionLedgerResponse | None = None
+
+
+class SampleRetentionLedgerListApiResponse(BaseModel):
+    """留样台账列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[SampleRetentionLedgerResponse] | None = None

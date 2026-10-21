@@ -182,7 +182,7 @@ export default function ItemLedgerPage() {
           form.resetFields()
         }}
         onOk={() => form.submit()}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item name="name" label="物品名称" rules={[{ required: true, message: '请输入物品名称' }]}>

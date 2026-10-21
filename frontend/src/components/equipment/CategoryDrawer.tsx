@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEffect } from 'react'
 import { useEquipmentStore } from '@/stores/equipment'
+import { useEquipmentTaxonomyQuery } from '@/hooks/useEquipmentLedger'
 import { createCategory, updateCategory } from '@/actions/equipment'
 
 const { TextArea } = Input
@@ -16,8 +17,9 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
     categoryDrawerOpen,
     editingCategory,
     closeCategoryDrawer,
-    categories,
   } = useEquipmentStore()
+  const { data: taxonomy } = useEquipmentTaxonomyQuery()
+  const categories = taxonomy?.categories ?? []
 
   useEffect(() => {
     if (!categoryDrawerOpen) return
@@ -87,12 +89,12 @@ export function CategoryDrawer({ onRefresh }: { onRefresh?: () => void }) {
   const parentOptions = flattenTree(categories, editingCategory?.id)
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={editingCategory ? '编辑分类' : '新增分类'}
-      width={400}
+      size={400}
       open={categoryDrawerOpen}
       onClose={closeCategoryDrawer}
-      destroyOnClose
+      destroyOnHidden
       extra={
         <Space>
           <Button onClick={closeCategoryDrawer}>取消</Button>

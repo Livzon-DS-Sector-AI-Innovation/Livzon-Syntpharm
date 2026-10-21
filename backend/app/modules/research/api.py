@@ -11,9 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
-from app.core.response import build_response, paginated_response
+from app.core.response import ApiResponse, build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
+    EDBOOptimizeApiResponse,
+    PilotWorkflowCreate,
+    PilotWorkflowListResponse,
+    PilotWorkflowResponse,
+    PilotWorkflowStepResponse,
     RdDeliverableTemplateCreate,
     RdDeliverableTemplateResponse,
     RdDeliverableTemplateUpdate,
@@ -61,7 +66,6 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.schemas import ApiResponse
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +78,6 @@ async def create_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     project = await service.create_project(db, data)
 
     return build_response(data=ResearchProjectResponse.model_validate(project))
@@ -91,7 +94,6 @@ async def get_projects(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     projects, total = await service.get_projects(
         db,
         stage=stage,
@@ -116,7 +118,6 @@ async def get_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     project = await service.get_project(db, project_id)
 
     return build_response(data=ResearchProjectResponse.model_validate(project))
@@ -129,7 +130,6 @@ async def update_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     project = await service.update_project(db, project_id, data)
 
     return build_response(data=ResearchProjectResponse.model_validate(project))
@@ -141,7 +141,6 @@ async def delete_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     await service.delete_project(db, project_id)
 
     return build_response(data={"message": "项目已删除"})
@@ -154,7 +153,6 @@ async def analyze_ich_q3c(
     route: str = Query("oral", description="给药途径"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     file_content = await file.read()
 
     filename = file.filename or "unknown"
@@ -172,7 +170,6 @@ async def analyze_ich_combined(
     use_llm: bool = Query(False, description="是否使用 LLM 增强"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     file_content = await file.read()
 
     filename = file.filename or "unknown"
@@ -189,7 +186,6 @@ async def get_ich_records(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     records, total = await service.get_ich_records(db, page=page, page_size=page_size)
 
     return paginated_response(
@@ -218,7 +214,6 @@ async def get_ich_record(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     record = await service.get_ich_record(db, record_id)
 
     return build_response(
@@ -241,13 +236,12 @@ async def delete_ich_record(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     await service.delete_ich_record(db, record_id)
 
     return build_response(data={"message": "记录已删除"})
 
 
-@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=ApiResponse)
+@router.post("/edbo/optimize", summary="EDBO+ 贝叶斯优化", response_model=EDBOOptimizeApiResponse)
 async def edbo_optimize(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="反应范围 CSV 文件"),
@@ -255,7 +249,7 @@ async def edbo_optimize(
     objective_modes: str = Body("max", description="目标方向，逗号分隔（max/min）"),
     batch_size: int = Body(5, ge=1, le=100, description="建议实验数量"),
     save_prediction: bool = Body(False, description="是否保存预测文件"),
-) -> ApiResponse:
+) -> EDBOOptimizeApiResponse:
     """
 
     使用 EDBO+ 进行贝叶斯反应优化。
@@ -311,7 +305,7 @@ async def edbo_optimize(
 
         raise HTTPException(status_code=400, detail=str(e))
 
-    return build_response(data=EDBOOptimizeResponse(**result))
+    return EDBOOptimizeApiResponse(data=EDBOOptimizeResponse(**result))
 
 
 @router.post("/edbo/generate-scope", summary="生成反应范围")
@@ -377,7 +371,7 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
     import itertools
     import math
 
-    import pandas as pd  # type: ignore[import-untyped]
+    import pandas as pd
 
     logger = logging.getLogger(__name__)
 
@@ -669,12 +663,6 @@ from app.modules.research.pilot_workflow.engine import (  # noqa: E402
 from app.modules.research.pilot_workflow.engine import (  # noqa: E402
     start_workflow as start_workflow_engine,
 )
-from app.modules.research.schemas import (  # noqa: E402
-    PilotWorkflowCreate,
-    PilotWorkflowListResponse,
-    PilotWorkflowResponse,
-    PilotWorkflowStepResponse,
-)
 
 
 @router.post("/pilot/workflow", summary="创建中试研究")
@@ -683,7 +671,6 @@ async def create_pilot_workflow(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     workflow_data = data.model_dump()
 
     workflow = await pilot_repo.create_workflow(db, workflow_data)
@@ -708,7 +695,6 @@ async def get_pilot_workflows(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     workflows, total = await pilot_repo.get_workflows(
         db, status=status, keyword=keyword, page=page, page_size=page_size
     )
@@ -744,7 +730,6 @@ async def get_pilot_workflow_detail(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
@@ -765,7 +750,6 @@ async def start_pilot_workflow(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
@@ -786,7 +770,6 @@ async def approve_pilot_workflow_step(
     workflow_id: uuid_module.UUID,
     current_user: RequiredUser,
 ) -> ApiResponse:
-
     result = await approve_step_engine(workflow_id)
 
     if "error" in result:
@@ -802,7 +785,6 @@ async def get_pilot_workflow_step(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     step = await pilot_repo.get_workflow_step_by_id(db, step_id)
 
     if not step or step.workflow_id != workflow_id:
@@ -818,7 +800,6 @@ async def upload_pilot_document(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
@@ -862,7 +843,6 @@ async def delete_pilot_workflow(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     workflow = await pilot_repo.get_workflow_by_id(db, workflow_id)
 
     if not workflow:
@@ -902,7 +882,6 @@ async def analyze_literature(  # type: ignore[no-untyped-def]
     filename = file.filename.lower() if file.filename else ""
 
     async def event_stream():  # type: ignore[no-untyped-def]
-
         nonlocal text
 
         # 进度 10%: 开始解析文件
@@ -1021,7 +1000,6 @@ async def get_routes(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import func, or_, select
 
     from app.modules.research.models import RouteDevelopment
@@ -1098,7 +1076,6 @@ async def get_route(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import RouteDevelopment, RouteExperiment
@@ -1181,7 +1158,6 @@ async def create_route(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     import uuid as uuid_mod
     from datetime import date as date_mod
 
@@ -1217,7 +1193,6 @@ async def update_route(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import RouteDevelopment
@@ -1269,7 +1244,6 @@ async def delete_route(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import RouteDevelopment
@@ -1309,7 +1283,6 @@ async def create_experiment(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     import uuid as uuid_mod
     from datetime import date as date_mod
 
@@ -1361,7 +1334,6 @@ async def update_experiment(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from datetime import date as date_mod
 
     from sqlalchemy import select
@@ -1417,7 +1389,6 @@ async def delete_experiment(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import RouteExperiment
@@ -1454,7 +1425,6 @@ async def get_optimizations(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import func, select
 
     from app.modules.research.models import ProcessOptimization
@@ -1524,7 +1494,6 @@ async def get_optimization(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import ProcessOptimization
@@ -1564,7 +1533,6 @@ async def create_optimization(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     import uuid
     from datetime import date
 
@@ -1607,7 +1575,6 @@ async def update_optimization(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import ProcessOptimization
@@ -1661,7 +1628,6 @@ async def delete_optimization(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     from sqlalchemy import select
 
     from app.modules.research.models import ProcessOptimization
@@ -1685,10 +1651,6 @@ async def delete_optimization(
 # ===== Pilot Workflow Endpoints =====
 
 
-from app.modules.research.schemas import (  # noqa: E402
-    PilotWorkflowCreate,
-)
-
 # Rd Project schemas
 
 
@@ -1706,7 +1668,6 @@ async def create_milestone(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.create_milestone(db, project_id, data, user_id)
@@ -1720,7 +1681,6 @@ async def create_milestone(  # type: ignore[no-untyped-def]
 async def get_milestones(  # type: ignore[no-untyped-def]
     current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
 ):
-
     return await service.get_milestones(db, project_id)
 
 
@@ -1735,7 +1695,6 @@ async def update_milestone(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.update_milestone(db, milestone_id, data, user_id)
@@ -1755,7 +1714,6 @@ async def create_stage_record(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.create_stage_record(db, project_id, data, user_id)
@@ -1769,7 +1727,6 @@ async def create_stage_record(  # type: ignore[no-untyped-def]
 async def get_stage_records(  # type: ignore[no-untyped-def]
     current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
 ):
-
     return await service.get_stage_records(db, project_id)
 
 
@@ -1784,7 +1741,6 @@ async def update_stage_record(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.update_stage_record(db, record_id, data, user_id)
@@ -1804,7 +1760,6 @@ async def create_research_track(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.create_research_track(db, project_id, data, user_id)
@@ -1878,7 +1833,6 @@ async def get_all_research_tracks(  # type: ignore[no-untyped-def]
 async def get_research_tracks(  # type: ignore[no-untyped-def]
     current_user: RequiredUser, project_id: UUID, db: AsyncSession = Depends(get_db)
 ):
-
     return await service.get_research_tracks(db, project_id)
 
 
@@ -1893,7 +1847,6 @@ async def update_research_track(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.update_research_track(db, track_id, data, user_id)
@@ -1913,7 +1866,6 @@ async def create_research_finding(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.create_research_finding(db, track_id, data, user_id)
@@ -1927,7 +1879,6 @@ async def create_research_finding(  # type: ignore[no-untyped-def]
 async def get_research_findings(  # type: ignore[no-untyped-def]
     current_user: RequiredUser, track_id: UUID, db: AsyncSession = Depends(get_db)
 ):
-
     return await service.get_research_findings(db, track_id)
 
 
@@ -1942,7 +1893,6 @@ async def update_research_finding(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ):
-
     user_id = current_user.id
 
     return await service.update_research_finding(db, finding_id, data, user_id)
@@ -1992,7 +1942,6 @@ async def get_rd_projects(
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     projects, total = await service.get_rd_projects(
         db,
         stage=stage,
@@ -2017,7 +1966,6 @@ async def get_rd_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     project = await service.get_rd_project(db, project_id)
 
     return build_response(data=RdProjectResponse.model_validate(project))
@@ -2029,7 +1977,6 @@ async def create_rd_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     project = await service.create_rd_project(db, data, user_id)
@@ -2047,7 +1994,6 @@ async def update_rd_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     project = await service.update_rd_project(db, project_id, data, user_id)
@@ -2064,7 +2010,6 @@ async def delete_rd_project(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     await service.delete_rd_project(db, project_id, user_id)
@@ -2082,7 +2027,6 @@ async def transition_stage(
     data: dict = Body(...),  # type: ignore[type-arg]
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     target_stage = data.get("target_stage")
 
     review_notes = data.get("review_notes")
@@ -2111,7 +2055,6 @@ async def check_stage_transition(
     target_stage: str = Query(..., description="目标阶段"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     result = await service.check_stage_transition(db, project_id, target_stage)
 
     return build_response(data=result)
@@ -2126,7 +2069,6 @@ async def get_pilot_studies(
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     studies = await service.get_pilot_studies(db, project_id)
 
     return build_response(data=[RdPilotStudyResponse.model_validate(s) for s in studies])
@@ -2138,7 +2080,6 @@ async def create_pilot_study(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     study = await service.create_pilot_study(db, data, user_id)
@@ -2156,7 +2097,6 @@ async def update_pilot_study(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     study = await service.update_pilot_study(db, study_id, data, user_id)
@@ -2176,7 +2116,6 @@ async def get_validations(
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     validations = await service.get_validations(db, project_id)
 
     return build_response(data=[RdProcessValidationResponse.model_validate(v) for v in validations])
@@ -2188,7 +2127,6 @@ async def create_validation(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     validation = await service.create_validation(db, data, user_id)
@@ -2206,7 +2144,6 @@ async def update_validation(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     validation = await service.update_validation(db, validation_id, data, user_id)
@@ -2226,7 +2163,6 @@ async def get_filings(
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     filings = await service.get_filings(db, project_id)
 
     return build_response(data=[RdRegistrationFilingResponse.model_validate(f) for f in filings])
@@ -2238,7 +2174,6 @@ async def create_filing(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     filing = await service.create_filing(db, data, user_id)
@@ -2256,7 +2191,6 @@ async def update_filing(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     filing = await service.update_filing(db, filing_id, data, user_id)
@@ -2280,7 +2214,6 @@ async def create_rd_stage_deliverable_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
-
     user_id = current_user.id
 
     deliverable = await service.create_rd_stage_deliverable(db, data, user_id)
@@ -2298,7 +2231,6 @@ async def get_rd_stage_deliverable_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
-
     deliverable = await service.get_rd_stage_deliverable(db, deliverable_id)
 
     return RdStageDeliverableResponse.model_validate(deliverable.__dict__)
@@ -2318,7 +2250,6 @@ async def list_rd_stage_deliverables_api(  # type: ignore[no-untyped-def]
     page_size: int = 20,
     db: AsyncSession = Depends(get_db),
 ):
-
     items, total = await service.list_rd_stage_deliverables(
         db, project_id, stage, deliverable_type, status, page, page_size
     )
@@ -2342,7 +2273,6 @@ async def update_rd_stage_deliverable_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> RdStageDeliverableResponse:
-
     user_id = current_user.id
 
     deliverable = await service.update_rd_stage_deliverable(db, deliverable_id, data, user_id)
@@ -2359,7 +2289,6 @@ async def delete_rd_stage_deliverable_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_rd_stage_deliverable(db, deliverable_id, user_id)
@@ -2457,7 +2386,6 @@ async def get_pilot_studies(  # noqa: F811
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
-
     items = await service.get_pilot_studies(db, project_id)
 
     return [RdPilotStudyResponse.model_validate(i.__dict__).model_dump() for i in items]
@@ -2469,7 +2397,6 @@ async def create_pilot_study_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     item = await service.create_pilot_study(db, data, user_id)
@@ -2484,7 +2411,6 @@ async def update_pilot_study_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     item = await service.update_pilot_study(db, study_id, data, user_id)
@@ -2498,7 +2424,6 @@ async def delete_pilot_study_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_pilot_study(db, study_id, user_id)
@@ -2515,7 +2440,6 @@ async def get_validations(  # noqa: F811
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
-
     items = await service.get_validations(db, project_id)
 
     return [RdProcessValidationResponse.model_validate(i.__dict__).model_dump() for i in items]
@@ -2527,7 +2451,6 @@ async def create_validation_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     item = await service.create_validation(db, data, user_id)
@@ -2542,7 +2465,6 @@ async def update_validation_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     item = await service.update_validation(db, validation_id, data, user_id)
@@ -2556,7 +2478,6 @@ async def delete_validation_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_validation(db, validation_id, user_id)
@@ -2573,7 +2494,6 @@ async def get_filings(  # noqa: F811
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> list:  # type: ignore[type-arg]
-
     items = await service.get_filings(db, project_id)
 
     return [RdRegistrationFilingResponse.model_validate(i.__dict__).model_dump() for i in items]
@@ -2585,7 +2505,6 @@ async def create_filing_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     item = await service.create_filing(db, data, user_id)
@@ -2600,7 +2519,6 @@ async def update_filing_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     item = await service.update_filing(db, filing_id, data, user_id)
@@ -2614,7 +2532,6 @@ async def delete_filing_api(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_filing(db, filing_id, user_id)
@@ -2631,7 +2548,6 @@ async def get_experiment_logs(
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     logs = await service.get_experiment_logs(db, project_id)
 
     return build_response(data=[RdExperimentLogResponse.model_validate(log) for log in logs])
@@ -2643,7 +2559,6 @@ async def create_experiment_log(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     log = await service.create_experiment_log(db, data, user_id)
@@ -2663,7 +2578,6 @@ async def update_experiment_log(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     log = await service.update_experiment_log(db, log_id, data, user_id)
@@ -2682,7 +2596,6 @@ async def delete_experiment_log(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_experiment_log(db, log_id, user_id)
@@ -2699,7 +2612,6 @@ async def get_reports(
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     reports = await service.get_reports(db, project_id)
 
     return build_response(data=[RdReportResponse.model_validate(r) for r in reports])
@@ -2711,7 +2623,6 @@ async def create_report(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     report = await service.create_report(db, data, user_id)
@@ -2731,7 +2642,6 @@ async def update_report(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     report = await service.update_report(db, report_id, data, user_id)
@@ -2750,7 +2660,6 @@ async def delete_report(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_report(db, report_id, user_id)
@@ -2767,7 +2676,6 @@ async def get_initiations(
     project_id: UUID = Query(..., description="项目ID"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     items = await service.get_initiations(db, project_id)
 
     return build_response(data=[RdInitiationResponse.model_validate(i.__dict__) for i in items])
@@ -2779,7 +2687,6 @@ async def create_initiation(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     item = await service.create_initiation(db, data, user_id)
@@ -2799,7 +2706,6 @@ async def update_initiation(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     item = await service.update_initiation(db, initiation_id, data, user_id)
@@ -2818,7 +2724,6 @@ async def delete_initiation(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_initiation(db, initiation_id, user_id)
@@ -3398,7 +3303,6 @@ async def get_deliverable_templates(
     is_active: bool | None = Query(None, description="是否启用"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     templates = await service.get_deliverable_templates(db, stage, deliverable_type, is_active)
 
     return build_response(data=[RdDeliverableTemplateResponse.model_validate(t.__dict__) for t in templates])
@@ -3410,7 +3314,6 @@ async def create_deliverable_template(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     template = await service.create_deliverable_template(db, data, user_id)
@@ -3430,7 +3333,6 @@ async def update_deliverable_template(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     user_id = current_user.id
 
     template = await service.update_deliverable_template(db, template_id, data, user_id)
@@ -3449,7 +3351,6 @@ async def delete_deliverable_template(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> dict:  # type: ignore[type-arg]
-
     user_id = current_user.id
 
     await service.delete_deliverable_template(db, template_id, user_id)
@@ -3466,7 +3367,6 @@ async def generate_report(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-
     result = await service.generate_report_with_ai(
         db,
         data.project_id,

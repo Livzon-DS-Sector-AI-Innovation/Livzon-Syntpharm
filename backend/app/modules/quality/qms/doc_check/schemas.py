@@ -228,3 +228,127 @@ class VectorCacheResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ============ API Response Wrappers ============
+
+
+class DocCheckConfigListApiResponse(BaseModel):
+    """配置列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[DocCheckConfigResponse]
+
+
+class DocCheckConfigApiResponse(BaseModel):
+    """配置响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocCheckConfigResponse | None = None
+
+
+class DocCheckTaskApiResponse(BaseModel):
+    """校验任务响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None
+
+
+class DocCheckListApiResponse(BaseModel):
+    """校验列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[DocCheckResponse]
+    meta: dict[str, Any] | None = None
+
+
+class DocCheckDetailApiResponse(BaseModel):
+    """校验详情响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocCheckDetailResponse | None = None
+
+
+class DocCheckProblemListApiResponse(BaseModel):
+    """问题列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProblemResponse]
+
+
+class DocCheckVectorCacheListApiResponse(BaseModel):
+    """向量缓存列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[dict[str, Any]]
+
+
+class DocCheckUploadApiResponse(BaseModel):
+    """文件上传响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class DocCheckProgressApiResponse(BaseModel):
+    """校验进度响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class DocCheckRecordsApiResponse(BaseModel):
+    """校验记录响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class DocCheckMessageApiResponse(BaseModel):
+    """消息响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None
+
+
+class DocCheckSuccessApiResponse(BaseModel):
+    """成功响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class DocCheckProblemUpdateApiResponse(BaseModel):
+    """问题更新响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class DocCheckBatchUpdateApiResponse(BaseModel):
+    """批量更新响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any]
+
+
+class DocCheckExportApiResponse(BaseModel):
+    """导出响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | None = None

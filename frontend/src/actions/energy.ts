@@ -18,6 +18,7 @@ import {
   deleteAlertRule as apiDeleteAlertRule,
   fetchAlertRecords,
   processAlertRecord as apiProcessAlertRecord,
+  deleteAlertRecord as apiDeleteAlertRecord,
   fetchWorkshops,
   fetchWorkshopById,
   createWorkshop as apiCreateWorkshop,
@@ -42,6 +43,7 @@ type CreateWorkshopInput = components['schemas']['EnergyWorkshopCreate']
 type UpdateWorkshopInput = components['schemas']['EnergyWorkshopUpdate']
 type CreateMonthlyRecordInput = components['schemas']['EnergyMonthlyRecordCreate']
 type FeishuImportRequest = components['schemas']['FeishuEnergyImportRequest']
+type BitableCrossImportRequest = components['schemas']['BitableCrossImportRequest']
 import type {
   DeviceQueryParams,
   RuleQueryParams,
@@ -112,19 +114,19 @@ export async function getAlertRuleById(id: string) {
 
 export async function createAlertRule(data: CreateRuleInput) {
   const result = await apiCreateAlertRule(data)
-  revalidatePath('/energy/alert-rules')
+  revalidatePath('/energy/alerts')
   return result
 }
 
 export async function updateAlertRule(id: string, data: UpdateRuleInput) {
   const result = await apiUpdateAlertRule(id, data)
-  revalidatePath('/energy/alert-rules')
+  revalidatePath('/energy/alerts')
   return result
 }
 
 export async function deleteAlertRule(id: string) {
   await apiDeleteAlertRule(id)
-  revalidatePath('/energy/alert-rules')
+  revalidatePath('/energy/alerts')
 }
 
 // 预警记录 Server Actions
@@ -135,8 +137,13 @@ export async function getAlertRecords(params?: RuleQueryParams) {
 
 export async function processAlertRecord(id: string, data: ProcessRecordInput) {
   const result = await apiProcessAlertRecord(id, data)
-  revalidatePath('/energy/alert-records')
+  revalidatePath('/energy/alerts')
   return result
+}
+
+export async function deleteAlertRecord(id: string) {
+  await apiDeleteAlertRecord(id)
+  revalidatePath('/energy/alerts')
 }
 
 // 车间管理 Server Actions
@@ -206,18 +213,14 @@ export async function importFromFeishuAction(data: FeishuImportRequest) {
 
 // ── 飞书多维表格交叉表导入 Server Action ──
 
-export async function crossImportFromBitableAction(data: components['schemas']['BitableCrossImportRequest']) {
-  const result = await apiCrossImportFromBitable(data as Record<string, unknown>)
-  revalidatePath('/energy/monthly')
-  return result
+export async function crossImportFromBitableAction(data: BitableCrossImportRequest) {
+  return apiCrossImportFromBitable(data)
 }
 
 // ── 数据导入和预警检查 ──
 
 export async function syncBitableDailyDataAction() {
-  const result = await apiSyncBitableDailyData()
-  revalidatePath('/energy/alerts')
-  return result
+  return apiSyncBitableDailyData()
 }
 
 export async function checkAlertsAction(checkDate: string) {

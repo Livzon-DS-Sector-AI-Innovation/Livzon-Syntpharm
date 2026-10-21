@@ -89,7 +89,7 @@ export function AIFileParser({
         style={{ marginBottom: 12 }}
       />
 
-      <Space direction="vertical" style={{ width: '100%' }} size="middle">
+      <Space orientation="vertical" style={{ width: '100%' }} size="middle">
         {/* 文件上传 */}
         <div>
           <Text strong style={{ display: 'block', marginBottom: 8 }}>
@@ -127,7 +127,7 @@ export function AIFileParser({
                 点击输入文本内容
               </Button>
             ) : (
-              <Space direction="vertical" style={{ width: '100%' }}>
+              <Space orientation="vertical" style={{ width: '100%' }}>
                 <textarea
                   value={textContent}
                   onChange={(e) => setTextContent(e.target.value)}

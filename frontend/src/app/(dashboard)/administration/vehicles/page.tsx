@@ -272,7 +272,7 @@ export default function VehiclePage() {
         title={editing ? '编辑车辆' : '新增车辆'}
         onCancel={() => { setModalOpen(false); setEditing(null); form.resetFields(); setFileList([]) }}
         onOk={() => form.submit()}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item name="plate_number" label="车牌号" rules={[{ required: true }]}>

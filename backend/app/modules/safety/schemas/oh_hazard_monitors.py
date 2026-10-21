@@ -79,7 +79,7 @@ class OhHazardMonitorApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: OhHazardMonitorResponse
+    data: OhHazardMonitorResponse | None = None
 
 
 class OhHazardMonitorListApiResponse(BaseModel):

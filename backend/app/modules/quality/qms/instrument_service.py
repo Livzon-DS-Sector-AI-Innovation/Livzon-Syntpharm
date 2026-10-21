@@ -9,6 +9,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.secrets import encrypt_secret
 from app.modules.quality.qms.instrument_models import (
     CalibrationReminderConfig,
     InstrumentCalibration,
@@ -594,6 +595,9 @@ class ReminderConfigService:
     async def create_config(self, data: ReminderConfigCreate, user_id: UUID | None = None) -> CalibrationReminderConfig:
         """创建提醒配置"""
         config_data = data.model_dump()
+        # Stored encrypted at rest: a database dump must not disclose it.
+        if config_data.get("feishu_app_secret"):
+            config_data["feishu_app_secret"] = encrypt_secret(config_data["feishu_app_secret"])
         config_data["created_by"] = user_id
         config_data["updated_by"] = user_id
         return await self.repository.create(config_data)
@@ -625,6 +629,9 @@ class ReminderConfigService:
             raise ValueError("配置不存在")
 
         update_data = data.model_dump(exclude_unset=True)
+        # `exclude_unset` means the field may be absent — only encrypt what was sent.
+        if update_data.get("feishu_app_secret"):
+            update_data["feishu_app_secret"] = encrypt_secret(update_data["feishu_app_secret"])
         update_data["updated_by"] = user_id
         return await self.repository.update(config_id, update_data)  # type: ignore[return-value]
 

@@ -182,7 +182,7 @@ export default function RequisitionPage() {
           form.resetFields()
         }}
         onOk={() => form.submit()}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleSave}>
           <Form.Item name="seq_no" label="序号">

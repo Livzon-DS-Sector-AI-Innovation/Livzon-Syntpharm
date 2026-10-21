@@ -21,16 +21,25 @@ const DEFAULT_VALUES = {
   category: 'workshop' as WorkshopCategory,
   sort_order: 0,
   is_active: true,
+  excluded_energy_types: [] as string[],
 }
+
+// 合计行实体：其数值等于其他实体之和，勾选后全厂汇总不再计入该项（月度明细仍可见）
+const excludedTypeOptions = [
+  { label: '电力', value: 'electricity' },
+  { label: '自来水', value: 'water' },
+  { label: '蒸汽', value: 'steam' },
+  { label: '天然气', value: 'natural_gas' },
+]
 
 export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: WorkshopDrawerProps) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const isEdit = !!workshopId
 
-  // 使用 useQuery 获取车间数据
+  // 使用 useQuery 获取车间数据（挂在 ['energy-workshops'] 前缀下，车间保存后随列表一并失效）
   const { data: workshopData, isLoading: loading } = useQuery({
-    queryKey: ['workshop', workshopId],
+    queryKey: ['energy-workshops', 'detail', workshopId],
     queryFn: async () => {
       if (!workshopId) return null
       const data = await getWorkshopById(workshopId)
@@ -48,6 +57,7 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
         category: workshopData.category,
         sort_order: workshopData.sort_order,
         is_active: workshopData.is_active,
+        excluded_energy_types: workshopData.excluded_energy_types ?? [],
       })
     } else if (open && !workshopId) {
       form.resetFields()
@@ -73,11 +83,11 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
   }
 
   return (
-    <Drawer
+    <Drawer forceRender
       title={isEdit ? '编辑车间' : '新增车间'}
       open={open}
       onClose={onClose}
-      width={480}
+      size={480}
       extra={
         <Space>
           <Button onClick={onClose}>取消</Button>
@@ -122,6 +132,13 @@ export function WorkshopDrawer({ open, workshopId, onClose, onSuccess }: Worksho
                 { value: 'utility', label: '动力设施' },
               ]}
             />
+          </Form.Item>
+          <Form.Item
+            name="excluded_energy_types"
+            label="不计入全厂汇总"
+            tooltip="合计行（数值等于其他车间之和）勾选对应能源类型后，能源总览与全厂合计会剔除该项，避免重复计数；月度记录明细不受影响。"
+          >
+            <Select mode="multiple" allowClear placeholder="不勾选则全部计入" options={excludedTypeOptions} />
           </Form.Item>
           <Form.Item name="sort_order" label="排序">
             <InputNumber min={0} style={{ width: '100%' }} />

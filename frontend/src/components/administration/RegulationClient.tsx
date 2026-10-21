@@ -529,7 +529,7 @@ export default function RegulationClient() {
         onOk={handleSaveEdit}
         title={<span className="text-lg font-semibold">编辑制度</span>}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={editForm} layout="vertical">
           <Form.Item

@@ -534,7 +534,7 @@ export default function CalibrationRecordsPage() {
         title="编辑校准记录"
         open={editDrawerVisible}
         onClose={() => setEditDrawerVisible(false)}
-        width={isMobile ? '100%' : 800}
+        size={isMobile ? '100%' : 800}
         className="instrument-drawer"
         styles={{ body: { paddingBottom: 80 } }}
       >

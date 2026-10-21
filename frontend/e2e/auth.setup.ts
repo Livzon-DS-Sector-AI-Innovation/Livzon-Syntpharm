@@ -4,6 +4,14 @@ import fs from 'fs'
 
 const authFile = path.join(__dirname, '.auth', 'storageState.json')
 
+async function saveStorageState(context: import('@playwright/test').BrowserContext) {
+  const dir = path.dirname(authFile)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true })
+  }
+  await context.storageState({ path: authFile })
+}
+
 async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string } }> }) {
   const baseURL = config.projects?.[0]?.use?.baseURL || 'http://localhost:3000'
   const apiURL = process.env.E2E_BACKEND_URL || 'http://localhost:18000'
@@ -14,6 +22,21 @@ async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string
   const page = await context.newPage()
   
   try {
+    const injectedToken = process.env.E2E_AUTH_TOKEN?.trim()
+    if (injectedToken) {
+      // dev 栈的 APP_ENV 不是 test/e2e，test-login 会返回 404；此时允许直接注入已有令牌。
+      // 只写登录态、跳过能源造数：造数是能源用例自己的前置，不该把整套 E2E 绑在测试后端上。
+      await context.addCookies([{
+        name: 'auth_token',
+        value: injectedToken,
+        domain: new URL(baseURL).hostname,
+        path: '/'
+      }])
+      await saveStorageState(context)
+      console.log('已使用 E2E_AUTH_TOKEN 注入登录态，跳过 test-login 与能源造数')
+      return
+    }
+
     // 使用 test-login 端点获取 token
     const loginResponse = await page.request.post(`${apiURL}/api/v1/identity/auth/test-login`, {
       headers: {
@@ -45,7 +68,9 @@ async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string
         'Authorization': `Bearer ${token}`
       },
       data: {
-        name: 'E2E测试车间',
+        // AI 分析页的车间列表按 production_only 过滤，只认 models.PRODUCTION_WORKSHOPS 里的名字，
+        // 自定义名字会让下拉框恒为「暂无数据」，TC1 选不到车间。
+        name: '101车间',
         code: 'E2E-001',
         location: '测试地点',
         is_active: true,
@@ -116,12 +141,7 @@ async function globalSetup(config: { projects?: Array<{ use?: { baseURL?: string
     console.log('Energy data created successfully')
 
     // 保存认证状态
-    // Ensure directory exists
-    const dir = path.dirname(authFile)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-    await context.storageState({ path: authFile })
+    await saveStorageState(context)
   } finally {
     await browser.close()
   }

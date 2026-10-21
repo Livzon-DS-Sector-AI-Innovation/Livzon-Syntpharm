@@ -269,10 +269,10 @@ export function CollectLogDetailDrawer({
   return (
     <Drawer
       title="采集日志详情"
-      width={640}
+      size={640}
       open={open}
       onClose={onClose}
-      destroyOnClose
+      destroyOnHidden
       styles={{
         header: {
           borderBottom: '1px solid #e5e3df',

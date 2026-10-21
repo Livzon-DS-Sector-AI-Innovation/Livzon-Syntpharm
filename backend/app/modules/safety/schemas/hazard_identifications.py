@@ -279,7 +279,7 @@ class HazardIdentificationApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: HazardIdentificationResponse
+    data: HazardIdentificationResponse | None = None
 
 
 class HazardIdentificationListApiResponse(BaseModel):
@@ -304,4 +304,4 @@ class RegulationStagesApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: RegulationStagesResponse
+    data: RegulationStagesResponse | None = None

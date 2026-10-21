@@ -1,11 +1,13 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { App, Table, Button, Space, Select } from 'antd'
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TableColumnsType } from 'antd'
 import type { EnergyWorkshop, WorkshopCategory } from '@/types/energy'
-import { getWorkshops, deleteWorkshopAction } from '@/actions/energy'
+import { deleteWorkshopAction } from '@/actions/energy'
+import { fetchWorkshopsPageClient } from '@/lib/api/client/energy'
 import { WorkshopDrawer } from './WorkshopDrawer'
 
 const luxuryPill = (color: string, bg: string) =>
@@ -30,6 +32,14 @@ const categoryConfig: Record<WorkshopCategory, { label: string; pill: ReturnType
 
 const activePill = luxuryPill('#1aae39', '#d9f3e1')
 const inactivePill = luxuryPill('#787671', '#f0eeec')
+const rollupPill = luxuryPill('#b63a00', '#ffe3d6')
+
+const excludedTypeShortLabel: Record<string, string> = {
+  electricity: '电',
+  water: '水',
+  steam: '汽',
+  natural_gas: '气',
+}
 
 const tableStyles = `
 .luxury-workshop-table .ant-table-thead > tr > th {
@@ -81,31 +91,29 @@ const actionLink = {
 
 export function WorkshopTable() {
   const { message, modal } = App.useApp()
-  const [workshops, setWorkshops] = useState<EnergyWorkshop[]>([])
-  const [loading, setLoading] = useState(false)
-  const [total, setTotal] = useState(0)
+  const queryClient = useQueryClient()
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [categoryFilter, setCategoryFilter] = useState<WorkshopCategory | undefined>()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result: { items: EnergyWorkshop[]; total: number } = await getWorkshops({
-        category: categoryFilter,
-        page,
-        page_size: pageSize,
-      })
-      setWorkshops(result.items || [])
-      setTotal(result.total || 0)
-    } catch (_error) {
-      message.error('加载车间列表失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [categoryFilter, page, pageSize, message])
+  const { data, isFetching, error } = useQuery({
+    queryKey: ['energy-workshops', { categoryFilter, page, pageSize }],
+    queryFn: () => fetchWorkshopsPageClient({ category: categoryFilter, page, page_size: pageSize }),
+  })
+
+  useEffect(() => {
+    if (error) message.error('加载车间列表失败')
+  }, [error, message])
+
+  const workshops = data?.items ?? []
+  const total = data?.total ?? 0
+
+  // 车间增删改会影响月度记录页的车间下拉，按前缀一并失效
+  const refreshWorkshops = () => {
+    queryClient.invalidateQueries({ queryKey: ['energy-workshops'] })
+  }
 
   const handleDelete = (record: EnergyWorkshop) => {
     modal.confirm({
@@ -118,7 +126,7 @@ export function WorkshopTable() {
         try {
           await deleteWorkshopAction(record.id)
           message.success('删除成功')
-          loadData()
+          refreshWorkshops()
         } catch {
           message.error('删除失败')
         }
@@ -153,6 +161,18 @@ export function WorkshopTable() {
       dataIndex: 'name',
       key: 'name',
       width: 200,
+      render: (name: string, record: EnergyWorkshop) => {
+        const excluded = record.excluded_energy_types ?? []
+        if (excluded.length === 0) return name
+        return (
+          <Space size={6}>
+            <span>{name}</span>
+            <span style={rollupPill} title="合计行：全厂汇总已剔除该能源类型，避免与其构成项重复计数">
+              合计行·{excluded.map((t) => excludedTypeShortLabel[t] ?? t).join('/')}
+            </span>
+          </Space>
+        )
+      },
     },
     {
       title: '分类',
@@ -232,7 +252,7 @@ export function WorkshopTable() {
         columns={columns}
         dataSource={workshops}
         rowKey="id"
-        loading={loading}
+        loading={isFetching}
         pagination={{
           current: page,
           pageSize,
@@ -251,7 +271,7 @@ export function WorkshopTable() {
         onClose={handleDrawerClose}
         onSuccess={() => {
           handleDrawerClose()
-          loadData()
+          refreshWorkshops()
         }}
       />
     </>

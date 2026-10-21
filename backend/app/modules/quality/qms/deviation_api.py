@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, Query
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse
 from app.modules.quality.qms.deviation_schemas import (
     AIAnalysisApiResponse,
     BatchLockRequest,
@@ -230,7 +229,7 @@ async def post(
             max_tokens=1024,
         )
 
-        return ApiResponse(data={"description": result})
+        return AIAnalysisApiResponse(data={"description": result})
     except ValueError as e:
         error_msg = str(e)
         if "API Key" in error_msg or "AI配置" in error_msg:
@@ -304,7 +303,7 @@ async def post(  # noqa: F811
             max_tokens=1024,
         )
 
-        return ApiResponse(data={"impact_analysis": result})
+        return AIAnalysisApiResponse(data={"impact_analysis": result})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -360,7 +359,7 @@ async def post(  # noqa: F811
             max_tokens=1024,
         )
 
-        return ApiResponse(data={"emergency_measures": result})
+        return AIAnalysisApiResponse(data={"emergency_measures": result})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -419,7 +418,7 @@ async def post(  # noqa: F811
             max_tokens=1536,
         )
 
-        return ApiResponse(data={"root_cause_analysis": result})
+        return AIAnalysisApiResponse(data={"root_cause_analysis": result})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -469,7 +468,7 @@ async def post(  # noqa: F811
             max_tokens=1024,
         )
 
-        return ApiResponse(data={"direct_cause_analysis": result})
+        return AIAnalysisApiResponse(data={"direct_cause_analysis": result})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -534,7 +533,7 @@ CAPA结构：
             max_tokens=1536,
         )
 
-        return ApiResponse(data={"capa": result})
+        return AIAnalysisApiResponse(data={"capa": result})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -592,7 +591,7 @@ async def post(  # noqa: F811
             max_tokens=1536,
         )
 
-        return ApiResponse(data={"prevention": result})
+        return AIAnalysisApiResponse(data={"prevention": result})
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -697,7 +696,7 @@ async def get(  # noqa: F811
                 "archived": result["closing"].archived,
             }
 
-        return ApiResponse(data=data)
+        return DeviationApiResponse(data=data)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -712,7 +711,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id
         result = await service.create_deviation(data, user_id)  # type: ignore[arg-type]
-        return ApiResponse(
+        return DeviationApiResponse(
             message="创建成功",
             data={
                 "id": str(result["deviation"].id),
@@ -735,7 +734,7 @@ async def put(
         deviation = await service.update_deviation(deviation_id, data)
         if not deviation:
             raise ValueError("偏差不存在")
-        return ApiResponse(message="更新成功", data={"id": str(deviation.id)})  # type: ignore[attr-defined]
+        return DeviationApiResponse(message="更新成功", data={"id": str(deviation.id)})  # type: ignore[attr-defined]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -771,7 +770,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id
         await service.submit_deviation(deviation_id, user_id)
-        return ApiResponse(message="提交成功")
+        return DeviationApiResponse(message="提交成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -790,7 +789,7 @@ async def post(  # noqa: F811
         user_id = current_user.id
         user_name = current_user.name
         await service.approve_deviation(deviation_id, approved, comments, approval_type, user_id, user_name)
-        return ApiResponse(message="审批完成")
+        return DeviationApiResponse(message="审批完成")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -805,7 +804,7 @@ async def post(  # noqa: F811
     """锁定批次"""
     try:
         await service.lock_batch(deviation_id, data.reason)
-        return ApiResponse(message="批次已锁定")
+        return DeviationApiResponse(message="批次已锁定")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -819,7 +818,7 @@ async def post(  # noqa: F811
     """解锁批次"""
     try:
         await service.unlock_batch(deviation_id)
-        return ApiResponse(message="批次已解锁")
+        return DeviationApiResponse(message="批次已解锁")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -900,7 +899,7 @@ async def post(  # noqa: F811
     """创建调查"""
     try:
         investigation = await service.create_investigation(deviation_id, data)
-        return ApiResponse(message="创建成功", data={"id": str(investigation.id)})  # type: ignore[attr-defined]
+        return DeviationApiResponse(message="创建成功", data={"id": str(investigation.id)})  # type: ignore[attr-defined]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -917,7 +916,7 @@ async def put(  # noqa: F811
         investigation = await service.update_investigation(deviation_id, data)
         if not investigation:
             raise ValueError("调查记录不存在")
-        return ApiResponse(message="更新成功")
+        return DeviationApiResponse(message="更新成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -931,7 +930,7 @@ async def post(  # noqa: F811
     """完成调查"""
     try:
         await service.complete_investigation(deviation_id)
-        return ApiResponse(message="调查已完成")
+        return DeviationApiResponse(message="调查已完成")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1009,7 +1008,7 @@ async def post(  # noqa: F811
     """创建整改"""
     try:
         correction = await service.create_correction(deviation_id, data)
-        return ApiResponse(message="创建成功", data={"id": str(correction.id)})  # type: ignore[attr-defined]
+        return DeviationApiResponse(message="创建成功", data={"id": str(correction.id)})  # type: ignore[attr-defined]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1026,7 +1025,7 @@ async def put(  # noqa: F811
         correction = await service.update_correction(deviation_id, data)
         if not correction:
             raise ValueError("整改记录不存在")
-        return ApiResponse(message="更新成功")
+        return DeviationApiResponse(message="更新成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1041,7 +1040,7 @@ async def post(  # noqa: F811
     """更新整改进度"""
     try:
         await service.update_progress(deviation_id, progress)
-        return ApiResponse(message="进度已更新")
+        return DeviationApiResponse(message="进度已更新")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1117,7 +1116,7 @@ async def post(  # noqa: F811
     """创建关闭申请"""
     try:
         closing = await service.create_closing(deviation_id, data)
-        return ApiResponse(message="创建成功", data={"id": str(closing.id)})  # type: ignore[attr-defined]
+        return DeviationApiResponse(message="创建成功", data={"id": str(closing.id)})  # type: ignore[attr-defined]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1134,7 +1133,7 @@ async def put(  # noqa: F811
         closing = await service.update_closing(deviation_id, data)
         if not closing:
             raise ValueError("关闭记录不存在")
-        return ApiResponse(message="更新成功")
+        return DeviationApiResponse(message="更新成功")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -1148,7 +1147,7 @@ async def post(  # noqa: F811
     """完成关闭"""
     try:
         await service.complete_closing(deviation_id)
-        return ApiResponse(message="偏差已关闭")
+        return DeviationApiResponse(message="偏差已关闭")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -52,7 +52,7 @@ export function CategoryEditor({ mode, parentId, initialData, open, onOpenChange
   }
 
   return (
-    <Modal
+    <Modal forceRender
       title={mode === 'edit' ? '编辑分类' : '新增分类'}
       open={open}
       onCancel={() => onOpenChange(false)}

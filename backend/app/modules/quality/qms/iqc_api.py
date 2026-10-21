@@ -10,10 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.iqc_schemas import (
     IQCApprovalCreate,
     IQCApprovalRecordResponse,
+    IQCInspectionApiResponse,
     IQCInspectionCreate,
     IQCInspectionFilter,
     IQCInspectionListResponse,
@@ -29,7 +29,7 @@ def get_iqc_service(session: AsyncSession = Depends(get_db)) -> IQCInspectionSer
     return IQCInspectionService(session)
 
 
-@router.post("/inspections", response_model=ApiResponse, status_code=201)
+@router.post("/inspections", response_model=IQCInspectionApiResponse, status_code=201)
 async def post(
     data: IQCInspectionCreate,
     service: IQCInspectionService = Depends(get_iqc_service),
@@ -39,7 +39,7 @@ async def post(
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.create_inspection(data, user_id)
-        return ApiResponse(
+        return IQCInspectionApiResponse(
             message="创建成功",
             data=IQCInspectionResponse.model_validate(inspection),
         )
@@ -84,7 +84,7 @@ async def get(
     }
 
 
-@router.get("/inspections/{inspection_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/inspections/{inspection_id}", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
     service: IQCInspectionService = Depends(get_iqc_service),
@@ -93,12 +93,12 @@ async def get(  # noqa: F811
     """获取IQC检验单详情"""
     try:
         inspection = await service.get_inspection(inspection_id)
-        return ApiResponse(data=IQCInspectionResponse.model_validate(inspection))
+        return IQCInspectionApiResponse(data=IQCInspectionResponse.model_validate(inspection))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/inspections/{inspection_id}", response_model=ApiResponse)
+@router.put("/inspections/{inspection_id}", response_model=IQCInspectionApiResponse)
 async def put(
     inspection_id: UUID,
     data: IQCInspectionUpdate,
@@ -109,7 +109,7 @@ async def put(
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.update_inspection(inspection_id, data, user_id)
-        return ApiResponse(
+        return IQCInspectionApiResponse(
             message="更新成功",
             data=IQCInspectionResponse.model_validate(inspection),
         )
@@ -127,12 +127,12 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_inspection(inspection_id, user_id)
-        return success_response(message="删除成功")
+        return IQCInspectionApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/submit", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     service: IQCInspectionService = Depends(get_iqc_service),
@@ -142,7 +142,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.submit_for_approval(inspection_id, user_id)
-        return ApiResponse(
+        return IQCInspectionApiResponse(
             message="提交成功",
             data=IQCInspectionResponse.model_validate(inspection),
         )
@@ -150,7 +150,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/approve", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: IQCApprovalCreate,
@@ -163,7 +163,7 @@ async def post(  # noqa: F811
         user_name = current_user.name if current_user else ""
         approver_role = "qa"
         inspection = await service.approve_inspection(inspection_id, data, user_id, user_name, approver_role)
-        return ApiResponse(
+        return IQCInspectionApiResponse(
             message="审批完成",
             data=IQCInspectionResponse.model_validate(inspection),
         )

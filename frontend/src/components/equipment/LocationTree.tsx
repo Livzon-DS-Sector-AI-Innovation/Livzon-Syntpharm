@@ -9,6 +9,9 @@ import { deleteLocation } from '@/actions/equipment'
 import { LocationEditor } from './LocationEditor'
 interface LocationTreeProps {
   locations: Location[]
+  /** 当前 URL 上选中的位置（空串 = 不限） */
+  selectedId: string
+  onSelect: (id: string) => void
   onRefresh?: () => void
 }
 
@@ -182,14 +185,10 @@ function TreeNode({
 
 // ==================== 位置树主组件 ====================
 
-export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
+export function LocationTree({ locations, selectedId, onSelect, onRefresh }: LocationTreeProps) {
   const [editorOpen, setEditorOpen] = useState(false)
   const { message } = App.useApp()
-  const {
-    selectedLocation,
-    setSelectedLocation,
-    openLocationDrawer,
-  } = useEquipmentStore()
+  const { openLocationDrawer } = useEquipmentStore()
 
   const handleDelete = async (node: TreeNodeData) => {
     try {
@@ -288,8 +287,8 @@ export function LocationTree({ locations, onRefresh }: LocationTreeProps) {
             key={loc.id}
             node={loc}
             level={0}
-            selectedId={selectedLocation}
-            onSelect={(id) => setSelectedLocation(id || null)}
+            selectedId={selectedId}
+            onSelect={onSelect}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

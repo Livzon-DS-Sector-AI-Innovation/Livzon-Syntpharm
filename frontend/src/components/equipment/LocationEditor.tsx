@@ -52,7 +52,7 @@ export function LocationEditor({ mode, parentId, initialData, open, onOpenChange
   }
 
   return (
-    <Modal
+    <Modal forceRender
       title={mode === 'edit' ? '编辑位置' : '新增位置'}
       open={open}
       onCancel={() => onOpenChange(false)}

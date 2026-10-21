@@ -263,7 +263,7 @@ Full audit
 5. Does `LLM_ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?
 6. Are there any API key patterns in source code or log statements? (Patterns: `sk-[a-zA-Z0-9]{20,}`, `api_key\s*=\s*'[^']{20,}'`, `token\s*=\s*'[^']{20,}'`)
 7. Are there plaintext credentials in configuration files?
-8. Are environment variable files (`.env`, `.env.local`) properly gitignored?
+8. Are environment variable files (`.env`, `.env.uat`) properly gitignored?
 9. Are there `process.env.API_BASE_URL` reads or `getApiBaseUrl()` definitions outside of `lib/api/server/base.ts`?
 
 
@@ -912,11 +912,17 @@ Full audit
   - **dev** — 开发阶段：复制源代码，运行 `pnpm dev`，支持热更新
   - **builder** — 生产构建阶段：运行 `pnpm build`
   - **runtime** — 生产运行阶段：仅包含 standalone 输出，运行 `node server.js`
-- 三种 docker-compose 配置：
-  - `docker-compose.yml` — 生产环境（`target: runtime`，无热更新）
-  - `docker-compose.dev.yml` — 开发覆盖（`target: dev`，有热更新）
-  - `docker-compose.ci.yml` — CI 环境（`target: runtime`，用于 E2E 测试）
-- 开发时必须使用：
+- 五种 docker-compose 配置：
+  - `docker-compose.yml` — 基础栈：PostgreSQL/Redis/MinIO 与应用服务；生产环境与本地开发共用，无热更新
+  - `docker-compose.dev.yml` — 覆盖文件：叠加在 `docker-compose.yml` 之上，开启前后端热更新（本地开发用）
+  - `docker-compose.ci.yml` — CI 环境：CI 流水线专用（E2E 测试、前端构建等），`target: runtime`
+  - `docker-compose.uat-infra.yml` — UAT 基础设施层：独立 `uat-data/` 数据目录与 `uat-net` 网络
+  - `docker-compose.uat.yml` — UAT 应用层：必须与 `uat-infra.yml` 一起传入
+- 本地开发（基础设施也跑在本地，与 UAT 数据隔离）：
+  ```bash
+  bash scripts/dev.sh
+  ```
+  等价于：
   ```bash
   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
   ```
@@ -928,6 +934,8 @@ Full audit
   - `docker-compose.yml`
   - `docker-compose.dev.yml`
   - `docker-compose.ci.yml`
+  - `docker-compose.uat-infra.yml`
+  - `docker-compose.uat.yml`
 
 ### Directories to inspect
 - `frontend/Dockerfile`
@@ -935,6 +943,8 @@ Full audit
 - `docker-compose.yml`
 - `docker-compose.dev.yml`
 - `docker-compose.ci.yml`
+- `docker-compose.uat-infra.yml`
+- `docker-compose.uat.yml`
 - `nginx/`
 
 ### Questions

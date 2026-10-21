@@ -2,8 +2,6 @@ import type { components } from '@/types/generated/schema'
 
 // Pressure differential inspection module types
 
-import type { ApiResponse } from './production'
-
 // ============ Enums ============
 
 export const AREA_OPTIONS = [
@@ -170,6 +168,3 @@ export interface DeleteMergedRowRequest {
   point_id: string
   date: string
 }
-
-// Re-export ApiResponse for convenience
-export type { ApiResponse }

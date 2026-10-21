@@ -103,7 +103,7 @@ export default function EmployeeForm({ open, employee, onClose, onSuccess }: Emp
   )
 
   return (
-    <Modal
+    <Modal forceRender
       title={isEdit ? '编辑员工' : '新增员工'}
       open={open}
       onOk={handleSubmit}

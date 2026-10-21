@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Table, Button, Space, Input, Select, DatePicker, Tag, Card,
   Typography, Drawer, App, Tooltip, Modal,
@@ -43,9 +44,6 @@ export default function SpecialOpsReportPanel() {
   const [form] = Form.useForm()
 
   // ── Data State ──
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<SpecialOperationReport[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
 
@@ -76,23 +74,28 @@ export default function SpecialOpsReportPanel() {
   }, [editingReport, reportDrawerOpen, form])
 
   // ── Fetch ──
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await getSpecialOperationReports({
-        page, page_size: pageSize,
+  // `AGENTS.md:549` — 数据获取：使用 React Query，禁止 useEffect + setState.
+  // The filter state is the cache key, so a change refetches and the previous page
+  // stays cached; the nine places that called `fetchData()` by hand after a mutation
+  // now invalidate instead.
+  const queryClient = useQueryClient()
+
+  const { data: queryResult, isLoading: loading } = useQuery({
+    queryKey: ['special-ops-reports', page, pageSize, statusFilter, opType, keyword],
+    queryFn: () =>
+      getSpecialOperationReports({
+        page,
+        page_size: pageSize,
         status: statusFilter || undefined,
         operation_type: opType,
         keyword: keyword || undefined,
-      })
-      setData(res.data || [])
-      setTotal(res.meta?.total || 0)
-    } catch {
-      message.error('获取数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, statusFilter, opType, keyword, message])
+      }),
+  })
+
+  const data = queryResult?.data || []
+  const total = queryResult?.meta?.total || 0
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['special-ops-reports'] })
 
   // ── Open report drawer ──
   const handleCreateReport = () => {
@@ -121,7 +124,7 @@ export default function SpecialOpsReportPanel() {
         if (r.code === 200) {
           message.success('已更新')
           setReportDrawerOpen(false)
-          fetchData()
+          refresh()
         } else {
           message.error(r.message || '更新失败')
         }
@@ -131,7 +134,7 @@ export default function SpecialOpsReportPanel() {
           message.success('已创建')
           setReportDrawerOpen(false)
           form.resetFields()
-          fetchData()
+          refresh()
         } else {
           message.error(r.message || '创建失败')
         }
@@ -149,7 +152,7 @@ export default function SpecialOpsReportPanel() {
       title: '确认删除', content: '确定要删除该报备吗？',
       onOk: async () => {
         const r = await deleteSpecialOperationReport(id)
-        if (r.code === 200) { message.success('已删除'); fetchData() }
+        if (r.code === 200) { message.success('已删除'); refresh() }
         else { message.error(r.message || '删除失败') }
       },
     })
@@ -165,14 +168,14 @@ export default function SpecialOpsReportPanel() {
       } else {
         message.success(`已提交${item.is_critical_reason ? ` · ${item.is_critical_reason}` : ''}`)
       }
-      fetchData()
+      refresh()
     }
     else { message.error(r.message || '提交失败') }
   }
 
   const handleApprove = async (id: string) => {
     const r = await approveSpecialOperationReport(id)
-    if (r.code === 200) { message.success('已审批'); fetchData() }
+    if (r.code === 200) { message.success('已审批'); refresh() }
     else { message.error(r.message || '审批失败') }
   }
 
@@ -181,13 +184,16 @@ export default function SpecialOpsReportPanel() {
   const handleReject = async () => {
     if (!rejectReason.trim()) { message.error('请填写驳回原因'); return }
     const r = await rejectSpecialOperationReport(rejectId, rejectReason)
-    if (r.code === 200) { message.success('已驳回'); setRejectVisible(false); fetchData() }
+    if (r.code === 200) { message.success('已驳回'); setRejectVisible(false); refresh() }
     else { message.error(r.message || '驳回失败') }
   }
 
   const handleToggleCritical = async (id: string, checked: boolean) => {
     const r = await setSpecialOperationReportCritical(id, checked)
-    if (r.code === 200) { message.success(checked ? '已标记为关键作业' : '已取消关键作业标记'); fetchData() }
+    if (r.code === 200) {
+      message.success(checked ? '已标记为关键作业' : '已取消关键作业标记')
+      refresh()
+    }
     else { message.error(r.message || '操作失败') }
   }
 
@@ -428,12 +434,12 @@ export default function SpecialOpsReportPanel() {
             style={{ width: 200, borderRadius: 8 }}
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            onPressEnter={() => { setPage(1); fetchData() }}
+            onPressEnter={() => setPage(1)}
             allowClear
           />
           <Button
             icon={<SearchOutlined />}
-            onClick={() => { setPage(1); fetchData() }}
+            onClick={() => setPage(1)}
             style={{ borderRadius: 8 }}
           >
             查询
@@ -466,7 +472,7 @@ export default function SpecialOpsReportPanel() {
       </Card>
 
       {/* ── Report Drawer (create/edit) ── */}
-      <Drawer
+      <Drawer forceRender
         title={
           <Space>
             <SafetyCertificateOutlined style={{ color: T.primary }} />
@@ -510,7 +516,7 @@ export default function SpecialOpsReportPanel() {
       </Drawer>
 
       {/* ── Reject Modal ── */}
-      <Modal
+      <Modal forceRender
         title="驳回原因"
         open={rejectVisible}
         onOk={handleReject}

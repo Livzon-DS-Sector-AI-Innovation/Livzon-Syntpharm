@@ -64,6 +64,8 @@ from app.modules.energy.schemas import (
     MonthlySummaryApiResponse,
     MonthlySummaryItem,
     SyncJobApiResponse,
+    SyncJobResult,
+    SyncJobStatus,
     UnitConsumptionTargetApiResponse,
     UnitConsumptionTargetCreate,
     UnitConsumptionTargetResponse,
@@ -638,6 +640,17 @@ async def process_alert_record(
     )
 
 
+@alert_record_router.delete("/{record_id}", summary="删除预警记录")
+async def delete_alert_record(
+    record_id: UUID,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> EnergyDeleteResponse:
+    await service.delete_alert_record(db, record_id)
+    await db.commit()
+    return EnergyDeleteResponse()
+
+
 router.include_router(device_router, prefix="/devices")
 router.include_router(data_router, prefix="/data")
 router.include_router(collect_router, prefix="/collect")
@@ -664,6 +677,7 @@ async def create_workshop(
             parent_id=str(obj.parent_id) if obj.parent_id else None,
             sort_order=obj.sort_order,
             is_active=obj.is_active,
+            excluded_energy_types=list(obj.excluded_energy_types),
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -675,6 +689,7 @@ async def list_workshops(
     current_user: RequiredUser,
     category: str | None = Query(default=None, description="分类"),
     is_active: bool | None = Query(default=None, description="是否启用"),
+    production_only: bool = Query(default=False, description="仅生产车间（AI 能耗分析用），按名字白名单过滤"),
     page: int = Query(default=1, ge=1, description="页码"),
     page_size: int = Query(default=100, ge=1, le=500, description="每页条数"),
     db: AsyncSession = Depends(get_db),
@@ -683,6 +698,7 @@ async def list_workshops(
         db,
         category=category,
         is_active=is_active,
+        production_only=production_only,
         page=page,
         page_size=page_size,
     )
@@ -696,6 +712,7 @@ async def list_workshops(
                 parent_id=str(i.parent_id) if i.parent_id else None,
                 sort_order=i.sort_order,
                 is_active=i.is_active,
+                excluded_energy_types=list(i.excluded_energy_types),
                 created_at=i.created_at,
                 updated_at=i.updated_at,
             )
@@ -721,6 +738,7 @@ async def get_workshop(
             parent_id=str(obj.parent_id) if obj.parent_id else None,
             sort_order=obj.sort_order,
             is_active=obj.is_active,
+            excluded_energy_types=list(obj.excluded_energy_types),
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -745,6 +763,7 @@ async def update_workshop(
             parent_id=str(obj.parent_id) if obj.parent_id else None,
             sort_order=obj.sort_order,
             is_active=obj.is_active,
+            excluded_energy_types=list(obj.excluded_energy_types),
             created_at=obj.created_at,
             updated_at=obj.updated_at,
         )
@@ -950,6 +969,7 @@ async def import_from_feishu(
             workshops_created=result.workshops_created,
             workshops_existing=result.workshops_existing,
             records_created=result.records_created,
+            records_updated=result.records_updated,
             records_skipped=result.records_skipped,
             errors=result.errors,
         )
@@ -979,7 +999,7 @@ async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-bitable-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
@@ -999,7 +1019,7 @@ async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiR
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-workshops-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
@@ -1019,7 +1039,7 @@ async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-sync-monthly-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
@@ -1045,7 +1065,7 @@ async def cross_import_from_bitable(body: BitableCrossImportRequest, current_use
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-cross-import-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
@@ -1083,15 +1103,16 @@ async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
                 sync_job_store.fail(job_id, str(e))
 
     spawn_task(_run(), name=f"energy-daily-import-{job_id[:8]}")
-    return SyncJobApiResponse(data={"job_id": job_id, "status": "running"})
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job_id, status="running"))
 
 
 @router.get("/jobs/{job_id}", summary="查询异步任务状态")
 async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiResponse:
     job = sync_job_store.get(job_id)
-    if not job:
+    if job is None:
         raise NotFoundException("job", job_id)
-    return SyncJobApiResponse(data=job)
+    result = SyncJobResult.model_validate(job.result) if job.result is not None else None
+    return SyncJobApiResponse(data=SyncJobStatus(job_id=job.job_id, status=job.status, result=result, error=job.error))
 
 
 # ── 单耗目标 ──────────────────────────────────────────────────────────────

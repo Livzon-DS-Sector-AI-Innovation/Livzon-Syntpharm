@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Tests for safety module API endpoints."""
 
 from __future__ import annotations

@@ -200,4 +200,4 @@ async def get_config(config_type: str = "text") -> LLMConfigData:
     if config:
         return config
 
-    raise LLMConfigError("LLM not configured. Set LLM_API_KEY in .env.local or configure via admin UI.")
+    raise LLMConfigError("LLM not configured. Set LLM_API_KEY in .env or configure via admin UI.")

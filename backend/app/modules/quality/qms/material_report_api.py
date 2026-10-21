@@ -9,7 +9,6 @@ from fastapi.responses import StreamingResponse
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
 from app.core.deps import RequiredUser
 from app.core.exceptions import AppException, NotFoundException
-from app.core.response import ApiResponse
 from app.core.storage import save_upload_file
 from app.modules.quality.qms.material_report_schemas import (
     ReportCreate,
@@ -22,6 +21,7 @@ from app.modules.quality.qms.material_report_service import (
     MaterialReportService,
     ReportTemplateService,
 )
+from app.modules.quality.qms.schemas import InspectionStandardApiResponse
 
 router = APIRouter(prefix="/quality/material-report", tags=["原料报告单"])
 
@@ -62,7 +62,7 @@ async def get(
         page_size=page_size,
     )
 
-    return ApiResponse(
+    return InspectionStandardApiResponse(
         data={
             "items": reports,
             "total": total,
@@ -81,7 +81,7 @@ async def post(
     """创建报告单"""
     service = MaterialReportService(session)
     report = await service.create_report(data)
-    return ApiResponse(data={"id": str(report.id), "report_no": report.report_no})  # type: ignore[attr-defined]
+    return InspectionStandardApiResponse(data={"id": str(report.id), "report_no": report.report_no})  # type: ignore[attr-defined]
 
 
 @router.get("/statistics", summary="获取统计数据")  # type: ignore[no-redef]
@@ -92,7 +92,7 @@ async def get(  # noqa: F811
     """获取统计数据"""
     service = MaterialReportService(session)
     stats = await service.get_statistics()
-    return ApiResponse(data=stats)
+    return InspectionStandardApiResponse(data=stats)
 
 
 @router.get("/template", summary="获取模板列表")  # type: ignore[no-redef]
@@ -111,7 +111,7 @@ async def get(  # noqa: F811
         page_size=page_size,
     )
 
-    return ApiResponse(
+    return InspectionStandardApiResponse(
         data={
             "items": templates,
             "total": total,
@@ -169,7 +169,7 @@ async def post(  # noqa: F811
         file_url=file_url,
     )
 
-    return ApiResponse(data=template)
+    return InspectionStandardApiResponse(data=template)
 
 
 @router.get("/template/{template_id}", summary="获取模板详情")  # type: ignore[no-redef]
@@ -185,7 +185,7 @@ async def get(  # noqa: F811
     if not template:
         raise NotFoundException(resource="模板不存在")
 
-    return ApiResponse(data=template)
+    return InspectionStandardApiResponse(data=template)
 
 
 @router.put("/template/{template_id}", summary="更新模板")
@@ -202,7 +202,7 @@ async def put(  # noqa: F811
     if not template:
         raise NotFoundException(resource="模板不存在")
 
-    return ApiResponse(data=template)
+    return InspectionStandardApiResponse(data=template)
 
 
 @router.delete("/template/{template_id}", summary="删除模板")
@@ -218,7 +218,7 @@ async def delete(  # noqa: F811
     if not success:
         raise NotFoundException(resource="模板不存在")
 
-    return ApiResponse(message="删除成功")
+    return InspectionStandardApiResponse(message="删除成功", data=None)
 
 
 @router.get("/template/{template_id}/preview", summary="预览模板字段")  # type: ignore[no-redef]
@@ -234,7 +234,7 @@ async def get(  # noqa: F811
     if not result:
         raise NotFoundException(resource="模板不存在")
 
-    return ApiResponse(data=result)
+    return InspectionStandardApiResponse(data=result)
 
 
 # ============ 图片上传与AI识别 API ============
@@ -253,7 +253,7 @@ async def get(  # noqa: F811
     if not report:
         raise NotFoundException(resource="报告单不存在")
 
-    return ApiResponse(data=report)
+    return InspectionStandardApiResponse(data=report)
 
 
 @router.put("/{report_id}", summary="更新报告单")  # type: ignore[no-redef]
@@ -270,7 +270,7 @@ async def put(  # noqa: F811
     if not report:
         raise NotFoundException(resource="报告单不存在")
 
-    return ApiResponse(data=report)
+    return InspectionStandardApiResponse(data=report)
 
 
 @router.delete("/{report_id}", summary="删除报告单")  # type: ignore[no-redef]
@@ -286,7 +286,7 @@ async def delete(  # noqa: F811
     if not success:
         raise NotFoundException(resource="报告单不存在")
 
-    return ApiResponse(message="删除成功")
+    return InspectionStandardApiResponse(message="删除成功", data=None)
 
 
 @router.post("/{report_id}/items", summary="批量保存明细数据")  # type: ignore[no-redef]
@@ -305,7 +305,7 @@ async def post(  # noqa: F811
         raise NotFoundException(resource="报告单不存在")
 
     items = await service.save_items(report_id, data)
-    return ApiResponse(data={"items": items})
+    return InspectionStandardApiResponse(data={"items": items})
 
 
 @router.post("/{report_id}/generate", summary="生成报告单文件")  # type: ignore[no-redef]
@@ -347,7 +347,7 @@ async def post(  # noqa: F811
     except ValueError as e:
         raise AppException(status_code=400, message=str(e))
 
-    return ApiResponse(data=report)
+    return InspectionStandardApiResponse(data=report)
 
 
 # ============ 模板管理 API ============
@@ -377,7 +377,7 @@ async def post(  # noqa: F811
             row_index=row_index,
             file=file,
         )
-        return ApiResponse(data=result)
+        return InspectionStandardApiResponse(data=result)
     except ValueError as e:
         raise AppException(status_code=400, message=str(e))
 
@@ -391,4 +391,4 @@ async def get(  # noqa: F811
     """获取报告单的所有图片记录"""
     service = MaterialReportService(session)
     images = await service.get_report_images(report_id)
-    return ApiResponse(data=images)
+    return InspectionStandardApiResponse(data=images)

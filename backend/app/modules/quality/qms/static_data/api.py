@@ -5,6 +5,7 @@ Prefix: /api/v1/quality/static-data/
 """
 
 import io
+import logging
 from datetime import date
 from typing import Any
 from uuid import UUID
@@ -15,11 +16,31 @@ from fastapi.responses import StreamingResponse
 from openpyxl.styles import Alignment, Font, PatternFill
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser
-from app.core.response import ApiResponse
+from app.core.exceptions import BadRequestException, NotFoundException
+from app.core.job_repository import JobRepository
+from app.core.jobs import spawn_task
 from app.modules.quality.qms.static_data import schemas as s
+from app.modules.quality.qms.static_data.schemas import (
+    # Import shared response wrappers from app.shared.schemas
+    ChromColumnApiResponse,
+    ChromColumnListApiResponse,
+    HplcReferenceApiResponse,
+    HplcReferenceListApiResponse,
+    MediumApiResponse,
+    MediumListApiResponse,
+    StandardApiResponse,
+    StandardListApiResponse,
+    StorageConditionApiResponse,
+    StorageConditionListApiResponse,
+    UnitApiResponse,
+    UnitListApiResponse,
+)
 from app.modules.quality.qms.static_data.service import StaticDataService
+from app.shared.schemas import DataApiResponse, MessageApiResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/static-data", tags=["Static Data"])
 
@@ -125,15 +146,15 @@ DICT_OPTIONS = {
 
 
 @router.get("/dict/{dict_type}", summary="Get dictionary options by type")
-async def get_dict_options(dict_type: str) -> Any:
+async def get_dict_options(current_user: RequiredUser, dict_type: str) -> Any:
     """Get dictionary options - returns hardcoded options for various dict types"""
     if dict_type in DICT_OPTIONS:
-        return ApiResponse(data=DICT_OPTIONS[dict_type])
-    return ApiResponse(code=404, message=f"Dictionary type '{dict_type}' not found")
+        return DataApiResponse(data=DICT_OPTIONS[dict_type])
+    raise NotFoundException(resource=f"Dictionary type '{dict_type}' not found")
 
 
 @router.get("/storage-condition/options", summary="Get storage condition options")
-async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_storage_condition_options(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
     """Get storage condition options for dropdown selection"""
     from sqlalchemy import and_, select
 
@@ -141,30 +162,30 @@ async def get_storage_condition_options(db: AsyncSession = Depends(get_db)) -> A
 
     result = await db.execute(
         select(StorageCondition)
-        .where(and_(StorageCondition.del_flag == 0, StorageCondition.status == 0))
+        .where(and_(StorageCondition.is_deleted.is_(False), StorageCondition.status == 0))
         .order_by(StorageCondition.id)
     )
     items = result.scalars().all()
-    return ApiResponse(data=[{"label": x.cond_name, "value": x.cond_code} for x in items])
+    return StorageConditionListApiResponse(data=[{"label": x.cond_name, "value": x.cond_code} for x in items])
 
 
 @router.get("/unit/options", summary="Get unit options")
-async def get_unit_options(db: AsyncSession = Depends(get_db)) -> Any:
+async def get_unit_options(current_user: RequiredUser, db: AsyncSession = Depends(get_db)) -> Any:
     """Get unit options for dropdown selection"""
     from sqlalchemy import and_, select
 
     from app.modules.quality.qms.static_data.models import Unit
 
-    result = await db.execute(select(Unit).where(and_(Unit.del_flag == 0, Unit.status == 0)).order_by(Unit.id))
+    result = await db.execute(select(Unit).where(and_(Unit.is_deleted.is_(False), Unit.status == 0)).order_by(Unit.id))
     items = result.scalars().all()
-    return ApiResponse(data=[{"label": x.unit_name, "value": x.unit_code} for x in items])
+    return UnitListApiResponse(data=[{"label": x.unit_name, "value": x.unit_code} for x in items])
 
 
 # ========== Template Download ==========
 
 
 @router.get("/hplc-reference/template", summary="Download HPLC reference template")
-async def download_hplc_reference_template() -> Any:
+async def download_hplc_reference_template(current_user: RequiredUser) -> Any:
     """Download Excel template for HPLC reference substance import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -254,108 +275,202 @@ async def download_hplc_reference_template() -> Any:
 # ========== Batch Import ==========
 
 
-@router.post("/hplc-reference/batch-import", summary="Batch import HPLC reference substances")
+async def _import_hplc_references(contents: bytes, user_id: UUID, db: AsyncSession) -> dict[str, Any]:
+    """Parse the workbook and create one record per row.
+
+    Takes its session rather than making one: the caller owns the lifecycle, which
+    is what lets a test drive this against its own transaction instead of spawning
+    a detached session it cannot observe. Returns the counts the caller polls for.
+    """
+    wb = openpyxl.load_workbook(io.BytesIO(contents))
+    ws = wb.active
+
+    service = StaticDataService(db)
+
+    # Get headers from first row
+    headers = [cell.value for cell in ws[1]]
+
+    # Field mapping
+    field_map = {
+        "对照品编号(ref_code)*": "ref_code",
+        "对照品名称(ref_name)*": "ref_name",
+        "检测项目(project_name)": "project_name",
+        "厂内批号(internal_batch)": "internal_batch",
+        "CAS号(cas_no)": "cas_no",
+        "供应商货号(cat_no)": "cat_no",
+        "厂家批号(manufacturer_batch)": "manufacturer_batch",
+        "供应商/来源(manufacturer)": "manufacturer",
+        "规格(spec)": "spec",
+        "纯度(purity)": "purity",
+        "含量(content)": "content",
+        "数量(quantity)": "quantity",
+        "库存状态(stock_status)": "stock_status",
+        "到货日期(arrival_date)": "arrival_date",
+        "生产/标定日期(produce_date)": "produce_date",
+        "有效期至(expire_date)": "expire_date",
+        "复标周期天(recal_cycle_days)": "recal_cycle_days",
+        "开瓶日期(open_date)": "open_date",
+        "开瓶有效期天(open_expire_days)": "open_expire_days",
+        "贮存条件编码(storage_cond_code)": "storage_cond_code",
+        "存放位置(location)": "location",
+        "是否有COA(has_coa)": "has_coa",
+        "交接单号(handover_no)": "handover_no",
+        "状态(ref_status:0在用/1用完/2过期/3报废)": "ref_status",
+        "备注(remark)": "remark",
+    }
+
+    success_count = 0
+    error_count = 0
+    errors = []
+
+    for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        if not row[0] or not row[1]:  # Skip empty rows
+            continue
+
+        data: dict[str, object] = {"created_by": user_id}
+        for col, header in enumerate(headers):
+            if header in field_map and row[col] is not None:
+                field = field_map[header]
+                value = row[col]
+                # Convert boolean
+                if field == "has_coa":
+                    value = str(value).upper() in ["TRUE", "是", "YES", "1"]
+                # Convert status
+                elif field == "ref_status":
+                    if isinstance(value, str):
+                        if "用完" in value:
+                            value = 1
+                        elif "过期" in value:
+                            value = 2
+                        elif "报废" in value:
+                            value = 3
+                        else:
+                            value = 0
+                # Convert date strings
+                elif field in [
+                    "arrival_date",
+                    "produce_date",
+                    "expire_date",
+                    "open_date",
+                ]:
+                    if isinstance(value, str):
+                        try:
+                            value = date.fromisoformat(value.split()[0])
+                        except (ValueError, IndexError, AttributeError):
+                            value = None
+                data[field] = value
+
+        try:
+            await service.create_hplc_reference(s.HplcReferenceCreate(**data), user_id)
+            success_count += 1
+        except Exception as e:
+            error_count += 1
+            errors.append(f"Row {row_num}: {str(e)}")
+            # The ordinary import failure is one bad row, not a corrupt file.
+            # The counts go back to the caller; the row is logged so an operator
+            # can find it without downloading the workbook again.
+            logger.warning(
+                "HPLC reference import: row failed",
+                extra={"row": row_num, "ref_code": data.get("ref_code")},
+                exc_info=True,
+            )
+
+    message = f"Import completed: {success_count} success, {error_count} failed"
+    if errors:
+        message += f"\nErrors: {'; '.join(errors[:5])}"
+
+    return {"success": success_count, "failed": error_count, "message": message}
+
+
+@router.post(
+    "/hplc-reference/batch-import",
+    response_model=s.BatchImportJobApiResponse,
+    status_code=202,
+    summary="Batch import HPLC reference substances",
+)
 async def handler(
     file: UploadFile = File(...),
-    service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Import HPLC reference substances from Excel file"""
+    """Import HPLC reference substances from Excel file.
+
+    Returns immediately with a job id; the rows are created off the request path —
+    `AGENTS.md:310` forbids running an operation over 5 seconds inside a request.
+    Poll `GET /jobs/{job_id}` for the counts.
+    """
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return ApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)")
+        raise BadRequestException(message="Please upload an Excel file (.xlsx or .xls)")
 
-    try:
-        contents = await file.read()
-        wb = openpyxl.load_workbook(io.BytesIO(contents))
-        ws = wb.active
+    # Read here: `UploadFile` is closed when the request ends, so the bytes must be
+    # captured before the background job runs.
+    contents = await file.read()
 
-        # Get headers from first row
-        headers = [cell.value for cell in ws[1]]
+    # The job row is committed before the work starts, so the id is pollable even
+    # if the worker never finishes — a row stuck on `running` is the signal.
+    job_id = await JobRepository(db).create("static-data-hplc-import")
 
-        # Field mapping
-        field_map = {
-            "对照品编号(ref_code)*": "ref_code",
-            "对照品名称(ref_name)*": "ref_name",
-            "检测项目(project_name)": "project_name",
-            "厂内批号(internal_batch)": "internal_batch",
-            "CAS号(cas_no)": "cas_no",
-            "供应商货号(cat_no)": "cat_no",
-            "厂家批号(manufacturer_batch)": "manufacturer_batch",
-            "供应商/来源(manufacturer)": "manufacturer",
-            "规格(spec)": "spec",
-            "纯度(purity)": "purity",
-            "含量(content)": "content",
-            "数量(quantity)": "quantity",
-            "库存状态(stock_status)": "stock_status",
-            "到货日期(arrival_date)": "arrival_date",
-            "生产/标定日期(produce_date)": "produce_date",
-            "有效期至(expire_date)": "expire_date",
-            "复标周期天(recal_cycle_days)": "recal_cycle_days",
-            "开瓶日期(open_date)": "open_date",
-            "开瓶有效期天(open_expire_days)": "open_expire_days",
-            "贮存条件编码(storage_cond_code)": "storage_cond_code",
-            "存放位置(location)": "location",
-            "是否有COA(has_coa)": "has_coa",
-            "交接单号(handover_no)": "handover_no",
-            "状态(ref_status:0在用/1用完/2过期/3报废)": "ref_status",
-            "备注(remark)": "remark",
-        }
-
-        success_count = 0
-        error_count = 0
-        errors = []
-
-        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-            if not row[0] or not row[1]:  # Skip empty rows
-                continue
-
-            data = {"create_by": user_id}
-            for col, header in enumerate(headers):
-                if header in field_map and row[col] is not None:
-                    field = field_map[header]
-                    value = row[col]
-                    # Convert boolean
-                    if field == "has_coa":
-                        value = str(value).upper() in ["TRUE", "是", "YES", "1"]
-                    # Convert status
-                    elif field == "ref_status":
-                        if isinstance(value, str):
-                            if "用完" in value:
-                                value = 1
-                            elif "过期" in value:
-                                value = 2
-                            elif "报废" in value:
-                                value = 3
-                            else:
-                                value = 0
-                    # Convert date strings
-                    elif field in [
-                        "arrival_date",
-                        "produce_date",
-                        "expire_date",
-                        "open_date",
-                    ]:
-                        if isinstance(value, str):
-                            try:
-                                value = date.fromisoformat(value.split()[0])
-                            except (ValueError, IndexError, AttributeError):
-                                value = None
-                    data[field] = value
-
+    async def _run() -> None:
+        # Own session: the request's is closed by the time this runs.
+        async with async_session_factory() as worker_db:
             try:
-                await service.create_hplc_reference(s.HplcReferenceCreate(**data), user_id)
-                success_count += 1
+                result = await _import_hplc_references(contents, user_id, worker_db)
+                await JobRepository(worker_db).complete(job_id, result)
             except Exception as e:
-                error_count += 1
-                errors.append(f"Row {row_num}: {str(e)}")
+                # A background failure has no caller to report to, so the traceback
+                # is the only record — and the job row carries the message to the
+                # poller. `extra` makes the line findable from the job id
+                # (`AGENTS.md:332`: log lines must carry their context).
+                logger.exception(
+                    "HPLC reference batch import failed",
+                    extra={"job_id": str(job_id), "user_id": str(user_id)},
+                )
+                await JobRepository(worker_db).fail(job_id, str(e))
 
-        message = f"Import completed: {success_count} success, {error_count} failed"
-        if errors:
-            message += f"\nErrors: {'; '.join(errors[:5])}"
+    spawn_task(_run(), name=f"static-data-hplc-import-{str(job_id)[:8]}")
 
-        return ApiResponse(message=message, data={"success": success_count, "failed": error_count})
-    except Exception as e:
-        return ApiResponse(code=500, message=f"Import failed: {str(e)}")
+    return {
+        "code": 200,
+        "message": "Import started",
+        "data": {"job_id": str(job_id), "status": "running"},
+    }
+
+
+@router.get(
+    "/jobs/{job_id}",
+    response_model=s.BatchImportJobApiResponse,
+    summary="Query a batch-import job",
+)
+async def get_import_job(
+    job_id: str,
+    current_user: RequiredUser,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """Poll a batch import started by `batch-import`.
+
+    `result` is present only once `status` is `done`; `error` only once it is
+    `failed`. The job is a row, so this answers **after** a restart — unlike the
+    in-memory store this replaced (`AGENTS.md:308`, 重启后丢失).
+    """
+    try:
+        job_uuid = UUID(job_id)
+    except ValueError:
+        raise NotFoundException(resource="导入任务", resource_id=job_id) from None
+
+    job = await JobRepository(db).get(job_uuid)
+    if job is None:
+        raise NotFoundException(resource="导入任务", resource_id=job_id)
+
+    return {
+        "code": 200,
+        "message": "success",
+        "data": {
+            "job_id": str(job.id),
+            "status": job.state,
+            "result": job.result,
+            "error": job.error,
+        },
+    }
 
 
 # ========== 11. HPLC Reference Substance ==========
@@ -363,6 +478,7 @@ async def handler(
 
 @router.get("/hplc-reference", summary="List HPLC reference substances")
 async def get(
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     ref_code: str | None = Query(None, description="Reference code"),
@@ -382,7 +498,7 @@ async def get(
         ref_status=ref_status,
         has_coa=has_coa,
     )
-    return ApiResponse(
+    return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -390,77 +506,81 @@ async def get(
 
 @router.get("/hplc-reference/need-recal", summary="查询需要复标的对照品")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """查询剩余量低于复标阈值、需要复标的对照品列表"""
     items = await service.get_hplc_references_need_recal()
-    return ApiResponse(
+    # `count` is payload, not pagination — `meta` is reserved for PaginationMeta.
+    # The list length is already the count, so it needs no separate field.
+    return HplcReferenceListApiResponse(
         data=[s.HplcReferenceResponse.model_validate(x) for x in items],
-        meta={"count": len(items)},
     )
 
 
 @router.get("/hplc-reference/{id}", summary="Get HPLC reference substance by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_hplc_reference(id)
     if not obj:
-        return ApiResponse(code=404, message="Record not found")
-    return ApiResponse(data=s.HplcReferenceResponse.model_validate(obj))
+        raise NotFoundException(resource="Record not found")
+    return HplcReferenceApiResponse(data=s.HplcReferenceResponse.model_validate(obj))
 
 
 @router.post("/hplc-reference", summary="Create HPLC reference substance")
 async def post(
     data: s.HplcReferenceCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_hplc_reference(data, user_id)
-        return ApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Created successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.put("/hplc-reference/{id}", summary="Update HPLC reference substance")
 async def put(
-    id: int,
+    id: UUID,
     data: s.HplcReferenceUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_hplc_reference(id, data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Updated successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.delete("/hplc-reference/{id}", summary="Delete HPLC reference substance")
 async def delete(
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
         await service.delete_hplc_reference(id)
-        return ApiResponse(message="Deleted successfully")
+        return MessageApiResponse(message="Deleted successfully", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.post(  # type: ignore[no-redef]
     "/hplc-reference/{id}/adjust-quantity", summary="Adjust HPLC reference quantity"
 )
 async def handler(  # noqa: F811
-    id: int,
+    id: UUID,
     current_user: RequiredUser,
     quantity_change: int = Body(..., embed=True, description="Quantity change (positive = in, negative = out)"),
     service: StaticDataService = Depends(_get_service),
@@ -468,17 +588,17 @@ async def handler(  # noqa: F811
     try:
         user_id = current_user.id
         obj = await service.adjust_hplc_reference_quantity(id, quantity_change, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return HplcReferenceApiResponse(
             data=s.HplcReferenceResponse.model_validate(obj),
             message="Quantity adjusted",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.post("/hplc-reference/{id}/use", summary="使用/领用对照品")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    id: int,
+    id: UUID,
     current_user: RequiredUser,
     usage_amount: float = Body(..., embed=True, description="领用量 (mg/g)"),
     usage_unit: str = Body("mg", embed=True, description="领用单位"),
@@ -499,7 +619,7 @@ async def post(  # noqa: F811
             remark,
             user_id,
         )
-        return ApiResponse(
+        return ChromColumnApiResponse(
             data={
                 "reference": s.HplcReferenceResponse.model_validate(obj),
                 "usage": s.HplcReferenceUsageResponse.model_validate(usage_log),
@@ -507,12 +627,13 @@ async def post(  # noqa: F811
             message="领用成功",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.get("/hplc-reference/{id}/usage-history", summary="查询对照品领用历史")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     service: StaticDataService = Depends(_get_service),
@@ -520,7 +641,7 @@ async def get(  # noqa: F811
     """查询指定对照品的领用历史记录"""
     skip = (page - 1) * page_size
     items, total = await service.list_hplc_reference_usage(ref_id=id, skip=skip, limit=page_size)
-    return ApiResponse(
+    return UnitApiResponse(
         data=[s.HplcReferenceUsageResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -531,6 +652,7 @@ async def get(  # noqa: F811
 
 @router.get("/chrom-column", summary="List chromatography columns")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     col_code: str | None = Query(None, description="Column code"),
@@ -552,14 +674,14 @@ async def get(  # noqa: F811
         col_status=col_status,
         column_category=column_category,
     )
-    return ApiResponse(
+    return ChromColumnListApiResponse(
         data=[s.ChromColumnResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
 
 
 @router.get("/chrom-column/template", summary="Download chromatography column template")
-async def download_chrom_column_template() -> Any:
+async def download_chrom_column_template(current_user: RequiredUser) -> Any:
     """Download Excel template for chromatography column import"""
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -641,318 +763,371 @@ async def download_chrom_column_template() -> Any:
     )
 
 
+async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession) -> dict[str, Any]:
+    """Parse every sheet and create one column record per row.
+
+    Takes its session rather than opening one — the caller owns the lifecycle, which
+    is what lets a test drive it against its own transaction. Returns the counts the
+    caller polls for.
+    """
+    wb = openpyxl.load_workbook(io.BytesIO(contents))
+    service = StaticDataService(db)
+
+    field_map = {
+        "品牌": "brand",
+        "型号": "model",
+        "色谱柱信息": "col_type",
+        "色谱柱类型*": "col_type",
+        "色谱柱类型": "col_type",
+        "色谱柱内径(mm)": "inner_diameter",
+        "色谱柱内径": "inner_diameter",
+        "柱长(mm)": "column_length",
+        "柱长": "column_length",
+        "填料粒径(μm)": "particle_size",
+        "填料粒径": "particle_size",
+        "验收日期*": "purchase_date",
+        "验收日期": "purchase_date",
+        "色谱柱编号*": "col_code",
+        "色谱柱编号": "col_code",
+        "货号P.N": "cat_no",
+        "序列号S.N*": "serial_no",
+        "序列号S.N": "serial_no",
+        "产品编号": "product_no",
+        "编号C-N0": "product_no",
+        "批次号L.N": "batch_no",
+        "启用日期": "use_start_date",
+        "适用检测项目": "apply_method",
+        "品名/检验项目": "apply_method",
+        "最大使用次数": "max_use_times",
+        "存放位置*": "location",
+        "存放位置": "location",
+        "贮存条件编码*": "storage_cond_code",
+        "贮存条件编码": "storage_cond_code",
+        "状态(0在用/1待清洗/2封存/3报废)": "col_status",
+        "状态": "col_status",
+        "备注": "remark",
+    }
+
+    success_count = 0
+    error_count = 0
+    errors = []
+
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        if ws.max_row < 2:
+            continue
+
+        headers = [cell.value for cell in ws[1]]
+
+        for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+            if not any(row):
+                continue
+
+            data: dict[str, object] = {"created_by": user_id}
+
+            if "气相" in sheet_name or "GC" in sheet_name.upper():
+                data["column_category"] = 1
+            else:
+                data["column_category"] = 0
+
+            spec_parts = []
+            manufacturer_parts = []
+
+            for col, header in enumerate(headers):
+                if not header or row[col] is None:
+                    continue
+                header_str = str(header).strip()
+                if header_str not in field_map:
+                    continue
+
+                field = field_map[header_str]
+                value = row[col]
+
+                if field == "brand":
+                    manufacturer_parts.append(str(value))
+                elif field == "model":
+                    manufacturer_parts.append(str(value))
+                elif field == "inner_diameter":
+                    spec_parts.append(f"{value}")
+                elif field == "column_length":
+                    spec_parts.append(f"*{value}mm")
+                elif field == "particle_size":
+                    spec_parts.append(f" {value}μm")
+                elif field == "col_type":
+                    data["col_type"] = str(value).strip()
+                elif field == "col_code":
+                    data["col_code"] = str(value).strip()
+                elif field == "serial_no":
+                    data["serial_no"] = str(value).strip()
+                elif field == "location":
+                    data["location"] = str(value).strip()
+                elif field == "storage_cond_code":
+                    data["storage_cond_code"] = str(value).strip()
+                elif field == "apply_method":
+                    data["apply_method"] = str(value).strip()
+                elif field == "purchase_date":
+                    if isinstance(value, date):
+                        data["purchase_date"] = value
+                    elif isinstance(value, (int, float)):
+                        try:
+                            from datetime import timedelta
+
+                            base = date(1899, 12, 30)
+                            data["purchase_date"] = base + timedelta(days=int(value))
+                        except (ValueError, TypeError, OverflowError):
+                            pass
+                    elif isinstance(value, str) and value.strip() and value.strip() != "/":
+                        try:
+                            v = value.strip()
+                            if len(v) == 8 and v.isdigit():
+                                data["purchase_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
+                            else:
+                                data["purchase_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
+                        except (ValueError, IndexError, AttributeError):
+                            pass
+                elif field == "use_start_date":
+                    if isinstance(value, date):
+                        data["use_start_date"] = value
+                    elif isinstance(value, (int, float)):
+                        try:
+                            from datetime import timedelta
+
+                            base = date(1899, 12, 30)
+                            data["use_start_date"] = base + timedelta(days=int(value))
+                        except (ValueError, TypeError, OverflowError):
+                            pass
+                    elif isinstance(value, str) and value.strip() and value.strip() != "/":
+                        try:
+                            v = value.strip()
+                            if len(v) == 8 and v.isdigit():
+                                data["use_start_date"] = date(int(v[:4]), int(v[4:6]), int(v[6:8]))
+                            else:
+                                data["use_start_date"] = date.fromisoformat(v.replace("/", "-").split()[0])
+                        except (ValueError, IndexError, AttributeError):
+                            pass
+                elif field == "max_use_times":
+                    try:
+                        data["max_use_times"] = int(float(value))
+                    except (ValueError, TypeError):
+                        data["max_use_times"] = 100
+                elif field == "col_status":
+                    v = str(value).strip()
+                    if "待清洗" in v:
+                        data["col_status"] = 1
+                    elif "封存" in v:
+                        data["col_status"] = 2
+                    elif "报废" in v:
+                        data["col_status"] = 3
+                    else:
+                        data["col_status"] = 0
+                elif field == "remark":
+                    data["remark"] = str(value).strip()
+
+            if manufacturer_parts:
+                data["manufacturer"] = " ".join(manufacturer_parts)
+            if spec_parts:
+                data["spec"] = "".join(spec_parts).replace("*", "×")
+
+            if "col_code" not in data or not data["col_code"] or data["col_code"] == "/":
+                error_count += 1
+                errors.append(f"Sheet[{sheet_name}] Row {row_num}: 缺少色谱柱编号")
+                continue
+            if "col_type" not in data or not data["col_type"]:
+                error_count += 1
+                errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型")
+                continue
+            if "manufacturer" not in data or not data["manufacturer"]:
+                data["manufacturer"] = "未知"
+            if "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/":
+                data["serial_no"] = data["col_code"]
+            if "location" not in data or not data["location"]:
+                data["location"] = "未指定"
+            if "storage_cond_code" not in data or not data["storage_cond_code"]:
+                data["storage_cond_code"] = "ROOM_TEMP"
+            if "max_use_times" not in data:
+                data["max_use_times"] = 100
+            if "col_status" not in data:
+                data["col_status"] = 0
+            if "purchase_date" not in data:
+                if "use_start_date" in data:
+                    data["purchase_date"] = data["use_start_date"]
+                else:
+                    data["purchase_date"] = date.today()
+            if "spec" not in data or not data["spec"]:
+                data["spec"] = "未指定"
+
+            try:
+                await service.create_chrom_column(s.ChromColumnCreate(**data), user_id)
+                success_count += 1
+            except Exception as e:
+                error_count += 1
+                errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}")
+                # See the HPLC handler: a single bad row is the ordinary failure.
+                logger.warning(
+                    "Chrom-column import: row failed",
+                    extra={
+                        "sheet": sheet_name,
+                        "row": row_num,
+                        "col_code": data.get("col_code"),
+                    },
+                    exc_info=True,
+                )
+
+    message = f"导入完成: 成功 {success_count} 条，失败 {error_count} 条"
+    if errors:
+        message += f"\n错误: {'; '.join(errors[:10])}"
+        if len(errors) > 10:
+            message += f" ...等共{len(errors)}条错误"
+
+    return {"success": success_count, "failed": error_count, "errors": errors, "message": message}
+
+
 @router.post(  # type: ignore[no-redef]
-    "/chrom-column/batch-import", summary="Batch import chromatography columns"
+    "/chrom-column/batch-import",
+    response_model=s.BatchImportJobApiResponse,
+    status_code=202,
+    summary="Batch import chromatography columns",
 )
 async def handler(  # noqa: F811
     file: UploadFile = File(...),
-    service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """Import chromatography columns from Excel file (supports both 液相 and 气相 sheets)"""
+    """Import chromatography columns from Excel (液相 and 气相 sheets).
+
+    Returns immediately with a job id; the rows are created off the request path —
+    `AGENTS.md:310` forbids an operation over 5 seconds inside a request. Poll
+    `GET /jobs/{job_id}` for the counts.
+    """
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
-        return ApiResponse(code=400, message="Please upload an Excel file (.xlsx or .xls)")
+        raise BadRequestException(message="Please upload an Excel file (.xlsx or .xls)")
 
-    try:
-        contents = await file.read()
-        wb = openpyxl.load_workbook(io.BytesIO(contents))
+    # Read here: `UploadFile` is closed when the request ends.
+    contents = await file.read()
 
-        field_map = {
-            "品牌": "brand",
-            "型号": "model",
-            "色谱柱信息": "col_type",
-            "色谱柱类型*": "col_type",
-            "色谱柱类型": "col_type",
-            "色谱柱内径(mm)": "inner_diameter",
-            "色谱柱内径": "inner_diameter",
-            "柱长(mm)": "column_length",
-            "柱长": "column_length",
-            "填料粒径(μm)": "particle_size",
-            "填料粒径": "particle_size",
-            "验收日期*": "purchase_date",
-            "验收日期": "purchase_date",
-            "色谱柱编号*": "col_code",
-            "色谱柱编号": "col_code",
-            "货号P.N": "cat_no",
-            "序列号S.N*": "serial_no",
-            "序列号S.N": "serial_no",
-            "产品编号": "product_no",
-            "编号C-N0": "product_no",
-            "批次号L.N": "batch_no",
-            "启用日期": "use_start_date",
-            "适用检测项目": "apply_method",
-            "品名/检验项目": "apply_method",
-            "最大使用次数": "max_use_times",
-            "存放位置*": "location",
-            "存放位置": "location",
-            "贮存条件编码*": "storage_cond_code",
-            "贮存条件编码": "storage_cond_code",
-            "状态(0在用/1待清洗/2封存/3报废)": "col_status",
-            "状态": "col_status",
-            "备注": "remark",
-        }
+    job_id = await JobRepository(db).create("static-data-chrom-import")
 
-        success_count = 0
-        error_count = 0
-        errors = []
+    async def _run() -> None:
+        # Own session: the request's is closed by the time this runs.
+        async with async_session_factory() as worker_db:
+            try:
+                result = await _import_chrom_columns(contents, user_id, worker_db)
+                await JobRepository(worker_db).complete(job_id, result)
+            except Exception as e:
+                # `extra` carries the job id so the log can be joined to the poll the
+                # client made (`AGENTS.md:332`).
+                logger.exception(
+                    "Chrom-column batch import failed",
+                    extra={"job_id": str(job_id), "user_id": str(user_id)},
+                )
+                await JobRepository(worker_db).fail(job_id, str(e))
 
-        for sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-            if ws.max_row < 2:
-                continue
+    spawn_task(_run(), name=f"static-data-chrom-import-{str(job_id)[:8]}")
 
-            headers = [cell.value for cell in ws[1]]
-
-            for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-                if not any(row):
-                    continue
-
-                data = {"create_by": user_id}
-
-                if "气相" in sheet_name or "GC" in sheet_name.upper():
-                    data["column_category"] = 1
-                else:
-                    data["column_category"] = 0
-
-                spec_parts = []
-                manufacturer_parts = []
-
-                for col, header in enumerate(headers):
-                    if not header or row[col] is None:
-                        continue
-                    header_str = str(header).strip()
-                    if header_str not in field_map:
-                        continue
-
-                    field = field_map[header_str]
-                    value = row[col]
-
-                    if field == "brand":
-                        manufacturer_parts.append(str(value))
-                    elif field == "model":
-                        manufacturer_parts.append(str(value))
-                    elif field == "inner_diameter":
-                        spec_parts.append(f"{value}")
-                    elif field == "column_length":
-                        spec_parts.append(f"*{value}mm")
-                    elif field == "particle_size":
-                        spec_parts.append(f" {value}μm")
-                    elif field == "col_type":
-                        data["col_type"] = str(value).strip()  # type: ignore[assignment]
-                    elif field == "col_code":
-                        data["col_code"] = str(value).strip()  # type: ignore[assignment]
-                    elif field == "serial_no":
-                        data["serial_no"] = str(value).strip()  # type: ignore[assignment]
-                    elif field == "location":
-                        data["location"] = str(value).strip()  # type: ignore[assignment]
-                    elif field == "storage_cond_code":
-                        data["storage_cond_code"] = str(value).strip()  # type: ignore[assignment]
-                    elif field == "apply_method":
-                        data["apply_method"] = str(value).strip()  # type: ignore[assignment]
-                    elif field == "purchase_date":
-                        if isinstance(value, date):
-                            data["purchase_date"] = value  # type: ignore[assignment]
-                        elif isinstance(value, (int, float)):
-                            try:
-                                from datetime import timedelta
-
-                                base = date(1899, 12, 30)
-                                data["purchase_date"] = base + timedelta(  # type: ignore[assignment]
-                                    days=int(value)
-                                )
-                            except (ValueError, TypeError, OverflowError):
-                                pass
-                        elif isinstance(value, str) and value.strip() and value.strip() != "/":
-                            try:
-                                v = value.strip()
-                                if len(v) == 8 and v.isdigit():
-                                    data["purchase_date"] = date(  # type: ignore[assignment]
-                                        int(v[:4]), int(v[4:6]), int(v[6:8])
-                                    )
-                                else:
-                                    data["purchase_date"] = date.fromisoformat(  # type: ignore[assignment]
-                                        v.replace("/", "-").split()[0]
-                                    )
-                            except (ValueError, IndexError, AttributeError):
-                                pass
-                    elif field == "use_start_date":
-                        if isinstance(value, date):
-                            data["use_start_date"] = value  # type: ignore[assignment]
-                        elif isinstance(value, (int, float)):
-                            try:
-                                from datetime import timedelta
-
-                                base = date(1899, 12, 30)
-                                data["use_start_date"] = base + timedelta(  # type: ignore[assignment]
-                                    days=int(value)
-                                )
-                            except (ValueError, TypeError, OverflowError):
-                                pass
-                        elif isinstance(value, str) and value.strip() and value.strip() != "/":
-                            try:
-                                v = value.strip()
-                                if len(v) == 8 and v.isdigit():
-                                    data["use_start_date"] = date(  # type: ignore[assignment]
-                                        int(v[:4]), int(v[4:6]), int(v[6:8])
-                                    )
-                                else:
-                                    data["use_start_date"] = date.fromisoformat(  # type: ignore[assignment]
-                                        v.replace("/", "-").split()[0]
-                                    )
-                            except (ValueError, IndexError, AttributeError):
-                                pass
-                    elif field == "max_use_times":
-                        try:
-                            data["max_use_times"] = int(float(value))
-                        except (ValueError, TypeError):
-                            data["max_use_times"] = 100
-                    elif field == "col_status":
-                        v = str(value).strip()
-                        if "待清洗" in v:
-                            data["col_status"] = 1
-                        elif "封存" in v:
-                            data["col_status"] = 2
-                        elif "报废" in v:
-                            data["col_status"] = 3
-                        else:
-                            data["col_status"] = 0
-                    elif field == "remark":
-                        data["remark"] = str(value).strip()  # type: ignore[assignment]
-
-                if manufacturer_parts:
-                    data["manufacturer"] = " ".join(manufacturer_parts)  # type: ignore[assignment]
-                if spec_parts:
-                    data["spec"] = "".join(spec_parts).replace("*", "×")  # type: ignore[assignment]
-
-                if (
-                    "col_code" not in data or not data["col_code"] or data["col_code"] == "/"  # type: ignore[comparison-overlap]
-                ):
-                    error_count += 1
-                    errors.append(f"Sheet[{sheet_name}] Row {row_num}: 缺少色谱柱编号")
-                    continue
-                if "col_type" not in data or not data["col_type"]:
-                    error_count += 1
-                    errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): 缺少色谱柱类型")
-                    continue
-                if "manufacturer" not in data or not data["manufacturer"]:
-                    data["manufacturer"] = "未知"  # type: ignore[assignment]
-                if (
-                    "serial_no" not in data or not data["serial_no"] or data["serial_no"] == "/"  # type: ignore[comparison-overlap]
-                ):
-                    data["serial_no"] = data["col_code"]
-                if "location" not in data or not data["location"]:
-                    data["location"] = "未指定"  # type: ignore[assignment]
-                if "storage_cond_code" not in data or not data["storage_cond_code"]:
-                    data["storage_cond_code"] = "ROOM_TEMP"  # type: ignore[assignment]
-                if "max_use_times" not in data:
-                    data["max_use_times"] = 100
-                if "col_status" not in data:
-                    data["col_status"] = 0
-                if "purchase_date" not in data:
-                    if "use_start_date" in data:
-                        data["purchase_date"] = data["use_start_date"]
-                    else:
-                        data["purchase_date"] = date.today()  # type: ignore[assignment]
-                if "spec" not in data or not data["spec"]:
-                    data["spec"] = "未指定"  # type: ignore[assignment]
-
-                try:
-                    await service.create_chrom_column(s.ChromColumnCreate(**data), user_id)
-                    success_count += 1
-                except Exception as e:
-                    error_count += 1
-                    errors.append(f"Sheet[{sheet_name}] Row {row_num} ({data.get('col_code', '')}): {str(e)}")
-
-        message = f"导入完成: 成功 {success_count} 条，失败 {error_count} 条"
-        if errors:
-            message += f"\n错误: {'; '.join(errors[:10])}"
-            if len(errors) > 10:
-                message += f" ...等共{len(errors)}条错误"
-
-        return ApiResponse(
-            message=message,
-            data={"success": success_count, "failed": error_count, "errors": errors},
-        )
-    except Exception as e:
-        return ApiResponse(code=500, message=f"导入失败: {str(e)}")
+    return {
+        "code": 200,
+        "message": "Import started",
+        "data": {"job_id": job_id, "status": "running"},
+    }
 
 
 @router.get("/chrom-column/{id}", summary="Get chromatography column by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_chrom_column(id)
     if not obj:
-        return ApiResponse(code=404, message="Record not found")
-    return ApiResponse(data=s.ChromColumnResponse.model_validate(obj))
+        raise NotFoundException(resource="Record not found")
+    return ChromColumnApiResponse(data=s.ChromColumnResponse.model_validate(obj))
 
 
 @router.post("/chrom-column", summary="Create chromatography column")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.ChromColumnCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_chrom_column(data, user_id)
-        return ApiResponse(
+        return ChromColumnApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Created successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.put("/chrom-column/{id}", summary="Update chromatography column")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.ChromColumnUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_chrom_column(id, data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return ChromColumnApiResponse(
             data=s.ChromColumnResponse.model_validate(obj),
             message="Updated successfully",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.delete("/chrom-column/{id}", summary="Delete chromatography column")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     try:
         await service.delete_chrom_column(id)
-        return ApiResponse(message="Deleted successfully")
+        return MessageApiResponse(message="Deleted successfully", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.post(  # type: ignore[no-redef]
     "/chrom-column/{id}/increment-usage", summary="Increment column usage count"
 )
 async def handler(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.increment_chrom_column_usage(id, user_id)
-        return ApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
+        return ChromColumnApiResponse(data=s.ChromColumnResponse.model_validate(obj), message="Usage incremented")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 # ========== 6. Medium (培养基) ==========
 
 
+@router.get(
+    "/medium/stats",
+    response_model=s.MediumStatsResponse,
+    summary="Counts for the mediums page",
+)
+async def get_medium_stats(
+    current_user: RequiredUser,
+    medium_type: str | None = Query(None, description="Medium type, when one is chosen"),
+    service: StaticDataService = Depends(_get_service),
+) -> Any:
+    """Counts the mediums page renders, in one request.
+
+    The page fetched every row and counted in JavaScript; as the table grew the
+    stats got slower with it (#103).
+    """
+    return {"code": 200, "message": "success", "data": await service.get_medium_stats(medium_type)}
+
+
 @router.get("/medium", summary="List medium")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     medium_code: str | None = Query(None, description="Medium code"),
@@ -974,7 +1149,7 @@ async def get(  # noqa: F811
         verify_status=verify_status,
         status=status,
     )
-    return ApiResponse(
+    return MediumListApiResponse(
         data=[s.MediumResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -982,74 +1157,89 @@ async def get(  # noqa: F811
 
 @router.get("/medium/{id}", summary="Get medium by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_medium(id)
     if not obj:
-        return ApiResponse(code=404, message="Medium not found")
-    return ApiResponse(data=s.MediumResponse.model_validate(obj))
+        raise NotFoundException(resource="Medium not found")
+    return MediumApiResponse(data=s.MediumResponse.model_validate(obj))
 
 
 @router.post("/medium", summary="Create medium")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.MediumCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_medium(data, user_id)
-        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium created")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.put("/medium/{id}", summary="Update medium")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.MediumUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_medium(id, data, user_id)
-        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Medium updated")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.delete("/medium/{id}", summary="Delete medium")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         await service.delete_medium(id)
-        return ApiResponse(message="Medium deleted")
+        return MessageApiResponse(message="Medium deleted", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.post("/medium/{id}/adjust-stock", summary="Adjust medium stock quantity")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    id: int,
+    id: UUID,
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.adjust_medium_stock(id, quantity, user_id)
-        return ApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
+        return MediumApiResponse(data=s.MediumResponse.model_validate(obj), message="Stock adjusted")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 # ========== 7. Standard (标准品) ==========
 
 
+@router.get(
+    "/standard/stats",
+    response_model=s.StandardStatsResponse,
+    summary="Counts for the standards page",
+)
+async def get_standard_stats(
+    current_user: RequiredUser,
+    service: StaticDataService = Depends(_get_service),
+) -> Any:
+    """Counts the standards page renders, in one request (see #103)."""
+    return {"code": 200, "message": "success", "data": await service.get_standard_stats()}
+
+
 @router.get("/standard", summary="List standards")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     std_code: str | None = Query(None, description="Standard code"),
@@ -1069,7 +1259,7 @@ async def get(  # noqa: F811
         manufacturer=manufacturer,
         std_status=std_status,
     )
-    return ApiResponse(
+    return StandardListApiResponse(
         data=[s.StandardResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -1077,67 +1267,68 @@ async def get(  # noqa: F811
 
 @router.get("/standard/{id}", summary="Get standard by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_standard(id)
     if not obj:
-        return ApiResponse(code=404, message="Standard not found")
-    return ApiResponse(data=s.StandardResponse.model_validate(obj))
+        raise NotFoundException(resource="Standard not found")
+    return StandardApiResponse(data=s.StandardResponse.model_validate(obj))
 
 
 @router.post("/standard", summary="Create standard")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.StandardCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_standard(data, user_id)
-        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard created")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.put("/standard/{id}", summary="Update standard")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.StandardUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_standard(id, data, user_id)
-        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Standard updated")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.delete("/standard/{id}", summary="Delete standard")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         await service.delete_standard(id)
-        return ApiResponse(message="Standard deleted")
+        return MessageApiResponse(message="Standard deleted", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.post("/standard/{id}/adjust-quantity", summary="Adjust standard quantity")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    id: int,
+    id: UUID,
     quantity: int = Body(..., embed=True, description="Quantity change (positive or negative)"),
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.adjust_standard_quantity(id, quantity, user_id)
-        return ApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
+        return StandardApiResponse(data=s.StandardResponse.model_validate(obj), message="Quantity adjusted")
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 # ========== 8. Storage Condition (贮存条件) ==========
@@ -1145,6 +1336,7 @@ async def post(  # noqa: F811
 
 @router.get("/storage-condition", summary="List storage conditions")  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    current_user: RequiredUser,
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=200),
     cond_code: str | None = Query(None, description="Condition code"),
@@ -1160,7 +1352,7 @@ async def get(  # noqa: F811
         cond_name=cond_name,
         status=status,
     )
-    return ApiResponse(
+    return StorageConditionListApiResponse(
         data=[s.StorageConditionResponse.model_validate(x) for x in items],
         meta={"page": page, "page_size": page_size, "total": total},
     )
@@ -1168,56 +1360,57 @@ async def get(  # noqa: F811
 
 @router.get("/storage-condition/{id}", summary="Get storage condition by ID")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    id: int,
+    current_user: RequiredUser,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     obj = await service.get_storage_condition(id)
     if not obj:
-        return ApiResponse(code=404, message="Storage condition not found")
-    return ApiResponse(data=s.StorageConditionResponse.model_validate(obj))
+        raise NotFoundException(resource="Storage condition not found")
+    return StorageConditionApiResponse(data=s.StorageConditionResponse.model_validate(obj))
 
 
 @router.post("/storage-condition", summary="Create storage condition")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: s.StorageConditionCreate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.create_storage_condition(data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition created",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.put("/storage-condition/{id}", summary="Update storage condition")  # type: ignore[no-redef]
 async def put(  # noqa: F811
-    id: int,
+    id: UUID,
     data: s.StorageConditionUpdate,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         obj = await service.update_storage_condition(id, data, user_id)  # type: ignore[attr-defined]
-        return ApiResponse(
+        return StorageConditionApiResponse(
             data=s.StorageConditionResponse.model_validate(obj),
             message="Storage condition updated",
         )
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))
 
 
 @router.delete("/storage-condition/{id}", summary="Delete storage condition")  # type: ignore[no-redef]
 async def delete(  # noqa: F811
-    id: int,
+    id: UUID,
     service: StaticDataService = Depends(_get_service),
-    user_id: int = Depends(_user_id),
+    user_id: UUID = Depends(_user_id),
 ) -> Any:
     try:
         await service.delete_storage_condition(id)
-        return ApiResponse(message="Storage condition deleted")
+        return MessageApiResponse(message="Storage condition deleted", data=None)
     except ValueError as e:
-        return ApiResponse(code=400, message=str(e))
+        raise BadRequestException(message=str(e))

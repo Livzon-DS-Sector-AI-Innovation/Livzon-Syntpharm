@@ -10,12 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.sampling_schemas import (
     RetentionLedgerFilter,
     SampleRetentionLedgerResponse,
     SamplingApprovalCreate,
     SamplingApprovalRecordResponse,
+    SamplingOrderApiResponse,
     SamplingOrderCreate,
     SamplingOrderFilter,
     SamplingOrderListResponse,
@@ -31,7 +31,7 @@ def get_sampling_service(session: AsyncSession = Depends(get_db)) -> SamplingSer
     return SamplingService(session)
 
 
-@router.post("/orders", response_model=ApiResponse, status_code=201)
+@router.post("/orders", response_model=SamplingOrderApiResponse, status_code=201)
 async def post(
     data: SamplingOrderCreate,
     service: SamplingService = Depends(get_sampling_service),
@@ -41,7 +41,7 @@ async def post(
     try:
         user_id = current_user.id if current_user else None
         order = await service.create_order(data, user_id)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="创建成功",
             data=SamplingOrderResponse.model_validate(order),
         )
@@ -84,7 +84,7 @@ async def get(
     }
 
 
-@router.get("/orders/{order_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/orders/{order_id}", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     order_id: UUID,
     service: SamplingService = Depends(get_sampling_service),
@@ -93,12 +93,12 @@ async def get(  # noqa: F811
     """获取取样单详情"""
     try:
         order = await service.get_order(order_id)
-        return ApiResponse(data=SamplingOrderResponse.model_validate(order))
+        return SamplingOrderApiResponse(data=SamplingOrderResponse.model_validate(order))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/orders/{order_id}", response_model=ApiResponse)
+@router.put("/orders/{order_id}", response_model=SamplingOrderApiResponse)
 async def put(
     order_id: UUID,
     data: SamplingOrderUpdate,
@@ -109,7 +109,7 @@ async def put(
     try:
         user_id = current_user.id if current_user else None
         order = await service.update_order(order_id, data, user_id)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="更新成功",
             data=SamplingOrderResponse.model_validate(order),
         )
@@ -127,12 +127,12 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_order(order_id, user_id)
-        return success_response(message="删除成功")
+        return SamplingOrderApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/orders/{order_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/orders/{order_id}/submit", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     order_id: UUID,
     service: SamplingService = Depends(get_sampling_service),
@@ -142,7 +142,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         order = await service.submit_for_approval(order_id, user_id)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="提交成功",
             data=SamplingOrderResponse.model_validate(order),
         )
@@ -150,7 +150,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/orders/{order_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/orders/{order_id}/approve", response_model=SamplingOrderApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     order_id: UUID,
     data: SamplingApprovalCreate,
@@ -163,7 +163,7 @@ async def post(  # noqa: F811
         user_name = current_user.name if current_user else ""
         approver_role = "qa"
         order = await service.approve_order(order_id, data, user_id, user_name, approver_role)
-        return ApiResponse(
+        return SamplingOrderApiResponse(
             message="审批完成",
             data=SamplingOrderResponse.model_validate(order),
         )

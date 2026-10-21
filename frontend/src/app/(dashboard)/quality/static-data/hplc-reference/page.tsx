@@ -62,11 +62,10 @@ import {
   listHplcReference,
   downloadHplcReferenceTemplate,
   batchImportHplcReference,
-  adjustHplcReferenceQuantity,
-  consumeHplcReference,
   getHplcReferenceUsageHistory,
   getHplcReferencesNeedRecal,
 } from '@/lib/api/client/static-data-api'
+import { adjustHplcReferenceQuantity, consumeHplcReference } from '@/actions/static-data'
 import './hplc-style.css'
 
 const { RangePicker } = DatePicker
@@ -134,12 +133,18 @@ export default function HplcReferencePage() {
     if (statusFilter !== 'all') {
       params.ref_status = statusFilter
     }
-    const adv = advancedForm.getFieldsValue()
-    if (adv.cas_no) params.cas_no = adv.cas_no
-    if (adv.expire_start) params.expire_start = adv.expire_start
-    if (adv.expire_end) params.expire_end = adv.expire_end
+    // Only read the instance while its <Form> is mounted — see chrom-column for the
+    // full explanation. advancedForm lives behind {showAdvanced && ...}, and this
+    // useCallback runs on mount via react-query, which trips antd's
+    // "Instance created by `useForm` is not connected to any Form element" warning.
+    if (showAdvanced) {
+      const adv = advancedForm.getFieldsValue()
+      if (adv.cas_no) params.cas_no = adv.cas_no
+      if (adv.expire_start) params.expire_start = adv.expire_start
+      if (adv.expire_end) params.expire_end = adv.expire_end
+    }
     return params
-  }, [page, pageSize, searchText, statusFilter, advancedForm])
+  }, [page, pageSize, searchText, statusFilter, advancedForm, showAdvanced])
 
   const { data: queryResult, isLoading: loading, refetch: _fetchData } = useQuery({
     queryKey: ['hplc-reference-list', page, pageSize, searchText, statusFilter],
@@ -954,10 +959,10 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        width={680}
+        size={680}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <div style={{ display: 'flex', gap: 8 }}>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
@@ -1166,10 +1171,10 @@ export default function HplcReferencePage() {
       <Drawer
         title="批量导入"
         placement="right"
-        width={480}
+        size={480}
         open={importModalOpen}
         onClose={() => setImportModalOpen(false)}
-        destroyOnClose
+        destroyOnHidden
       >
         <div style={{ marginBottom: 24 }}>
           <p style={{ color: '#64748b', marginBottom: 12 }}>
@@ -1191,10 +1196,10 @@ export default function HplcReferencePage() {
       <Drawer
         title="调整数量"
         placement="right"
-        width={400}
+        size={400}
         open={stockDrawerOpen}
         onClose={() => setStockDrawerOpen(false)}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setStockDrawerOpen(false)}>取消</Button>
@@ -1247,10 +1252,10 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        width={480}
+        size={480}
         open={usageDrawerOpen}
         onClose={() => setUsageDrawerOpen(false)}
-        destroyOnClose
+        destroyOnHidden
         extra={
           <Space>
             <Button onClick={() => setUsageDrawerOpen(false)}>取消</Button>
@@ -1350,10 +1355,10 @@ export default function HplcReferencePage() {
           </div>
         }
         placement="right"
-        width={720}
+        size={720}
         open={usageHistoryOpen}
         onClose={() => setUsageHistoryOpen(false)}
-        destroyOnClose
+        destroyOnHidden
       >
         {usageHistoryRecord && (
           <>

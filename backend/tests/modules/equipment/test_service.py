@@ -1,4 +1,3 @@
-# mypy: ignore-errors
 """Tests for equipment service layer."""
 
 import uuid

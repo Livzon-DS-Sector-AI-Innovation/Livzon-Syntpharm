@@ -11,6 +11,7 @@ export type CreateWorkshopInput = components['schemas']['EnergyWorkshopCreate']
 export type UpdateWorkshopInput = components['schemas']['EnergyWorkshopUpdate']
 export type CreateMonthlyRecordInput = components['schemas']['EnergyMonthlyRecordCreate']
 export type FeishuImportRequest = components['schemas']['FeishuEnergyImportRequest']
+export type BitableCrossImportRequest = components['schemas']['BitableCrossImportRequest']
 
 // Type aliases for response types (now available in generated schema)
 export type EnergyDeviceConfig = components['schemas']['EnergyDeviceConfigResponse']
@@ -32,6 +33,8 @@ export type CollectLog = components['schemas']['CollectLogResponse']
 export type CollectLogDeviceDetail = components['schemas']['CollectLogDeviceDetail']
 export type CollectLogDetail = components['schemas']['CollectLogDetailResponse']
 export type FeishuImportResult = components['schemas']['FeishuEnergyImportResponse']
+export type SyncJobStatus = components['schemas']['SyncJobStatus']
+export type SyncJobResult = components['schemas']['SyncJobResult']
 
 // ── UI 类型（用于入参、表单状态、组件 props、本地状态；非 API 契约）──
 
@@ -81,12 +84,8 @@ export interface LogQueryParams {
 }
 
 // 分页响应
-export interface PaginatedResponse<T> {
-  items: T[]
-  total: number
-  page: number
-  page_size: number
-}
+// Owned by types/common.ts; re-exported so existing importers keep working.
+export type { PaginatedResponse } from '@/types/common'
 
 // 预警等级
 export type AlertLevel = 'info' | 'warning' | 'critical' | 'emergency'
@@ -127,9 +126,14 @@ export interface RecordQueryParams {
 }
 
 // 分布数据点（图表输入，由总览 distribution 映射而来）
+// unit 必带：后端按 (车间名, 单位, 能源类型) 分组，同一车间的电/水/蒸汽会是多个数据点，
+// 只用车间名做标签会导致扇区标签重复且颜色互相覆盖
+// energyType 用于把饼图按能源分类画：跨单位把 value 加在一起算百分比是没有意义的
 export interface DistributionDataPoint {
   name: string
   value: number
+  unit: string
+  energyType: EnergyType
 }
 
 // ── 车间管理 ──
@@ -141,6 +145,8 @@ export type WorkshopCategory = 'workshop' | 'position' | 'support' | 'utility'
 export interface WorkshopQueryParams {
   category?: WorkshopCategory
   is_active?: boolean
+  /** 仅生产车间（AI 能耗分析用） */
+  production_only?: boolean
   page?: number
   page_size?: number
 }

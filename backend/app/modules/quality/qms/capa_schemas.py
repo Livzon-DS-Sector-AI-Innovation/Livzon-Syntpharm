@@ -233,7 +233,7 @@ class CapaApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: CapaResponse
+    data: CapaResponse | None = None
 
 
 class CapaListApiResponse(BaseModel):

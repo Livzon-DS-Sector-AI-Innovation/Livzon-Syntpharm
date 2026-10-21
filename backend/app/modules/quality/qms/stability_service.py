@@ -474,15 +474,17 @@ class StabilityStudyService:
         study = await self.get_study(study_id)
         inspections = await self.inspection_repo.get_by_study_id(study_id)
 
-        # 按检验项目分组
-        trend_data = {}  # type: ignore[var-annotated]
+        # Collect all data points and inspection items
+        all_data_points = []
+        inspection_items_set = set()
+
         for inspection in inspections:
             items = await self.item_repo.get_by_inspection_id(inspection.id)
             for item in items:
-                if item.inspection_item not in trend_data:
-                    trend_data[item.inspection_item] = []
-                trend_data[item.inspection_item].append(
+                inspection_items_set.add(item.inspection_item)
+                all_data_points.append(
                     {
+                        "inspection_item": item.inspection_item,
                         "node_month": inspection.node_month,
                         "measured_value": item.measured_value,
                         "result": item.result,
@@ -490,15 +492,23 @@ class StabilityStudyService:
                     }
                 )
 
-        # 排序
-        for item_name in trend_data:
-            trend_data[item_name].sort(key=lambda x: x["node_month"])
+        # Group by node_month
+        data_points_by_month: dict[int, list[dict[str, Any]]] = {}
+        for dp in all_data_points:
+            month = int(dp["node_month"])  # type: ignore[call-overload]
+            if month not in data_points_by_month:
+                data_points_by_month[month] = []
+            data_points_by_month[month].append(dp)
+
+        # Sort data points within each month by inspection_item
+        for month in data_points_by_month:
+            data_points_by_month[month].sort(key=lambda x: x["inspection_item"])
 
         return {
-            "study_no": study.study_no,
             "product_code": study.product_code,
             "product_name": study.product_name,
             "batch_no": study.batch_no,
             "study_type": study.study_type,
-            "trend_data": trend_data,
+            "inspection_items": sorted(list(inspection_items_set)),
+            "data_points": data_points_by_month,
         }

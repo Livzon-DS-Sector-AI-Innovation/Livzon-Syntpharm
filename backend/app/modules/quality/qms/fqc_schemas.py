@@ -276,3 +276,55 @@ class FQCInspectionFilter(BaseModel):
     batch_locked: bool | None = None
     start_date: datetime | None = None
     end_date: datetime | None = None
+
+
+# ========== API Response Wrappers ==========
+
+
+class FQCInspectionApiResponse(BaseModel):
+    """FQC检验单响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: FQCInspectionResponse | None = None
+
+
+class FQCInspectionListApiResponse(BaseModel):
+    """FQC检验单列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: FQCInspectionListResponse | None = None
+
+
+class FQCMessageApiResponse(BaseModel):
+    """FQC消息响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None
+
+
+class FQCApprovalRecordListApiResponse(BaseModel):
+    """FQC审批记录列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[FQCApprovalRecordResponse] | None = None
+
+
+class FQCPaginatedListResponse(BaseModel):
+    """FQC paginated list response"""
+
+    items: list[FQCInspectionResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class FQCPaginatedListApiResponse(BaseModel):
+    """FQC paginated list API response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: FQCPaginatedListResponse | None = None

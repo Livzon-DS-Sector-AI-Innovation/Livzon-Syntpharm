@@ -184,3 +184,39 @@ class ImportResponse(BaseModel):
     imported: int = Field(..., description="导入记录数")
     skipped: int = Field(..., description="跳过记录数")
     batch_id: str = Field(..., description="批次 ID")
+
+
+# ========== API Response Wrappers ==========
+
+
+class ProductOutputApiResponse(BaseModel):
+    """Product output response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProductOutputResponse | None = None
+
+
+class ProductOutputListApiResponse(BaseModel):
+    """Product output list response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProductOutputResponse]
+    meta: dict[str, Any] | None = None
+
+
+class SummaryApiResponse(BaseModel):
+    """Summary response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: SummaryResponse | None = None
+
+
+class AnnualReviewApiResponse(BaseModel):
+    """Annual review response wrapper"""
+
+    code: int = 200
+    message: str = "success"
+    data: AnnualReviewResponse | None = None

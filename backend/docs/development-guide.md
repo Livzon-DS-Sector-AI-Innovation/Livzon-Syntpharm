@@ -213,7 +213,7 @@ safety_app_id = settings.feishu.safety.credentials.app_id
 1. 在 `FeishuSettings` 中添加新的子模型
 2. 如果新模块需要独立应用，包含 `credentials: FeishuAppCredentials` 字段
 3. 如果使用平台应用凭证，只需添加表格配置字段
-4. 在 `.env`、`.env.local`、`.env.example` 中添加对应的环境变量
+4. 在 `.env`、`.env.dev.example`、`.env.example` 中添加对应的环境变量
 
 **禁止**：
 - 在模块代码中使用 `os.getenv()` 读取运行时配置
@@ -344,3 +344,5 @@ CI 会自动检查（`scripts/check_migration_scope.py`），违反会导致 PR 
 - [架构规范](architecture.md)
 - [模块结构示例](../examples/module-structure.md)
 - [常用命令](../examples/commands.md)
+- [能源月度交叉表字段映射对照表](energy-bitable-field-mapping.md)
+- [能源车间实体统一与总览分布拆分 · 变更说明](energy-workshop-unification.md)

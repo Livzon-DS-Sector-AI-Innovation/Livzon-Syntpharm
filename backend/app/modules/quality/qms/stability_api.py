@@ -10,9 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser
-from app.core.response import ApiResponse, success_response
 from app.modules.quality.qms.stability_schemas import (
     StabilityApprovalCreate,
+    StabilityInspectionApiResponse,
     StabilityInspectionCreate,
     StabilityInspectionFilter,
     StabilityInspectionListResponse,
@@ -20,11 +20,14 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityInspectionUpdate,
     StabilitySampleNodeResponse,
     StabilitySampleNodeUpdate,
+    StabilityStudyApiResponse,
     StabilityStudyCreate,
     StabilityStudyFilter,
     StabilityStudyListResponse,
     StabilityStudyResponse,
     StabilityStudyUpdate,
+    StabilityTrendApiResponse,
+    StabilityTrendResponse,
 )
 from app.modules.quality.qms.stability_service import StabilityStudyService
 
@@ -40,7 +43,7 @@ def get_stability_service(
 # ========== Stability Study Routes ==========
 
 
-@router.post("/studies", response_model=ApiResponse, status_code=201)
+@router.post("/studies", response_model=StabilityStudyApiResponse, status_code=201)
 async def post(
     data: StabilityStudyCreate,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -50,7 +53,7 @@ async def post(
     try:
         user_id = current_user.id if current_user else None
         study = await service.create_study(data, user_id)
-        return ApiResponse(
+        return StabilityStudyApiResponse(
             message="创建成功",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -93,7 +96,7 @@ async def get(
     }
 
 
-@router.get("/studies/{study_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/studies/{study_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     study_id: UUID,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -102,12 +105,12 @@ async def get(  # noqa: F811
     """获取稳定性试验方案详情"""
     try:
         study = await service.get_study(study_id)
-        return ApiResponse(data=StabilityStudyResponse.model_validate(study))
+        return StabilityStudyApiResponse(data=StabilityStudyResponse.model_validate(study))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/studies/{study_id}", response_model=ApiResponse)
+@router.put("/studies/{study_id}", response_model=StabilityStudyApiResponse)
 async def put(
     study_id: UUID,
     data: StabilityStudyUpdate,
@@ -118,7 +121,7 @@ async def put(
     try:
         user_id = current_user.id if current_user else None
         study = await service.update_study(study_id, data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="更新成功",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -136,12 +139,12 @@ async def delete(
     try:
         user_id = current_user.id if current_user else None
         await service.delete_study(study_id, user_id)
-        return success_response(message="删除成功")
+        return StabilityStudyApiResponse(code=200, message="操作成功", data=None)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/studies/{study_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/studies/{study_id}/submit", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     study_id: UUID,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -151,7 +154,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         study = await service.submit_study(study_id, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="提交成功",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -159,7 +162,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/studies/{study_id}/approve", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/studies/{study_id}/approve", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     study_id: UUID,
     data: StabilityApprovalCreate,
@@ -172,7 +175,7 @@ async def post(  # noqa: F811
         user_name = current_user.name if current_user else ""
         role = "approver"
         study = await service.approve_study(study_id, data, user_id, user_name, role)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="审批完成",
             data=StabilityStudyResponse.model_validate(study),
         )
@@ -194,7 +197,7 @@ async def handler(
     return [StabilitySampleNodeResponse.model_validate(node) for node in nodes]
 
 
-@router.put("/sample-nodes/{node_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/sample-nodes/{node_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811
     node_id: UUID,
     data: StabilitySampleNodeUpdate,
@@ -205,7 +208,7 @@ async def put(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         node = await service.update_sample_node(node_id, data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="更新成功",
             data=StabilitySampleNodeResponse.model_validate(node),
         )
@@ -216,7 +219,7 @@ async def put(  # noqa: F811
 # ========== Stability Inspection Routes ==========
 
 
-@router.post("/inspections", response_model=ApiResponse, status_code=201)  # type: ignore[no-redef]
+@router.post("/inspections", response_model=StabilityStudyApiResponse, status_code=201)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: StabilityInspectionCreate,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -226,7 +229,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.create_inspection(data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="创建成功",
             data=StabilityInspectionResponse.model_validate(inspection),
         )
@@ -267,7 +270,7 @@ async def get(  # noqa: F811
     }
 
 
-@router.get("/inspections/{inspection_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/inspections/{inspection_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -276,12 +279,12 @@ async def get(  # noqa: F811
     """获取稳定性检验记录详情"""
     try:
         inspection = await service.get_inspection(inspection_id)
-        return ApiResponse(data=StabilityInspectionResponse.model_validate(inspection))
+        return StabilityInspectionApiResponse(data=StabilityInspectionResponse.model_validate(inspection))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.put("/inspections/{inspection_id}", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.put("/inspections/{inspection_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def put(  # noqa: F811
     inspection_id: UUID,
     data: StabilityInspectionUpdate,
@@ -292,7 +295,7 @@ async def put(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.update_inspection(inspection_id, data, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="更新成功",
             data=StabilityInspectionResponse.model_validate(inspection),
         )
@@ -300,7 +303,7 @@ async def put(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.post("/inspections/{inspection_id}/submit", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.post("/inspections/{inspection_id}/submit", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -310,7 +313,7 @@ async def post(  # noqa: F811
     try:
         user_id = current_user.id if current_user else None
         inspection = await service.submit_inspection(inspection_id, user_id)
-        return ApiResponse(
+        return StabilityInspectionApiResponse(
             message="提交成功",
             data=StabilityInspectionResponse.model_validate(inspection),
         )
@@ -321,7 +324,7 @@ async def post(  # noqa: F811
 # ========== Trend Analysis Routes ==========
 
 
-@router.get("/studies/{study_id}/trend", response_model=ApiResponse)  # type: ignore[no-redef]
+@router.get("/studies/{study_id}/trend", response_model=StabilityTrendApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     study_id: UUID,
     service: StabilityStudyService = Depends(get_stability_service),
@@ -330,6 +333,8 @@ async def get(  # noqa: F811
     """获取稳定性试验趋势数据"""
     try:
         trend_data = await service.get_trend_data(study_id)
-        return ApiResponse(data=trend_data)
+        # Validate and convert to StabilityTrendResponse
+        trend_response = StabilityTrendResponse.model_validate(trend_data)
+        return StabilityTrendApiResponse(data=trend_response)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
