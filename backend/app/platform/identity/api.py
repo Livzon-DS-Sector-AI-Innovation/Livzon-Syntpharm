@@ -88,8 +88,13 @@ async def test_login(
         raise HTTPException(status_code=404)
 
     from app.platform.identity.service import generate_jwt, get_or_create_e2e_user
+    from app.platform.permission.public_api import ensure_superadmin
 
     user = await get_or_create_e2e_user(db)
+    # E2E 用例覆盖全部业务模块，逐个授权既脆弱又难维护：直接给测试账号挂超管（幂等）。
+    # 只有 APP_ENV=test/e2e 且携带正确 X-E2E-Secret 才能走到这里。
+    if user.username:
+        await ensure_superadmin(db, user.username)
     await db.commit()
     token = generate_jwt(user)
     return {"token": token, "user": {"id": str(user.id), "name": user.name}}

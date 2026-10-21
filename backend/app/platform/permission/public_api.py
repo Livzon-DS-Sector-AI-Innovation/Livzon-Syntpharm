@@ -15,7 +15,7 @@ from app.platform.permission.service.authorization import (
     build_permission_context,
     has_permission,
 )
-from app.platform.permission.service.management import guard_manage_target
+from app.platform.permission.service.management import ensure_superadmin, guard_manage_target
 
 
 async def user_is_superuser(db: AsyncSession, user: User) -> bool:
@@ -31,6 +31,7 @@ async def list_superuser_user_ids(db: AsyncSession) -> list[uuid.UUID]:
 __all__ = [
     "PermissionContext",
     "build_permission_context",
+    "ensure_superadmin",
     "has_permission",
     "guard_manage_target",
     "list_superuser_user_ids",
