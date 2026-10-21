@@ -8,6 +8,13 @@ type RouteCase = {
   kind: RouteKind
   expectedPath?: string
   expected: (page: Page) => Locator
+  /**
+   * 跳过内容断言，只校验跳转目标。
+   *
+   * 用于「跳转目标页在同一份清单里已单独断言过」的场景：服务端 `redirect()` 触发的是
+   * 客户端 RSC 导航，目标页内容偶尔赶不上 15s 断言窗口，重复断言只会制造 flaky。
+   */
+  skipContentCheck?: boolean
   heading?: string
   /**
    * Text of the page's top-level heading, when it has one worth pinning.
@@ -110,7 +117,9 @@ async function checkRoute(page: Page, route: RouteCase) {
         new RegExp(`${escapeRegex(dest)}(?:\\?.*)?$`),
         { timeout: 10_000 },
       )
-      await expect(route.expected(page)).toBeVisible({ timeout: 15_000 })
+      if (!route.skipContentCheck) {
+        await expect(route.expected(page)).toBeVisible({ timeout: 15_000 })
+      }
     } else if (route.kind === 'external-iframe') {
       expect(response).not.toBeNull()
       expect(response!.status()).toBeLessThan(400)
@@ -301,7 +310,15 @@ const qualityRoutes: RouteCase[] = [
   // { path: '/quality/department-contacts', module: 'quality', kind: 'normal', expected: heading('部门联系人配置') },
   { path: '/quality/doc-check', module: 'quality', kind: 'normal', expected: heading('审核管理') },
   { path: '/quality/fqc', module: 'quality', kind: 'normal', expected: heading('FQC') },
-  { path: '/quality/inspection', module: 'quality', kind: 'redirect', expectedPath: '/quality/inspection/standards', expected: text('检验标准维护') },
+  {
+    path: '/quality/inspection',
+    module: 'quality',
+    kind: 'redirect',
+    expectedPath: '/quality/inspection/standards',
+    expected: text('检验标准维护'),
+    // 目标页内容由下一行单独断言；这里只校验跳转，避免客户端导航下的重复 flaky
+    skipContentCheck: true,
+  },
   { path: '/quality/inspection/standards', module: 'quality', kind: 'normal', expected: text('检验标准维护') },
   { path: '/quality/inspection-table', module: 'quality', kind: 'normal', expected: text('原料检验数据表') },
   { path: '/quality/instrument', module: 'quality', kind: 'normal', expected: heading('仪器校准管理') },
