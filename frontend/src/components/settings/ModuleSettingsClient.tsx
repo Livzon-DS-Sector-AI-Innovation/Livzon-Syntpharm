@@ -199,7 +199,7 @@ export default function ModuleSettingsClient({
 
   return (
     <div className="settings-scope settings-enter mx-auto max-w-[1320px] md:px-6 md:py-6">
-      <SettingsPageHeader title={moduleName} description={moduleDescription} />
+      <SettingsPageHeader title={`${moduleName}配置`} description={moduleDescription} />
 
       <SettingsListCard>
         <Table

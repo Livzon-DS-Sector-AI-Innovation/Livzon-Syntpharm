@@ -233,7 +233,7 @@ const warehouseRoutes: RouteCase[] = [
 ]
 
 const settingsRoutes: RouteCase[] = [
-  { path: '/settings', module: 'settings', kind: 'normal', expected: heading('系统设置') },
+  { path: '/settings', module: 'settings', kind: 'normal', expected: heading('系统管理') },
 ]
 
 const hrRoutes: RouteCase[] = [
@@ -413,9 +413,10 @@ const allModuleRouteSets: { name: string; routes: RouteCase[] }[] = [
 // Tests
 // ═══════════════════════════════════════════════════════════════
 
-test('root redirects to /production', async ({ page }) => {
+test('root redirects to /home', async ({ page }) => {
+  // 登录后统一落地首页工作台（原先是生产管理页）
   await page.goto('/', { waitUntil: 'domcontentloaded' })
-  await expect(page).toHaveURL(/\/production(?:\?.*)?$/)
+  await expect(page).toHaveURL(/\/home(?:\?.*)?$/)
 })
 
 for (const { name, routes } of allModuleRouteSets) {
