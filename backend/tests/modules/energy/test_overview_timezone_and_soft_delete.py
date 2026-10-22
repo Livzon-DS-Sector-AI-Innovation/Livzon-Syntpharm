@@ -74,9 +74,7 @@ async def test_overview_summary_uses_cst_day_and_skips_deleted_workshop(db_sessi
 async def test_monthly_list_filters_deleted_workshop_and_returns_name(db_session):
     await _seed(db_session)
 
-    records, total = await repo.list_monthly_records(
-        db_session, start_date=DAY, end_date=DAY, page=1, page_size=10
-    )
+    records, total = await repo.list_monthly_records(db_session, start_date=DAY, end_date=DAY, page=1, page_size=10)
 
     assert total == 1
     assert records[0].value == Decimal(10)
