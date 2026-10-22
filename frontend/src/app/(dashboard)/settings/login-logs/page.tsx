@@ -14,7 +14,7 @@ export default async function SettingsLoginLogsPage() {
 
   if (!(await hasPermission(PERM.auditRead))) {
     return (
-      <NoAccessResult subTitle="查看登录记录需要「审计日志查看」权限，请联系管理员为你的账号分配。" />
+      <NoAccessResult subTitle="查看登录记录需要「操作记录查看」权限，请联系管理员为你的账号分配。" />
     )
   }
 

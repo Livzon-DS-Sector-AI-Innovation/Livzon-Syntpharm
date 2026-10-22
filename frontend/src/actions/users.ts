@@ -6,6 +6,8 @@ import {
   getUsers as getUsersServer,
   createUser as createUserServer,
   updateUser as updateUserServer,
+  deleteUser as deleteUserServer,
+  batchUpdateUserStatus as batchUpdateUserStatusServer,
   resetUserPassword as resetUserPasswordServer,
   changeMyPassword as changeMyPasswordServer,
   unbindFeishuUser as unbindFeishuUserServer,
@@ -17,10 +19,14 @@ import type {
   UserManagementItem,
   UserManagementListResponse,
   LocalUserCreate,
+  UserCreateResult,
   UserManagementUpdate,
   PasswordResetRequest,
   PasswordResetResult,
+  UserBatchStatusRequest,
+  UserBatchStatusResult,
   ChangePasswordRequest,
+  UserDeleteResult,
   UserSession,
 } from '@/types/users'
 
@@ -49,10 +55,10 @@ export async function getUsers(params?: {
   return res.data ?? { items: [], total: 0 }
 }
 
-export async function createUser(data: LocalUserCreate): Promise<UsersActionResult<UserManagementItem>> {
+export async function createUser(data: LocalUserCreate): Promise<UsersActionResult<UserCreateResult>> {
   const token = await getAuthToken()
   try {
-    const res = (await createUserServer(data, token)) as { data: UserManagementItem }
+    const res = (await createUserServer(data, token)) as { data: UserCreateResult }
     revalidatePath('/settings/users')
     return { ok: true, data: res.data }
   } catch (error) {
@@ -71,6 +77,32 @@ export async function updateUser(
     return { ok: true, data: res.data }
   } catch (error) {
     return { ok: false, message: error instanceof Error ? error.message : '更新用户失败' }
+  }
+}
+
+/** 批量启用 / 禁用账号：逐条汇总成功与失败原因。 */
+export async function batchUpdateUserStatus(
+  data: UserBatchStatusRequest,
+): Promise<UsersActionResult<UserBatchStatusResult>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await batchUpdateUserStatusServer(data, token)) as { data: UserBatchStatusResult }
+    revalidatePath('/settings/users')
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量操作失败' }
+  }
+}
+
+/** 删除账号：软删除 + 清空授权 + 吊销会话（后端限定仅超级管理员）。 */
+export async function deleteUser(id: string): Promise<UsersActionResult<UserDeleteResult>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await deleteUserServer(id, token)) as { data: UserDeleteResult }
+    revalidatePath('/settings/users')
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '删除用户失败' }
   }
 }
 

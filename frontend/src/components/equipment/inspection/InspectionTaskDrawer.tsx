@@ -210,7 +210,11 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
             <Form.Item name="assigned_to" noStyle rules={[{ required: true, message: '请选择巡检人员' }]}>
               <Select showSearch optionFilterProp='label' placeholder="选择巡检人员"
                 popupMatchSelectWidth={false} style={{ width: '100%' }}
-                options={personnel.map(p => ({ label: `${p.name}${p.department ? ' · ' + p.department : ''}`, value: p.user_id || p.id }))}
+                options={personnel.map(p => ({
+                  // 统一「姓名（账号）」
+                  label: `${p.name}${p.username ? `（${p.username}）` : ''}${p.department ? ' · ' + p.department : ''}`,
+                  value: p.user_id || p.id,
+                }))}
                 optionRender={o => {
                   const p = personnel.find(pe => (pe.user_id || pe.id) === o.value)
                   if (!p) return <Text>{o.label}</Text>

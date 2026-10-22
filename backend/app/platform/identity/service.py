@@ -123,7 +123,8 @@ def validate_password_strength(password: str) -> str | None:
 async def resolve_username_prefix() -> str:
     """用户名前缀：运行时配置 `identity.USERNAME_PREFIX` 优先，缺省 YTH。"""
     raw = await get_module_setting("identity", USERNAME_PREFIX_SETTING_KEY, DEFAULT_USERNAME_PREFIX)
-    cleaned = "".join(ch for ch in raw.strip().upper() if ch.isalnum())[:8]
+    # 只保留 ASCII 字母数字：中文前缀会生成中文用户名，与新建账号的字符集规则冲突
+    cleaned = "".join(ch for ch in raw.strip().upper() if ch.isascii() and ch.isalnum())[:8]
     return cleaned or DEFAULT_USERNAME_PREFIX
 
 
@@ -1575,7 +1576,7 @@ LOCKOUT_SECONDS = 15 * 60
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
     if user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
 
     now = datetime.now(UTC)
     if user.locked_until is not None and user.locked_until > now:
@@ -1587,7 +1588,7 @@ async def authenticate_local_user(db: AsyncSession, *, username: str, password: 
             user.locked_until = now + timedelta(seconds=LOCKOUT_SECONDS)
             user.failed_login_attempts = 0
         await db.flush()
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
 
     if user.status == "disabled":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "账号已禁用")

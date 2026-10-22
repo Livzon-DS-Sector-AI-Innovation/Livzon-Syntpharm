@@ -42,7 +42,7 @@ export default function LoginLogsClient() {
         subTitle={
           error instanceof Error && error.message
             ? error.message
-            : '请确认账号拥有「审计日志查看」权限，或稍后重试。'
+            : '请确认账号拥有「操作记录查看」权限，或稍后重试。'
         }
       />
     )
@@ -130,7 +130,7 @@ export default function LoginLogsClient() {
           </div>
           <div className="w-full sm:w-[200px]">
             <Input
-              placeholder="搜索用户名"
+              placeholder="搜索账号"
               prefix={<SearchOutlined />}
               style={{ width: '100%' }}
               value={keyword}

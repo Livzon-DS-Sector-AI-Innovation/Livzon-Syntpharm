@@ -2,6 +2,8 @@
 
 import { cookies } from 'next/headers'
 import {
+  batchSetApiSwitch as batchSetApiSwitchApi,
+  batchToggleScheduledTasks as batchToggleScheduledTasksApi,
   clearLogs as clearLogsApi,
   deleteRedisKeys as deleteRedisKeysApi,
   getApiRoutes as getApiRoutesApi,
@@ -20,6 +22,7 @@ import {
 import type {
   ApiRouteItem,
   ApiSwitchResult,
+  BatchResult,
   ComponentHealth,
   DbColumnsData,
   DbTablesData,
@@ -83,6 +86,24 @@ export async function fetchScheduledTasks(): Promise<ScheduledTaskItem[]> {
 export async function toggleScheduledTask(name: string, enabled: boolean): Promise<void> {
   const token = await getAuthToken()
   await toggleScheduledTaskApi(name, enabled, token)
+}
+
+/** 批量启用 / 禁用定时任务（运行时临时，重启恢复默认）。 */
+export async function batchToggleScheduledTasks(names: string[], enabled: boolean): Promise<BatchResult> {
+  const token = await getAuthToken()
+  const res = (await batchToggleScheduledTasksApi(names, enabled, token)) as { data: BatchResult }
+  return res.data
+}
+
+/** 批量启用 / 禁用接口（保护名单内的接口由后端拒绝并返回原因）。 */
+export async function batchSetApiSwitch(
+  items: { method: string; route: string }[],
+  enabled: boolean,
+  reason: string | null,
+): Promise<BatchResult> {
+  const token = await getAuthToken()
+  const res = (await batchSetApiSwitchApi(items, enabled, reason, token)) as { data: BatchResult }
+  return res.data
 }
 
 export async function fetchApiRoutes(): Promise<ApiRouteItem[]> {

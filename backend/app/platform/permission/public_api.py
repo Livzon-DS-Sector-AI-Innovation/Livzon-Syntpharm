@@ -9,6 +9,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
+from app.platform.permission.cache import evict_user_permission_cache
 from app.platform.permission.repository import GrantRepository
 from app.platform.permission.service.authorization import (
     PermissionContext,
@@ -28,6 +29,18 @@ async def list_superuser_user_ids(db: AsyncSession) -> list[uuid.UUID]:
     return await GrantRepository().list_superuser_user_ids(db)
 
 
+async def revoke_all_user_grants(db: AsyncSession, user_id: uuid.UUID) -> int:
+    """清空某用户的全部有效授权并驱逐其权限缓存（删除账号时调用）。
+
+    缓存驱逐放在 flush 之后：即使外层事务最终回滚，也只是多一次回源计算，不会留下
+    「已删账号仍被判为有权限」的窗口。
+    """
+    count = await GrantRepository().soft_delete_user_grants(db, user_id)
+    await db.flush()
+    await evict_user_permission_cache(user_id)
+    return count
+
+
 __all__ = [
     "PermissionContext",
     "build_permission_context",
@@ -35,5 +48,6 @@ __all__ = [
     "has_permission",
     "guard_manage_target",
     "list_superuser_user_ids",
+    "revoke_all_user_grants",
     "user_is_superuser",
 ]

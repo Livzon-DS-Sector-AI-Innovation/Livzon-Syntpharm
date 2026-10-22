@@ -34,7 +34,7 @@ export default function PasswordLoginPage() {
             <Input
               name="username"
               size="large"
-              placeholder="账号（用户名 / 邮箱 / 手机号 / 工号）"
+              placeholder="账号 / 邮箱 / 手机号 / 工号"
               prefix={<UserOutlined className="text-[var(--color-stone)]" />}
               autoComplete="username"
               required

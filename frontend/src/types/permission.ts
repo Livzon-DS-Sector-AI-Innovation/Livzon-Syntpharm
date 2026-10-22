@@ -34,6 +34,19 @@ export interface RoleUpdateInput {
   status?: string
 }
 
+/** 批量操作失败项（后端统一结构）。 */
+export interface BatchFailureItem {
+  key: string
+  label?: string | null
+  reason: string
+}
+
+/** 批量操作结果：成功 id 列表 + 失败明细。 */
+export interface BatchResult {
+  succeeded: string[]
+  failed: BatchFailureItem[]
+}
+
 export interface PermissionItem {
   id: string
   code: string

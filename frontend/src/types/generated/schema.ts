@@ -36,7 +36,15 @@ export interface paths {
         /** 用户管理列表 */
         get: operations["list_users_management_api_v1_identity_users_get"];
         put?: never;
-        /** 新建本地用户 */
+        /**
+         * 新建本地用户（初始密码留空则自动生成）
+         * @description 新建本地账号。
+         *
+         *     - `password` 留空：后端生成 12 位随机密码，明文只在本次响应里返回一次（不落库）；
+         *     - 传了 `password`：按管理员指定值设置，响应不含明文；
+         *     - 两种情况都置 `must_change_password`，用户首次登录必须自行改密 —— 一次性密码
+         *       不应该变成长期凭据。
+         */
         post: operations["create_user_management_api_v1_identity_users_post"];
         delete?: never;
         options?: never;
@@ -55,6 +63,40 @@ export interface paths {
         /** 更新用户 */
         put: operations["update_user_management_api_v1_identity_users__user_id__put"];
         post?: never;
+        /**
+         * 删除用户（仅超级管理员，软删除）
+         * @description 删除账号：软删除 + 禁用，并清空角色授权、吊销在线会话。
+         *
+         *     「仅超级管理员」在 handler 内显式判定：`platform:user:manage` 同时授予普通账号
+         *     管理员（如 admin_account_manager），只靠权限码拦不住。
+         *
+         *     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
+         *     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+         */
+        delete: operations["delete_user_management_api_v1_identity_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/batch-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 禁用账号
+         * @description 批量启用 / 禁用账号（单次最多 100 个）。
+         *
+         *     逐条复用单条更新的保护规则：不能改自己、不能操作系统内置账号、非超管不能操作
+         *     超管或权限更高的账号。失败条目不影响其他条目，结果里返回失败原因。
+         *     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
+         */
+        post: operations["batch_update_user_status_api_v1_identity_users_batch_status_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -476,7 +518,7 @@ export interface paths {
         };
         /**
          * 查询登录记录
-         * @description 分页查询登录记录，支持按状态和用户名筛选。
+         * @description 分页查询登录记录，支持按状态和账号筛选。
          */
         get: operations["list_login_logs_api_v1_identity_login_logs_get"];
         put?: never;
@@ -648,6 +690,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/system/scheduled-tasks/batch-toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 禁用定时任务
+         * @description 逐条运行时启停（内存态）；不存在的任务 / 不可切换的 kind 记入失败明细。
+         */
+        post: operations["system_scheduled_tasks_batch_toggle_api_v1_system_scheduled_tasks_batch_toggle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/system/api-routes": {
         parameters: {
             query?: never;
@@ -682,6 +744,26 @@ export interface paths {
          */
         put: operations["system_api_switch_api_v1_system_api_routes_switch_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/api-routes/batch-switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 禁用接口
+         * @description 逐条切换；保护名单内接口拒绝禁用（记入失败明细），其余照常生效。
+         */
+        post: operations["system_api_routes_batch_switch_api_v1_system_api_routes_batch_switch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -816,6 +898,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/roles/batch-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 停用角色
+         * @description 逐条校验并汇总结果。
+         *
+         *     - 内置角色不可修改状态（与单条更新一致）；
+         *     - 状态已一致的按幂等处理（计入成功、不写审计）；
+         *     - 失败项不影响其他角色，返回原因。
+         */
+        post: operations["batch_role_status_api_v1_permission_roles_batch_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/roles/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量删除角色
+         * @description 逐条软删除；内置角色与超级管理员角色一律跳过并返回原因。
+         */
+        post: operations["batch_delete_roles_api_v1_permission_roles_batch_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permission/permissions": {
         parameters: {
             query?: never;
@@ -935,6 +1061,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/permission/grants/batch-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 停用授权
+         * @description 逐条复用单条护栏：不能改自己的授权、不能越级、不能停用最后一个超管授权。
+         *
+         *     每停用一条立即 flush，避免「同批停用两条超管授权」时计数看不到前面的变更。
+         */
+        post: operations["batch_grant_status_api_v1_permission_grants_batch_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量删除授权
+         * @description 逐条软删除；自己 / 越级 / 最后一个超管的授权跳过并返回原因。
+         */
+        post: operations["batch_delete_grants_api_v1_permission_grants_batch_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/permission/my-permissions": {
         parameters: {
             query?: never;
@@ -982,8 +1150,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 查询操作审计日志
-         * @description 分页查询操作审计日志，按时间倒序。
+         * 查询操作记录
+         * @description 分页查询操作记录，按时间倒序。
          */
         get: operations["list_audit_logs_api_v1_audit_logs_get"];
         put?: never;
@@ -1002,8 +1170,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 导出操作审计日志（CSV）
-         * @description 按当前筛选条件导出审计日志为 CSV（最多 10000 条，按时间倒序）。
+         * 导出操作记录（CSV）
+         * @description 按当前筛选条件导出操作记录为 CSV（最多 10000 条，按时间倒序）。
          */
         get: operations["export_audit_logs_api_v1_audit_logs_export_get"];
         put?: never;
@@ -19397,6 +19565,22 @@ export interface components {
             /** Data */
             data: components["schemas"]["ApiRouteItemModel"][];
         };
+        /** ApiSwitchBatchItem */
+        ApiSwitchBatchItem: {
+            /** Method */
+            method: string;
+            /** Route */
+            route: string;
+        };
+        /** ApiSwitchBatchRequest */
+        ApiSwitchBatchRequest: {
+            /** Items */
+            items: components["schemas"]["ApiSwitchBatchItem"][];
+            /** Enabled */
+            enabled: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
         /** ApiSwitchRequest */
         ApiSwitchRequest: {
             /** Method */
@@ -19581,7 +19765,7 @@ export interface components {
         };
         /**
          * AuditLogItem
-         * @description 单条操作审计记录（含操作者姓名/用户名，join identity.users）。
+         * @description 单条操作记录（含操作者姓名/账号，join identity.users）。
          */
         AuditLogItem: {
             /**
@@ -19623,7 +19807,7 @@ export interface components {
         };
         /**
          * AuditLogListData
-         * @description 操作审计分页数据（与登录记录返回结构保持一致：items / total / page / page_size）。
+         * @description 操作记录分页数据（与登录记录返回结构保持一致：items / total / page / page_size）。
          */
         AuditLogListData: {
             /** Items */
@@ -19895,6 +20079,15 @@ export interface components {
              * @description 设备ID列表
              */
             ids: string[];
+        };
+        /** BatchFailure */
+        BatchFailure: {
+            /** Key */
+            key: string;
+            /** Label */
+            label?: string | null;
+            /** Reason */
+            reason: string;
         };
         /**
          * BatchImportJobApiResponse
@@ -20287,6 +20480,41 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** BatchResultApiResponse */
+        BatchResultApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["BatchResultData"];
+        };
+        /** BatchResultData */
+        BatchResultData: {
+            /** Succeeded */
+            succeeded?: string[];
+            /** Failed */
+            failed?: components["schemas"]["BatchFailure"][];
+        };
+        /** BatchResultResponse */
+        BatchResultResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["BatchResultData"];
         };
         /**
          * BatchStatus
@@ -32033,6 +32261,14 @@ export interface components {
          * @enum {string}
          */
         IQStatus: "pending" | "confirmed" | "not_required";
+        /**
+         * IdsBatchRequest
+         * @description 按 ID 批量操作；单次上限 100。
+         */
+        IdsBatchRequest: {
+            /** Ids */
+            ids: string[];
+        };
         /** ImportErrorItem */
         ImportErrorItem: {
             /** Row */
@@ -34068,8 +34304,11 @@ export interface components {
         LocalUserCreate: {
             /** Username */
             username: string;
-            /** Password */
-            password: string;
+            /**
+             * Password
+             * @description 初始密码；留空则自动生成，明文只在创建响应里返回一次
+             */
+            password?: string | null;
             /** Name */
             name: string;
             /** Email */
@@ -45114,6 +45353,13 @@ export interface components {
             /** Remark */
             remark?: string | null;
         };
+        /** StatusBatchRequest */
+        StatusBatchRequest: {
+            /** Ids */
+            ids: string[];
+            /** Status */
+            status: string;
+        };
         /**
          * StockAdjustRequest
          * @description 盘点调整请求
@@ -45566,6 +45812,13 @@ export interface components {
              */
             message: string;
             data: components["schemas"]["SystemInfoData"];
+        };
+        /** TaskBatchToggleRequest */
+        TaskBatchToggleRequest: {
+            /** Names */
+            names: string[];
+            /** Enabled */
+            enabled: boolean;
         };
         /**
          * TaskStatus
@@ -46916,11 +47169,187 @@ export interface components {
              */
             status?: string | null;
         };
+        /** UserBatchFailure */
+        UserBatchFailure: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Username */
+            username?: string | null;
+            /** Reason */
+            reason: string;
+        };
+        /** UserBatchStatusApiResponse */
+        UserBatchStatusApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserBatchStatusData"];
+        };
+        /** UserBatchStatusData */
+        UserBatchStatusData: {
+            /** Succeeded */
+            succeeded?: string[];
+            /** Failed */
+            failed?: components["schemas"]["UserBatchFailure"][];
+        };
+        /**
+         * UserBatchStatusRequest
+         * @description 批量启用 / 禁用账号。
+         */
+        UserBatchStatusRequest: {
+            /**
+             * User Ids
+             * @description 单次最多 100 个账号
+             */
+            user_ids: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "disabled";
+        };
+        /** UserCreateApiResponse */
+        UserCreateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserCreateData"];
+        };
+        /**
+         * UserCreateData
+         * @description 新建账号响应：额外带回一次性初始密码（仅自动生成时有值，不落库）。
+         */
+        UserCreateData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /** Initial Password */
+            initial_password?: string | null;
+        };
+        /** UserDeleteApiResponse */
+        UserDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserDeleteData"];
+        };
+        /**
+         * UserDeleteData
+         * @description 删除账号结果（软删除，账号名继续被占用）。
+         */
+        UserDeleteData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Revoked Grants
+             * @default 0
+             */
+            revoked_grants: number;
+            /**
+             * Revoked Sessions
+             * @default 0
+             */
+            revoked_sessions: number;
+        };
         /** UserManagementUpdate */
         UserManagementUpdate: {
             /**
              * Username
-             * @description 登录用户名（创建后不可修改）
+             * @description 登录账号（创建后不可修改）
              */
             username?: string | null;
             /** Name */
@@ -48192,7 +48621,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["UserCreateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48230,6 +48659,74 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_management_api_v1_identity_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserDeleteApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_update_user_status_api_v1_identity_users_batch_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserBatchStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserBatchStatusApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -48924,7 +49421,7 @@ export interface operations {
             query?: {
                 /** @description 筛选状态：success / failed */
                 status?: string | null;
-                /** @description 按用户名搜索 */
+                /** @description 按账号搜索 */
                 keyword?: string | null;
                 page?: number;
                 page_size?: number;
@@ -49240,6 +49737,41 @@ export interface operations {
             };
         };
     };
+    system_scheduled_tasks_batch_toggle_api_v1_system_scheduled_tasks_batch_toggle_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskBatchToggleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     system_api_routes_api_v1_system_api_routes_get: {
         parameters: {
             query?: never;
@@ -49293,6 +49825,41 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["ApiSwitchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_api_routes_batch_switch_api_v1_system_api_routes_batch_switch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiSwitchBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49641,6 +50208,76 @@ export interface operations {
             };
         };
     };
+    batch_role_status_api_v1_permission_roles_batch_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_roles_api_v1_permission_roles_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_permissions_api_v1_permission_permissions_get: {
         parameters: {
             query?: never;
@@ -49903,6 +50540,76 @@ export interface operations {
             };
         };
     };
+    batch_grant_status_api_v1_permission_grants_batch_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_grants_api_v1_permission_grants_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_permissions_api_v1_permission_my_permissions_get: {
         parameters: {
             query?: never;
@@ -49976,7 +50683,7 @@ export interface operations {
                 action?: string | null;
                 /** @description 按资源类型筛选，如 user / role / grant */
                 resource_type?: string | null;
-                /** @description 按操作者姓名/用户名模糊搜索 */
+                /** @description 按操作者姓名/账号模糊搜索 */
                 keyword?: string | null;
                 page?: number;
                 page_size?: number;
@@ -50018,7 +50725,7 @@ export interface operations {
                 action?: string | null;
                 /** @description 按资源类型筛选 */
                 resource_type?: string | null;
-                /** @description 按操作者姓名/用户名模糊搜索 */
+                /** @description 按操作者姓名/账号模糊搜索 */
                 keyword?: string | null;
             };
             header?: never;

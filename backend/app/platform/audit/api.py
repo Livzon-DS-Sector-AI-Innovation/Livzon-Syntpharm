@@ -1,4 +1,4 @@
-"""操作审计查询 API。
+"""操作记录查询 API。
 
 挂载前缀：/api/v1/audit（见 api/router.py）。
 权限：`platform:audit:read`（与登录记录复用同一审计查看码，审计本身只读）。
@@ -23,21 +23,21 @@ from app.platform.audit.models import AuditLog
 from app.platform.audit.schemas import AuditLogItem, AuditLogListData, AuditLogListResponse
 from app.platform.identity.models import User
 
-router = APIRouter(tags=["操作审计"])
+router = APIRouter(tags=["操作记录"])
 
 
-@router.get("/logs", response_model=AuditLogListResponse, summary="查询操作审计日志")
+@router.get("/logs", response_model=AuditLogListResponse, summary="查询操作记录")
 async def list_audit_logs(
     ctx: PermissionContext = Depends(require_permission("platform:audit:read")),
     db: AsyncSession = Depends(get_db),
     user_id: uuid.UUID | None = Query(None, description="按操作者筛选"),
     action: str | None = Query(None, description="按动作筛选，如 user.update / grant.create"),
     resource_type: str | None = Query(None, description="按资源类型筛选，如 user / role / grant"),
-    keyword: str | None = Query(None, description="按操作者姓名/用户名模糊搜索"),
+    keyword: str | None = Query(None, description="按操作者姓名/账号模糊搜索"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
 ) -> ApiResponse:
-    """分页查询操作审计日志，按时间倒序。"""
+    """分页查询操作记录，按时间倒序。"""
     base = (
         select(AuditLog, User.name, User.username)
         .outerjoin(User, User.id == AuditLog.user_id)
@@ -78,16 +78,16 @@ async def list_audit_logs(
     return build_response(data=AuditLogListData(items=data, total=total, page=page, page_size=page_size).model_dump())
 
 
-@router.get("/logs/export", summary="导出操作审计日志（CSV）")
+@router.get("/logs/export", summary="导出操作记录（CSV）")
 async def export_audit_logs(
     ctx: PermissionContext = Depends(require_permission("platform:audit:read")),
     db: AsyncSession = Depends(get_db),
     user_id: uuid.UUID | None = Query(None, description="按操作者筛选"),
     action: str | None = Query(None, description="按动作筛选"),
     resource_type: str | None = Query(None, description="按资源类型筛选"),
-    keyword: str | None = Query(None, description="按操作者姓名/用户名模糊搜索"),
+    keyword: str | None = Query(None, description="按操作者姓名/账号模糊搜索"),
 ) -> StreamingResponse:
-    """按当前筛选条件导出审计日志为 CSV（最多 10000 条，按时间倒序）。"""
+    """按当前筛选条件导出操作记录为 CSV（最多 10000 条，按时间倒序）。"""
     limit = 10000
 
     base = (
@@ -108,7 +108,7 @@ async def export_audit_logs(
 
     output = io.StringIO()
     writer = csv.writer(output)
-    header = ["操作时间", "操作者", "用户名", "动作", "资源类型", "资源ID", "IP", "改前", "改后", "附加信息"]
+    header = ["操作时间", "操作者", "账号", "动作", "资源类型", "资源ID", "IP", "改前", "改后", "附加信息"]
     writer.writerow(header)
     for log, user_name, username in rows:
         writer.writerow(

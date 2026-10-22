@@ -181,6 +181,36 @@ class MessageApiResponse(BaseModel):
     data: None = None
 
 
+# ── 批量操作（角色 / 授权）────────────────────────────────────────
+
+
+class IdsBatchRequest(BaseModel):
+    """按 ID 批量操作；单次上限 100。"""
+
+    ids: list[UUID] = Field(..., min_length=1, max_length=100)
+
+
+class StatusBatchRequest(IdsBatchRequest):
+    status: str = Field(..., pattern="^(active|disabled)$")
+
+
+class BatchFailure(BaseModel):
+    key: str
+    label: str | None = None
+    reason: str
+
+
+class BatchResultData(BaseModel):
+    succeeded: list[str] = Field(default_factory=list)
+    failed: list[BatchFailure] = Field(default_factory=list)
+
+
+class BatchResultApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: BatchResultData
+
+
 # ── 权限目录树（角色管理界面渲染用）───────────────────────────────
 
 

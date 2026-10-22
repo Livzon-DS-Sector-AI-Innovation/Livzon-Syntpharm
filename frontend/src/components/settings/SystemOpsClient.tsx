@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type Key } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   App,
@@ -22,6 +22,8 @@ import {
 } from 'antd'
 import { DeleteOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import {
+  batchSetApiSwitch,
+  batchToggleScheduledTasks,
   clearLogs,
   deleteRedisKeys,
   fetchApiRoutes,
@@ -39,6 +41,7 @@ import {
 } from '@/actions/system-ops'
 import type {
   ApiRouteItem,
+  BatchResult,
   ComponentHealth,
   DbColumnItem,
   DbTableItem,
@@ -48,6 +51,7 @@ import type {
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import { SettingsListCard } from './SettingsListCard'
+import { BatchActionBar, BatchResultModal } from './BatchOperations'
 
 const { Text } = Typography
 
@@ -306,6 +310,10 @@ function TasksTab() {
   const { can, loading: permissionLoading } = usePermission()
   const canManage = !permissionLoading && can(PERM.opsManage)
   const [keyword, setKeyword] = useState('')
+  // 批量启停：只有 task / generator 可切换，其他类型复选框置灰
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
+  const [batching, setBatching] = useState(false)
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null)
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['ops-tasks'],
     queryFn: fetchScheduledTasks,
@@ -320,6 +328,34 @@ function TasksTab() {
       message.error(e instanceof Error ? e.message : '切换失败')
     }
   }
+
+  const handleBatchToggle = async (enabled: boolean) => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      const result = await batchToggleScheduledTasks(selectedRowKeys.map(String), enabled)
+      setBatchResult(result)
+      setSelectedRowKeys([])
+      queryClient.invalidateQueries({ queryKey: ['ops-tasks'] })
+      if (!result.failed.length) {
+        message.success(`已${enabled ? '启用' : '禁用'} ${result.succeeded.length} 个任务`)
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '批量切换失败')
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  const rowSelection = canManage
+    ? {
+        selectedRowKeys,
+        onChange: (keys: Key[]) => setSelectedRowKeys(keys),
+        getCheckboxProps: (task: ScheduledTaskItem) => ({
+          disabled: task.kind !== 'task' && task.kind !== 'generator',
+        }),
+      }
+    : undefined
 
   const columns = [
     { title: '任务名', dataIndex: 'name', width: 240 },
@@ -379,6 +415,18 @@ function TasksTab() {
       <SettingsListCard
         toolbar={
           <>
+            <BatchActionBar
+              count={selectedRowKeys.length}
+              loading={batching}
+              onClear={() => setSelectedRowKeys([])}
+            >
+              <Button size="small" loading={batching} onClick={() => handleBatchToggle(true)}>
+                批量启用
+              </Button>
+              <Button size="small" loading={batching} onClick={() => handleBatchToggle(false)}>
+                批量禁用
+              </Button>
+            </BatchActionBar>
             <div className="w-full sm:w-[260px]">
               <Input.Search
                 allowClear
@@ -403,10 +451,12 @@ function TasksTab() {
           rowKey="name"
           size="small"
           loading={isLoading}
+          rowSelection={rowSelection}
           scroll={{ x: 'max-content' }}
           pagination={{ pageSize: 20, showSizeChanger: true }}
         />
       </SettingsListCard>
+      <BatchResultModal result={batchResult} onClose={() => setBatchResult(null)} />
     </>
   )
 }
@@ -426,6 +476,10 @@ function ApiTab() {
   const [disableTarget, setDisableTarget] = useState<ApiRouteItem | null>(null)
   const [reason, setReason] = useState('')
   const [saving, setSaving] = useState(false)
+  // 批量启停：保护名单内的接口复选框置灰
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
+  const [batching, setBatching] = useState(false)
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null)
 
   const { data: routes = [], isLoading } = useQuery({
     queryKey: ['ops-api-routes'],
@@ -471,6 +525,37 @@ function ApiTab() {
       if (error instanceof Error) message.error(error.message)
     }
   }
+
+  const handleBatchSwitch = async (enabled: boolean) => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      // rowKey 形如 "GET /api/v1/xxx"，拆回 method + route
+      const items = selectedRowKeys.map((key) => {
+        const [method, ...rest] = String(key).split(' ')
+        return { method, route: rest.join(' ') }
+      })
+      const result = await batchSetApiSwitch(items, enabled, enabled ? null : '批量禁用')
+      setBatchResult(result)
+      setSelectedRowKeys([])
+      queryClient.invalidateQueries({ queryKey: ['ops-api-routes'] })
+      if (!result.failed.length) {
+        message.success(`已${enabled ? '启用' : '禁用'} ${result.succeeded.length} 个接口`)
+      }
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : '批量切换失败')
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  const rowSelection = canManage
+    ? {
+        selectedRowKeys,
+        onChange: (keys: Key[]) => setSelectedRowKeys(keys),
+        getCheckboxProps: (route: ApiRouteItem) => ({ disabled: route.protected }),
+      }
+    : undefined
 
   const columns = [
     {
@@ -526,6 +611,27 @@ function ApiTab() {
       <SettingsListCard
         toolbar={
           <>
+            <BatchActionBar
+              count={selectedRowKeys.length}
+              loading={batching}
+              onClear={() => setSelectedRowKeys([])}
+            >
+              <Popconfirm
+                title="确认批量禁用选中的接口？禁用后立即 403。"
+                onConfirm={() => handleBatchSwitch(false)}
+                okText="确认禁用"
+                cancelText="取消"
+              >
+                <Button size="small" danger loading={batching}>
+                  批量禁用
+                </Button>
+              </Popconfirm>
+              <Popconfirm title="确认批量启用选中的接口？" onConfirm={() => handleBatchSwitch(true)}>
+                <Button size="small" loading={batching}>
+                  批量启用
+                </Button>
+              </Popconfirm>
+            </BatchActionBar>
             <div className="w-full sm:w-[320px]">
               <Input.Search
                 allowClear
@@ -576,10 +682,13 @@ function ApiTab() {
           rowKey={(r) => `${r.method} ${r.route}`}
           size="small"
           loading={isLoading}
+          rowSelection={rowSelection}
           scroll={{ x: 1000 }}
           pagination={{ pageSize: 20, showSizeChanger: true, showTotal: (t) => `共 ${t} 条` }}
         />
       </SettingsListCard>
+
+      <BatchResultModal result={batchResult} onClose={() => setBatchResult(null)} />
 
       <Modal
         title={`禁用接口：${disableTarget?.method} ${disableTarget?.route}`}
@@ -597,7 +706,7 @@ function ApiTab() {
       >
         <div className="mt-3 space-y-2">
           <p className="m-0 text-[13px] text-[var(--color-steel)]">
-            禁用后该接口对所有调用方立即返回 403；填写原因便于排查（记入审计日志）。
+            禁用后该接口对所有调用方立即返回 403；填写原因便于排查（记入操作记录）。
           </p>
           <Input.TextArea
             rows={3}

@@ -42,6 +42,14 @@ export async function updateUser(id: string, data: unknown, token?: string) {
   })
 }
 
+export async function batchUpdateUserStatus(data: unknown, token?: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/batch-status`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: JSON.stringify(data),
+  })
+}
+
 export async function resetUserPassword(id: string, data: unknown, token?: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}/reset-password`, {
     method: 'POST',
@@ -55,6 +63,14 @@ export async function changeMyPassword(data: unknown, token?: string) {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     body: JSON.stringify(data),
+  })
+}
+
+/** 删除账号（后端限定仅超级管理员可调用）。 */
+export async function deleteUser(id: string, token?: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/identity/users/${id}`, {
+    method: 'DELETE',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   })
 }
 

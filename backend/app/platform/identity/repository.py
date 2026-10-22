@@ -51,6 +51,25 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def soft_delete_user(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        operator_id: UUID | None = None,
+    ) -> User:
+        """软删除账号：标记删除并置禁用。
+
+        物理删除不可行——`permission.user_role_grants.user_id` 等外键是 NOT NULL 且
+        没有 ON DELETE 规则（PostgreSQL 默认 NO ACTION），删行会被数据库挡住。
+        """
+        user.is_deleted = True
+        user.status = "disabled"
+        if operator_id is not None:
+            user.updated_by = operator_id
+        await session.flush()
+        return user
+
     async def get_by_login_identifier(
         self,
         session: AsyncSession,

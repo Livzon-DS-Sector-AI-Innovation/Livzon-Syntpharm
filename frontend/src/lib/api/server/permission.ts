@@ -82,6 +82,40 @@ export function deleteGrant(id: string, token?: string) {
   return apiFetch(P(`/grants/${id}`), { method: 'DELETE', headers: auth(token) })
 }
 
+// ── 批量操作 ───────────────────────────────────────────────────────
+
+export function batchUpdateRoleStatus(data: unknown, token?: string) {
+  return apiFetch(P('/roles/batch-status'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export function batchDeleteRoles(data: unknown, token?: string) {
+  return apiFetch(P('/roles/batch-delete'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export function batchUpdateGrantStatus(data: unknown, token?: string) {
+  return apiFetch(P('/grants/batch-status'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
+export function batchDeleteGrants(data: unknown, token?: string) {
+  return apiFetch(P('/grants/batch-delete'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify(data),
+  })
+}
+
 // ── 用户选择列表（授权下拉用）─────────────────────────────────────
 
 export function getUsersForSelect(token?: string) {

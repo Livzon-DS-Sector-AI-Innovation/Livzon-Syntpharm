@@ -36,6 +36,9 @@ from app.platform.permission.repository import (
 from app.platform.permission.schemas import (
     ApiBindingListResponse,
     ApiBindingResponse,
+    BatchFailure,
+    BatchResultApiResponse,
+    BatchResultData,
     DepartmentOption,
     DepartmentOptionListResponse,
     GrantCreate,
@@ -43,6 +46,7 @@ from app.platform.permission.schemas import (
     GrantListResponse,
     GrantResponse,
     GrantUpdate,
+    IdsBatchRequest,
     MessageApiResponse,
     MyPermissionsData,
     MyPermissionsResponse,
@@ -56,6 +60,7 @@ from app.platform.permission.schemas import (
     RoleDetailResponse,
     RoleListResponse,
     RoleUpdate,
+    StatusBatchRequest,
 )
 from app.platform.permission.service.authorization import is_superuser_with_cache
 from app.platform.permission.service.catalog import build_permission_tree
@@ -261,6 +266,103 @@ async def delete_role(
     await db.commit()
     await _evict_cache_for_role(db, role.id)
     return build_response()
+
+
+@router.post(
+    "/roles/batch-status",
+    response_model=BatchResultApiResponse,
+    summary="批量启用 / 停用角色",
+)
+async def batch_role_status(
+    payload: StatusBatchRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:role:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """逐条校验并汇总结果。
+
+    - 内置角色不可修改状态（与单条更新一致）；
+    - 状态已一致的按幂等处理（计入成功、不写审计）；
+    - 失败项不影响其他角色，返回原因。
+    """
+    role_repo = RoleRepository()
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+    changed: list[uuid.UUID] = []
+
+    for role_id in dict.fromkeys(payload.ids):
+        role = await role_repo.get_role(db, role_id)
+        if role is None:
+            failed.append(BatchFailure(key=str(role_id), reason="角色不存在"))
+            continue
+        if role.is_builtin:
+            failed.append(BatchFailure(key=str(role.id), label=role.name, reason="内置角色不可修改状态"))
+            continue
+        if role.status == payload.status:
+            succeeded.append(str(role.id))
+            continue
+
+        role.status = payload.status
+        changed.append(role.id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="role.update",
+            resource_type="role",
+            resource_id=role.id,
+            new_value={"name": role.name, "status": payload.status, "batch": True},
+        )
+        succeeded.append(str(role.id))
+
+    await db.commit()
+    for role_id in changed:
+        await _evict_cache_for_role(db, role_id)
+    return build_response(data=BatchResultData(succeeded=succeeded, failed=failed).model_dump())
+
+
+@router.post(
+    "/roles/batch-delete",
+    response_model=BatchResultApiResponse,
+    summary="批量删除角色",
+)
+async def batch_delete_roles(
+    payload: IdsBatchRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:role:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """逐条软删除；内置角色与超级管理员角色一律跳过并返回原因。"""
+    role_repo = RoleRepository()
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+    changed: list[uuid.UUID] = []
+
+    for role_id in dict.fromkeys(payload.ids):
+        role = await role_repo.get_role(db, role_id)
+        if role is None:
+            failed.append(BatchFailure(key=str(role_id), reason="角色不存在"))
+            continue
+        if role.is_builtin:
+            failed.append(BatchFailure(key=str(role.id), label=role.name, reason="内置角色不可删除"))
+            continue
+        if role.is_superuser:
+            failed.append(BatchFailure(key=str(role.id), label=role.name, reason="超级管理员角色不可删除"))
+            continue
+
+        await role_repo.soft_delete_role(db, role)
+        changed.append(role.id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="role.delete",
+            resource_type="role",
+            resource_id=role.id,
+            old_value={"code": role.code, "name": role.name, "batch": True},
+        )
+        succeeded.append(str(role.id))
+
+    await db.commit()
+    for role_id in changed:
+        await _evict_cache_for_role(db, role_id)
+    return build_response(data=BatchResultData(succeeded=succeeded, failed=failed).model_dump())
 
 
 # ── 权限目录 ──────────────────────────────────────────────────────
@@ -538,6 +640,125 @@ async def delete_grant(
     await db.commit()
     await _evict_user_cache(grant.user_id)
     return build_response()
+
+
+@router.post(
+    "/grants/batch-status",
+    response_model=BatchResultApiResponse,
+    summary="批量启用 / 停用授权",
+)
+async def batch_grant_status(
+    payload: StatusBatchRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:grant:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """逐条复用单条护栏：不能改自己的授权、不能越级、不能停用最后一个超管授权。
+
+    每停用一条立即 flush，避免「同批停用两条超管授权」时计数看不到前面的变更。
+    """
+    grant_repo = GrantRepository()
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+    affected_users: set[uuid.UUID] = set()
+
+    for grant_id in dict.fromkeys(payload.ids):
+        grant = await grant_repo.get_grant(db, grant_id)
+        if grant is None:
+            failed.append(BatchFailure(key=str(grant_id), reason="授权不存在"))
+            continue
+
+        try:
+            guard_self_escalation(ctx.user.id, grant)
+            target_user = (await db.execute(select(User).where(User.id == grant.user_id))).scalar_one_or_none()
+            if target_user is not None:
+                await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
+            if payload.status != GRANT_ACTIVE:
+                await guard_last_superadmin(db, grant)
+        except ForbiddenException as exc:
+            failed.append(BatchFailure(key=str(grant.id), reason=exc.message))
+            continue
+
+        if grant.status == payload.status:
+            succeeded.append(str(grant.id))
+            continue
+
+        grant.status = payload.status
+        grant.version += 1
+        # flush 让同批后续的「最后一个超管」判断能看到本次停用
+        await db.flush()
+        affected_users.add(grant.user_id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="grant.update",
+            resource_type="grant",
+            resource_id=grant.id,
+            new_value={"status": payload.status, "batch": True},
+        )
+        succeeded.append(str(grant.id))
+
+    await db.commit()
+    for user_id in affected_users:
+        await _evict_user_cache(user_id)
+    return build_response(data=BatchResultData(succeeded=succeeded, failed=failed).model_dump())
+
+
+@router.post(
+    "/grants/batch-delete",
+    response_model=BatchResultApiResponse,
+    summary="批量删除授权",
+)
+async def batch_delete_grants(
+    payload: IdsBatchRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:grant:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> ApiResponse:
+    """逐条软删除；自己 / 越级 / 最后一个超管的授权跳过并返回原因。"""
+    grant_repo = GrantRepository()
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+    affected_users: set[uuid.UUID] = set()
+
+    for grant_id in dict.fromkeys(payload.ids):
+        grant = await grant_repo.get_grant(db, grant_id)
+        if grant is None:
+            failed.append(BatchFailure(key=str(grant_id), reason="授权不存在"))
+            continue
+
+        try:
+            guard_self_escalation(ctx.user.id, grant)
+            target_user = (await db.execute(select(User).where(User.id == grant.user_id))).scalar_one_or_none()
+            if target_user is not None:
+                await guard_manage_target(db, actor=ctx.user, target=target_user, resource_label="授权")
+            await guard_last_superadmin(db, grant)
+        except ForbiddenException as exc:
+            failed.append(BatchFailure(key=str(grant.id), reason=exc.message))
+            continue
+
+        role = await get_role(db, grant.role_id)
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="grant.delete",
+            resource_type="grant",
+            resource_id=grant.id,
+            old_value={
+                "user_id": str(grant.user_id),
+                "role_code": role.code if role else None,
+                "scope_type": grant.scope_type,
+                "batch": True,
+            },
+        )
+        grant.is_deleted = True
+        # flush 让同批后续的「最后一个超管」判断能看到本次删除
+        await db.flush()
+        affected_users.add(grant.user_id)
+        succeeded.append(str(grant.id))
+
+    await db.commit()
+    for user_id in affected_users:
+        await _evict_user_cache(user_id)
+    return build_response(data=BatchResultData(succeeded=succeeded, failed=failed).model_dump())
 
 
 # ── 当前用户权限 ──────────────────────────────────────────────────

@@ -214,7 +214,8 @@
           "\u7528\u6237\u4fe1\u606f",
           "\u7528\u6237\u4fe1\u606f"
         ],
-        "summary": "\u65b0\u5efa\u672c\u5730\u7528\u6237",
+        "summary": "\u65b0\u5efa\u672c\u5730\u7528\u6237\uff08\u521d\u59cb\u5bc6\u7801\u7559\u7a7a\u5219\u81ea\u52a8\u751f\u6210\uff09",
+        "description": "\u65b0\u5efa\u672c\u5730\u8d26\u53f7\u3002\n\n- `password` \u7559\u7a7a\uff1a\u540e\u7aef\u751f\u6210 12 \u4f4d\u968f\u673a\u5bc6\u7801\uff0c\u660e\u6587\u53ea\u5728\u672c\u6b21\u54cd\u5e94\u91cc\u8fd4\u56de\u4e00\u6b21\uff08\u4e0d\u843d\u5e93\uff09\uff1b\n- \u4f20\u4e86 `password`\uff1a\u6309\u7ba1\u7406\u5458\u6307\u5b9a\u503c\u8bbe\u7f6e\uff0c\u54cd\u5e94\u4e0d\u542b\u660e\u6587\uff1b\n- \u4e24\u79cd\u60c5\u51b5\u90fd\u7f6e `must_change_password`\uff0c\u7528\u6237\u9996\u6b21\u767b\u5f55\u5fc5\u987b\u81ea\u884c\u6539\u5bc6 \u2014\u2014 \u4e00\u6b21\u6027\u5bc6\u7801\n  \u4e0d\u5e94\u8be5\u53d8\u6210\u957f\u671f\u51ed\u636e\u3002",
         "operationId": "create_user_management_api_v1_identity_users_post",
         "parameters": [
           {
@@ -249,7 +250,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/UserCreateApiResponse"
+                }
               }
             }
           },
@@ -318,6 +321,126 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u7528\u6237\u4fe1\u606f",
+          "\u7528\u6237\u4fe1\u606f"
+        ],
+        "summary": "\u5220\u9664\u7528\u6237\uff08\u4ec5\u8d85\u7ea7\u7ba1\u7406\u5458\uff0c\u8f6f\u5220\u9664\uff09",
+        "description": "\u5220\u9664\u8d26\u53f7\uff1a\u8f6f\u5220\u9664 + \u7981\u7528\uff0c\u5e76\u6e05\u7a7a\u89d2\u8272\u6388\u6743\u3001\u540a\u9500\u5728\u7ebf\u4f1a\u8bdd\u3002\n\n\u300c\u4ec5\u8d85\u7ea7\u7ba1\u7406\u5458\u300d\u5728 handler \u5185\u663e\u5f0f\u5224\u5b9a\uff1a`platform:user:manage` \u540c\u65f6\u6388\u4e88\u666e\u901a\u8d26\u53f7\n\u7ba1\u7406\u5458\uff08\u5982 admin_account_manager\uff09\uff0c\u53ea\u9760\u6743\u9650\u7801\u62e6\u4e0d\u4f4f\u3002\n\n\u8d26\u53f7\u540d\u4e0d\u4f1a\u88ab\u91ca\u653e\u2014\u2014`uq_identity_users_username` \u4e0d\u533a\u5206 `is_deleted`\uff0c\u5220\u9664\u540e\u540c\u540d\n\u8d26\u53f7\u65e0\u6cd5\u91cd\u5efa\uff1b\u5982\u9700\u590d\u7528\u540d\u79f0\uff0c\u8bf7\u53e6\u5efa\u65b0\u540d\uff08\u6216\u540e\u7eed\u505a\u6539\u540d\u8fc1\u79fb\uff09\u3002",
+        "operationId": "delete_user_management_api_v1_identity_users__user_id__delete",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserDeleteApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/identity/users/batch-status": {
+      "post": {
+        "tags": [
+          "\u7528\u6237\u4fe1\u606f",
+          "\u7528\u6237\u4fe1\u606f"
+        ],
+        "summary": "\u6279\u91cf\u542f\u7528 / \u7981\u7528\u8d26\u53f7",
+        "description": "\u6279\u91cf\u542f\u7528 / \u7981\u7528\u8d26\u53f7\uff08\u5355\u6b21\u6700\u591a 100 \u4e2a\uff09\u3002\n\n\u9010\u6761\u590d\u7528\u5355\u6761\u66f4\u65b0\u7684\u4fdd\u62a4\u89c4\u5219\uff1a\u4e0d\u80fd\u6539\u81ea\u5df1\u3001\u4e0d\u80fd\u64cd\u4f5c\u7cfb\u7edf\u5185\u7f6e\u8d26\u53f7\u3001\u975e\u8d85\u7ba1\u4e0d\u80fd\u64cd\u4f5c\n\u8d85\u7ba1\u6216\u6743\u9650\u66f4\u9ad8\u7684\u8d26\u53f7\u3002\u5931\u8d25\u6761\u76ee\u4e0d\u5f71\u54cd\u5176\u4ed6\u6761\u76ee\uff0c\u7ed3\u679c\u91cc\u8fd4\u56de\u5931\u8d25\u539f\u56e0\u3002\n\u72b6\u6001\u4e0e\u76ee\u6807\u4e00\u81f4\u7684\u6761\u76ee\u6309\u5e42\u7b49\u5904\u7406\uff08\u8ba1\u5165\u6210\u529f\uff0c\u4e0d\u5199\u5ba1\u8ba1\uff09\u3002",
+        "operationId": "batch_update_user_status_api_v1_identity_users_batch_status_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserBatchStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserBatchStatusApiResponse"
+                }
               }
             }
           },
@@ -1511,7 +1634,7 @@
           "\u767b\u5f55\u8bb0\u5f55"
         ],
         "summary": "\u67e5\u8be2\u767b\u5f55\u8bb0\u5f55",
-        "description": "\u5206\u9875\u67e5\u8be2\u767b\u5f55\u8bb0\u5f55\uff0c\u652f\u6301\u6309\u72b6\u6001\u548c\u7528\u6237\u540d\u7b5b\u9009\u3002",
+        "description": "\u5206\u9875\u67e5\u8be2\u767b\u5f55\u8bb0\u5f55\uff0c\u652f\u6301\u6309\u72b6\u6001\u548c\u8d26\u53f7\u7b5b\u9009\u3002",
         "operationId": "list_login_logs_api_v1_identity_login_logs_get",
         "parameters": [
           {
@@ -1545,10 +1668,10 @@
                   "type": "null"
                 }
               ],
-              "description": "\u6309\u7528\u6237\u540d\u641c\u7d22",
+              "description": "\u6309\u8d26\u53f7\u641c\u7d22",
               "title": "Keyword"
             },
-            "description": "\u6309\u7528\u6237\u540d\u641c\u7d22"
+            "description": "\u6309\u8d26\u53f7\u641c\u7d22"
           },
           {
             "name": "page",
@@ -2103,6 +2226,67 @@
         }
       }
     },
+    "/api/v1/system/scheduled-tasks/batch-toggle": {
+      "post": {
+        "tags": [
+          "\u7cfb\u7edf\u8fd0\u7ef4",
+          "\u7cfb\u7edf\u8fd0\u7ef4"
+        ],
+        "summary": "\u6279\u91cf\u542f\u7528 / \u7981\u7528\u5b9a\u65f6\u4efb\u52a1",
+        "description": "\u9010\u6761\u8fd0\u884c\u65f6\u542f\u505c\uff08\u5185\u5b58\u6001\uff09\uff1b\u4e0d\u5b58\u5728\u7684\u4efb\u52a1 / \u4e0d\u53ef\u5207\u6362\u7684 kind \u8bb0\u5165\u5931\u8d25\u660e\u7ec6\u3002",
+        "operationId": "system_scheduled_tasks_batch_toggle_api_v1_system_scheduled_tasks_batch_toggle_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskBatchToggleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResultResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/system/api-routes": {
       "get": {
         "tags": [
@@ -2198,6 +2382,67 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiSwitchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/api-routes/batch-switch": {
+      "post": {
+        "tags": [
+          "\u7cfb\u7edf\u8fd0\u7ef4",
+          "\u7cfb\u7edf\u8fd0\u7ef4"
+        ],
+        "summary": "\u6279\u91cf\u542f\u7528 / \u7981\u7528\u63a5\u53e3",
+        "description": "\u9010\u6761\u5207\u6362\uff1b\u4fdd\u62a4\u540d\u5355\u5185\u63a5\u53e3\u62d2\u7edd\u7981\u7528\uff08\u8bb0\u5165\u5931\u8d25\u660e\u7ec6\uff09\uff0c\u5176\u4f59\u7167\u5e38\u751f\u6548\u3002",
+        "operationId": "system_api_routes_batch_switch_api_v1_system_api_routes_batch_switch_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiSwitchBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResultResponse"
                 }
               }
             }
@@ -2819,6 +3064,128 @@
         }
       }
     },
+    "/api/v1/permission/roles/batch-status": {
+      "post": {
+        "tags": [
+          "\u6743\u9650\u7ba1\u7406",
+          "\u6743\u9650\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u542f\u7528 / \u505c\u7528\u89d2\u8272",
+        "description": "\u9010\u6761\u6821\u9a8c\u5e76\u6c47\u603b\u7ed3\u679c\u3002\n\n- \u5185\u7f6e\u89d2\u8272\u4e0d\u53ef\u4fee\u6539\u72b6\u6001\uff08\u4e0e\u5355\u6761\u66f4\u65b0\u4e00\u81f4\uff09\uff1b\n- \u72b6\u6001\u5df2\u4e00\u81f4\u7684\u6309\u5e42\u7b49\u5904\u7406\uff08\u8ba1\u5165\u6210\u529f\u3001\u4e0d\u5199\u5ba1\u8ba1\uff09\uff1b\n- \u5931\u8d25\u9879\u4e0d\u5f71\u54cd\u5176\u4ed6\u89d2\u8272\uff0c\u8fd4\u56de\u539f\u56e0\u3002",
+        "operationId": "batch_role_status_api_v1_permission_roles_batch_status_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResultApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/permission/roles/batch-delete": {
+      "post": {
+        "tags": [
+          "\u6743\u9650\u7ba1\u7406",
+          "\u6743\u9650\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u5220\u9664\u89d2\u8272",
+        "description": "\u9010\u6761\u8f6f\u5220\u9664\uff1b\u5185\u7f6e\u89d2\u8272\u4e0e\u8d85\u7ea7\u7ba1\u7406\u5458\u89d2\u8272\u4e00\u5f8b\u8df3\u8fc7\u5e76\u8fd4\u56de\u539f\u56e0\u3002",
+        "operationId": "batch_delete_roles_api_v1_permission_roles_batch_delete_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdsBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResultApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/permission/permissions": {
       "get": {
         "tags": [
@@ -3274,6 +3641,128 @@
         }
       }
     },
+    "/api/v1/permission/grants/batch-status": {
+      "post": {
+        "tags": [
+          "\u6743\u9650\u7ba1\u7406",
+          "\u6743\u9650\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u542f\u7528 / \u505c\u7528\u6388\u6743",
+        "description": "\u9010\u6761\u590d\u7528\u5355\u6761\u62a4\u680f\uff1a\u4e0d\u80fd\u6539\u81ea\u5df1\u7684\u6388\u6743\u3001\u4e0d\u80fd\u8d8a\u7ea7\u3001\u4e0d\u80fd\u505c\u7528\u6700\u540e\u4e00\u4e2a\u8d85\u7ba1\u6388\u6743\u3002\n\n\u6bcf\u505c\u7528\u4e00\u6761\u7acb\u5373 flush\uff0c\u907f\u514d\u300c\u540c\u6279\u505c\u7528\u4e24\u6761\u8d85\u7ba1\u6388\u6743\u300d\u65f6\u8ba1\u6570\u770b\u4e0d\u5230\u524d\u9762\u7684\u53d8\u66f4\u3002",
+        "operationId": "batch_grant_status_api_v1_permission_grants_batch_status_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatusBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResultApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/permission/grants/batch-delete": {
+      "post": {
+        "tags": [
+          "\u6743\u9650\u7ba1\u7406",
+          "\u6743\u9650\u7ba1\u7406"
+        ],
+        "summary": "\u6279\u91cf\u5220\u9664\u6388\u6743",
+        "description": "\u9010\u6761\u8f6f\u5220\u9664\uff1b\u81ea\u5df1 / \u8d8a\u7ea7 / \u6700\u540e\u4e00\u4e2a\u8d85\u7ba1\u7684\u6388\u6743\u8df3\u8fc7\u5e76\u8fd4\u56de\u539f\u56e0\u3002",
+        "operationId": "batch_delete_grants_api_v1_permission_grants_batch_delete_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IdsBatchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResultApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/permission/my-permissions": {
       "get": {
         "tags": [
@@ -3388,11 +3877,11 @@
     "/api/v1/audit/logs": {
       "get": {
         "tags": [
-          "\u64cd\u4f5c\u5ba1\u8ba1",
-          "\u64cd\u4f5c\u5ba1\u8ba1"
+          "\u64cd\u4f5c\u8bb0\u5f55",
+          "\u64cd\u4f5c\u8bb0\u5f55"
         ],
-        "summary": "\u67e5\u8be2\u64cd\u4f5c\u5ba1\u8ba1\u65e5\u5fd7",
-        "description": "\u5206\u9875\u67e5\u8be2\u64cd\u4f5c\u5ba1\u8ba1\u65e5\u5fd7\uff0c\u6309\u65f6\u95f4\u5012\u5e8f\u3002",
+        "summary": "\u67e5\u8be2\u64cd\u4f5c\u8bb0\u5f55",
+        "description": "\u5206\u9875\u67e5\u8be2\u64cd\u4f5c\u8bb0\u5f55\uff0c\u6309\u65f6\u95f4\u5012\u5e8f\u3002",
         "operationId": "list_audit_logs_api_v1_audit_logs_get",
         "parameters": [
           {
@@ -3463,10 +3952,10 @@
                   "type": "null"
                 }
               ],
-              "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u7528\u6237\u540d\u6a21\u7cca\u641c\u7d22",
+              "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u8d26\u53f7\u6a21\u7cca\u641c\u7d22",
               "title": "Keyword"
             },
-            "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u7528\u6237\u540d\u6a21\u7cca\u641c\u7d22"
+            "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u8d26\u53f7\u6a21\u7cca\u641c\u7d22"
           },
           {
             "name": "page",
@@ -3535,11 +4024,11 @@
     "/api/v1/audit/logs/export": {
       "get": {
         "tags": [
-          "\u64cd\u4f5c\u5ba1\u8ba1",
-          "\u64cd\u4f5c\u5ba1\u8ba1"
+          "\u64cd\u4f5c\u8bb0\u5f55",
+          "\u64cd\u4f5c\u8bb0\u5f55"
         ],
-        "summary": "\u5bfc\u51fa\u64cd\u4f5c\u5ba1\u8ba1\u65e5\u5fd7\uff08CSV\uff09",
-        "description": "\u6309\u5f53\u524d\u7b5b\u9009\u6761\u4ef6\u5bfc\u51fa\u5ba1\u8ba1\u65e5\u5fd7\u4e3a CSV\uff08\u6700\u591a 10000 \u6761\uff0c\u6309\u65f6\u95f4\u5012\u5e8f\uff09\u3002",
+        "summary": "\u5bfc\u51fa\u64cd\u4f5c\u8bb0\u5f55\uff08CSV\uff09",
+        "description": "\u6309\u5f53\u524d\u7b5b\u9009\u6761\u4ef6\u5bfc\u51fa\u64cd\u4f5c\u8bb0\u5f55\u4e3a CSV\uff08\u6700\u591a 10000 \u6761\uff0c\u6309\u65f6\u95f4\u5012\u5e8f\uff09\u3002",
         "operationId": "export_audit_logs_api_v1_audit_logs_export_get",
         "parameters": [
           {
@@ -3610,10 +4099,10 @@
                   "type": "null"
                 }
               ],
-              "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u7528\u6237\u540d\u6a21\u7cca\u641c\u7d22",
+              "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u8d26\u53f7\u6a21\u7cca\u641c\u7d22",
               "title": "Keyword"
             },
-            "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u7528\u6237\u540d\u6a21\u7cca\u641c\u7d22"
+            "description": "\u6309\u64cd\u4f5c\u8005\u59d3\u540d/\u8d26\u53f7\u6a21\u7cca\u641c\u7d22"
           },
           {
             "name": "auth_token",
@@ -92467,6 +92956,63 @@
         ],
         "title": "ApiRoutesResponse"
       },
+      "ApiSwitchBatchItem": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "maxLength": 16,
+            "minLength": 1,
+            "title": "Method"
+          },
+          "route": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Route"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "route"
+        ],
+        "title": "ApiSwitchBatchItem"
+      },
+      "ApiSwitchBatchRequest": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ApiSwitchBatchItem"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "enabled"
+        ],
+        "title": "ApiSwitchBatchRequest"
+      },
       "ApiSwitchRequest": {
         "properties": {
           "method": {
@@ -92982,7 +93528,7 @@
           "created_at"
         ],
         "title": "AuditLogItem",
-        "description": "\u5355\u6761\u64cd\u4f5c\u5ba1\u8ba1\u8bb0\u5f55\uff08\u542b\u64cd\u4f5c\u8005\u59d3\u540d/\u7528\u6237\u540d\uff0cjoin identity.users\uff09\u3002"
+        "description": "\u5355\u6761\u64cd\u4f5c\u8bb0\u5f55\uff08\u542b\u64cd\u4f5c\u8005\u59d3\u540d/\u8d26\u53f7\uff0cjoin identity.users\uff09\u3002"
       },
       "AuditLogListData": {
         "properties": {
@@ -93014,7 +93560,7 @@
           "page_size"
         ],
         "title": "AuditLogListData",
-        "description": "\u64cd\u4f5c\u5ba1\u8ba1\u5206\u9875\u6570\u636e\uff08\u4e0e\u767b\u5f55\u8bb0\u5f55\u8fd4\u56de\u7ed3\u6784\u4fdd\u6301\u4e00\u81f4\uff1aitems / total / page / page_size\uff09\u3002"
+        "description": "\u64cd\u4f5c\u8bb0\u5f55\u5206\u9875\u6570\u636e\uff08\u4e0e\u767b\u5f55\u8bb0\u5f55\u8fd4\u56de\u7ed3\u6784\u4fdd\u6301\u4e00\u81f4\uff1aitems / total / page / page_size\uff09\u3002"
       },
       "AuditLogListResponse": {
         "properties": {
@@ -93500,6 +94046,35 @@
         ],
         "title": "BatchDeleteRequest",
         "description": "\u6279\u91cf\u5220\u9664\u8bf7\u6c42"
+      },
+      "BatchFailure": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "reason"
+        ],
+        "title": "BatchFailure"
       },
       "BatchImportJobApiResponse": {
         "properties": {
@@ -94328,6 +94903,70 @@
         ],
         "title": "BatchResponse",
         "description": "\u6279\u6b21\u54cd\u5e94"
+      },
+      "BatchResultApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BatchResultData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchResultApiResponse"
+      },
+      "BatchResultData": {
+        "properties": {
+          "succeeded": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Succeeded"
+          },
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/BatchFailure"
+            },
+            "type": "array",
+            "title": "Failed"
+          }
+        },
+        "type": "object",
+        "title": "BatchResultData"
+      },
+      "BatchResultResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/BatchResultData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "BatchResultResponse"
       },
       "BatchStatus": {
         "type": "string",
@@ -122611,6 +123250,26 @@
         "title": "IQStatus",
         "description": "IQ\u786e\u8ba4\u72b6\u6001"
       },
+      "IdsBatchRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "IdsBatchRequest",
+        "description": "\u6309 ID \u6279\u91cf\u64cd\u4f5c\uff1b\u5355\u6b21\u4e0a\u9650 100\u3002"
+      },
       "ImportErrorItem": {
         "properties": {
           "row": {
@@ -127207,10 +127866,18 @@
             "title": "Username"
           },
           "password": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 6,
-            "title": "Password"
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password",
+            "description": "\u521d\u59cb\u5bc6\u7801\uff1b\u7559\u7a7a\u5219\u81ea\u52a8\u751f\u6210\uff0c\u660e\u6587\u53ea\u5728\u521b\u5efa\u54cd\u5e94\u91cc\u8fd4\u56de\u4e00\u6b21"
           },
           "name": {
             "type": "string",
@@ -127291,7 +127958,6 @@
         "type": "object",
         "required": [
           "username",
-          "password",
           "name"
         ],
         "title": "LocalUserCreate"
@@ -152875,6 +153541,31 @@
         "title": "StandardUpdate",
         "description": "Update Standard"
       },
+      "StatusBatchRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Ids"
+          },
+          "status": {
+            "type": "string",
+            "pattern": "^(active|disabled)$",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ids",
+          "status"
+        ],
+        "title": "StatusBatchRequest"
+      },
       "StockAdjustRequest": {
         "properties": {
           "new_qty": {
@@ -153916,6 +154607,29 @@
           "data"
         ],
         "title": "SystemInfoResponse"
+      },
+      "TaskBatchToggleRequest": {
+        "properties": {
+          "names": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Names"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "names",
+          "enabled"
+        ],
+        "title": "TaskBatchToggleRequest"
       },
       "TaskStatus": {
         "type": "string",
@@ -157086,6 +157800,460 @@
         "title": "UpdateReagentRequest",
         "description": "\u66f4\u65b0\u8bd5\u5242\u8bb0\u5f55\u8bf7\u6c42"
       },
+      "UserBatchFailure": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reason"
+        ],
+        "title": "UserBatchFailure"
+      },
+      "UserBatchStatusApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserBatchStatusData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "UserBatchStatusApiResponse"
+      },
+      "UserBatchStatusData": {
+        "properties": {
+          "succeeded": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Succeeded"
+          },
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/UserBatchFailure"
+            },
+            "type": "array",
+            "title": "Failed"
+          }
+        },
+        "type": "object",
+        "title": "UserBatchStatusData"
+      },
+      "UserBatchStatusRequest": {
+        "properties": {
+          "user_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "User Ids",
+            "description": "\u5355\u6b21\u6700\u591a 100 \u4e2a\u8d26\u53f7"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "disabled"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_ids",
+          "status"
+        ],
+        "title": "UserBatchStatusRequest",
+        "description": "\u6279\u91cf\u542f\u7528 / \u7981\u7528\u8d26\u53f7\u3002"
+      },
+      "UserCreateApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserCreateData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "UserCreateApiResponse"
+      },
+      "UserCreateData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "auth_source": {
+            "type": "string",
+            "enum": [
+              "local",
+              "feishu"
+            ],
+            "title": "Auth Source",
+            "default": "feishu"
+          },
+          "en_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "En Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "enterprise_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprise Email"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "avatar_thumb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Thumb"
+          },
+          "avatar_middle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Middle"
+          },
+          "avatar_big": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Big"
+          },
+          "employee_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee No"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "feishu_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu User Id"
+          },
+          "feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Open Id"
+          },
+          "feishu_union_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Union Id"
+          },
+          "tenant_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Key"
+          },
+          "must_change_password": {
+            "type": "boolean",
+            "title": "Must Change Password",
+            "default": false
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "active"
+          },
+          "last_login_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Login At"
+          },
+          "password_updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password Updated At"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "is_superuser": {
+            "type": "boolean",
+            "title": "Is Superuser",
+            "default": false
+          },
+          "initial_password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "UserCreateData",
+        "description": "\u65b0\u5efa\u8d26\u53f7\u54cd\u5e94\uff1a\u989d\u5916\u5e26\u56de\u4e00\u6b21\u6027\u521d\u59cb\u5bc6\u7801\uff08\u4ec5\u81ea\u52a8\u751f\u6210\u65f6\u6709\u503c\uff0c\u4e0d\u843d\u5e93\uff09\u3002"
+      },
+      "UserDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserDeleteData"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "UserDeleteApiResponse"
+      },
+      "UserDeleteData": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "revoked_grants": {
+            "type": "integer",
+            "title": "Revoked Grants",
+            "default": 0
+          },
+          "revoked_sessions": {
+            "type": "integer",
+            "title": "Revoked Sessions",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "UserDeleteData",
+        "description": "\u5220\u9664\u8d26\u53f7\u7ed3\u679c\uff08\u8f6f\u5220\u9664\uff0c\u8d26\u53f7\u540d\u7ee7\u7eed\u88ab\u5360\u7528\uff09\u3002"
+      },
       "UserManagementUpdate": {
         "properties": {
           "username": {
@@ -157100,7 +158268,7 @@
               }
             ],
             "title": "Username",
-            "description": "\u767b\u5f55\u7528\u6237\u540d\uff08\u521b\u5efa\u540e\u4e0d\u53ef\u4fee\u6539\uff09"
+            "description": "\u767b\u5f55\u8d26\u53f7\uff08\u521b\u5efa\u540e\u4e0d\u53ef\u4fee\u6539\uff09"
           },
           "name": {
             "anyOf": [

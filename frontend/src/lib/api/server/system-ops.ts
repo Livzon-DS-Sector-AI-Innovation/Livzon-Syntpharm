@@ -53,6 +53,29 @@ export function getApiRoutes(token?: string) {
   return apiFetch(P('/api-routes'), { headers: auth(token) })
 }
 
+// ── 批量操作 ───────────────────────────────────────────────────────
+
+export function batchToggleScheduledTasks(names: string[], enabled: boolean, token?: string) {
+  return apiFetch(P('/scheduled-tasks/batch-toggle'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify({ names, enabled }),
+  })
+}
+
+export function batchSetApiSwitch(
+  items: { method: string; route: string }[],
+  enabled: boolean,
+  reason: string | null,
+  token?: string,
+) {
+  return apiFetch(P('/api-routes/batch-switch'), {
+    method: 'POST',
+    headers: auth(token),
+    body: JSON.stringify({ items, enabled, reason }),
+  })
+}
+
 export function setApiSwitch(
   method: string,
   route: string,

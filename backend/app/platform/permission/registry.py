@@ -75,7 +75,7 @@ PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("platform:grant:manage", "管理授权", "platform", "grant", "manage"),
     PermissionDef("platform:config:read", "查看平台配置", "platform", "config", "read"),
     PermissionDef("platform:config:manage", "管理平台配置", "platform", "config", "manage"),
-    PermissionDef("platform:audit:read", "查看审计日志", "platform", "audit", "read"),
+    PermissionDef("platform:audit:read", "查看操作记录", "platform", "audit", "read"),
     PermissionDef("platform:api-binding:read", "查看接口绑定登记簿", "platform", "api-binding", "read"),
     PermissionDef("platform:ops:read", "查看系统运维", "platform", "ops", "read"),
     PermissionDef("platform:ops:manage", "系统运维操作", "platform", "ops", "manage"),
@@ -928,6 +928,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/users"),
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users"),
     ApiBindingDef("platform:user:manage", "PUT", "/api/v1/identity/users/{id}"),
+    ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/batch-status"),
+    ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}"),
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/reset-password"),
     ApiBindingDef("platform:user:manage", "POST", "/api/v1/identity/users/{id}/bind-feishu"),
     ApiBindingDef("platform:user:manage", "DELETE", "/api/v1/identity/users/{id}/bind-feishu"),
@@ -941,7 +943,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/personnel"),
     # 登录记录（审计类）
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/identity/login-logs"),
-    # 操作审计
+    # 操作记录
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/audit/logs"),
     # Livzon 助手飞书配置与通讯录同步
     ApiBindingDef("platform:config:read", "GET", "/api/v1/identity/feishu-config"),
@@ -955,6 +957,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles"),
     ApiBindingDef("platform:role:manage", "PUT", "/api/v1/permission/roles/{id}"),
     ApiBindingDef("platform:role:manage", "DELETE", "/api/v1/permission/roles/{id}"),
+    ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles/batch-status"),
+    ApiBindingDef("platform:role:manage", "POST", "/api/v1/permission/roles/batch-delete"),
     # 权限目录
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/permissions"),
     # 权限树只服务于「角色管理」勾选权限，跟随 role:read（与端点 require_permission 对齐）
@@ -967,6 +971,8 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants"),
     ApiBindingDef("platform:grant:manage", "PUT", "/api/v1/permission/grants/{id}"),
     ApiBindingDef("platform:grant:manage", "DELETE", "/api/v1/permission/grants/{id}"),
+    ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants/batch-status"),
+    ApiBindingDef("platform:grant:manage", "POST", "/api/v1/permission/grants/batch-delete"),
     # 当前用户权限（登录用户自取）
     ApiBindingDef("platform:permission:read", "GET", "/api/v1/permission/my-permissions"),
     # 系统运维
@@ -978,10 +984,12 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:ops:manage", "DELETE", "/api/v1/system/redis/keys"),
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/scheduled-tasks"),
     ApiBindingDef("platform:ops:manage", "PUT", "/api/v1/system/scheduled-tasks/{name}/toggle"),
+    ApiBindingDef("platform:ops:manage", "POST", "/api/v1/system/scheduled-tasks/batch-toggle"),
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/modules"),
     # API 启停开关
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/api-routes"),
     ApiBindingDef("platform:ops:manage", "PUT", "/api/v1/system/api-routes/switch"),
+    ApiBindingDef("platform:ops:manage", "POST", "/api/v1/system/api-routes/batch-switch"),
     # 日志管理
     ApiBindingDef("platform:ops:read", "GET", "/api/v1/system/logs"),
     ApiBindingDef("platform:ops:manage", "DELETE", "/api/v1/system/logs"),

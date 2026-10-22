@@ -1,4 +1,4 @@
-"""操作审计日志响应 schema。"""
+"""操作记录响应 schema。"""
 
 import uuid
 from datetime import datetime
@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 
 class AuditLogItem(BaseModel):
-    """单条操作审计记录（含操作者姓名/用户名，join identity.users）。"""
+    """单条操作记录（含操作者姓名/账号，join identity.users）。"""
 
     id: uuid.UUID
     user_id: uuid.UUID | None = None
@@ -25,7 +25,7 @@ class AuditLogItem(BaseModel):
 
 
 class AuditLogListData(BaseModel):
-    """操作审计分页数据（与登录记录返回结构保持一致：items / total / page / page_size）。"""
+    """操作记录分页数据（与登录记录返回结构保持一致：items / total / page / page_size）。"""
 
     items: list[AuditLogItem]
     total: int

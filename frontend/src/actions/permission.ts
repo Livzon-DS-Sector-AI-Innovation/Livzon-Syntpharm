@@ -3,6 +3,10 @@
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import {
+  batchDeleteGrants as batchDeleteGrantsApi,
+  batchDeleteRoles as batchDeleteRolesApi,
+  batchUpdateGrantStatus as batchUpdateGrantStatusApi,
+  batchUpdateRoleStatus as batchUpdateRoleStatusApi,
   createGrant as createGrantApi,
   createRole as createRoleApi,
   deleteGrant as deleteGrantApi,
@@ -21,6 +25,7 @@ import {
 } from '@/lib/api/server/permission'
 import type {
   ApiBindingItem,
+  BatchResult,
   DepartmentOption,
   GrantCreateInput,
   GrantItem,
@@ -154,6 +159,62 @@ export async function deleteGrant(id: string): Promise<void> {
   const token = await getAuthToken()
   await deleteGrantApi(id, token)
   revalidatePath(PERMISSION_PATH)
+}
+
+// ── 批量操作 ──────────────────────────────────────────────────────
+
+/** 批量启用 / 停用角色（内置角色由后端跳过并返回原因）。 */
+export async function batchUpdateRoleStatus(
+  ids: string[],
+  status: 'active' | 'disabled',
+): Promise<PermissionActionResult<BatchResult>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await batchUpdateRoleStatusApi({ ids, status }, token)) as { data: BatchResult }
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量操作角色失败' }
+  }
+}
+
+/** 批量删除角色（内置 / 超管角色由后端跳过并返回原因）。 */
+export async function batchDeleteRoles(ids: string[]): Promise<PermissionActionResult<BatchResult>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await batchDeleteRolesApi({ ids }, token)) as { data: BatchResult }
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量删除角色失败' }
+  }
+}
+
+/** 批量启用 / 停用授权（自己 / 越级 / 最后超管由后端跳过并返回原因）。 */
+export async function batchUpdateGrantStatus(
+  ids: string[],
+  status: 'active' | 'disabled',
+): Promise<PermissionActionResult<BatchResult>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await batchUpdateGrantStatusApi({ ids, status }, token)) as { data: BatchResult }
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量操作授权失败' }
+  }
+}
+
+/** 批量删除授权（自己 / 越级 / 最后超管由后端跳过并返回原因）。 */
+export async function batchDeleteGrants(ids: string[]): Promise<PermissionActionResult<BatchResult>> {
+  const token = await getAuthToken()
+  try {
+    const res = (await batchDeleteGrantsApi({ ids }, token)) as { data: BatchResult }
+    revalidatePath(PERMISSION_PATH)
+    return { ok: true, data: res.data }
+  } catch (error) {
+    return { ok: false, message: error instanceof Error ? error.message : '批量删除授权失败' }
+  }
 }
 
 // ── 用户选择列表 ──────────────────────────────────────────────────

@@ -24,8 +24,22 @@ export interface UserManagementItem {
   password_updated_at?: string | null
   /** 解绑飞书时该账号是否被一并软删除（仅解绑响应返回） */
   account_deleted?: boolean
+  /** 是否超级管理员：批量选择时该行复选框置灰 */
+  is_superuser?: boolean
   created_at: string
   updated_at: string
+}
+
+/** 批量启用/禁用请求。 */
+export interface UserBatchStatusRequest {
+  user_ids: string[]
+  status: 'active' | 'disabled'
+}
+
+/** 批量启用/禁用结果：逐条汇总，失败项带原因。 */
+export interface UserBatchStatusResult {
+  succeeded: string[]
+  failed: { id: string; username?: string | null; reason: string }[]
 }
 
 export interface FeishuBindRequest {
@@ -44,7 +58,8 @@ export interface UserManagementListResponse {
 
 export interface LocalUserCreate {
   username: string
-  password: string
+  /** 留空 = 后端自动生成一次性初始密码（只在创建响应里返回一次） */
+  password?: string
   name: string
   email?: string | null
   mobile?: string | null
@@ -52,6 +67,12 @@ export interface LocalUserCreate {
   department?: string | null
   position?: string | null
   status?: string
+}
+
+/** 新建账号的响应：比列表项多一个一次性初始密码。 */
+export interface UserCreateResult extends UserManagementItem {
+  /** 自动生成时才有值；不落库，关闭弹窗后无法再次查看 */
+  initial_password?: string | null
 }
 
 export interface UserManagementUpdate {
@@ -75,6 +96,16 @@ export interface PasswordResetResult {
   message: string
   /** 仅「随机生成」时返回，供管理员一次性抄给用户；不落库，关闭弹窗后无法再看 */
   password?: string | null
+}
+
+/** 删除账号结果：软删除，同时清空授权并吊销会话。 */
+export interface UserDeleteResult {
+  id: string
+  username?: string | null
+  /** 被清空的角色授权条数 */
+  revoked_grants: number
+  /** 被吊销的在线会话数 */
+  revoked_sessions: number
 }
 
 export interface ChangePasswordRequest {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type Key } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -19,6 +19,8 @@ import {
 } from 'antd'
 import { EyeOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
+  batchDeleteGrants,
+  batchUpdateGrantStatus,
   createGrant,
   deleteGrant,
   fetchDepartmentOptions,
@@ -28,10 +30,11 @@ import {
   fetchUserPreview,
   updateGrant,
 } from '@/actions/permission'
-import type { DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
+import type { BatchResult, DepartmentOption, GrantCreateInput, GrantItem, ScopeType } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 import { SettingsListCard } from './SettingsListCard'
+import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
 import { moduleMenus } from '@/lib/menu-config'
 import { MODULE_ACCESS_PERMS, SUBMENU_ACCESS_PERMS, canAccess } from '@/lib/permissions/modules'
 
@@ -50,7 +53,7 @@ export default function GrantManagementClient() {
   // 权限：无「授权管理」权限时隐藏全部写操作入口
   // （前端隐藏只是体验优化，后端 require_permission 仍会拦截绕过前端的调用）
   // 注意：必须放在任何 early return 之前
-  const { can, loading: permissionLoading } = usePermission()
+  const { can, user: currentUser, loading: permissionLoading } = usePermission()
   const canManage = !permissionLoading && can(PERM.grantManage)
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -64,6 +67,11 @@ export default function GrantManagementClient() {
   // 生效预览：选一个用户，看其当前权限下能进哪些模块/页面
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewUserId, setPreviewUserId] = useState<string | undefined>()
+  // 批量操作：选中项 + 结果汇总 + 删除强确认
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
+  const [batching, setBatching] = useState(false)
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const scopeType = Form.useWatch('scope_type', form)
 
   const { data: grants = [], isLoading } = useQuery({
@@ -291,6 +299,59 @@ export default function GrantManagementClient() {
     }
   }
 
+  const clearSelection = () => setSelectedRowKeys([])
+
+  /** 批量启用 / 停用授权：自己 / 越级 / 最后超管由后端逐条拒绝并返回原因。 */
+  const handleBatchStatus = async (status: 'active' | 'disabled') => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      const result = await batchUpdateGrantStatus(selectedRowKeys.map(String), status)
+      if (!result.ok) {
+        message.error(result.message)
+        return
+      }
+      setBatchResult(result.data)
+      clearSelection()
+      queryClient.invalidateQueries({ queryKey: ['permission-grants'] })
+      if (!result.data.failed.length) {
+        message.success(`已${status === 'active' ? '启用' : '停用'} ${result.data.succeeded.length} 条授权`)
+      }
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  /** 批量删除授权：弹窗列出影响项 + 输入「删除」确认。 */
+  const handleBatchDelete = async () => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      const result = await batchDeleteGrants(selectedRowKeys.map(String))
+      if (!result.ok) {
+        message.error(result.message)
+        return
+      }
+      setDeleteConfirmOpen(false)
+      setBatchResult(result.data)
+      clearSelection()
+      queryClient.invalidateQueries({ queryKey: ['permission-grants'] })
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  // 不能操作自己的授权（后端同样会拒绝），前端直接禁止勾选
+  const rowSelection = canManage
+    ? {
+        selectedRowKeys,
+        onChange: (keys: Key[]) => setSelectedRowKeys(keys),
+        getCheckboxProps: (record: GrantItem) => ({ disabled: record.user_id === currentUser?.id }),
+      }
+    : undefined
+
+  const selectedGrants = grants.filter((grant) => selectedRowKeys.some((key) => String(key) === grant.id))
+
   const columns = [
     {
       title: '用户',
@@ -352,6 +413,17 @@ export default function GrantManagementClient() {
       <SettingsListCard
         toolbar={
           <>
+            <BatchActionBar count={selectedRowKeys.length} loading={batching} onClear={clearSelection}>
+              <Button size="small" loading={batching} onClick={() => handleBatchStatus('active')}>
+                批量启用
+              </Button>
+              <Button size="small" loading={batching} onClick={() => handleBatchStatus('disabled')}>
+                批量停用
+              </Button>
+              <Button size="small" danger loading={batching} onClick={() => setDeleteConfirmOpen(true)}>
+                批量删除
+              </Button>
+            </BatchActionBar>
             <div className="w-full sm:w-[240px]">
               <Input.Search
                 allowClear
@@ -383,6 +455,7 @@ export default function GrantManagementClient() {
           dataSource={visibleGrants}
           rowKey="id"
           loading={isLoading}
+          rowSelection={rowSelection}
           scroll={{ x: 1000 }}
           pagination={{
             pageSize: 20,
@@ -391,6 +464,18 @@ export default function GrantManagementClient() {
           }}
         />
       </SettingsListCard>
+
+      <BatchResultModal result={batchResult} onClose={() => setBatchResult(null)} />
+      <BatchDeleteConfirmModal
+        open={deleteConfirmOpen}
+        items={selectedGrants.map((grant) => ({
+          key: grant.id,
+          label: `${grant.user_name || grant.user_id} · ${grant.role_name || grant.role_code || '-'}`,
+        }))}
+        loading={batching}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleBatchDelete}
+      />
 
       <Modal
         title={editing ? '编辑该用户的角色授权' : '新建授权'}

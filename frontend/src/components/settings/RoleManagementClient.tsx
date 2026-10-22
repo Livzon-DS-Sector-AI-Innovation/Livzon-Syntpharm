@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type Key } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Alert,
@@ -18,6 +18,8 @@ import {
 } from 'antd'
 import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
+  batchDeleteRoles,
+  batchUpdateRoleStatus,
   createRole,
   deleteRole,
   fetchPermissionTree,
@@ -26,7 +28,8 @@ import {
 } from '@/actions/permission'
 import PermissionTreePanel from './PermissionTreePanel'
 import { SettingsListCard } from './SettingsListCard'
-import type { RoleCreateInput, RoleDetail, RoleUpdateInput } from '@/types/permission'
+import { BatchActionBar, BatchDeleteConfirmModal, BatchResultModal } from './BatchOperations'
+import type { BatchResult, RoleCreateInput, RoleDetail, RoleUpdateInput } from '@/types/permission'
 import { usePermission } from '@/hooks/usePermission'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -56,6 +59,11 @@ export default function RoleManagementClient() {
   const [editing, setEditing] = useState<RoleDetail | null>(null)
   const [saving, setSaving] = useState(false)
   const [keyword, setKeyword] = useState('')
+  // 批量操作：选中项 + 结果汇总 + 删除强确认
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([])
+  const [batching, setBatching] = useState(false)
+  const [batchResult, setBatchResult] = useState<BatchResult | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [form] = Form.useForm()
 
   const category = Form.useWatch('category', form)
@@ -176,6 +184,63 @@ export default function RoleManagementClient() {
     queryClient.invalidateQueries({ queryKey: ['permission-roles'] })
   }
 
+  const clearSelection = () => setSelectedRowKeys([])
+
+  /** 批量启用 / 停用：内置与超管角色在前端已不可选，后端仍会逐条校验。 */
+  const handleBatchStatus = async (status: 'active' | 'disabled') => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      const result = await batchUpdateRoleStatus(selectedRowKeys.map(String), status)
+      if (!result.ok) {
+        message.error(result.message)
+        return
+      }
+      setBatchResult(result.data)
+      clearSelection()
+      queryClient.invalidateQueries({ queryKey: ['permission-roles'] })
+      queryClient.invalidateQueries({ queryKey: ['permission-tree'] })
+      if (!result.data.failed.length) {
+        message.success(`已${status === 'active' ? '启用' : '停用'} ${result.data.succeeded.length} 个角色`)
+      }
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  /** 批量删除：弹窗列出影响项 + 输入「删除」确认。 */
+  const handleBatchDelete = async () => {
+    if (!selectedRowKeys.length) return
+    setBatching(true)
+    try {
+      const result = await batchDeleteRoles(selectedRowKeys.map(String))
+      if (!result.ok) {
+        message.error(result.message)
+        return
+      }
+      setDeleteConfirmOpen(false)
+      setBatchResult(result.data)
+      clearSelection()
+      queryClient.invalidateQueries({ queryKey: ['permission-roles'] })
+      queryClient.invalidateQueries({ queryKey: ['permission-tree'] })
+    } finally {
+      setBatching(false)
+    }
+  }
+
+  // 内置 / 超管角色不能改状态也不能删除，直接不允许勾选
+  const rowSelection = canManage
+    ? {
+        selectedRowKeys,
+        onChange: (keys: Key[]) => setSelectedRowKeys(keys),
+        getCheckboxProps: (record: RoleDetail) => ({
+          disabled: Boolean(record.is_builtin || record.is_superuser),
+        }),
+      }
+    : undefined
+
+  const selectedRoles = roles.filter((role) => selectedRowKeys.some((key) => String(key) === role.id))
+
   const columns = [
     { title: '角色编码', dataIndex: 'code', width: 200 },
     { title: '名称', dataIndex: 'name', width: 180 },
@@ -247,6 +312,17 @@ export default function RoleManagementClient() {
       <SettingsListCard
         toolbar={
           <>
+            <BatchActionBar count={selectedRowKeys.length} loading={batching} onClear={clearSelection}>
+              <Button size="small" loading={batching} onClick={() => handleBatchStatus('active')}>
+                批量启用
+              </Button>
+              <Button size="small" loading={batching} onClick={() => handleBatchStatus('disabled')}>
+                批量停用
+              </Button>
+              <Button size="small" danger loading={batching} onClick={() => setDeleteConfirmOpen(true)}>
+                批量删除
+              </Button>
+            </BatchActionBar>
             <div className="w-full sm:w-[260px]">
               <Input.Search
                 allowClear
@@ -275,6 +351,7 @@ export default function RoleManagementClient() {
           dataSource={visibleRoles}
           rowKey="id"
           loading={isLoading}
+          rowSelection={rowSelection}
           scroll={{ x: 1000 }}
           pagination={{
             pageSize: 20,
@@ -283,6 +360,15 @@ export default function RoleManagementClient() {
           }}
         />
       </SettingsListCard>
+
+      <BatchResultModal result={batchResult} onClose={() => setBatchResult(null)} />
+      <BatchDeleteConfirmModal
+        open={deleteConfirmOpen}
+        items={selectedRoles.map((role) => ({ key: role.id, label: `${role.name}（${role.code}）` }))}
+        loading={batching}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleBatchDelete}
+      />
 
       <Modal
         title={editing ? '编辑角色' : '新建角色'}

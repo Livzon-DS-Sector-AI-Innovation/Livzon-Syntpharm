@@ -37,7 +37,7 @@ export async function loginWithPassword(
   const password = String(formData.get('password') || '')
 
   if (!username || !password) {
-    return { error: '请输入用户名和密码' }
+    return { error: '请输入账号和密码' }
   }
 
   try {

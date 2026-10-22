@@ -2,12 +2,13 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
 from app.platform.permission.models import (
     GRANT_ACTIVE,
+    GRANT_DISABLED,
     ApiBinding,
     Permission,
     Role,
@@ -123,6 +124,23 @@ class GrantRepository:
             .distinct()
         )
         return list(result.scalars().all())
+
+    async def soft_delete_user_grants(self, db: AsyncSession, user_id: uuid.UUID) -> int:
+        """清空某用户的全部有效授权（账号被删除时调用），返回受影响行数。
+
+        授权是「一条授权 = 一个角色 + 数据范围」的最小单元，账号删除后必须一并失效，
+        否则已删账号的权限仍会被授权判定读到（且列表里可能继续展示其角色）。
+        """
+        stmt = (
+            update(UserRoleGrant)
+            .where(
+                UserRoleGrant.user_id == user_id,
+                UserRoleGrant.is_deleted == False,  # noqa: E712
+            )
+            .values(is_deleted=True, status=GRANT_DISABLED)
+        )
+        result = await db.execute(stmt)
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
 
     async def create_grant(
         self,
