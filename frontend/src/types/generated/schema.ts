@@ -24376,6 +24376,20 @@ export interface components {
              */
             unit: string;
         };
+        /** CurrentUserApiResponse */
+        CurrentUserApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserResponse"];
+        };
         /**
          * CustomMenuItem
          * @description 管理员自定义新增的菜单项。
@@ -43939,6 +43953,63 @@ export interface components {
             data: components["schemas"]["ScheduledTaskItem"][];
         };
         /**
+         * SessionItem
+         * @description 在线会话条目（Redis 中存储的会话信息）。
+         */
+        SessionItem: {
+            /** Jti */
+            jti: string;
+            /** User Id */
+            user_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** User Agent */
+            user_agent?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** SessionListApiResponse */
+        SessionListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SessionItem"][];
+        };
+        /** SessionRevokeApiResponse */
+        SessionRevokeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SessionRevokeData"];
+        };
+        /**
+         * SessionRevokeData
+         * @description 吊销会话结果：单条为布尔，批量为用户会话数。
+         */
+        SessionRevokeData: {
+            /** Revoked */
+            revoked: boolean | number;
+        };
+        /**
          * SetCriticalRequest
          * @description 手动设置关键作业标记
          */
@@ -46616,6 +46687,48 @@ export interface components {
              */
             updated_at?: string | null;
         };
+        /** SyncAllTriggerApiResponse */
+        SyncAllTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SyncAllTriggerData"];
+        };
+        /** SyncAllTriggerData */
+        SyncAllTriggerData: {
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /** SyncDepartmentsTriggerApiResponse */
+        SyncDepartmentsTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SyncDepartmentsTriggerData"];
+        };
+        /** SyncDepartmentsTriggerData */
+        SyncDepartmentsTriggerData: {
+            /** Message */
+            message: string;
+            /** Root Dept Id */
+            root_dept_id: string;
+        };
         /** SyncJobApiResponse */
         SyncJobApiResponse: {
             /**
@@ -46737,6 +46850,27 @@ export interface components {
             result?: components["schemas"]["SyncJobResult"] | null;
             /** Error */
             error?: string | null;
+        };
+        /** SyncMembersTriggerApiResponse */
+        SyncMembersTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SyncMembersTriggerData"];
+        };
+        /** SyncMembersTriggerData */
+        SyncMembersTriggerData: {
+            /** Message */
+            message: string;
+            /** Target Dept Id */
+            target_dept_id: string;
         };
         /** SyncTriggerRequest */
         SyncTriggerRequest: {
@@ -48244,6 +48378,98 @@ export interface components {
              */
             status: "active" | "disabled";
         };
+        /** UserBindFeishuApiResponse */
+        UserBindFeishuApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserBindFeishuData"];
+        };
+        /**
+         * UserBindFeishuData
+         * @description 绑定飞书结果：UserManagementItem + 授权迁移计数。
+         */
+        UserBindFeishuData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /** Bind Result */
+            bind_result?: {
+                [key: string]: number;
+            } | null;
+        };
         /** UserCreateApiResponse */
         UserCreateApiResponse: {
             /**
@@ -48371,6 +48597,116 @@ export interface components {
              */
             revoked_sessions: number;
         };
+        /** UserManagementApiResponse */
+        UserManagementApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserManagementItem"];
+        };
+        /** UserManagementItem */
+        UserManagementItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+        };
+        /** UserManagementListApiResponse */
+        UserManagementListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserManagementListResponse"];
+        };
+        /** UserManagementListResponse */
+        UserManagementListResponse: {
+            /** Items */
+            items: components["schemas"]["UserManagementItem"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+        };
         /** UserManagementUpdate */
         UserManagementUpdate: {
             /**
@@ -48445,6 +48781,99 @@ export interface components {
              * @default false
              */
             must_change_password: boolean;
+        };
+        /** UserUnbindFeishuApiResponse */
+        UserUnbindFeishuApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserUnbindFeishuData"];
+        };
+        /**
+         * UserUnbindFeishuData
+         * @description 解绑飞书结果：UserManagementItem + 是否因解绑而软删账号。
+         */
+        UserUnbindFeishuData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /**
+             * Account Deleted
+             * @default false
+             */
+            account_deleted: boolean;
         };
         /** ValidationAuditFileListApiResponse */
         ValidationAuditFileListApiResponse: {
@@ -49908,7 +50337,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["CurrentUserApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49952,7 +50381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["UserManagementListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50024,7 +50453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["UserManagementApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50160,7 +50589,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SessionListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50193,7 +50622,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SessionRevokeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50226,7 +50655,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SessionRevokeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50298,7 +50727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["UserBindFeishuApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50331,7 +50760,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["UserUnbindFeishuApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50605,7 +51034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SyncDepartmentsTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50636,7 +51065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SyncMembersTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50667,7 +51096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SyncAllTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */

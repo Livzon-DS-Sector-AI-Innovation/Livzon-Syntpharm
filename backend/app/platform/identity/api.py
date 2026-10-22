@@ -19,6 +19,7 @@ from app.platform.identity.schemas import (
     ChangePasswordApiResponse,
     ChangePasswordData,
     ChangePasswordRequest,
+    CurrentUserApiResponse,
     DepartmentResponse,
     DepartmentTreeNode,
     FeishuBindRequest,
@@ -33,19 +34,28 @@ from app.platform.identity.schemas import (
     PasswordResetRequest,
     PersonnelItem,
     PersonnelListResponse,
+    SessionListApiResponse,
+    SessionRevokeApiResponse,
+    SyncAllTriggerApiResponse,
+    SyncDepartmentsTriggerApiResponse,
+    SyncMembersTriggerApiResponse,
     TokenResponse,
     UserBatchFailure,
     UserBatchStatusApiResponse,
     UserBatchStatusData,
     UserBatchStatusRequest,
+    UserBindFeishuApiResponse,
     UserCreateApiResponse,
     UserCreateData,
     UserDeleteApiResponse,
     UserDeleteData,
+    UserManagementApiResponse,
     UserManagementItem,
+    UserManagementListApiResponse,
     UserManagementListResponse,
     UserManagementUpdate,
     UserResponse,
+    UserUnbindFeishuApiResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -301,7 +311,7 @@ async def logout() -> RedirectResponse:
 # ── Current User ────────────────────────────────────────────────────
 
 
-@user_router.get("/me", summary="获取当前登录用户信息")
+@user_router.get("/me", summary="获取当前登录用户信息", response_model=CurrentUserApiResponse)
 async def get_me(
     current_user: RequiredUser,
 ) -> JSONResponse:
@@ -409,7 +419,11 @@ async def list_personnel(
 # ── Sync ────────────────────────────────────────────────────────────
 
 
-@sync_router.post("/departments", summary="触发飞书组织架构同步（异步）")
+@sync_router.post(
+    "/departments",
+    summary="触发飞书组织架构同步（异步）",
+    response_model=SyncDepartmentsTriggerApiResponse,
+)
 async def trigger_sync_departments(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
@@ -428,7 +442,11 @@ async def trigger_sync_departments(
     )
 
 
-@sync_router.post("/members", summary="触发飞书成员同步（异步）")
+@sync_router.post(
+    "/members",
+    summary="触发飞书成员同步（异步）",
+    response_model=SyncMembersTriggerApiResponse,
+)
 async def trigger_sync_members(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
@@ -446,7 +464,11 @@ async def trigger_sync_members(
     )
 
 
-@sync_router.post("/all", summary="同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）")
+@sync_router.post(
+    "/all",
+    summary="同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）",
+    response_model=SyncAllTriggerApiResponse,
+)
 async def trigger_sync_all(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
 ) -> JSONResponse:
@@ -551,7 +573,7 @@ async def list_login_logs(
 # ── 用户管理（管理页）──────────────────────────────────────────────
 
 
-@user_router.get("/users", summary="用户管理列表")
+@user_router.get("/users", summary="用户管理列表", response_model=UserManagementListApiResponse)
 async def list_users_management(
     ctx: PermissionContext = Depends(require_permission("platform:user:read")),
     keyword: str | None = Query(None, description="按姓名/账号/邮箱/手机号搜索"),
@@ -666,7 +688,7 @@ async def create_user_management(
     return build_response(data=data.model_dump())
 
 
-@user_router.put("/users/{user_id}", summary="更新用户")
+@user_router.put("/users/{user_id}", summary="更新用户", response_model=UserManagementApiResponse)
 async def update_user_management(
     user_id: uuid.UUID,
     payload: UserManagementUpdate,
@@ -990,7 +1012,7 @@ async def _record_login_session(token: str, user: User, ip_address: str | None, 
         logger.warning("记录登录会话失败", exc_info=True)
 
 
-@user_router.get("/sessions", summary="在线会话列表")
+@user_router.get("/sessions", summary="在线会话列表", response_model=SessionListApiResponse)
 async def list_sessions(
     ctx: PermissionContext = Depends(require_permission("platform:user:read")),
 ) -> Any:
@@ -1000,7 +1022,7 @@ async def list_sessions(
     return build_response(data=await list_all_sessions())
 
 
-@user_router.delete("/sessions/{jti}", summary="吊销会话（踢下线）")
+@user_router.delete("/sessions/{jti}", summary="吊销会话（踢下线）", response_model=SessionRevokeApiResponse)
 async def revoke_session_api(
     jti: str,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
@@ -1011,7 +1033,7 @@ async def revoke_session_api(
     return build_response(data={"revoked": True})
 
 
-@user_router.delete("/users/{user_id}/sessions", summary="吊销某用户全部会话")
+@user_router.delete("/users/{user_id}/sessions", summary="吊销某用户全部会话", response_model=SessionRevokeApiResponse)
 async def revoke_user_sessions(
     user_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
@@ -1060,7 +1082,7 @@ async def change_my_password(
     return build_response(data=ChangePasswordData(message="密码已修改"))
 
 
-@user_router.post("/users/{user_id}/bind-feishu", summary="绑定飞书用户")
+@user_router.post("/users/{user_id}/bind-feishu", summary="绑定飞书用户", response_model=UserBindFeishuApiResponse)
 async def bind_user_feishu(
     user_id: uuid.UUID,
     payload: FeishuBindRequest,
@@ -1102,7 +1124,7 @@ async def bind_user_feishu(
     return success_response(data=data)
 
 
-@user_router.delete("/users/{user_id}/bind-feishu", summary="解绑飞书用户")
+@user_router.delete("/users/{user_id}/bind-feishu", summary="解绑飞书用户", response_model=UserUnbindFeishuApiResponse)
 async def unbind_user_feishu(
     user_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),

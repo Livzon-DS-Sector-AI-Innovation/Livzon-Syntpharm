@@ -265,7 +265,7 @@ export default function RoleManagementClient() {
       title: '权限数',
       key: 'permCount',
       width: 90,
-      render: (_: unknown, record: RoleDetail) => record.permission_codes.length,
+      render: (_: unknown, record: RoleDetail) => (record.permission_codes ?? []).length,
     },
     {
       title: '内置',

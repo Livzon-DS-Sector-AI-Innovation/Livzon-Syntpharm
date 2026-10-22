@@ -1,58 +1,21 @@
 /**
- * 系统运维 UI 类型（对应后端 platform/system 运维 API）。
+ * 系统运维类型。
+ *
+ * 已有 response_model 的运维端点（组件健康/系统信息/资源使用）从 `@/types/generated/schema`
+ * 派生；Redis/日志/数据库/调度/API 开关等端点尚未补充 response_model（OpenAPI 未生成对应
+ * schema），暂保留手写，待后端补齐后再迁移。
  */
+import type { components } from '@/types/generated/schema'
 
-export interface ComponentHealth {
-  name: string
-  status: 'ok' | 'error' | 'disabled' | string
-  latency_ms: number | null
-  /** 运行时长（秒）；取不到为 null（如 minio） */
-  uptime_seconds: number | null
-  detail: string | null
-}
+export type ComponentHealth = components['schemas']['ComponentHealth']
+export type DependencyInfo = components['schemas']['DependencyInfo']
+export type SystemInfoData = components['schemas']['SystemInfoData']
+export type DiskUsage = components['schemas']['DiskUsage']
+export type MemoryUsage = components['schemas']['MemoryUsage']
+export type LoadAverage = components['schemas']['LoadAverage']
+export type ResourcesData = components['schemas']['ResourcesData']
 
-export interface DependencyInfo {
-  name: string
-  version: string
-}
-
-export interface SystemInfoData {
-  app_name: string
-  app_env: string
-  version: string
-  python_version: string
-  started_at: string
-  uptime_seconds: number
-  dependencies: DependencyInfo[]
-}
-
-export interface DiskUsage {
-  path: string
-  total_gb: number
-  used_gb: number
-  free_gb: number
-  percent: number
-}
-
-export interface MemoryUsage {
-  total_gb: number
-  used_gb: number
-  available_gb: number
-  percent: number
-}
-
-export interface LoadAverage {
-  load1: number
-  load5: number
-  load15: number
-  cpu_count: number
-}
-
-export interface ResourcesData {
-  disk: DiskUsage
-  memory: MemoryUsage
-  load: LoadAverage
-}
+// ── 以下运维端点尚无 response_model，暂保留手写（待后端补齐后迁移） ──
 
 export interface RedisOverviewData {
   dbsize: number

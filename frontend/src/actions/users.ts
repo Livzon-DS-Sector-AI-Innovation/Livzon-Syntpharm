@@ -28,6 +28,7 @@ import type {
   ChangePasswordRequest,
   UserDeleteResult,
   UserSession,
+  UserUnbindResult,
 } from '@/types/users'
 
 async function getAuthToken(): Promise<string | undefined> {
@@ -139,10 +140,10 @@ export async function changeMyPassword(
   }
 }
 
-export async function unbindFeishuUser(id: string): Promise<UsersActionResult<UserManagementItem>> {
+export async function unbindFeishuUser(id: string): Promise<UsersActionResult<UserUnbindResult>> {
   const token = await getAuthToken()
   try {
-    const res = (await unbindFeishuUserServer(id, token)) as { data: UserManagementItem }
+    const res = (await unbindFeishuUserServer(id, token)) as { data: UserUnbindResult }
     revalidatePath('/settings/users')
     return { ok: true, data: res.data }
   } catch (error) {

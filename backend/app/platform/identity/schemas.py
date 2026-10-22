@@ -467,3 +467,111 @@ class FeishuCardCallbackResponse(BaseModel):
     toast: dict[str, Any] | None = None
     card: dict[str, Any] | None = None
     challenge: str | None = None
+
+
+# ── API 响应信封（具体 response_model，替换 JSONResponse/Any） ──
+
+
+class CurrentUserApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserResponse
+
+
+class UserManagementApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserManagementItem
+
+
+class UserManagementListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserManagementListResponse
+
+
+class UserBindFeishuData(UserManagementItem):
+    """绑定飞书结果：UserManagementItem + 授权迁移计数。"""
+
+    bind_result: dict[str, int] | None = None
+
+
+class UserBindFeishuApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserBindFeishuData
+
+
+class UserUnbindFeishuData(UserManagementItem):
+    """解绑飞书结果：UserManagementItem + 是否因解绑而软删账号。"""
+
+    account_deleted: bool = False
+
+
+class UserUnbindFeishuApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: UserUnbindFeishuData
+
+
+class SessionItem(BaseModel):
+    """在线会话条目（Redis 中存储的会话信息）。"""
+
+    jti: str
+    user_id: str | None = None
+    name: str | None = None
+    username: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    created_at: str | None = None
+
+
+class SessionListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[SessionItem]
+
+
+class SessionRevokeData(BaseModel):
+    """吊销会话结果：单条为布尔，批量为用户会话数。"""
+
+    revoked: bool | int
+
+
+class SessionRevokeApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: SessionRevokeData
+
+
+class SyncDepartmentsTriggerData(BaseModel):
+    message: str
+    root_dept_id: str
+
+
+class SyncDepartmentsTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: SyncDepartmentsTriggerData
+
+
+class SyncMembersTriggerData(BaseModel):
+    message: str
+    target_dept_id: str
+
+
+class SyncMembersTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: SyncMembersTriggerData
+
+
+class SyncAllTriggerData(BaseModel):
+    status: str
+    message: str
+
+
+class SyncAllTriggerApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: SyncAllTriggerData
