@@ -866,6 +866,7 @@ async def list_monthly_records(
             EnergyMonthlyRecordResponse(
                 id=str(i.id),
                 workshop_id=str(i.workshop_id),
+                workshop_name=getattr(i, "workshop_name", None),
                 energy_type=i.energy_type,
                 record_date=i.record_date,
                 date_range_end=i.date_range_end,

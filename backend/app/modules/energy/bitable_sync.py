@@ -13,6 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
 from app.modules.energy.repository import apply_changed_fields
+from app.modules.energy.workshop_names import (
+    load_workshop_alias_map,
+    normalize_workshop_name,
+    resolve_workshop_name,
+)
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
@@ -27,6 +32,32 @@ class EnergyBitableSync:
         self.app_token = _settings.feishu.energy.app_token
         self.workshop_table_id = _settings.feishu.energy.workshop_table_id
         self.monthly_table_id = _settings.feishu.energy.monthly_table_id
+        self._alias_map: dict[str, str] | None = None
+
+    async def _get_alias_map(self) -> dict[str, str]:
+        if self._alias_map is None:
+            self._alias_map = await load_workshop_alias_map(self.list_tables, self.list_records)
+        return self._alias_map
+
+    async def list_tables(self) -> list[dict[str, Any]]:
+        """获取多维表格中的所有数据表（自动分页）。"""
+        path = f"/bitable/v1/apps/{self.app_token}/tables"
+        all_tables: list[dict[str, Any]] = []
+        page_token = None
+
+        while True:
+            params: dict[str, Any] = {"page_size": 100}
+            if page_token:
+                params["page_token"] = page_token
+
+            data = await self.client.request("GET", path, params=params)
+            all_tables.extend(data.get("items", []))
+
+            if not data.get("has_more"):
+                break
+            page_token = data.get("page_token")
+
+        return all_tables
 
     def _is_enabled(self) -> bool:
         return bool(self.app_token)
@@ -64,6 +95,7 @@ class EnergyBitableSync:
             return {"status": "disabled", "message": "未配置能源多维表格"}
 
         records = await self.list_records(self.workshop_table_id)
+        alias_map = await self._get_alias_map()
         created = 0
         updated = 0
 
@@ -78,21 +110,38 @@ class EnergyBitableSync:
             if not code or not name:
                 continue
 
-            # 检查是否已存在（软删除的车间不复用，与 repository.get_workshop_by_code 口径一致）
+            resolved_name = resolve_workshop_name(str(name), alias_map)
+
+            # 先按规范名找：别名行（如 QC）与规范行（质量控制部）必须落到同一个实体，
+            # 否则会按别名 code 再建一个孤儿车间
             result = await db.execute(
-                select(EnergyWorkshop).where(
-                    EnergyWorkshop.code == code,
+                select(EnergyWorkshop)
+                .where(
+                    EnergyWorkshop.name == resolved_name,
                     EnergyWorkshop.is_deleted == False,  # noqa: E712
                 )
+                .order_by(EnergyWorkshop.id)
             )
             workshop = result.scalars().first()
+
+            # 再按编码找（软删除的车间不复用，与 repository.get_workshop_by_code 口径一致）
+            if workshop is None:
+                result = await db.execute(
+                    select(EnergyWorkshop)
+                    .where(
+                        EnergyWorkshop.code == code,
+                        EnergyWorkshop.is_deleted == False,  # noqa: E712
+                    )
+                    .order_by(EnergyWorkshop.id)
+                )
+                workshop = result.scalars().first()
 
             if workshop:
                 # 只统计值真变化的行（D-51）
                 if apply_changed_fields(
                     workshop,
                     {
-                        "name": name,
+                        "name": resolved_name,
                         "category": category,
                         "sort_order": sort_order,
                         "is_active": is_active,
@@ -103,11 +152,11 @@ class EnergyBitableSync:
                 # 创建
                 workshop = EnergyWorkshop(
                     code=code,
-                    name=name,
+                    name=resolved_name,
                     category=category,
                     sort_order=sort_order,
                     is_active=is_active,
-                    excluded_energy_types=list(ROLLUP_WORKSHOPS.get(name, ())),
+                    excluded_energy_types=list(ROLLUP_WORKSHOPS.get(resolved_name, ())),
                 )
                 db.add(workshop)
                 created += 1
@@ -121,6 +170,7 @@ class EnergyBitableSync:
             return {"status": "disabled", "message": "未配置能源多维表格"}
 
         records = await self.list_records(self.monthly_table_id)
+        alias_map = await self._get_alias_map()
         created = 0
         updated = 0
 
@@ -134,7 +184,7 @@ class EnergyBitableSync:
         workshops_by_name: dict[str, EnergyWorkshop] = {}
         workshops_by_code: dict[str, EnergyWorkshop] = {}
         for ws in result.scalars().all():
-            workshops_by_name.setdefault(ws.name, ws)
+            workshops_by_name.setdefault(normalize_workshop_name(ws.name), ws)
             workshops_by_code.setdefault(ws.code, ws)
 
         for record in records:
@@ -145,7 +195,15 @@ class EnergyBitableSync:
             if not workshop_ref:
                 continue
 
-            workshop = workshops_by_name.get(workshop_ref) or workshops_by_code.get(workshop_ref)
+            # 先套别名再查：水侧 QC / 炊事班 等写法必须挂到规范实体上
+            workshop_ref = str(workshop_ref)
+            resolved_ref = resolve_workshop_name(workshop_ref, alias_map)
+            workshop = (
+                workshops_by_name.get(resolved_ref)
+                or workshops_by_code.get(resolved_ref)
+                # 过渡期兜底：规范实体还没建出来但别名实体已存在时，不丢记录
+                or workshops_by_name.get(normalize_workshop_name(workshop_ref))
+            )
             if not workshop:
                 logger.warning(f"车间不存在: {workshop_ref}")
                 continue

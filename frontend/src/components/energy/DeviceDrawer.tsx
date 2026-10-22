@@ -324,6 +324,7 @@ export function DeviceDrawer({ onRefresh }: DeviceDrawerProps) {
                   { label: '电力', value: 'electricity' },
                   { label: '自来水', value: 'water' },
                   { label: '蒸汽', value: 'steam' },
+                  { label: '天然气', value: 'natural_gas' },
                 ]}
                 style={{ height: 44 }}
               />

@@ -188,21 +188,3 @@ export async function analyzeEnergyV2(data: {
   })
   return result.data
 }
-
-// ═══════════════════════════════════════════════════════════
-//  生产数据同步
-// ═══════════════════════════════════════════════════════════
-
-export interface ProductionOutputItem {
-  product_name: string
-  quantity: number
-  unit: string
-}
-
-export async function fetchProductionOutput(params: {
-  workshop_id: string
-  month: string
-}): Promise<{ items: ProductionOutputItem[] }> {
-  const query = buildQueryString(params)
-  return apiGet<{ items: ProductionOutputItem[] }>(`${API_BASE}/energy/production/output${query}`)
-}
