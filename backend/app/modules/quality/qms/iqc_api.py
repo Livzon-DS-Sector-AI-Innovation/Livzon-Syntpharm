@@ -17,6 +17,7 @@ from app.modules.quality.qms.iqc_schemas import (
     IQCInspectionCreate,
     IQCInspectionFilter,
     IQCInspectionListResponse,
+    IQCInspectionPageResponse,
     IQCInspectionResponse,
     IQCInspectionUpdate,
 )
@@ -48,7 +49,7 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/inspections", response_model=dict)
+@router.get("/inspections", response_model=IQCInspectionPageResponse)
 async def get(
     ctx: PermissionContext = Depends(require_permission("quality:iqc:read")),
     inspection_no: str | None = Query(None, description="检验单号"),

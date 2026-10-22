@@ -58605,9 +58605,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Validation Audit Tasks Post"
+                  "$ref": "#/components/schemas/ValidationAuditTaskApiResponse"
                 }
               }
             }
@@ -58726,9 +58724,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Validation Audit Tasks Get"
+                  "$ref": "#/components/schemas/ValidationAuditTaskListApiResponse"
                 }
               }
             }
@@ -58788,9 +58784,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Validation Audit Tasks  Task Id  Get"
+                  "$ref": "#/components/schemas/ValidationAuditTaskApiResponse"
                 }
               }
             }
@@ -58858,9 +58852,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Put Api V1 Registration Validation Audit Tasks  Task Id  Put"
+                  "$ref": "#/components/schemas/ValidationAuditTaskApiResponse"
                 }
               }
             }
@@ -58918,9 +58910,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Delete Api V1 Registration Validation Audit Tasks  Task Id  Delete"
+                  "$ref": "#/components/schemas/ValidationAuditMessageApiResponse"
                 }
               }
             }
@@ -58991,9 +58981,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Validation Audit Tasks  Task Id  Files Post"
+                  "$ref": "#/components/schemas/ValidationAuditFileUploadApiResponse"
                 }
               }
             }
@@ -59051,9 +59039,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Validation Audit Tasks  Task Id  Files Get"
+                  "$ref": "#/components/schemas/ValidationAuditFileListApiResponse"
                 }
               }
             }
@@ -59113,9 +59099,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Validation Audit Tasks  Task Id  Parse Post"
+                  "$ref": "#/components/schemas/ValidationAuditTaskApiResponse"
                 }
               }
             }
@@ -59175,9 +59159,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Post Api V1 Registration Validation Audit Tasks  Task Id  Audit Post"
+                  "$ref": "#/components/schemas/ValidationAuditTaskApiResponse"
                 }
               }
             }
@@ -59253,9 +59235,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Validation Audit Tasks  Task Id  Issues Get"
+                  "$ref": "#/components/schemas/ValidationAuditIssueListApiResponse"
                 }
               }
             }
@@ -59315,9 +59295,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Registration Validation Audit Tasks  Task Id  Report Get"
+                  "$ref": "#/components/schemas/ValidationAuditReportApiResponse"
                 }
               }
             }
@@ -59377,8 +59355,6 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
                   "title": "Response Post Api V1 Registration Validation Audit Tasks  Task Id  Export Post"
                 }
               }
@@ -61903,9 +61879,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Sampling Orders Get"
+                  "$ref": "#/components/schemas/SamplingOrderPageResponse"
                 }
               }
             }
@@ -62459,9 +62433,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Sampling Retention Ledger Get"
+                  "$ref": "#/components/schemas/SampleRetentionLedgerPageResponse"
                 }
               }
             }
@@ -62825,9 +62797,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Iqc Inspections Get"
+                  "$ref": "#/components/schemas/IQCInspectionPageResponse"
                 }
               }
             }
@@ -63530,9 +63500,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Ipqc Inspections Get"
+                  "$ref": "#/components/schemas/IPQCInspectionPageResponse"
                 }
               }
             }
@@ -65337,9 +65305,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Stability Studies Get"
+                  "$ref": "#/components/schemas/StabilityStudyPageResponse"
                 }
               }
             }
@@ -66060,9 +66026,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Stability Inspections Get"
+                  "$ref": "#/components/schemas/StabilityInspectionPageResponse"
                 }
               }
             }
@@ -70931,9 +70895,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Post Api V1 Quality Reagent Recognize Post"
+                  "$ref": "#/components/schemas/ReagentRecognizeApiResponse"
                 }
               }
             }
@@ -71002,9 +70964,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Reagent Next Lot No Get"
+                  "$ref": "#/components/schemas/ReagentNextLotNoApiResponse"
                 }
               }
             }
@@ -71136,9 +71096,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Reagent List Get"
+                  "$ref": "#/components/schemas/ReagentListApiResponse"
                 }
               }
             }
@@ -71303,9 +71261,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Api V1 Quality Reagent  Reagent Id  Get"
+                  "$ref": "#/components/schemas/ReagentDetailApiResponse"
                 }
               }
             }
@@ -71373,9 +71329,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Put Api V1 Quality Reagent  Reagent Id  Put"
+                  "$ref": "#/components/schemas/ReagentDetailApiResponse"
                 }
               }
             }
@@ -71433,9 +71387,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Delete Api V1 Quality Reagent  Reagent Id  Delete"
+                  "$ref": "#/components/schemas/ReagentMessageApiResponse"
                 }
               }
             }
@@ -71496,9 +71448,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Post Api V1 Quality Reagent Post"
+                  "$ref": "#/components/schemas/ReagentDetailApiResponse"
                 }
               }
             }
@@ -87824,9 +87774,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Create Product Dossier Api V1 Registration Dossier Writer Products Post"
+                  "$ref": "#/components/schemas/ProductDossierApiResponse"
                 }
               }
             }
@@ -87897,9 +87845,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response List Product Dossiers Api V1 Registration Dossier Writer Products Get"
+                  "$ref": "#/components/schemas/ProductDossierListApiResponse"
                 }
               }
             }
@@ -87959,9 +87905,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Get"
+                  "$ref": "#/components/schemas/ProductDossierApiResponse"
                 }
               }
             }
@@ -88029,9 +87973,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Update Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Put"
+                  "$ref": "#/components/schemas/ProductDossierApiResponse"
                 }
               }
             }
@@ -88089,9 +88031,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Delete Product Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Delete"
+                  "$ref": "#/components/schemas/app__modules__registration__dossier_writer__schemas__MessageApiResponse"
                 }
               }
             }
@@ -88161,9 +88101,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Upload Templates Api V1 Registration Dossier Writer Products  Dossier Id  Templates Post"
+                  "$ref": "#/components/schemas/TemplateUploadApiResponse"
                 }
               }
             }
@@ -88223,9 +88161,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Parse Templates Api V1 Registration Dossier Writer Products  Dossier Id  Parse Post"
+                  "$ref": "#/components/schemas/ParseResultApiResponse"
                 }
               }
             }
@@ -88285,9 +88221,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Chapter Tree Api V1 Registration Dossier Writer Products  Dossier Id  Chapters Get"
+                  "$ref": "#/components/schemas/ChapterTreeApiResponse"
                 }
               }
             }
@@ -88347,9 +88281,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Chapter Detail Api V1 Registration Dossier Writer Chapters  Chapter Id  Get"
+                  "$ref": "#/components/schemas/ChapterDetailApiResponse"
                 }
               }
             }
@@ -88419,9 +88351,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Upload Asset Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Post"
+                  "$ref": "#/components/schemas/AssetUploadBatchApiResponse"
                 }
               }
             }
@@ -88479,9 +88409,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response List Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Assets Get"
+                  "$ref": "#/components/schemas/AssetListApiResponse"
                 }
               }
             }
@@ -88541,9 +88469,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Delete Asset Api V1 Registration Dossier Writer Assets  Asset Id  Delete"
+                  "$ref": "#/components/schemas/app__modules__registration__dossier_writer__schemas__MessageApiResponse"
                 }
               }
             }
@@ -88681,9 +88607,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Export Dossier Api V1 Registration Dossier Writer Products  Dossier Id  Export Post"
+                  "$ref": "#/components/schemas/ExportApiResponse"
                 }
               }
             }
@@ -88812,9 +88736,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Chapter Preview Api V1 Registration Dossier Writer Chapters  Chapter Id  Preview Get"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -88932,9 +88854,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Match Assets To Chapters Api V1 Registration Dossier Writer Products  Dossier Id  Match Assets Post"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -88994,9 +88914,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Fill Chapter Fields Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Fields Post"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -89055,9 +88973,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Field Mappings Api V1 Registration Dossier Writer Chapters  Chapter Code  Field Mappings Get"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -89107,9 +89023,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Init S6 Field Mappings Api V1 Registration Dossier Writer Field Mappings Init S6 Post"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -89159,9 +89073,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Init S7 Field Mappings Api V1 Registration Dossier Writer Field Mappings Init S7 Post"
+                  "$ref": "#/components/schemas/InitS7ApiResponse"
                 }
               }
             }
@@ -89221,9 +89133,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Fill Results Api V1 Registration Dossier Writer Chapters  Chapter Id  Fill Results Get"
+                  "$ref": "#/components/schemas/FillResultListApiResponse"
                 }
               }
             }
@@ -89283,9 +89193,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Ai Preview Extraction Api V1 Registration Dossier Writer Chapters  Chapter Id  Ai Preview Post"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -89414,9 +89322,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Asset Categories Api V1 Registration Dossier Writer Chapters  Chapter Code  Asset Categories Get"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -89615,9 +89521,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Get Appendix Slots Api V1 Registration Dossier Writer Chapters  Chapter Code  Appendix Slots Get"
+                  "$ref": "#/components/schemas/StringListApiResponse"
                 }
               }
             }
@@ -89677,9 +89581,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response List Available Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Available Assets Get"
+                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
                 }
               }
             }
@@ -89819,9 +89721,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response List Selected Assets Api V1 Registration Dossier Writer Chapters  Chapter Id  Selected Assets Get"
+                  "$ref": "#/components/schemas/AssetListApiResponse"
                 }
               }
             }
@@ -90251,7 +90151,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ModuleSettingListApiResponse"
                 }
               }
             }
@@ -90310,7 +90210,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ModuleSettingApiResponse"
                 }
               }
             }
@@ -90379,7 +90279,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ModuleSettingApiResponse"
                 }
               }
             }
@@ -90456,7 +90356,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ModuleSettingApiResponse"
                 }
               }
             }
@@ -90523,7 +90423,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/ModuleSettingApiResponse"
                 }
               }
             }
@@ -93337,6 +93237,208 @@
         ],
         "title": "AssetCategoryUpdateResponse",
         "description": "\u7d20\u6750\u5206\u7c7b\u66f4\u65b0\u54cd\u5e94"
+      },
+      "AssetListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AssetResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "AssetListApiResponse"
+      },
+      "AssetResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "original_filename",
+          "uploaded_at"
+        ],
+        "title": "AssetResponse",
+        "description": "\u7d20\u6750\u54cd\u5e94"
+      },
+      "AssetUploadBatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetUploadBatchData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AssetUploadBatchApiResponse"
+      },
+      "AssetUploadBatchData": {
+        "properties": {
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetUploadResponse"
+            },
+            "type": "array",
+            "title": "Assets"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "assets",
+          "count"
+        ],
+        "title": "AssetUploadBatchData"
+      },
+      "AssetUploadResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "file_path": {
+            "type": "string",
+            "title": "File Path"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "original_filename",
+          "file_path",
+          "uploaded_at"
+        ],
+        "title": "AssetUploadResponse",
+        "description": "\u7d20\u6750\u4e0a\u4f20\u54cd\u5e94"
       },
       "AssetUsageToggleData": {
         "properties": {
@@ -98741,6 +98843,242 @@
         ],
         "title": "ChangePasswordRequest",
         "description": "\u5f53\u524d\u767b\u5f55\u7528\u6237\u81ea\u52a9\u6539\u5bc6\u3002"
+      },
+      "ChapterDetailApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChapterDetailResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ChapterDetailApiResponse"
+      },
+      "ChapterDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "product_dossier_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Product Dossier Id"
+          },
+          "chapter_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Code"
+          },
+          "chapter_title": {
+            "type": "string",
+            "title": "Chapter Title"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "has_content": {
+            "type": "boolean",
+            "title": "Has Content"
+          },
+          "has_assets": {
+            "type": "boolean",
+            "title": "Has Assets"
+          },
+          "source_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File"
+          },
+          "working_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Working File"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/AssetResponse"
+            },
+            "type": "array",
+            "title": "Assets",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_dossier_id",
+          "chapter_title",
+          "level",
+          "has_content",
+          "has_assets"
+        ],
+        "title": "ChapterDetailResponse",
+        "description": "\u7ae0\u8282\u8be6\u60c5\u54cd\u5e94"
+      },
+      "ChapterResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "chapter_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Code"
+          },
+          "chapter_title": {
+            "type": "string",
+            "title": "Chapter Title"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order"
+          },
+          "has_content": {
+            "type": "boolean",
+            "title": "Has Content"
+          },
+          "has_assets": {
+            "type": "boolean",
+            "title": "Has Assets"
+          },
+          "asset_count": {
+            "type": "integer",
+            "title": "Asset Count",
+            "default": 0
+          },
+          "source_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File"
+          },
+          "working_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Working File"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/ChapterResponse"
+            },
+            "type": "array",
+            "title": "Children",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "chapter_title",
+          "level",
+          "sort_order",
+          "has_content",
+          "has_assets"
+        ],
+        "title": "ChapterResponse",
+        "description": "\u7ae0\u8282\u54cd\u5e94"
+      },
+      "ChapterTreeApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ChapterResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "ChapterTreeApiResponse"
       },
       "CheckStatus": {
         "type": "string",
@@ -113906,6 +114244,32 @@
         "title": "ExecutionTrackSubmit",
         "description": "\u63d0\u4ea4\u6267\u884c\u8ddf\u8e2a"
       },
+      "ExportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ExportApiResponse"
+      },
       "ExportRequest": {
         "properties": {
           "chapter_ids": {
@@ -113934,6 +114298,47 @@
         "type": "object",
         "title": "ExportRequest",
         "description": "\u5bfc\u51fa\u8bf7\u6c42"
+      },
+      "ExportResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ExportResponse",
+        "description": "\u5bfc\u51fa\u54cd\u5e94"
       },
       "FQCApprovalCreate": {
         "properties": {
@@ -116532,6 +116937,98 @@
         ],
         "title": "FeishuWsStatusResponse",
         "description": "Feishu WebSocket status response"
+      },
+      "FillResultItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "filled_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filled Value"
+          },
+          "fill_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill Method"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "field_name"
+        ],
+        "title": "FillResultItem"
+      },
+      "FillResultListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FillResultItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "FillResultListApiResponse"
       },
       "GrantCreate": {
         "properties": {
@@ -121211,6 +121708,166 @@
         "title": "IPQCInspectionItemResponse",
         "description": "IPQC\u68c0\u9a8c\u660e\u7ec6\u54cd\u5e94"
       },
+      "IPQCInspectionListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "inspection_no": {
+            "type": "string",
+            "title": "Inspection No"
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch No"
+          },
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "product_specification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Specification"
+          },
+          "process_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Process Stage"
+          },
+          "sampling_point": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling Point"
+          },
+          "sampling_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling Time"
+          },
+          "inspector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IPQCInspectionStatus"
+          },
+          "inspection_conclusion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IPQCInspectionConclusion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batch_locked": {
+            "type": "boolean",
+            "title": "Batch Locked",
+            "default": false
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "inspection_no",
+          "product_code",
+          "status",
+          "created_at"
+        ],
+        "title": "IPQCInspectionListResponse",
+        "description": "IPQC\u68c0\u9a8c\u5355\u5217\u8868\u54cd\u5e94"
+      },
+      "IPQCInspectionPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IPQCInspectionListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "IPQCInspectionPageResponse",
+        "description": "IPQC\u68c0\u9a8c\u5355\u5217\u8868\u5206\u9875\u54cd\u5e94\uff08\u5217\u8868\u63a5\u53e3\u76f4\u63a5\u8fd4\u56de items/total/page/page_size\uff09"
+      },
       "IPQCInspectionResponse": {
         "properties": {
           "batch_record_id": {
@@ -122612,6 +123269,164 @@
         "title": "IQCInspectionItemResponse",
         "description": "IQC\u68c0\u9a8c\u660e\u7ec6\u54cd\u5e94"
       },
+      "IQCInspectionListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "inspection_no": {
+            "type": "string",
+            "title": "Inspection No"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/app__modules__quality__qms__iqc_schemas__SourceType"
+          },
+          "source_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source No"
+          },
+          "material_code": {
+            "type": "string",
+            "title": "Material Code"
+          },
+          "material_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Name"
+          },
+          "material_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/app__modules__quality__qms__iqc_schemas__MaterialCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch No"
+          },
+          "supplier_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Name"
+          },
+          "inspection_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Date"
+          },
+          "inspector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/InspectionStatus"
+          },
+          "inspection_conclusion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InspectionConclusion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "inspection_no",
+          "source_type",
+          "material_code",
+          "status",
+          "created_at"
+        ],
+        "title": "IQCInspectionListResponse",
+        "description": "IQC\u68c0\u9a8c\u5355\u5217\u8868\u54cd\u5e94"
+      },
+      "IQCInspectionPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IQCInspectionListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "IQCInspectionPageResponse",
+        "description": "IQC\u68c0\u9a8c\u5355\u5217\u8868\u5206\u9875\u54cd\u5e94\uff08\u5217\u8868\u63a5\u53e3\u76f4\u63a5\u8fd4\u56de items/total/page/page_size\uff09"
+      },
       "IQCInspectionResponse": {
         "properties": {
           "source_type": {
@@ -123442,6 +124257,49 @@
         ],
         "title": "ImportV4PreviewResponse",
         "description": "\u9884\u89c8\u63a5\u53e3\u54cd\u5e94\u6a21\u578b"
+      },
+      "InitS7ApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InitS7Data"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "InitS7ApiResponse"
+      },
+      "InitS7Data": {
+        "properties": {
+          "chapters": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Chapters"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chapters"
+        ],
+        "title": "InitS7Data"
       },
       "InspectionAIAnalyzeRequest": {
         "properties": {
@@ -129409,6 +130267,43 @@
         "title": "MessageTemplateRequest",
         "description": "\u6d88\u606f\u6a21\u677f\u8bf7\u6c42"
       },
+      "ModuleSettingApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModuleSettingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ModuleSettingApiResponse",
+        "description": "Single-item envelope (404 returns data=None)."
+      },
       "ModuleSettingCreate": {
         "properties": {
           "module": {
@@ -129454,6 +130349,110 @@
         ],
         "title": "ModuleSettingCreate",
         "description": "Request schema for creating a new setting."
+      },
+      "ModuleSettingListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleSettingResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ModuleSettingListApiResponse",
+        "description": "List envelope \u2014 concrete response model so OpenAPI types `data`."
+      },
+      "ModuleSettingResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "module": {
+            "type": "string",
+            "title": "Module"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "value_type": {
+            "type": "string",
+            "title": "Value Type"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "module",
+          "key",
+          "value",
+          "value_type"
+        ],
+        "title": "ModuleSettingResponse",
+        "description": "Response schema for a module setting."
       },
       "ModuleSettingUpdate": {
         "properties": {
@@ -131297,6 +132296,39 @@
         ],
         "title": "OnboardingEvaluationInput"
       },
+      "OpaqueDataApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "OpaqueDataApiResponse",
+        "description": "service \u8fd4\u56de\u7684\u81ea\u7531\u7ed3\u6784\u7ed3\u679c\uff08\u6620\u5c04/\u5217\u8868\uff09\u3002\u4f5c\u4e3a\u8fc7\u6e21\u6a21\u578b\uff0c\u66ff\u4ee3 response_model=dict\u3002"
+      },
       "OperationLevel": {
         "type": "string",
         "enum": [
@@ -132267,6 +133299,67 @@
         ],
         "title": "PaginationMeta",
         "description": "Pagination envelope carried in ApiResponse.meta.\n\nMirrors what app/core/response.py:paginated_response() emits, so the\nOpenAPI contract names these fields instead of leaving meta an opaque dict.\n\nDeliberately a TypedDict, not a BaseModel: a BaseModel would coerce meta\ninto a model instance, and the ~73 module envelopes that declare\n`meta: dict[...]` would then fail `response_model` validation with\n\"Input should be a valid dictionary\". A TypedDict keeps meta a plain dict\nwhile still generating a named schema for the frontend."
+      },
+      "ParseResultApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ParseResultResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ParseResultApiResponse"
+      },
+      "ParseResultResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "chapter_count": {
+            "type": "integer",
+            "title": "Chapter Count",
+            "default": 0
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ParseResultResponse",
+        "description": "\u89e3\u6790\u7ed3\u679c\u54cd\u5e94"
       },
       "PartComplete": {
         "properties": {
@@ -134751,6 +135844,32 @@
         ],
         "title": "ProductCreate"
       },
+      "ProductDossierApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductDossierResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ProductDossierApiResponse"
+      },
       "ProductDossierCreate": {
         "properties": {
           "product_name": {
@@ -134806,6 +135925,264 @@
         ],
         "title": "ProductDossierCreate",
         "description": "\u521b\u5efa\u54c1\u79cd\u8d44\u6599\u8bf7\u6c42"
+      },
+      "ProductDossierListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductDossierListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ProductDossierListApiResponse"
+      },
+      "ProductDossierListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductDossierListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "skip": {
+            "type": "integer",
+            "title": "Skip"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "skip",
+          "limit"
+        ],
+        "title": "ProductDossierListData"
+      },
+      "ProductDossierListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "sterile_type": {
+            "type": "string",
+            "title": "Sterile Type"
+          },
+          "manufacturer": {
+            "type": "string",
+            "title": "Manufacturer"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "chapter_count": {
+            "type": "integer",
+            "title": "Chapter Count",
+            "default": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_name",
+          "sterile_type",
+          "manufacturer",
+          "status",
+          "parse_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProductDossierListResponse",
+        "description": "\u54c1\u79cd\u8d44\u6599\u5217\u8868\u54cd\u5e94"
+      },
+      "ProductDossierResponse": {
+        "properties": {
+          "product_name": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Product Name",
+            "description": "\u54c1\u79cd\u540d\u79f0"
+          },
+          "sterile_type": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Sterile Type",
+            "description": "\u65e0\u83cc/\u975e\u65e0\u83cc"
+          },
+          "manufacturer": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Manufacturer",
+            "description": "\u751f\u4ea7\u5546"
+          },
+          "template_original_product_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Original Product Name",
+            "description": "\u6a21\u677f\u539f\u54c1\u79cd\u540d\u79f0"
+          },
+          "template_original_manufacturer": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Original Manufacturer",
+            "description": "\u6a21\u677f\u539f\u751f\u4ea7\u5546"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "parse_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parse Error"
+          },
+          "source_templates_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Templates Path"
+          },
+          "working_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Working Path"
+          },
+          "assets_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assets Path"
+          },
+          "outputs_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outputs Path"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "chapter_count": {
+            "type": "integer",
+            "title": "Chapter Count",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "product_name",
+          "sterile_type",
+          "manufacturer",
+          "id",
+          "status",
+          "parse_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProductDossierResponse",
+        "description": "\u54c1\u79cd\u8d44\u6599\u54cd\u5e94"
       },
       "ProductDossierUpdate": {
         "properties": {
@@ -141581,6 +142958,312 @@
         ],
         "title": "RdTrackConclusionVersionCreate"
       },
+      "ReagentDetailApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReagentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ReagentDetailApiResponse"
+      },
+      "ReagentListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ReagentListResponse"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ReagentListApiResponse"
+      },
+      "ReagentListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReagentResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "ReagentListResponse",
+        "description": "\u8bd5\u5242\u5217\u8868\u54cd\u5e94"
+      },
+      "ReagentMessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ReagentMessageApiResponse",
+        "description": "\u65e0 data \u7684\u54cd\u5e94\uff08\u5220\u9664\u7b49\uff09"
+      },
+      "ReagentNextLotNoApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReagentNextLotNoData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ReagentNextLotNoApiResponse"
+      },
+      "ReagentNextLotNoData": {
+        "properties": {
+          "incoming_lot_no": {
+            "type": "string",
+            "title": "Incoming Lot No"
+          }
+        },
+        "type": "object",
+        "required": [
+          "incoming_lot_no"
+        ],
+        "title": "ReagentNextLotNoData",
+        "description": "\u4e0b\u4e00\u4e2a\u5165\u573a\u6279\u53f7"
+      },
+      "ReagentRecognizeApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReagentRecognizeData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ReagentRecognizeApiResponse"
+      },
+      "ReagentRecognizeData": {
+        "properties": {
+          "reagent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reagent Name"
+          },
+          "lot_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lot No"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "production_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Date"
+          },
+          "expiration_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiration Date"
+          },
+          "specification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specification"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "title": "ReagentRecognizeData",
+        "description": "AI\u8bc6\u522b\u8bd5\u5242\u6807\u7b7e\u63a5\u53e3\u7684 data \u8d1f\u8f7d\uff08\u4e0e reagent_api \u5b9e\u9645\u8fd4\u56de\u5b57\u6bb5\u4e00\u81f4\uff09"
+      },
       "ReagentReminderConfigData": {
         "properties": {
           "feishu_app_id": {
@@ -141773,6 +143456,172 @@
         ],
         "title": "ReagentReminderSavedResponse",
         "description": "`POST /config`"
+      },
+      "ReagentResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "reagent_label_urls": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reagent Label Urls"
+          },
+          "reagent_name": {
+            "type": "string",
+            "title": "Reagent Name"
+          },
+          "arrival_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Arrival Date"
+          },
+          "production_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Production Date"
+          },
+          "lot_no": {
+            "type": "string",
+            "title": "Lot No"
+          },
+          "incoming_lot_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incoming Lot No"
+          },
+          "expiration_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Expiration Date"
+          },
+          "specification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Specification"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category"
+          },
+          "reagent_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reagent No"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "reagent_name",
+          "arrival_date",
+          "lot_no",
+          "expiration_date",
+          "category",
+          "quantity",
+          "unit",
+          "status",
+          "created_at"
+        ],
+        "title": "ReagentResponse",
+        "description": "\u8bd5\u5242\u8bb0\u5f55\u54cd\u5e94"
       },
       "RectificationReplyRequest": {
         "properties": {
@@ -146032,6 +147881,38 @@
         "title": "SampleNodeStatus",
         "description": "\u53d6\u6837\u8282\u70b9\u72b6\u6001"
       },
+      "SampleRetentionLedgerPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SampleRetentionLedgerResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "SampleRetentionLedgerPageResponse",
+        "description": "\u7559\u6837\u53f0\u8d26\u5217\u8868\u5206\u9875\u54cd\u5e94"
+      },
       "SampleRetentionLedgerResponse": {
         "properties": {
           "id": {
@@ -146830,6 +148711,158 @@
         ],
         "title": "SamplingOrderItemResponse",
         "description": "\u53d6\u6837\u660e\u7ec6\u54cd\u5e94"
+      },
+      "SamplingOrderListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "order_no": {
+            "type": "string",
+            "title": "Order No"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/app__modules__quality__qms__sampling_schemas__SourceType"
+          },
+          "source_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source No"
+          },
+          "material_code": {
+            "type": "string",
+            "title": "Material Code"
+          },
+          "material_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Name"
+          },
+          "material_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material Category"
+          },
+          "batch_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch No"
+          },
+          "sampling_source": {
+            "$ref": "#/components/schemas/SamplingSource"
+          },
+          "sampling_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampling Date"
+          },
+          "sampler_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sampler Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SamplingStatus"
+          },
+          "sampling_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SamplingResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "order_no",
+          "source_type",
+          "material_code",
+          "sampling_source",
+          "status",
+          "created_at"
+        ],
+        "title": "SamplingOrderListResponse",
+        "description": "\u53d6\u6837\u5355\u5217\u8868\u54cd\u5e94"
+      },
+      "SamplingOrderPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SamplingOrderListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "SamplingOrderPageResponse",
+        "description": "\u53d6\u6837\u5355\u5217\u8868\u5206\u9875\u54cd\u5e94\uff08\u5217\u8868\u63a5\u53e3\u76f4\u63a5\u8fd4\u56de items/total/page/page_size\uff09"
       },
       "SamplingOrderResponse": {
         "properties": {
@@ -151463,6 +153496,143 @@
         "title": "StabilityInspectionItemCreate",
         "description": "\u521b\u5efa\u68c0\u9a8c\u660e\u7ec6"
       },
+      "StabilityInspectionListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "inspection_no": {
+            "type": "string",
+            "title": "Inspection No"
+          },
+          "study_no": {
+            "type": "string",
+            "title": "Study No"
+          },
+          "node_month": {
+            "type": "integer",
+            "title": "Node Month"
+          },
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "batch_no": {
+            "type": "string",
+            "title": "Batch No"
+          },
+          "inspection_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspection Date"
+          },
+          "inspector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inspector Name"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StabilityInspectionStatus"
+          },
+          "inspection_conclusion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StabilityInspectionConclusion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "inspection_no",
+          "study_no",
+          "node_month",
+          "product_code",
+          "batch_no",
+          "status",
+          "created_at"
+        ],
+        "title": "StabilityInspectionListResponse",
+        "description": "\u68c0\u9a8c\u8bb0\u5f55\u5217\u8868\u54cd\u5e94"
+      },
+      "StabilityInspectionPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StabilityInspectionListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "StabilityInspectionPageResponse",
+        "description": "\u7a33\u5b9a\u6027\u68c0\u9a8c\u8bb0\u5f55\u5217\u8868\u5206\u9875\u54cd\u5e94"
+      },
+      "StabilityInspectionStatus": {
+        "type": "string",
+        "enum": [
+          "draft",
+          "submitted",
+          "approved",
+          "rejected"
+        ],
+        "title": "StabilityInspectionStatus",
+        "description": "\u7a33\u5b9a\u6027\u68c0\u9a8c\u72b6\u6001"
+      },
       "StabilityInspectionUpdate": {
         "properties": {
           "inspection_date": {
@@ -152278,6 +154448,150 @@
         ],
         "title": "StabilityStudyCreate",
         "description": "\u521b\u5efa\u7a33\u5b9a\u6027\u8bd5\u9a8c"
+      },
+      "StabilityStudyListResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "study_no": {
+            "type": "string",
+            "title": "Study No"
+          },
+          "product_code": {
+            "type": "string",
+            "title": "Product Code"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "batch_no": {
+            "type": "string",
+            "title": "Batch No"
+          },
+          "study_type": {
+            "$ref": "#/components/schemas/StabilityStudyType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/StabilityStudyStatus"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
+          "developer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Developer Name"
+          },
+          "study_conclusion": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StabilityStudyConclusion"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "study_no",
+          "product_code",
+          "batch_no",
+          "study_type",
+          "status",
+          "created_at"
+        ],
+        "title": "StabilityStudyListResponse",
+        "description": "\u7a33\u5b9a\u6027\u8bd5\u9a8c\u5217\u8868\u54cd\u5e94"
+      },
+      "StabilityStudyPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/StabilityStudyListResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size"
+        ],
+        "title": "StabilityStudyPageResponse",
+        "description": "\u7a33\u5b9a\u6027\u8bd5\u9a8c\u5217\u8868\u5206\u9875\u54cd\u5e94\uff08\u5217\u8868\u63a5\u53e3\u76f4\u63a5\u8fd4\u56de items/total/page/page_size\uff09"
       },
       "StabilityStudyResponse": {
         "properties": {
@@ -153789,6 +156103,36 @@
         "title": "StorageConditionUpdate",
         "description": "Update Storage Condition"
       },
+      "StringListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "StringListApiResponse"
+      },
       "SubmitOcrTaskResultRequest": {
         "properties": {
           "records": {
@@ -154861,6 +157205,139 @@
         "type": "object",
         "title": "TemplateUpdate",
         "description": "\u6a21\u677f\u66f4\u65b0"
+      },
+      "TemplateUploadApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateUploadData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "TemplateUploadApiResponse"
+      },
+      "TemplateUploadData": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateUploadItem"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "success_count": {
+            "type": "integer",
+            "title": "Success Count"
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count"
+          },
+          "matched_count": {
+            "type": "integer",
+            "title": "Matched Count"
+          },
+          "unmatched_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unmatched Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results",
+          "success_count",
+          "failed_count",
+          "matched_count",
+          "unmatched_files"
+        ],
+        "title": "TemplateUploadData"
+      },
+      "TemplateUploadItem": {
+        "properties": {
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TemplateUploadItem"
       },
       "TokenResponse": {
         "properties": {
@@ -158571,6 +161048,422 @@
         ],
         "title": "UserResponse"
       },
+      "ValidationAuditFileListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ValidationAuditFileListItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditFileListApiResponse"
+      },
+      "ValidationAuditFileListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "file_type": {
+            "type": "string",
+            "title": "File Type"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          },
+          "parse_status": {
+            "type": "string",
+            "title": "Parse Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "file_type",
+          "original_filename",
+          "file_size",
+          "parse_status",
+          "created_at"
+        ],
+        "title": "ValidationAuditFileListItem",
+        "description": "\u5ba1\u6838\u6587\u4ef6\u5217\u8868\u9879"
+      },
+      "ValidationAuditFileUploadApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ValidationAuditFileUploadItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditFileUploadApiResponse"
+      },
+      "ValidationAuditFileUploadItem": {
+        "properties": {
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ValidationAuditFileUploadItem"
+      },
+      "ValidationAuditIssueListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ValidationAuditIssueResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditIssueListApiResponse"
+      },
+      "ValidationAuditIssueResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "issue_no": {
+            "type": "string",
+            "title": "Issue No"
+          },
+          "dimension": {
+            "type": "string",
+            "title": "Dimension"
+          },
+          "check_item": {
+            "type": "string",
+            "title": "Check Item"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion"
+          },
+          "issue_type": {
+            "type": "string",
+            "title": "Issue Type"
+          },
+          "page_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page No"
+          },
+          "evidence_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Text"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "issue_no",
+          "dimension",
+          "check_item",
+          "description",
+          "issue_type",
+          "created_at"
+        ],
+        "title": "ValidationAuditIssueResponse",
+        "description": "\u5ba1\u6838\u95ee\u9898\u8be6\u60c5"
+      },
+      "ValidationAuditMessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditMessageApiResponse"
+      },
+      "ValidationAuditReportApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationAuditReportResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditReportApiResponse"
+      },
+      "ValidationAuditReportResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Task Id"
+          },
+          "report_title": {
+            "type": "string",
+            "title": "Report Title"
+          },
+          "report_markdown": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Markdown"
+          },
+          "report_file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report File Path"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_id",
+          "report_title",
+          "version",
+          "created_at"
+        ],
+        "title": "ValidationAuditReportResponse",
+        "description": "\u5ba1\u6838\u62a5\u544a\u8be6\u60c5"
+      },
+      "ValidationAuditTaskApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationAuditTaskResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditTaskApiResponse"
+      },
       "ValidationAuditTaskCreate": {
         "properties": {
           "task_name": {
@@ -158612,6 +161505,250 @@
         ],
         "title": "ValidationAuditTaskCreate",
         "description": "\u521b\u5efa\u5ba1\u6838\u4efb\u52a1"
+      },
+      "ValidationAuditTaskListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationAuditTaskListData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "meta": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PaginationMeta"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ValidationAuditTaskListApiResponse"
+      },
+      "ValidationAuditTaskListData": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationAuditTaskListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "ValidationAuditTaskListData"
+      },
+      "ValidationAuditTaskListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "source_company": {
+            "type": "string",
+            "title": "Source Company"
+          },
+          "audit_mode": {
+            "type": "string",
+            "title": "Audit Mode"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion"
+          },
+          "serious_count": {
+            "type": "integer",
+            "title": "Serious Count",
+            "default": 0
+          },
+          "general_count": {
+            "type": "integer",
+            "title": "General Count",
+            "default": 0
+          },
+          "suggestion_count": {
+            "type": "integer",
+            "title": "Suggestion Count",
+            "default": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_name",
+          "product_name",
+          "source_company",
+          "audit_mode",
+          "status",
+          "created_at"
+        ],
+        "title": "ValidationAuditTaskListItem",
+        "description": "\u5ba1\u6838\u4efb\u52a1\u5217\u8868\u9879"
+      },
+      "ValidationAuditTaskResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "task_name": {
+            "type": "string",
+            "title": "Task Name"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "method_name": {
+            "type": "string",
+            "title": "Method Name"
+          },
+          "source_company": {
+            "type": "string",
+            "title": "Source Company"
+          },
+          "audit_mode": {
+            "type": "string",
+            "title": "Audit Mode"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "conclusion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conclusion"
+          },
+          "risk_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Level"
+          },
+          "serious_count": {
+            "type": "integer",
+            "title": "Serious Count",
+            "default": 0
+          },
+          "general_count": {
+            "type": "integer",
+            "title": "General Count",
+            "default": 0
+          },
+          "suggestion_count": {
+            "type": "integer",
+            "title": "Suggestion Count",
+            "default": 0
+          },
+          "compliant_count": {
+            "type": "integer",
+            "title": "Compliant Count",
+            "default": 0
+          },
+          "non_compliant_count": {
+            "type": "integer",
+            "title": "Non Compliant Count",
+            "default": 0
+          },
+          "report_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Path"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "task_name",
+          "product_name",
+          "method_name",
+          "source_company",
+          "audit_mode",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ValidationAuditTaskResponse",
+        "description": "\u5ba1\u6838\u4efb\u52a1\u8be6\u60c5"
       },
       "ValidationAuditTaskUpdate": {
         "properties": {
@@ -160935,6 +164072,27 @@
         ],
         "title": "MaterialCategory",
         "description": "\u7269\u6599\u5206\u7c7b"
+      },
+      "app__modules__registration__dossier_writer__schemas__MessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "MessageApiResponse",
+        "description": "\u65e0 data \u7684\u54cd\u5e94\uff08\u5220\u9664\u7b49\uff09"
       },
       "app__modules__safety__schemas__enums__OperationType": {
         "type": "string",

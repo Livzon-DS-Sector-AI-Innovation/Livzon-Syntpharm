@@ -264,3 +264,12 @@ class IPQCApprovalRecordListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[IPQCApprovalRecordResponse] | None = None
+
+
+class IPQCInspectionPageResponse(BaseModel):
+    """IPQC检验单列表分页响应（列表接口直接返回 items/total/page/page_size）"""
+
+    items: list[IPQCInspectionListResponse]
+    total: int
+    page: int
+    page_size: int

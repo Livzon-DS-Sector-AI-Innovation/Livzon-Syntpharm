@@ -19734,6 +19734,92 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** AssetListApiResponse */
+        AssetListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AssetResponse"][] | null;
+        };
+        /**
+         * AssetResponse
+         * @description 素材响应
+         */
+        AssetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Type */
+            file_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Category Id */
+            category_id?: string | null;
+        };
+        /** AssetUploadBatchApiResponse */
+        AssetUploadBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AssetUploadBatchData"] | null;
+        };
+        /** AssetUploadBatchData */
+        AssetUploadBatchData: {
+            /** Assets */
+            assets: components["schemas"]["AssetUploadResponse"][];
+            /** Count */
+            count: number;
+        };
+        /**
+         * AssetUploadResponse
+         * @description 素材上传响应
+         */
+        AssetUploadResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Path */
+            file_path: string;
+            /** File Type */
+            file_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Category Id */
+            category_id?: string | null;
+        };
         /**
          * AssetUsageToggleData
          * @description 素材使用状态切换响应数据
@@ -21994,6 +22080,109 @@ export interface components {
             old_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** ChapterDetailApiResponse */
+        ChapterDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ChapterDetailResponse"] | null;
+        };
+        /**
+         * ChapterDetailResponse
+         * @description 章节详情响应
+         */
+        ChapterDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Product Dossier Id
+             * Format: uuid
+             */
+            product_dossier_id: string;
+            /** Chapter Code */
+            chapter_code?: string | null;
+            /** Chapter Title */
+            chapter_title: string;
+            /** Level */
+            level: number;
+            /** Has Content */
+            has_content: boolean;
+            /** Has Assets */
+            has_assets: boolean;
+            /** Source File */
+            source_file?: string | null;
+            /** Working File */
+            working_file?: string | null;
+            /**
+             * Assets
+             * @default []
+             */
+            assets: components["schemas"]["AssetResponse"][];
+        };
+        /**
+         * ChapterResponse
+         * @description 章节响应
+         */
+        ChapterResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Chapter Code */
+            chapter_code?: string | null;
+            /** Chapter Title */
+            chapter_title: string;
+            /** Level */
+            level: number;
+            /** Sort Order */
+            sort_order: number;
+            /** Has Content */
+            has_content: boolean;
+            /** Has Assets */
+            has_assets: boolean;
+            /**
+             * Asset Count
+             * @default 0
+             */
+            asset_count: number;
+            /** Source File */
+            source_file?: string | null;
+            /** Working File */
+            working_file?: string | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["ChapterResponse"][];
+        };
+        /** ChapterTreeApiResponse */
+        ChapterTreeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ChapterResponse"][] | null;
         };
         /**
          * CheckStatus
@@ -28555,6 +28744,20 @@ export interface components {
              */
             execution_notes?: string | null;
         };
+        /** ExportApiResponse */
+        ExportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ExportResponse"] | null;
+        };
         /**
          * ExportRequest
          * @description 导出请求
@@ -28571,6 +28774,20 @@ export interface components {
              * @default docx
              */
             format: string;
+        };
+        /**
+         * ExportResponse
+         * @description 导出响应
+         */
+        ExportResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** File Path */
+            file_path?: string | null;
+            /** Filename */
+            filename?: string | null;
         };
         /**
          * FQCApprovalCreate
@@ -29716,6 +29933,36 @@ export interface components {
              * @description PONG 看门狗是否健康
              */
             pong_watchdog_healthy?: boolean | null;
+        };
+        /** FillResultItem */
+        FillResultItem: {
+            /** Id */
+            id: string;
+            /** Field Name */
+            field_name: string;
+            /** Filled Value */
+            filled_value?: string | null;
+            /** Fill Method */
+            fill_method?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** FillResultListApiResponse */
+        FillResultListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["FillResultItem"][] | null;
         };
         /** GrantCreate */
         GrantCreate: {
@@ -31528,6 +31775,61 @@ export interface components {
             updated_by?: string | null;
         };
         /**
+         * IPQCInspectionListResponse
+         * @description IPQC检验单列表响应
+         */
+        IPQCInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Product Specification */
+            product_specification?: string | null;
+            /** Process Stage */
+            process_stage?: string | null;
+            /** Sampling Point */
+            sampling_point?: string | null;
+            /** Sampling Time */
+            sampling_time?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            status: components["schemas"]["IPQCInspectionStatus"];
+            inspection_conclusion?: components["schemas"]["IPQCInspectionConclusion"] | null;
+            /**
+             * Batch Locked
+             * @default false
+             */
+            batch_locked: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * IPQCInspectionPageResponse
+         * @description IPQC检验单列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        IPQCInspectionPageResponse: {
+            /** Items */
+            items: components["schemas"]["IPQCInspectionListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * IPQCInspectionResponse
          * @description IPQC检验单响应
          */
@@ -32065,6 +32367,56 @@ export interface components {
             updated_by?: string | null;
         };
         /**
+         * IQCInspectionListResponse
+         * @description IQC检验单列表响应
+         */
+        IQCInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            source_type: components["schemas"]["app__modules__quality__qms__iqc_schemas__SourceType"];
+            /** Source No */
+            source_no?: string | null;
+            /** Material Code */
+            material_code: string;
+            /** Material Name */
+            material_name?: string | null;
+            material_category?: components["schemas"]["app__modules__quality__qms__iqc_schemas__MaterialCategory"] | null;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /** Inspection Date */
+            inspection_date?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            status: components["schemas"]["InspectionStatus"];
+            inspection_conclusion?: components["schemas"]["InspectionConclusion"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * IQCInspectionPageResponse
+         * @description IQC检验单列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        IQCInspectionPageResponse: {
+            /** Items */
+            items: components["schemas"]["IQCInspectionListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * IQCInspectionResponse
          * @description IQC检验单响应
          */
@@ -32363,6 +32715,27 @@ export interface components {
             total: number;
             /** Headers */
             headers: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** InitS7ApiResponse */
+        InitS7ApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["InitS7Data"] | null;
+        };
+        /** InitS7Data */
+        InitS7Data: {
+            /** Chapters */
+            chapters: {
                 [key: string]: unknown;
             }[];
         };
@@ -35012,6 +35385,24 @@ export interface components {
             is_default: boolean;
         };
         /**
+         * ModuleSettingApiResponse
+         * @description Single-item envelope (404 returns data=None).
+         */
+        ModuleSettingApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ModuleSettingResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
          * ModuleSettingCreate
          * @description Request schema for creating a new setting.
          */
@@ -35038,6 +35429,47 @@ export interface components {
             value_type: string;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ModuleSettingListApiResponse
+         * @description List envelope — concrete response model so OpenAPI types `data`.
+         */
+        ModuleSettingListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ModuleSettingResponse"][];
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ModuleSettingResponse
+         * @description Response schema for a module setting.
+         */
+        ModuleSettingResponse: {
+            /** Id */
+            id: string;
+            /** Module */
+            module: string;
+            /** Key */
+            key: string;
+            /** Value */
+            value: string;
+            /** Value Type */
+            value_type: string;
+            /** Description */
+            description?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ModuleSettingUpdate
@@ -35887,6 +36319,26 @@ export interface components {
             approval_date?: string | null;
         };
         /**
+         * OpaqueDataApiResponse
+         * @description service 返回的自由结构结果（映射/列表）。作为过渡模型，替代 response_model=dict。
+         */
+        OpaqueDataApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
+        };
+        /**
          * OperationLevel
          * @description 特殊作业级别枚举
          * @enum {string}
@@ -36254,6 +36706,37 @@ export interface components {
             page_size: number;
             /** Total */
             total: number;
+        };
+        /** ParseResultApiResponse */
+        ParseResultApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ParseResultResponse"] | null;
+        };
+        /**
+         * ParseResultResponse
+         * @description 解析结果响应
+         */
+        ParseResultResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /**
+             * Chapter Count
+             * @default 0
+             */
+            chapter_count: number;
+            /** Error */
+            error?: string | null;
         };
         /**
          * PartComplete
@@ -37543,6 +38026,20 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /** ProductDossierApiResponse */
+        ProductDossierApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProductDossierResponse"] | null;
+        };
         /**
          * ProductDossierCreate
          * @description 创建品种资料请求
@@ -37573,6 +38070,132 @@ export interface components {
              * @description 模板原生产商
              */
             template_original_manufacturer?: string | null;
+        };
+        /** ProductDossierListApiResponse */
+        ProductDossierListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProductDossierListData"] | null;
+        };
+        /** ProductDossierListData */
+        ProductDossierListData: {
+            /** Items */
+            items: components["schemas"]["ProductDossierListResponse"][];
+            /** Total */
+            total: number;
+            /** Skip */
+            skip: number;
+            /** Limit */
+            limit: number;
+        };
+        /**
+         * ProductDossierListResponse
+         * @description 品种资料列表响应
+         */
+        ProductDossierListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Product Name */
+            product_name: string;
+            /** Sterile Type */
+            sterile_type: string;
+            /** Manufacturer */
+            manufacturer: string;
+            /** Status */
+            status: string;
+            /** Parse Status */
+            parse_status: string;
+            /**
+             * Chapter Count
+             * @default 0
+             */
+            chapter_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ProductDossierResponse
+         * @description 品种资料响应
+         */
+        ProductDossierResponse: {
+            /**
+             * Product Name
+             * @description 品种名称
+             */
+            product_name: string;
+            /**
+             * Sterile Type
+             * @description 无菌/非无菌
+             */
+            sterile_type: string;
+            /**
+             * Manufacturer
+             * @description 生产商
+             */
+            manufacturer: string;
+            /**
+             * Template Original Product Name
+             * @description 模板原品种名称
+             */
+            template_original_product_name?: string | null;
+            /**
+             * Template Original Manufacturer
+             * @description 模板原生产商
+             */
+            template_original_manufacturer?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /** Parse Status */
+            parse_status: string;
+            /** Parse Error */
+            parse_error?: string | null;
+            /** Source Templates Path */
+            source_templates_path?: string | null;
+            /** Working Path */
+            working_path?: string | null;
+            /** Assets Path */
+            assets_path?: string | null;
+            /** Outputs Path */
+            outputs_path?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Chapter Count
+             * @default 0
+             */
+            chapter_count: number;
         };
         /**
          * ProductDossierUpdate
@@ -40132,6 +40755,132 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** ReagentDetailApiResponse */
+        ReagentDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ReagentListApiResponse */
+        ReagentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ReagentListResponse"];
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ReagentListResponse
+         * @description 试剂列表响应
+         */
+        ReagentListResponse: {
+            /** Items */
+            items: components["schemas"]["ReagentResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * ReagentMessageApiResponse
+         * @description 无 data 的响应（删除等）
+         */
+        ReagentMessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ReagentNextLotNoApiResponse */
+        ReagentNextLotNoApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentNextLotNoData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ReagentNextLotNoData
+         * @description 下一个入场批号
+         */
+        ReagentNextLotNoData: {
+            /** Incoming Lot No */
+            incoming_lot_no: string;
+        };
+        /** ReagentRecognizeApiResponse */
+        ReagentRecognizeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentRecognizeData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ReagentRecognizeData
+         * @description AI识别试剂标签接口的 data 负载（与 reagent_api 实际返回字段一致）
+         */
+        ReagentRecognizeData: {
+            /** Reagent Name */
+            reagent_name?: string | null;
+            /** Lot No */
+            lot_no?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Production Date */
+            production_date?: string | null;
+            /** Expiration Date */
+            expiration_date?: string | null;
+            /** Specification */
+            specification?: string | null;
+            /**
+             * Confidence
+             * @default 0
+             */
+            confidence: number;
+        };
         /**
          * ReagentReminderConfigData
          * @description The reminder config as the page reads it.
@@ -40207,6 +40956,59 @@ export interface components {
              */
             message: string;
             data: components["schemas"]["ReagentReminderSavedData"];
+        };
+        /**
+         * ReagentResponse
+         * @description 试剂记录响应
+         */
+        ReagentResponse: {
+            /** Id */
+            id: string;
+            /** Reagent Label Urls */
+            reagent_label_urls?: string[] | null;
+            /** Reagent Name */
+            reagent_name: string;
+            /**
+             * Arrival Date
+             * Format: date
+             */
+            arrival_date: string;
+            /** Production Date */
+            production_date?: string | null;
+            /** Lot No */
+            lot_no: string;
+            /** Incoming Lot No */
+            incoming_lot_no?: string | null;
+            /**
+             * Expiration Date
+             * Format: date
+             */
+            expiration_date: string;
+            /** Specification */
+            specification?: string | null;
+            /** Category */
+            category: string;
+            /** Reagent No */
+            reagent_no?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Quantity */
+            quantity: number;
+            /** Unit */
+            unit: string;
+            /** Status */
+            status: string;
+            /** Created By */
+            created_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * RectificationReplyRequest
@@ -42227,6 +43029,20 @@ export interface components {
          */
         SampleNodeStatus: "pending" | "sampling_done" | "inspection_done" | "overdue";
         /**
+         * SampleRetentionLedgerPageResponse
+         * @description 留样台账列表分页响应
+         */
+        SampleRetentionLedgerPageResponse: {
+            /** Items */
+            items: components["schemas"]["SampleRetentionLedgerResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * SampleRetentionLedgerResponse
          * @description 留样台账响应
          */
@@ -42549,6 +43365,56 @@ export interface components {
             disposal_date?: string | null;
             /** Disposal Method */
             disposal_method?: string | null;
+        };
+        /**
+         * SamplingOrderListResponse
+         * @description 取样单列表响应
+         */
+        SamplingOrderListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Order No */
+            order_no: string;
+            source_type: components["schemas"]["app__modules__quality__qms__sampling_schemas__SourceType"];
+            /** Source No */
+            source_no?: string | null;
+            /** Material Code */
+            material_code: string;
+            /** Material Name */
+            material_name?: string | null;
+            /** Material Category */
+            material_category?: string | null;
+            /** Batch No */
+            batch_no?: string | null;
+            sampling_source: components["schemas"]["SamplingSource"];
+            /** Sampling Date */
+            sampling_date?: string | null;
+            /** Sampler Name */
+            sampler_name?: string | null;
+            status: components["schemas"]["SamplingStatus"];
+            sampling_result?: components["schemas"]["SamplingResult"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * SamplingOrderPageResponse
+         * @description 取样单列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        SamplingOrderPageResponse: {
+            /** Items */
+            items: components["schemas"]["SamplingOrderListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
         };
         /**
          * SamplingOrderResponse
@@ -44596,6 +45462,60 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * StabilityInspectionListResponse
+         * @description 检验记录列表响应
+         */
+        StabilityInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            /** Study No */
+            study_no: string;
+            /** Node Month */
+            node_month: number;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no: string;
+            /** Inspection Date */
+            inspection_date?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            status: components["schemas"]["StabilityInspectionStatus"];
+            inspection_conclusion?: components["schemas"]["StabilityInspectionConclusion"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * StabilityInspectionPageResponse
+         * @description 稳定性检验记录列表分页响应
+         */
+        StabilityInspectionPageResponse: {
+            /** Items */
+            items: components["schemas"]["StabilityInspectionListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * StabilityInspectionStatus
+         * @description 稳定性检验状态
+         * @enum {string}
+         */
+        StabilityInspectionStatus: "draft" | "submitted" | "approved" | "rejected";
+        /**
          * StabilityInspectionUpdate
          * @description 更新检验记录
          */
@@ -44907,6 +45827,55 @@ export interface components {
              * @description 取样节点列表
              */
             sample_nodes?: components["schemas"]["StabilitySampleNodeCreate"][];
+        };
+        /**
+         * StabilityStudyListResponse
+         * @description 稳定性试验列表响应
+         */
+        StabilityStudyListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Study No */
+            study_no: string;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no: string;
+            study_type: components["schemas"]["StabilityStudyType"];
+            status: components["schemas"]["StabilityStudyStatus"];
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Developer Name */
+            developer_name?: string | null;
+            study_conclusion?: components["schemas"]["StabilityStudyConclusion"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * StabilityStudyPageResponse
+         * @description 稳定性试验列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        StabilityStudyPageResponse: {
+            /** Items */
+            items: components["schemas"]["StabilityStudyListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
         };
         /**
          * StabilityStudyResponse
@@ -45457,6 +46426,21 @@ export interface components {
             /** Status */
             status?: number | null;
         };
+        /** StringListApiResponse */
+        StringListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: string[] | null;
+        };
         /** SubmitOcrTaskResultRequest */
         SubmitOcrTaskResultRequest: {
             /** Records */
@@ -45909,6 +46893,48 @@ export interface components {
             } | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** TemplateUploadApiResponse */
+        TemplateUploadApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TemplateUploadData"] | null;
+        };
+        /** TemplateUploadData */
+        TemplateUploadData: {
+            /** Results */
+            results: components["schemas"]["TemplateUploadItem"][];
+            /** Success Count */
+            success_count: number;
+            /** Failed Count */
+            failed_count: number;
+            /** Matched Count */
+            matched_count: number;
+            /** Unmatched Files */
+            unmatched_files: string[];
+        };
+        /** TemplateUploadItem */
+        TemplateUploadItem: {
+            /** Filename */
+            filename?: string | null;
+            /** Status */
+            status: string;
+            /** Error */
+            error?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** File Size */
+            file_size?: string | null;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -47420,6 +48446,199 @@ export interface components {
              */
             must_change_password: boolean;
         };
+        /** ValidationAuditFileListApiResponse */
+        ValidationAuditFileListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ValidationAuditFileListItem"][] | null;
+        };
+        /**
+         * ValidationAuditFileListItem
+         * @description 审核文件列表项
+         */
+        ValidationAuditFileListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** File Type */
+            file_type: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Size */
+            file_size: number;
+            /** Parse Status */
+            parse_status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ValidationAuditFileUploadApiResponse */
+        ValidationAuditFileUploadApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ValidationAuditFileUploadItem"][] | null;
+        };
+        /** ValidationAuditFileUploadItem */
+        ValidationAuditFileUploadItem: {
+            /** Filename */
+            filename?: string | null;
+            /** Status */
+            status: string;
+            /** Error */
+            error?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** File Size */
+            file_size?: number | null;
+        };
+        /** ValidationAuditIssueListApiResponse */
+        ValidationAuditIssueListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ValidationAuditIssueResponse"][] | null;
+        };
+        /**
+         * ValidationAuditIssueResponse
+         * @description 审核问题详情
+         */
+        ValidationAuditIssueResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** File Id */
+            file_id?: string | null;
+            /** Issue No */
+            issue_no: string;
+            /** Dimension */
+            dimension: string;
+            /** Check Item */
+            check_item: string;
+            /** Description */
+            description: string;
+            /** Suggestion */
+            suggestion?: string | null;
+            /** Issue Type */
+            issue_type: string;
+            /** Page No */
+            page_no?: number | null;
+            /** Evidence Text */
+            evidence_text?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ValidationAuditMessageApiResponse */
+        ValidationAuditMessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /** ValidationAuditReportApiResponse */
+        ValidationAuditReportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ValidationAuditReportResponse"] | null;
+        };
+        /**
+         * ValidationAuditReportResponse
+         * @description 审核报告详情
+         */
+        ValidationAuditReportResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Report Title */
+            report_title: string;
+            /** Report Markdown */
+            report_markdown?: string | null;
+            /** Report File Path */
+            report_file_path?: string | null;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ValidationAuditTaskApiResponse */
+        ValidationAuditTaskApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ValidationAuditTaskResponse"] | null;
+        };
         /**
          * ValidationAuditTaskCreate
          * @description 创建审核任务
@@ -47447,6 +48666,135 @@ export interface components {
             source_company: string;
             /** @description 审核模式 */
             audit_mode: components["schemas"]["AuditMode"];
+        };
+        /** ValidationAuditTaskListApiResponse */
+        ValidationAuditTaskListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ValidationAuditTaskListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ValidationAuditTaskListData */
+        ValidationAuditTaskListData: {
+            /** Items */
+            items: components["schemas"]["ValidationAuditTaskListItem"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * ValidationAuditTaskListItem
+         * @description 审核任务列表项
+         */
+        ValidationAuditTaskListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Name */
+            task_name: string;
+            /** Product Name */
+            product_name: string;
+            /** Source Company */
+            source_company: string;
+            /** Audit Mode */
+            audit_mode: string;
+            /** Status */
+            status: string;
+            /** Conclusion */
+            conclusion?: string | null;
+            /**
+             * Serious Count
+             * @default 0
+             */
+            serious_count: number;
+            /**
+             * General Count
+             * @default 0
+             */
+            general_count: number;
+            /**
+             * Suggestion Count
+             * @default 0
+             */
+            suggestion_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ValidationAuditTaskResponse
+         * @description 审核任务详情
+         */
+        ValidationAuditTaskResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Name */
+            task_name: string;
+            /** Product Name */
+            product_name: string;
+            /** Method Name */
+            method_name: string;
+            /** Source Company */
+            source_company: string;
+            /** Audit Mode */
+            audit_mode: string;
+            /** Status */
+            status: string;
+            /** Conclusion */
+            conclusion?: string | null;
+            /** Risk Level */
+            risk_level?: string | null;
+            /**
+             * Serious Count
+             * @default 0
+             */
+            serious_count: number;
+            /**
+             * General Count
+             * @default 0
+             */
+            general_count: number;
+            /**
+             * Suggestion Count
+             * @default 0
+             */
+            suggestion_count: number;
+            /**
+             * Compliant Count
+             * @default 0
+             */
+            compliant_count: number;
+            /**
+             * Non Compliant Count
+             * @default 0
+             */
+            non_compliant_count: number;
+            /** Report Path */
+            report_path?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * ValidationAuditTaskUpdate
@@ -48466,6 +49814,24 @@ export interface components {
          * @enum {string}
          */
         app__modules__quality__qms__schemas__MaterialCategory: "raw_material" | "excipient" | "packaging_material" | "intermediate" | "finished_product";
+        /**
+         * MessageApiResponse
+         * @description 无 data 的响应（删除等）
+         */
+        app__modules__registration__dossier_writer__schemas__MessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
         /**
          * OperationType
          * @description 特殊作业类型枚举（GB 30871-2022）
@@ -78269,9 +79635,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78306,9 +79670,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78341,9 +79703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78380,9 +79740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78415,9 +79773,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78450,9 +79806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditFileListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78489,9 +79843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditFileUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78524,9 +79876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78559,9 +79909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78596,9 +79944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditIssueListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78631,9 +79977,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78666,9 +80010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79910,9 +81252,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80199,9 +81539,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["SampleRetentionLedgerPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80288,9 +81626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80587,9 +81923,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81391,9 +82725,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81721,9 +83053,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["StabilityInspectionPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84147,9 +85477,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentRecognizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84183,9 +85511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentNextLotNoApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84227,9 +85553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84300,9 +85624,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84339,9 +85661,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84374,9 +85694,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84411,9 +85729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92134,9 +93450,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92171,9 +93485,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92206,9 +93518,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92245,9 +93555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92280,9 +93588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__registration__dossier_writer__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92319,9 +93625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["TemplateUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92354,9 +93658,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ParseResultApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92389,9 +93691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ChapterTreeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92424,9 +93724,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ChapterDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92459,9 +93757,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92498,9 +93794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["AssetUploadBatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92533,9 +93827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__registration__dossier_writer__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92609,9 +93901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ExportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92680,9 +93970,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92748,9 +94036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92783,9 +94069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92818,9 +94102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92851,9 +94133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92884,9 +94164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["InitS7ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92919,9 +94197,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["FillResultListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92954,9 +94230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93026,9 +94300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93135,9 +94407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["StringListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93170,9 +94440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93243,9 +94511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93479,7 +94745,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93514,7 +94780,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93548,7 +94814,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93586,7 +94852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -93620,7 +94886,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */

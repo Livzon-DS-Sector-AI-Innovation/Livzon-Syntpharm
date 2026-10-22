@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.qms.sampling_schemas import (
     RetentionLedgerFilter,
+    SampleRetentionLedgerPageResponse,
     SampleRetentionLedgerResponse,
     SamplingApprovalCreate,
     SamplingApprovalRecordResponse,
@@ -19,6 +20,7 @@ from app.modules.quality.qms.sampling_schemas import (
     SamplingOrderCreate,
     SamplingOrderFilter,
     SamplingOrderListResponse,
+    SamplingOrderPageResponse,
     SamplingOrderResponse,
     SamplingOrderUpdate,
 )
@@ -50,7 +52,7 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/orders", response_model=dict)
+@router.get("/orders", response_model=SamplingOrderPageResponse)
 async def get(
     ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     material_code: str | None = Query(None, description="物料编码"),
@@ -190,7 +192,7 @@ async def handler(
     return approvals
 
 
-@router.get("/retention-ledger", response_model=dict)  # type: ignore[no-redef]
+@router.get("/retention-ledger", response_model=SampleRetentionLedgerPageResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     material_code: str | None = Query(None, description="物料编码"),

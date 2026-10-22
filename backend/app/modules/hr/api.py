@@ -117,6 +117,65 @@ router = create_module_router(MODULES_BY_CODE["hr"])
 
 logger = logging.getLogger(__name__)
 
+# ─── 原生 SQL 白名单 ───
+# 老厂/新厂员工数据分布在两张固定表中，SQL 以静态语句维护，不做表名拼接
+_SELECT_EMPLOYEE_BY_NAME_SQL: dict[str, object] = {
+    "hr.employees": text("SELECT * FROM hr.employees WHERE name = :name AND is_deleted = false LIMIT 1"),
+    "hr.employees_new": text("SELECT * FROM hr.employees_new WHERE name = :name AND is_deleted = false LIMIT 1"),
+}
+_SELECT_EMPLOYEE_BY_NUMBER_SQL: dict[str, object] = {
+    "hr.employees": text("SELECT * FROM hr.employees WHERE employee_number = :num AND is_deleted = false LIMIT 1"),
+    "hr.employees_new": text(
+        "SELECT * FROM hr.employees_new WHERE employee_number = :num AND is_deleted = false LIMIT 1"
+    ),
+}
+_UPDATE_EMPLOYEE_OPEN_ID_SQL: dict[str, object] = {
+    "hr.employees": text("UPDATE hr.employees SET feishu_open_id = :oid WHERE employee_number = :eno"),
+    "hr.employees_new": text("UPDATE hr.employees_new SET feishu_open_id = :oid WHERE employee_number = :eno"),
+}
+_EMPLOYEE_SOURCE_TABLES = tuple(_SELECT_EMPLOYEE_BY_NAME_SQL)
+
+# 新厂克隆表查询允许的表名与列名；白名单之外的标识符一律拒绝，避免把运行期输入拼入 SQL
+_CLONE_TABLE_COLUMNS: dict[str, frozenset[str]] = {
+    "hr.employees_new": frozenset(
+        {
+            "name",
+            "employee_number",
+            "department",
+            "team",
+            "status",
+            "hire_date",
+            "offboarding_date",
+            "created_at",
+            "is_deleted",
+        }
+    ),
+    "hr.onboarding_records_new": frozenset(
+        {
+            "name",
+            "employee_number",
+            "department",
+            "position",
+            "hire_date",
+            "created_at",
+            "is_deleted",
+        }
+    ),
+    "hr.departure_records_new": frozenset(
+        {
+            "name",
+            "employee_number",
+            "department",
+            "position",
+            "offboarding_type",
+            "offboarding_date",
+            "created_at",
+            "is_deleted",
+        }
+    ),
+}
+_CLONE_SORT_ORDERS = frozenset({"asc", "desc"})
+
 
 async def _get_new_employee(employee_id: UUID, session: AsyncSession) -> Employee:
     """Query employees_new clone table and construct an Employee instance."""
@@ -645,8 +704,8 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
     # 查询李文兆（先查老厂，再查新厂）
     li_employee = None
     li_table = None
-    for table in ["hr.employees", "hr.employees_new"]:
-        sql = text(f"SELECT * FROM {table} WHERE name = :name AND is_deleted = false LIMIT 1")
+    for table in _EMPLOYEE_SOURCE_TABLES:
+        sql = _SELECT_EMPLOYEE_BY_NAME_SQL[table]
         result = await service.repo.session.execute(sql, {"name": "李文兆"})
         row = result.mappings().first()
         if row:
@@ -666,7 +725,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
             open_id = mapping.get(mobile) or mapping.get(li_employee.phone)
             if open_id:
                 # 持久化到数据库
-                update_sql = text(f"UPDATE {li_table} SET feishu_open_id = :oid WHERE employee_number = :eno")
+                update_sql = _UPDATE_EMPLOYEE_OPEN_ID_SQL[li_table]
                 await service.repo.session.execute(update_sql, {"oid": open_id, "eno": li_employee.employee_number})
                 await service.repo.session.flush()
         except Exception:
@@ -1980,15 +2039,28 @@ def _build_where(
     keyword_fields: list[str] | None = None,
     keyword: str | None = None,
 ) -> tuple[str, dict]:  # type: ignore[type-arg]
-    """Build WHERE clause and params for raw SQL."""
+    """Build WHERE clause and params for raw SQL.
+
+    表名与列名必须命中 `_CLONE_TABLE_COLUMNS` 白名单，所有取值一律走绑定参数。
+    PostgreSQL 不允许把标识符作为绑定参数，因此标识符先做白名单校验再拼接。
+    """
+    allowed = _CLONE_TABLE_COLUMNS.get(base_table)
+    if allowed is None:
+        raise ValueError(f"不支持的数据表: {base_table}")
+
     conditions = [f"{base_table}.is_deleted = false"]
     params: dict = {}  # type: ignore[type-arg]
     for col, val in filters:
         if val:
+            if col not in allowed:
+                raise ValueError(f"不支持的过滤字段: {base_table}.{col}")
             conditions.append(f"{base_table}.{col} ILIKE :{col}")
             params[col] = f"%{val}%"
     if keyword and keyword_fields:
-        ors = [f"{base_table}.{f} ILIKE :keyword" for f in keyword_fields]
+        for field_name in keyword_fields:
+            if field_name not in allowed:
+                raise ValueError(f"不支持的搜索字段: {base_table}.{field_name}")
+        ors = [f"{base_table}.{field_name} ILIKE :keyword" for field_name in keyword_fields]
         conditions.append(f"({' OR '.join(ors)})")
         params["keyword"] = f"%{keyword}%"
     return " AND ".join(conditions), params
@@ -2005,6 +2077,15 @@ async def _query_clone_table(
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ) -> tuple[list, int]:  # type: ignore[type-arg]
+    allowed = _CLONE_TABLE_COLUMNS.get(table)
+    if allowed is None:
+        raise ValueError(f"不支持的数据表: {table}")
+    if sort_by not in allowed:
+        raise ValueError(f"不支持的排序字段: {table}.{sort_by}")
+    if sort_order.lower() not in _CLONE_SORT_ORDERS:
+        raise ValueError(f"不支持的排序方向: {sort_order}")
+    sort_order = sort_order.lower()
+
     count_sql = text(f"SELECT COUNT(*) FROM {table} WHERE {where_sql}")
     total = (await session.execute(count_sql, params)).scalar()
 
@@ -2046,13 +2127,10 @@ async def list_new_employees(  # type: ignore[no-untyped-def]
 
     where, params = _build_where(
         "hr.employees_new",
-        [("department", dept_filter), ("status", status)],
+        [("department", dept_filter), ("status", status), ("team", team_filter)],
         keyword_fields=["name", "employee_number"],
         keyword=keyword,
     )
-    if team_filter:
-        where += " AND hr.employees_new.team = :team"
-        params["team"] = team_filter
 
     data, total = await _query_clone_table(
         session,
@@ -2186,19 +2264,19 @@ async def list_new_departments(  # type: ignore[no-untyped-def]
     session: AsyncSession = Depends(get_db),
 ):
     """Aggregate departments from employees_new (no standalone departments_new table)."""
-    where = "is_deleted = false"
-    params: dict = {}  # type: ignore[type-arg]
-    if keyword:
-        where += " AND name ILIKE :keyword"
-        params["keyword"] = f"%{keyword}%"
+    params: dict = {"keyword": f"%{keyword}%" if keyword else None}  # type: ignore[type-arg]
 
-    count_sql = text(f"""
+    count_sql = text(
+        """
         SELECT COUNT(DISTINCT department) FROM hr.employees_new
-        WHERE {where}
-    """)
+        WHERE is_deleted = false
+          AND (CAST(:keyword AS text) IS NULL OR name ILIKE :keyword)
+        """
+    )
     total = (await session.execute(count_sql, params)).scalar()
 
-    sql = text(f"""
+    sql = text(
+        """
         SELECT DISTINCT ON (department)
             department AS name,
             department AS code,
@@ -2207,10 +2285,12 @@ async def list_new_departments(  # type: ignore[no-untyped-def]
             NOW() AS created_at,
             NOW() AS updated_at
         FROM hr.employees_new
-        WHERE {where}
+        WHERE is_deleted = false
+          AND (CAST(:keyword AS text) IS NULL OR name ILIKE :keyword)
         ORDER BY department
         LIMIT :limit OFFSET :offset
-    """)
+        """
+    )
     params["limit"] = page_params.page_size
     params["offset"] = (page_params.page - 1) * page_params.page_size
 
@@ -2669,8 +2749,8 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
 
         if specialist_config:
             # 根据工号从对应厂区的员工表查找
-            for table in ["hr.employees", "hr.employees_new"]:
-                sql = text(f"SELECT * FROM {table} WHERE employee_number = :num AND is_deleted = false LIMIT 1")
+            for table in _EMPLOYEE_SOURCE_TABLES:
+                sql = _SELECT_EMPLOYEE_BY_NUMBER_SQL[table]
                 result = await employee_service.repo.session.execute(sql, {"num": specialist_config.employee_number})
                 row = result.mappings().first()
                 if row:
@@ -2705,9 +2785,7 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
                 mapping = await im.batch_get_open_ids_by_mobile([mobile])
                 open_id = mapping.get(mobile) or mapping.get(specialist.phone)
                 if open_id:
-                    update_sql = text(
-                        f"UPDATE {specialist_table} SET feishu_open_id = :oid WHERE employee_number = :eno"
-                    )
+                    update_sql = _UPDATE_EMPLOYEE_OPEN_ID_SQL[specialist_table]
                     await employee_service.repo.session.execute(
                         update_sql, {"oid": open_id, "eno": specialist.employee_number}
                     )

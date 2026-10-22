@@ -58,6 +58,27 @@ CONFLICT_COLUMNS: dict[str, tuple[str, ...]] = {
 # 用名称字符串引用车间的表，改名后要一起跟上
 NAME_STRING_TABLES: tuple[tuple[str, str], ...] = (("energy_device_configs", "workshop"),)
 
+# 允许拼进 SQL 的表名/列名（限制在上面的常量集合内）。
+# PostgreSQL 不支持把标识符作为绑定参数，因此拼接前先校验白名单。
+_ALLOWED_TABLES: frozenset[str] = frozenset(t for t, _ in REPOINT_TABLES) | frozenset(t for t, _ in NAME_STRING_TABLES)
+_ALLOWED_COLUMNS: frozenset[str] = frozenset(c for cols in CONFLICT_COLUMNS.values() for c in cols) | frozenset(
+    c for _, c in NAME_STRING_TABLES
+)
+
+
+def _checked_table(name: str) -> str:
+    """校验表名在白名单内，否则抛错。"""
+    if name not in _ALLOWED_TABLES:
+        raise ValueError(f"非法的表名: {name!r}")
+    return name
+
+
+def _checked_column(name: str) -> str:
+    """校验列名在白名单内，否则抛错。"""
+    if name not in _ALLOWED_COLUMNS:
+        raise ValueError(f"非法的列名: {name!r}")
+    return name
+
 
 async def _find_active(db: AsyncSession, name: str) -> Any:
     row = (
@@ -73,11 +94,12 @@ async def _find_active(db: AsyncSession, name: str) -> Any:
 
 
 async def _find_conflicts(db: AsyncSession, table: str, src_id: str, tgt_id: str) -> list[Any]:
-    cols = CONFLICT_COLUMNS[table]
+    checked_table = _checked_table(table)
+    cols = [_checked_column(c) for c in CONFLICT_COLUMNS[table]]
     on_clause = " and ".join(f"t.{c} = m.{c}" for c in cols)
     sql = (
-        f"select {', '.join('m.' + c for c in cols)} from energy.{table} m "
-        f"join energy.{table} t on t.workshop_id = cast(:tgt as uuid) and {on_clause} "
+        f"select {', '.join('m.' + c for c in cols)} from energy.{checked_table} m "
+        f"join energy.{checked_table} t on t.workshop_id = cast(:tgt as uuid) and {on_clause} "
         "where m.workshop_id = cast(:src as uuid)"
     )
     rows = (await db.execute(text(sql), {"src": str(src_id), "tgt": str(tgt_id)})).fetchall()
@@ -85,9 +107,10 @@ async def _find_conflicts(db: AsyncSession, table: str, src_id: str, tgt_id: str
 
 
 async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply: bool) -> int:
+    checked_table = _checked_table(table)
     row = (
         await db.execute(
-            text(f"select count(*) from energy.{table} where workshop_id = cast(:src as uuid)"),
+            text(f"select count(*) from energy.{checked_table} where workshop_id = cast(:src as uuid)"),
             {"src": str(src_id)},
         )
     ).one()
@@ -95,7 +118,7 @@ async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply
     if count and apply:
         await db.execute(
             text(
-                f"update energy.{table} set workshop_id = cast(:tgt as uuid), updated_at = now() "
+                f"update energy.{checked_table} set workshop_id = cast(:tgt as uuid), updated_at = now() "
                 "where workshop_id = cast(:src as uuid)"
             ),
             {"src": str(src_id), "tgt": str(tgt_id)},
@@ -158,8 +181,13 @@ async def run(apply: bool, audit_path: str | None) -> int:
                         {"name": canonical, "code": canonical, "id": str(src.id)},
                     )
                     for table, column in NAME_STRING_TABLES:
+                        checked_table = _checked_table(table)
+                        checked_column = _checked_column(column)
                         await db.execute(
-                            text(f"update energy.{table} set {column} = :name where {column} = :old"),
+                            text(
+                                f"update energy.{checked_table} set {checked_column} = :name "
+                                f"where {checked_column} = :old"
+                            ),
                             {"name": canonical, "old": alias},
                         )
                 actions.append({"type": "rename", "from": alias, "to": canonical, "workshop_id": str(src.id)})

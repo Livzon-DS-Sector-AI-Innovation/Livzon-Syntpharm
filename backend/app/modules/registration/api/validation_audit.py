@@ -12,10 +12,17 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.validation_audit import (
+    ValidationAuditFileListApiResponse,
     ValidationAuditFileListItem,
+    ValidationAuditFileUploadApiResponse,
+    ValidationAuditIssueListApiResponse,
     ValidationAuditIssueResponse,
+    ValidationAuditMessageApiResponse,
+    ValidationAuditReportApiResponse,
     ValidationAuditReportResponse,
+    ValidationAuditTaskApiResponse,
     ValidationAuditTaskCreate,
+    ValidationAuditTaskListApiResponse,
     ValidationAuditTaskListItem,
     ValidationAuditTaskResponse,
     ValidationAuditTaskUpdate,
@@ -30,7 +37,7 @@ router = APIRouter()
 # ── 任务管理 ──────────────────────────────────────────────
 
 
-@router.post("/tasks", response_model=dict, summary="创建审核任务")
+@router.post("/tasks", response_model=ValidationAuditTaskApiResponse, summary="创建审核任务")
 async def post(
     current_user: CurrentUser,
     data: ValidationAuditTaskCreate,
@@ -45,7 +52,7 @@ async def post(
     )
 
 
-@router.get("/tasks", response_model=dict, summary="任务列表")
+@router.get("/tasks", response_model=ValidationAuditTaskListApiResponse, summary="任务列表")
 async def get(
     current_user: CurrentUser,
     ctx: PermissionContext = Depends(require_permission("registration:validation-audit:read")),
@@ -74,7 +81,7 @@ async def get(
     )
 
 
-@router.get("/tasks/{task_id}", response_model=dict, summary="任务详情")  # type: ignore[no-redef]
+@router.get("/tasks/{task_id}", response_model=ValidationAuditTaskApiResponse, summary="任务详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -91,7 +98,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.put("/tasks/{task_id}", response_model=dict, summary="更新任务")
+@router.put("/tasks/{task_id}", response_model=ValidationAuditTaskApiResponse, summary="更新任务")
 async def put(
     current_user: CurrentUser,
     task_id: UUID,
@@ -110,7 +117,7 @@ async def put(
     )
 
 
-@router.delete("/tasks/{task_id}", response_model=dict, summary="删除任务")
+@router.delete("/tasks/{task_id}", response_model=ValidationAuditMessageApiResponse, summary="删除任务")
 async def delete(
     current_user: CurrentUser,
     task_id: UUID,
@@ -128,7 +135,7 @@ async def delete(
 # ── 文件管理 ──────────────────────────────────────────────
 
 
-@router.post("/tasks/{task_id}/files", response_model=dict, summary="上传文件")  # type: ignore[no-redef]
+@router.post("/tasks/{task_id}/files", response_model=ValidationAuditFileUploadApiResponse, summary="上传文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -181,7 +188,7 @@ async def post(  # noqa: F811
     return success_response(data=results, message="上传完成")
 
 
-@router.get("/tasks/{task_id}/files", response_model=dict, summary="文件列表")  # type: ignore[no-redef]
+@router.get("/tasks/{task_id}/files", response_model=ValidationAuditFileListApiResponse, summary="文件列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -202,7 +209,7 @@ async def get(  # noqa: F811
 # ── 解析与审核 ────────────────────────────────────────────
 
 
-@router.post("/tasks/{task_id}/parse", response_model=dict, summary="解析文件")  # type: ignore[no-redef]
+@router.post("/tasks/{task_id}/parse", response_model=ValidationAuditTaskApiResponse, summary="解析文件")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -226,7 +233,7 @@ async def post(  # noqa: F811
         return error_response(message=str(e))
 
 
-@router.post("/tasks/{task_id}/audit", response_model=dict, summary="执行审核")  # type: ignore[no-redef]
+@router.post("/tasks/{task_id}/audit", response_model=ValidationAuditTaskApiResponse, summary="执行审核")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -256,7 +263,7 @@ async def post(  # noqa: F811
 # ── 问题与报告 ────────────────────────────────────────────
 
 
-@router.get("/tasks/{task_id}/issues", response_model=dict, summary="问题列表")  # type: ignore[no-redef]
+@router.get("/tasks/{task_id}/issues", response_model=ValidationAuditIssueListApiResponse, summary="问题列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -275,7 +282,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.get("/tasks/{task_id}/report", response_model=dict, summary="审核报告")  # type: ignore[no-redef]
+@router.get("/tasks/{task_id}/report", response_model=ValidationAuditReportApiResponse, summary="审核报告")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,
@@ -295,7 +302,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.post("/tasks/{task_id}/export", response_model=dict, summary="导出报告")  # type: ignore[no-redef]
+@router.post("/tasks/{task_id}/export", summary="导出报告")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
     task_id: UUID,

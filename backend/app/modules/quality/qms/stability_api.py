@@ -16,6 +16,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityInspectionCreate,
     StabilityInspectionFilter,
     StabilityInspectionListResponse,
+    StabilityInspectionPageResponse,
     StabilityInspectionResponse,
     StabilityInspectionUpdate,
     StabilitySampleNodeResponse,
@@ -24,6 +25,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityStudyCreate,
     StabilityStudyFilter,
     StabilityStudyListResponse,
+    StabilityStudyPageResponse,
     StabilityStudyResponse,
     StabilityStudyUpdate,
     StabilityTrendApiResponse,
@@ -62,7 +64,7 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/studies", response_model=dict)
+@router.get("/studies", response_model=StabilityStudyPageResponse)
 async def get(
     ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     study_no: str | None = Query(None, description="方案编号"),
@@ -247,7 +249,7 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/inspections", response_model=dict)  # type: ignore[no-redef]
+@router.get("/inspections", response_model=StabilityInspectionPageResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     study_id: UUID | None = Query(None, description="试验ID"),
