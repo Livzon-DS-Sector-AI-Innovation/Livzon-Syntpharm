@@ -142,8 +142,7 @@ async def energy_collection_loop() -> None:
     支持补采：若设备上次采集时间距今超过 collection_interval，补采缺失的整点数据。
     """
     if not await get_module_setting_bool("energy", "ENERGY_AUTO_COLLECT_ENABLED", default=False):
-        logger.info("能耗自动采集已通过配置关闭（ENERGY_AUTO_COLLECT_ENABLED=false），跳过启动")
-        return
+        logger.info("能耗自动采集当前关闭，循环保持运行并等待配置开启")
 
     logger.info("能耗自动采集任务已启动", extra={"interval_seconds": TICK_INTERVAL})
 

@@ -98,9 +98,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     register_feishu_event_handlers()
 
-    from app.modules.energy.scheduler import (
-        energy_collection_loop,
-    )
     from app.modules.equipment.scheduler import (
         maintenance_plan_loop,
         timeout_scan_loop,
@@ -110,7 +107,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
 
     start_scheduler()
-    energy_task = asyncio.ensure_future(energy_collection_loop())
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
@@ -235,7 +231,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await stop_warehouse_ws()
 
-    energy_task.cancel()
     maintenance_plan_task.cancel()
     timeout_task.cancel()
     member_task.cancel()

@@ -16,6 +16,7 @@ const energyTypeOptions = [
   { label: '电力', value: 'electricity' },
   { label: '自来水', value: 'water' },
   { label: '蒸汽', value: 'steam' },
+  { label: '天然气', value: 'natural_gas' },
 ]
 
 const monitorMetricOptions = [
@@ -60,6 +61,7 @@ const DEFAULT_VALUES = {
   threshold_type: 'greater_than' as ThresholdType,
   alert_level: 'warning' as AlertLevel,
   notify_method: ['lark'],
+  notify_users: [] as string[],
   notify_frequency: 'every' as NotifyFrequency,
   effective_time: 'all_day' as EffectiveTimeType,
   is_enabled: true,
@@ -95,6 +97,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
               unit: rule.unit,
               alert_level: rule.alert_level,
               notify_method: rule.notify_method,
+              notify_users: rule.notify_users,
               notify_frequency: rule.notify_frequency,
               effective_time: rule.effective_time,
               is_enabled: rule.is_enabled,
@@ -127,6 +130,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
           unit: values.unit,
           alert_level: values.alert_level,
           notify_method: values.notify_method,
+          notify_users: values.notify_users || [],
           notify_frequency: values.notify_frequency,
           effective_time: values.effective_time,
           is_enabled: values.is_enabled,
@@ -144,7 +148,7 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
           unit: values.unit,
           alert_level: values.alert_level,
           notify_method: values.notify_method,
-          notify_users: [],
+          notify_users: values.notify_users || [],
           notify_frequency: values.notify_frequency,
           effective_time: values.effective_time,
           is_enabled: values.is_enabled,
@@ -214,8 +218,16 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
           <Form.Item name="threshold_type" label="阈值类型" rules={[{ required: true }]} style={{ flex: 1 }}>
             <Select options={thresholdTypeOptions} style={{ height: 44 }} />
           </Form.Item>
-          <Form.Item name="threshold_value" label="阈值" rules={[{ required: true, message: '请输入阈值' }]} style={{ flex: 1 }}>
-            <InputNumber min={0} style={{ width: '100%', height: 44 }} placeholder="数值" />
+          <Form.Item
+            name="threshold_value"
+            label="阈值"
+            rules={[
+              { required: true, message: '请输入阈值' },
+              { type: 'number', min: 0.0001, message: '阈值需大于 0' },
+            ]}
+            style={{ flex: 1 }}
+          >
+            <InputNumber min={0.0001} style={{ width: '100%', height: 44 }} placeholder="数值（须大于 0）" />
           </Form.Item>
         </div>
 
@@ -229,6 +241,10 @@ export function AlertConfigDrawer({ onRefresh }: AlertConfigDrawerProps) {
 
         <Form.Item name="notify_method" label="通知方式" rules={[{ required: true, message: '请选择通知方式' }]}>
           <Select mode="multiple" options={notifyMethodOptions} style={{ minHeight: 44 }} />
+        </Form.Item>
+
+        <Form.Item name="notify_users" label="通知用户">
+          <Select mode="tags" placeholder="输入用户标识后回车，可留空" style={{ minHeight: 44 }} />
         </Form.Item>
 
         <Form.Item name="notify_frequency" label="通知频率" rules={[{ required: true }]}>

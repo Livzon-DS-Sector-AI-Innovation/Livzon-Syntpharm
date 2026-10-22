@@ -47,6 +47,10 @@ export default function TargetModal({
       message.error('请输入有效的目标单耗值')
       return
     }
+    if (targetValue > 100) {
+      message.error('目标单耗不能大于 100 kWh/kg')
+      return
+    }
 
     setLoading(true)
     try {
@@ -109,10 +113,10 @@ export default function TargetModal({
             value={targetValue}
             onChange={(val) => setTargetValue(val)}
             min={0.0001}
-            max={9999.9999}
+            max={100}
             precision={4}
             step={0.1}
-            placeholder="请输入目标单耗"
+            placeholder="请输入目标单耗（0.0001 ~ 100）"
             style={{ width: '100%', marginTop: 8 }}
             addonAfter="kWh/kg"
           />

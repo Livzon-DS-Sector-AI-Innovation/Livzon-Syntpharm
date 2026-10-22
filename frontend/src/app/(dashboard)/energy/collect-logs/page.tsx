@@ -5,11 +5,37 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Select, Button } from 'antd'
+import { Select, Button, message } from 'antd'
 import { ThunderboltOutlined } from '@ant-design/icons'
 import { useEnergyStore } from '@/stores/energy'
 import { CollectLogTable, CollectLogDetailDrawer } from '@/components/energy'
 import { getCollectLogs, triggerCollect } from '@/actions/energy'
+import type { PlatformCollectResult } from '@/types/energy'
+
+function reportCollectResult(results: Record<string, PlatformCollectResult> | undefined) {
+  const entries = Object.entries(results || {})
+  if (entries.length === 0) {
+    message.warning('没有可用的采集平台')
+    return
+  }
+  const failed = entries.filter(([, r]) => r.status === 'failed')
+  const partiallyFailed = entries.filter(([, r]) => r.status === 'partial')
+  const noDevices = entries.every(([, r]) => r.device_count === 0)
+
+  if (noDevices) {
+    message.warning('没有启用的采集设备，请先在数据源配置中启用')
+    return
+  }
+  if (failed.length === entries.length) {
+    message.error(failed.map(([code, r]) => `${code}: ${r.error || '采集失败'}`).join('；'))
+    return
+  }
+  if (failed.length > 0 || partiallyFailed.length > 0) {
+    message.warning('部分平台采集未完全成功，请查看采集日志')
+    return
+  }
+  message.success('采集完成')
+}
 
 export default function CollectLogsPage() {
   const {
@@ -45,10 +71,11 @@ export default function CollectLogsPage() {
   const handleTriggerCollect = async () => {
     setTriggerLoading(true)
     try {
-      await triggerCollect()
+      const result = await triggerCollect()
+      reportCollectResult(result)
       fetchData()
     } catch (error) {
-      console.error('触发采集失败:', error)
+      message.error(error instanceof Error ? error.message : '触发采集失败')
     } finally {
       setTriggerLoading(false)
     }
@@ -56,10 +83,11 @@ export default function CollectLogsPage() {
 
   const handleRetry = async (platformCode: string) => {
     try {
-      await triggerCollect(platformCode)
+      const result = await triggerCollect(platformCode)
+      reportCollectResult(result)
       fetchData()
     } catch (error) {
-      console.error('触发重试失败:', error)
+      message.error(error instanceof Error ? error.message : '触发重试失败')
     }
   }
 
