@@ -128,9 +128,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     register_feishu_event_handlers()
 
-    from app.modules.energy.scheduler import (
-        energy_collection_loop,
-    )
     from app.modules.equipment.scheduler import (
         maintenance_plan_loop,
         timeout_scan_loop,
@@ -141,8 +138,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     )
 
     # regulatory_tracker 的调度引擎由其 background worker（regulatory_tracker.scheduler）
-    # 负责初始化并运行；这里不再重复启动，避免定时任务被执行两遍。
-    energy_task = asyncio.ensure_future(energy_collection_loop())
+    # 负责初始化并运行；energy 采集由其 background worker（energy.__init__）负责启动。
+    # 这里不再重复启动，避免定时任务被执行两遍。
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
@@ -253,7 +250,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await stop_warehouse_ws()
 
-    energy_task.cancel()
     maintenance_plan_task.cancel()
     timeout_task.cancel()
     member_task.cancel()

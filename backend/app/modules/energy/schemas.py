@@ -69,6 +69,7 @@ class EnergyMonthlyRecordCreate(BaseModel):
 class EnergyMonthlyRecordResponse(BaseModel):
     id: StrUUID
     workshop_id: StrUUID
+    workshop_name: str | None = None
     energy_type: str
     record_date: date
     date_range_end: date | None
@@ -218,7 +219,7 @@ class EnergyAlertRuleCreate(BaseModel):
     unit: str = Field(..., min_length=1, max_length=20, description="计量单位")
     alert_level: AlertLevel = Field(..., description="预警等级")
     notify_method: list[str] = Field(..., min_length=1, description="通知方式")
-    notify_users: list[str] = Field(..., min_length=1, description="通知用户列表")
+    notify_users: list[str] = Field(default_factory=list, description="通知用户列表；当前无投递实现，允许留空")
     notify_frequency: NotifyFrequency = Field(default="first", description="通知频率")
     effective_time: EffectiveTime = Field(default="all_day", description="生效时段类型")
     custom_time_start: str | None = Field(default=None, description="自定义开始时间")
@@ -236,7 +237,7 @@ class EnergyAlertRuleUpdate(BaseModel):
     unit: str | None = Field(default=None, min_length=1, max_length=20)
     alert_level: AlertLevel | None = Field(default=None)
     notify_method: list[str] | None = Field(default=None, min_length=1)
-    notify_users: list[str] | None = Field(default=None, min_length=1)
+    notify_users: list[str] | None = Field(default=None)
     notify_frequency: NotifyFrequency | None = Field(default=None)
     effective_time: EffectiveTime | None = Field(default=None)
     custom_time_start: str | None = Field(default=None)

@@ -111229,9 +111229,8 @@
               "type": "string"
             },
             "type": "array",
-            "minItems": 1,
             "title": "Notify Users",
-            "description": "\u901a\u77e5\u7528\u6237\u5217\u8868"
+            "description": "\u901a\u77e5\u7528\u6237\u5217\u8868\uff1b\u5f53\u524d\u65e0\u6295\u9012\u5b9e\u73b0\uff0c\u5141\u8bb8\u7559\u7a7a"
           },
           "notify_frequency": {
             "type": "string",
@@ -111294,8 +111293,7 @@
           "threshold_value",
           "unit",
           "alert_level",
-          "notify_method",
-          "notify_users"
+          "notify_method"
         ],
         "title": "EnergyAlertRuleCreate"
       },
@@ -111603,8 +111601,7 @@
                 "items": {
                   "type": "string"
                 },
-                "type": "array",
-                "minItems": 1
+                "type": "array"
               },
               {
                 "type": "null"
@@ -112404,6 +112401,17 @@
           "workshop_id": {
             "type": "string",
             "title": "Workshop Id"
+          },
+          "workshop_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workshop Name"
           },
           "energy_type": {
             "type": "string",

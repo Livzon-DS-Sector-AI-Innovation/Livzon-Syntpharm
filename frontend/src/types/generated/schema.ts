@@ -27404,9 +27404,9 @@ export interface components {
             notify_method: string[];
             /**
              * Notify Users
-             * @description 通知用户列表
+             * @description 通知用户列表；当前无投递实现，允许留空
              */
-            notify_users: string[];
+            notify_users?: string[];
             /**
              * Notify Frequency
              * @description 通知频率
@@ -27877,6 +27877,8 @@ export interface components {
             id: string;
             /** Workshop Id */
             workshop_id: string;
+            /** Workshop Name */
+            workshop_name?: string | null;
             /** Energy Type */
             energy_type: string;
             /**

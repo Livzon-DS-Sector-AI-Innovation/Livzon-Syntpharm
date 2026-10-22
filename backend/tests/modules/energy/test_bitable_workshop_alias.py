@@ -35,6 +35,22 @@ def test_shared_meter_name_is_no_longer_truncated(cross_import):
     assert cross_import._normalize_workshop_name("101") == "101车间"
 
 
+def test_fullwidth_parentheses_are_normalized(cross_import):
+    """源表里全角括号写法也要能命中别名，不能直接漏过去建第二个车间。"""
+    assert cross_import._normalize_workshop_name("环保中心（含RTO）") == "环保中心(含RTO)"
+    assert cross_import._normalize_workshop_name("RTO（天然气）") == "RTO(天然气)"
+
+
+async def test_fullwidth_alias_resolves_to_canonical(cross_import, db_session):
+    canonical = await cross_import._get_or_create_workshop(db_session, "环保中心")
+    await db_session.flush()
+
+    resolved = await cross_import._get_or_create_workshop(db_session, "环保中心（含RTO）")
+
+    assert resolved.id == canonical.id
+    assert resolved.name == "环保中心"
+
+
 async def test_alias_reuses_canonical_workshop(cross_import, db_session):
     cross_import._alias_map = {"别名甲": "规范甲"}
     canonical = EnergyWorkshop(code="规范甲", name="规范甲", category="support", sort_order=0, is_active=True)
@@ -168,6 +184,22 @@ async def test_missing_mapping_sheet_falls_back_to_constant(cross_import, monkey
 
     async def fail_records(table_id):
         raise AssertionError("缺映射表时不应再请求记录")
+
+    monkeypatch.setattr(cross_import, "list_tables", fake_tables)
+    monkeypatch.setattr(cross_import, "list_records", fail_records)
+    cross_import._alias_map = None
+
+    assert await cross_import._get_alias_map() == dict(bci.WORKSHOP_ALIASES)
+
+
+async def test_mapping_sheet_record_failure_falls_back_to_constant(cross_import, monkeypatch):
+    """映射表存在但记录读不出来时，导入仍应按内置别名继续，不能整批失败。"""
+
+    async def fake_tables():
+        return [{"name": bci.MAPPING_TABLE_NAME, "table_id": "tbl-map"}]
+
+    async def fail_records(table_id):
+        raise RuntimeError("bitable unavailable")
 
     monkeypatch.setattr(cross_import, "list_tables", fake_tables)
     monkeypatch.setattr(cross_import, "list_records", fail_records)
