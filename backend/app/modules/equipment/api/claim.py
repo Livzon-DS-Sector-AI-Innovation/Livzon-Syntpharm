@@ -1,6 +1,5 @@
 """抢单 API 路由."""
 
-import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -12,6 +11,7 @@ from app.core.database import get_db
 from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
+from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.schemas import WorkOrderResponse
 from app.platform.integrations.feishu.contact import is_department_member
@@ -51,7 +51,11 @@ async def claim_work_order(
 
     wo = await service.claim_work_order(db, work_order_id, current_user.id)
 
-    asyncio.ensure_future(send_claim_notification(wo.work_order_no, current_user.name))
+    # 通知失败不应影响接单结果；用 spawn_task 包装后异常会进日志（ensure_future 只是静默丢弃）
+    spawn_task(
+        send_claim_notification(wo.work_order_no, current_user.name),
+        name=f"claim-notify-{wo.work_order_no}",
+    )
 
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:

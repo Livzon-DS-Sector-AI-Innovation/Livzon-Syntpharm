@@ -12,6 +12,7 @@ from app.shared.module_registry import BUSINESS_MODULES, BUSINESS_SCHEMAS
 # Import platform and module models so Alembic can detect them.
 import_module("app.platform.audit.models")
 import_module("app.platform.identity.models")
+import_module("app.platform.permission.models")
 import_module("app.core.llm.config")
 import_module("app.modules.registration.dossier_writer.models")
 import_module("app.modules.quality.ai.models")

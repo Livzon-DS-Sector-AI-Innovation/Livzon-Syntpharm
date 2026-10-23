@@ -207,6 +207,8 @@ class Settings(BaseSettings):
 
     # Audit
     AUDIT_RETENTION_DAYS: int = 7
+    # 审计日志过期清理任务开关（SchedulerEngine 的 settings_toggle_key 读它）
+    AUDIT_CLEANUP_ENABLED: bool = True
 
     # Feishu / Lark — all modules grouped
     feishu: FeishuSettings = Field(default_factory=FeishuSettings)
@@ -272,6 +274,14 @@ class Settings(BaseSettings):
 
     # HR Bitable
     HR_BITABLE_APP_TOKEN: str = ""
+
+    # HR 飞书「审批完成」事件回调校验凭据（飞书开放平台 → 事件与回调 → 加密策略）。
+    # 回调由飞书服务器发起、没有用户登录态，只能靠这两个凭据鉴权：
+    # - ENCRYPT_KEY：配置后必须提供 timestamp/nonce/signature 并通过 HMAC 校验；
+    # - VERIFICATION_TOKEN：与 payload.header.token 比对。
+    # 两者都为空时回调一律拒绝（fail-closed），避免无鉴权的状态变更接口。
+    HR_FEISHU_APPROVAL_ENCRYPT_KEY: str = ""
+    HR_FEISHU_APPROVAL_VERIFICATION_TOKEN: str = ""
 
     # Font
     CJK_FONT_PATH: str = ""

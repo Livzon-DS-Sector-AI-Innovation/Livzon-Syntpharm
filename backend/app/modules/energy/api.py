@@ -665,6 +665,7 @@ async def process_alert_record(
 async def delete_alert_record(
     record_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-record:update")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeleteResponse:
     await service.delete_alert_record(db, record_id)

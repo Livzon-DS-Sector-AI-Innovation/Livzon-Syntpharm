@@ -1,6 +1,8 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { unwrapResponse } from '@/lib/api/server/base'
+import { normalizeBatchResult } from '@/lib/api/batch'
 import {
   batchSetApiSwitch as batchSetApiSwitchApi,
   batchToggleScheduledTasks as batchToggleScheduledTasksApi,
@@ -21,6 +23,7 @@ import {
 } from '@/lib/api/server/system-ops'
 import type {
   ApiRouteItem,
+  ApiSwitchBatchItem,
   ApiSwitchResult,
   BatchResult,
   ComponentHealth,
@@ -43,44 +46,40 @@ async function getAuthToken(): Promise<string | undefined> {
 
 export async function fetchHealth(): Promise<ComponentHealth[]> {
   const token = await getAuthToken()
-  const res = (await getHealth(token)) as { data: ComponentHealth[] }
-  return res.data ?? []
+  const data = unwrapResponse(await getHealth(token))
+  return data ?? []
 }
 
 export async function fetchSystemInfo(): Promise<SystemInfoData | null> {
   const token = await getAuthToken()
-  const res = (await getSystemInfo(token)) as { data: SystemInfoData }
-  return res.data ?? null
+  return unwrapResponse(await getSystemInfo(token)) ?? null
 }
 
 export async function fetchResources(): Promise<ResourcesData | null> {
   const token = await getAuthToken()
-  const res = (await getResources(token)) as { data: ResourcesData }
-  return res.data ?? null
+  return unwrapResponse(await getResources(token)) ?? null
 }
 
 export async function fetchRedisOverview(): Promise<RedisOverviewData | null> {
   const token = await getAuthToken()
-  const res = (await getRedisOverview(token)) as { data: RedisOverviewData }
-  return res.data ?? null
+  return unwrapResponse(await getRedisOverview(token)) ?? null
 }
 
 export async function fetchRedisKeys(prefix: string): Promise<RedisKeysData> {
   const token = await getAuthToken()
-  const res = (await getRedisKeysApi(prefix, 200, token)) as { data: RedisKeysData }
-  return res.data ?? { keys: [], total_scanned: 0, truncated: false }
+  const data = unwrapResponse(await getRedisKeysApi(prefix, 200, token))
+  return data ?? { keys: [], total_scanned: 0, truncated: false }
 }
 
 export async function deleteRedisKeys(prefix: string): Promise<RedisDeleteResult> {
   const token = await getAuthToken()
-  const res = (await deleteRedisKeysApi(prefix, token)) as { data: RedisDeleteResult }
-  return res.data
+  return unwrapResponse(await deleteRedisKeysApi(prefix, token))
 }
 
 export async function fetchScheduledTasks(): Promise<ScheduledTaskItem[]> {
   const token = await getAuthToken()
-  const res = (await getScheduledTasks(token)) as { data: ScheduledTaskItem[] }
-  return res.data ?? []
+  const data = unwrapResponse(await getScheduledTasks(token))
+  return data ?? []
 }
 
 export async function toggleScheduledTask(name: string, enabled: boolean): Promise<void> {
@@ -91,25 +90,23 @@ export async function toggleScheduledTask(name: string, enabled: boolean): Promi
 /** 批量启用 / 禁用定时任务（运行时临时，重启恢复默认）。 */
 export async function batchToggleScheduledTasks(names: string[], enabled: boolean): Promise<BatchResult> {
   const token = await getAuthToken()
-  const res = (await batchToggleScheduledTasksApi(names, enabled, token)) as { data: BatchResult }
-  return res.data
+  return normalizeBatchResult(unwrapResponse(await batchToggleScheduledTasksApi({ names, enabled }, token)))
 }
 
 /** 批量启用 / 禁用接口（保护名单内的接口由后端拒绝并返回原因）。 */
 export async function batchSetApiSwitch(
-  items: { method: string; route: string }[],
+  items: ApiSwitchBatchItem[],
   enabled: boolean,
   reason: string | null,
 ): Promise<BatchResult> {
   const token = await getAuthToken()
-  const res = (await batchSetApiSwitchApi(items, enabled, reason, token)) as { data: BatchResult }
-  return res.data
+  return normalizeBatchResult(unwrapResponse(await batchSetApiSwitchApi({ items, enabled, reason }, token)))
 }
 
 export async function fetchApiRoutes(): Promise<ApiRouteItem[]> {
   const token = await getAuthToken()
-  const res = (await getApiRoutesApi(token)) as { data: ApiRouteItem[] }
-  return res.data ?? []
+  const data = unwrapResponse(await getApiRoutesApi(token))
+  return data ?? []
 }
 
 export async function setApiSwitch(
@@ -119,29 +116,24 @@ export async function setApiSwitch(
   reason: string | null,
 ): Promise<ApiSwitchResult> {
   const token = await getAuthToken()
-  const res = (await setApiSwitchApi(method, route, enabled, reason, token)) as {
-    data: ApiSwitchResult
-  }
-  return res.data
+  return unwrapResponse(await setApiSwitchApi({ method, route, enabled, reason }, token))
 }
 
 export async function fetchLogs(level = '', keyword = ''): Promise<LogsData> {
   const token = await getAuthToken()
-  const res = (await getLogsApi(level, keyword, 500, token)) as { data: LogsData }
-  return res.data ?? { items: [], total: 0, buffer_size: 0 }
+  const data = unwrapResponse(await getLogsApi(level, keyword, 500, token))
+  return data ?? { items: [], total: 0, buffer_size: 0 }
 }
 
 export async function clearLogs(): Promise<LogClearResult> {
   const token = await getAuthToken()
-  const res = (await clearLogsApi(token)) as { data: LogClearResult }
-  return res.data
+  return unwrapResponse(await clearLogsApi(token))
 }
 
 /** 数据库概览 + 业务表清单（只读，不含数据内容）。 */
 export async function fetchDbTables(): Promise<DbTablesData | null> {
   const token = await getAuthToken()
-  const res = (await getDbTablesApi(token)) as { data: DbTablesData }
-  return res.data ?? null
+  return unwrapResponse(await getDbTablesApi(token)) ?? null
 }
 
 /** 单表字段结构（只读，不含数据内容）。 */
@@ -150,6 +142,5 @@ export async function fetchDbTableColumns(
   table: string,
 ): Promise<DbColumnsData | null> {
   const token = await getAuthToken()
-  const res = (await getDbTableColumnsApi(schema, table, token)) as { data: DbColumnsData }
-  return res.data ?? null
+  return unwrapResponse(await getDbTableColumnsApi(schema, table, token)) ?? null
 }

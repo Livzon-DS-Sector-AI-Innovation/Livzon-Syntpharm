@@ -20,15 +20,9 @@ export type RedisDeleteResult = components['schemas']['RedisDeleteResult']
 export type ScheduledTaskItem = components['schemas']['ScheduledTaskItem']
 export type ApiRouteItem = components['schemas']['ApiRouteItemModel']
 export type ApiSwitchResult = components['schemas']['ApiSwitchResult']
+export type ApiSwitchBatchItem = components['schemas']['ApiSwitchBatchItem']
 
-export type BatchFailureItem = components['schemas']['BatchFailure']
-
-/** 批量操作结果：后端 schema 给 succeeded/failed 设了默认值，OpenAPI 标成可选；
- *  实际响应总会返回这两个数组，这里恢复成必填，避免消费端冗余判空。 */
-export type BatchResult = {
-  succeeded: NonNullable<components['schemas']['BatchResultData']['succeeded']>
-  failed: NonNullable<components['schemas']['BatchResultData']['failed']>
-}
+export type { BatchFailureItem, BatchResult } from '@/types/batch'
 
 export type LogItem = components['schemas']['LogItemModel']
 export type LogsData = components['schemas']['LogsData']

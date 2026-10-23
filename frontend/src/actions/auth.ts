@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import type { User, ImpersonationStatusExtended } from '@/types/user'
+import type { LoginActionState } from '@/types/auth'
 import {
   loginApi,
   getCurrentUserApi,
@@ -11,10 +12,6 @@ import {
   getImpersonationStatusApi,
 } from '@/lib/api/server/auth'
 import { resolveLandingPath } from '@/lib/permissions/server'
-
-export interface LoginActionState {
-  error?: string
-}
 
 function getErrorMessage(value: unknown): string {
   if (!value || typeof value !== 'object') return '登录失败，请重试'

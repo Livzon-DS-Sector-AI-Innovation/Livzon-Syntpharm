@@ -1,10 +1,32 @@
 import { cache } from 'react'
 import { cookies } from 'next/headers'
-import { getMenuConfig } from '@/actions/menu'
+import { unwrapResponse } from '@/lib/api/server/base'
+import { getMenuConfigApi } from '@/lib/api/server/menu'
 import { getMyPermissions } from '@/lib/api/server/permission'
 import { resolveMenus } from '@/lib/menu/resolve'
 import { MODULE_ACCESS_PERMS, type PermissionView } from '@/lib/permissions/modules'
 import type { PermissionCode } from '@/lib/permissions/codes'
+import { EMPTY_MENU_CONFIG, type MenuConfigData } from '@/types/menu-admin'
+
+/** 读菜单栏配置：真实数据，失败时返回空配置（导航按代码默认渲染）。 */
+const readMenuConfig = cache(async (): Promise<MenuConfigData> => {
+  const token = (await cookies()).get('auth_token')?.value
+  if (!token) return EMPTY_MENU_CONFIG
+  try {
+    const data = unwrapResponse(await getMenuConfigApi(token))
+    if (!data) return EMPTY_MENU_CONFIG
+    return {
+      items: data.items ?? {},
+      custom: (data.custom ?? []).map(item => ({
+        ...item,
+        parent: item.parent ?? null,
+        perms: item.perms ?? [],
+      })),
+    }
+  } catch {
+    return EMPTY_MENU_CONFIG
+  }
+})
 
 /** 当前请求用户的权限快照（未登录 / 后端不可用 → null）。 */
 export interface PermissionsSnapshot {
@@ -22,10 +44,7 @@ export const getPermissionsSnapshot = cache(async (): Promise<PermissionsSnapsho
   if (!token) return null
 
   try {
-    const res = (await getMyPermissions(token)) as {
-      data?: { permissions?: string[]; is_superuser?: boolean }
-    }
-    const data = res?.data
+    const data = unwrapResponse(await getMyPermissions(token))
     if (!data) return null
     return {
       permissions: data.permissions ?? [],
@@ -77,8 +96,9 @@ export async function getPermissionView(): Promise<PermissionView> {
   const granted = new Set(snapshot?.permissions ?? [])
   const isSuperuser = snapshot?.isSuperuser ?? false
 
-  // 菜单栏管理配置（显隐 / 权重 / 权限绑定 / 自定义项）：读不到按空配置 = 代码默认
-  const menuConfig = await getMenuConfig()
+  // 菜单栏管理配置（显隐 / 权重 / 权限绑定 / 自定义项）：读不到按空配置 = 代码默认。
+  // 这里直接调 API 层而不是 `@/actions/menu`，避免 lib → actions 的反向依赖。
+  const menuConfig = await readMenuConfig()
   const modules = resolveMenus(menuConfig, granted, isSuperuser)
 
   return {

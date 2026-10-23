@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, require_permission
+from app.core.deps import CurrentUser, require_route_permission
 from app.core.response import ApiResponse, build_response, error_response, success_response
 
 from .field_models import FieldFillResult, FieldMapping
@@ -51,9 +51,32 @@ from .service import DossierService
 
 logger = logging.getLogger(__name__)
 
-# 申报资料撰写整体挂在 registration:dossier:read 下（粗粒度，读写共用）。
-# TODO: 后续按 create/update/delete 细分到具体路由。
-router = APIRouter(dependencies=[Depends(require_permission("registration:dossier:read"))])
+# 读写分离：GET 与「只读语义的 POST」（预览/解析/下载）→ registration:dossier:read；
+# POST → :create，PUT/PATCH → :update，DELETE → :delete。
+_DOSSIER_READ_ONLY_SUFFIXES = (
+    "/preview",
+    "/ai-preview",
+    "/split-preview",
+    "/download",
+    "/docx-file",
+    "/fill-results",
+)
+
+
+def resolve_dossier_code(method: str, path: str) -> str:
+    """按方法与路径解析申报资料撰写的权限码（与 registry 绑定登记同口径）。"""
+    if method.upper() in ("GET", "HEAD") or path.rstrip("/").endswith(_DOSSIER_READ_ONLY_SUFFIXES):
+        return "registration:dossier:read"
+    if method.upper() == "POST":
+        return "registration:dossier:create"
+    if method.upper() in ("PUT", "PATCH"):
+        return "registration:dossier:update"
+    if method.upper() == "DELETE":
+        return "registration:dossier:delete"
+    return "registration:dossier:read"
+
+
+router = APIRouter(dependencies=[Depends(require_route_permission(resolve_dossier_code))])
 
 
 # ====== Product Dossier ======
@@ -647,11 +670,8 @@ async def ai_preview_extraction(
         result = await service.preview_extraction(dossier, chapter)
         return success_response(data=result, message=result.get("message", "完成"))
     except Exception as e:
-        # 记录完整错误日志
-        import traceback
-
-        error_detail = traceback.format_exc()
-        print(f"AI 解析失败: {error_detail}")
+        # logger.exception 自带 traceback，不要用 print 输出（容器里会落到 stdout 丢上下文）
+        logger.exception("AI 解析预览失败 chapter_id=%s", chapter_id)
 
         # 返回 JSON 错误响应
         return error_response(

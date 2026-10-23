@@ -460,6 +460,7 @@ async def handler(
 async def get_import_job(
     job_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Poll a batch import started by `batch-import`.
@@ -604,6 +605,7 @@ async def delete(
 async def handler(  # noqa: F811
     id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     quantity_change: int = Body(..., embed=True, description="Quantity change (positive = in, negative = out)"),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
@@ -1018,6 +1020,7 @@ async def _import_chrom_columns(contents: bytes, user_id: UUID, db: AsyncSession
 )
 async def handler(  # noqa: F811
     file: UploadFile = File(...),
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:create")),
     user_id: UUID = Depends(_user_id),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -1126,6 +1129,7 @@ async def delete(  # noqa: F811
 )
 async def handler(  # noqa: F811
     id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:update")),
     service: StaticDataService = Depends(_get_service),
     user_id: UUID = Depends(_user_id),
 ) -> Any:
@@ -1146,6 +1150,7 @@ async def handler(  # noqa: F811
 )
 async def get_medium_stats(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     medium_type: str | None = Query(None, description="Medium type, when one is chosen"),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:

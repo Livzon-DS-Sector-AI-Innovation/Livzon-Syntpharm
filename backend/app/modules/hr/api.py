@@ -1,4 +1,6 @@
 # mypy: ignore-errors
+import hashlib
+import hmac
 import logging
 import os
 import re
@@ -7,7 +9,7 @@ from io import BytesIO
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import Body, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -19,6 +21,7 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.redis import cache_get, cache_set
 from app.core.response import paginated_response, success_response
+from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
     AnnualTrainingPlanItemBatchUpdate,
@@ -396,13 +399,65 @@ async def sync_employee_to_feishu(  # type: ignore[no-untyped-def]
     )
 
 
+async def _verify_feishu_approval_callback(request: Request, payload: dict) -> None:  # type: ignore[type-arg]
+    """校验飞书审批完成回调的合法性（fail-closed）。
+
+    飞书服务器发起回调时不可能携带用户 JWT，因此该路由不挂权限码
+    （已在 registry.EXEMPT_ROUTES 豁免绑定兜底），改用回调凭据鉴权：
+
+    - 配置了 Encrypt Key：必须带齐 timestamp/nonce/signature，且 HMAC-SHA256 校验通过；
+    - 配置了 Verification Token：payload.token 或 payload.header.token 必须一致；
+    - 两者都没配置：直接拒绝，避免留下一个无鉴权的数据变更入口。
+    """
+    settings = get_settings()
+    encrypt_key = settings.HR_FEISHU_APPROVAL_ENCRYPT_KEY
+    verification_token = settings.HR_FEISHU_APPROVAL_VERIFICATION_TOKEN
+
+    if not encrypt_key and not verification_token:
+        logger.error(
+            "HR 飞书审批回调未配置校验凭据（HR_FEISHU_APPROVAL_ENCRYPT_KEY / "
+            "HR_FEISHU_APPROVAL_VERIFICATION_TOKEN），已拒绝回调",
+        )
+        raise HTTPException(status_code=503, detail="飞书审批回调未配置校验凭据")
+
+    if encrypt_key:
+        timestamp = request.headers.get("X-Lark-Request-Timestamp")
+        nonce = request.headers.get("X-Lark-Request-Nonce")
+        signature = request.headers.get("X-Lark-Signature")
+        if not timestamp or not nonce or not signature:
+            raise HTTPException(status_code=401, detail="飞书回调缺少签名头")
+        raw_body = await request.body()
+        expected = hashlib.sha256(f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            raise HTTPException(status_code=401, detail="飞书回调签名校验失败")
+
+    if verification_token:
+        header = payload.get("header")
+        token = payload.get("token")
+        if not isinstance(token, str) and isinstance(header, dict):
+            token = header.get("token")
+        if not isinstance(token, str) or not hmac.compare_digest(token, verification_token):
+            raise HTTPException(status_code=401, detail="飞书回调 token 校验失败")
+
+
 @router.post("/webhook/feishu-approval", summary="飞书审批完成回调")
 async def feishu_approval_webhook(  # type: ignore[no-untyped-def]
+    request: Request,
     payload: dict,  # type: ignore[type-arg]
-    ctx: PermissionContext = Depends(require_permission("hr:webhook:create")),
     service: EmployeeService = Depends(get_employee_service),
 ):
-    """接收飞书审批完成通知，更新员工状态为在职。"""
+    """接收飞书审批完成通知，更新员工状态为在职。
+
+    鉴权方式见 `_verify_feishu_approval_callback`：飞书回调没有用户登录态，
+    用签名 + verification token 校验替代 JWT。
+    """
+    await _verify_feishu_approval_callback(request, payload)
+
+    # 飞书配置回调地址时会先发一次 url_verification 挑战请求
+    challenge = payload.get("challenge")
+    if isinstance(challenge, str):
+        return {"challenge": challenge}
+
     employee_number = payload.get("employee_number")
     if not employee_number:
         return success_response(message="缺少工号")
@@ -3125,6 +3180,25 @@ SETTING_KEYS = [
     "AI_MODEL",
 ]
 
+# 凭据类键：落库前加密（app.core.secrets.encrypt_secret），读出后一律按掩码返回。
+SECRET_SETTING_KEYS: frozenset[str] = frozenset(
+    key for key in SETTING_KEYS if "SECRET" in key or key.endswith("_API_KEY")
+)
+# 前端回传的「未修改」占位符：拿到掩码后原样提交时不能把掩码当成新密钥写库。
+MASK_PLACEHOLDER = "****"
+
+
+def _get_db_setting(db_settings: dict[str, str], key: str) -> str:
+    """取 DB 中的设置值；凭据类先解密（兼容历史明文行）。"""
+    raw = db_settings.get(key)
+    if not raw:
+        return ""
+    try:
+        return decrypt_secret(raw)
+    except RuntimeError:
+        logger.exception("HR 系统设置解密失败 key=%s（ENCRYPTION_KEY 不匹配？）", key)
+        return ""
+
 
 def _get_setting_value(settings, key: str) -> str:
     parts = key.lower().split("__")
@@ -3142,7 +3216,7 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     ctx: PermissionContext = Depends(require_permission("hr:system-settings:read")),
     session: AsyncSession = Depends(get_db),
 ):
-    """获取所有系统配置。secret 类字段仅返回尾部 4 位。"""
+    """获取所有系统配置。凭据类字段只返回掩码（如 `cli_ab****cd12`），绝不返回明文。"""
     result = {}
     _settings = get_settings()
     from sqlalchemy import text as sql_text
@@ -3151,8 +3225,8 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     for key in SETTING_KEYS:
-        val = db_settings.get(key) or _get_setting_value(_settings, key)
-        result[key] = val
+        val = _get_db_setting(db_settings, key) or _get_setting_value(_settings, key)
+        result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
 
     return success_response(data=result)
 
@@ -3164,21 +3238,34 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
     payload: dict = Body(...),  # type: ignore[type-arg]
     session: AsyncSession = Depends(get_db),
 ):
-    """批量保存系统配置到 DB，同时写入 .env 文件。"""
+    """批量保存系统配置到 DB，同时写入 .env 文件。
+
+    凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
+    避免把掩码当成新密钥写进库。
+    """
     from sqlalchemy import text as sql_text
 
-    updated = []
-    for key, value in payload.items():
+    updated: list[str] = []
+    env_updates: dict[str, str] = {}
+    for key, raw_value in payload.items():
         if key not in SETTING_KEYS:
             continue
+        value_text = "" if raw_value is None else str(raw_value)
+        if key in SECRET_SETTING_KEYS:
+            if not value_text or MASK_PLACEHOLDER in value_text:
+                continue
+            stored_value = encrypt_secret(value_text)
+        else:
+            stored_value = value_text
         await session.execute(
             sql_text(
                 "INSERT INTO hr.system_settings (key, value, updated_at) VALUES (:k, :v, now()) "
                 "ON CONFLICT (key) DO UPDATE SET value = :v, updated_at = now()"
             ),
-            {"k": key, "v": value},
+            {"k": key, "v": stored_value},
         )
         updated.append(key)
+        env_updates[key] = value_text
     await session.commit()
 
     # Write to .env file
@@ -3194,9 +3281,7 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
             if m:
                 existing_keys[m.group(1)] = i
 
-        for key, value in payload.items():
-            if key not in SETTING_KEYS:
-                continue
+        for key, value in env_updates.items():
             new_line = f"{key}={value}\n"
             if key in existing_keys:
                 lines[existing_keys[key]] = new_line
@@ -3205,7 +3290,7 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
 
         with open(ENV_PATH, "w", encoding="utf-8") as f:
             f.writelines(lines)
-    except Exception as e:
-        logger.warning("Failed to write .env: %s", e)
+    except Exception:
+        logger.exception("写入 .env 失败（设置已保存到数据库，但需手工补环境变量）")
 
     return success_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")

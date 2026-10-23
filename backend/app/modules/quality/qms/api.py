@@ -89,6 +89,7 @@ async def handler(
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取检验标准详情"""
@@ -120,6 +121,7 @@ async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     data: InspectionStandardUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新检验标准"""
@@ -140,6 +142,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> InspectionStandardDeleteApiResponse:  # noqa: F821  # type: ignore[name-defined]
     """删除检验标准"""
@@ -162,6 +165,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:submit")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交审批"""
@@ -182,6 +186,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:approve")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """审批通过"""
@@ -204,6 +209,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:approve")),
     comments: str = Query(..., description="驳回原因"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -227,6 +233,7 @@ async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     data: ObsoleteSubmit,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:approve")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交作废"""
@@ -268,6 +275,7 @@ async def post(  # noqa: F811
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取检验项目列表"""
@@ -289,6 +297,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     standard_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:standard:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取审批记录"""

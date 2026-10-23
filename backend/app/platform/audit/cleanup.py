@@ -1,25 +1,32 @@
 """审计日志过期清理定时任务。
 
 ``audit.logs`` 为 append-only 表（无软删除，过期即物理清理）。按
-``AUDIT_RETENTION_DAYS``（默认 7 天）每天凌晨清理一次过期记录，分批删除避免长事务锁表。
+``AUDIT_RETENTION_DAYS``（默认 7 天）每天凌晨 04:00 清理一次过期记录，
+分批删除避免长事务锁表。
+
+调度走 SchedulerEngine（`TaskDefinition` + `scheduler_registry`），
+不再由 main.py 手写 ``asyncio`` 循环：这样任务会出现在「系统运维 → 定时任务」里，
+可被运行时开关（``AUDIT_CLEANUP_ENABLED``）与手动触发统一管理。
 """
 
-import asyncio
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import delete, select
 
 from app.core.config import get_settings
 from app.core.database import async_session_factory
 from app.platform.audit.models import AuditLog
+from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskDefinition
+from app.platform.scheduler.registry import scheduler_registry
 
 logger = logging.getLogger(__name__)
 
 # 每批删除条数：避免单条 DELETE 长事务锁住大表
 _BATCH_SIZE = 5000
 
-stop_cleanup_flag = asyncio.Event()
+JOB_ID = "audit_cleanup_daily"
 
 
 async def cleanup_expired_audit_logs(retention_days: int | None = None) -> int:
@@ -54,28 +61,30 @@ async def cleanup_expired_audit_logs(retention_days: int | None = None) -> int:
     return total_deleted
 
 
-async def audit_cleanup_loop() -> None:
-    """每天凌晨 04:00 清理一次过期审计日志（独立轮询循环，main.py 启动）。"""
+async def _run_audit_cleanup() -> None:
+    """调度引擎调用的无参入口（保留期从配置读）。"""
+    await cleanup_expired_audit_logs()
+
+
+audit_cleanup_task = TaskDefinition(
+    name="审计日志过期清理",
+    schedule=ScheduleConfig(
+        strategy=ScheduleStrategy.CRON,
+        expression="0 4 * * *",
+        timezone="Asia/Shanghai",
+    ),
+    coro=_run_audit_cleanup,
+    module="platform",
+    settings_toggle_key="AUDIT_CLEANUP_ENABLED",
+    # 分批删除大量过期日志可能超过默认 300s，给足时间避免被引擎中途取消
+    timeout_seconds=1800,
+)
+
+
+def register() -> Any:
+    """注册审计清理任务（幂等，main.py lifespan 调用）。"""
+    scheduler_registry.register_task(audit_cleanup_task)
     logger.info(
-        "审计日志过期清理任务已启动（每天 04:00，保留 %d 天）",
+        "审计日志过期清理任务已注册（每天 04:00，保留 %d 天）",
         get_settings().AUDIT_RETENTION_DAYS,
     )
-
-    while not stop_cleanup_flag.is_set():
-        now = datetime.now()
-        next_run = (now + timedelta(days=1)).replace(hour=4, minute=0, second=0, microsecond=0)
-        wait_seconds = (next_run - now).total_seconds()
-        try:
-            await asyncio.wait_for(stop_cleanup_flag.wait(), timeout=wait_seconds)
-            break
-        except TimeoutError:
-            pass
-
-        if stop_cleanup_flag.is_set():
-            break
-        try:
-            await cleanup_expired_audit_logs()
-        except Exception:
-            logger.exception("审计日志过期清理失败")
-
-    logger.info("审计日志过期清理任务已停止")

@@ -292,7 +292,14 @@ async def bitable_monthly_sync_loop() -> None:
                             extra={"month_table": month_table},
                         )
                         if attempt < max_retries:
-                            await asyncio.sleep(60)  # 等待 60 秒后重试
+                            # 指数退避（60s / 120s / 240s …），避免对方限流时固定间隔硬撞
+                            backoff_seconds = 60 * (2 ** (attempt - 1))
+                            logger.warning(
+                                "月度数据同步 %d 秒后重试",
+                                backoff_seconds,
+                                extra={"month_table": month_table, "attempt": attempt},
+                            )
+                            await asyncio.sleep(backoff_seconds)
                         else:
                             logger.exception("月度数据同步最终失败", extra={"month_table": month_table})
 

@@ -1,4 +1,7 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+
+type Schemas = components['schemas']
 
 const P = (path: string) => `${getApiBaseUrl()}/api/v1/system${path}`
 
@@ -7,86 +10,75 @@ function auth(token?: string): Record<string, string> | undefined {
 }
 
 export function getHealth(token?: string) {
-  return apiFetch(P('/health'), { headers: auth(token) })
+  return apiFetch<Schemas['HealthResponse']>(P('/health'), { headers: auth(token) })
 }
 
 export function getSystemInfo(token?: string) {
-  return apiFetch(P('/info'), { headers: auth(token) })
+  return apiFetch<Schemas['SystemInfoResponse']>(P('/info'), { headers: auth(token) })
 }
 
 export function getResources(token?: string) {
-  return apiFetch(P('/resources'), { headers: auth(token) })
+  return apiFetch<Schemas['ResourcesResponse']>(P('/resources'), { headers: auth(token) })
 }
 
 export function getRedisOverview(token?: string) {
-  return apiFetch(P('/redis'), { headers: auth(token) })
+  return apiFetch<Schemas['RedisOverviewResponse']>(P('/redis'), { headers: auth(token) })
 }
 
 export function getRedisKeys(prefix: string, limit = 200, token?: string) {
   const params = new URLSearchParams()
   if (prefix) params.set('prefix', prefix)
   params.set('limit', String(limit))
-  return apiFetch(P(`/redis/keys?${params.toString()}`), { headers: auth(token) })
+  return apiFetch<Schemas['RedisKeysResponse']>(P(`/redis/keys?${params.toString()}`), { headers: auth(token) })
 }
 
 export function deleteRedisKeys(prefix: string, token?: string) {
   const params = new URLSearchParams({ prefix })
-  return apiFetch(P(`/redis/keys?${params.toString()}`), {
+  return apiFetch<Schemas['RedisDeleteResponse']>(P(`/redis/keys?${params.toString()}`), {
     method: 'DELETE',
     headers: auth(token),
   })
 }
 
 export function getScheduledTasks(token?: string) {
-  return apiFetch(P('/scheduled-tasks'), { headers: auth(token) })
+  return apiFetch<Schemas['ScheduledTasksResponse']>(P('/scheduled-tasks'), { headers: auth(token) })
 }
 
 export function toggleScheduledTask(name: string, enabled: boolean, token?: string) {
-  return apiFetch(P(`/scheduled-tasks/${encodeURIComponent(name)}/toggle`), {
+  return apiFetch<Schemas['TaskToggleResponse']>(P(`/scheduled-tasks/${encodeURIComponent(name)}/toggle`), {
     method: 'PUT',
     headers: auth(token),
-    body: JSON.stringify({ enabled }),
+    body: JSON.stringify({ enabled } satisfies Schemas['TaskToggleRequest']),
   })
 }
 
 export function getApiRoutes(token?: string) {
-  return apiFetch(P('/api-routes'), { headers: auth(token) })
+  return apiFetch<Schemas['ApiRoutesResponse']>(P('/api-routes'), { headers: auth(token) })
 }
 
 // ── 批量操作 ───────────────────────────────────────────────────────
 
-export function batchToggleScheduledTasks(names: string[], enabled: boolean, token?: string) {
-  return apiFetch(P('/scheduled-tasks/batch-toggle'), {
+export function batchToggleScheduledTasks(data: Schemas['TaskBatchToggleRequest'], token?: string) {
+  return apiFetch<Schemas['BatchResultResponse']>(P('/scheduled-tasks/batch-toggle'), {
     method: 'POST',
     headers: auth(token),
-    body: JSON.stringify({ names, enabled }),
+    body: JSON.stringify(data),
   })
 }
 
-export function batchSetApiSwitch(
-  items: { method: string; route: string }[],
-  enabled: boolean,
-  reason: string | null,
-  token?: string,
-) {
-  return apiFetch(P('/api-routes/batch-switch'), {
+export function batchSetApiSwitch(data: Schemas['ApiSwitchBatchRequest'], token?: string) {
+  return apiFetch<Schemas['BatchResultResponse']>(P('/api-routes/batch-switch'), {
     method: 'POST',
     headers: auth(token),
-    body: JSON.stringify({ items, enabled, reason }),
+    body: JSON.stringify(data),
   })
 }
 
-export function setApiSwitch(
-  method: string,
-  route: string,
-  enabled: boolean,
-  reason: string | null,
-  token?: string,
-) {
-  return apiFetch(P('/api-routes/switch'), {
+export function setApiSwitch(data: Schemas['ApiSwitchRequest'], token?: string) {
+  return apiFetch<Schemas['ApiSwitchResponse']>(P('/api-routes/switch'), {
     method: 'PUT',
     headers: auth(token),
-    body: JSON.stringify({ method, route, enabled, reason }),
+    body: JSON.stringify(data),
   })
 }
 
@@ -95,19 +87,19 @@ export function getLogs(level: string, keyword: string, limit = 500, token?: str
   if (level) params.set('level', level)
   if (keyword) params.set('keyword', keyword)
   params.set('limit', String(limit))
-  return apiFetch(P(`/logs?${params.toString()}`), { headers: auth(token) })
+  return apiFetch<Schemas['LogsResponse']>(P(`/logs?${params.toString()}`), { headers: auth(token) })
 }
 
 export function clearLogs(token?: string) {
-  return apiFetch(P('/logs'), { method: 'DELETE', headers: auth(token) })
+  return apiFetch<Schemas['LogsClearResponse']>(P('/logs'), { method: 'DELETE', headers: auth(token) })
 }
 
 export function getDbTables(token?: string) {
-  return apiFetch(P('/db/tables'), { headers: auth(token) })
+  return apiFetch<Schemas['DbTablesResponse']>(P('/db/tables'), { headers: auth(token) })
 }
 
 export function getDbTableColumns(schema: string, table: string, token?: string) {
   const s = encodeURIComponent(schema)
   const t = encodeURIComponent(table)
-  return apiFetch(P(`/db/tables/${s}/${t}/columns`), { headers: auth(token) })
+  return apiFetch<Schemas['DbColumnsResponse']>(P(`/db/tables/${s}/${t}/columns`), { headers: auth(token) })
 }

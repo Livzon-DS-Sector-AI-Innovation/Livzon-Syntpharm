@@ -1,26 +1,18 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { unwrapResponse } from '@/lib/api/server/base'
 import { getAuditLogsApi } from '@/lib/api/server/audit'
-import type { AuditLogListResponse } from '@/types/audit'
+import type { AuditLogListResponse, AuditLogQuery } from '@/types/audit'
 
-export async function getAuditLogs(params: {
-  page?: number
-  page_size?: number
-  user_id?: string
-  action?: string
-  resource_type?: string
-  keyword?: string
-}): Promise<AuditLogListResponse> {
+export async function getAuditLogs(params: AuditLogQuery): Promise<AuditLogListResponse> {
   const cookieStore = await cookies()
   const token = cookieStore.get('auth_token')
 
-  const res = (await getAuditLogsApi(token?.value || '', params)) as {
-    data?: AuditLogListResponse
-  }
+  const data = unwrapResponse(await getAuditLogsApi(token?.value || '', params))
 
   return (
-    res?.data ?? {
+    data ?? {
       items: [],
       total: 0,
       page: params.page ?? 1,

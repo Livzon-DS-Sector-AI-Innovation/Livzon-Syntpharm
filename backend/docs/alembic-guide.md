@@ -266,7 +266,7 @@ uv run alembic upgrade 0082:0083 --sql
 **日常更推荐走容器**（环境变量齐全）：
 
 ```bash
-docker compose -f docker-compose.local-dev.yml --env-file .env.local run --rm migrate
+docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm migrate
 ```
 
 ### 6.3 改模型的标准流程

@@ -1,10 +1,12 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { unwrapResponse } from '@/lib/api/server/base'
 import { getMenuConfigApi, saveMenuConfigApi } from '@/lib/api/server/menu'
 import { EMPTY_MENU_CONFIG, type MenuConfigData } from '@/types/menu-admin'
 
-export interface MenuActionState {
+/** 保存结果（不 export：`'use server'` 文件只允许导出异步函数）。 */
+interface MenuActionState {
   ok: boolean
   message: string
 }
@@ -21,11 +23,17 @@ export async function getMenuConfig(): Promise<MenuConfigData> {
   if (!token) return EMPTY_MENU_CONFIG
 
   try {
-    // apiFetch 返回完整信封 { code, data, message }，必须解包 data
-    const res = (await getMenuConfigApi(token)) as { data?: MenuConfigData }
-    const data = res?.data
+    const data = unwrapResponse(await getMenuConfigApi(token))
     if (!data) return EMPTY_MENU_CONFIG
-    return { items: data.items ?? {}, custom: data.custom ?? [] }
+    // 生成类型里 custom[].parent 可选（后端默认 null），这里归一成必填 null
+    return {
+      items: data.items ?? {},
+      custom: (data.custom ?? []).map(item => ({
+        ...item,
+        parent: item.parent ?? null,
+        perms: item.perms ?? [],
+      })),
+    }
   } catch {
     return EMPTY_MENU_CONFIG
   }

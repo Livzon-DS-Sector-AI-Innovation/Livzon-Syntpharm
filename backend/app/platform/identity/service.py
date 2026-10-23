@@ -1202,8 +1202,13 @@ def _verify_feishu_callback_signature(
     nonce: str | None,
     signature: str | None,
 ) -> bool:
-    if not encrypt_key or not timestamp or not nonce or not signature:
+    # 未配置 Encrypt Key 时无法做签名校验，此时由调用方的 verification token 校验兜底。
+    if not encrypt_key:
         return True
+    # 配置了 Encrypt Key 就必须提供完整签名材料，缺任何一项都判失败（fail-closed），
+    # 否则「删掉签名头」即可绕过校验。
+    if not timestamp or not nonce or not signature:
+        return False
     raw = f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body
     expected = hashlib.sha256(raw).hexdigest()
     return hmac.compare_digest(expected, signature)

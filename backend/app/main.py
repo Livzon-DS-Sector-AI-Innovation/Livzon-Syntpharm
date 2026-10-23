@@ -132,7 +132,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         maintenance_plan_loop,
         timeout_scan_loop,
     )
-    from app.platform.audit.cleanup import audit_cleanup_loop
     from app.platform.identity.scheduler import (
         member_sync_loop,
     )
@@ -143,7 +142,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
-    audit_cleanup_task = asyncio.ensure_future(audit_cleanup_loop())
+
+    # 审计日志过期清理：走 SchedulerEngine（可在「系统运维 → 定时任务」里看到并开关）
+    try:
+        from app.platform.audit.cleanup import register as register_audit_cleanup
+
+        register_audit_cleanup()
+    except Exception:
+        logger.exception("审计日志过期清理任务注册失败")
 
     # Start reagent reminder scheduler
     try:
@@ -151,8 +157,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         register()
         logger.info("Reagent reminder scheduler registered")
-    except Exception as e:
-        logger.warning(f"Failed to register reagent reminder scheduler: {e}")
+    except Exception:
+        logger.exception("Failed to register reagent reminder scheduler")
+
+    # SOP AI 定时巡检任务（此前 register() 从未被调用，动态任务永远不触发）
+    try:
+        from app.modules.quality.sop_ai.scheduler import register as register_sop_ai_scheduler
+
+        register_sop_ai_scheduler()
+    except Exception:
+        logger.exception("SOP AI 定时任务注册失败")
 
     # Start deviation reporter reminder scheduler
     try:
@@ -162,8 +176,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         register_deviation_reminder()
         logger.info("Deviation reporter reminder scheduler registered")
-    except Exception as e:
-        logger.warning(f"Failed to start deviation reporter reminder scheduler: {e}")
+    except Exception:
+        logger.exception("Failed to start deviation reporter reminder scheduler")
 
     # ── 平台级飞书 WebSocket 长连接 ──
     if settings.feishu.platform.ws_enabled:
@@ -253,7 +267,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     maintenance_plan_task.cancel()
     timeout_task.cancel()
     member_task.cancel()
-    audit_cleanup_task.cancel()
 
     # 停止平台级飞书 WebSocket
     from app.platform.integrations.feishu.ws_client import stop_ws_client

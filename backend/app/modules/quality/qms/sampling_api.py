@@ -228,6 +228,7 @@ async def get(  # noqa: F811
 )
 async def handler(  # noqa: F811
     order_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:sampling:read")),
     service: SamplingService = Depends(get_sampling_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]

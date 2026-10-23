@@ -1,4 +1,5 @@
 import { apiFetch, getApiBaseUrl, unwrapResponse } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
 
 export async function getLLMConfigs(configType?: string, token?: string) {
   const searchParams = new URLSearchParams()
@@ -80,13 +81,12 @@ export async function testLivzonFeishuConfig(data: unknown, token?: string) {
 }
 
 export async function syncLivzonFeishuContacts(token?: string) {
-  return fetchFeishuConfigData<{
-    status?: string
-    message?: string
-    departments?: Record<string, unknown>
-    members?: Record<string, unknown>
-  }>(`${getApiBaseUrl()}/api/v1/identity/sync/all`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  })
+  const envelope = await apiFetch<components['schemas']['SyncAllTriggerApiResponse']>(
+    `${getApiBaseUrl()}/api/v1/identity/sync/all`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    },
+  )
+  return unwrapResponse(envelope)
 }

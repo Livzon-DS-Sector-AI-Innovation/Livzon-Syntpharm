@@ -4,7 +4,8 @@ import { useActionState } from "react"
 import Link from "next/link"
 import { Button, Card, Divider, Input, Typography } from "antd"
 import { LockOutlined, UserOutlined } from "@ant-design/icons"
-import { loginWithPassword, type LoginActionState } from "@/actions/auth"
+import { loginWithPassword } from "@/actions/auth"
+import type { LoginActionState } from "@/types/auth"
 
 const INITIAL_STATE: LoginActionState = {}
 

@@ -359,6 +359,7 @@ async def batch_delete_equipments(
 @router.post("/equipments/sync-excel", summary="智能同步 Excel 设备数据", response_model=EquipmentSyncResponse)
 async def sync_equipments_excel(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     file: UploadFile = File(...),
     dry_run: bool = Query(False, description="是否仅预览不执行"),
     db: AsyncSession = Depends(get_db),

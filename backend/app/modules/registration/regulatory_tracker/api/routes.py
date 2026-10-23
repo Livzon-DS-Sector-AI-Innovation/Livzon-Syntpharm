@@ -1,11 +1,12 @@
 """Regulatory Tracker API routes V4 - 系统分类支持。"""
 # ruff: noqa: N803  # API query params use camelCase for frontend compatibility
 
+import logging
 import uuid
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +24,8 @@ from app.modules.registration.regulatory_tracker.services.classification_service
 from app.modules.registration.regulatory_tracker.utils.excel_export import (
     generate_regulatory_excel,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -369,7 +372,6 @@ async def post(
 async def post(  # noqa: F811
     current_user: CurrentUser,
     request: SyncTriggerRequest,
-    background_tasks: BackgroundTasks,
     ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -397,26 +399,37 @@ async def post(  # noqa: F811
     )
     await db.commit()
 
-    # 后台执行同步（不阻塞响应）
-    # AI 分析现在在 sync_service 中自动执行
+    # 后台执行同步（不阻塞响应）。用 spawn_task 而不是 BackgroundTasks：
+    # 后者在响应结束后脱离请求上下文执行，异常只会静默丢失，任务状态永远停在 pending。
+    # AI 分析在 sync_service 内部自动执行。
+    from app.core.tasks import spawn_task
     from app.modules.registration.regulatory_tracker.services.sync_service import (
         run_sync_job,
     )
 
-    async def _run_sync(current_user: CurrentUser) -> Any:
+    async def _run_sync() -> None:
         from app.core.database import async_session_factory
 
-        async with async_session_factory() as session:
-            await run_sync_job(
-                db=session,
-                source=source,
-                channel=channel,
-                job_type="manual_sync",
-                start_page=request.startPage,
-                end_page=request.endPage,
-            )
+        try:
+            async with async_session_factory() as session:
+                await run_sync_job(
+                    db=session,
+                    source=source,
+                    channel=channel,
+                    job_type="manual_sync",
+                    start_page=request.startPage,
+                    end_page=request.endPage,
+                )
+        except Exception:
+            logger.exception("法规同步任务执行失败 jobId=%s", job.id)
+            try:
+                async with async_session_factory() as session:
+                    await repo.update_sync_job(session, job.id, {"status": "failed"})
+                    await session.commit()
+            except Exception:
+                logger.exception("标记同步任务失败状态时出错 jobId=%s", job.id)
 
-    background_tasks.add_task(_run_sync)
+    spawn_task(_run_sync(), name=f"regulatory-sync-{job.id}")
 
     return {
         "code": 200,

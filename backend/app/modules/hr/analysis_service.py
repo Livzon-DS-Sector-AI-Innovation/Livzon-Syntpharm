@@ -1,6 +1,7 @@
 """HR turnover analysis service."""
 
 import asyncio
+import logging
 from collections import Counter
 from datetime import date, timedelta
 from typing import Any
@@ -15,6 +16,8 @@ from app.modules.hr.analysis_schemas import (
     TurnoverRawData,
 )
 from app.modules.hr.models import DepartureRecord, OnboardingRecord
+
+logger = logging.getLogger(__name__)
 
 _TURNOVER_SYSTEM_PROMPT = """你是一位人力资源数据分析顾问，擅长从人员流动数据中发现管理问题并提供针对性建议。
 
@@ -288,12 +291,15 @@ class TurnoverAnalysisService:
             return TurnoverAnalysisService._parse_ai_response(full_text)
 
         except Exception:
+            # AI 不可用 / 超时：降级为纯统计摘要，并把原因写进日志（不能静默吞掉）
+            logger.warning("流失率 AI 分析失败，降级为统计摘要", exc_info=True)
             return {
                 "summary": (
                     f"统计周期内老厂入职{raw_data['onboarding_count']}人，"
                     f"离职{raw_data['departure_count']}人，"
                     f"净增减{metrics.net_change}人，"
                     f"人员流失率{metrics.turnover_rate}%。"
+                    "（AI 分析暂时不可用，请人工复核）"
                 ),
                 "suggestions": [],
             }

@@ -362,6 +362,7 @@ async def post(  # noqa: F811
 async def handler(  # noqa: F811
     upload_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取上传进度"""
@@ -388,6 +389,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     check_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取校验进度"""
@@ -624,6 +626,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     record_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:doc-check:update")),
     operator: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> Any:

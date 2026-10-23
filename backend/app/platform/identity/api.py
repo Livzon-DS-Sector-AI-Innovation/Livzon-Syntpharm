@@ -937,7 +937,7 @@ async def reset_user_password(
     """
     from app.core.exceptions import ForbiddenException, NotFoundException
     from app.platform.identity.service import reset_password_by_admin
-    from app.platform.permission.public_api import user_is_superuser
+    from app.platform.permission.public_api import guard_manage_target, user_is_superuser
 
     repo = UserRepository()
     user = await repo.get_by_id(db, user_id)
@@ -946,6 +946,9 @@ async def reset_user_password(
 
     if await user_is_superuser(db, user):
         raise ForbiddenException("超级管理员的密码只能由本人登录后修改")
+
+    # 分级校验：只能重置权限严格低于自己的账号，防止低级管理员重置上级口令后接管账号
+    await guard_manage_target(db, actor=ctx.user, target=user)
 
     generated = await reset_password_by_admin(
         db,
@@ -1041,10 +1044,13 @@ async def revoke_user_sessions(
 ) -> Any:
     from app.core.exceptions import NotFoundException
     from app.platform.identity.session import revoke_all_user_sessions
+    from app.platform.permission.public_api import guard_manage_target
 
     user = await UserRepository().get_by_id(db, user_id)
     if user is None:
         raise NotFoundException("用户")
+    # 分级校验：只能踢权限严格低于自己的账号，防止低级管理员把上级踢下线
+    await guard_manage_target(db, actor=ctx.user, target=user, resource_label="会话")
     count = await revoke_all_user_sessions(user.id)
     return build_response(data={"revoked": count})
 

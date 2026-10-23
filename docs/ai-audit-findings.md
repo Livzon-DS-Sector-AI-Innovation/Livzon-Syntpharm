@@ -5232,3 +5232,112 @@ Dynamic sort logic analysis (`repository/equipment.py` `_build_order_by()`):
 
 The 2 low-severity `'use client'` issues and 8 redundant `@pytest.mark.asyncio` decorators can be fixed in a follow-up commit.
 
+### PR #121: 权限体系落地与系统管理补全（base: main @ 590be0b8, head: feature/permission-system-admin @ 80e9c15e, date: 2026-10-23）
+
+**修复轮次：P0（阻断）+ P1（安全高危）**
+
+#### 已修复（Confirmed → RESOLVED）
+
+- [x] Cat 5 — `backend/alembic/env.py` — 补 `import_module("app.platform.permission.models")`；5 张 `permission.*` 表已进入 `Base.metadata`，`--autogenerate` 不再误判为 drop_table。（blocking，RESOLVED）
+- [x] Cat 4 — `backend/app/modules/hr/api.py` — 飞书审批回调移除 `require_permission("hr:webhook:create")`（飞书服务器无用户 JWT，原实现使所有真实回调 401）；改为 `HR_FEISHU_APPROVAL_ENCRYPT_KEY` 签名校验 + `HR_FEISHU_APPROVAL_VERIFICATION_TOKEN` 校验 + `challenge` 回显，两者都未配置时直接 503（fail-closed）。绑定从 `API_BINDINGS` 移除并登记到 `EXEMPT_ROUTES`。（blocking，RESOLVED）
+- [x] Cat 4 — `backend/app/platform/permission/service/authorization.py` — 权限表未迁移的降级改为：`PERMISSION_ENFORCE_ENABLED=true` 时 fail-closed（503 + 迁移提示），关闭时保留「仅登录」降级；`has_permission` 同步返回 False。（high，RESOLVED）
+- [x] Cat 4 — `backend/app/platform/identity/service.py` — `_verify_feishu_callback_signature` 不再 fail-open：配置了 Encrypt Key 后，缺 timestamp/nonce/signature 即判失败。（high，RESOLVED）
+- [x] Cat 4 — `backend/app/platform/identity/deps.py` — 会话吊销查询异常改为 fail-closed（拒绝请求），不再当作「未吊销」放行。（medium，RESOLVED）
+- [x] Cat 4 — `backend/app/platform/identity/api.py` — `reset-password` 与 `DELETE /users/{id}/sessions` 补 `guard_manage_target`，禁止低级管理员操作权限不低于自己的账号。（high，RESOLVED）
+- [x] Cat 4 — `backend/app/modules/safety/api/feishu.py` — `POST /feishu/ws/restart`（及 status）不再匿名可调，新增权限码 `safety:feishu:manage` 并登记绑定。（high，RESOLVED）
+- [x] Cat 6 — `backend/app/modules/hr/api.py` — `hr.system_settings` 的凭据类键（`*SECRET`、`*_API_KEY`）加密后落库，读取接口只返回掩码；空值/回传掩码视为「不修改」，避免把掩码写成新密钥。（high，RESOLVED）
+- [x] Cat 2 / Cat 6 — `.env.example` 移除 `LLM_ENCRYPTION_KEY` 明文占位；三个 `.env*.example` 同步补 `PERMISSION_ENFORCE_ENABLED` / `PERMISSION_ENFORCE_MODULES` / `HR_FEISHU_APPROVAL_*` / `BOOTSTRAP_ADMIN_FORCE_RESET`。（medium，RESOLVED）
+- [x] Cat 8 — 新增 `backend/tests/unit/test_hr_feishu_webhook_auth.py`（6 例），覆盖回调鉴权的全部 fail-closed 分支。
+
+#### 未处理（按决策保留 / 不在本轮范围）
+
+- [ ] Cat 9 / Cat 11 — `frontend/src/hooks/usePermission.ts`、`frontend/src/proxy.ts` 治理审批：按决策本轮保留，待架构负责人确认后补审批记录；`consumeLoginRedirect` 只在 `/` 生效导致登录落到 `/home` 时失效的缺陷一并留待该轮修复。
+- [ ] Cat 4（剩余）— safety 子路由共用 `safety:module:read`、dossier_writer 读写共用、equipment/quality/energy 写接口缺权限码等约 60 个端点：归入 P2 批量接入。
+- [ ] Cat 9 / Cat 10 / Cat 16 — 前端类型收敛、跨模块深引用、`useEffect` 取数改 React Query：归入 P3。
+- [ ] Cat 6 / Cat 7 / Cat 13 — `audit_cleanup_loop` 改 SchedulerEngine、日志 `extra={}`、Dockerfile Playwright 层说明：归入 P4。
+- [ ] 标注 *(pre-existing)* 的低危项：独立跟进，不作为本 PR 合并前置条件。
+
+#### PR #121 第二轮修复（P2 鉴权缺口，2026-10-23）
+
+盘点结论：受保护前缀下原有 **314 个路由没有登记绑定**（审计报告只点了其中约 60 个写接口），
+其中 safety 220、registration 43、quality 33、equipment 14、energy/audit 各 1、模块根路由 5。
+
+- [x] Cat 4 — safety 全部 220 个接口：从「统一 `safety:module:read`」改为按 `资源 + 方法` 逐请求判定
+      （`safety/api/permission_map.py`）。读接口要 `<resource>:read`，写/审批/删除要 `<resource>:manage`，
+      导出/预览/解析查询这类只读 POST 仍按只读码。新增 45 个安全细码 + 220 条绑定。
+- [x] Cat 4 — `registration/dossier_writer`：路由级 `dossier:read` 改为
+      `GET→read / POST→create / PUT,PATCH→update / DELETE→delete`（原 TODO 落地），新增 32 条绑定。
+- [x] Cat 4 — quality：`standards` 的 PUT/DELETE/submit/approve/reject/obsolete/detail/items/approvals
+      9 个接口补权限依赖（原来仅登录）；`static-data` 的 batch-import / increment-usage / adjust-quantity / jobs、
+      `doc_check` 的 upload-progress / check-progress / records-confirm、`sampling` 的留样台账详情同样补齐；
+      新增 `quality:standard:update|delete|submit|approve` 四个码 + 33 条绑定。
+- [x] Cat 4 — equipment：`import-v4/batch`、`import-v4/preview`、`sync-excel` 补权限依赖（原仅登录），
+      `categories`、模块根路由补绑定，共 14 条。
+- [x] Cat 4 — energy `DELETE /alerts/records/{id}`、audit `GET /logs/export` 补绑定。
+- [x] Cat 4 — `PermissionBindingMiddleware` 增加「尾斜杠归一」匹配：`/plans` 与 `/plans/` 是两条独立路由，
+      不再需要为每个变体单独登记（一次消除 19 条未绑定）。
+- [x] 门禁 — `frontend/src/lib/permissions/codes.ts` 同步 55 个新码（CI `check_permissions.py` 强制两边一致）。
+- [x] 上线配套 — 新增 `backend/scripts/migration/backfill_permission_grants_20261023.py`：持有
+      `safety:module:read` / `registration:dossier:read` 的角色需补新码，否则细分后立刻 403。
+      默认「保持改造前能力」并支持 `--read-only`（只补读码）与 `--apply`。
+
+**覆盖率验证**：按中间件真实匹配逻辑重算，`openapi.json` 中 1284 个 method+path 全部命中绑定或豁免（未绑定 = 0）。
+**未处理**：`scripts/ci/check_permissions.py` 的完整性扫描仍按「模块前缀 + 装饰器路径」拼路径，
+对带内部 prefix 的子路由（如 `equipment/batch_import.py`、`quality/static_data/api.py`）产生约 510 条误报，
+需要先展平子路由再纳入门禁（工具改造，另开）。
+
+#### PR #121 第三轮修复（P3 前端类型与边界，2026-10-23）
+
+- [x] Cat 10 — `'use server'` 文件导出类型（`actions/permission.ts`、`users.ts`、`menu.ts`、`auth.ts`）：
+      `PermissionActionResult` 移到 `types/permission.ts`，`LoginActionState` 移到 `types/auth.ts`（并改
+      `app/login/password/page.tsx` 的导入），`UsersActionResult` / `MenuActionState` 无外部消费方 → 改为模块内私有。
+- [x] Cat 10 — 权限/用户/系统运维/审计/菜单/身份 API 层全部改用生成类型：
+      `lib/api/server/{permission,users,system-ops,audit,menu,identity,settings}.ts` 的 `apiFetch` 补
+      `components['schemas'][...]` 泛型，请求体改用生成请求模型（`RoleCreate`/`StatusBatchRequest`/`ApiSwitchRequest` 等），
+      调用侧改用 `unwrapResponse()`，删除约 30 处 `as { data: X }` 手写断言。
+- [x] Cat 10 — 生成类型与手写类型的语义差在边界归一：新增 `lib/api/batch.ts`
+      （`normalizeBatchResult` / `normalizeUserBatchStatus`），补齐 OpenAPI 标成可选的 `succeeded/failed`；
+      菜单 `custom[].parent/perms`、人员下拉 `username`、会话吊销 `revoked` 同样在边界收敛。
+- [x] Cat 10 — 重复类型定义：`BatchResult` 抽出到 `types/batch.ts`，`types/permission.ts` 与
+      `types/system-ops.ts` 改为 re-export；审计/登录日志的查询参数抽成 `AuditLogQuery` / `LoginLogQuery` 供两层共用。
+- [x] Cat 10 — `lib/api/server/{module-settings,agent-skills}.ts` 由相对 `/api/v1` 改为 `getApiBaseUrl()`。
+- [x] Cat 9 — `components/auth/RequirePermission.tsx` 删除：全仓无引用、与 `PermissionGate` 功能重复，
+      其跨模块深引用 `@/components/settings/NoAccessResult` 一并消除。
+- [x] Cat 10 — `lib/permissions/server.ts` 的 lib→actions 反向依赖：改为直接调用 `lib/api/server/menu`，
+      菜单配置与权限快照都通过 `unwrapResponse` 解包。
+
+**未处理（本轮范围外）**：Cat 9 的 `<Card title>` 语义 h1（9 个页面需重构标题层级，留到 P4）；
+Cat 16 的 `useEffect` 取数改 React Query（风险最高，单独一轮）；
+`types/identity.ts`、`types/equipment-personnel.ts` 仍是手写契约 —— 根因是后端
+`GET /identity/login-logs`、`GET /identity/personnel` 未声明 `response_model`，需先补后端模型再重新生成 schema。
+
+#### PR #121 第四轮修复（P4 后台任务 / 日志 / 配置 / 部署说明，2026-10-23）
+
+- [x] Cat 7 — `app/platform/audit/cleanup.py`：审计日志清理从 `main.py` 手写
+      `asyncio.ensure_future(audit_cleanup_loop())` + 自建调度，改为 `TaskDefinition`（CRON `0 4 * * *`，
+      Asia/Shanghai）+ `scheduler_registry.register_task`；新增 `AUDIT_CLEANUP_ENABLED` 作为
+      `settings_toggle_key`，可在「系统运维 → 定时任务」里运行时开关；`timeout_seconds=1800` 避免大批量删除被取消。
+      同时从 `ops_service._STANDALONE_LOOPS` 移除该条目（不再属于独立轮询循环）。
+- [x] Cat 7 — `registration/regulatory_tracker/api/routes.py`：同步任务从 `BackgroundTasks.add_task(_run_sync)`
+      （签名多一个必填参数 ⇒ 响应结束后 TypeError、任务永远 pending）改为 `spawn_task`，并在失败时
+      写日志 + 把 `sync_job.status` 置为 `failed`。
+- [x] Cat 7 — `quality/sop_ai/scheduler.py`：`register()` 从未被调用 ⇒ 定时巡检永不触发；已在 startup 注册。
+      同时修 `_cron_matches` 用 `croniter.get_prev()` 导致「基准时刻正好匹配时永远返回上一拍」的问题，改用 `match()`。
+- [x] Cat 7 — `equipment/api/claim.py`：接单通知从裸 `asyncio.ensure_future` 改为 `spawn_task`（异常进日志）。
+- [x] Cat 7 — `hr/analysis_service.py`：流失率 AI 分析失败由静默兜底改为 `logger.warning(exc_info=True)`
+      并在摘要里标注「AI 分析暂时不可用，请人工复核」。
+- [x] Cat 6 — `quality/qms/{reagent,deviation_reporter}_reminder_scheduler.py`：`logger.error(f"...{e}")` 改
+      `logger.exception`（保留 traceback）；`main.py` 两处调度注册失败同样改 `logger.exception`。
+- [x] Cat 7 — `registration/dossier_writer/api.py`：`print(traceback)` 改为 `logger.exception`。
+- [x] Cat 7 — `energy/scheduler.py`：月度同步失败重试由固定 60s 改为指数退避（60/120/240s）。
+- [x] Cat 1 — 文档失效引用：`permission-module-onboarding.md` 与 `alembic-guide.md` 里的
+      `docker-compose.local-dev.yml` / `.env.local` 改为实际使用的 `docker-compose.yml + docker-compose.dev.yml` 与 `.env`；
+      `docker-compose.dev.yml` 的注释同步更正（Compose 不读 `.env.local`）。
+- [x] Cat 6 — 核实 `identity` 登录锁定参数：`MAX_LOGIN_FAILURES` / `LOCKOUT_SECONDS` 已在 `service.py` 定义并被
+      `api.py` 引用，**审计该条已过期**，无需改动。
+
+**未处理（pre-existing，需独立排期）**：Cat 7 里 6 处「请求内联 LLM/OCR 超过 5 秒」的接口
+（hr ai_exam / hr 简历解析 / quality doc_check / label_verification / registration validation_audit /
+equipment inspection）—— 都要改成「提交任务 + 轮询」，属接口契约变更，不适合与安全修复混做一个 PR。
+Cat 5 的「`0086`/`0087` 三张表无 ORM model、靠 `RAW_SQL_ONLY_TABLES` 白名单长期遮蔽」需要补 model 并
+在有库环境跑 `alembic check` 验证，同样留待独立一轮。
