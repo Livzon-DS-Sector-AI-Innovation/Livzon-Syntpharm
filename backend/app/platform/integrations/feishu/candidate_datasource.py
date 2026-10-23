@@ -57,8 +57,9 @@ class CandidateBitableDataSource:
     """Candidate datasource backed by Feishu Bitable."""
 
     def __init__(self) -> None:
-        app_token = _settings.FEISHU_BITABLE_CANDIDATE_APP_TOKEN  # type: ignore[attr-defined]
-        table_id = _settings.FEISHU_BITABLE_CANDIDATE_TABLE_ID  # type: ignore[attr-defined]
+        # 配置已统一收敛到 Settings.feishu.hr_bitable（旧的平铺属性名已移除）
+        app_token = _settings.feishu.hr_bitable.candidate_app_token
+        table_id = _settings.feishu.hr_bitable.candidate_table_id
         self._ds = BitableDataSource(app_token=app_token, table_id=table_id)
         self.client = self._ds.client
         self.table_id = table_id

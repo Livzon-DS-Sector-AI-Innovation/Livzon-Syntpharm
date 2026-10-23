@@ -6,6 +6,11 @@ from app.shared.schemas import ApiResponse
 
 __all__ = ["ApiResponse", "build_response", "success_response", "error_response", "paginated_response"]
 
+# 显式声明 UTF-8：响应体含中文（如错误提示「数据重复，该记录已存在」）时，
+# 若 Content-Type 不带 charset，某些客户端/代理会按 ISO-8859-1 解析 → 出现
+# 「æ•°æ®é‡å¤」这类乱码。
+JSON_UTF8 = "application/json; charset=utf-8"
+
 
 def build_response(
     data: Any = None,
@@ -26,7 +31,11 @@ def success_response(
     status_code: int = 200,
 ) -> JSONResponse:
     body = ApiResponse(code=status_code, message=message, data=data, meta=meta)
-    return JSONResponse(content=body.model_dump(mode="json"), status_code=status_code)
+    return JSONResponse(
+        content=body.model_dump(mode="json"),
+        status_code=status_code,
+        media_type=JSON_UTF8,
+    )
 
 
 def error_response(
@@ -43,7 +52,7 @@ def error_response(
         body["detail"] = detail
     if request_id:
         body["request_id"] = request_id
-    return JSONResponse(content=body, status_code=status_code)
+    return JSONResponse(content=body, status_code=status_code, media_type=JSON_UTF8)
 
 
 def paginated_response(

@@ -12,6 +12,8 @@ import {
 } from '@/types/research/rd-project'
 import dayjs from 'dayjs'
 import { createInitiation, updateInitiation } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 
 // JSON structure interfaces for InitiationPage
@@ -218,10 +220,14 @@ export function InitiationPage({ projectId }: Props) {
       width: 120,
       render: (_: unknown, record: RdInitiation) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
-          <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchInitiationUpdate}>
+            <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+          </PermissionGate>
+          <PermissionGate code={PERM.researchInitiationDelete}>
+            <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
+              <Button type="link" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -350,9 +356,11 @@ export function InitiationPage({ projectId }: Props) {
       <Card
         title="立项申请"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            新建立项
-          </Button>
+          <PermissionGate code={PERM.researchInitiationCreate}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              新建立项
+            </Button>
+          </PermissionGate>
         }
       >
         <Table
@@ -374,7 +382,9 @@ export function InitiationPage({ projectId }: Props) {
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
+            <PermissionGate code={editingRecord ? PERM.researchInitiationUpdate : PERM.researchInitiationCreate}>
+              <Button type="primary" onClick={handleSave}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >

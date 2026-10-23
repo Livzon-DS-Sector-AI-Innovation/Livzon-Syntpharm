@@ -266,7 +266,7 @@ export function FeishuRawRecordTable({
   )
 
   if (error) {
-    return <Alert type="warning" showIcon message={error} />
+    return <Alert type="warning" showIcon title={error} />
   }
 
   return (
@@ -301,7 +301,7 @@ export function FeishuRawRecordTable({
             type="warning"
             showIcon
             className="mb-4"
-            message={data.table.sync_error}
+            title={data.table.sync_error}
           />
         )}
         {extra && <div className="mb-4">{extra}</div>}

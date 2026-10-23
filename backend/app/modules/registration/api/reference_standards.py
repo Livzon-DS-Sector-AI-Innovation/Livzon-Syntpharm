@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.service import ReferenceStandardService
@@ -24,6 +24,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> ReferenceStandardSer
 @router.post("/parse-coa", summary="解析COA文件提取信息")
 async def post(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:create")),
     coa: UploadFile = File(...),
 ) -> Any:
     """解析COA PDF文件，自动提取关键信息"""
@@ -43,6 +44,7 @@ async def post(
 async def post(  # noqa: F811
     current_user: CurrentUser,
     coa: UploadFile,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:create")),
     drug_name: str = Form(..., description="药品名称"),
     reference_substance_name: str | None = Form(None, description="对照物质名称"),
     batch_number: str | None = Form(None, description="批号"),
@@ -90,6 +92,7 @@ async def post(  # noqa: F811
 @router.get("", summary="对照物质说明表记录列表")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
     service: ReferenceStandardService = Depends(get_service),
@@ -112,6 +115,7 @@ async def get(
 async def get(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     record = await service.get_record(record_id)
@@ -122,6 +126,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     record_model = await service.repo.get_by_id(record_id)
@@ -139,6 +144,7 @@ async def get(  # noqa: F811
 async def get(  # noqa: F811
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     record_model = await service.repo.get_by_id(record_id)
@@ -160,6 +166,7 @@ async def get(  # noqa: F811
 async def delete(
     current_user: CurrentUser,
     record_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:reference-standard:delete")),
     service: ReferenceStandardService = Depends(get_service),
 ) -> Any:
     await service.delete_record(record_id)

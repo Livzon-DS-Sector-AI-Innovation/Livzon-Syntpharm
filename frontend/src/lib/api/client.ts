@@ -67,7 +67,7 @@ export async function fetchApi<T>(
     const errorMessages: Record<number, string> = {
       400: '请求参数错误',
       401: '未授权，请重新登录',
-      403: '拒绝访问',
+      403: '当前用户权限不足',
       404: '请求的资源不存在',
       408: '请求超时',
       500: '服务器内部错误',
@@ -77,7 +77,17 @@ export async function fetchApi<T>(
     }
 
     const message = errorMessages[response.status] || `请求失败: ${response.status}`
-    
+
+    // 401：会话过期 → 记住当前地址并带去登录页，登录成功后由落地页跳回
+    // （以前只弹「未授权」文案，用户得自己重新找页面）
+    if (response.status === 401 && typeof window !== 'undefined') {
+      const target = `${window.location.pathname}${window.location.search}`
+      if (!target.startsWith('/login')) {
+        document.cookie = `login_redirect=${encodeURIComponent(target)}; path=/; max-age=600`
+      }
+      window.location.href = '/login'
+    }
+
     // 尝试解析错误响应（可能是 JSON 格式的错误信息）
     let errorData: unknown = null
     const contentType = response.headers.get('content-type')

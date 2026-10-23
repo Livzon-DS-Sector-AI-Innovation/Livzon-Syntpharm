@@ -6,6 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.shared.schemas import PaginationMeta
+
 # ── 枚举 ──────────────────────────────────────────────────
 
 
@@ -229,3 +231,62 @@ class AuditResult(BaseModel):
     non_compliant_count: int = Field(0, description="不合规项数")
     issues: list[AuditIssueItem] = Field(default_factory=list, description="问题列表")
     summary: str = Field("", description="审核总结")
+
+
+# ── API 响应信封（具体 response_model，替换 response_model=dict） ──
+
+
+class ValidationAuditTaskApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ValidationAuditTaskResponse | None = None
+
+
+class ValidationAuditTaskListData(BaseModel):
+    items: list[ValidationAuditTaskListItem]
+    total: int
+
+
+class ValidationAuditTaskListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ValidationAuditTaskListData | None = None
+    meta: PaginationMeta | None = None
+
+
+class ValidationAuditMessageApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: None = None
+
+
+class ValidationAuditFileUploadItem(BaseModel):
+    filename: str | None = None
+    status: str
+    error: str | None = None
+    file_id: str | None = None
+    file_size: int | None = None
+
+
+class ValidationAuditFileUploadApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ValidationAuditFileUploadItem] | None = None
+
+
+class ValidationAuditFileListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ValidationAuditFileListItem] | None = None
+
+
+class ValidationAuditIssueListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ValidationAuditIssueResponse] | None = None
+
+
+class ValidationAuditReportApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ValidationAuditReportResponse | None = None

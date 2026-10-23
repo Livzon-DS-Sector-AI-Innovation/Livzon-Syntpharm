@@ -247,7 +247,7 @@ class StaticDataService:
         """Get single storage condition"""
         return await self.repo.get_storage_condition(id)
 
-    async def _func_l247(self, data: s.StorageConditionCreate, user_id: UUID) -> Any:
+    async def create_storage_condition(self, data: s.StorageConditionCreate, user_id: UUID) -> Any:
         """Create storage condition"""
         existing = await self.repo.get_storage_condition_by_code(data.cond_code)
         if existing:
@@ -255,7 +255,7 @@ class StaticDataService:
         obj = await self.repo.create_storage_condition({**data.model_dump(), "created_by": user_id})
         return obj
 
-    async def _func_l258(self, id: UUID, data: s.StorageConditionUpdate, user_id: UUID) -> Any:
+    async def update_storage_condition(self, id: UUID, data: s.StorageConditionUpdate, user_id: UUID) -> Any:
         """Update storage condition"""
         existing = await self.repo.get_storage_condition(id)
         if not existing:

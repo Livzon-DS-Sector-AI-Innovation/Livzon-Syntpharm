@@ -9,13 +9,14 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.modules.quality.qms.stability_schemas import (
     StabilityApprovalCreate,
     StabilityInspectionApiResponse,
     StabilityInspectionCreate,
     StabilityInspectionFilter,
     StabilityInspectionListResponse,
+    StabilityInspectionPageResponse,
     StabilityInspectionResponse,
     StabilityInspectionUpdate,
     StabilitySampleNodeResponse,
@@ -24,6 +25,7 @@ from app.modules.quality.qms.stability_schemas import (
     StabilityStudyCreate,
     StabilityStudyFilter,
     StabilityStudyListResponse,
+    StabilityStudyPageResponse,
     StabilityStudyResponse,
     StabilityStudyUpdate,
     StabilityTrendApiResponse,
@@ -46,6 +48,7 @@ def get_stability_service(
 @router.post("/studies", response_model=StabilityStudyApiResponse, status_code=201)
 async def post(
     data: StabilityStudyCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:create")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -61,8 +64,9 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/studies", response_model=dict)
+@router.get("/studies", response_model=StabilityStudyPageResponse)
 async def get(
+    ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     study_no: str | None = Query(None, description="方案编号"),
     product_code: str | None = Query(None, description="产品编码"),
     product_name: str | None = Query(None, description="产品名称"),
@@ -99,6 +103,7 @@ async def get(
 @router.get("/studies/{study_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     study_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -114,6 +119,7 @@ async def get(  # noqa: F811
 async def put(
     study_id: UUID,
     data: StabilityStudyUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:update")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -132,6 +138,7 @@ async def put(
 @router.delete("/studies/{study_id}")
 async def delete(
     study_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:delete")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -147,6 +154,7 @@ async def delete(
 @router.post("/studies/{study_id}/submit", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     study_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:submit")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -166,6 +174,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     study_id: UUID,
     data: StabilityApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:approve")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -189,6 +198,7 @@ async def post(  # noqa: F811
 @router.get("/studies/{study_id}/sample-nodes", response_model=list[StabilitySampleNodeResponse])
 async def handler(
     study_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -201,6 +211,7 @@ async def handler(
 async def put(  # noqa: F811
     node_id: UUID,
     data: StabilitySampleNodeUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:update")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -222,6 +233,7 @@ async def put(  # noqa: F811
 @router.post("/inspections", response_model=StabilityStudyApiResponse, status_code=201)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     data: StabilityInspectionCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:create")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -237,8 +249,9 @@ async def post(  # noqa: F811
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/inspections", response_model=dict)  # type: ignore[no-redef]
+@router.get("/inspections", response_model=StabilityInspectionPageResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
+    ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     study_id: UUID | None = Query(None, description="试验ID"),
     study_no: str | None = Query(None, description="方案编号"),
     inspection_no: str | None = Query(None, description="检验单号"),
@@ -273,6 +286,7 @@ async def get(  # noqa: F811
 @router.get("/inspections/{inspection_id}", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -288,6 +302,7 @@ async def get(  # noqa: F811
 async def put(  # noqa: F811
     inspection_id: UUID,
     data: StabilityInspectionUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:update")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -306,6 +321,7 @@ async def put(  # noqa: F811
 @router.post("/inspections/{inspection_id}/submit", response_model=StabilityStudyApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:submit")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
@@ -327,6 +343,7 @@ async def post(  # noqa: F811
 @router.get("/studies/{study_id}/trend", response_model=StabilityTrendApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     study_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:stability:read")),
     service: StabilityStudyService = Depends(get_stability_service),
     current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]

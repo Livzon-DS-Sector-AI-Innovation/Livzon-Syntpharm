@@ -4,6 +4,8 @@ import { Table, Button, Space, Tag, Popconfirm, App } from 'antd'
 import { EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import { deleteRouteAction } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import { RouteDevelopment, RouteStatus } from '@/types/research'
 
 interface RouteTableProps {
@@ -84,19 +86,23 @@ export function RouteTable({ routes, loading, onEdit, onRefresh }: RouteTablePro
           <Button type="link" size="small" icon={<EyeOutlined />}>
             查看
           </Button>
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm
-            title="确定要删除这条路线吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-              删除
+          <PermissionGate code={PERM.researchRouteUpdate}>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => onEdit(record)}>
+              编辑
             </Button>
-          </Popconfirm>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchRouteDelete}>
+            <Popconfirm
+              title="确定要删除这条路线吗？"
+              onConfirm={() => handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },

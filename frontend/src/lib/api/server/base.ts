@@ -1,3 +1,5 @@
+import { PermissionDeniedError } from '@/lib/api/errors'
+
 export function getApiBaseUrl(): string {
   if (process.env.API_BASE_URL) {
     return process.env.API_BASE_URL
@@ -52,17 +54,27 @@ export async function apiFetch<T = any>(url: string, options?: RequestInit): Pro
     cache: options?.cache ?? 'no-store',
   })
   if (!response.ok) {
-    const _errorBody = await response.text().catch(() => '')
     let errorMessage = `请求失败: ${response.status} ${response.statusText}`
     try {
       const errorJson = await response.json()
       if (errorJson.message) errorMessage = errorJson.message
       else if (errorJson.detail) errorMessage = typeof errorJson.detail === 'string' ? errorJson.detail : JSON.stringify(errorJson.detail)
-    } catch {}
+    } catch {
+      // 非 JSON 响应，保留默认文案
+    }
+    // 403 单独语义化：由调用方统一提示「当前用户权限不足」，不把技术状态码抛给用户
+    if (response.status === 403) {
+      throw new PermissionDeniedError(errorMessage)
+    }
     throw new Error(errorMessage)
   }
-  const result = await response.json()
-  return result
+  // 204 No Content（如软删除接口）或空响应体：没有 JSON 可解析，直接返回 null。
+  // 否则 response.json() 会抛 "Unexpected end of JSON input"，调用方误报「操作失败」，
+  // 而数据其实已经删除成功。
+  if (response.status === 204) return null as T
+  const text = await response.text()
+  if (!text) return null as T
+  return JSON.parse(text) as T
 }
 
 export async function apiFetchRaw(url: string, options?: RequestInit): Promise<Response> {

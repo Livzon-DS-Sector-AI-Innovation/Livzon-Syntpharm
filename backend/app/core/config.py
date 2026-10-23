@@ -169,6 +169,12 @@ class Settings(BaseSettings):
     ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
     ENERGY_BITABLE_SYNC_HOUR: int = 17
     DEBUG: bool = False
+    # 权限：是否强制执行「接口精确绑定兜底」（未登记绑定的受保护接口一律 403）。
+    # 默认关闭，待存量业务接口全部接入绑定登记后再开启。
+    PERMISSION_ENFORCE_ENABLED: bool = False
+    # 权限灰度：逗号分隔的模块码（业务模块码 + 平台域 identity/permission/system/audit）。
+    # 空字符串 = 对所有受保护前缀强制（最终态）；非空 = 仅所列模块强制（灰度节奏：接入一个开一个）。
+    PERMISSION_ENFORCE_MODULES: str = ""
 
     @field_validator("DEBUG", mode="before")
     @classmethod
@@ -201,6 +207,8 @@ class Settings(BaseSettings):
 
     # Audit
     AUDIT_RETENTION_DAYS: int = 7
+    # 审计日志过期清理任务开关（SchedulerEngine 的 settings_toggle_key 读它）
+    AUDIT_CLEANUP_ENABLED: bool = True
 
     # Feishu / Lark — all modules grouped
     feishu: FeishuSettings = Field(default_factory=FeishuSettings)
@@ -231,6 +239,9 @@ class Settings(BaseSettings):
     BOOTSTRAP_USER_PASSWORD: str = ""
     BOOTSTRAP_USER_NAME: str = "普通用户"
     BOOTSTRAP_USER_EMAIL: str = ""
+    # 默认 false：启动时只补建缺失的引导账号，不覆盖已存在账号的密码
+    # （用户自行修改过的密码必须活过容器重启）。需要回灌初始密码时显式打开。
+    BOOTSTRAP_ADMIN_FORCE_RESET: bool = False
     LIVZON_FEISHU_CARD_CALLBACK_WS_ENABLED: bool = False
 
     # AI — HR 离职分析
@@ -263,6 +274,14 @@ class Settings(BaseSettings):
 
     # HR Bitable
     HR_BITABLE_APP_TOKEN: str = ""
+
+    # HR 飞书「审批完成」事件回调校验凭据（飞书开放平台 → 事件与回调 → 加密策略）。
+    # 回调由飞书服务器发起、没有用户登录态，只能靠这两个凭据鉴权：
+    # - ENCRYPT_KEY：配置后必须提供 timestamp/nonce/signature 并通过 HMAC 校验；
+    # - VERIFICATION_TOKEN：与 payload.header.token 比对。
+    # 两者都为空时回调一律拒绝（fail-closed），避免无鉴权的状态变更接口。
+    HR_FEISHU_APPROVAL_ENCRYPT_KEY: str = ""
+    HR_FEISHU_APPROVAL_VERIFICATION_TOKEN: str = ""
 
     # Font
     CJK_FONT_PATH: str = ""

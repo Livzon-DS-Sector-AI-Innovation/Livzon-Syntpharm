@@ -7,6 +7,8 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, UploadOutlined, DownloadOut
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
 import { RdDeliverableTemplate, STAGE_LABELS, DELIVERABLE_TYPES, RdProjectStage } from '@/types/research/rd-project'
 import { createDeliverableTemplate, updateDeliverableTemplate, deleteDeliverableTemplate } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { TextArea } = Input
 
@@ -176,11 +178,15 @@ export function DeliverableTemplatePage() {
       key: 'actions',
       render: (_: unknown, record: RdDeliverableTemplate) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+          <PermissionGate code={PERM.researchDeliverableTemplateUpdate}>
+            <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+          </PermissionGate>
           <Button type="link" icon={<DownloadOutlined />} onClick={() => handleExportTemplate(record)} disabled={!record.template_content} />
-          <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchDeliverableTemplateDelete}>
+            <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
+              <Button type="link" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -196,19 +202,23 @@ export function DeliverableTemplatePage() {
       <Card
         extra={
           <Space>
-            <Upload
-              beforeUpload={handleBatchUpload}
-              showUploadList={false}
-              accept=".md,.txt,.markdown"
-              disabled={batchUploading}
-            >
-              <Button icon={<UploadOutlined />} loading={batchUploading}>
-                快速上传模板
+            <PermissionGate code={PERM.researchDeliverableTemplateCreate}>
+              <Upload
+                beforeUpload={handleBatchUpload}
+                showUploadList={false}
+                accept=".md,.txt,.markdown"
+                disabled={batchUploading}
+              >
+                <Button icon={<UploadOutlined />} loading={batchUploading}>
+                  快速上传模板
+                </Button>
+              </Upload>
+            </PermissionGate>
+            <PermissionGate code={PERM.researchDeliverableTemplateCreate}>
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                新建模板
               </Button>
-            </Upload>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-              新建模板
-            </Button>
+            </PermissionGate>
           </Space>
         }
       >
@@ -246,7 +256,11 @@ export function DeliverableTemplatePage() {
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
+            <PermissionGate
+              code={editingTemplate ? PERM.researchDeliverableTemplateUpdate : PERM.researchDeliverableTemplateCreate}
+            >
+              <Button type="primary" onClick={handleSave}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >

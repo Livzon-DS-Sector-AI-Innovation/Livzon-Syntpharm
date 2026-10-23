@@ -780,7 +780,7 @@ export default function ProductOutputRecordsPage() {
 
       {lastBatchId && (
         <Alert
-          message={
+          title={
             <div className="flex items-center justify-between">
               <div>
                 <CheckCircleOutlined className="text-green-500 mr-2" />

@@ -81,7 +81,6 @@ async def handler(
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/stats",
-    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识工作流统计",
 )
 async def handler(  # noqa: F811
@@ -90,12 +89,12 @@ async def handler(  # noqa: F811
     """获取危险源辨识工作流统计（草案/进行中/待审核/已完成）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_stats()
-    return HazardIdentificationApiResponse(data=stats)
+    # stats 是统计对象（非单条记录），不能用 HazardIdentificationApiResponse 包装
+    return {"code": 200, "message": "success", "data": stats}
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/ledger-stats",
-    response_model=HazardIdentificationApiResponse,
     summary="获取危险源辨识台账统计",
 )
 async def handler(  # noqa: F811
@@ -116,12 +115,11 @@ async def handler(  # noqa: F811
         date_from,
         date_to,
     )
-    return HazardIdentificationApiResponse(data=stats)
+    return {"code": 200, "message": "success", "data": stats}
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/risk-options",
-    response_model=HazardIdentificationApiResponse,
     summary="获取危险源风险选项（常规作业报备用）",
 )
 async def handler(  # noqa: F811

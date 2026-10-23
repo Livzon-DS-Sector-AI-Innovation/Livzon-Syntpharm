@@ -271,3 +271,12 @@ class IQCApprovalRecordListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[IQCApprovalRecordResponse] | None = None
+
+
+class IQCInspectionPageResponse(BaseModel):
+    """IQC检验单列表分页响应（列表接口直接返回 items/total/page/page_size）"""
+
+    items: list[IQCInspectionListResponse]
+    total: int
+    page: int
+    page_size: int

@@ -1,5 +1,10 @@
-import { RegulationClient } from '@/components/administration'
+import { DevelopmentNotice, RegulationClient } from '@/components/administration'
 
 export default async function NoticePage() {
-  return <RegulationClient />
+  return (
+    <>
+      <DevelopmentNotice feature="公告通知" />
+      <RegulationClient />
+    </>
+  )
 }

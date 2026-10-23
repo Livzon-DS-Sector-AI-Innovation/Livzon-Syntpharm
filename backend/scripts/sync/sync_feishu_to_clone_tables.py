@@ -12,6 +12,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import sys
 from datetime import UTC, date, datetime
 
@@ -31,6 +32,18 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 APP_TOKEN = "RfEmb1WyzasCg4sn6tsc4LbWnjf"
+
+# SQL 标识符（表名/列名）只允许常规小写命名，且表名可选带 schema 前缀；
+# PostgreSQL 不支持把标识符作为绑定参数，因此拼接前必须先过这道校验。
+_IDENTIFIER_RE = re.compile(r"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)?$")
+
+
+def _checked_identifier(name: str, kind: str) -> str:
+    """校验 SQL 标识符，非法值直接抛错而不是拼进语句。"""
+    if not _IDENTIFIER_RE.fullmatch(name):
+        raise ValueError(f"非法的{kind}: {name!r}")
+    return name
+
 
 # ─── Table configs ───
 TABLE_CONFIGS = {
@@ -408,7 +421,8 @@ def _build_record(fields: dict, mapping: dict, defaults: dict | None = None) -> 
 
 def _build_insert_sql(table: str, record: dict) -> tuple[str, dict]:
     """Build INSERT SQL and parameters."""
-    cols = list(record.keys())
+    table = _checked_identifier(table, "表名")
+    cols = [_checked_identifier(c, "列名") for c in record]
     placeholders = [f":{c}" for c in cols]
     sql = f"INSERT INTO {table} ({', '.join(cols)}) VALUES ({', '.join(placeholders)})"
     return sql, record
@@ -429,7 +443,7 @@ async def sync_table(
     logger.info("Syncing %s -> %s", feishu_table_id, db_table)
 
     # Clear existing data
-    await conn.execute(text(f"DELETE FROM {db_table}"))
+    await conn.execute(text(f"DELETE FROM {_checked_identifier(db_table, '表名')}"))
 
     # Fetch all records from Feishu
     records_data = await client.request(

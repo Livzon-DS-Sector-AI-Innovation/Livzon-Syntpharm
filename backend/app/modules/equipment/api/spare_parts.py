@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
+from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
@@ -34,6 +34,7 @@ def _require_user(current_user: CurrentUser) -> uuid.UUID:
 async def create_spare_part(
     data: SparePartCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -44,6 +45,7 @@ async def create_spare_part(
 @router.get("/", summary="备件列表")
 async def list_spare_parts(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:read")),
     category: str | None = Query(None, description="备件分类"),
     keyword: str | None = Query(None, description="关键词搜索"),
     is_active: bool | None = Query(None, description="是否启用"),
@@ -71,6 +73,7 @@ async def list_spare_parts(
 @router.get("/stock/warnings", summary="库存预警列表")
 async def get_stock_warnings(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -103,6 +106,7 @@ async def update_spare_part(
     spare_part_id: uuid.UUID,
     data: SparePartUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -125,6 +129,7 @@ async def delete_spare_part(
 async def get_stock(
     spare_part_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)
@@ -149,6 +154,7 @@ async def adjust_stock(
     spare_part_id: uuid.UUID,
     data: StockAdjustRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     _require_user(current_user)

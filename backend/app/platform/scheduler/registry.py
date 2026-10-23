@@ -124,6 +124,8 @@ class SchedulerRegistry:
     def __init__(self) -> None:
         self._tasks: dict[str, TaskDefinition] = {}
         self._generators: dict[str, TaskGenerator] = {}
+        # 运行时临时禁用集合（系统运维页可启停；内存态，容器重启后恢复默认）
+        self._disabled: set[str] = set()
 
     # ── registration ──────────────────────────────────────────
 
@@ -153,6 +155,21 @@ class SchedulerRegistry:
         """Shallow copy of the generator map."""
         return dict(self._generators)
 
+    # ── 运行时临时启停（内存态） ──────────────────────────────────
+
+    def disable(self, name: str) -> None:
+        self._disabled.add(name)
+
+    def enable(self, name: str) -> None:
+        self._disabled.discard(name)
+
+    def is_disabled(self, name: str) -> bool:
+        return name in self._disabled
+
+    @property
+    def disabled_names(self) -> set[str]:
+        return set(self._disabled)
+
 
 # ═══════════════════════════════════════════════════════════════
 # Action handler registry — for future ScheduledJob DB table
@@ -179,3 +196,28 @@ def get_action_handler(
 ) -> Callable[..., Awaitable[Any]] | None:
     """Return the handler registered for *action_type*, or None."""
     return _ACTION_HANDLERS.get(action_type)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Global registry reference — 供系统运维页只读introspection
+# ═══════════════════════════════════════════════════════════════
+
+_GLOBAL_REGISTRY: SchedulerRegistry | None = None
+
+
+def set_global_registry(registry: SchedulerRegistry) -> None:
+    """应用启动时登记全局注册表（main.py 调用）。"""
+    global _GLOBAL_REGISTRY
+    _GLOBAL_REGISTRY = registry
+
+
+def get_global_registry() -> SchedulerRegistry | None:
+    """返回全局注册表；未初始化时为 None。"""
+    return _GLOBAL_REGISTRY
+
+
+# 模块级单例：SchedulerEngine 启动方与各模块定时任务共享同一个注册表。
+# 历史遗留：多个模块直接 `from ...registry import scheduler_registry`，但该符号曾缺失，
+# 导致这些模块的 register() 运行时 ImportError（被 main.py 的 try/except 吞掉、静默失败）。
+# 统一单例后，无论启动方还是各模块的 register() 都操作同一对象，无时序竞态。
+scheduler_registry = SchedulerRegistry()

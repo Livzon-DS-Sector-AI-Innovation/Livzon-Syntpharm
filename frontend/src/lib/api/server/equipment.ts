@@ -263,7 +263,7 @@ export async function updateClaimTimeoutConfigApiTyped(data: components['schemas
 }
 
 // Personnel Management
-export async function createPersonnelRoleApiTyped(data: components['schemas']['RoleCreate'], headers?: Record<string, string>) {
+export async function createPersonnelRoleApiTyped(data: components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate'], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -271,7 +271,7 @@ export async function createPersonnelRoleApiTyped(data: components['schemas']['R
   })
 }
 
-export async function updatePersonnelRoleApiTyped(id: string, data: components['schemas']['RoleUpdate'], headers?: Record<string, string>) {
+export async function updatePersonnelRoleApiTyped(id: string, data: components['schemas']['app__modules__equipment__schemas__personnel__RoleUpdate'], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/personnel/roles/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),

@@ -7,6 +7,8 @@ import {PlayCircleOutlined, UploadOutlined, FilePdfOutlined, DeleteOutlined} fro
 import { RouteWorkflowPage } from './RouteWorkflowPage'
 import { fetchRoutes } from '@/lib/api/client/research'
 import { createRouteAction, deleteRouteAction } from '@/actions/research/route-development'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import { RouteDevelopment, RouteStatus, WorkflowModule } from '@/types/research'
 import type { UploadFile } from 'antd/es/upload/interface'
 
@@ -247,36 +249,38 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
             >
               {hasSaved ? '继续' : '开始'}
             </Button>
-            <Popconfirm
-              title="确认删除"
-              description="删除后无法恢复，确认删除？"
-              onConfirm={async () => {
-                try {
-                  await deleteRouteAction(record.id)
-                  localStorage.removeItem(`workflow-${record.id}`)
-                  setSavedWorkflows(prev => {
-                    const next = new Map(prev)
-                    next.delete(record.id)
-                    return next
-                  })
-                  invalidateRoutes()
-                  message.success('已删除')
-                } catch {
-                  message.error('删除失败')
-                }
-              }}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button 
-                type="link" 
-                size="small" 
-                danger
-                icon={<DeleteOutlined />}
+            <PermissionGate code={PERM.researchRouteDelete}>
+              <Popconfirm
+                title="确认删除"
+                description="删除后无法恢复，确认删除？"
+                onConfirm={async () => {
+                  try {
+                    await deleteRouteAction(record.id)
+                    localStorage.removeItem(`workflow-${record.id}`)
+                    setSavedWorkflows(prev => {
+                      const next = new Map(prev)
+                      next.delete(record.id)
+                      return next
+                    })
+                    invalidateRoutes()
+                    message.success('已删除')
+                  } catch {
+                    message.error('删除失败')
+                  }
+                }}
+                okText="确定"
+                cancelText="取消"
               >
-                删除
-              </Button>
-            </Popconfirm>
+                <Button 
+                  type="link" 
+                  size="small" 
+                  danger
+                  icon={<DeleteOutlined />}
+                >
+                  删除
+                </Button>
+              </Popconfirm>
+            </PermissionGate>
             {hasSaved && (
               <Tag color="orange" style={{ fontSize: 11 }}>有未完成的进度</Tag>
             )}
@@ -290,7 +294,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
     <div>
       {false && (
         <Alert
-          message="后端服务不可用"
+          title="后端服务不可用"
           description="API 服务器未启动，当前显示的是空数据。工作流功能仍可正常使用，数据保存在浏览器本地。"
           type="warning"
           showIcon
@@ -334,7 +338,7 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
 
           {fileList.length > 0 && (
             <Alert
-              message={`✓ 已选择 ${fileList.length} 个文件`}
+              title={`✓ 已选择 ${fileList.length} 个文件`}
               description={fileList.map(f => f.name).join('、')}
               type="success"
               showIcon
@@ -342,16 +346,18 @@ export function RouteDevelopmentPage({ initialRoutes, initialTotal, projectId }:
             />
           )}
 
-          <Button
-            type="primary"
-            icon={<UploadOutlined />}
-            onClick={handleCreateWorkflow}
-            size="large"
-            loading={creating}
-            disabled={creating || (fileList.length === 0 && !literatureInput)}
-          >
-            🚀 创建工作流并开始解析
-          </Button>
+          <PermissionGate code={PERM.researchRouteCreate}>
+            <Button
+              type="primary"
+              icon={<UploadOutlined />}
+              onClick={handleCreateWorkflow}
+              size="large"
+              loading={creating}
+              disabled={creating || (fileList.length === 0 && !literatureInput)}
+            >
+              🚀 创建工作流并开始解析
+            </Button>
+          </PermissionGate>
         </div>
       </Card>
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +13,7 @@ from app.core.database import async_session_factory
 from app.modules.energy import repository as repo
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.models import EnergyDeviceConfig
-from app.shared.config_reader import get_module_setting_bool
+from app.shared.config_reader import get_module_setting_bool, get_module_setting_int
 
 logger = logging.getLogger(__name__)
 
@@ -225,20 +224,22 @@ async def bitable_monthly_sync_loop() -> None:
     """
     settings = get_settings()
 
-    # 优先从环境变量读取，其次从数据库读取
-    auto_sync_env = os.getenv("ENERGY_BITABLE_AUTO_SYNC_ENABLED")
-    if auto_sync_env is not None:
-        auto_sync_enabled = auto_sync_env.lower() in ("true", "1", "yes")
-    else:
-        auto_sync_enabled = await get_module_setting_bool("energy", "ENERGY_BITABLE_AUTO_SYNC_ENABLED", default=False)
+    # 运行时配置优先（core.module_settings），未配置时回落到部署配置（.env → core/config.py）
+    auto_sync_enabled = await get_module_setting_bool(
+        "energy",
+        "ENERGY_BITABLE_AUTO_SYNC_ENABLED",
+        default=settings.ENERGY_BITABLE_AUTO_SYNC_ENABLED,
+    )
 
     if not auto_sync_enabled:
         logger.info("飞书多维表格月度同步已关闭（ENERGY_BITABLE_AUTO_SYNC_ENABLED=false）")
         return
 
-    # 优先从环境变量读取同步时间
-    sync_hour_env = os.getenv("ENERGY_BITABLE_SYNC_HOUR")
-    sync_hour = int(sync_hour_env) if sync_hour_env else settings.ENERGY_BITABLE_SYNC_HOUR
+    sync_hour = await get_module_setting_int(
+        "energy",
+        "ENERGY_BITABLE_SYNC_HOUR",
+        default=settings.ENERGY_BITABLE_SYNC_HOUR,
+    )
     logger.info("飞书多维表格月度同步任务已启动", extra={"sync_hour": sync_hour})
 
     last_sync_date: str | None = None
@@ -291,7 +292,14 @@ async def bitable_monthly_sync_loop() -> None:
                             extra={"month_table": month_table},
                         )
                         if attempt < max_retries:
-                            await asyncio.sleep(60)  # 等待 60 秒后重试
+                            # 指数退避（60s / 120s / 240s …），避免对方限流时固定间隔硬撞
+                            backoff_seconds = 60 * (2 ** (attempt - 1))
+                            logger.warning(
+                                "月度数据同步 %d 秒后重试",
+                                backoff_seconds,
+                                extra={"month_table": month_table, "attempt": attempt},
+                            )
+                            await asyncio.sleep(backoff_seconds)
                         else:
                             logger.exception("月度数据同步最终失败", extra={"month_table": month_table})
 

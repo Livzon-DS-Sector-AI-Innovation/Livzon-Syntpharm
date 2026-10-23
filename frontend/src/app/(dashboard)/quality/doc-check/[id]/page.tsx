@@ -411,7 +411,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
         <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/quality/doc-check')}>
           返回列表
         </Button>
-        <Alert type="error" message="未找到该记录" style={{ marginTop: 16 }} />
+        <Alert type="error" title="未找到该记录" style={{ marginTop: 16 }} />
       </div>
     )
   }
@@ -510,7 +510,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
           <Form form={handleForm} layout="vertical">
             <Alert
               type={selectedProblem.risk_level === 'high' ? 'error' : 'warning'}
-              message={`风险等级: ${RISK_LABELS[selectedProblem.risk_level]}`}
+              title={`风险等级: ${RISK_LABELS[selectedProblem.risk_level]}`}
               style={{ marginBottom: 16 }}
             />
 

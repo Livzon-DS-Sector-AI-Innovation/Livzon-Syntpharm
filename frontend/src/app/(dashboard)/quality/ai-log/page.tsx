@@ -224,7 +224,7 @@ export default function AiLogPage() {
 
       {/* GMP合规提示 */}
       <Alert
-        message="GMP合规说明"
+        title="GMP合规说明"
         description="AI生成的领用事由、报废原因及异常分析建议仅供人工参考，需经过质量人员审核确认后方可生效。AI不参与任何业务决策。"
         type="info"
         showIcon

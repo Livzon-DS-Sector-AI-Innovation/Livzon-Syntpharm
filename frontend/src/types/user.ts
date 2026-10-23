@@ -20,6 +20,8 @@ export interface User {
   employee_no: string | null
   department: string | null
   position: string | null
+  /** 是否被要求强制修改密码（管理员重置密码后为 true） */
+  must_change_password?: boolean
 }
 
 // Impersonation types

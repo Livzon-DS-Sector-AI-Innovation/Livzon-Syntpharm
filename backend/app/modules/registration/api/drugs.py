@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import success_response
 from app.modules.registration import service
 from app.modules.registration.models.review import ReviewNode
@@ -25,6 +25,7 @@ router = APIRouter()
 @router.get("/", summary="获取药品列表")
 async def list_drugs(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取所有药品及其审评节点"""
@@ -37,6 +38,7 @@ async def list_drugs(
 async def create_drug(
     current_user: CurrentUser,
     data: DrugCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """创建新药品"""
@@ -47,6 +49,7 @@ async def create_drug(
 @router.get("/nodes", summary="获取审评节点配置")
 async def get_review_nodes(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
 ) -> JSONResponse:
     """获取10个审评节点的配置信息"""
     nodes = [ReviewNodeConfig(**n) for n in ReviewNode.get_all()]
@@ -57,6 +60,7 @@ async def get_review_nodes(
 async def get_drug(
     current_user: CurrentUser,
     drug_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """获取单个药品及其审评节点"""
@@ -69,6 +73,7 @@ async def update_drug(
     current_user: CurrentUser,
     drug_id: uuid.UUID,
     data: DrugUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """更新药品信息及审评节点"""
@@ -80,6 +85,7 @@ async def update_drug(
 async def delete_drug(
     current_user: CurrentUser,
     drug_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:drug:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     """删除药品"""

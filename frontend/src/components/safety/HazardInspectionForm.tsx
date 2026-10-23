@@ -88,10 +88,14 @@ export default function HazardInspectionForm({
         if (resp.ok) {
           const json = await resp.json()
           const items = (json.data?.items ?? []) as Record<string, unknown>[]
-          setUserOptions(items.map((u) => ({
-            value: String(u.id),
-            label: `${String(u.name)} - ${String(u.department || '未知部门')}`,
-          })))
+          setUserOptions(items.map((u) => {
+            const account = String(u.username ?? '')
+            return {
+              value: String(u.id),
+              // 统一「姓名（账号）」：重名时能区分
+              label: `${String(u.name)}${account ? `（${account}）` : ''} - ${String(u.department || '未知部门')}`,
+            }
+          }))
         }
       } catch {
         if (!cancelled) setUserOptions([])

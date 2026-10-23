@@ -131,7 +131,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
           <Alert
             type="info"
             showIcon
-            message="支持两种交叉表格式"
+            title="支持两种交叉表格式"
             description={
               <div style={{ fontSize: 12, marginTop: 4 }}>
                 <div>格式A：行=车间+能源类型，列=日期范围</div>
@@ -148,7 +148,7 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
           <Alert
             type={(dryRunResult.errors ?? []).length > 0 ? 'warning' : 'success'}
             showIcon
-            message={
+            title={
               (dryRunResult.errors ?? []).length > 0
                 ? `解析完成，但有 ${(dryRunResult.errors ?? []).length} 个问题`
                 : '解析成功'

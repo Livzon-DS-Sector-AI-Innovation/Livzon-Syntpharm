@@ -1,6 +1,8 @@
-"""Safety API — 飞书事件订阅管理端点（WebSocket 状态查询 / 手动恢复）。"""
+"""Safety API — 飞书事件订阅管理端点（WebSocket 状态查询 / 手动恢复）。
 
-# This file contains public webhook endpoints. No auth required.
+这些是运维动作（重启会中断并重建长连接），统一要求 `safety:feishu:manage`，
+由 `safety/api/__init__.py` 在挂载路由时注入依赖，不对匿名调用方开放。
+"""
 
 from typing import Any
 
@@ -15,7 +17,7 @@ from app.modules.safety.schemas import (
 feishu_router = APIRouter()
 
 
-@feishu_router.get(  # public
+@feishu_router.get(
     "/feishu/ws/status",
     response_model=FeishuWsStatusApiResponse,
     summary="查询飞书 WebSocket 连接状态",
@@ -35,7 +37,7 @@ async def ws_status() -> Any:
     return FeishuWsStatusApiResponse(data=status)
 
 
-@feishu_router.post(  # public
+@feishu_router.post(
     "/feishu/ws/restart",
     response_model=FeishuWsRestartApiResponse,
     summary="手动恢复飞书 WebSocket 连接",

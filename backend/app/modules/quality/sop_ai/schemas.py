@@ -218,7 +218,9 @@ class ApiResponse(BaseModel):
 
     code: int = Field(200, description="状态码")
     message: str = Field("success", description="消息")
-    data: dict[str, Any] | None = Field(None, description="数据")
+    # data 既可能是对象（config / records 详情）也可能是数组（jobs / records 列表），
+    # 声明为 dict 会导致返回 list 的接口触发 ResponseValidationError（500）。
+    data: Any = Field(None, description="数据")
 
 
 class PaginatedResponse(BaseModel):

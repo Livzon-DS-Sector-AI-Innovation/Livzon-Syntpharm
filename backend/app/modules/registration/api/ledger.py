@@ -10,7 +10,7 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import error_response, success_response
 from app.modules.registration.schemas.ledger import (
     CoppCertificateCreate,
@@ -38,6 +38,7 @@ router = APIRouter()
 @router.get("/domestic-approvals")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -52,6 +53,7 @@ async def get(
 async def post(
     current_user: CurrentUser,
     data: DomesticApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_domestic_approval(db, data)
@@ -61,6 +63,7 @@ async def post(
 @router.post("/domestic-approvals/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -136,6 +139,7 @@ async def post(  # noqa: F811
 @router.get("/domestic-approvals/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_domestic_approvals(db)
@@ -154,6 +158,7 @@ async def get(  # noqa: F811
 @router.get("/overseas-approvals")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -168,6 +173,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: OverseasApprovalCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_overseas_approval(db, data)
@@ -177,6 +183,7 @@ async def post(  # noqa: F811
 @router.post("/overseas-approvals/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -249,6 +256,7 @@ async def post(  # noqa: F811
 @router.get("/overseas-approvals/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_overseas_approvals(db)
@@ -267,6 +275,7 @@ async def get(  # noqa: F811
 @router.get("/international-reviews")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -281,6 +290,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: InternationalReviewCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_international_review(db, data)
@@ -290,6 +300,7 @@ async def post(  # noqa: F811
 @router.post("/international-reviews/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -347,6 +358,7 @@ async def post(  # noqa: F811
 @router.get("/international-reviews/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_international_reviews(db)
@@ -365,6 +377,7 @@ async def get(  # noqa: F811
 @router.get("/copp-certificates")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -379,6 +392,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: CoppCertificateCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_copp_certificate(db, data)
@@ -388,6 +402,7 @@ async def post(  # noqa: F811
 @router.post("/copp-certificates/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -445,6 +460,7 @@ async def post(  # noqa: F811
 @router.get("/copp-certificates/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_copp_certificates(db)
@@ -463,6 +479,7 @@ async def get(  # noqa: F811
 @router.get("/wc-certificates")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     skip: int = 0,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
@@ -477,6 +494,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     current_user: CurrentUser,
     data: WcCertificateCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     item = await ledger_service.create_wc_certificate(db, data)
@@ -486,6 +504,7 @@ async def post(  # noqa: F811
 @router.post("/wc-certificates/import")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:create")),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -543,6 +562,7 @@ async def post(  # noqa: F811
 @router.get("/wc-certificates/export")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     items = await ledger_service.list_wc_certificates(db)
@@ -561,6 +581,7 @@ async def get(  # noqa: F811
 @router.get("/summary")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     summary = await ledger_service.get_ledger_summary(db)
@@ -574,6 +595,7 @@ async def get(  # noqa: F811
 @router.get("/reviewing")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:approval-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """从 drugs 表获取审评中的品种"""

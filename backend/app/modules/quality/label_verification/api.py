@@ -11,7 +11,7 @@ from fastapi import Depends, Query, UploadFile  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.core.database import get_db  # noqa: E402
-from app.core.deps import CurrentUser  # noqa: E402
+from app.core.deps import CurrentUser, PermissionContext, require_permission  # noqa: E402
 from app.core.response import paginated_response, success_response  # noqa: E402
 from app.shared.module_api import create_module_router  # noqa: E402
 from app.shared.module_registry import MODULES_BY_CODE  # noqa: E402
@@ -38,6 +38,7 @@ def get_label_verification_service(
 @router.get("/label-verifications", summary="标签复核记录列表")
 async def get(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:read")),
     batch_number: str | None = Query(None, description="批号搜索"),
     product_name: str | None = Query(None, description="产品名称搜索"),
     result_status: str | None = Query(None, description="结论状态筛选"),
@@ -70,6 +71,7 @@ async def get(
 async def post(
     current_user: CurrentUser,
     payload: LabelVerificationCreate,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:create")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verification = await service.create_verification(payload)
@@ -84,6 +86,7 @@ async def post(
 @router.get("/label-verifications/statistics", summary="标签复核统计")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:read")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     stats = await service.get_statistics()
@@ -98,6 +101,7 @@ async def get(  # noqa: F811
 async def handler(
     current_user: CurrentUser,
     batch_number: str,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:read")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verifications = await service.get_by_batch_number(batch_number)
@@ -114,6 +118,7 @@ async def handler(
 async def handler(  # noqa: F811
     current_user: CurrentUser,
     verification_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:read")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verification = await service.get_verification(verification_id)
@@ -131,6 +136,7 @@ async def handler(  # noqa: F811
     current_user: CurrentUser,
     verification_id: UUID,
     payload: LabelVerificationUpdate,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:update")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     verification = await service.update_verification(verification_id, payload)
@@ -148,6 +154,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     current_user: CurrentUser,
     verification_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:delete")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     await service.delete_verification(verification_id)
@@ -162,6 +169,7 @@ async def handler(  # noqa: F811
 async def handler(  # noqa: F811
     current_user: CurrentUser,
     file: UploadFile,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:create")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """上传视频文件，返回文件 key 和文件名"""
@@ -210,6 +218,7 @@ async def handler(  # noqa: F811
     current_user: CurrentUser,
     file_key: str,
     fps: float = 1.0,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:create")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """分析视频中的标签信息，返回 AI 识别结果"""
@@ -384,6 +393,7 @@ class AutoCompareRequest(BaseModel):
 async def handler(  # noqa: F811
     current_user: CurrentUser,
     payload: AutoCompareRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:label-verification:create")),
     service: LabelVerificationService = Depends(get_label_verification_service),
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """

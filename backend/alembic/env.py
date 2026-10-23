@@ -12,6 +12,7 @@ from app.shared.module_registry import BUSINESS_MODULES, BUSINESS_SCHEMAS
 # Import platform and module models so Alembic can detect them.
 import_module("app.platform.audit.models")
 import_module("app.platform.identity.models")
+import_module("app.platform.permission.models")
 import_module("app.core.llm.config")
 import_module("app.modules.registration.dossier_writer.models")
 import_module("app.modules.quality.ai.models")
@@ -35,11 +36,25 @@ PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", "permission", "dossier
 TARGET_SCHEMA = os.environ.get("ALEMBIC_TARGET_SCHEMA")
 
 
+# 由迁移直接建表、代码里用原生 SQL 访问、没有 ORM 模型的表。
+# autogenerate / alembic check 会把它们误判成「数据库多余的表」并生成 DROP，这里显式排除。
+RAW_SQL_ONLY_TABLES: frozenset[tuple[str | None, str]] = frozenset(
+    {
+        ("qms", "qms_reagent_item_reminder_config"),
+        ("qms", "qms_deviation_reminder_rules"),
+        ("hr", "system_settings"),
+    }
+)
+
+
 def include_object(object, name, type_, reflected, compare_to):
     """Limit autogenerate to specific schema.
-    
+
     If ALEMBIC_TARGET_SCHEMA is set, only include objects in that schema.
     """
+    if type_ == "table" and (getattr(object, "schema", None), name) in RAW_SQL_ONLY_TABLES:
+        return False
+
     if not TARGET_SCHEMA:
         return True
     

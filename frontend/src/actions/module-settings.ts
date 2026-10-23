@@ -5,10 +5,8 @@ import {
   getModuleSettings as apiGetModuleSettings,
   getModuleSetting as apiGetModuleSetting,
   updateModuleSetting as apiUpdateModuleSetting,
-  createModuleSetting as apiCreateModuleSetting,
-  deleteModuleSetting as apiDeleteModuleSetting,
 } from '@/lib/api/server/module-settings'
-import type { ModuleSetting, ModuleSettingUpdate, ModuleSettingCreate } from '@/types/module-settings'
+import type { ModuleSetting, ModuleSettingUpdate } from '@/types/module-settings'
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies()
@@ -41,17 +39,3 @@ export async function updateModuleSetting(
   return apiUpdateModuleSetting(headers, module, key, data)
 }
 
-export async function createModuleSetting(
-  data: ModuleSettingCreate
-): Promise<{ data: ModuleSetting }> {
-  const headers = await getAuthHeaders()
-  return apiCreateModuleSetting(headers, data)
-}
-
-export async function deleteModuleSetting(
-  module: string,
-  key: string
-): Promise<{ message: string }> {
-  const headers = await getAuthHeaders()
-  return apiDeleteModuleSetting(headers, module, key)
-}

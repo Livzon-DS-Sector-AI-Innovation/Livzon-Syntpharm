@@ -7,6 +7,8 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchFilings } from '@/lib/api/client/research/rd-project'
 import { RdRegistrationFiling } from '@/types/research/rd-project'
 import { createFiling, updateFiling } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props { projectId: string }
 
@@ -151,10 +153,14 @@ export function RegistrationFilingPage({ projectId }: Props) {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
       render: (_: unknown, record: RdRegistrationFiling) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
-          <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-          </Popconfirm>
+          <PermissionGate code={PERM.researchRegistrationFilingUpdate}>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchRegistrationFilingDelete}>
+            <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -256,7 +262,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
     <div>
       <Card
         title="申报资料记录"
-        extra={<Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建记录</Button>}
+        extra={<PermissionGate code={PERM.researchRegistrationFilingCreate}><Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建记录</Button></PermissionGate>}
       >
         <Table
           dataSource={filings}
@@ -277,7 +283,9 @@ export function RegistrationFilingPage({ projectId }: Props) {
         extra={
           <Space>
             <Button onClick={() => { setDrawerOpen(false); form.resetFields() }}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
+            <PermissionGate code={editingRecord ? PERM.researchRegistrationFilingUpdate : PERM.researchRegistrationFilingCreate}>
+              <Button type="primary" onClick={handleSave}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >

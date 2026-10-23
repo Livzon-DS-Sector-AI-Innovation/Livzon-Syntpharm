@@ -277,7 +277,8 @@ export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfi
 }
 
 export async function fetchPersonnelList(_params?: Record<string, unknown>): Promise<Personnel[]> {
-  return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?page_size=1000`) || []
+  // 后端只认 limit（默认 100、上限 500）；写 page_size 会被静默忽略，导致只拿到前 100 人
+  return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?limit=500`) || []
 }
 
 // ═══════════════════════════════════════════════════════════

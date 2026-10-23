@@ -7,6 +7,8 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { fetchValidations } from '@/lib/api/client/research/rd-project'
 import { RdProcessValidation } from '@/types/research/rd-project'
 import { createValidation, updateValidation } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props { projectId: string }
 
@@ -149,10 +151,14 @@ export function ProcessValidationPage({ projectId }: Props) {
       title: '操作', key: 'action', width: 120, fixed: 'right' as const,
       render: (_: unknown, record: RdProcessValidation) => (
         <Space size="small">
-          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
-          <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
-            <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
-          </Popconfirm>
+          <PermissionGate code={PERM.researchProcessValidationUpdate}>
+            <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchProcessValidationDelete}>
+            <Popconfirm title="确认删除此记录？" onConfirm={() => handleDelete(record.id)} okText="删除" cancelText="取消">
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>删除</Button>
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -254,7 +260,7 @@ export function ProcessValidationPage({ projectId }: Props) {
     <div>
       <Card
         title="工艺验证记录"
-        extra={<Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建记录</Button>}
+        extra={<PermissionGate code={PERM.researchProcessValidationCreate}><Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建记录</Button></PermissionGate>}
       >
         <Table
           dataSource={validations}
@@ -275,7 +281,9 @@ export function ProcessValidationPage({ projectId }: Props) {
         extra={
           <Space>
             <Button onClick={() => { setDrawerOpen(false); form.resetFields() }}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
+            <PermissionGate code={editingRecord ? PERM.researchProcessValidationUpdate : PERM.researchProcessValidationCreate}>
+              <Button type="primary" onClick={handleSave}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >

@@ -326,6 +326,139 @@ class AssetCategoryUpdateResponse(BaseModel):
     message: str
 
 
+# ====== API 响应信封（具体 response_model，替换 response_model=dict） ======
+
+
+class MessageApiResponse(BaseModel):
+    """无 data 的响应（删除等）"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None
+
+
+class ProductDossierApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ProductDossierResponse | None = None
+
+
+class ProductDossierListData(BaseModel):
+    items: list[ProductDossierListResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class ProductDossierListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ProductDossierListData | None = None
+
+
+class TemplateUploadItem(BaseModel):
+    filename: str | None = None
+    status: str
+    error: str | None = None
+    file_id: str | None = None
+    file_path: str | None = None
+    file_size: str | None = None
+
+
+class TemplateUploadData(BaseModel):
+    results: list[TemplateUploadItem]
+    success_count: int
+    failed_count: int
+    matched_count: int
+    unmatched_files: list[str]
+
+
+class TemplateUploadApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: TemplateUploadData | None = None
+
+
+class ParseResultApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ParseResultResponse | None = None
+
+
+class ChapterTreeApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ChapterResponse] | None = None
+
+
+class ChapterDetailApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ChapterDetailResponse | None = None
+
+
+class AssetUploadBatchData(BaseModel):
+    assets: list[AssetUploadResponse]
+    count: int
+
+
+class AssetUploadBatchApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AssetUploadBatchData | None = None
+
+
+class AssetListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[AssetResponse] | None = None
+
+
+class ExportApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ExportResponse | None = None
+
+
+class FillResultItem(BaseModel):
+    id: str
+    field_name: str
+    filled_value: str | None = None
+    fill_method: str | None = None
+    status: str | None = None
+    created_at: str | None = None
+
+
+class FillResultListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[FillResultItem] | None = None
+
+
+class StringListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[str] | None = None
+
+
+class InitS7Data(BaseModel):
+    chapters: list[dict[str, Any]]
+
+
+class InitS7ApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: InitS7Data | None = None
+
+
+class OpaqueDataApiResponse(BaseModel):
+    """service 返回的自由结构结果（映射/列表）。作为过渡模型，替代 response_model=dict。"""
+
+    code: int = 200
+    message: str = "success"
+    data: dict[str, Any] | list[Any] | None = None
+
+
 # 解决循环引用
 ChapterResponse.model_rebuild()
 ChapterDetailResponse.model_rebuild()

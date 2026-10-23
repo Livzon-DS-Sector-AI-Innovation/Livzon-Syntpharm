@@ -246,7 +246,6 @@ def _edge_to_dict(e) -> dict:
 
 @knowledge_router.get(
     "/knowledge-graph/full-graph",
-    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取完整知识图谱",
 )
 async def get_full_graph(
@@ -272,7 +271,6 @@ async def get_full_graph(
 
 @knowledge_router.get(
     "/knowledge-graph/nodes",
-    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取图谱节点列表",
 )
 async def get_graph_nodes(
@@ -299,7 +297,6 @@ async def get_graph_nodes(
 
 @knowledge_router.get(
     "/knowledge-graph/edges",
-    response_model=SafetyKnowledgeArticleApiResponse,
     summary="获取图谱边列表",
 )
 async def get_graph_edges(
@@ -324,7 +321,6 @@ async def get_graph_edges(
 
 @knowledge_router.get(
     "/knowledge-graph/search",
-    response_model=SafetyKnowledgeArticleApiResponse,
     summary="搜索图谱节点",
 )
 async def search_graph_nodes(
@@ -343,7 +339,6 @@ async def search_graph_nodes(
 
 @knowledge_router.get(
     "/knowledge-graph/expand",
-    response_model=SafetyKnowledgeArticleApiResponse,
     summary="展开节点邻居",
 )
 async def expand_graph_node(
@@ -370,7 +365,6 @@ async def expand_graph_node(
 
 @knowledge_router.post(
     "/knowledge-graph/generate",
-    response_model=SafetyKnowledgeArticleApiResponse,
     summary="AI 生成知识图谱",
 )
 async def generate_graph(

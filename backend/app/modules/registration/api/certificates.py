@@ -2,12 +2,12 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, PermissionContext, require_permission
 from app.core.response import success_response
 from app.modules.registration.schemas.certificate import (
     CertificateCreate,
@@ -22,6 +22,7 @@ router = APIRouter()
 @router.get("/", summary="获取注册证书列表")
 async def list_certificates(
     current_user: CurrentUser,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     certs = await cert_service.get_certificates(db)
@@ -33,6 +34,7 @@ async def list_certificates(
 async def create_certificate(
     current_user: CurrentUser,
     data: CertificateCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     cert = await cert_service.create_certificate(db, data)
@@ -43,9 +45,13 @@ async def create_certificate(
 async def get_certificate(
     current_user: CurrentUser,
     certificate_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    cert = await cert_service.get_certificate(db, certificate_id)
+    try:
+        cert = await cert_service.get_certificate(db, certificate_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return success_response(data=CertificateResponse.model_validate(cert))
 
 
@@ -54,9 +60,13 @@ async def update_certificate(
     current_user: CurrentUser,
     certificate_id: uuid.UUID,
     data: CertificateUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    cert = await cert_service.update_certificate(db, certificate_id, data)
+    try:
+        cert = await cert_service.update_certificate(db, certificate_id, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return success_response(data=CertificateResponse.model_validate(cert))
 
 
@@ -64,7 +74,11 @@ async def update_certificate(
 async def delete_certificate(
     current_user: CurrentUser,
     certificate_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    await cert_service.delete_certificate(db, certificate_id)
+    try:
+        await cert_service.delete_certificate(db, certificate_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
     return success_response(message="删除成功")

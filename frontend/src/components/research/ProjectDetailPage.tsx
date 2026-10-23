@@ -14,6 +14,8 @@ import { RegistrationFilingPage } from './RegistrationFilingPage'
 import { StageDeliverablesTab } from './StageDeliverablesTab'
 import dayjs from 'dayjs'
 import {createMilestone, doTransition} from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props { project: RdProject }
 
@@ -132,9 +134,11 @@ export function ProjectDetailPage({ project }: Props) {
           </Descriptions>
           {nextStage && (
             <div style={{ marginTop: 16, textAlign: 'center' }}>
-              <Button type="primary" icon={<ArrowRightOutlined />} onClick={() => handleTransition(nextStage)}>
-                流转到 {STAGE_LABELS[nextStage as keyof typeof STAGE_LABELS]}
-              </Button>
+              <PermissionGate code={PERM.researchProjectSubmit}>
+                <Button type="primary" icon={<ArrowRightOutlined />} onClick={() => handleTransition(nextStage)}>
+                  流转到 {STAGE_LABELS[nextStage as keyof typeof STAGE_LABELS]}
+                </Button>
+              </PermissionGate>
             </div>
           )}
         </Card>
@@ -144,7 +148,7 @@ export function ProjectDetailPage({ project }: Props) {
       key: 'milestones',
       label: `里程碑 (${milestones.length})`,
       children: (
-        <Card title="里程碑管理" extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleAddMilestone}>添加里程碑</Button>}>
+        <Card title="里程碑管理" extra={<PermissionGate code={PERM.researchProjectCreate}><Button type="primary" icon={<PlusOutlined />} onClick={handleAddMilestone}>添加里程碑</Button></PermissionGate>}>
           <Table dataSource={milestones} rowKey="id" size="small" loading={loading} pagination={false}
             columns={[
               { title: '标题', dataIndex: 'title', key: 'title' },

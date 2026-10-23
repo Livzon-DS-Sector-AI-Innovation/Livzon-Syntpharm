@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import CurrentUser, require_route_permission
 from app.core.response import ApiResponse, build_response, error_response, success_response
 
 from .field_models import FieldFillResult, FieldMapping
@@ -19,12 +19,24 @@ from .schemas import (
     AIConfirmResponse,
     AssetCategoryUpdateRequest,
     AssetCategoryUpdateResponse,
+    AssetListApiResponse,
     AssetResponse,
+    AssetUploadBatchApiResponse,
     AssetUploadResponse,
     AssetUsageToggleRequest,
     AssetUsageToggleResponse,
+    ChapterDetailApiResponse,
+    ChapterTreeApiResponse,
+    ExportApiResponse,
     ExportRequest,
+    FillResultListApiResponse,
+    InitS7ApiResponse,
+    MessageApiResponse,
+    OpaqueDataApiResponse,
+    ParseResultApiResponse,
+    ProductDossierApiResponse,
     ProductDossierCreate,
+    ProductDossierListApiResponse,
     ProductDossierListResponse,
     ProductDossierResponse,
     ProductDossierUpdate,
@@ -32,18 +44,45 @@ from .schemas import (
     SplitConfirmResponse,
     SplitPreviewRequest,
     SplitPreviewResponse,
+    StringListApiResponse,
+    TemplateUploadApiResponse,
 )
 from .service import DossierService
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+# 读写分离：GET 与「只读语义的 POST」（预览/解析/下载）→ registration:dossier:read；
+# POST → :create，PUT/PATCH → :update，DELETE → :delete。
+_DOSSIER_READ_ONLY_SUFFIXES = (
+    "/preview",
+    "/ai-preview",
+    "/split-preview",
+    "/download",
+    "/docx-file",
+    "/fill-results",
+)
+
+
+def resolve_dossier_code(method: str, path: str) -> str:
+    """按方法与路径解析申报资料撰写的权限码（与 registry 绑定登记同口径）。"""
+    if method.upper() in ("GET", "HEAD") or path.rstrip("/").endswith(_DOSSIER_READ_ONLY_SUFFIXES):
+        return "registration:dossier:read"
+    if method.upper() == "POST":
+        return "registration:dossier:create"
+    if method.upper() in ("PUT", "PATCH"):
+        return "registration:dossier:update"
+    if method.upper() == "DELETE":
+        return "registration:dossier:delete"
+    return "registration:dossier:read"
+
+
+router = APIRouter(dependencies=[Depends(require_route_permission(resolve_dossier_code))])
 
 
 # ====== Product Dossier ======
 
 
-@router.post("/products", response_model=dict)
+@router.post("/products", response_model=ProductDossierApiResponse)
 async def create_product_dossier(
     current_user: CurrentUser,
     data: ProductDossierCreate,
@@ -58,7 +97,7 @@ async def create_product_dossier(
         return error_response(message=str(e), status_code=400)
 
 
-@router.get("/products", response_model=dict)
+@router.get("/products", response_model=ProductDossierListApiResponse)
 async def list_product_dossiers(
     current_user: CurrentUser,
     skip: int = Query(0, ge=0),
@@ -79,7 +118,7 @@ async def list_product_dossiers(
     )
 
 
-@router.get("/products/{dossier_id}", response_model=dict)
+@router.get("/products/{dossier_id}", response_model=ProductDossierApiResponse)
 async def get_product_dossier(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -93,7 +132,7 @@ async def get_product_dossier(
     return success_response(data=ProductDossierResponse.model_validate(dossier), message="获取成功")
 
 
-@router.put("/products/{dossier_id}", response_model=dict)
+@router.put("/products/{dossier_id}", response_model=ProductDossierApiResponse)
 async def update_product_dossier(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -108,7 +147,7 @@ async def update_product_dossier(
     return success_response(data=ProductDossierResponse.model_validate(dossier), message="更新成功")
 
 
-@router.delete("/products/{dossier_id}", response_model=dict)
+@router.delete("/products/{dossier_id}", response_model=MessageApiResponse)
 async def delete_product_dossier(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -125,7 +164,7 @@ async def delete_product_dossier(
 # ====== Template Upload ======
 
 
-@router.post("/products/{dossier_id}/templates", response_model=dict)
+@router.post("/products/{dossier_id}/templates", response_model=TemplateUploadApiResponse)
 async def upload_templates(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -195,7 +234,7 @@ async def upload_templates(
 # ====== Template Parsing ======
 
 
-@router.post("/products/{dossier_id}/parse", response_model=dict)
+@router.post("/products/{dossier_id}/parse", response_model=ParseResultApiResponse)
 async def parse_templates(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -214,7 +253,7 @@ async def parse_templates(
 # ====== Chapter ======
 
 
-@router.get("/products/{dossier_id}/chapters", response_model=dict)
+@router.get("/products/{dossier_id}/chapters", response_model=ChapterTreeApiResponse)
 async def get_chapter_tree(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -226,7 +265,7 @@ async def get_chapter_tree(
     return success_response(data=chapters, message="获取成功")
 
 
-@router.get("/chapters/{chapter_id}", response_model=dict)
+@router.get("/chapters/{chapter_id}", response_model=ChapterDetailApiResponse)
 async def get_chapter_detail(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -243,7 +282,7 @@ async def get_chapter_detail(
 # ====== Asset ======
 
 
-@router.post("/chapters/{chapter_id}/assets", response_model=dict)
+@router.post("/chapters/{chapter_id}/assets", response_model=AssetUploadBatchApiResponse)
 async def upload_asset(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -280,7 +319,7 @@ async def upload_asset(
     )
 
 
-@router.get("/chapters/{chapter_id}/assets", response_model=dict)
+@router.get("/chapters/{chapter_id}/assets", response_model=AssetListApiResponse)
 async def list_assets(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -295,7 +334,7 @@ async def list_assets(
     return success_response(data=[AssetResponse.model_validate(a) for a in assets], message="获取成功")
 
 
-@router.delete("/assets/{asset_id}", response_model=dict)
+@router.delete("/assets/{asset_id}", response_model=MessageApiResponse)
 async def delete_asset(
     current_user: CurrentUser,
     asset_id: UUID,
@@ -339,7 +378,7 @@ async def update_asset_category(
 # ====== Export ======
 
 
-@router.post("/products/{dossier_id}/export", response_model=dict)
+@router.post("/products/{dossier_id}/export", response_model=ExportApiResponse)
 async def export_dossier(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -382,7 +421,7 @@ async def download_exported_file(
     )
 
 
-@router.get("/chapters/{chapter_id}/preview", response_model=dict)
+@router.get("/chapters/{chapter_id}/preview", response_model=OpaqueDataApiResponse)
 async def get_chapter_preview(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -430,7 +469,7 @@ async def get_chapter_docx_file(
     )
 
 
-@router.post("/products/{dossier_id}/match-assets", response_model=dict)
+@router.post("/products/{dossier_id}/match-assets", response_model=OpaqueDataApiResponse)
 async def match_assets_to_chapters(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -453,7 +492,7 @@ from .field_fill_service import FieldFillService  # noqa: E402
 # from .field_mapping_config import S6_FIELD_MAPPINGS  # 已废弃
 
 
-@router.post("/chapters/{chapter_id}/fill-fields", response_model=dict)
+@router.post("/chapters/{chapter_id}/fill-fields", response_model=OpaqueDataApiResponse)
 async def fill_chapter_fields(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -487,7 +526,7 @@ async def fill_chapter_fields(
     return success_response(data=result, message=result["message"])
 
 
-@router.get("/chapters/{chapter_code}/field-mappings", response_model=dict)
+@router.get("/chapters/{chapter_code}/field-mappings", response_model=OpaqueDataApiResponse)
 async def get_field_mappings(
     current_user: CurrentUser,
     chapter_code: str,
@@ -519,7 +558,7 @@ async def get_field_mappings(
     )
 
 
-@router.post("/field-mappings/init-s6", response_model=dict)
+@router.post("/field-mappings/init-s6", response_model=OpaqueDataApiResponse)
 async def init_s6_field_mappings(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
@@ -532,7 +571,7 @@ async def init_s6_field_mappings(
     return success_response(data=result, message=result["message"])
 
 
-@router.post("/field-mappings/init-s7", response_model=dict)
+@router.post("/field-mappings/init-s7", response_model=InitS7ApiResponse)
 async def init_s7_field_mappings(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
@@ -562,7 +601,7 @@ async def init_s7_field_mappings(
     return success_response(data={"chapters": results}, message="S.7 稳定性模块初始化完成")
 
 
-@router.get("/chapters/{chapter_id}/fill-results", response_model=dict)
+@router.get("/chapters/{chapter_id}/fill-results", response_model=FillResultListApiResponse)
 async def get_fill_results(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -601,7 +640,7 @@ async def get_fill_results(
 # ====== AI Fill Service ======
 
 
-@router.post("/chapters/{chapter_id}/ai-preview", response_model=dict)
+@router.post("/chapters/{chapter_id}/ai-preview", response_model=OpaqueDataApiResponse)
 async def ai_preview_extraction(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -631,11 +670,8 @@ async def ai_preview_extraction(
         result = await service.preview_extraction(dossier, chapter)
         return success_response(data=result, message=result.get("message", "完成"))
     except Exception as e:
-        # 记录完整错误日志
-        import traceback
-
-        error_detail = traceback.format_exc()
-        print(f"AI 解析失败: {error_detail}")
+        # logger.exception 自带 traceback，不要用 print 输出（容器里会落到 stdout 丢上下文）
+        logger.exception("AI 解析预览失败 chapter_id=%s", chapter_id)
 
         # 返回 JSON 错误响应
         return error_response(
@@ -679,7 +715,7 @@ async def ai_confirm_and_fill(
     return build_response(data=result, message=result.get("message", "完成"))
 
 
-@router.get("/chapters/{chapter_code}/asset-categories", response_model=dict)
+@router.get("/chapters/{chapter_code}/asset-categories", response_model=OpaqueDataApiResponse)
 async def get_asset_categories(
     current_user: CurrentUser,
     chapter_code: str,
@@ -759,7 +795,7 @@ async def split_confirm_and_insert(
     return build_response(data=result, message=result["message"])
 
 
-@router.get("/chapters/{chapter_code}/appendix-slots", response_model=dict)
+@router.get("/chapters/{chapter_code}/appendix-slots", response_model=StringListApiResponse)
 async def get_appendix_slots(
     current_user: CurrentUser,
     chapter_code: str,
@@ -785,7 +821,7 @@ async def get_appendix_slots(
 # ====== Asset Usage (素材使用管理) ======
 
 
-@router.get("/chapters/{chapter_id}/available-assets", response_model=dict)
+@router.get("/chapters/{chapter_id}/available-assets", response_model=OpaqueDataApiResponse)
 async def list_available_assets(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -844,7 +880,7 @@ async def toggle_asset_usage(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/chapters/{chapter_id}/selected-assets", response_model=dict)
+@router.get("/chapters/{chapter_id}/selected-assets", response_model=AssetListApiResponse)
 async def list_selected_assets(
     current_user: CurrentUser,
     chapter_id: UUID,

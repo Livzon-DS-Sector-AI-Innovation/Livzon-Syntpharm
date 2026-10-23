@@ -3,11 +3,11 @@ import type { components } from '@/types/generated/schema'
 
 const BASE = `${getApiBaseUrl()}/api/v1/equipment/personnel`
 
-export async function createRoleApi(data: components['schemas']['RoleCreate'], headers?: Record<string, string>) {
+export async function createRoleApi(data: components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate'], headers?: Record<string, string>) {
   return apiFetch(`${BASE}/roles`, { method: 'POST', body: JSON.stringify(data), headers })
 }
 
-export async function updateRoleApi(id: string, data: components['schemas']['RoleUpdate'], headers?: Record<string, string>) {
+export async function updateRoleApi(id: string, data: components['schemas']['app__modules__equipment__schemas__personnel__RoleUpdate'], headers?: Record<string, string>) {
   return apiFetch(`${BASE}/roles/${id}`, { method: 'PUT', body: JSON.stringify(data), headers })
 }
 

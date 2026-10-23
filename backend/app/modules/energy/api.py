@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory, get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.jobs import spawn_task
 from app.modules.energy import service
@@ -91,7 +91,10 @@ sync_router = APIRouter()
 
 
 @router.get("/platforms", summary="获取已登记的平台列表", response_model=EnergyPlatformListApiResponse)
-async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiResponse:
+async def list_platforms(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:platform:read")),
+) -> EnergyPlatformListApiResponse:
     data = [EnergyPlatformResponse(code=code, name=adapter.platform_name) for code, adapter in ADAPTERS.items()]
     return EnergyPlatformListApiResponse(data=data)
 
@@ -103,6 +106,7 @@ async def list_platforms(current_user: RequiredUser) -> EnergyPlatformListApiRes
 async def create_device_config(
     data: EnergyDeviceConfigCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:device:create")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeviceConfigApiResponse:
     obj = await service.create_device_config(db, data)
@@ -131,6 +135,7 @@ async def create_device_config(
 @device_router.get("", summary="查询设备配置列表", response_model=EnergyDeviceConfigListApiResponse)
 async def list_device_configs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:device:read")),
     platform_code: str | None = Query(default=None, description="平台标识"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     workshop: str | None = Query(default=None, description="车间"),
@@ -179,6 +184,7 @@ async def list_device_configs(
 async def get_device_config(
     config_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:device:read")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeviceConfigApiResponse:
     obj = await service.get_device_config(db, config_id)
@@ -208,6 +214,7 @@ async def update_device_config(
     config_id: UUID,
     data: EnergyDeviceConfigUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:device:update")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeviceConfigApiResponse:
     obj = await service.update_device_config(db, config_id, data)
@@ -237,6 +244,7 @@ async def update_device_config(
 async def delete_device_config(
     config_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:device:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeleteResponse:
     await service.delete_device_config(db, config_id)
@@ -250,6 +258,7 @@ async def delete_device_config(
 @data_router.get("", summary="查询能耗数据", response_model=EnergyDataListApiResponse)
 async def list_energy_data(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:data:read")),
     device_config_id: UUID | None = Query(default=None, description="设备配置ID"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     workshop: str | None = Query(default=None, description="车间"),
@@ -288,6 +297,7 @@ async def list_energy_data(
 @data_router.get("/statistics", summary="能耗统计", response_model=EnergyStatisticsApiResponse)
 async def get_energy_statistics(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:data:read")),
     group_by: str = Query(default="workshop", description="分组维度: workshop/production_line/device"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_time: str = Query(..., description="开始时间(ISO格式)"),
@@ -321,6 +331,7 @@ async def get_energy_statistics(
 async def trigger_collection(
     request: CollectTriggerRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:collect:create")),
     db: AsyncSession = Depends(get_db),
 ) -> CollectTriggerApiResponse:
     result = await service.trigger_collection(db, request)
@@ -330,6 +341,7 @@ async def trigger_collection(
 @collect_router.get("/logs", summary="查询采集日志")
 async def list_collect_logs(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:collect:read")),
     platform_code: str | None = Query(default=None, description="平台标识"),
     status: str | None = Query(default=None, description="状态"),
     page: int = Query(default=1, ge=1),
@@ -365,6 +377,7 @@ async def list_collect_logs(
 async def get_collect_log_detail(
     log_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:collect:read")),
     db: AsyncSession = Depends(get_db),
 ) -> CollectLogDetailApiResponse:
     result = await service.get_collect_log_detail(db, log_id)
@@ -391,6 +404,7 @@ async def get_collect_log_detail(
 @router.get("/overview", summary="能源总览数据")
 async def get_energy_overview(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:overview:read")),
     energy_type: str | None = Query(default=None, description="能源类型筛选"),
     start_time: str = Query(..., description="开始时间(ISO格式)"),
     end_time: str = Query(..., description="结束时间(ISO格式)"),
@@ -412,6 +426,7 @@ async def get_energy_overview(
 async def create_alert_rule(
     data: EnergyAlertRuleCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-rule:create")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyAlertRuleApiResponse:
     obj = await service.create_alert_rule(db, data)
@@ -443,6 +458,7 @@ async def create_alert_rule(
 @alert_router.get("", summary="查询预警规则列表", response_model=EnergyAlertRuleListApiResponse)
 async def list_alert_rules(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-rule:read")),
     energy_type: str | None = Query(default=None, description="能源类型"),
     alert_level: str | None = Query(default=None, description="预警等级"),
     is_enabled: bool | None = Query(default=None, description="是否启用"),
@@ -490,6 +506,7 @@ async def list_alert_rules(
 async def get_alert_rule(
     rule_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-rule:read")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyAlertRuleApiResponse:
     obj = await service.get_alert_rule(db, rule_id)
@@ -522,6 +539,7 @@ async def update_alert_rule(
     rule_id: UUID,
     data: EnergyAlertRuleUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-rule:update")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyAlertRuleApiResponse:
     obj = await service.update_alert_rule(db, rule_id, data)
@@ -554,6 +572,7 @@ async def update_alert_rule(
 async def delete_alert_rule(
     rule_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-rule:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeleteResponse:
     await service.delete_alert_rule(db, rule_id)
@@ -567,6 +586,7 @@ async def delete_alert_rule(
 @alert_record_router.get("", summary="查询预警记录列表", response_model=EnergyAlertRecordListApiResponse)
 async def list_alert_records(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-record:read")),
     energy_type: str | None = Query(default=None, description="能源类型"),
     alert_level: str | None = Query(default=None, description="预警等级"),
     status: str | None = Query(default=None, description="处理状态"),
@@ -615,6 +635,7 @@ async def process_alert_record(
     record_id: UUID,
     request: AlertRecordProcessRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-record:update")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyAlertRecordApiResponse:
     obj = await service.process_alert_record(db, record_id, request)
@@ -644,6 +665,7 @@ async def process_alert_record(
 async def delete_alert_record(
     record_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:alert-record:update")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeleteResponse:
     await service.delete_alert_record(db, record_id)
@@ -664,6 +686,7 @@ router.include_router(alert_record_router, prefix="/alerts/records")
 async def create_workshop(
     data: EnergyWorkshopCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:workshop:create")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyWorkshopApiResponse:
     obj = await service.create_workshop(db, data)
@@ -687,6 +710,7 @@ async def create_workshop(
 @workshop_router.get("", summary="查询车间列表", response_model=EnergyWorkshopListApiResponse)
 async def list_workshops(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:workshop:read")),
     category: str | None = Query(default=None, description="分类"),
     is_active: bool | None = Query(default=None, description="是否启用"),
     production_only: bool = Query(default=False, description="仅生产车间（AI 能耗分析用），按名字白名单过滤"),
@@ -726,6 +750,7 @@ async def list_workshops(
 async def get_workshop(
     workshop_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:workshop:read")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyWorkshopApiResponse:
     obj = await service.get_workshop(db, workshop_id)
@@ -750,6 +775,7 @@ async def update_workshop(
     workshop_id: UUID,
     data: EnergyWorkshopUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:workshop:update")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyWorkshopApiResponse:
     obj = await service.update_workshop(db, workshop_id, data)
@@ -774,6 +800,7 @@ async def update_workshop(
 async def delete_workshop(
     workshop_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:workshop:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeleteResponse:
     await service.delete_workshop(db, workshop_id)
@@ -788,6 +815,7 @@ async def delete_workshop(
 async def create_monthly_record(
     data: EnergyMonthlyRecordCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyMonthlyRecordApiResponse:
     obj = await service.create_monthly_record(db, data)
@@ -813,6 +841,7 @@ async def create_monthly_record(
 async def batch_create_monthly_records(
     data: EnergyMonthlyRecordBatchCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyMonthlyBatchCreateApiResponse:
     objs = await service.batch_create_monthly_records(db, data.records)
@@ -839,6 +868,7 @@ async def batch_create_monthly_records(
 @monthly_router.get("", summary="查询月度记录列表")
 async def list_monthly_records(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:read")),
     workshop_id: UUID | None = Query(default=None, description="车间ID"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_date: str | None = Query(default=None, description="开始日期(YYYY-MM-DD)"),
@@ -886,6 +916,7 @@ async def list_monthly_records(
 @monthly_router.get("/summary", summary="月度记录汇总", response_model=MonthlySummaryApiResponse)
 async def get_monthly_summary(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:read")),
     workshop_id: UUID | None = Query(default=None, description="车间ID"),
     energy_type: str | None = Query(default=None, description="能源类型"),
     start_date: str | None = Query(default=None, description="开始日期(YYYY-MM-DD)"),
@@ -912,6 +943,7 @@ async def get_monthly_summary(
 async def get_monthly_record(
     record_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:read")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyMonthlyRecordApiResponse:
     obj = await service.get_monthly_record(db, record_id)
@@ -936,6 +968,7 @@ async def get_monthly_record(
 async def delete_monthly_record(
     record_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> EnergyDeleteResponse:
     await service.delete_monthly_record(db, record_id)
@@ -953,6 +986,7 @@ router.include_router(workshop_router, prefix="/workshops", tags=["车间管理"
 async def import_from_feishu(
     data: FeishuEnergyImportRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:monthly-record:create")),
     db: AsyncSession = Depends(get_db),
 ) -> FeishuImportApiResponse:
     from app.modules.energy.feishu_import import FeishuEnergyImporter
@@ -984,7 +1018,10 @@ router.include_router(monthly_router, prefix="/monthly", tags=["月度记录"])
 
 
 @router.post("/sync/bitable", summary="从飞书多维表格同步数据")
-async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
+async def sync_from_bitable(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:sync:create")),
+) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -1004,7 +1041,10 @@ async def sync_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
 
 
 @router.post("/sync/bitable/workshops", summary="从飞书多维表格同步车间数据")
-async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
+async def sync_workshops_from_bitable(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:sync:create")),
+) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -1024,7 +1064,10 @@ async def sync_workshops_from_bitable(current_user: RequiredUser) -> SyncJobApiR
 
 
 @router.post("/sync/bitable/monthly", summary="从飞书多维表格同步月度记录")
-async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
+async def sync_monthly_from_bitable(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:sync:create")),
+) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -1044,7 +1087,11 @@ async def sync_monthly_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
 
 
 @router.post("/sync/bitable/cross-import", summary="从飞书多维表格交叉表导入数据")
-async def cross_import_from_bitable(body: BitableCrossImportRequest, current_user: RequiredUser) -> SyncJobApiResponse:
+async def cross_import_from_bitable(
+    body: BitableCrossImportRequest,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:sync:create")),
+) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -1070,7 +1117,10 @@ async def cross_import_from_bitable(body: BitableCrossImportRequest, current_use
 
 
 @router.post("/sync/bitable/daily-import", summary="从飞书表格导入每日数据并检查预警")
-async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiResponse:
+async def daily_import_from_bitable(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:sync:create")),
+) -> SyncJobApiResponse:
     job_id = sync_job_store.create()
 
     async def _run() -> None:
@@ -1108,7 +1158,11 @@ async def daily_import_from_bitable(current_user: RequiredUser) -> SyncJobApiRes
 
 
 @router.get("/jobs/{job_id}", summary="查询异步任务状态")
-async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiResponse:
+async def get_job_status(
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:job:read")),
+) -> SyncJobApiResponse:
     job = sync_job_store.get(job_id)
     if job is None:
         raise NotFoundException("job", job_id)
@@ -1123,6 +1177,7 @@ async def get_job_status(job_id: str, current_user: RequiredUser) -> SyncJobApiR
 async def create_target(
     body: UnitConsumptionTargetCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:target:create")),
     db: AsyncSession = Depends(get_db),
 ) -> UnitConsumptionTargetApiResponse:
     target = await service.create_target(
@@ -1147,6 +1202,7 @@ async def get_target(
     workshop_id: UUID,
     target_month: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:target:read")),
     db: AsyncSession = Depends(get_db),
 ) -> UnitConsumptionTargetApiResponse:
     target = await service.get_target(db, workshop_id, target_month)
@@ -1168,6 +1224,7 @@ async def update_target(
     target_id: UUID,
     body: UnitConsumptionTargetUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:target:update")),
     db: AsyncSession = Depends(get_db),
 ) -> UnitConsumptionTargetApiResponse:
     target = await service.update_target(db, target_id, body.target_unit_consumption)
@@ -1186,6 +1243,7 @@ async def update_target(
 async def ai_analysis_v2(
     body: AIAnalysisRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:analysis:create")),
     db: AsyncSession = Depends(get_db),
 ) -> AIAnalysisApiResponse:
     """执行 AI 能耗分析，支持多产品产量输入和单耗计算"""

@@ -26,6 +26,217 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 用户管理列表 */
+        get: operations["list_users_management_api_v1_identity_users_get"];
+        put?: never;
+        /**
+         * 新建本地用户（初始密码留空则自动生成）
+         * @description 新建本地账号。
+         *
+         *     - `password` 留空：后端生成 12 位随机密码，明文只在本次响应里返回一次（不落库）；
+         *     - 传了 `password`：按管理员指定值设置，响应不含明文；
+         *     - 两种情况都置 `must_change_password`，用户首次登录必须自行改密 —— 一次性密码
+         *       不应该变成长期凭据。
+         */
+        post: operations["create_user_management_api_v1_identity_users_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 更新用户 */
+        put: operations["update_user_management_api_v1_identity_users__user_id__put"];
+        post?: never;
+        /**
+         * 删除用户（仅超级管理员，软删除）
+         * @description 删除账号：软删除 + 禁用，并清空角色授权、吊销在线会话。
+         *
+         *     「仅超级管理员」在 handler 内显式判定：`platform:user:manage` 同时授予普通账号
+         *     管理员（如 admin_account_manager），只靠权限码拦不住。
+         *
+         *     账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
+         *     账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+         */
+        delete: operations["delete_user_management_api_v1_identity_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/batch-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 禁用账号
+         * @description 批量启用 / 禁用账号（单次最多 100 个）。
+         *
+         *     逐条复用单条更新的保护规则：不能改自己、不能操作系统内置账号、非超管不能操作
+         *     超管或权限更高的账号。失败条目不影响其他条目，结果里返回失败原因。
+         *     状态与目标一致的条目按幂等处理（计入成功，不写审计）。
+         */
+        post: operations["batch_update_user_status_api_v1_identity_users_batch_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/{user_id}/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 重置用户密码（留空则随机生成，明文只返回一次）
+         * @description 管理员重置密码。
+         *
+         *     - 不传 `password`：随机生成，明文在响应里**只返回一次**（不落库），前端弹窗展示；
+         *     - 传 `password`：按管理员指定值设置，响应不含明文；
+         *     - 两种情况都把账号标记为「首登需改密」；
+         *     - 超级管理员账号不允许被他人重置 —— 其密码只能由本人登录后自助修改。
+         */
+        post: operations["reset_user_password_api_v1_identity_users__user_id__reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 在线会话列表
+         * @description 列出全部在线会话（账号管理员可看，用于识别并踢掉异常会话）。
+         */
+        get: operations["list_sessions_api_v1_identity_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/sessions/{jti}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 吊销会话（踢下线） */
+        delete: operations["revoke_session_api_api_v1_identity_sessions__jti__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/{user_id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** 吊销某用户全部会话 */
+        delete: operations["revoke_user_sessions_api_v1_identity_users__user_id__sessions_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 修改当前登录用户的密码（自助改密）
+         * @description 当前登录用户自助改密：校验原密码 → 更新 → 清除强制改密标记。
+         *
+         *     只要求「已登录」，不挂权限码（已在 `registry.EXEMPT_ROUTES` 登记豁免绑定兜底）。
+         */
+        post: operations["change_my_password_api_v1_identity_me_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/users/{user_id}/bind-feishu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 绑定飞书用户
+         * @description 把一条飞书用户记录合并进该账号：迁角色授权 + 迁飞书身份 + 软删原记录。
+         *
+         *     ⚠️ 产品要求（2026-10-13）：**管理端界面不再提供「绑定飞书」入口** ——
+         *     管理员只能解绑，不能替用户绑定；绑定由用户本人首次飞书登录时自动完成
+         *     （见 `handle_oauth_callback`）。本接口保留，以便后续「系统自动合并重复账号」
+         *     等场景调用；若需彻底禁止人工调用，可把依赖换成更高权限码或直接下线。
+         */
+        post: operations["bind_user_feishu_api_v1_identity_users__user_id__bind_feishu_post"];
+        /**
+         * 解绑飞书用户
+         * @description 解绑飞书身份。
+         *
+         *     - 由飞书首次登录自动创建的账号（`auth_source=feishu`）：解绑即**软删除**该账号，
+         *       因为它没有本地密码，解绑后已无可用登录身份；
+         *     - 本地创建后绑定飞书的账号：只清空飞书字段，账号本体与角色授权保留。
+         */
+        delete: operations["unbind_user_feishu_api_v1_identity_users__user_id__bind_feishu_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/departments": {
         parameters: {
             query?: never;
@@ -100,6 +311,28 @@ export interface paths {
          * @description Return a JWT for the e2e test user. Requires APP_ENV=test/e2e + X-E2E-Secret header.
          */
         post: operations["test_login_api_v1_identity_auth_test_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/identity/auth/local/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 本地账号密码登录
+         * @description 本地账号密码登录，成功返回 JWT（与飞书登录共用同一套 token）。
+         *
+         *     统一错误消息「账号或密码错误」，避免账号枚举。
+         */
+        post: operations["local_login_api_v1_identity_auth_local_login_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -209,6 +442,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/identity/sync/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）
+         * @description POST 触发一次「部门 + 成员」全量同步。
+         *
+         *     全量同步耗时较长（数百人约 50 秒），按项目规范走后台任务、不阻塞请求；
+         *     结果写入飞书配置的 last_sync_status / last_sync_message / last_synced_at。
+         */
+        post: operations["trigger_sync_all_api_v1_identity_sync_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/identity/feishu-config": {
         parameters: {
             query?: never;
@@ -262,7 +518,7 @@ export interface paths {
         };
         /**
          * 查询登录记录
-         * @description 分页查询登录记录，支持按状态和用户名筛选。
+         * @description 分页查询登录记录，支持按状态和账号筛选。
          */
         get: operations["list_login_logs_api_v1_identity_login_logs_get"];
         put?: never;
@@ -282,6 +538,642 @@ export interface paths {
         };
         /** 业务模块清单 */
         get: operations["list_modules_api_v1_system_modules_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 服务健康检查
+         * @description 并行探测 backend / postgres / redis / minio 的存活与耗时。
+         */
+        get: operations["system_health_api_v1_system_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 系统信息
+         * @description 版本、环境标识、Python 与关键依赖版本、运行时长。
+         */
+        get: operations["system_info_api_v1_system_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 资源监控
+         * @description 磁盘 / 内存 / 负载（容器视角，容器内读到的为宿主机资源）。
+         */
+        get: operations["system_resources_api_v1_system_resources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/redis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Redis 概览
+         * @description key 总数、内存占用、连接数、命中率。
+         */
+        get: operations["system_redis_overview_api_v1_system_redis_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/redis/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 按前缀查看 Redis key
+         * @description SCAN 遍历（非 KEYS），最多返回 limit 个。
+         */
+        get: operations["system_redis_keys_api_v1_system_redis_keys_get"];
+        put?: never;
+        post?: never;
+        /**
+         * 按前缀清理 Redis key
+         * @description 按前缀清理缓存。禁止空/过短前缀，防误删全库。
+         */
+        delete: operations["system_redis_delete_api_v1_system_redis_keys_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/scheduled-tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 定时任务 / 后台任务清单
+         * @description 汇总调度引擎任务、动态生成器、后台 worker 与独立轮询循环。
+         */
+        get: operations["system_scheduled_tasks_api_v1_system_scheduled_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/scheduled-tasks/{name}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用 / 禁用某个定时任务（运行时临时）
+         * @description 运行时临时启停（内存态，容器重启后恢复默认）。找不到名字返回 400。
+         */
+        put: operations["system_scheduled_task_toggle_api_v1_system_scheduled_tasks__name__toggle_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/scheduled-tasks/batch-toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 禁用定时任务
+         * @description 逐条运行时启停（内存态）；不存在的任务 / 不可切换的 kind 记入失败明细。
+         */
+        post: operations["system_scheduled_tasks_batch_toggle_api_v1_system_scheduled_tasks_batch_toggle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/api-routes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 全部 API 清单与启停状态
+         * @description 从 OpenAPI schema 导出全部接口（自动跟随代码），含禁用状态与保护标记。
+         */
+        get: operations["system_api_routes_api_v1_system_api_routes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/api-routes/switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 启用 / 禁用某个接口
+         * @description 禁用后该接口立即 403（内存判定，无需重启）；保护名单内接口拒绝禁用。
+         */
+        put: operations["system_api_switch_api_v1_system_api_routes_switch_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/api-routes/batch-switch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 禁用接口
+         * @description 逐条切换；保护名单内接口拒绝禁用（记入失败明细），其余照常生效。
+         */
+        post: operations["system_api_routes_batch_switch_api_v1_system_api_routes_batch_switch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 运行日志（内存缓冲）
+         * @description 返回最近的运行日志（内存环形缓冲，最多 2000 条，重启清空；时间倒序，最新在前）。
+         */
+        get: operations["system_logs_api_v1_system_logs_get"];
+        put?: never;
+        post?: never;
+        /**
+         * 清空日志缓冲
+         * @description 清空内存缓冲区（仅影响本进程缓冲，不影响容器 stdout 日志）。
+         */
+        delete: operations["system_logs_clear_api_v1_system_logs_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/db/tables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 数据库概览与表清单
+         * @description 库版本 / 大小 / 连接数 / 缓存命中率 + 全部业务表（体积、行数估算、列数）。
+         */
+        get: operations["system_db_tables_api_v1_system_db_tables_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/db/tables/{schema}/{table}/columns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 表字段结构
+         * @description 单表字段结构（列名 / 类型 / 可空 / 默认值 / 注释）。表不存在返回 400。
+         */
+        get: operations["system_db_table_columns_api_v1_system_db_tables__schema___table__columns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/system/menus/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 读取菜单栏配置
+         * @description 返回菜单的显隐/权重/权限覆盖配置与自定义菜单项（未配置 = 空，前端按代码默认渲染）。
+         *
+         *     **只要求已登录**（不做权限码校验）：每个用户的导航渲染都要读这份配置，
+         *     若要求 `platform:ops:read`，普通用户读不到 → 菜单配置对他们不生效。
+         *     写操作（PUT）仍要求 `platform:ops:manage`。
+         */
+        get: operations["get_menu_config_api_v1_system_menus_config_get"];
+        /**
+         * 保存菜单栏配置
+         * @description 整体保存菜单配置（护栏校验不通过返回 400）。
+         */
+        put: operations["put_menu_config_api_v1_system_menus_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Roles */
+        get: operations["list_roles_api_v1_permission_roles_get"];
+        put?: never;
+        /** Create Role */
+        post: operations["create_role_api_v1_permission_roles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/roles/{role_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Role */
+        put: operations["update_role_api_v1_permission_roles__role_id__put"];
+        post?: never;
+        /** Delete Role */
+        delete: operations["delete_role_api_v1_permission_roles__role_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/roles/batch-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 停用角色
+         * @description 逐条校验并汇总结果。
+         *
+         *     - 内置角色不可修改状态（与单条更新一致）；
+         *     - 状态已一致的按幂等处理（计入成功、不写审计）；
+         *     - 失败项不影响其他角色，返回原因。
+         */
+        post: operations["batch_role_status_api_v1_permission_roles_batch_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/roles/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量删除角色
+         * @description 逐条软删除；内置角色与超级管理员角色一律跳过并返回原因。
+         */
+        post: operations["batch_delete_roles_api_v1_permission_roles_batch_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Permissions */
+        get: operations["list_permissions_api_v1_permission_permissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Permission Tree
+         * @description 权限目录树（模块 → 资源 → 权限码），供角色管理按模块 / 功能勾选权限。
+         *
+         *     权限码口径取 `platform:role:read` 而非 `platform:permission:read`：
+         *     该树只服务于「角色管理」勾选权限，跟随角色读权限，避免出现
+         *     「有角色管理权、却因缺权限目录读权而整个角色页报错」的口径不一致。
+         *
+         *     纯注册表数据、不查库，因此权限表未迁移时也可正常返回。
+         */
+        get: operations["get_permission_tree_api_v1_permission_tree_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/api-bindings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Api Bindings */
+        get: operations["list_api_bindings_api_v1_permission_api_bindings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/departments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Department Options
+         * @description 授权管理「数据范围」选部门用的选项（hr.departments.code + name）。
+         *
+         *     数据源是 hr.departments（部门唯一真理来源），通过 hr public_api 只读获取，
+         *     避免在权限模块里直接 import hr 的模型。
+         */
+        get: operations["list_department_options_api_v1_permission_departments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Grants */
+        get: operations["list_grants_api_v1_permission_grants_get"];
+        put?: never;
+        /** Create Grant */
+        post: operations["create_grant_api_v1_permission_grants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants/{grant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update Grant */
+        put: operations["update_grant_api_v1_permission_grants__grant_id__put"];
+        post?: never;
+        /** Delete Grant */
+        delete: operations["delete_grant_api_v1_permission_grants__grant_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants/batch-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量启用 / 停用授权
+         * @description 逐条复用单条护栏：不能改自己的授权、不能越级、不能停用最后一个超管授权。
+         *
+         *     每停用一条立即 flush，避免「同批停用两条超管授权」时计数看不到前面的变更。
+         */
+        post: operations["batch_grant_status_api_v1_permission_grants_batch_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/grants/batch-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 批量删除授权
+         * @description 逐条软删除；自己 / 越级 / 最后一个超管的授权跳过并返回原因。
+         */
+        post: operations["batch_delete_grants_api_v1_permission_grants_batch_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/my-permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** My Permissions */
+        get: operations["my_permissions_api_v1_permission_my_permissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/permission/preview/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview User Access
+         * @description 预览某用户的生效权限（授权管理「生效预览」用）：返回权限码集合 + 是否超管。
+         *
+         *     口径与 `my-permissions` 完全一致（超管返回全部权限码），只是针对任意目标用户。
+         */
+        get: operations["preview_user_access_api_v1_permission_preview__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 查询操作记录
+         * @description 分页查询操作记录，按时间倒序。
+         */
+        get: operations["list_audit_logs_api_v1_audit_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit/logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 导出操作记录（CSV）
+         * @description 按当前筛选条件导出操作记录为 CSV（最多 10000 条，按时间倒序）。
+         */
+        get: operations["export_audit_logs_api_v1_audit_logs_export_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7790,6 +8682,9 @@ export interface paths {
         /**
          * 飞书审批完成回调
          * @description 接收飞书审批完成通知，更新员工状态为在职。
+         *
+         *     鉴权方式见 `_verify_feishu_approval_callback`：飞书回调没有用户登录态，
+         *     用签名 + verification token 校验替代 JWT。
          */
         post: operations["feishu_approval_webhook_api_v1_hr_webhook_feishu_approval_post"];
         delete?: never;
@@ -8988,12 +9883,15 @@ export interface paths {
         };
         /**
          * 获取系统设置
-         * @description 获取所有系统配置。secret 类字段仅返回尾部 4 位。
+         * @description 获取所有系统配置。凭据类字段只返回掩码（如 `cli_ab****cd12`），绝不返回明文。
          */
         get: operations["get_system_settings_api_v1_hr_system_settings_get"];
         /**
          * 保存系统设置
          * @description 批量保存系统配置到 DB，同时写入 .env 文件。
+         *
+         *     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
+         *     避免把掩码当成新密钥写进库。
          */
         put: operations["save_system_settings_api_v1_hr_system_settings_put"];
         post?: never;
@@ -18576,6 +19474,45 @@ export interface components {
              */
             status?: string | null;
         };
+        /** ApiBindingListResponse */
+        ApiBindingListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ApiBindingResponse"][];
+        };
+        /** ApiBindingResponse */
+        ApiBindingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Permission Code */
+            permission_code: string;
+            /** Method */
+            method: string;
+            /** Route Template */
+            route_template: string;
+            /**
+             * Scope Required
+             * @default false
+             */
+            scope_required: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+        };
         /** ApiResponse */
         ApiResponse: {
             /**
@@ -18591,6 +19528,100 @@ export interface components {
             /** Data */
             data?: unknown;
             meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ApiRouteItemModel */
+        ApiRouteItemModel: {
+            /** Method */
+            method: string;
+            /** Route */
+            route: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Tags */
+            tags?: string[];
+            /**
+             * Disabled
+             * @default false
+             */
+            disabled: boolean;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Protected
+             * @description 保护名单内（不可禁用）
+             * @default false
+             */
+            protected: boolean;
+        };
+        /** ApiRoutesResponse */
+        ApiRoutesResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ApiRouteItemModel"][];
+        };
+        /** ApiSwitchBatchItem */
+        ApiSwitchBatchItem: {
+            /** Method */
+            method: string;
+            /** Route */
+            route: string;
+        };
+        /** ApiSwitchBatchRequest */
+        ApiSwitchBatchRequest: {
+            /** Items */
+            items: components["schemas"]["ApiSwitchBatchItem"][];
+            /** Enabled */
+            enabled: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** ApiSwitchRequest */
+        ApiSwitchRequest: {
+            /** Method */
+            method: string;
+            /** Route */
+            route: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** ApiSwitchResponse */
+        ApiSwitchResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ApiSwitchResult"];
+        };
+        /** ApiSwitchResult */
+        ApiSwitchResult: {
+            /** Method */
+            method: string;
+            /** Route */
+            route: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Message */
+            message: string;
         };
         /**
          * ApprovalRecordListApiResponse
@@ -18709,6 +19740,92 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** AssetListApiResponse */
+        AssetListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AssetResponse"][] | null;
+        };
+        /**
+         * AssetResponse
+         * @description 素材响应
+         */
+        AssetResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Type */
+            file_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Category Id */
+            category_id?: string | null;
+        };
+        /** AssetUploadBatchApiResponse */
+        AssetUploadBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AssetUploadBatchData"] | null;
+        };
+        /** AssetUploadBatchData */
+        AssetUploadBatchData: {
+            /** Assets */
+            assets: components["schemas"]["AssetUploadResponse"][];
+            /** Count */
+            count: number;
+        };
+        /**
+         * AssetUploadResponse
+         * @description 素材上传响应
+         */
+        AssetUploadResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Path */
+            file_path: string;
+            /** File Type */
+            file_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Category Id */
+            category_id?: string | null;
+        };
         /**
          * AssetUsageToggleData
          * @description 素材使用状态切换响应数据
@@ -18737,6 +19854,76 @@ export interface components {
             data: components["schemas"]["AssetUsageToggleData"];
             /** Message */
             message: string;
+        };
+        /**
+         * AuditLogItem
+         * @description 单条操作记录（含操作者姓名/账号，join identity.users）。
+         */
+        AuditLogItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** User Id */
+            user_id?: string | null;
+            /** User Name */
+            user_name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Action */
+            action: string;
+            /** Resource Type */
+            resource_type?: string | null;
+            /** Resource Id */
+            resource_id?: string | null;
+            /** Old Value */
+            old_value?: {
+                [key: string]: unknown;
+            } | null;
+            /** New Value */
+            new_value?: {
+                [key: string]: unknown;
+            } | null;
+            /** Extra */
+            extra?: {
+                [key: string]: unknown;
+            } | null;
+            /** Ip Address */
+            ip_address?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * AuditLogListData
+         * @description 操作记录分页数据（与登录记录返回结构保持一致：items / total / page / page_size）。
+         */
+        AuditLogListData: {
+            /** Items */
+            items: components["schemas"]["AuditLogItem"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /** AuditLogListResponse */
+        AuditLogListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AuditLogListData"];
         };
         /**
          * AuditMode
@@ -18984,6 +20171,15 @@ export interface components {
              * @description 设备ID列表
              */
             ids: string[];
+        };
+        /** BatchFailure */
+        BatchFailure: {
+            /** Key */
+            key: string;
+            /** Label */
+            label?: string | null;
+            /** Reason */
+            reason: string;
         };
         /**
          * BatchImportJobApiResponse
@@ -19376,6 +20572,41 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** BatchResultApiResponse */
+        BatchResultApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["BatchResultData"];
+        };
+        /** BatchResultData */
+        BatchResultData: {
+            /** Succeeded */
+            succeeded?: string[];
+            /** Failed */
+            failed?: components["schemas"]["BatchFailure"][];
+        };
+        /** BatchResultResponse */
+        BatchResultResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["BatchResultData"];
         };
         /**
          * BatchStatus
@@ -20827,6 +22058,138 @@ export interface components {
             /** Related Project Id */
             related_project_id?: string | null;
         };
+        /** ChangePasswordApiResponse */
+        ChangePasswordApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ChangePasswordData"];
+        };
+        /** ChangePasswordData */
+        ChangePasswordData: {
+            /** Message */
+            message: string;
+        };
+        /**
+         * ChangePasswordRequest
+         * @description 当前登录用户自助改密。
+         */
+        ChangePasswordRequest: {
+            /** Old Password */
+            old_password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** ChapterDetailApiResponse */
+        ChapterDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ChapterDetailResponse"] | null;
+        };
+        /**
+         * ChapterDetailResponse
+         * @description 章节详情响应
+         */
+        ChapterDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Product Dossier Id
+             * Format: uuid
+             */
+            product_dossier_id: string;
+            /** Chapter Code */
+            chapter_code?: string | null;
+            /** Chapter Title */
+            chapter_title: string;
+            /** Level */
+            level: number;
+            /** Has Content */
+            has_content: boolean;
+            /** Has Assets */
+            has_assets: boolean;
+            /** Source File */
+            source_file?: string | null;
+            /** Working File */
+            working_file?: string | null;
+            /**
+             * Assets
+             * @default []
+             */
+            assets: components["schemas"]["AssetResponse"][];
+        };
+        /**
+         * ChapterResponse
+         * @description 章节响应
+         */
+        ChapterResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Chapter Code */
+            chapter_code?: string | null;
+            /** Chapter Title */
+            chapter_title: string;
+            /** Level */
+            level: number;
+            /** Sort Order */
+            sort_order: number;
+            /** Has Content */
+            has_content: boolean;
+            /** Has Assets */
+            has_assets: boolean;
+            /**
+             * Asset Count
+             * @default 0
+             */
+            asset_count: number;
+            /** Source File */
+            source_file?: string | null;
+            /** Working File */
+            working_file?: string | null;
+            /**
+             * Children
+             * @default []
+             */
+            children: components["schemas"]["ChapterResponse"][];
+        };
+        /** ChapterTreeApiResponse */
+        ChapterTreeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ChapterResponse"][] | null;
+        };
         /**
          * CheckStatus
          * @description 校验状态
@@ -21308,6 +22671,34 @@ export interface components {
          * @enum {string}
          */
         CompletionMethod: "normal" | "early_termination";
+        /** ComponentHealth */
+        ComponentHealth: {
+            /**
+             * Name
+             * @description 组件名
+             */
+            name: string;
+            /**
+             * Status
+             * @description ok / error / disabled
+             */
+            status: string;
+            /**
+             * Latency Ms
+             * @description 探测耗时（毫秒）
+             */
+            latency_ms?: number | null;
+            /**
+             * Uptime Seconds
+             * @description 运行时长（秒），取不到为 null
+             */
+            uptime_seconds?: number | null;
+            /**
+             * Detail
+             * @description 失败原因或补充说明
+             */
+            detail?: string | null;
+        };
         /**
          * ConfirmCheckRequest
          * @description 确认检查请求
@@ -22991,6 +24382,68 @@ export interface components {
              */
             unit: string;
         };
+        /** CurrentUserApiResponse */
+        CurrentUserApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserResponse"];
+        };
+        /**
+         * CustomMenuItem
+         * @description 管理员自定义新增的菜单项。
+         */
+        CustomMenuItem: {
+            /**
+             * Id
+             * @description 自定义项 ID（前端生成）
+             */
+            id: string;
+            /**
+             * Parent
+             * @description 父菜单 key；None = 模块级（顶部一个 Tab）
+             */
+            parent?: string | null;
+            /**
+             * Title
+             * @description 菜单名称
+             */
+            title: string;
+            /**
+             * Path
+             * @description 跳转路径（/xxx 或 http(s)://）
+             */
+            path: string;
+            /**
+             * Icon
+             * @description 图标名（取前端可用图标集合）
+             * @default link
+             */
+            icon: string;
+            /**
+             * Sort
+             * @description 排列权重，数字小排前面
+             * @default 100
+             */
+            sort: number;
+            /**
+             * Perms
+             * @description 需要的权限码；空 = 不限制
+             */
+            perms?: string[];
+            /**
+             * Visible
+             * @default true
+             */
+            visible: boolean;
+        };
         /**
          * DailyRiskReportApiResponse
          * @description Single daily risk report response wrapper
@@ -23436,6 +24889,144 @@ export interface components {
              */
             enabled: boolean;
         };
+        /**
+         * DbColumnItem
+         * @description 一个字段的结构定义（不含数据内容）。
+         */
+        DbColumnItem: {
+            /** Ordinal */
+            ordinal: number;
+            /** Name */
+            name: string;
+            /**
+             * Data Type
+             * @description 完整类型，如 character varying(255)
+             */
+            data_type: string;
+            /** Nullable */
+            nullable: boolean;
+            /** Default */
+            default?: string | null;
+            /** Comment */
+            comment?: string | null;
+        };
+        /** DbColumnsData */
+        DbColumnsData: {
+            /** Schema */
+            schema: string;
+            /** Table */
+            table: string;
+            /** Est Rows */
+            est_rows: number;
+            /** Total Bytes */
+            total_bytes: number;
+            /** Items */
+            items: components["schemas"]["DbColumnItem"][];
+        };
+        /** DbColumnsResponse */
+        DbColumnsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DbColumnsData"];
+        };
+        /**
+         * DbOverview
+         * @description 数据库概览。
+         */
+        DbOverview: {
+            /** Database */
+            database: string;
+            /**
+             * Version
+             * @description 数据库版本（已裁掉 OS 后缀）
+             */
+            version: string;
+            /**
+             * Migration Version
+             * @description 当前 Alembic 迁移版本号（alembic_version.version_num）
+             */
+            migration_version?: string | null;
+            /**
+             * Size Bytes
+             * @description 当前库占用字节数
+             */
+            size_bytes: number;
+            /**
+             * Table Count
+             * @description 业务表数量（排除 pg_* 系统 schema）
+             */
+            table_count: number;
+            /**
+             * Connections
+             * @description 当前连接数
+             */
+            connections: number;
+            /**
+             * Max Connections
+             * @description 最大连接数
+             */
+            max_connections: number;
+            /**
+             * Cache Hit Percent
+             * @description 缓存命中率（%），越高越好
+             */
+            cache_hit_percent: number;
+        };
+        /**
+         * DbTableItem
+         * @description 一张业务表的元信息（不含数据内容）。
+         */
+        DbTableItem: {
+            /** Schema */
+            schema: string;
+            /** Table */
+            table: string;
+            /**
+             * Est Rows
+             * @description 估算行数（统计收集器，ANALYZE 后准确）
+             */
+            est_rows: number;
+            /**
+             * Total Bytes
+             * @description 表 + 索引占用字节数
+             */
+            total_bytes: number;
+            /** Column Count */
+            column_count: number;
+            /**
+             * Last Analyze
+             * @description 最后一次 ANALYZE 时间；null = 从未分析
+             */
+            last_analyze?: string | null;
+        };
+        /** DbTablesData */
+        DbTablesData: {
+            overview: components["schemas"]["DbOverview"];
+            /** Items */
+            items: components["schemas"]["DbTableItem"][];
+        };
+        /** DbTablesResponse */
+        DbTablesResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DbTablesData"];
+        };
         /** DeleteMergedRowRequest */
         DeleteMergedRowRequest: {
             /** Point Id */
@@ -23519,6 +25110,28 @@ export interface components {
              * @description 负责人 UUID
              */
             leader_id?: string | null;
+        };
+        /** DepartmentOption */
+        DepartmentOption: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+        };
+        /** DepartmentOptionListResponse */
+        DepartmentOptionListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["DepartmentOption"][];
         };
         /**
          * DepartmentSafetyOfficerApiResponse
@@ -23808,6 +25421,13 @@ export interface components {
             remarks?: string[] | null;
         } & {
             [key: string]: unknown;
+        };
+        /** DependencyInfo */
+        DependencyInfo: {
+            /** Name */
+            name: string;
+            /** Version */
+            version: string;
         };
         /**
          * DeptHeadConfirm
@@ -24099,6 +25719,19 @@ export interface components {
             correction?: components["schemas"]["CorrectionUpdate"] | null;
             /** Status */
             status?: string | null;
+        };
+        /** DiskUsage */
+        DiskUsage: {
+            /** Path */
+            path: string;
+            /** Total Gb */
+            total_gb: number;
+            /** Used Gb */
+            used_gb: number;
+            /** Free Gb */
+            free_gb: number;
+            /** Percent */
+            percent: number;
         };
         /**
          * DocCheckBatchUpdateApiResponse
@@ -27133,6 +28766,20 @@ export interface components {
              */
             execution_notes?: string | null;
         };
+        /** ExportApiResponse */
+        ExportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ExportResponse"] | null;
+        };
         /**
          * ExportRequest
          * @description 导出请求
@@ -27149,6 +28796,20 @@ export interface components {
              * @default docx
              */
             format: string;
+        };
+        /**
+         * ExportResponse
+         * @description 导出响应
+         */
+        ExportResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** File Path */
+            file_path?: string | null;
+            /** Filename */
+            filename?: string | null;
         };
         /**
          * FQCApprovalCreate
@@ -27918,6 +29579,18 @@ export interface components {
             is_active?: boolean | null;
         };
         /**
+         * FeishuBindRequest
+         * @description 绑定飞书用户：把库里已存在的飞书用户记录合并进目标账号。
+         */
+        FeishuBindRequest: {
+            /**
+             * Source User Id
+             * Format: uuid
+             * @description 飞书用户记录的 ID（auth_source=feishu）
+             */
+            source_user_id: string;
+        };
+        /**
          * FeishuBotConfigRequest
          * @description 飞书机器人配置请求
          */
@@ -28282,6 +29955,134 @@ export interface components {
              * @description PONG 看门狗是否健康
              */
             pong_watchdog_healthy?: boolean | null;
+        };
+        /** FillResultItem */
+        FillResultItem: {
+            /** Id */
+            id: string;
+            /** Field Name */
+            field_name: string;
+            /** Filled Value */
+            filled_value?: string | null;
+            /** Fill Method */
+            fill_method?: string | null;
+            /** Status */
+            status?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** FillResultListApiResponse */
+        FillResultListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["FillResultItem"][] | null;
+        };
+        /** GrantCreate */
+        GrantCreate: {
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
+            /**
+             * Scope Type
+             * @default all
+             */
+            scope_type: string;
+            /** Scope Dept Codes */
+            scope_dept_codes?: string[] | null;
+        };
+        /** GrantDetailApiResponse */
+        GrantDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["GrantResponse"];
+        };
+        /** GrantListResponse */
+        GrantListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["GrantResponse"][];
+        };
+        /** GrantResponse */
+        GrantResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /**
+             * Role Id
+             * Format: uuid
+             */
+            role_id: string;
+            /** Scope Type */
+            scope_type: string;
+            /** Scope Dept Codes */
+            scope_dept_codes?: string[] | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Granted By */
+            granted_by?: string | null;
+            /**
+             * Version
+             * @default 1
+             */
+            version: number;
+            /** Role Code */
+            role_code?: string | null;
+            /** Role Name */
+            role_name?: string | null;
+            /** User Name */
+            user_name?: string | null;
+        };
+        /** GrantUpdate */
+        GrantUpdate: {
+            /** Scope Type */
+            scope_type?: string | null;
+            /** Scope Dept Codes */
+            scope_dept_codes?: string[] | null;
+            /** Status */
+            status?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -29357,6 +31158,21 @@ export interface components {
          * @enum {string}
          */
         HeaderColorEnum: "blue" | "orange" | "green" | "red" | "purple";
+        /** HealthResponse */
+        HealthResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ComponentHealth"][];
+        };
         /** HolidayCreate */
         HolidayCreate: {
             /** Year */
@@ -29981,6 +31797,61 @@ export interface components {
             updated_by?: string | null;
         };
         /**
+         * IPQCInspectionListResponse
+         * @description IPQC检验单列表响应
+         */
+        IPQCInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Product Specification */
+            product_specification?: string | null;
+            /** Process Stage */
+            process_stage?: string | null;
+            /** Sampling Point */
+            sampling_point?: string | null;
+            /** Sampling Time */
+            sampling_time?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            status: components["schemas"]["IPQCInspectionStatus"];
+            inspection_conclusion?: components["schemas"]["IPQCInspectionConclusion"] | null;
+            /**
+             * Batch Locked
+             * @default false
+             */
+            batch_locked: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * IPQCInspectionPageResponse
+         * @description IPQC检验单列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        IPQCInspectionPageResponse: {
+            /** Items */
+            items: components["schemas"]["IPQCInspectionListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * IPQCInspectionResponse
          * @description IPQC检验单响应
          */
@@ -30518,6 +32389,56 @@ export interface components {
             updated_by?: string | null;
         };
         /**
+         * IQCInspectionListResponse
+         * @description IQC检验单列表响应
+         */
+        IQCInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            source_type: components["schemas"]["app__modules__quality__qms__iqc_schemas__SourceType"];
+            /** Source No */
+            source_no?: string | null;
+            /** Material Code */
+            material_code: string;
+            /** Material Name */
+            material_name?: string | null;
+            material_category?: components["schemas"]["app__modules__quality__qms__iqc_schemas__MaterialCategory"] | null;
+            /** Batch No */
+            batch_no?: string | null;
+            /** Supplier Name */
+            supplier_name?: string | null;
+            /** Inspection Date */
+            inspection_date?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            status: components["schemas"]["InspectionStatus"];
+            inspection_conclusion?: components["schemas"]["InspectionConclusion"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * IQCInspectionPageResponse
+         * @description IQC检验单列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        IQCInspectionPageResponse: {
+            /** Items */
+            items: components["schemas"]["IQCInspectionListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * IQCInspectionResponse
          * @description IQC检验单响应
          */
@@ -30714,6 +32635,14 @@ export interface components {
          * @enum {string}
          */
         IQStatus: "pending" | "confirmed" | "not_required";
+        /**
+         * IdsBatchRequest
+         * @description 按 ID 批量操作；单次上限 100。
+         */
+        IdsBatchRequest: {
+            /** Ids */
+            ids: string[];
+        };
         /** ImportErrorItem */
         ImportErrorItem: {
             /** Row */
@@ -30808,6 +32737,27 @@ export interface components {
             total: number;
             /** Headers */
             headers: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** InitS7ApiResponse */
+        InitS7ApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["InitS7Data"] | null;
+        };
+        /** InitS7Data */
+        InitS7Data: {
+            /** Chapters */
+            chapters: {
                 [key: string]: unknown;
             }[];
         };
@@ -31828,7 +33778,7 @@ export interface components {
             /** Data */
             data?: {
                 [key: string]: unknown;
-            } | null;
+            }[] | null;
         };
         /**
          * InstrumentUpdate
@@ -32710,6 +34660,69 @@ export interface components {
          * @enum {string}
          */
         LimitType: "upper_limit" | "lower_limit" | "range" | "not_detectable";
+        /** LoadAverage */
+        LoadAverage: {
+            /** Load1 */
+            load1: number;
+            /** Load5 */
+            load5: number;
+            /** Load15 */
+            load15: number;
+            /** Cpu Count */
+            cpu_count: number;
+        };
+        /**
+         * LocalLoginApiResponse
+         * @description 本地账号密码登录响应（完整信封）。
+         */
+        LocalLoginApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["TokenResponse"];
+        };
+        /** LocalLoginRequest */
+        LocalLoginRequest: {
+            /** Username */
+            username: string;
+            /** Password */
+            password: string;
+        };
+        /** LocalUserCreate */
+        LocalUserCreate: {
+            /** Username */
+            username: string;
+            /**
+             * Password
+             * @description 初始密码；留空则自动生成，明文只在创建响应里返回一次
+             */
+            password?: string | null;
+            /** Name */
+            name: string;
+            /** Email */
+            email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /**
+             * Status
+             * @default active
+             * @enum {string}
+             */
+            status: "active" | "disabled";
+        };
         /**
          * LocationCreate
          * @description 创建位置请求
@@ -32761,6 +34774,66 @@ export interface components {
              * @description 位置描述
              */
             description?: string | null;
+        };
+        /** LogClearResult */
+        LogClearResult: {
+            /** Cleared */
+            cleared: number;
+        };
+        /** LogItemModel */
+        LogItemModel: {
+            /** Seq */
+            seq: number;
+            /** Timestamp */
+            timestamp: string;
+            /** Level */
+            level: string;
+            /** Logger */
+            logger: string;
+            /** Message */
+            message: string;
+            /**
+             * Request Id
+             * @default -
+             */
+            request_id: string;
+        };
+        /** LogsClearResponse */
+        LogsClearResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["LogClearResult"];
+        };
+        /** LogsData */
+        LogsData: {
+            /** Items */
+            items: components["schemas"]["LogItemModel"][];
+            /** Total */
+            total: number;
+            /** Buffer Size */
+            buffer_size: number;
+        };
+        /** LogsResponse */
+        LogsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["LogsData"];
         };
         /** LowStockData */
         LowStockData: {
@@ -33216,6 +35289,91 @@ export interface components {
             /** Remark */
             remark?: string | null;
         };
+        /** MemoryUsage */
+        MemoryUsage: {
+            /** Total Gb */
+            total_gb: number;
+            /** Used Gb */
+            used_gb: number;
+            /** Available Gb */
+            available_gb: number;
+            /** Percent */
+            percent: number;
+        };
+        /** MenuConfigData */
+        MenuConfigData: {
+            /** Items */
+            items?: {
+                [key: string]: components["schemas"]["MenuItemOverride"];
+            };
+            /** Custom */
+            custom?: components["schemas"]["CustomMenuItem"][];
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** MenuConfigResponse */
+        MenuConfigResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["MenuConfigData"];
+        };
+        /** MenuConfigSaveRequest */
+        MenuConfigSaveRequest: {
+            /** Items */
+            items?: {
+                [key: string]: components["schemas"]["MenuItemOverride"];
+            };
+            /** Custom */
+            custom?: components["schemas"]["CustomMenuItem"][];
+        };
+        /** MenuConfigSaveResponse */
+        MenuConfigSaveResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["MenuConfigData"];
+        };
+        /**
+         * MenuItemOverride
+         * @description 内置菜单项的覆盖配置。
+         */
+        MenuItemOverride: {
+            /**
+             * Label
+             * @description 菜单显示名；None/空 = 按代码默认（菜单管理里可改）
+             */
+            label?: string | null;
+            /**
+             * Visible
+             * @description 是否显示；None = 按代码默认（显示）
+             */
+            visible?: boolean | null;
+            /**
+             * Sort
+             * @description 排列权重，数字小排前面；None = 按代码顺序
+             */
+            sort?: number | null;
+            /**
+             * Perms
+             * @description 需要的权限码（任一满足即可）；None = 按代码默认规则；[] = 不限制
+             */
+            perms?: string[] | null;
+        };
         /**
          * MessageTemplateRequest
          * @description 消息模板请求
@@ -33249,6 +35407,24 @@ export interface components {
             is_default: boolean;
         };
         /**
+         * ModuleSettingApiResponse
+         * @description Single-item envelope (404 returns data=None).
+         */
+        ModuleSettingApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ModuleSettingResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
          * ModuleSettingCreate
          * @description Request schema for creating a new setting.
          */
@@ -33275,6 +35451,47 @@ export interface components {
             value_type: string;
             /** Description */
             description?: string | null;
+        };
+        /**
+         * ModuleSettingListApiResponse
+         * @description List envelope — concrete response model so OpenAPI types `data`.
+         */
+        ModuleSettingListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ModuleSettingResponse"][];
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ModuleSettingResponse
+         * @description Response schema for a module setting.
+         */
+        ModuleSettingResponse: {
+            /** Id */
+            id: string;
+            /** Module */
+            module: string;
+            /** Key */
+            key: string;
+            /** Value */
+            value: string;
+            /** Value Type */
+            value_type: string;
+            /** Description */
+            description?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
          * ModuleSettingUpdate
@@ -33333,6 +35550,30 @@ export interface components {
              * @default 0
              */
             previous_year_weight: number;
+        };
+        /** MyPermissionsData */
+        MyPermissionsData: {
+            /** Permissions */
+            permissions?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+        };
+        /** MyPermissionsResponse */
+        MyPermissionsResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["MyPermissionsData"];
         };
         /**
          * OQStatus
@@ -34100,6 +36341,26 @@ export interface components {
             approval_date?: string | null;
         };
         /**
+         * OpaqueDataApiResponse
+         * @description service 返回的自由结构结果（映射/列表）。作为过渡模型，替代 response_model=dict。
+         */
+        OpaqueDataApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            } | unknown[] | null;
+        };
+        /**
          * OperationLevel
          * @description 特殊作业级别枚举
          * @enum {string}
@@ -34468,6 +36729,37 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ParseResultApiResponse */
+        ParseResultApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ParseResultResponse"] | null;
+        };
+        /**
+         * ParseResultResponse
+         * @description 解析结果响应
+         */
+        ParseResultResponse: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /**
+             * Chapter Count
+             * @default 0
+             */
+            chapter_count: number;
+            /** Error */
+            error?: string | null;
+        };
         /**
          * PartComplete
          * @description 完成部分
@@ -34478,6 +36770,158 @@ export interface components {
              * @description 部分名称
              */
             part: string;
+        };
+        /** PasswordResetApiResponse */
+        PasswordResetApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["PasswordResetData"];
+        };
+        /** PasswordResetData */
+        PasswordResetData: {
+            /** Message */
+            message: string;
+            /** Password */
+            password?: string | null;
+        };
+        /**
+         * PasswordResetRequest
+         * @description 管理员重置密码。
+         *
+         *     `password` 留空 = 随机生成：生成的明文密码只在响应里返回一次（一次性展示），
+         *     数据库仍只存哈希，之后无法再次查看。两种情况都会把账号标记为「首登需改密」。
+         */
+        PasswordResetRequest: {
+            /** Password */
+            password?: string | null;
+        };
+        /** PermissionListResponse */
+        PermissionListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["PermissionResponse"][];
+        };
+        /** PermissionResponse */
+        PermissionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Module */
+            module: string;
+            /** Resource */
+            resource: string;
+            /** Action */
+            action: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /**
+             * Is Builtin
+             * @default true
+             */
+            is_builtin: boolean;
+        };
+        /** PermissionTreeData */
+        PermissionTreeData: {
+            /** Tree */
+            tree: components["schemas"]["PermissionTreeNode"][];
+            /** Total Permissions */
+            total_permissions: number;
+            /** Total Modules */
+            total_modules: number;
+        };
+        /** PermissionTreeNode */
+        PermissionTreeNode: {
+            /**
+             * Key
+             * @description 树节点唯一键（前端 Tree 用）
+             */
+            key: string;
+            /**
+             * Title
+             * @description 显示名
+             */
+            title: string;
+            /**
+             * Type
+             * @description module / resource / permission
+             */
+            type: string;
+            /**
+             * Code
+             * @description 模块编码或权限码
+             */
+            code?: string | null;
+            /**
+             * Kind
+             * @description 模块节点类别：platform / business
+             */
+            kind?: string | null;
+            /**
+             * Status
+             * @description 权限叶子状态：active / deprecated
+             */
+            status?: string | null;
+            /**
+             * Description
+             * @description 权限说明
+             */
+            description?: string | null;
+            /**
+             * Binding Count
+             * @description 该权限码绑定的接口数量（仅叶子）
+             * @default 0
+             */
+            binding_count: number;
+            /**
+             * Disabled
+             * @description 是否置灰（如尚未接入权限码的模块）
+             * @default false
+             */
+            disabled: boolean;
+            /** Children */
+            children?: components["schemas"]["PermissionTreeNode"][];
+        };
+        /** PermissionTreeResponse */
+        PermissionTreeResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["PermissionTreeData"];
         };
         /**
          * PermitStatus
@@ -35604,6 +38048,20 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /** ProductDossierApiResponse */
+        ProductDossierApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProductDossierResponse"] | null;
+        };
         /**
          * ProductDossierCreate
          * @description 创建品种资料请求
@@ -35634,6 +38092,132 @@ export interface components {
              * @description 模板原生产商
              */
             template_original_manufacturer?: string | null;
+        };
+        /** ProductDossierListApiResponse */
+        ProductDossierListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ProductDossierListData"] | null;
+        };
+        /** ProductDossierListData */
+        ProductDossierListData: {
+            /** Items */
+            items: components["schemas"]["ProductDossierListResponse"][];
+            /** Total */
+            total: number;
+            /** Skip */
+            skip: number;
+            /** Limit */
+            limit: number;
+        };
+        /**
+         * ProductDossierListResponse
+         * @description 品种资料列表响应
+         */
+        ProductDossierListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Product Name */
+            product_name: string;
+            /** Sterile Type */
+            sterile_type: string;
+            /** Manufacturer */
+            manufacturer: string;
+            /** Status */
+            status: string;
+            /** Parse Status */
+            parse_status: string;
+            /**
+             * Chapter Count
+             * @default 0
+             */
+            chapter_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * ProductDossierResponse
+         * @description 品种资料响应
+         */
+        ProductDossierResponse: {
+            /**
+             * Product Name
+             * @description 品种名称
+             */
+            product_name: string;
+            /**
+             * Sterile Type
+             * @description 无菌/非无菌
+             */
+            sterile_type: string;
+            /**
+             * Manufacturer
+             * @description 生产商
+             */
+            manufacturer: string;
+            /**
+             * Template Original Product Name
+             * @description 模板原品种名称
+             */
+            template_original_product_name?: string | null;
+            /**
+             * Template Original Manufacturer
+             * @description 模板原生产商
+             */
+            template_original_manufacturer?: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /** Parse Status */
+            parse_status: string;
+            /** Parse Error */
+            parse_error?: string | null;
+            /** Source Templates Path */
+            source_templates_path?: string | null;
+            /** Working Path */
+            working_path?: string | null;
+            /** Assets Path */
+            assets_path?: string | null;
+            /** Outputs Path */
+            outputs_path?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Chapter Count
+             * @default 0
+             */
+            chapter_count: number;
         };
         /**
          * ProductDossierUpdate
@@ -38193,6 +40777,132 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** ReagentDetailApiResponse */
+        ReagentDetailApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentResponse"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ReagentListApiResponse */
+        ReagentListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ReagentListResponse"];
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ReagentListResponse
+         * @description 试剂列表响应
+         */
+        ReagentListResponse: {
+            /** Items */
+            items: components["schemas"]["ReagentResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * ReagentMessageApiResponse
+         * @description 无 data 的响应（删除等）
+         */
+        ReagentMessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ReagentNextLotNoApiResponse */
+        ReagentNextLotNoApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentNextLotNoData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ReagentNextLotNoData
+         * @description 下一个入场批号
+         */
+        ReagentNextLotNoData: {
+            /** Incoming Lot No */
+            incoming_lot_no: string;
+        };
+        /** ReagentRecognizeApiResponse */
+        ReagentRecognizeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ReagentRecognizeData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /**
+         * ReagentRecognizeData
+         * @description AI识别试剂标签接口的 data 负载（与 reagent_api 实际返回字段一致）
+         */
+        ReagentRecognizeData: {
+            /** Reagent Name */
+            reagent_name?: string | null;
+            /** Lot No */
+            lot_no?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Production Date */
+            production_date?: string | null;
+            /** Expiration Date */
+            expiration_date?: string | null;
+            /** Specification */
+            specification?: string | null;
+            /**
+             * Confidence
+             * @default 0
+             */
+            confidence: number;
+        };
         /**
          * ReagentReminderConfigData
          * @description The reminder config as the page reads it.
@@ -38270,6 +40980,59 @@ export interface components {
             data: components["schemas"]["ReagentReminderSavedData"];
         };
         /**
+         * ReagentResponse
+         * @description 试剂记录响应
+         */
+        ReagentResponse: {
+            /** Id */
+            id: string;
+            /** Reagent Label Urls */
+            reagent_label_urls?: string[] | null;
+            /** Reagent Name */
+            reagent_name: string;
+            /**
+             * Arrival Date
+             * Format: date
+             */
+            arrival_date: string;
+            /** Production Date */
+            production_date?: string | null;
+            /** Lot No */
+            lot_no: string;
+            /** Incoming Lot No */
+            incoming_lot_no?: string | null;
+            /**
+             * Expiration Date
+             * Format: date
+             */
+            expiration_date: string;
+            /** Specification */
+            specification?: string | null;
+            /** Category */
+            category: string;
+            /** Reagent No */
+            reagent_no?: string | null;
+            /** Content */
+            content?: string | null;
+            /** Manufacturer */
+            manufacturer?: string | null;
+            /** Quantity */
+            quantity: number;
+            /** Unit */
+            unit: string;
+            /** Status */
+            status: string;
+            /** Created By */
+            created_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /**
          * RectificationReplyRequest
          * @description 整改回复请求（合并了原 complete_rectification 步骤）
          */
@@ -38299,6 +41062,81 @@ export interface components {
              * @description 整改完成时间（默认当前时间）
              */
             actual_completion_date?: string | null;
+        };
+        /** RedisDeleteResponse */
+        RedisDeleteResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["RedisDeleteResult"];
+        };
+        /** RedisDeleteResult */
+        RedisDeleteResult: {
+            /** Deleted */
+            deleted: number;
+            /** Pattern */
+            pattern: string;
+        };
+        /** RedisKeysData */
+        RedisKeysData: {
+            /** Keys */
+            keys: string[];
+            /** Total Scanned */
+            total_scanned: number;
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** RedisKeysResponse */
+        RedisKeysResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["RedisKeysData"];
+        };
+        /** RedisOverviewData */
+        RedisOverviewData: {
+            /** Dbsize */
+            dbsize: number;
+            /** Used Memory Human */
+            used_memory_human: string;
+            /** Connected Clients */
+            connected_clients: number;
+            /** Keyspace Hits */
+            keyspace_hits: number;
+            /** Keyspace Misses */
+            keyspace_misses: number;
+            /** Uptime In Days */
+            uptime_in_days: number;
+            /** Version */
+            version: string;
+        };
+        /** RedisOverviewResponse */
+        RedisOverviewResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["RedisOverviewData"];
         };
         /** ReferenceSubstanceCreate */
         ReferenceSubstanceCreate: {
@@ -38995,6 +41833,26 @@ export interface components {
             /** Description */
             description?: string | null;
         };
+        /** ResourcesData */
+        ResourcesData: {
+            disk: components["schemas"]["DiskUsage"];
+            memory: components["schemas"]["MemoryUsage"];
+            load: components["schemas"]["LoadAverage"];
+        };
+        /** ResourcesResponse */
+        ResourcesResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ResourcesData"];
+        };
         /**
          * RetentionStatus
          * @description 留样状态
@@ -39007,64 +41865,69 @@ export interface components {
          * @enum {string}
          */
         RevisionType: "manual" | "ai";
-        /**
-         * RoleCreate
-         * @description 创建角色请求
-         */
-        RoleCreate: {
-            /**
-             * Name
-             * @description 角色名称
-             */
-            name: string;
+        /** RoleDetailApiResponse */
+        RoleDetailApiResponse: {
             /**
              * Code
-             * @description 角色编码
+             * @default 200
              */
-            code: string;
+            code: number;
             /**
-             * Description
-             * @description 角色描述
+             * Message
+             * @default success
              */
-            description?: string | null;
-            /**
-             * Scope
-             * @description 作用域
-             * @default global
-             */
-            scope: string;
-            /**
-             * Is Active
-             * @description 是否启用
-             * @default true
-             */
-            is_active: boolean;
+            message: string;
+            data: components["schemas"]["RoleDetailResponse"];
         };
-        /**
-         * RoleUpdate
-         * @description 更新角色请求
-         */
-        RoleUpdate: {
+        /** RoleDetailResponse */
+        RoleDetailResponse: {
             /**
-             * Name
-             * @description 角色名称
+             * Id
+             * Format: uuid
              */
-            name?: string | null;
-            /**
-             * Description
-             * @description 角色描述
-             */
+            id: string;
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Category */
+            category: string;
+            /** Module Code */
+            module_code?: string | null;
+            /** Description */
             description?: string | null;
             /**
-             * Scope
-             * @description 作用域
+             * Is Builtin
+             * @default false
              */
-            scope?: string | null;
+            is_builtin: boolean;
             /**
-             * Is Active
-             * @description 是否启用
+             * Is Superuser
+             * @default false
              */
-            is_active?: boolean | null;
+            is_superuser: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Permission Codes */
+            permission_codes?: string[];
+        };
+        /** RoleListResponse */
+        RoleListResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["RoleDetailResponse"][];
         };
         /**
          * RouteCheckSubmit
@@ -40188,6 +43051,20 @@ export interface components {
          */
         SampleNodeStatus: "pending" | "sampling_done" | "inspection_done" | "overdue";
         /**
+         * SampleRetentionLedgerPageResponse
+         * @description 留样台账列表分页响应
+         */
+        SampleRetentionLedgerPageResponse: {
+            /** Items */
+            items: components["schemas"]["SampleRetentionLedgerResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * SampleRetentionLedgerResponse
          * @description 留样台账响应
          */
@@ -40512,6 +43389,56 @@ export interface components {
             disposal_method?: string | null;
         };
         /**
+         * SamplingOrderListResponse
+         * @description 取样单列表响应
+         */
+        SamplingOrderListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Order No */
+            order_no: string;
+            source_type: components["schemas"]["app__modules__quality__qms__sampling_schemas__SourceType"];
+            /** Source No */
+            source_no?: string | null;
+            /** Material Code */
+            material_code: string;
+            /** Material Name */
+            material_name?: string | null;
+            /** Material Category */
+            material_category?: string | null;
+            /** Batch No */
+            batch_no?: string | null;
+            sampling_source: components["schemas"]["SamplingSource"];
+            /** Sampling Date */
+            sampling_date?: string | null;
+            /** Sampler Name */
+            sampler_name?: string | null;
+            status: components["schemas"]["SamplingStatus"];
+            sampling_result?: components["schemas"]["SamplingResult"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * SamplingOrderPageResponse
+         * @description 取样单列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        SamplingOrderPageResponse: {
+            /** Items */
+            items: components["schemas"]["SamplingOrderListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
          * SamplingOrderResponse
          * @description 取样单响应
          */
@@ -40795,6 +43722,41 @@ export interface components {
              */
             is_enabled: boolean;
         };
+        /** ScheduledTaskItem */
+        ScheduledTaskItem: {
+            /**
+             * Name
+             * @description 任务名
+             */
+            name: string;
+            /**
+             * Kind
+             * @description task / generator / worker / loop
+             */
+            kind: string;
+            /**
+             * Schedule
+             * @description 调度描述，如 cron 0 2 * * *
+             * @default
+             */
+            schedule: string;
+            /**
+             * Module
+             * @description 所属模块
+             * @default
+             */
+            module: string;
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+        };
         /**
          * ScheduledTaskListApiResponse
          * @description Scheduled task list response wrapper
@@ -40982,6 +43944,78 @@ export interface components {
              * @description 是否启用
              */
             is_enabled?: boolean | null;
+        };
+        /** ScheduledTasksResponse */
+        ScheduledTasksResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["ScheduledTaskItem"][];
+        };
+        /**
+         * SessionItem
+         * @description 在线会话条目（Redis 中存储的会话信息）。
+         */
+        SessionItem: {
+            /** Jti */
+            jti: string;
+            /** User Id */
+            user_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Username */
+            username?: string | null;
+            /** Ip Address */
+            ip_address?: string | null;
+            /** User Agent */
+            user_agent?: string | null;
+            /** Created At */
+            created_at?: string | null;
+        };
+        /** SessionListApiResponse */
+        SessionListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: components["schemas"]["SessionItem"][];
+        };
+        /** SessionRevokeApiResponse */
+        SessionRevokeApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SessionRevokeData"];
+        };
+        /**
+         * SessionRevokeData
+         * @description 吊销会话结果：单条为布尔，批量为用户会话数。
+         */
+        SessionRevokeData: {
+            /** Revoked */
+            revoked: boolean | number;
         };
         /**
          * SetCriticalRequest
@@ -42507,6 +45541,60 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * StabilityInspectionListResponse
+         * @description 检验记录列表响应
+         */
+        StabilityInspectionListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inspection No */
+            inspection_no: string;
+            /** Study No */
+            study_no: string;
+            /** Node Month */
+            node_month: number;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no: string;
+            /** Inspection Date */
+            inspection_date?: string | null;
+            /** Inspector Name */
+            inspector_name?: string | null;
+            status: components["schemas"]["StabilityInspectionStatus"];
+            inspection_conclusion?: components["schemas"]["StabilityInspectionConclusion"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * StabilityInspectionPageResponse
+         * @description 稳定性检验记录列表分页响应
+         */
+        StabilityInspectionPageResponse: {
+            /** Items */
+            items: components["schemas"]["StabilityInspectionListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+        };
+        /**
+         * StabilityInspectionStatus
+         * @description 稳定性检验状态
+         * @enum {string}
+         */
+        StabilityInspectionStatus: "draft" | "submitted" | "approved" | "rejected";
+        /**
          * StabilityInspectionUpdate
          * @description 更新检验记录
          */
@@ -42818,6 +45906,55 @@ export interface components {
              * @description 取样节点列表
              */
             sample_nodes?: components["schemas"]["StabilitySampleNodeCreate"][];
+        };
+        /**
+         * StabilityStudyListResponse
+         * @description 稳定性试验列表响应
+         */
+        StabilityStudyListResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Study No */
+            study_no: string;
+            /** Product Code */
+            product_code: string;
+            /** Product Name */
+            product_name?: string | null;
+            /** Batch No */
+            batch_no: string;
+            study_type: components["schemas"]["StabilityStudyType"];
+            status: components["schemas"]["StabilityStudyStatus"];
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Expiry Date */
+            expiry_date?: string | null;
+            /** Developer Name */
+            developer_name?: string | null;
+            study_conclusion?: components["schemas"]["StabilityStudyConclusion"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * StabilityStudyPageResponse
+         * @description 稳定性试验列表分页响应（列表接口直接返回 items/total/page/page_size）
+         */
+        StabilityStudyPageResponse: {
+            /** Items */
+            items: components["schemas"]["StabilityStudyListResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
         };
         /**
          * StabilityStudyResponse
@@ -43264,6 +46401,13 @@ export interface components {
             /** Remark */
             remark?: string | null;
         };
+        /** StatusBatchRequest */
+        StatusBatchRequest: {
+            /** Ids */
+            ids: string[];
+            /** Status */
+            status: string;
+        };
         /**
          * StockAdjustRequest
          * @description 盘点调整请求
@@ -43360,6 +46504,21 @@ export interface components {
             remark?: string | null;
             /** Status */
             status?: number | null;
+        };
+        /** StringListApiResponse */
+        StringListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: string[] | null;
         };
         /** SubmitOcrTaskResultRequest */
         SubmitOcrTaskResultRequest: {
@@ -43536,6 +46695,48 @@ export interface components {
              */
             updated_at?: string | null;
         };
+        /** SyncAllTriggerApiResponse */
+        SyncAllTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SyncAllTriggerData"];
+        };
+        /** SyncAllTriggerData */
+        SyncAllTriggerData: {
+            /** Status */
+            status: string;
+            /** Message */
+            message: string;
+        };
+        /** SyncDepartmentsTriggerApiResponse */
+        SyncDepartmentsTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SyncDepartmentsTriggerData"];
+        };
+        /** SyncDepartmentsTriggerData */
+        SyncDepartmentsTriggerData: {
+            /** Message */
+            message: string;
+            /** Root Dept Id */
+            root_dept_id: string;
+        };
         /** SyncJobApiResponse */
         SyncJobApiResponse: {
             /**
@@ -43658,6 +46859,27 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /** SyncMembersTriggerApiResponse */
+        SyncMembersTriggerApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SyncMembersTriggerData"];
+        };
+        /** SyncMembersTriggerData */
+        SyncMembersTriggerData: {
+            /** Message */
+            message: string;
+            /** Target Dept Id */
+            target_dept_id: string;
+        };
         /** SyncTriggerRequest */
         SyncTriggerRequest: {
             /**
@@ -43686,12 +46908,79 @@ export interface components {
              */
             autoAnalyze: boolean;
         };
+        /** SystemInfoData */
+        SystemInfoData: {
+            /** App Name */
+            app_name: string;
+            /** App Env */
+            app_env: string;
+            /** Version */
+            version: string;
+            /** Python Version */
+            python_version: string;
+            /** Started At */
+            started_at: string;
+            /** Uptime Seconds */
+            uptime_seconds: number;
+            /** Dependencies */
+            dependencies: components["schemas"]["DependencyInfo"][];
+        };
+        /** SystemInfoResponse */
+        SystemInfoResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["SystemInfoData"];
+        };
+        /** TaskBatchToggleRequest */
+        TaskBatchToggleRequest: {
+            /** Names */
+            names: string[];
+            /** Enabled */
+            enabled: boolean;
+        };
         /**
          * TaskStatus
          * @description 任务状态枚举
          * @enum {string}
          */
         TaskStatus: "pending" | "assigned" | "in_progress" | "completed";
+        /** TaskToggleRequest */
+        TaskToggleRequest: {
+            /**
+             * Enabled
+             * @description 目标状态：true 启用 / false 禁用
+             */
+            enabled: boolean;
+        };
+        /** TaskToggleResponse */
+        TaskToggleResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["TaskToggleResult"];
+        };
+        /** TaskToggleResult */
+        TaskToggleResult: {
+            /** Name */
+            name: string;
+            /** Enabled */
+            enabled: boolean;
+        };
         /** TeamCreate */
         TeamCreate: {
             /**
@@ -43746,6 +47035,59 @@ export interface components {
             } | null;
             /** Is Active */
             is_active?: boolean | null;
+        };
+        /** TemplateUploadApiResponse */
+        TemplateUploadApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["TemplateUploadData"] | null;
+        };
+        /** TemplateUploadData */
+        TemplateUploadData: {
+            /** Results */
+            results: components["schemas"]["TemplateUploadItem"][];
+            /** Success Count */
+            success_count: number;
+            /** Failed Count */
+            failed_count: number;
+            /** Matched Count */
+            matched_count: number;
+            /** Unmatched Files */
+            unmatched_files: string[];
+        };
+        /** TemplateUploadItem */
+        TemplateUploadItem: {
+            /** Filename */
+            filename?: string | null;
+            /** Status */
+            status: string;
+            /** Error */
+            error?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** File Path */
+            file_path?: string | null;
+            /** File Size */
+            file_size?: string | null;
+        };
+        /** TokenResponse */
+        TokenResponse: {
+            /** Access Token */
+            access_token: string;
+            /**
+             * Token Type
+             * @default Bearer
+             */
+            token_type: string;
+            user?: components["schemas"]["UserResponse"] | null;
         };
         /**
          * TopProduct
@@ -44995,6 +48337,745 @@ export interface components {
              */
             status?: string | null;
         };
+        /** UserBatchFailure */
+        UserBatchFailure: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Username */
+            username?: string | null;
+            /** Reason */
+            reason: string;
+        };
+        /** UserBatchStatusApiResponse */
+        UserBatchStatusApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserBatchStatusData"];
+        };
+        /** UserBatchStatusData */
+        UserBatchStatusData: {
+            /** Succeeded */
+            succeeded?: string[];
+            /** Failed */
+            failed?: components["schemas"]["UserBatchFailure"][];
+        };
+        /**
+         * UserBatchStatusRequest
+         * @description 批量启用 / 禁用账号。
+         */
+        UserBatchStatusRequest: {
+            /**
+             * User Ids
+             * @description 单次最多 100 个账号
+             */
+            user_ids: string[];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "disabled";
+        };
+        /** UserBindFeishuApiResponse */
+        UserBindFeishuApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserBindFeishuData"];
+        };
+        /**
+         * UserBindFeishuData
+         * @description 绑定飞书结果：UserManagementItem + 授权迁移计数。
+         */
+        UserBindFeishuData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /** Bind Result */
+            bind_result?: {
+                [key: string]: number;
+            } | null;
+        };
+        /** UserCreateApiResponse */
+        UserCreateApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserCreateData"];
+        };
+        /**
+         * UserCreateData
+         * @description 新建账号响应：额外带回一次性初始密码（仅自动生成时有值，不落库）。
+         */
+        UserCreateData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /** Initial Password */
+            initial_password?: string | null;
+        };
+        /** UserDeleteApiResponse */
+        UserDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserDeleteData"];
+        };
+        /**
+         * UserDeleteData
+         * @description 删除账号结果（软删除，账号名继续被占用）。
+         */
+        UserDeleteData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Revoked Grants
+             * @default 0
+             */
+            revoked_grants: number;
+            /**
+             * Revoked Sessions
+             * @default 0
+             */
+            revoked_sessions: number;
+        };
+        /** UserManagementApiResponse */
+        UserManagementApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserManagementItem"];
+        };
+        /** UserManagementItem */
+        UserManagementItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+        };
+        /** UserManagementListApiResponse */
+        UserManagementListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserManagementListResponse"];
+        };
+        /** UserManagementListResponse */
+        UserManagementListResponse: {
+            /** Items */
+            items: components["schemas"]["UserManagementItem"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+        };
+        /** UserManagementUpdate */
+        UserManagementUpdate: {
+            /**
+             * Username
+             * @description 登录账号（创建后不可修改）
+             */
+            username?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Status */
+            status?: ("active" | "disabled") | null;
+        };
+        /** UserResponse */
+        UserResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+        };
+        /** UserUnbindFeishuApiResponse */
+        UserUnbindFeishuApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["UserUnbindFeishuData"];
+        };
+        /**
+         * UserUnbindFeishuData
+         * @description 解绑飞书结果：UserManagementItem + 是否因解绑而软删账号。
+         */
+        UserUnbindFeishuData: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /**
+             * Auth Source
+             * @default feishu
+             * @enum {string}
+             */
+            auth_source: "local" | "feishu";
+            /** En Name */
+            en_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /**
+             * Must Change Password
+             * @default false
+             */
+            must_change_password: boolean;
+            /**
+             * Status
+             * @default active
+             */
+            status: string;
+            /** Last Login At */
+            last_login_at?: string | null;
+            /** Password Updated At */
+            password_updated_at?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Roles */
+            roles?: string[];
+            /**
+             * Is Superuser
+             * @default false
+             */
+            is_superuser: boolean;
+            /**
+             * Account Deleted
+             * @default false
+             */
+            account_deleted: boolean;
+        };
+        /** ValidationAuditFileListApiResponse */
+        ValidationAuditFileListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ValidationAuditFileListItem"][] | null;
+        };
+        /**
+         * ValidationAuditFileListItem
+         * @description 审核文件列表项
+         */
+        ValidationAuditFileListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** File Type */
+            file_type: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Size */
+            file_size: number;
+            /** Parse Status */
+            parse_status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ValidationAuditFileUploadApiResponse */
+        ValidationAuditFileUploadApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ValidationAuditFileUploadItem"][] | null;
+        };
+        /** ValidationAuditFileUploadItem */
+        ValidationAuditFileUploadItem: {
+            /** Filename */
+            filename?: string | null;
+            /** Status */
+            status: string;
+            /** Error */
+            error?: string | null;
+            /** File Id */
+            file_id?: string | null;
+            /** File Size */
+            file_size?: number | null;
+        };
+        /** ValidationAuditIssueListApiResponse */
+        ValidationAuditIssueListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["ValidationAuditIssueResponse"][] | null;
+        };
+        /**
+         * ValidationAuditIssueResponse
+         * @description 审核问题详情
+         */
+        ValidationAuditIssueResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** File Id */
+            file_id?: string | null;
+            /** Issue No */
+            issue_no: string;
+            /** Dimension */
+            dimension: string;
+            /** Check Item */
+            check_item: string;
+            /** Description */
+            description: string;
+            /** Suggestion */
+            suggestion?: string | null;
+            /** Issue Type */
+            issue_type: string;
+            /** Page No */
+            page_no?: number | null;
+            /** Evidence Text */
+            evidence_text?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ValidationAuditMessageApiResponse */
+        ValidationAuditMessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /** ValidationAuditReportApiResponse */
+        ValidationAuditReportApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ValidationAuditReportResponse"] | null;
+        };
+        /**
+         * ValidationAuditReportResponse
+         * @description 审核报告详情
+         */
+        ValidationAuditReportResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Task Id
+             * Format: uuid
+             */
+            task_id: string;
+            /** Report Title */
+            report_title: string;
+            /** Report Markdown */
+            report_markdown?: string | null;
+            /** Report File Path */
+            report_file_path?: string | null;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ValidationAuditTaskApiResponse */
+        ValidationAuditTaskApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ValidationAuditTaskResponse"] | null;
+        };
         /**
          * ValidationAuditTaskCreate
          * @description 创建审核任务
@@ -45022,6 +49103,135 @@ export interface components {
             source_company: string;
             /** @description 审核模式 */
             audit_mode: components["schemas"]["AuditMode"];
+        };
+        /** ValidationAuditTaskListApiResponse */
+        ValidationAuditTaskListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ValidationAuditTaskListData"] | null;
+            meta?: components["schemas"]["PaginationMeta"] | null;
+        };
+        /** ValidationAuditTaskListData */
+        ValidationAuditTaskListData: {
+            /** Items */
+            items: components["schemas"]["ValidationAuditTaskListItem"][];
+            /** Total */
+            total: number;
+        };
+        /**
+         * ValidationAuditTaskListItem
+         * @description 审核任务列表项
+         */
+        ValidationAuditTaskListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Name */
+            task_name: string;
+            /** Product Name */
+            product_name: string;
+            /** Source Company */
+            source_company: string;
+            /** Audit Mode */
+            audit_mode: string;
+            /** Status */
+            status: string;
+            /** Conclusion */
+            conclusion?: string | null;
+            /**
+             * Serious Count
+             * @default 0
+             */
+            serious_count: number;
+            /**
+             * General Count
+             * @default 0
+             */
+            general_count: number;
+            /**
+             * Suggestion Count
+             * @default 0
+             */
+            suggestion_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ValidationAuditTaskResponse
+         * @description 审核任务详情
+         */
+        ValidationAuditTaskResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Task Name */
+            task_name: string;
+            /** Product Name */
+            product_name: string;
+            /** Method Name */
+            method_name: string;
+            /** Source Company */
+            source_company: string;
+            /** Audit Mode */
+            audit_mode: string;
+            /** Status */
+            status: string;
+            /** Conclusion */
+            conclusion?: string | null;
+            /** Risk Level */
+            risk_level?: string | null;
+            /**
+             * Serious Count
+             * @default 0
+             */
+            serious_count: number;
+            /**
+             * General Count
+             * @default 0
+             */
+            general_count: number;
+            /**
+             * Suggestion Count
+             * @default 0
+             */
+            suggestion_count: number;
+            /**
+             * Compliant Count
+             * @default 0
+             */
+            compliant_count: number;
+            /**
+             * Non Compliant Count
+             * @default 0
+             */
+            non_compliant_count: number;
+            /** Report Path */
+            report_path?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * ValidationAuditTaskUpdate
@@ -45811,6 +50021,65 @@ export interface components {
             remark?: string | null;
         };
         /**
+         * RoleCreate
+         * @description 创建角色请求
+         */
+        app__modules__equipment__schemas__personnel__RoleCreate: {
+            /**
+             * Name
+             * @description 角色名称
+             */
+            name: string;
+            /**
+             * Code
+             * @description 角色编码
+             */
+            code: string;
+            /**
+             * Description
+             * @description 角色描述
+             */
+            description?: string | null;
+            /**
+             * Scope
+             * @description 作用域
+             * @default global
+             */
+            scope: string;
+            /**
+             * Is Active
+             * @description 是否启用
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /**
+         * RoleUpdate
+         * @description 更新角色请求
+         */
+        app__modules__equipment__schemas__personnel__RoleUpdate: {
+            /**
+             * Name
+             * @description 角色名称
+             */
+            name?: string | null;
+            /**
+             * Description
+             * @description 角色描述
+             */
+            description?: string | null;
+            /**
+             * Scope
+             * @description 作用域
+             */
+            scope?: string | null;
+            /**
+             * Is Active
+             * @description 是否启用
+             */
+            is_active?: boolean | null;
+        };
+        /**
          * MessageApiResponse
          * @description 消息响应包装（用于删除等操作）
          */
@@ -45983,11 +50252,73 @@ export interface components {
          */
         app__modules__quality__qms__schemas__MaterialCategory: "raw_material" | "excipient" | "packaging_material" | "intermediate" | "finished_product";
         /**
+         * MessageApiResponse
+         * @description 无 data 的响应（删除等）
+         */
+        app__modules__registration__dossier_writer__schemas__MessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
          * OperationType
          * @description 特殊作业类型枚举（GB 30871-2022）
          * @enum {string}
          */
         app__modules__safety__schemas__enums__OperationType: "hot_work" | "confined_space" | "blind_plate" | "height_work" | "lifting" | "temporary_electricity" | "excavation" | "road_breaking";
+        /** MessageApiResponse */
+        app__platform__permission__schemas__MessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /** RoleCreate */
+        app__platform__permission__schemas__RoleCreate: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Category
+             * @default module
+             */
+            category: string;
+            /** Module Code */
+            module_code?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Permission Codes */
+            permission_codes?: string[];
+        };
+        /** RoleUpdate */
+        app__platform__permission__schemas__RoleUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Permission Codes */
+            permission_codes?: string[] | null;
+            /** Status */
+            status?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -46014,7 +50345,430 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["CurrentUserApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users_management_api_v1_identity_users_get: {
+        parameters: {
+            query?: {
+                /** @description 按姓名/账号/邮箱/手机号搜索 */
+                keyword?: string | null;
+                /** @description 按状态筛选 */
+                status?: string | null;
+                /** @description 按账号来源筛选：local / feishu */
+                auth_source?: string | null;
+                /** @description 仅返回未绑定飞书身份的账号 */
+                unbound_only?: boolean;
+                /** @description 按「待改密」筛选 */
+                must_change_password?: boolean | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserManagementListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_user_management_api_v1_identity_users_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalUserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserCreateApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_management_api_v1_identity_users__user_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserManagementUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserManagementApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_management_api_v1_identity_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserDeleteApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_update_user_status_api_v1_identity_users_batch_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserBatchStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserBatchStatusApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_user_password_api_v1_identity_users__user_id__reset_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["PasswordResetApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sessions_api_v1_identity_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SessionListApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_session_api_api_v1_identity_sessions__jti__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jti: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SessionRevokeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_user_sessions_api_v1_identity_users__user_id__sessions_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SessionRevokeApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_my_password_api_v1_identity_me_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ChangePasswordApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bind_user_feishu_api_v1_identity_users__user_id__bind_feishu_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeishuBindRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserBindFeishuApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unbind_user_feishu_api_v1_identity_users__user_id__bind_feishu_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["UserUnbindFeishuApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46048,7 +50802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -46081,7 +50835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -46119,7 +50873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -46150,9 +50904,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    local_login_api_v1_identity_auth_local_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocalLoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LocalLoginApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46181,7 +50968,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
         };
@@ -46204,7 +50991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -46233,7 +51020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
         };
@@ -46255,7 +51042,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SyncDepartmentsTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46286,7 +51073,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["SyncMembersTriggerApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_sync_all_api_v1_identity_sync_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SyncAllTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46317,7 +51135,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeishuConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FeishuConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46352,7 +51170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeishuConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FeishuConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46387,7 +51205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeishuDiagnosticApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FeishuDiagnosticApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46406,7 +51224,7 @@ export interface operations {
             query?: {
                 /** @description 筛选状态：success / failed */
                 status?: string | null;
-                /** @description 按用户名搜索 */
+                /** @description 按账号搜索 */
                 keyword?: string | null;
                 page?: number;
                 page_size?: number;
@@ -46425,7 +51243,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -46454,9 +51272,1289 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     }[];
+                };
+            };
+        };
+    };
+    system_health_api_v1_system_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_info_api_v1_system_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["SystemInfoResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_resources_api_v1_system_resources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ResourcesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_redis_overview_api_v1_system_redis_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RedisOverviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_redis_keys_api_v1_system_redis_keys_get: {
+        parameters: {
+            query?: {
+                /** @description key 前缀，留空为全部 */
+                prefix?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RedisKeysResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_redis_delete_api_v1_system_redis_keys_delete: {
+        parameters: {
+            query: {
+                /** @description key 前缀（至少 2 字符） */
+                prefix: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RedisDeleteResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_scheduled_tasks_api_v1_system_scheduled_tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTasksResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_scheduled_task_toggle_api_v1_system_scheduled_tasks__name__toggle_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskToggleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["TaskToggleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_scheduled_tasks_batch_toggle_api_v1_system_scheduled_tasks_batch_toggle_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskBatchToggleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_api_routes_api_v1_system_api_routes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ApiRoutesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_api_switch_api_v1_system_api_routes_switch_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiSwitchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ApiSwitchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_api_routes_batch_switch_api_v1_system_api_routes_batch_switch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiSwitchBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_logs_api_v1_system_logs_get: {
+        parameters: {
+            query?: {
+                /** @description 级别过滤，逗号分隔：INFO,ERROR */
+                level?: string;
+                /** @description 关键词（消息 / logger 名） */
+                keyword?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LogsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_logs_clear_api_v1_system_logs_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["LogsClearResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_db_tables_api_v1_system_db_tables_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DbTablesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    system_db_table_columns_api_v1_system_db_tables__schema___table__columns_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schema: string;
+                table: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DbColumnsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_menu_config_api_v1_system_menus_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["MenuConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_menu_config_api_v1_system_menus_config_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuConfigSaveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["MenuConfigSaveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_roles_api_v1_permission_roles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RoleListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_role_api_v1_permission_roles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__platform__permission__schemas__RoleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RoleDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_role_api_v1_permission_roles__role_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__platform__permission__schemas__RoleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["RoleDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_role_api_v1_permission_roles__role_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                role_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_role_status_api_v1_permission_roles_batch_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_roles_api_v1_permission_roles_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_permissions_api_v1_permission_permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["PermissionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_permission_tree_api_v1_permission_tree_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["PermissionTreeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_api_bindings_api_v1_permission_api_bindings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["ApiBindingListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_department_options_api_v1_permission_departments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentOptionListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_grants_api_v1_permission_grants_get: {
+        parameters: {
+            query?: {
+                user_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["GrantListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_grant_api_v1_permission_grants_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["GrantDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_grant_api_v1_permission_grants__grant_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GrantUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["GrantDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_grant_api_v1_permission_grants__grant_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grant_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__platform__permission__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_grant_status_api_v1_permission_grants_batch_status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatusBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_delete_grants_api_v1_permission_grants_batch_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IdsBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["BatchResultApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_permissions_api_v1_permission_my_permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["MyPermissionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_user_access_api_v1_permission_preview__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["MyPermissionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_audit_logs_api_v1_audit_logs_get: {
+        parameters: {
+            query?: {
+                /** @description 按操作者筛选 */
+                user_id?: string | null;
+                /** @description 按动作筛选，如 user.update / grant.create */
+                action?: string | null;
+                /** @description 按资源类型筛选，如 user / role / grant */
+                resource_type?: string | null;
+                /** @description 按操作者姓名/账号模糊搜索 */
+                keyword?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AuditLogListResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_audit_logs_api_v1_audit_logs_export_get: {
+        parameters: {
+            query?: {
+                /** @description 按操作者筛选 */
+                user_id?: string | null;
+                /** @description 按动作筛选 */
+                action?: string | null;
+                /** @description 按资源类型筛选 */
+                resource_type?: string | null;
+                /** @description 按操作者姓名/账号模糊搜索 */
+                keyword?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -46486,7 +52584,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46521,7 +52619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46554,7 +52652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46591,7 +52689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46624,7 +52722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46661,7 +52759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46694,7 +52792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchMaterialListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchMaterialListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46731,7 +52829,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchMaterialApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchMaterialApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46768,7 +52866,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchMaterialApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchMaterialApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46801,7 +52899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46837,7 +52935,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionPlanListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionPlanListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46872,7 +52970,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionPlanApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionPlanApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46905,7 +53003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionPlanApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionPlanApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46942,7 +53040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionPlanApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionPlanApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -46975,7 +53073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47008,7 +53106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanTaskListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PlanTaskListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47043,7 +53141,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PlanTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47080,7 +53178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PlanTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47113,7 +53211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47149,7 +53247,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessSpecListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessSpecListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47184,7 +53282,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessSpecApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessSpecApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47217,7 +53315,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessSpecApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessSpecApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47254,7 +53352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessSpecApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessSpecApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47287,7 +53385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47320,7 +53418,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessStepListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessStepListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47355,7 +53453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessStepApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessStepApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47392,7 +53490,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessStepApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessStepApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47425,7 +53523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47458,7 +53556,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessParameterListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessParameterListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47493,7 +53591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProcessParameterApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProcessParameterApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47526,7 +53624,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47562,7 +53660,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47597,7 +53695,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47634,7 +53732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductionRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductionRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47667,7 +53765,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__production__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47700,7 +53798,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MaterialBalanceApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["MaterialBalanceApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47737,7 +53835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MaterialBalanceApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["MaterialBalanceApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47772,7 +53870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MaterialBalanceApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["MaterialBalanceApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47791,7 +53889,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -47801,9 +53901,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -47825,7 +53934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -47863,7 +53972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -47898,7 +54007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -47932,7 +54041,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -47965,7 +54074,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48002,7 +54111,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48035,7 +54144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48075,7 +54184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48114,7 +54223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48150,7 +54259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48185,7 +54294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48220,7 +54329,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48255,7 +54364,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48290,7 +54399,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48325,7 +54434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48360,7 +54469,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48393,7 +54502,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48426,7 +54535,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48463,7 +54572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48498,7 +54607,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48533,7 +54642,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48564,7 +54673,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48599,7 +54708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48634,7 +54743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48667,7 +54776,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48704,7 +54813,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48743,7 +54852,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48778,7 +54887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48813,7 +54922,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48846,7 +54955,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48883,7 +54992,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48916,7 +55025,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48951,7 +55060,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -48986,7 +55095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -49019,7 +55128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -49052,7 +55161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -49071,7 +55180,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49081,9 +55192,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -49098,7 +55218,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49108,7 +55230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49143,7 +55265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49164,7 +55286,9 @@ export interface operations {
             path: {
                 category_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49174,7 +55298,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49211,7 +55335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49244,7 +55368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49268,7 +55392,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49278,7 +55404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49313,7 +55439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49344,7 +55470,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49381,7 +55507,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49414,7 +55540,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49433,7 +55559,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49443,7 +55571,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -49472,7 +55609,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49482,7 +55621,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49517,7 +55656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49545,7 +55684,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -49555,7 +55696,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49586,7 +55727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49623,7 +55764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49656,7 +55797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49691,7 +55832,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49729,7 +55870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EquipmentSyncResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EquipmentSyncResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49771,7 +55912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49806,7 +55947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49837,7 +55978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49870,7 +56011,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49907,7 +56048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49940,7 +56081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -49973,7 +56114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50010,7 +56151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50047,7 +56188,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50066,7 +56207,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -50076,7 +56219,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -50102,7 +56254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50123,7 +56275,9 @@ export interface operations {
             path: {
                 code_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -50133,7 +56287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50170,7 +56324,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50203,7 +56357,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50222,7 +56376,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -50232,7 +56388,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -50258,7 +56423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50279,7 +56444,9 @@ export interface operations {
             path: {
                 code_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -50289,7 +56456,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50326,7 +56493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50359,7 +56526,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50378,7 +56545,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -50388,7 +56557,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -50414,7 +56592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50435,7 +56613,9 @@ export interface operations {
             path: {
                 code_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -50445,7 +56625,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50482,7 +56662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50515,7 +56695,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -50559,7 +56739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50594,7 +56774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50627,7 +56807,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50664,7 +56844,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50695,7 +56875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50732,7 +56912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50765,7 +56945,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50802,7 +56982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50839,7 +57019,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50872,7 +57052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50905,7 +57085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50942,7 +57122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -50982,7 +57162,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51017,7 +57197,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51051,7 +57231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51084,7 +57264,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51121,7 +57301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51154,7 +57334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51194,7 +57374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51229,7 +57409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51262,7 +57442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51304,7 +57484,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51339,7 +57519,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51373,7 +57553,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51406,7 +57586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51443,7 +57623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51476,7 +57656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51518,7 +57698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51553,7 +57733,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51586,7 +57766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51623,7 +57803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51656,7 +57836,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51693,7 +57873,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51730,7 +57910,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51763,7 +57943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51800,7 +57980,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51831,7 +58011,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -51868,7 +58048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -51890,7 +58070,9 @@ export interface operations {
                 work_order_id: string;
                 image_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -51900,7 +58082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -51934,7 +58116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -51967,7 +58149,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -51986,7 +58168,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -51996,7 +58180,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -52006,7 +58199,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -52020,7 +58215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52051,7 +58246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52082,7 +58277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52120,7 +58315,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52145,7 +58340,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoleCreate"];
+                "application/json": components["schemas"]["app__modules__equipment__schemas__personnel__RoleCreate"];
             };
         };
         responses: {
@@ -52155,7 +58350,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52188,7 +58383,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52215,7 +58410,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RoleUpdate"];
+                "application/json": components["schemas"]["app__modules__equipment__schemas__personnel__RoleUpdate"];
             };
         };
         responses: {
@@ -52225,7 +58420,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52258,7 +58453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52298,7 +58493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52333,7 +58528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52369,7 +58564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52402,7 +58597,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52439,7 +58634,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52472,7 +58667,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52509,7 +58704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52546,7 +58741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52583,7 +58778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52620,7 +58815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52651,7 +58846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -52693,7 +58888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52728,7 +58923,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52761,7 +58956,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52798,7 +58993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52831,7 +59026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52868,7 +59063,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52918,7 +59113,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52953,7 +59148,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -52986,7 +59181,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53019,7 +59214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53052,7 +59247,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53089,7 +59284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53126,7 +59321,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53164,7 +59359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53202,7 +59397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53235,7 +59430,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53272,7 +59467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53305,7 +59500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -53339,7 +59534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53377,7 +59572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53423,7 +59618,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53456,7 +59651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53489,7 +59684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -53526,7 +59721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -53564,7 +59759,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -53598,7 +59793,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -53617,7 +59812,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -53627,7 +59824,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -53653,7 +59859,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53688,7 +59894,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53723,7 +59929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53756,7 +59962,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -53795,7 +60001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportV4BatchApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ImportV4BatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53830,7 +60036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportV4PreviewApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ImportV4PreviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53874,7 +60080,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53909,7 +60115,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53942,7 +60148,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -53979,7 +60185,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54012,7 +60218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54045,7 +60251,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54091,7 +60297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54129,7 +60335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54162,7 +60368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54195,7 +60401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AccidentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AccidentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54235,7 +60441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54270,7 +60476,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54303,7 +60509,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54340,7 +60546,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54373,7 +60579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54408,7 +60614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54441,7 +60647,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -54474,7 +60680,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54509,7 +60715,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIWorkflowConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIWorkflowConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54546,7 +60752,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54581,7 +60787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54614,7 +60820,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54651,7 +60857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54684,7 +60890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54717,7 +60923,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54753,7 +60959,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54790,7 +60996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyCheckApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54828,7 +61034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54863,7 +61069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54896,7 +61102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54933,7 +61139,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54966,7 +61172,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -54999,7 +61205,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55032,7 +61238,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55068,7 +61274,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55101,7 +61307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorWorkRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorWorkRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55138,7 +61344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55176,7 +61382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55210,7 +61416,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55248,7 +61454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractorWorkRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractorWorkRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55289,7 +61495,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55324,7 +61530,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55357,7 +61563,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55394,7 +61600,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55427,7 +61633,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55460,7 +61666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55493,7 +61699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55529,7 +61735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DailyRiskReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DailyRiskReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55569,7 +61775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55604,7 +61810,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55637,7 +61843,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55674,7 +61880,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55707,7 +61913,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55740,7 +61946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55777,7 +61983,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55813,7 +62019,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55846,7 +62052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55879,7 +62085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55916,7 +62122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55949,7 +62155,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -55988,7 +62194,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56025,7 +62231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56064,7 +62270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56103,7 +62309,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EhsChangeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EhsChangeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56134,7 +62340,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyEnumsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyEnumsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56165,7 +62371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56196,7 +62402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56229,7 +62435,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -56272,7 +62478,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56307,7 +62513,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56338,7 +62544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -56375,7 +62581,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -56413,7 +62619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -56446,7 +62652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56483,7 +62689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56516,7 +62722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56537,7 +62743,9 @@ export interface operations {
             path: {
                 regulation_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -56547,7 +62755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RegulationStagesApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationStagesApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56582,7 +62790,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationBatchApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationBatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56615,7 +62823,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56652,7 +62860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56689,7 +62897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56726,7 +62934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56761,7 +62969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardIdentificationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56836,7 +63044,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56871,7 +63079,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56890,7 +63098,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -56900,7 +63110,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardStatsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardStatsApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -56913,7 +63132,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -56923,7 +63144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DepartmentLeaderApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentLeaderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56945,7 +63166,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -56955,7 +63178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DepartmentSafetyOfficerApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DepartmentSafetyOfficerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -56988,7 +63211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57025,7 +63248,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57058,7 +63281,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57095,7 +63318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57132,7 +63355,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57165,7 +63388,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57202,7 +63425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57239,7 +63462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57276,7 +63499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57310,7 +63533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57343,7 +63566,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57376,7 +63599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57409,7 +63632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57440,7 +63663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HazardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["HazardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57477,7 +63700,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57512,7 +63735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57545,7 +63768,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57582,7 +63805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57615,7 +63838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57648,7 +63871,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57681,7 +63904,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57718,7 +63941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -57753,7 +63976,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -57791,7 +64014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -57827,7 +64050,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -57861,7 +64084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -57897,7 +64120,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -57934,7 +64157,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeArticleApiResponse"];
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -57971,7 +64194,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeBatchImportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeBatchImportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58004,7 +64227,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeGenerateCardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeGenerateCardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58043,7 +64266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeGeneratePptApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeGeneratePptApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58079,7 +64302,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgePptHistoryApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgePptHistoryApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58112,7 +64335,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyKnowledgeGenerateSummaryApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyKnowledgeGenerateSummaryApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58150,7 +64373,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58185,7 +64408,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58218,7 +64441,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58255,7 +64478,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58288,7 +64511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58321,7 +64544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58354,7 +64577,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58391,7 +64614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58430,7 +64653,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58470,7 +64693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58504,7 +64727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58543,7 +64766,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58580,7 +64803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHazardMonitorApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHazardMonitorApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58618,7 +64841,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58653,7 +64876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58686,7 +64909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58723,7 +64946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58756,7 +64979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58789,7 +65012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58822,7 +65045,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58855,7 +65078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58894,7 +65117,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58934,7 +65157,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58968,7 +65191,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59005,7 +65228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59044,7 +65267,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59081,7 +65304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OhHealthExamApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OhHealthExamApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59119,7 +65342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59154,7 +65377,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59187,7 +65410,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59224,7 +65447,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59257,7 +65480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59294,7 +65517,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59332,7 +65555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RegulationRevisionListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationRevisionListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59367,7 +65590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RegulationRevisionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RegulationRevisionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59400,7 +65623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59437,7 +65660,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59470,7 +65693,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59507,7 +65730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59540,7 +65763,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59578,7 +65801,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59611,7 +65834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59646,7 +65869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59679,7 +65902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59716,7 +65939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59753,7 +65976,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OperationRegulationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OperationRegulationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59786,7 +66009,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -59817,7 +66040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59852,7 +66075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59883,7 +66106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59919,7 +66142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59954,7 +66177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -59987,7 +66210,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60024,7 +66247,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60057,7 +66280,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60093,7 +66316,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60126,7 +66349,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60162,7 +66385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ScheduledTaskLogListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ScheduledTaskLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60208,7 +66431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60243,7 +66466,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60276,7 +66499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60313,7 +66536,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60346,7 +66569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60379,7 +66602,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60412,7 +66635,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60448,7 +66671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60485,7 +66708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60530,7 +66753,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60561,7 +66784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationLedgerStatsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationLedgerStatsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60596,7 +66819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationReportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60667,7 +66890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60702,7 +66925,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60735,7 +66958,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60772,7 +66995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60805,7 +67028,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60838,7 +67061,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60871,7 +67094,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60907,7 +67130,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60940,7 +67163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60976,7 +67199,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61009,7 +67232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPermitApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPermitApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61047,7 +67270,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPersonnelListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPersonnelListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61082,7 +67305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61115,7 +67338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61152,7 +67375,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61185,7 +67408,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpecialOperationPersonnelApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SpecialOperationPersonnelApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61222,7 +67445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61257,7 +67480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61290,7 +67513,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61327,7 +67550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61360,7 +67583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61393,7 +67616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61426,7 +67649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SafetyTrainingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SafetyTrainingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61459,7 +67682,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TrainingRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["TrainingRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61496,7 +67719,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TrainingRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["TrainingRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61533,7 +67756,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TrainingRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["TrainingRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61566,7 +67789,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TrainingRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["TrainingRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61602,7 +67825,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TrainingRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["TrainingRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61633,7 +67856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TrainingRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["TrainingRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61652,7 +67875,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -61662,9 +67887,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -61674,7 +67908,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -61684,9 +67920,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -61708,7 +67953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyPlatformListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyPlatformListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61746,7 +67991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyOverviewApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyOverviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61792,7 +68037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeviceConfigListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeviceConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61827,7 +68072,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61860,7 +68105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61897,7 +68142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeviceConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeviceConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61930,7 +68175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -61974,7 +68219,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDataListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDataListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62014,7 +68259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyStatisticsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyStatisticsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62049,7 +68294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollectTriggerApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CollectTriggerApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62087,7 +68332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollectLogListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CollectLogListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62120,7 +68365,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CollectLogDetailApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CollectLogDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62162,7 +68407,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyAlertRuleListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyAlertRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62197,7 +68442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62230,7 +68475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62267,7 +68512,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyAlertRuleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyAlertRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62300,7 +68545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62346,7 +68591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyAlertRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyAlertRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62383,7 +68628,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyAlertRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyAlertRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62416,7 +68661,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62458,7 +68703,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyWorkshopListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyWorkshopListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62493,7 +68738,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62526,7 +68771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62563,7 +68808,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyWorkshopApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyWorkshopApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62596,7 +68841,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62640,7 +68885,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyMonthlyRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyMonthlyRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62675,7 +68920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyMonthlyRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyMonthlyRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62710,7 +68955,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyMonthlyBatchCreateApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyMonthlyBatchCreateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62750,7 +68995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MonthlySummaryApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["MonthlySummaryApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62783,7 +69028,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyMonthlyRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyMonthlyRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62816,7 +69061,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EnergyDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EnergyDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62851,7 +69096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FeishuImportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FeishuImportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62882,7 +69127,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SyncJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62913,7 +69158,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SyncJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62944,7 +69189,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SyncJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62979,7 +69224,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SyncJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63010,7 +69255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SyncJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63043,7 +69288,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SyncJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SyncJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63078,7 +69323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63112,7 +69357,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63149,7 +69394,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UnitConsumptionTargetApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["UnitConsumptionTargetApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63184,7 +69429,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__energy__schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__energy__schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63203,7 +69448,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -63213,9 +69460,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63237,7 +69493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RawMaterialListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RawMaterialListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63268,7 +69524,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PackagingMaterialListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PackagingMaterialListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63299,7 +69555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProductInventoryListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProductInventoryListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63330,7 +69586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63365,7 +69621,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63400,7 +69656,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuConnectivityApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuConnectivityApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63435,7 +69691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuTableListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuTableListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63466,7 +69722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuTableListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuTableListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63501,7 +69757,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuTableBatchEnableApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuTableBatchEnableApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63538,7 +69794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuTableEnableApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuTableEnableApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63571,7 +69827,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuTableSyncApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuTableSyncApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63613,7 +69869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuRawRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuRawRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63656,7 +69912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuRawRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuRawRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63687,7 +69943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuWsStatusApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuWsStatusApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63718,7 +69974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WarehouseFeishuWsStatusApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WarehouseFeishuWsStatusApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63737,7 +69993,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -63747,9 +70005,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -63775,7 +70042,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvoiceRecognitionResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvoiceRecognitionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63819,7 +70086,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SupplierListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SupplierListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63854,7 +70121,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SupplierImportResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SupplierImportResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63896,7 +70163,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvoiceRecognitionRecordListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvoiceRecognitionRecordListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63929,7 +70196,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvoiceRecognitionRecordDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvoiceRecognitionRecordDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -63964,7 +70231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvoiceRecognitionRecordDeleteResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvoiceRecognitionRecordDeleteResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64006,7 +70273,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseOrderListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseOrderListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64044,7 +70311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64090,7 +70357,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64125,7 +70392,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64158,7 +70425,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64195,7 +70462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64228,7 +70495,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64265,7 +70532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64302,7 +70569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PurchaseRequestApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["PurchaseRequestApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64340,7 +70607,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractRecordListResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractRecordListResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64373,7 +70640,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractTemplateMetadata"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractTemplateMetadata"];
                 };
             };
             /** @description Validation Error */
@@ -64408,7 +70675,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64441,7 +70708,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ContractRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ContractRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -64474,7 +70741,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64493,7 +70760,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -64503,9 +70772,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64515,7 +70793,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -64525,9 +70805,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -64558,7 +70847,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64593,7 +70882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64624,7 +70913,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64655,7 +70944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64688,7 +70977,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64721,7 +71010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64758,7 +71047,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64791,7 +71080,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64824,7 +71113,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64859,7 +71148,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64895,7 +71184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64931,7 +71220,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -64971,7 +71260,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65007,7 +71296,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65045,7 +71334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65080,7 +71369,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65115,7 +71404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65148,7 +71437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65185,7 +71474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65216,7 +71505,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65249,7 +71538,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65287,7 +71576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65325,7 +71614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65363,7 +71652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65399,7 +71688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65434,7 +71723,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65467,7 +71756,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65504,7 +71793,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65537,7 +71826,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65575,7 +71864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65610,7 +71899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65643,7 +71932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65680,7 +71969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65713,7 +72002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65751,7 +72040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65786,7 +72075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65819,7 +72108,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65856,7 +72145,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65889,7 +72178,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65935,7 +72224,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65966,7 +72255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -65997,7 +72286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66030,7 +72319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66074,7 +72363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66109,7 +72398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66142,7 +72431,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66179,7 +72468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66212,7 +72501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66243,7 +72532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66274,7 +72563,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66314,7 +72603,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66349,7 +72638,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66380,7 +72669,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66415,7 +72704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66453,7 +72742,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66486,7 +72775,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66523,7 +72812,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66556,7 +72845,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66594,7 +72883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66629,7 +72918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66662,7 +72951,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66699,7 +72988,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66732,7 +73021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66765,7 +73054,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66802,7 +73091,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66835,7 +73124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66872,7 +73161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66909,7 +73198,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66946,7 +73235,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -66983,7 +73272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67018,7 +73307,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67049,7 +73338,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67093,7 +73382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67128,7 +73417,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67163,7 +73452,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67194,7 +73483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67225,7 +73514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67258,7 +73547,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67291,7 +73580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67328,7 +73617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67361,7 +73650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67398,7 +73687,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67431,7 +73720,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67473,7 +73762,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67508,7 +73797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67545,7 +73834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67578,7 +73867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67615,7 +73904,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67648,7 +73937,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67681,7 +73970,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67714,7 +74003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67745,7 +74034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67780,7 +74069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67813,7 +74102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67844,7 +74133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67878,7 +74167,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67913,7 +74202,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67950,7 +74239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -67983,7 +74272,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68019,7 +74308,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68054,7 +74343,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68085,7 +74374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68122,7 +74411,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68157,7 +74446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68192,7 +74481,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68211,7 +74500,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -68221,9 +74512,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -68256,7 +74556,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68291,7 +74591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68324,7 +74624,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68361,7 +74661,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68394,7 +74694,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68432,7 +74732,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68472,7 +74772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68506,7 +74806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68539,7 +74839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68572,7 +74872,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68607,7 +74907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EDBOOptimizeApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["EDBOOptimizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68642,7 +74942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68680,7 +74980,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68715,7 +75015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68748,7 +75048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68781,7 +75081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68814,7 +75114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68847,7 +75147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68881,7 +75181,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68918,7 +75218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -68953,7 +75253,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -68990,7 +75290,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69027,7 +75327,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69060,7 +75360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69099,7 +75399,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69132,7 +75432,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69171,7 +75471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69210,7 +75510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69243,7 +75543,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69280,7 +75580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69317,7 +75617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69350,7 +75650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69389,7 +75689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69422,7 +75722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69455,7 +75755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdMilestoneResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["RdMilestoneResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -69492,7 +75792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdMilestoneResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdMilestoneResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69529,7 +75829,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdMilestoneResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdMilestoneResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69562,7 +75862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdStageRecordResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["RdStageRecordResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -69599,7 +75899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdStageRecordResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdStageRecordResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69636,7 +75936,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdStageRecordResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdStageRecordResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69669,7 +75969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdResearchTrackResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["RdResearchTrackResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -69706,7 +76006,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdResearchTrackResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdResearchTrackResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69742,7 +76042,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -69779,7 +76079,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdResearchTrackResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdResearchTrackResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69812,7 +76112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -69847,7 +76147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdResearchFindingResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["RdResearchFindingResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -69884,7 +76184,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdResearchFindingResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdResearchFindingResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69921,7 +76221,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdResearchFindingResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdResearchFindingResponse"];
                 };
             };
             /** @description Validation Error */
@@ -69954,7 +76254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -69989,7 +76289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -70028,7 +76328,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -70070,7 +76370,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70105,7 +76405,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70138,7 +76438,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70175,7 +76475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70208,7 +76508,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70247,7 +76547,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70283,7 +76583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70317,7 +76617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70352,7 +76652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70389,7 +76689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70423,7 +76723,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70458,7 +76758,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70495,7 +76795,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70529,7 +76829,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70564,7 +76864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70601,7 +76901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70639,7 +76939,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -70674,7 +76974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdStageDeliverableResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdStageDeliverableResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70707,7 +77007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdStageDeliverableResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdStageDeliverableResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70744,7 +77044,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RdStageDeliverableResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["RdStageDeliverableResponse"];
                 };
             };
             /** @description Validation Error */
@@ -70777,7 +77077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json; charset=utf-8": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -70814,7 +77114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json; charset=utf-8": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -70847,7 +77147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -70880,7 +77180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json; charset=utf-8": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -70915,7 +77215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -70954,7 +77254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -70989,7 +77289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71024,7 +77324,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json; charset=utf-8": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -71059,7 +77359,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71098,7 +77398,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71133,7 +77433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71168,7 +77468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown[];
+                    "application/json; charset=utf-8": unknown[];
                 };
             };
             /** @description Validation Error */
@@ -71203,7 +77503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71242,7 +77542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71277,7 +77577,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71313,7 +77613,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71348,7 +77648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71385,7 +77685,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71418,7 +77718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71454,7 +77754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71489,7 +77789,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71526,7 +77826,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71559,7 +77859,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71595,7 +77895,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71630,7 +77930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71667,7 +77967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71700,7 +78000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -71735,7 +78035,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71768,7 +78068,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71805,7 +78105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71836,7 +78136,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -71870,7 +78170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -71904,7 +78204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -71935,7 +78235,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -71966,7 +78266,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72004,7 +78304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72039,7 +78339,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72076,7 +78376,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72109,7 +78409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: unknown;
                     };
                 };
@@ -72146,7 +78446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -72165,7 +78465,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -72175,9 +78477,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -72199,7 +78510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72230,7 +78541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72265,7 +78576,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72298,7 +78609,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72335,7 +78646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72368,7 +78679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72399,7 +78710,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72434,7 +78745,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72467,7 +78778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72504,7 +78815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72537,7 +78848,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72568,7 +78879,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72603,7 +78914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72634,7 +78945,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72667,7 +78978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72704,7 +79015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72737,7 +79048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72771,7 +79082,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72806,7 +79117,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72843,7 +79154,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72876,7 +79187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72907,7 +79218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72945,7 +79256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -72980,7 +79291,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73013,7 +79324,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73046,7 +79357,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73079,7 +79390,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73112,7 +79423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73143,7 +79454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73178,7 +79489,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73211,7 +79522,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73248,7 +79559,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73281,7 +79592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73316,7 +79627,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73351,7 +79662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73387,7 +79698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73420,7 +79731,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73453,7 +79764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73486,7 +79797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73519,7 +79830,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73554,7 +79865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73590,7 +79901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73623,7 +79934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73656,7 +79967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73689,7 +80000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73722,7 +80033,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -73759,9 +80070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73796,9 +80105,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73831,9 +80138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73870,9 +80175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73905,9 +80208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73940,9 +80241,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditFileListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73979,9 +80278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditFileUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74014,9 +80311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74049,9 +80344,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74086,9 +80379,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditIssueListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74121,9 +80412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ValidationAuditReportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74156,9 +80445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74192,7 +80479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74227,7 +80514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DomesticApprovalResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DomesticApprovalResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74262,7 +80549,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74293,7 +80580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74327,7 +80614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74362,7 +80649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OverseasApprovalResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["OverseasApprovalResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74397,7 +80684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74428,7 +80715,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74462,7 +80749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74497,7 +80784,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InternationalReviewResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InternationalReviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74532,7 +80819,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74563,7 +80850,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74597,7 +80884,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74632,7 +80919,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CoppCertificateResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CoppCertificateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74667,7 +80954,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74698,7 +80985,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74732,7 +81019,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74767,7 +81054,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WcCertificateResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["WcCertificateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74802,7 +81089,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74833,7 +81120,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74864,7 +81151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74895,7 +81182,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -74936,7 +81223,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74971,7 +81258,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75005,7 +81292,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75038,7 +81325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75075,7 +81362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75108,7 +81395,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardDeleteApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75141,7 +81428,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75174,7 +81461,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75210,7 +81497,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75247,7 +81534,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75282,7 +81569,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75315,7 +81602,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InspectionStandardItemListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InspectionStandardItemListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75348,7 +81635,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApprovalRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApprovalRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75400,9 +81687,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75437,7 +81722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75470,7 +81755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75507,7 +81792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75540,7 +81825,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -75573,7 +81858,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75610,7 +81895,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SamplingOrderApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SamplingOrderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75643,7 +81928,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SamplingApprovalRecordResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["SamplingApprovalRecordResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -75689,9 +81974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["SampleRetentionLedgerPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75724,7 +82007,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SampleRetentionLedgerResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["SampleRetentionLedgerResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -75778,9 +82061,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75815,7 +82096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75848,7 +82129,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75885,7 +82166,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75918,7 +82199,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -75951,7 +82232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -75988,7 +82269,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76021,7 +82302,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IQCApprovalRecordResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["IQCApprovalRecordResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -76077,9 +82358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76114,7 +82393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76147,7 +82426,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76184,7 +82463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76217,7 +82496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -76250,7 +82529,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76287,7 +82566,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76320,7 +82599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCApprovalRecordResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCApprovalRecordResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -76356,7 +82635,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76389,7 +82668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["IPQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["IPQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76447,7 +82726,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCPaginatedListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCPaginatedListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76482,7 +82761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76515,7 +82794,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76552,7 +82831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76585,7 +82864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -76618,7 +82897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76655,7 +82934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76688,7 +82967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCApprovalRecordResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["FQCApprovalRecordResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -76724,7 +83003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76760,7 +83039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76796,7 +83075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76829,7 +83108,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["FQCInspectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FQCInspectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76881,9 +83160,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76918,7 +83195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76951,7 +83228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -76988,7 +83265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77021,7 +83298,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -77054,7 +83331,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77091,7 +83368,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77124,7 +83401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilitySampleNodeResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["StabilitySampleNodeResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -77161,7 +83438,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77211,9 +83488,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["StabilityInspectionPageResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77248,7 +83523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77281,7 +83556,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77318,7 +83593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77351,7 +83626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityStudyApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityStudyApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77384,7 +83659,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StabilityTrendApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StabilityTrendApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77436,7 +83711,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77471,7 +83746,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77502,7 +83777,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationStatisticsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationStatisticsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77548,7 +83823,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77594,7 +83869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77632,7 +83907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77672,7 +83947,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77712,7 +83987,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77752,7 +84027,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77792,7 +84067,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77825,7 +84100,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77862,7 +84137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77895,7 +84170,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77928,7 +84203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -77968,7 +84243,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78005,7 +84280,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78038,7 +84313,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78072,7 +84347,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvestigationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvestigationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78109,7 +84384,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvestigationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvestigationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78146,7 +84421,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvestigationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvestigationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78179,7 +84454,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InvestigationApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InvestigationApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78213,7 +84488,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78250,7 +84525,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CorrectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CorrectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78287,7 +84562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CorrectionApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CorrectionApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78322,7 +84597,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78356,7 +84631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DeviationListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DeviationListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78393,7 +84668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClosingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ClosingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78430,7 +84705,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ClosingApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ClosingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78463,7 +84738,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__modules__quality__qms__deviation_schemas__MessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78482,7 +84757,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78492,7 +84769,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -78502,7 +84788,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78516,7 +84804,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78537,7 +84825,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78551,7 +84841,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78572,7 +84862,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78582,7 +84874,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78603,7 +84895,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78613,7 +84907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78632,7 +84926,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78642,7 +84938,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -78652,7 +84957,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78666,7 +84973,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78687,7 +84994,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78701,7 +85010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78722,7 +85031,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78732,7 +85043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78753,7 +85064,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78763,7 +85076,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78782,7 +85095,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78792,7 +85107,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -78802,7 +85126,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78816,7 +85142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78837,7 +85163,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78851,7 +85179,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78872,7 +85200,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78882,7 +85212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78903,7 +85233,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78913,7 +85245,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78932,7 +85264,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -78942,7 +85276,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -78952,7 +85295,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -78966,7 +85311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -78987,7 +85332,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79001,7 +85348,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79022,7 +85369,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79032,7 +85381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79053,7 +85402,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79063,7 +85414,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79082,7 +85433,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79092,7 +85445,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79102,7 +85464,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79116,7 +85480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79137,7 +85501,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79151,7 +85517,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79172,7 +85538,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79182,7 +85550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79203,7 +85571,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79213,7 +85583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79234,7 +85604,9 @@ export interface operations {
             path: {
                 id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79244,7 +85616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79263,7 +85635,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79273,7 +85647,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79283,7 +85666,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79297,7 +85682,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79316,7 +85701,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79330,7 +85717,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79349,7 +85736,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79359,7 +85748,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79369,7 +85767,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79379,7 +85779,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79389,7 +85798,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79399,7 +85810,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79414,7 +85834,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79424,7 +85846,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79443,7 +85865,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79453,7 +85877,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -79463,7 +85896,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79477,9 +85912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentRecognizeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79501,7 +85934,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79511,9 +85946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentNextLotNoApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79543,7 +85976,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79553,9 +85988,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79581,7 +86014,9 @@ export interface operations {
             };
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79591,7 +86026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -79612,7 +86047,9 @@ export interface operations {
             path: {
                 reagent_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79622,9 +86059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79645,7 +86080,9 @@ export interface operations {
             path: {
                 reagent_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79659,9 +86096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79682,7 +86117,9 @@ export interface operations {
             path: {
                 reagent_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -79692,9 +86129,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79713,7 +86148,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody: {
             content: {
@@ -79727,9 +86164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ReagentDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79760,7 +86195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckConfigListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79795,7 +86230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79828,7 +86263,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79865,7 +86300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79907,7 +86342,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79942,7 +86377,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -79975,7 +86410,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckDetailApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80008,7 +86443,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckDetailApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80045,7 +86480,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckTaskApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckTaskApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80078,7 +86513,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80112,7 +86547,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckProblemListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckProblemListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80148,7 +86583,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckVectorCacheListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckVectorCacheListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80183,7 +86618,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckUploadApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80216,7 +86651,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckProgressApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckProgressApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80249,7 +86684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckProgressApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckProgressApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80284,7 +86719,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckSuccessApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckSuccessApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80321,7 +86756,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckSuccessApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckSuccessApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80367,7 +86802,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckRecordsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckRecordsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80400,7 +86835,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckRecordsApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckRecordsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80435,7 +86870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckSuccessApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckSuccessApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80472,7 +86907,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckProblemUpdateApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckProblemUpdateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80511,7 +86946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckBatchUpdateApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckBatchUpdateApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80547,7 +86982,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DocCheckExportApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckExportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80580,7 +87015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80611,7 +87046,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80642,7 +87077,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80673,7 +87108,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80708,7 +87143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchImportJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80741,7 +87176,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchImportJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -80785,7 +87220,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80820,7 +87255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80851,7 +87286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80884,7 +87319,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80921,7 +87356,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80954,7 +87389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -80991,7 +87426,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81028,7 +87463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81064,7 +87499,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81110,7 +87545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81145,7 +87580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81176,7 +87611,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81211,7 +87646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BatchImportJobApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["BatchImportJobApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81244,7 +87679,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81281,7 +87716,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81314,7 +87749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81347,7 +87782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81381,7 +87816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MediumStatsResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["MediumStatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81427,7 +87862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81462,7 +87897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81495,7 +87930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81532,7 +87967,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81565,7 +88000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81602,7 +88037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81633,7 +88068,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StandardStatsResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["StandardStatsResponse"];
                 };
             };
             /** @description Validation Error */
@@ -81677,7 +88112,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81712,7 +88147,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81745,7 +88180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81782,7 +88217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81815,7 +88250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81852,7 +88287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81892,7 +88327,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81927,7 +88362,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81960,7 +88395,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -81997,7 +88432,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -82030,7 +88465,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -82061,7 +88496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReagentReminderConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ReagentReminderConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82096,7 +88531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReagentReminderSavedResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ReagentReminderSavedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82127,7 +88562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReminderCheckResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ReminderCheckResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82160,7 +88595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LowStockResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["LowStockResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82195,7 +88630,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ItemReminderResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ItemReminderResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82228,7 +88663,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ItemReminderConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ItemReminderConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82263,7 +88698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentFeishuUserApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentFeishuUserApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82294,7 +88729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentReminderConfigListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentReminderConfigListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82329,7 +88764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentReminderConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentReminderConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82366,7 +88801,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentReminderConfigApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentReminderConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82399,7 +88834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82447,7 +88882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82482,7 +88917,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82515,7 +88950,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82555,7 +88990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82588,7 +89023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82624,7 +89059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82658,7 +89093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRuleListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82693,7 +89128,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRuleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82726,7 +89161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRuleListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRuleListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82763,7 +89198,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRuleApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRuleApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82796,7 +89231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82830,7 +89265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82882,7 +89317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82917,7 +89352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82950,7 +89385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -82987,7 +89422,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83020,7 +89455,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83053,7 +89488,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83093,7 +89528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApprovalApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApprovalApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83126,7 +89561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83163,7 +89598,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83196,7 +89631,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83231,7 +89666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83265,7 +89700,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83299,7 +89734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentRecordListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentRecordListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83337,7 +89772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83368,7 +89803,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["InstrumentMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InstrumentMessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83418,7 +89853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83453,7 +89888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83486,7 +89921,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83523,7 +89958,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83556,7 +89991,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaDeleteApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83589,7 +90024,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83627,7 +90062,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83660,7 +90095,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83697,7 +90132,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83731,7 +90166,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaDeleteApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83768,7 +90203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83805,7 +90240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83842,7 +90277,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83879,7 +90314,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CapaApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CapaApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83919,7 +90354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CpvProductListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["CpvProductListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83954,7 +90389,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -83987,7 +90422,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84024,7 +90459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84057,7 +90492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84093,7 +90528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84130,7 +90565,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84167,7 +90602,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84200,7 +90635,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84246,7 +90681,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84290,7 +90725,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84334,7 +90769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84376,7 +90811,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84418,7 +90853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84460,7 +90895,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84495,7 +90930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84533,7 +90968,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84566,7 +91001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84597,7 +91032,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84630,7 +91065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84667,7 +91102,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84702,9 +91137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84739,9 +91172,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84785,9 +91216,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84820,7 +91249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84857,7 +91286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84888,9 +91317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84925,7 +91352,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84958,7 +91385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -84996,7 +91423,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85015,7 +91442,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -85025,9 +91454,18 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -85062,7 +91500,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85097,7 +91535,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85128,7 +91566,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85161,7 +91599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85194,7 +91632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85231,7 +91669,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85264,7 +91702,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85299,7 +91737,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85333,7 +91771,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85368,7 +91806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85407,7 +91845,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85442,7 +91880,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85473,7 +91911,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85508,7 +91946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85543,7 +91981,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85576,7 +92014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85613,7 +92051,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85646,7 +92084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85679,7 +92117,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85712,7 +92150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85749,7 +92187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85782,7 +92220,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85819,7 +92257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85852,7 +92290,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85885,7 +92323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85918,7 +92356,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85955,7 +92393,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -85986,7 +92424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86021,7 +92459,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86054,7 +92492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86087,7 +92525,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86124,7 +92562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86157,7 +92595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86176,7 +92614,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -86186,7 +92626,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -86221,7 +92670,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86256,7 +92705,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86300,7 +92749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86344,7 +92793,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86382,7 +92831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86416,7 +92865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnnualReviewResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AnnualReviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -86450,7 +92899,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86483,7 +92932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86520,7 +92969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86553,7 +93002,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86587,7 +93036,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86622,7 +93071,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86657,7 +93106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86690,7 +93139,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86726,7 +93175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86759,7 +93208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86794,7 +93243,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86831,7 +93280,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86864,7 +93313,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86897,7 +93346,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86930,7 +93379,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86963,7 +93412,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -86996,7 +93445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87029,7 +93478,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87062,7 +93511,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87093,7 +93542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87124,7 +93573,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87192,7 +93641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87225,7 +93674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87265,7 +93714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87298,7 +93747,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87333,7 +93782,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87368,7 +93817,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87402,7 +93851,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87436,9 +93885,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87473,9 +93920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87508,9 +93953,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87547,9 +93990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ProductDossierApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87582,9 +94023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__registration__dossier_writer__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87621,9 +94060,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["TemplateUploadApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87656,9 +94093,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ParseResultApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87691,9 +94126,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ChapterTreeApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87726,9 +94159,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ChapterDetailApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87761,9 +94192,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87800,9 +94229,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["AssetUploadBatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87835,9 +94262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__registration__dossier_writer__schemas__MessageApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87874,7 +94299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AssetCategoryUpdateResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AssetCategoryUpdateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87911,9 +94336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["ExportApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87949,7 +94372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -87982,9 +94405,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88017,7 +94438,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -88050,9 +94471,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88085,9 +94504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88120,9 +94537,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88153,9 +94568,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88186,9 +94599,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["InitS7ApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88221,9 +94632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["FillResultListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88256,9 +94665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88295,7 +94702,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AIConfirmResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIConfirmResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88328,9 +94735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88367,7 +94772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SplitPreviewResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SplitPreviewResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88404,7 +94809,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SplitConfirmResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["SplitConfirmResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88437,9 +94842,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["StringListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88472,9 +94875,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88512,7 +94913,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AssetUsageToggleResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AssetUsageToggleResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88545,9 +94946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json; charset=utf-8": components["schemas"]["AssetListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88580,7 +94979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LLMConfigResponse"][];
+                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"][];
                 };
             };
             /** @description Validation Error */
@@ -88615,7 +95014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LLMConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88648,7 +95047,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LLMConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88685,7 +95084,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LLMConfigResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["LLMConfigResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88747,7 +95146,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json; charset=utf-8": unknown;
                 };
             };
             /** @description Validation Error */
@@ -88781,7 +95180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88816,7 +95215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88850,7 +95249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88888,7 +95287,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88922,7 +95321,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ModuleSettingApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -88951,7 +95350,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
                 };
@@ -88973,7 +95372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
                 };
@@ -88995,7 +95394,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
+                    "application/json; charset=utf-8": {
                         [key: string]: string;
                     };
                 };

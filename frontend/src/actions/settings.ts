@@ -75,5 +75,5 @@ export async function testLivzonFeishuConfig(data?: FeishuConfigUpsert) {
 
 export async function syncLivzonFeishuContacts() {
   const token = await getAuthToken()
-  return await syncLivzonFeishuContactsServer(token) as { message?: string; status?: string; departments?: Record<string, unknown>; members?: Record<string, unknown> }
+  return syncLivzonFeishuContactsServer(token)
 }
