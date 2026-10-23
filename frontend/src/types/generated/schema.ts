@@ -8682,6 +8682,9 @@ export interface paths {
         /**
          * 飞书审批完成回调
          * @description 接收飞书审批完成通知，更新员工状态为在职。
+         *
+         *     鉴权方式见 `_verify_feishu_approval_callback`：飞书回调没有用户登录态，
+         *     用签名 + verification token 校验替代 JWT。
          */
         post: operations["feishu_approval_webhook_api_v1_hr_webhook_feishu_approval_post"];
         delete?: never;
@@ -9880,12 +9883,15 @@ export interface paths {
         };
         /**
          * 获取系统设置
-         * @description 获取所有系统配置。secret 类字段仅返回尾部 4 位。
+         * @description 获取所有系统配置。凭据类字段只返回掩码（如 `cli_ab****cd12`），绝不返回明文。
          */
         get: operations["get_system_settings_api_v1_hr_system_settings_get"];
         /**
          * 保存系统设置
          * @description 批量保存系统配置到 DB，同时写入 .env 文件。
+         *
+         *     凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
+         *     避免把掩码当成新密钥写进库。
          */
         put: operations["save_system_settings_api_v1_hr_system_settings_put"];
         post?: never;
@@ -71126,9 +71132,7 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
+            cookie?: never;
         };
         requestBody: {
             content: {

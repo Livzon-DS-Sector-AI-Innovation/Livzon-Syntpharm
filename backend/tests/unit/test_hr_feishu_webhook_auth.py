@@ -6,6 +6,7 @@
 
 import hashlib
 from types import SimpleNamespace
+from typing import Any
 
 import pytest
 from fastapi import HTTPException
@@ -26,7 +27,7 @@ def _request(body: bytes, headers: dict[str, str] | None = None) -> Request:
     }
     sent = False
 
-    async def receive():  # type: ignore[no-untyped-def]
+    async def receive() -> Any:
         nonlocal sent
         if sent:
             return {"type": "http.disconnect"}

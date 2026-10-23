@@ -42,16 +42,12 @@ from app.platform.permission.repository import RoleRepository
 SAFETY_MODULE_CODE = "safety:module:read"
 DOSSIER_MODULE_CODE = "registration:dossier:read"
 DOSSIER_WRITE_CODES = tuple(
-    code
-    for code in PERMISSIONS_BY_CODE
-    if code.startswith("registration:dossier:") and not code.endswith(":read")
+    code for code in PERMISSIONS_BY_CODE if code.startswith("registration:dossier:") and not code.endswith(":read")
 )
 
 
 def _safety_codes(*, read_only: bool) -> list[str]:
-    return sorted(
-        p.code for p in SAFETY_PERMISSIONS if p.action == "read" or (not read_only and p.action == "manage")
-    )
+    return sorted(p.code for p in SAFETY_PERMISSIONS if p.action == "read" or (not read_only and p.action == "manage"))
 
 
 async def main(apply: bool, read_only: bool) -> int:

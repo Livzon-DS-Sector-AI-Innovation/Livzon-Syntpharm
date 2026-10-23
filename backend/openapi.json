@@ -41788,37 +41788,19 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u98de\u4e66\u5ba1\u6279\u5b8c\u6210\u56de\u8c03",
-        "description": "\u63a5\u6536\u98de\u4e66\u5ba1\u6279\u5b8c\u6210\u901a\u77e5\uff0c\u66f4\u65b0\u5458\u5de5\u72b6\u6001\u4e3a\u5728\u804c\u3002",
+        "description": "\u63a5\u6536\u98de\u4e66\u5ba1\u6279\u5b8c\u6210\u901a\u77e5\uff0c\u66f4\u65b0\u5458\u5de5\u72b6\u6001\u4e3a\u5728\u804c\u3002\n\n\u9274\u6743\u65b9\u5f0f\u89c1 `_verify_feishu_approval_callback`\uff1a\u98de\u4e66\u56de\u8c03\u6ca1\u6709\u7528\u6237\u767b\u5f55\u6001\uff0c\n\u7528\u7b7e\u540d + verification token \u6821\u9a8c\u66ff\u4ee3 JWT\u3002",
         "operationId": "feishu_approval_webhook_api_v1_hr_webhook_feishu_approval_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
                 "additionalProperties": true,
+                "type": "object",
                 "title": "Payload"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -48098,7 +48080,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u83b7\u53d6\u7cfb\u7edf\u8bbe\u7f6e",
-        "description": "\u83b7\u53d6\u6240\u6709\u7cfb\u7edf\u914d\u7f6e\u3002secret \u7c7b\u5b57\u6bb5\u4ec5\u8fd4\u56de\u5c3e\u90e8 4 \u4f4d\u3002",
+        "description": "\u83b7\u53d6\u6240\u6709\u7cfb\u7edf\u914d\u7f6e\u3002\u51ed\u636e\u7c7b\u5b57\u6bb5\u53ea\u8fd4\u56de\u63a9\u7801\uff08\u5982 `cli_ab****cd12`\uff09\uff0c\u7edd\u4e0d\u8fd4\u56de\u660e\u6587\u3002",
         "operationId": "get_system_settings_api_v1_hr_system_settings_get",
         "parameters": [
           {
@@ -48144,7 +48126,7 @@
           "\u4eba\u4e8b\u7ba1\u7406"
         ],
         "summary": "\u4fdd\u5b58\u7cfb\u7edf\u8bbe\u7f6e",
-        "description": "\u6279\u91cf\u4fdd\u5b58\u7cfb\u7edf\u914d\u7f6e\u5230 DB\uff0c\u540c\u65f6\u5199\u5165 .env \u6587\u4ef6\u3002",
+        "description": "\u6279\u91cf\u4fdd\u5b58\u7cfb\u7edf\u914d\u7f6e\u5230 DB\uff0c\u540c\u65f6\u5199\u5165 .env \u6587\u4ef6\u3002\n\n\u51ed\u636e\u7c7b\u5b57\u6bb5\u52a0\u5bc6\u540e\u843d\u5e93\uff1b\u7a7a\u503c\u6216\u524d\u7aef\u56de\u4f20\u7684\u63a9\u7801\uff08****\uff09\u89c6\u4e3a\u300c\u4e0d\u4fee\u6539\u300d\uff0c\n\u907f\u514d\u628a\u63a9\u7801\u5f53\u6210\u65b0\u5bc6\u94a5\u5199\u8fdb\u5e93\u3002",
         "operationId": "save_system_settings_api_v1_hr_system_settings_put",
         "parameters": [
           {
