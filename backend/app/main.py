@@ -60,7 +60,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting %s (%s)", settings.APP_NAME, settings.APP_ENV)
 
     # Initialize OCR service in background (model loading is heavy)
-    asyncio.create_task(asyncio.to_thread(init_ocr))
+    # 可通过 OCR_ENABLED=false 环境变量禁用（PaddleOCR 在某些环境会段错误）
+    if os.environ.get("OCR_ENABLED", "true").lower() not in ("false", "0", "no"):
+        asyncio.create_task(asyncio.to_thread(init_ocr))
+    else:
+        logger.info("OCR service disabled by OCR_ENABLED environment variable")
 
     # Initialize file conversion service (libreoffice CLI wrapper, no-op)
     init_file_conversion()

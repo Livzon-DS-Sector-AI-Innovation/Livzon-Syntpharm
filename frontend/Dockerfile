@@ -13,7 +13,6 @@ WORKDIR /app
 RUN npm config set registry https://registry.npmmirror.com
 RUN corepack enable && COREPACK_NPM_REGISTRY=https://registry.npmmirror.com corepack prepare pnpm@10.33.0 --activate
 
-
 # Copy dependency files
 COPY package.json pnpm-lock.yaml* ./
 

@@ -59,6 +59,8 @@ class AssetExtractor:
         """使用 OCR 从 PDF 扫描件提取文本"""
         try:
             ocr_service = get_ocr_service()
+            if ocr_service is None:
+                return {"pages": [], "full_text": "", "error": "OCR service unavailable"}
 
             # 使用混合 API，PDF 自动使用 PP-StructureV3 保持结构
             full_text = ocr_service.extract(file_path, output_format="text")
@@ -85,6 +87,8 @@ class AssetExtractor:
         """从图片文件提取文本"""
         try:
             ocr_service = get_ocr_service()
+            if ocr_service is None:
+                return {"text": "", "error": "OCR service unavailable"}
             image = Image.open(str(file_path))
             # 使用 PP-OCR 进行快速文本提取
             text = ocr_service.extract_text(image)

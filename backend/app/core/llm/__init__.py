@@ -14,6 +14,7 @@ from .config import (
     get_active_config,
     get_config,
     get_env_config,
+    get_named_config,
 )
 from .encryption import decrypt_api_key, encrypt_api_key, mask_api_key
 from .exceptions import (
@@ -33,6 +34,7 @@ __all__ = [
     "get_config",
     "get_active_config",
     "get_env_config",
+    "get_named_config",
     "LLMConfigData",
     "LLMConfigModel",
     # Exceptions

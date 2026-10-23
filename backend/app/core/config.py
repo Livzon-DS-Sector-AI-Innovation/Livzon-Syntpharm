@@ -153,6 +153,23 @@ class FeishuSettings(BaseModel):
 # ============================================================================
 
 
+class RagflowSettings(BaseModel):
+    """RAGFlow 知识库服务接入配置（部署配置，环境变量前缀 RAGFLOW__）。
+
+    只放接入凭证与默认解析参数；并发、召回条数等运营参数走 core.module_settings。
+    """
+
+    base_url: str = ""
+    api_key: str = ""
+    timeout_seconds: float = 60.0
+    # 上传/推送文件到 RAGFlow 的超时（大文件解析前上传耗时更长）
+    upload_timeout_seconds: float = 300.0
+    # 新建知识库时使用的向量模型与切片方式（留空表示用租户默认）
+    default_embedding_model: str = ""
+    default_chunk_method: str = "naive"
+    default_language: str = "Chinese"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=_ENV_FILE,
@@ -165,6 +182,9 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "dazah-backend"
     APP_ENV: str = "development"
+    # 任务队列环境隔离标签（doc_gen_jobs.env）；留空回退 APP_ENV。
+    # 多套部署共用同一数据库时，worker 只领取 env 等于本值创建的任务。
+    DOC_GEN_WORKER_ENV: str = ""
     ENERGY_AUTO_COLLECT_ENABLED: bool = False
     ENERGY_BITABLE_AUTO_SYNC_ENABLED: bool = False
     ENERGY_BITABLE_SYNC_HOUR: int = 17
@@ -204,6 +224,9 @@ class Settings(BaseSettings):
 
     # Feishu / Lark — all modules grouped
     feishu: FeishuSettings = Field(default_factory=FeishuSettings)
+
+    # RAGFlow — 研发知识库（项目知识库检索服务）
+    ragflow: RagflowSettings = Field(default_factory=RagflowSettings)
 
     FRONTEND_URL: str = ""
     SSO_ADMIN_IDENTIFIERS: str = ""
@@ -283,6 +306,11 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.APP_ENV == "production"
+
+    @property
+    def doc_gen_worker_env(self) -> str:
+        """任务队列环境标签：显式配置优先，否则回退 APP_ENV。"""
+        return self.DOC_GEN_WORKER_ENV or self.APP_ENV
 
     def check(self) -> None:
         """启动时校验关键配置，避免漏配导致运行时异常。"""

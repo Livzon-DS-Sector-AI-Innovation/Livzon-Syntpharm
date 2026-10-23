@@ -26,6 +26,10 @@ export type {
   WorkOrderStatistics,
 } from './generated-bridge'
 
+// PaginatedResponse 统一由 types/common.ts 提供（PR#61 consolidate generic types），
+// 此处 re-export 保持 equipment 内部消费路径不变，同时避免 index.ts 的 export * 歧义
+export type { PaginatedResponse } from '../common'
+
 // Export response types (new naming)
 export type {
   EquipmentCategoryResponse,

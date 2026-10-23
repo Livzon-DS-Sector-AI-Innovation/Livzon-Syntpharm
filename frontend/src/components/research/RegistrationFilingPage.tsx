@@ -35,6 +35,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
   const { message: msgApi } = App.useApp()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdRegistrationFiling | null>(null)
   const [form] = Form.useForm()
 
@@ -107,14 +108,16 @@ export function RegistrationFilingPage({ projectId }: Props) {
   })
 
   const handleSave = async () => {
-    const values = await form.validateFields()
-    const jsonFields = collectJsonFields(values)
-    const payload = {
-      status: values.status,
-      notes: values.notes,
-      ...jsonFields,
-    }
+    if (saving) return
+    setSaving(true)
     try {
+      const values = await form.validateFields()
+      const jsonFields = collectJsonFields(values)
+      const payload = {
+        status: values.status,
+        notes: values.notes,
+        ...jsonFields,
+      }
       if (editingRecord) {
         await updateFiling(editingRecord.id, payload)
         msgApi.success('更新成功')
@@ -126,7 +129,10 @@ export function RegistrationFilingPage({ projectId }: Props) {
       form.resetFields()
       queryClient.invalidateQueries({ queryKey: ['registration-filings', projectId] })
     } catch (e: unknown) {
+      if (e && typeof e === 'object' && 'errorFields' in e) return
       msgApi.error(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -277,7 +283,7 @@ export function RegistrationFilingPage({ projectId }: Props) {
         extra={
           <Space>
             <Button onClick={() => { setDrawerOpen(false); form.resetFields() }}>取消</Button>
-            <Button type="primary" onClick={handleSave}>保存</Button>
+            <Button type="primary" onClick={handleSave} loading={saving}>保存</Button>
           </Space>
         }
       >

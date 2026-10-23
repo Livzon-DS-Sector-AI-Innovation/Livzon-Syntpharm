@@ -1,10 +1,11 @@
 import { ProjectListPage } from '@/components/research'
 import { fetchRdProjects } from '@/lib/api/server/research/rd-project'
+import type { RdProject } from '@/types/research/rd-project'
 
 export const dynamic = 'force-dynamic'
 
 export default async function RdProjectsPage() {
-  let projects = []
+  let projects: RdProject[] = []
   let total = 0
   try {
     const result = await fetchRdProjects({ page: 1, page_size: 20 })

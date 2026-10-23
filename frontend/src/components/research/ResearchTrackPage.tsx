@@ -103,6 +103,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   
   // Create/Edit track drawer
   const [trackDrawerOpen, setTrackDrawerOpen] = useState(false)
+  const [savingTrack, setSavingTrack] = useState(false)
+  const [savingFinding, setSavingFinding] = useState(false)
   const [editingTrack, setEditingTrack] = useState<RdResearchTrack | null>(null)
   const [trackForm] = Form.useForm()
   
@@ -162,6 +164,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   }
 
   const handleSaveTrack = async () => {
+    if (savingTrack) return
+    setSavingTrack(true)
     try {
       const values = await trackForm.validateFields()
       if (editingTrack) {
@@ -179,6 +183,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       msgApi.error(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSavingTrack(false)
     }
   }
 
@@ -234,6 +240,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
   }
 
   const handleSaveFinding = async () => {
+    if (savingFinding) return
+    setSavingFinding(true)
     try {
       const values = await findingForm.validateFields()
       const payload = {
@@ -284,6 +292,8 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       msgApi.error(e instanceof Error ? e.message : '保存失败')
+    } finally {
+      setSavingFinding(false)
     }
   }
 
@@ -707,7 +717,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         extra={
           <Space>
             <Button onClick={() => setTrackDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={handleSaveTrack}>保存</Button>
+            <Button type="primary" onClick={handleSaveTrack} loading={savingTrack}>保存</Button>
           </Space>
         }
       >
@@ -745,7 +755,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         extra={
           <Space>
             <Button onClick={() => setFindingDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={handleSaveFinding}>保存</Button>
+            <Button type="primary" onClick={handleSaveFinding} loading={savingFinding}>保存</Button>
           </Space>
         }
       >

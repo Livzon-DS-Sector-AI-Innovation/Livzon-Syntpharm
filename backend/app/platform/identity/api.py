@@ -77,6 +77,7 @@ async def auth_callback(
     code: str = Query(...),
     state: str = Query(""),
     db: AsyncSession = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ) -> RedirectResponse:
     """Handle the OAuth callback from Feishu.
 
@@ -92,6 +93,7 @@ async def auth_callback(
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
     log_repo = LoginLogRepository()
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
 
     # Validate state for CSRF protection
     if state and not validate_state_token(state):
@@ -105,7 +107,7 @@ async def auth_callback(
         )
         await db.commit()
         return RedirectResponse(
-            url="/login?error=invalid_state",
+            url=f"{frontend_url}/login?error=invalid_state",
             status_code=302,
         )
 
@@ -128,7 +130,7 @@ async def auth_callback(
         except Exception as log_exc:
             logger.error("Failed to record login failure: %s", log_exc)
         return RedirectResponse(
-            url="/login?error=callback_failed",
+            url=f"{frontend_url}/login?error=callback_failed",
             status_code=302,
         )
 
@@ -146,16 +148,17 @@ async def auth_callback(
 
     # Redirect to frontend with token
     return RedirectResponse(
-        url=f"/auth/callback?token={token}",
+        url=f"{frontend_url}/auth/callback?token={token}",
         status_code=302,
     )
 
 
 @auth_router.get("/logout", summary="登出")
-async def logout() -> RedirectResponse:
+async def logout(settings: Settings = Depends(get_settings)) -> RedirectResponse:
     """Redirect to frontend login page (frontend handles cookie clearing)."""
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
     return RedirectResponse(
-        url="/login",
+        url=f"{frontend_url}/login",
         status_code=302,
     )
 
