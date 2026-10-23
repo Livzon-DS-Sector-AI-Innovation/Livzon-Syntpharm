@@ -44,16 +44,16 @@ async def get_current_user(
         return None
 
     # 会话吊销检查（踢下线）：jti 命中吊销黑名单即视为未登录。
-    # 吊销状态查不到时按「已失效」处理（fail-closed）：否则 Redis 故障期间，
-    # 已被踢下线/已删除账号的 token 可以继续使用，吊销机制形同虚设。
+    # 这里刻意保持 fail-open：Redis 故障时按「未吊销」放行，避免基础设施抖一下就把
+    # 全员登出（ERP 可用性优先）。代价是 Redis 不可用期间，已被踢下线的 token 仍可用，
+    # 该窗口已作为已知残留风险记录在 docs/ai-audit-findings.md（PR #121 第四轮）。
     try:
         from app.platform.identity.session import is_session_revoked
 
         if await is_session_revoked(payload.get("jti")):
             return None
     except Exception:
-        logger.exception("会话吊销检查失败（Redis 不可用？），按失败关闭处理，拒绝本次请求")
-        return None
+        logger.warning("会话吊销检查失败（Redis 不可用？），按未吊销处理", exc_info=True)
 
     repo = UserRepository()
     user: User | None = None

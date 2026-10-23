@@ -5242,7 +5242,7 @@ The 2 low-severity `'use client'` issues and 8 redundant `@pytest.mark.asyncio` 
 - [x] Cat 4 — `backend/app/modules/hr/api.py` — 飞书审批回调移除 `require_permission("hr:webhook:create")`（飞书服务器无用户 JWT，原实现使所有真实回调 401）；改为 `HR_FEISHU_APPROVAL_ENCRYPT_KEY` 签名校验 + `HR_FEISHU_APPROVAL_VERIFICATION_TOKEN` 校验 + `challenge` 回显，两者都未配置时直接 503（fail-closed）。绑定从 `API_BINDINGS` 移除并登记到 `EXEMPT_ROUTES`。（blocking，RESOLVED）
 - [x] Cat 4 — `backend/app/platform/permission/service/authorization.py` — 权限表未迁移的降级改为：`PERMISSION_ENFORCE_ENABLED=true` 时 fail-closed（503 + 迁移提示），关闭时保留「仅登录」降级；`has_permission` 同步返回 False。（high，RESOLVED）
 - [x] Cat 4 — `backend/app/platform/identity/service.py` — `_verify_feishu_callback_signature` 不再 fail-open：配置了 Encrypt Key 后，缺 timestamp/nonce/signature 即判失败。（high，RESOLVED）
-- [x] Cat 4 — `backend/app/platform/identity/deps.py` — 会话吊销查询异常改为 fail-closed（拒绝请求），不再当作「未吊销」放行。（medium，RESOLVED）
+- [ ] Cat 4 — `backend/app/platform/identity/deps.py` — 会话吊销查询异常**保持 fail-open**（未修复，已决策）：曾改为 fail-closed，但 E2E 栈不含 Redis，导致 `auth.setup` 拿到的合法 token 被判 401；同时 fail-closed 意味着 Redis 抖动会全员登出。经权衡按「可用性优先」回滚为 fail-open 并保留 `logger.warning`。**残留风险**：Redis 不可用期间，已被踢下线 / 已删除账号的 token 仍可在有效期内使用；后续若要收回，需先给所有环境（含 CI/e2e）补齐 Redis，再按环境统一开启。
 - [x] Cat 4 — `backend/app/platform/identity/api.py` — `reset-password` 与 `DELETE /users/{id}/sessions` 补 `guard_manage_target`，禁止低级管理员操作权限不低于自己的账号。（high，RESOLVED）
 - [x] Cat 4 — `backend/app/modules/safety/api/feishu.py` — `POST /feishu/ws/restart`（及 status）不再匿名可调，新增权限码 `safety:feishu:manage` 并登记绑定。（high，RESOLVED）
 - [x] Cat 6 — `backend/app/modules/hr/api.py` — `hr.system_settings` 的凭据类键（`*SECRET`、`*_API_KEY`）加密后落库，读取接口只返回掩码；空值/回传掩码视为「不修改」，避免把掩码写成新密钥。（high，RESOLVED）
