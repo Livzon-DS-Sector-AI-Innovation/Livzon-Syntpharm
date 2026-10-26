@@ -5506,3 +5506,27 @@ Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需
 
 - [x] Cat 16 — `production/WorkshopRankingTrend.tsx`：`visibleSet` 由「useEffect 里 setState + ref 防抖」
       改为派生值（`userVisibleSet ?? 默认前三个车间`），去掉一轮多余渲染与 ref。
+
+#### PR #121 第十三轮修复（决策项收口，2026-10-26）
+
+按架构负责人「需要拍板的都按建议修改、配置默认值可改」的指示，处理剩余 4 条决策项：
+
+- [x] Cat 4 — `dossier_writer/schemas.py` 的 `OpaqueDataApiResponse`（`data: dict | list`）删除，
+      按 8 个接口的真实响应体拆成具体模型：`ChapterPreviewApiResponse`、`AssetMatchApiResponse`、
+      `FieldFillApiResponse`、`FieldMappingListApiResponse`、`InitChapterConfigApiResponse`、
+      `AiPreviewApiResponse`、`AssetCategoryListApiResponse`、`AvailableAssetListApiResponse`
+      （含明细模型：预览段落/表格、匹配明细、填充结果、字段映射、AI 提取字段、可用素材）。
+      已用 12 组真实载荷（成功 + 失败分支）验证模型可通过校验。
+- [x] Cat 5 — `shared/module_registry.py` 新增 `PLATFORM_SCHEMAS` / `ALL_SCHEMAS`，`permission`（及
+      identity/core/audit）正式登记；`core/database.py` 的 `search_path` 改用 `ALL_SCHEMAS`，
+      `alembic/env.py` 的 `PROJECT_SCHEMAS` 复用同一清单（原来两处各写一份，容易漂移）。
+- [x] Cat 6 — 登录失败锁定策略由硬编码常量改为配置项 `LOGIN_MAX_FAILURES`（默认 5）/
+      `LOGIN_LOCKOUT_SECONDS`（默认 900），`identity/service.lockout_policy()` 统一读取，
+      `identity/api.py` 改为调用同一函数；三个 `.env*.example` 已补默认值。
+- [x] Cat 13 — `docker-compose.dev.yml` 的 `ALLOWED_DEV_ORIGINS` 变更经架构负责人确认保留（2026-10-26），
+      注释已说明 Compose 读取的是 shell 环境变量或仓库根 `.env`，不是 `.env.local`。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+`pytest tests/unit + tests/modules/registration` 223 passed（2 errors 为本地无 PostgreSQL）；
+临时 postgres:17 上 `alembic upgrade head` + `alembic check` → **No new upgrade operations detected**（容器已删）；
+`openapi.json` 与前端 `schema.ts` 已重生成；`tsc --noEmit` / `eslint src --max-warnings=0` 通过。

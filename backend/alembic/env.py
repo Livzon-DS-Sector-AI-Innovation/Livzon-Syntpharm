@@ -7,7 +7,7 @@ from typing import Literal
 from alembic import context
 from app.core.config import get_settings
 from app.shared.base_model import Base
-from app.shared.module_registry import BUSINESS_MODULES, BUSINESS_SCHEMAS
+from app.shared.module_registry import BUSINESS_MODULES, BUSINESS_SCHEMAS, PLATFORM_SCHEMAS
 
 # Import platform and module models so Alembic can detect them.
 import_module("app.platform.audit.models")
@@ -30,7 +30,7 @@ target_metadata = Base.metadata
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
-PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", "permission", "dossier_writer", *BUSINESS_SCHEMAS))
+PROJECT_SCHEMAS = frozenset((*PLATFORM_SCHEMAS, *BUSINESS_SCHEMAS))
 
 # Get target schema from environment variable (for single-module migration generation)
 TARGET_SCHEMA = os.environ.get("ALEMBIC_TARGET_SCHEMA")

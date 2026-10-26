@@ -126,3 +126,11 @@ BUSINESS_SCHEMAS = tuple(module.db_schema for module in BUSINESS_MODULES) + (
     "dossier_writer",
     "regulatory_tracker",
 )
+
+# 平台层 schema：同样由本仓库拥有，但不隶属业务模块。
+# 之前只登记业务 schema，`permission` 既不进 search_path、也无法从注册表查到，
+# 属 schema 治理缺口（数据库连接层的 search_path 依赖这个清单）。
+PLATFORM_SCHEMAS: tuple[str, ...] = ("identity", "core", "audit", "permission")
+
+# 本仓库拥有的全部 schema（平台层在前，业务层在后，同名对象优先命中平台层）。
+ALL_SCHEMAS: tuple[str, ...] = PLATFORM_SCHEMAS + BUSINESS_SCHEMAS

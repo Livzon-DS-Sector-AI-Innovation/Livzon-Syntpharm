@@ -19260,6 +19260,62 @@ export interface components {
              */
             notes?: string | null;
         };
+        /** AiPreviewApiResponse */
+        AiPreviewApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AiPreviewData"] | null;
+        };
+        /** AiPreviewData */
+        AiPreviewData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+            /** Fields */
+            fields?: components["schemas"]["AiPreviewFieldItem"][];
+            /**
+             * Partial Success
+             * @default false
+             */
+            partial_success: boolean;
+            /**
+             * Failed Count
+             * @default 0
+             */
+            failed_count: number;
+            /**
+             * Llm Error
+             * @default false
+             */
+            llm_error: boolean;
+        };
+        /** AiPreviewFieldItem */
+        AiPreviewFieldItem: {
+            /** Field Name */
+            field_name: string;
+            /** Field Type */
+            field_type?: string | null;
+            /** Value */
+            value?: string | null;
+            /**
+             * Confidence
+             * @default 0
+             */
+            confidence: number;
+            /** Source */
+            source?: string | null;
+            /** Field Mapping Id */
+            field_mapping_id?: string | null;
+        };
         /** AlertRecordProcessRequest */
         AlertRecordProcessRequest: {
             /**
@@ -19697,6 +19753,36 @@ export interface components {
              */
             comments?: string | null;
         };
+        /** AssetCategoryItem */
+        AssetCategoryItem: {
+            /** Id */
+            id: string;
+            /** Category Name */
+            category_name: string;
+            /** Category Type */
+            category_type?: string | null;
+            /** Appendix Slot */
+            appendix_slot?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+        };
+        /** AssetCategoryListApiResponse */
+        AssetCategoryListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AssetCategoryItem"][] | null;
+        };
         /**
          * AssetCategoryUpdateData
          * @description 素材分类更新响应数据
@@ -19740,6 +19826,46 @@ export interface components {
             message: string;
             /** Data */
             data?: components["schemas"]["AssetResponse"][] | null;
+        };
+        /** AssetMatchApiResponse */
+        AssetMatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["AssetMatchData"] | null;
+        };
+        /** AssetMatchData */
+        AssetMatchData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+            /**
+             * Matched Count
+             * @default 0
+             */
+            matched_count: number;
+            /** Unmatched Files */
+            unmatched_files?: string[];
+            /** Details */
+            details?: components["schemas"]["AssetMatchDetail"][];
+        };
+        /**
+         * AssetMatchDetail
+         * @description 单个模板文件的匹配结果
+         */
+        AssetMatchDetail: {
+            /** Filename */
+            filename: string;
+            /** Chapters Generated */
+            chapters_generated?: string[];
         };
         /**
          * AssetResponse
@@ -20034,6 +20160,52 @@ export interface components {
              * @description 自定义消息
              */
             custom_message?: string | null;
+        };
+        /** AvailableAssetItem */
+        AvailableAssetItem: {
+            /** Id */
+            id: string;
+            /** Chapter Id */
+            chapter_id: string;
+            /** Original Filename */
+            original_filename: string;
+            /** File Path */
+            file_path?: string | null;
+            /** File Type */
+            file_type?: string | null;
+            /** File Size */
+            file_size?: number | null;
+            /** Uploaded At */
+            uploaded_at?: string | null;
+            /** Category Id */
+            category_id?: string | null;
+            /**
+             * Is Inherited
+             * @default false
+             */
+            is_inherited: boolean;
+            /**
+             * Is Selected
+             * @default false
+             */
+            is_selected: boolean;
+            /** Parent Chapter Code */
+            parent_chapter_code?: string | null;
+        };
+        /** AvailableAssetListApiResponse */
+        AvailableAssetListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["AvailableAssetItem"][] | null;
         };
         /**
          * BatchApiResponse
@@ -22121,6 +22293,51 @@ export interface components {
              * @default []
              */
             assets: components["schemas"]["AssetResponse"][];
+        };
+        /** ChapterPreviewApiResponse */
+        ChapterPreviewApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["ChapterPreviewData"] | null;
+        };
+        /**
+         * ChapterPreviewData
+         * @description 章节预览：成功时带段落/表格，失败时只有 success + message
+         */
+        ChapterPreviewData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+            /** Chapter Code */
+            chapter_code?: string | null;
+            /** Chapter Title */
+            chapter_title?: string | null;
+            /** Paragraphs */
+            paragraphs?: components["schemas"]["ChapterPreviewParagraph"][];
+            /** Tables */
+            tables?: string[][];
+        };
+        /**
+         * ChapterPreviewParagraph
+         * @description 预览段落（取自工作副本 docx）
+         */
+        ChapterPreviewParagraph: {
+            /** Text */
+            text: string;
+            /**
+             * Style
+             * @default Normal
+             */
+            style: string;
         };
         /**
          * ChapterResponse
@@ -29942,6 +30159,90 @@ export interface components {
              */
             pong_watchdog_healthy?: boolean | null;
         };
+        /** FieldFillApiResponse */
+        FieldFillApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["FieldFillData"] | null;
+        };
+        /** FieldFillData */
+        FieldFillData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message?: string | null;
+            /**
+             * Filled Count
+             * @default 0
+             */
+            filled_count: number;
+            /**
+             * Total Fields
+             * @default 0
+             */
+            total_fields: number;
+            /** Results */
+            results?: components["schemas"]["FieldFillResultItem"][];
+        };
+        /** FieldFillResultItem */
+        FieldFillResultItem: {
+            /** Field Name */
+            field_name: string;
+            /** Status */
+            status: string;
+            /** Filled Value */
+            filled_value?: string | null;
+        };
+        /** FieldMappingItem */
+        FieldMappingItem: {
+            /** Id */
+            id: string;
+            /** Field Name */
+            field_name: string;
+            /** Field Type */
+            field_type?: string | null;
+            /** Location Type */
+            location_type?: string | null;
+            /** Location Hint */
+            location_hint?: string | null;
+            /** Extraction Prompt */
+            extraction_prompt?: string | null;
+            /** Source Type */
+            source_type?: string | null;
+            /** Source Category */
+            source_category?: string | null;
+            /** Fixed Value */
+            fixed_value?: string | null;
+            /** Appendix Slot */
+            appendix_slot?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+            /** Is Required */
+            is_required?: boolean | null;
+        };
+        /** FieldMappingListApiResponse */
+        FieldMappingListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["FieldMappingItem"][] | null;
+        };
         /** FillResultItem */
         FillResultItem: {
             /** Id */
@@ -32816,6 +33117,49 @@ export interface components {
             headers: {
                 [key: string]: unknown;
             }[];
+        };
+        /** InitChapterConfigApiResponse */
+        InitChapterConfigApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["InitChapterConfigData"] | null;
+        };
+        /** InitChapterConfigData */
+        InitChapterConfigData: {
+            /** Success */
+            success: boolean;
+            /** Message */
+            message: string;
+            /** Chapter Code */
+            chapter_code?: string | null;
+            /**
+             * Field Mappings Created
+             * @default 0
+             */
+            field_mappings_created: number;
+            /**
+             * Field Mappings Skipped
+             * @default 0
+             */
+            field_mappings_skipped: number;
+            /**
+             * Asset Categories Created
+             * @default 0
+             */
+            asset_categories_created: number;
+            /**
+             * Asset Categories Skipped
+             * @default 0
+             */
+            asset_categories_skipped: number;
         };
         /** InitS7ApiResponse */
         InitS7ApiResponse: {
@@ -36416,26 +36760,6 @@ export interface components {
              * @description 审批日期
              */
             approval_date?: string | null;
-        };
-        /**
-         * OpaqueDataApiResponse
-         * @description service 返回的自由结构结果（映射/列表）。作为过渡模型，替代 response_model=dict。
-         */
-        OpaqueDataApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: {
-                [key: string]: unknown;
-            } | unknown[] | null;
         };
         /**
          * OperationLevel
@@ -94603,7 +94927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ChapterPreviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94669,7 +94993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AssetMatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94702,7 +95026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FieldFillApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94735,7 +95059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["FieldMappingListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94766,7 +95090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["InitChapterConfigApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94863,7 +95187,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AiPreviewApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -94933,7 +95257,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AssetCategoryListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -95073,7 +95397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["OpaqueDataApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AvailableAssetListApiResponse"];
                 };
             };
             /** @description Validation Error */

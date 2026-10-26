@@ -207,6 +207,9 @@ class Settings(BaseSettings):
 
     # Audit
     AUDIT_RETENTION_DAYS: int = 7
+    # 登录失败锁定策略（连续失败达到次数后锁定，默认 5 次 / 15 分钟）
+    LOGIN_MAX_FAILURES: int = 5
+    LOGIN_LOCKOUT_SECONDS: int = 900
     # 审计日志过期清理任务开关（SchedulerEngine 的 settings_toggle_key 读它）
     AUDIT_CLEANUP_ENABLED: bool = True
 

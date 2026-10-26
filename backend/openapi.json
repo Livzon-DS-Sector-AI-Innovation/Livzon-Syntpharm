@@ -88775,7 +88775,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/ChapterPreviewApiResponse"
                 }
               }
             }
@@ -88893,7 +88893,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/AssetMatchApiResponse"
                 }
               }
             }
@@ -88953,7 +88953,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/FieldFillApiResponse"
                 }
               }
             }
@@ -89012,7 +89012,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/FieldMappingListApiResponse"
                 }
               }
             }
@@ -89062,7 +89062,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/InitChapterConfigApiResponse"
                 }
               }
             }
@@ -89232,7 +89232,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/AiPreviewApiResponse"
                 }
               }
             }
@@ -89361,7 +89361,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/AssetCategoryListApiResponse"
                 }
               }
             }
@@ -89620,7 +89620,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/OpaqueDataApiResponse"
+                  "$ref": "#/components/schemas/AvailableAssetListApiResponse"
                 }
               }
             }
@@ -92347,6 +92347,140 @@
         "title": "AccidentUpdate",
         "description": "\u66f4\u65b0\u4e8b\u6545"
       },
+      "AiPreviewApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AiPreviewData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AiPreviewApiResponse"
+      },
+      "AiPreviewData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/AiPreviewFieldItem"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "partial_success": {
+            "type": "boolean",
+            "title": "Partial Success",
+            "default": false
+          },
+          "failed_count": {
+            "type": "integer",
+            "title": "Failed Count",
+            "default": 0
+          },
+          "llm_error": {
+            "type": "boolean",
+            "title": "Llm Error",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "AiPreviewData"
+      },
+      "AiPreviewFieldItem": {
+        "properties": {
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "field_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Type"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "confidence": {
+            "type": "number",
+            "title": "Confidence",
+            "default": 0.0
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "field_mapping_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Mapping Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_name"
+        ],
+        "title": "AiPreviewFieldItem"
+      },
       "AlertRecordProcessRequest": {
         "properties": {
           "status": {
@@ -93209,6 +93343,98 @@
         "title": "ApproveEhsChangeRequest",
         "description": "\u5ba1\u6279EHS\u53d8\u66f4\u8bf7\u6c42"
       },
+      "AssetCategoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "category_name": {
+            "type": "string",
+            "title": "Category Name"
+          },
+          "category_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Type"
+          },
+          "appendix_slot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appendix Slot"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_name"
+        ],
+        "title": "AssetCategoryItem"
+      },
+      "AssetCategoryListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AssetCategoryItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "AssetCategoryListApiResponse"
+      },
       "AssetCategoryUpdateData": {
         "properties": {
           "id": {
@@ -93306,6 +93532,96 @@
         },
         "type": "object",
         "title": "AssetListApiResponse"
+      },
+      "AssetMatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssetMatchData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AssetMatchApiResponse"
+      },
+      "AssetMatchData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "matched_count": {
+            "type": "integer",
+            "title": "Matched Count",
+            "default": 0
+          },
+          "unmatched_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unmatched Files"
+          },
+          "details": {
+            "items": {
+              "$ref": "#/components/schemas/AssetMatchDetail"
+            },
+            "type": "array",
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "AssetMatchData"
+      },
+      "AssetMatchDetail": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "chapters_generated": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chapters Generated"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename"
+        ],
+        "title": "AssetMatchDetail",
+        "description": "\u5355\u4e2a\u6a21\u677f\u6587\u4ef6\u7684\u5339\u914d\u7ed3\u679c"
       },
       "AssetResponse": {
         "properties": {
@@ -93932,6 +94248,135 @@
         ],
         "title": "AutoTriggerRequest",
         "description": "\u81ea\u52a8\u63d0\u9192\u89e6\u53d1\u8bf7\u6c42"
+      },
+      "AvailableAssetItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "chapter_id": {
+            "type": "string",
+            "title": "Chapter Id"
+          },
+          "original_filename": {
+            "type": "string",
+            "title": "Original Filename"
+          },
+          "file_path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Path"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "uploaded_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uploaded At"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id"
+          },
+          "is_inherited": {
+            "type": "boolean",
+            "title": "Is Inherited",
+            "default": false
+          },
+          "is_selected": {
+            "type": "boolean",
+            "title": "Is Selected",
+            "default": false
+          },
+          "parent_chapter_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Chapter Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "chapter_id",
+          "original_filename"
+        ],
+        "title": "AvailableAssetItem"
+      },
+      "AvailableAssetListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/AvailableAssetItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "AvailableAssetListApiResponse"
       },
       "BatchApiResponse": {
         "properties": {
@@ -98990,6 +99435,115 @@
         ],
         "title": "ChapterDetailResponse",
         "description": "\u7ae0\u8282\u8be6\u60c5\u54cd\u5e94"
+      },
+      "ChapterPreviewApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChapterPreviewData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "ChapterPreviewApiResponse"
+      },
+      "ChapterPreviewData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "chapter_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Code"
+          },
+          "chapter_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Title"
+          },
+          "paragraphs": {
+            "items": {
+              "$ref": "#/components/schemas/ChapterPreviewParagraph"
+            },
+            "type": "array",
+            "title": "Paragraphs"
+          },
+          "tables": {
+            "items": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Tables"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "ChapterPreviewData",
+        "description": "\u7ae0\u8282\u9884\u89c8\uff1a\u6210\u529f\u65f6\u5e26\u6bb5\u843d/\u8868\u683c\uff0c\u5931\u8d25\u65f6\u53ea\u6709 success + message"
+      },
+      "ChapterPreviewParagraph": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "style": {
+            "type": "string",
+            "title": "Style",
+            "default": "Normal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ChapterPreviewParagraph",
+        "description": "\u9884\u89c8\u6bb5\u843d\uff08\u53d6\u81ea\u5de5\u4f5c\u526f\u672c docx\uff09"
       },
       "ChapterResponse": {
         "properties": {
@@ -117007,6 +117561,260 @@
         "title": "FeishuWsStatusResponse",
         "description": "Feishu WebSocket status response"
       },
+      "FieldFillApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldFillData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "FieldFillApiResponse"
+      },
+      "FieldFillData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "filled_count": {
+            "type": "integer",
+            "title": "Filled Count",
+            "default": 0
+          },
+          "total_fields": {
+            "type": "integer",
+            "title": "Total Fields",
+            "default": 0
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/FieldFillResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success"
+        ],
+        "title": "FieldFillData"
+      },
+      "FieldFillResultItem": {
+        "properties": {
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "filled_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filled Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field_name",
+          "status"
+        ],
+        "title": "FieldFillResultItem"
+      },
+      "FieldMappingItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "field_name": {
+            "type": "string",
+            "title": "Field Name"
+          },
+          "field_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Type"
+          },
+          "location_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Type"
+          },
+          "location_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Hint"
+          },
+          "extraction_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extraction Prompt"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          },
+          "source_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Category"
+          },
+          "fixed_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fixed Value"
+          },
+          "appendix_slot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appendix Slot"
+          },
+          "sort_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sort Order"
+          },
+          "is_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Required"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "field_name"
+        ],
+        "title": "FieldMappingItem"
+      },
+      "FieldMappingListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FieldMappingItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "FieldMappingListApiResponse"
+      },
       "FillResultItem": {
         "properties": {
           "id": {
@@ -124439,6 +125247,81 @@
         ],
         "title": "ImportV4PreviewResponse",
         "description": "\u9884\u89c8\u63a5\u53e3\u54cd\u5e94\u6a21\u578b"
+      },
+      "InitChapterConfigApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InitChapterConfigData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "InitChapterConfigApiResponse"
+      },
+      "InitChapterConfigData": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "chapter_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chapter Code"
+          },
+          "field_mappings_created": {
+            "type": "integer",
+            "title": "Field Mappings Created",
+            "default": 0
+          },
+          "field_mappings_skipped": {
+            "type": "integer",
+            "title": "Field Mappings Skipped",
+            "default": 0
+          },
+          "asset_categories_created": {
+            "type": "integer",
+            "title": "Asset Categories Created",
+            "default": 0
+          },
+          "asset_categories_skipped": {
+            "type": "integer",
+            "title": "Asset Categories Skipped",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "InitChapterConfigData"
       },
       "InitS7ApiResponse": {
         "properties": {
@@ -132477,39 +133360,6 @@
           "employee_name"
         ],
         "title": "OnboardingEvaluationInput"
-      },
-      "OpaqueDataApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "items": {},
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "title": "OpaqueDataApiResponse",
-        "description": "service \u8fd4\u56de\u7684\u81ea\u7531\u7ed3\u6784\u7ed3\u679c\uff08\u6620\u5c04/\u5217\u8868\uff09\u3002\u4f5c\u4e3a\u8fc7\u6e21\u6a21\u578b\uff0c\u66ff\u4ee3 response_model=dict\u3002"
       },
       "OperationLevel": {
         "type": "string",

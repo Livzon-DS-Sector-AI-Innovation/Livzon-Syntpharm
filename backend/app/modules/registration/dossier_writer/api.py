@@ -18,22 +18,29 @@ from .models import ChapterAsset, DossierChapter, ProductDossier
 from .schemas import (
     AIConfirmRequest,
     AIConfirmResponse,
+    AiPreviewApiResponse,
+    AssetCategoryListApiResponse,
     AssetCategoryUpdateRequest,
     AssetCategoryUpdateResponse,
     AssetListApiResponse,
+    AssetMatchApiResponse,
     AssetResponse,
     AssetUploadBatchApiResponse,
     AssetUploadResponse,
     AssetUsageToggleRequest,
     AssetUsageToggleResponse,
+    AvailableAssetListApiResponse,
     ChapterDetailApiResponse,
+    ChapterPreviewApiResponse,
     ChapterTreeApiResponse,
     ExportApiResponse,
     ExportRequest,
+    FieldFillApiResponse,
+    FieldMappingListApiResponse,
     FillResultListApiResponse,
+    InitChapterConfigApiResponse,
     InitS7ApiResponse,
     MessageApiResponse,
-    OpaqueDataApiResponse,
     ParseResultApiResponse,
     ProductDossierApiResponse,
     ProductDossierCreate,
@@ -422,7 +429,7 @@ async def download_exported_file(
     )
 
 
-@router.get("/chapters/{chapter_id}/preview", response_model=OpaqueDataApiResponse)
+@router.get("/chapters/{chapter_id}/preview", response_model=ChapterPreviewApiResponse)
 async def get_chapter_preview(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -470,7 +477,7 @@ async def get_chapter_docx_file(
     )
 
 
-@router.post("/products/{dossier_id}/match-assets", response_model=OpaqueDataApiResponse)
+@router.post("/products/{dossier_id}/match-assets", response_model=AssetMatchApiResponse)
 async def match_assets_to_chapters(
     current_user: CurrentUser,
     dossier_id: UUID,
@@ -493,7 +500,7 @@ from .field_fill_service import FieldFillService  # noqa: E402
 # from .field_mapping_config import S6_FIELD_MAPPINGS  # 已废弃
 
 
-@router.post("/chapters/{chapter_id}/fill-fields", response_model=OpaqueDataApiResponse)
+@router.post("/chapters/{chapter_id}/fill-fields", response_model=FieldFillApiResponse)
 async def fill_chapter_fields(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -527,7 +534,7 @@ async def fill_chapter_fields(
     return build_response(data=result, message=result["message"])
 
 
-@router.get("/chapters/{chapter_code}/field-mappings", response_model=OpaqueDataApiResponse)
+@router.get("/chapters/{chapter_code}/field-mappings", response_model=FieldMappingListApiResponse)
 async def get_field_mappings(
     current_user: CurrentUser,
     chapter_code: str,
@@ -559,7 +566,7 @@ async def get_field_mappings(
     )
 
 
-@router.post("/field-mappings/init-s6", response_model=OpaqueDataApiResponse)
+@router.post("/field-mappings/init-s6", response_model=InitChapterConfigApiResponse)
 async def init_s6_field_mappings(
     current_user: CurrentUser,
     db: AsyncSession = Depends(get_db),
@@ -641,7 +648,7 @@ async def get_fill_results(
 # ====== AI Fill Service ======
 
 
-@router.post("/chapters/{chapter_id}/ai-preview", response_model=OpaqueDataApiResponse)
+@router.post("/chapters/{chapter_id}/ai-preview", response_model=AiPreviewApiResponse)
 async def ai_preview_extraction(
     current_user: CurrentUser,
     chapter_id: UUID,
@@ -716,7 +723,7 @@ async def ai_confirm_and_fill(
     return build_response(data=result, message=result.get("message", "完成"))
 
 
-@router.get("/chapters/{chapter_code}/asset-categories", response_model=OpaqueDataApiResponse)
+@router.get("/chapters/{chapter_code}/asset-categories", response_model=AssetCategoryListApiResponse)
 async def get_asset_categories(
     current_user: CurrentUser,
     chapter_code: str,
@@ -822,7 +829,7 @@ async def get_appendix_slots(
 # ====== Asset Usage (素材使用管理) ======
 
 
-@router.get("/chapters/{chapter_id}/available-assets", response_model=OpaqueDataApiResponse)
+@router.get("/chapters/{chapter_id}/available-assets", response_model=AvailableAssetListApiResponse)
 async def list_available_assets(
     current_user: CurrentUser,
     chapter_id: UUID,

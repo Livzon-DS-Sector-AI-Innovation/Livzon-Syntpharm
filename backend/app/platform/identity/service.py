@@ -1573,8 +1573,14 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
     return user
 
 
-MAX_LOGIN_FAILURES = 5
-LOCKOUT_SECONDS = 15 * 60
+def lockout_policy() -> tuple[int, int]:
+    """登录失败锁定策略：(最大失败次数, 锁定秒数)。
+
+    从配置读取（`LOGIN_MAX_FAILURES` / `LOGIN_LOCKOUT_SECONDS`），默认 5 次 / 900 秒，
+    与原硬编码一致；运维可只改环境变量调整，不需要改代码。
+    """
+    settings = get_settings()
+    return settings.LOGIN_MAX_FAILURES, settings.LOGIN_LOCKOUT_SECONDS
 
 
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
@@ -1586,10 +1592,11 @@ async def authenticate_local_user(db: AsyncSession, *, username: str, password: 
     if user.locked_until is not None and user.locked_until > now:
         raise HTTPException(status.HTTP_423_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试")
 
+    max_failures, lockout_seconds = lockout_policy()
     if not verify_password(password, user.password_hash):
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-        if user.failed_login_attempts >= MAX_LOGIN_FAILURES:
-            user.locked_until = now + timedelta(seconds=LOCKOUT_SECONDS)
+        if user.failed_login_attempts >= max_failures:
+            user.locked_until = now + timedelta(seconds=lockout_seconds)
             user.failed_login_attempts = 0
         await db.flush()
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
