@@ -4,14 +4,14 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.jobs import spawn_task
-from app.core.response import build_response, success_response
+from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
 from app.platform.identity.repository import DepartmentRepository, UserRepository
@@ -314,12 +314,12 @@ async def logout() -> RedirectResponse:
 @user_router.get("/me", summary="获取当前登录用户信息", response_model=CurrentUserApiResponse)
 async def get_me(
     current_user: RequiredUser,
-) -> JSONResponse:
+) -> Any:
     """Return the currently authenticated user's profile.
 
     Authentication via Bearer header or auth_token cookie.
     """
-    return success_response(data=UserResponse.model_validate(current_user).model_dump())
+    return build_response(data=UserResponse.model_validate(current_user).model_dump())
 
 
 # ── Departments ─────────────────────────────────────────────────────
@@ -354,16 +354,16 @@ async def list_departments(
     current_user: RequiredUser,
     tree: bool = Query(False, description="是否返回树形结构"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """获取所有部门。传 ?tree=true 返回层级组织架构树。"""
     repo = DepartmentRepository()
     depts = await repo.list_all(db)
 
     if tree:
         nodes = _build_department_tree(depts, parent_id=None)
-        return success_response(data=[n.model_dump() for n in nodes])
+        return build_response(data=[n.model_dump() for n in nodes])
 
-    return success_response(
+    return build_response(
         data=[DepartmentResponse.model_validate(d).model_dump() for d in depts],
     )
 
@@ -373,7 +373,7 @@ async def get_department(
     dept_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """按 open_department_id 获取单个部门详情。"""
     repo = DepartmentRepository()
     dept = await repo.get_by_feishu_id(db, dept_id)
@@ -381,7 +381,7 @@ async def get_department(
         from fastapi import HTTPException
 
         raise HTTPException(status_code=404, detail="部门不存在")
-    return success_response(data=DepartmentResponse.model_validate(dept).model_dump())
+    return build_response(data=DepartmentResponse.model_validate(dept).model_dump())
 
 
 # ── Personnel ───────────────────────────────────────────────────────
@@ -395,7 +395,7 @@ async def list_personnel(
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """分页获取所有人员名单，支持按部门和姓名筛选。"""
     repo = UserRepository()
     users, total = await repo.list_all(
@@ -413,7 +413,7 @@ async def list_personnel(
         offset=offset,
         limit=limit,
     )
-    return success_response(data=resp.model_dump())
+    return build_response(data=resp.model_dump())
 
 
 # ── Sync ────────────────────────────────────────────────────────────
@@ -427,7 +427,7 @@ async def list_personnel(
 async def trigger_sync_departments(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
-) -> JSONResponse:
+) -> Any:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
     # root_id 允许为空：为空时由 get_all_departments 自动从「应用可见范围内的部门」出发
     # （应用可见范围通常不含根部门 "0"，硬编码 "0" 会报 40004 no dept authority error）
@@ -437,7 +437,7 @@ async def trigger_sync_departments(
 
     spawn_task(sync_departments(root_id), name="identity.sync_departments")
     logger.info("Department sync triggered for root=%s", root_id or "(自动：可见范围内的部门)")
-    return success_response(
+    return build_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id or "auto"},
     )
 
@@ -450,7 +450,7 @@ async def trigger_sync_departments(
 async def trigger_sync_members(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
-) -> JSONResponse:
+) -> Any:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
     # target_id 允许为空：为空时由 sync_members 自动从「应用可见范围内的部门」出发
     target_id = settings.feishu.platform.sync_member_dept_id or None
@@ -459,7 +459,7 @@ async def trigger_sync_members(
 
     spawn_task(sync_members(target_id), name="identity.sync_members")
     logger.info("Member sync triggered for target=%s", target_id or "(自动)")
-    return success_response(
+    return build_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id or "auto"},
     )
 
@@ -471,7 +471,7 @@ async def trigger_sync_members(
 )
 async def trigger_sync_all(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
-) -> JSONResponse:
+) -> Any:
     """POST 触发一次「部门 + 成员」全量同步。
 
     全量同步耗时较长（数百人约 50 秒），按项目规范走后台任务、不阻塞请求；
@@ -481,7 +481,7 @@ async def trigger_sync_all(
 
     spawn_task(sync_livzon_feishu_contacts_all(), name="identity.sync_all")
     logger.info("Livzon Feishu contacts sync (departments + members) triggered")
-    return success_response(
+    return build_response(
         data={
             "status": "ok",
             "message": "通讯录同步已在后台开始（部门 + 成员），约 1 分钟后刷新本页查看结果。",
@@ -546,7 +546,7 @@ async def list_login_logs(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """分页查询登录记录，支持按状态和账号筛选。"""
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.schemas import LoginLogListResponse, LoginLogResponse
@@ -567,7 +567,7 @@ async def list_login_logs(
         page=page,
         page_size=page_size,
     )
-    return success_response(data=resp.model_dump())
+    return build_response(data=resp.model_dump())
 
 
 # ── 用户管理（管理页）──────────────────────────────────────────────
@@ -584,7 +584,7 @@ async def list_users_management(
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     repo = UserRepository()
     # 超管账号只对超管可见：非超管即使有 platform:user:read，也不返回超管行
     # （否则会泄露超管姓名、联系方式与所持角色）。
@@ -613,7 +613,7 @@ async def list_users_management(
         item.is_superuser = u.id in super_ids
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
-    return success_response(data=resp.model_dump())
+    return build_response(data=resp.model_dump())
 
 
 @user_router.post(
@@ -694,7 +694,7 @@ async def update_user_management(
     payload: UserManagementUpdate,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     from app.core.exceptions import ForbiddenException, NotFoundException
 
     repo = UserRepository()
@@ -766,7 +766,7 @@ async def update_user_management(
         },
     )
     await db.commit()
-    return success_response(data=UserManagementItem.model_validate(user).model_dump())
+    return build_response(data=UserManagementItem.model_validate(user).model_dump())
 
 
 @user_router.post(
@@ -1094,7 +1094,7 @@ async def bind_user_feishu(
     payload: FeishuBindRequest,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """把一条飞书用户记录合并进该账号：迁角色授权 + 迁飞书身份 + 软删原记录。
 
     ⚠️ 产品要求（2026-10-13）：**管理端界面不再提供「绑定飞书」入口** ——
@@ -1127,7 +1127,7 @@ async def bind_user_feishu(
     result = await bind_feishu_user(db, target=target, source=source, operator_id=ctx.user.id)
     data = UserManagementItem.model_validate(target).model_dump()
     data["bind_result"] = result
-    return success_response(data=data)
+    return build_response(data=data)
 
 
 @user_router.delete("/users/{user_id}/bind-feishu", summary="解绑飞书用户", response_model=UserUnbindFeishuApiResponse)
@@ -1135,7 +1135,7 @@ async def unbind_user_feishu(
     user_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """解绑飞书身份。
 
     - 由飞书首次登录自动创建的账号（`auth_source=feishu`）：解绑即**软删除**该账号，
@@ -1183,4 +1183,4 @@ async def unbind_user_feishu(
     await db.commit()
     data = UserManagementItem.model_validate(user).model_dump()
     data["account_deleted"] = delete_account
-    return success_response(data=data)
+    return build_response(data=data)

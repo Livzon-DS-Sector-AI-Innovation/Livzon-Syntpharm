@@ -5397,3 +5397,21 @@ PostgreSQL 未启动）；`openapi.json` 与前端 `schema.ts` 已重生成；`t
 
 **未纳入**：`module_registry` 未登记 `permission` schema —— 与 `identity`/`audit`/`core` 等平台 schema
 现状一致（都未登记），单独补 `permission` 反而不一致，需与架构负责人一并决定平台 schema 的登记口径。
+
+#### PR #121 第七轮修复（D 架构循环 + B 响应模型绕过，2026-10-26）
+
+- [x] Cat 3 — `shared/module_api.py` 反向依赖 `platform.identity`：`require_current_user` 改从
+      `app.core.deps` 门面导入、返回类型用 `Any`，不再直接 import `platform.identity.deps/models`，
+      切断 shared ↔ platform.identity 的包级环。
+- [x] Cat 3 — `identity ↔ permission` 循环：identity 不再直接 import permission 的 models/repository。
+      新增 `permission/public_api.py` 的 `get_role_names_by_user_ids` / `migrate_user_grants`，
+      `identity/repository.get_roles_for_users` 与 `identity/service.bind_feishu_user` 改为经 public_api 调用
+      （授权数据读写收敛在 permission 模块）；identity 里已无任何 `from app.platform.permission`（除 public_api）。
+- [x] Cat 4 — `success_response()` 返回 `JSONResponse` 绕过 `response_model`：`dossier_writer/api.py`（25 处）、
+      `validation_audit.py`（11 处）、`identity/api.py`（13 处）全部改为 `build_response()`（返回 `ApiResponse`，
+      由 FastAPI 应用 response_model 校验）；相应返回注解 `-> JSONResponse` 改为 `-> Any`，移除未用的 `JSONResponse` 导入。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+`pytest tests/unit + tests/modules/registration` 223 passed（2 errors 为本地 PostgreSQL 未启动）；
+`openapi.json` 因响应 media-type 由 `application/json; charset=utf-8` 收敛为 `application/json` 有 16 行差异，
+已重导出；前端 `schema.ts` 无变化（生成类型不包含 content-type）。

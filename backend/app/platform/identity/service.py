@@ -15,7 +15,6 @@ from uuid import UUID, uuid4
 
 import jwt
 from fastapi import HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -1636,47 +1635,15 @@ async def bind_feishu_user(
     目标账号保留自己的 username / password_hash / auth_source —— 本地账号合并后
     既能继续用账号密码登录，也能用飞书登录（登录回调按 feishu_open_id 命中它）。
     """
-    from app.platform.permission.models import UserRoleGrant
+    from app.platform.permission.public_api import migrate_user_grants
 
-    # 1. 迁移授权
-    target_grants = (
-        (
-            await db.execute(
-                select(UserRoleGrant).where(
-                    UserRoleGrant.user_id == target.id,
-                    UserRoleGrant.is_deleted == False,  # noqa: E712
-                )
-            )
-        )
-        .scalars()
-        .all()
+    # 1. 迁移授权（授权数据的读写收敛在 permission 模块，identity 只经 public_api 调用）
+    moved, deduplicated = await migrate_user_grants(
+        db,
+        source_user_id=source.id,
+        target_user_id=target.id,
+        operator_id=operator_id,
     )
-    existing_keys = {(grant.role_id, grant.scope_type) for grant in target_grants}
-
-    source_grants = (
-        (
-            await db.execute(
-                select(UserRoleGrant).where(
-                    UserRoleGrant.user_id == source.id,
-                    UserRoleGrant.is_deleted == False,  # noqa: E712
-                )
-            )
-        )
-        .scalars()
-        .all()
-    )
-
-    moved = 0
-    deduplicated = 0
-    for grant in source_grants:
-        if (grant.role_id, grant.scope_type) in existing_keys:
-            grant.is_deleted = True
-            deduplicated += 1
-        else:
-            grant.user_id = target.id
-            grant.version += 1
-            moved += 1
-        grant.updated_by = operator_id
 
     # 2. 身份字段搬迁
     for field in FEISHU_IDENTITY_FIELDS:

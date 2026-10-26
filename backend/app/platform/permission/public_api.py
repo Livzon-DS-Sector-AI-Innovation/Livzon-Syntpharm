@@ -6,6 +6,7 @@
 
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.platform.identity.models import User
@@ -29,6 +30,91 @@ async def list_superuser_user_ids(db: AsyncSession) -> list[uuid.UUID]:
     return await GrantRepository().list_superuser_user_ids(db)
 
 
+async def get_role_names_by_user_ids(
+    db: AsyncSession,
+    user_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, list[str]]:
+    """批量取用户的有效角色名（用户管理列表「角色」列据此显示）。
+
+    只统计生效中的授权（status=active 且未软删）。授权数据的读写收敛到 permission 模块，
+    identity 只通过本函数消费，不再反向 import permission 的 models/repository。
+    """
+    if not user_ids:
+        return {}
+    from app.platform.permission.models import GRANT_ACTIVE, Role, UserRoleGrant
+
+    stmt = (
+        select(UserRoleGrant.user_id, Role.name)
+        .join(Role, Role.id == UserRoleGrant.role_id)
+        .where(
+            UserRoleGrant.user_id.in_(user_ids),
+            UserRoleGrant.is_deleted == False,  # noqa: E712
+            UserRoleGrant.status == GRANT_ACTIVE,
+        )
+        .order_by(Role.name)
+    )
+    rows = (await db.execute(stmt)).all()
+    result: dict[uuid.UUID, list[str]] = {}
+    for user_id, role_name in rows:
+        result.setdefault(user_id, []).append(role_name)
+    return result
+
+
+async def migrate_user_grants(
+    db: AsyncSession,
+    *,
+    source_user_id: uuid.UUID,
+    target_user_id: uuid.UUID,
+    operator_id: uuid.UUID | None,
+) -> tuple[int, int]:
+    """把 source 用户的生效授权迁移到 target，按 (role_id, scope_type) 去重。
+
+    同款已存在则软删源侧那条（deduplicated），否则把 user_id 改挂到 target（moved）。
+    返回 (moved, deduplicated)。**不提交事务**，由调用方（identity 绑定飞书流程）统一 commit。
+    """
+    from app.platform.permission.models import UserRoleGrant
+
+    target_grants = (
+        (
+            await db.execute(
+                select(UserRoleGrant).where(
+                    UserRoleGrant.user_id == target_user_id,
+                    UserRoleGrant.is_deleted == False,  # noqa: E712
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    existing_keys = {(grant.role_id, grant.scope_type) for grant in target_grants}
+
+    source_grants = (
+        (
+            await db.execute(
+                select(UserRoleGrant).where(
+                    UserRoleGrant.user_id == source_user_id,
+                    UserRoleGrant.is_deleted == False,  # noqa: E712
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    moved = 0
+    deduplicated = 0
+    for grant in source_grants:
+        if (grant.role_id, grant.scope_type) in existing_keys:
+            grant.is_deleted = True
+            deduplicated += 1
+        else:
+            grant.user_id = target_user_id
+            grant.version += 1
+            moved += 1
+        grant.updated_by = operator_id
+    return moved, deduplicated
+
+
 async def revoke_all_user_grants(db: AsyncSession, user_id: uuid.UUID) -> int:
     """清空某用户的全部有效授权并驱逐其权限缓存（删除账号时调用）。
 
@@ -45,9 +131,11 @@ __all__ = [
     "PermissionContext",
     "build_permission_context",
     "ensure_superadmin",
-    "has_permission",
+    "get_role_names_by_user_ids",
     "guard_manage_target",
+    "has_permission",
     "list_superuser_user_ids",
+    "migrate_user_grants",
     "revoke_all_user_grants",
     "user_is_superuser",
 ]

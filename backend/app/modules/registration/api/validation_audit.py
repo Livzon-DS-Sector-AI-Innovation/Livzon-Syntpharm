@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, PermissionContext, require_permission
-from app.core.response import error_response, success_response
+from app.core.response import build_response, error_response
 from app.modules.registration.schemas.validation_audit import (
     ValidationAuditFileListApiResponse,
     ValidationAuditFileListItem,
@@ -46,7 +46,7 @@ async def post(
 ) -> Any:
     service = ValidationAuditService(db)
     task = await service.create_task(data)
-    return success_response(
+    return build_response(
         data=ValidationAuditTaskResponse.model_validate(task),
         message="创建成功",
     )
@@ -71,7 +71,7 @@ async def get(
         page=page,
         page_size=page_size,
     )
-    return success_response(
+    return build_response(
         data={
             "items": [ValidationAuditTaskListItem.model_validate(i) for i in items],
             "total": total,
@@ -92,7 +92,7 @@ async def get(  # noqa: F811
     task = await service.get_task(task_id)
     if not task:
         return error_response(message="任务不存在", status_code=404)
-    return success_response(
+    return build_response(
         data=ValidationAuditTaskResponse.model_validate(task),
         message="获取成功",
     )
@@ -111,7 +111,7 @@ async def put(
     if not task:
         return error_response(message="任务不存在", status_code=404)
     updated = await service.update_task(task, data)
-    return success_response(
+    return build_response(
         data=ValidationAuditTaskResponse.model_validate(updated),
         message="更新成功",
     )
@@ -129,7 +129,7 @@ async def delete(
     if not task:
         return error_response(message="任务不存在", status_code=404)
     await service.delete_task(task)
-    return success_response(message="删除成功")
+    return build_response(message="删除成功")
 
 
 # ── 文件管理 ──────────────────────────────────────────────
@@ -185,7 +185,7 @@ async def post(  # noqa: F811
                 }
             )
 
-    return success_response(data=results, message="上传完成")
+    return build_response(data=results, message="上传完成")
 
 
 @router.get("/tasks/{task_id}/files", response_model=ValidationAuditFileListApiResponse, summary="文件列表")  # type: ignore[no-redef]
@@ -200,7 +200,7 @@ async def get(  # noqa: F811
     if not task:
         return error_response(message="任务不存在", status_code=404)
     files = await service.list_files(task_id)
-    return success_response(
+    return build_response(
         data=[ValidationAuditFileListItem.model_validate(f) for f in files],
         message="获取成功",
     )
@@ -225,7 +225,7 @@ async def post(  # noqa: F811
         await service.parse_files(task)
         # Re-fetch task after status update
         task = await service.get_task(task_id)
-        return success_response(
+        return build_response(
             data=ValidationAuditTaskResponse.model_validate(task),
             message="文件解析完成",
         )
@@ -252,7 +252,7 @@ async def post(  # noqa: F811
 
         # Re-fetch task after updates
         task = await service.get_task(task_id)
-        return success_response(
+        return build_response(
             data=ValidationAuditTaskResponse.model_validate(task),
             message="审核完成",
         )
@@ -276,7 +276,7 @@ async def get(  # noqa: F811
     if not task:
         return error_response(message="任务不存在", status_code=404)
     issues = await service.list_issues(task_id, issue_type=issue_type)
-    return success_response(
+    return build_response(
         data=[ValidationAuditIssueResponse.model_validate(i) for i in issues],
         message="获取成功",
     )
@@ -296,7 +296,7 @@ async def get(  # noqa: F811
     report = await service.get_report(task_id)
     if not report:
         return error_response(message="报告尚未生成", status_code=404)
-    return success_response(
+    return build_response(
         data=ValidationAuditReportResponse.model_validate(report),
         message="获取成功",
     )

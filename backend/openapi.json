@@ -939,7 +939,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List Departments Api V1 Identity Departments Get"
+                }
               }
             }
           },
@@ -997,7 +999,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Get Department Api V1 Identity Departments  Dept Id  Get"
+                }
               }
             }
           },
@@ -1105,7 +1109,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List Personnel Api V1 Identity Personnel Get"
+                }
               }
             }
           },
@@ -1734,7 +1740,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "title": "Response List Login Logs Api V1 Identity Login Logs Get"
+                }
               }
             }
           },
