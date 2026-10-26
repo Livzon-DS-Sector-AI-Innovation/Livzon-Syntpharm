@@ -36,15 +36,15 @@ PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", "permission", "dossier
 TARGET_SCHEMA = os.environ.get("ALEMBIC_TARGET_SCHEMA")
 
 
-# 由迁移直接建表、代码里用原生 SQL 访问、没有 ORM 模型的表。
+# 由迁移直接建表、代码里用原生 SQL 访问、且**确实无法/无需**建 ORM 模型的表。
 # autogenerate / alembic check 会把它们误判成「数据库多余的表」并生成 DROP，这里显式排除。
-RAW_SQL_ONLY_TABLES: frozenset[tuple[str | None, str]] = frozenset(
-    {
-        ("qms", "qms_reagent_item_reminder_config"),
-        ("qms", "qms_deviation_reminder_rules"),
-        ("hr", "system_settings"),
-    }
-)
+#
+# 2026-10-26 清空：原来的三张表（qms_reagent_item_reminder_config、
+# qms_deviation_reminder_rules、hr_system_settings）已补模型
+# （quality/qms/reminder_models.py、hr/models.py:SystemSetting），
+# 白名单长期遮蔽会让这些表的字段漂移永远发现不了。新增条目请谨慎：
+# 优先补模型，只有「物理表无法建模」时才允许加白名单。
+RAW_SQL_ONLY_TABLES: frozenset[tuple[str | None, str]] = frozenset()
 
 
 def include_object(object, name, type_, reflected, compare_to):

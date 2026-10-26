@@ -33,6 +33,10 @@ from app.modules.quality.qms.reagent_models import (
 from app.modules.quality.qms.reagent_reminder_config import (
     ReagentReminderConfig,
 )
+from app.modules.quality.qms.reminder_models import (
+    QmsDeviationReminderRule,
+    QmsReagentItemReminderConfig,
+)
 from app.modules.quality.qms.static_data.models import (
     ChromColumn,
     HplcReference,
@@ -64,6 +68,8 @@ __all__ = [
     "SopAiCheckProblem",
     "ReagentReminderConfig",
     "ReagentQuality",
+    "QmsDeviationReminderRule",
+    "QmsReagentItemReminderConfig",
     "StorageCondition",
     "Unit",
     "HplcReference",

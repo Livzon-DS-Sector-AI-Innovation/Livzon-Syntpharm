@@ -5373,3 +5373,27 @@ PostgreSQL 未启动）；`openapi.json` 与前端 `schema.ts` 已重生成；`t
 **未纳入本轮**（仍在 B/C/D 批次）：45 处 `JSONResponse` 绕过 response_model、`OpaqueDataApiResponse`
 泛型信封、registration 裸 `HTTPException`、`research/api.py` 硬编码 `/tmp` 上传目录、
 `0086/0087` 无 ORM model、identity↔permission 与 shared→platform 循环依赖。
+
+#### PR #121 第六轮修复（C 批：模型与迁移一致性，2026-10-26）
+
+- [x] Cat 5 — `0086` 的两张表补 ORM 模型：新增
+      `app/modules/quality/qms/reminder_models.py`（`QmsReagentItemReminderConfig`、
+      `QmsDeviationReminderRule`），并在 `quality/models.py` 注册（`env.py` 的模块循环据此发现）。
+      两张表是配置表、物理表没有 `BaseModel` 的 `created_by/updated_by`，因此继承 `Base` 并在
+      docstring 写明原因；读写仍走现有原生 SQL，不改表结构。
+- [x] Cat 5 — `0087` 的 `hr.system_settings` 补模型 `SystemSetting`（`hr/models.py`），
+      同样继承 `Base`（以 `key` 为主键、无审计列）。
+- [x] Cat 5 — `alembic/env.py` 的 `RAW_SQL_ONLY_TABLES` **清空**：三张表已可被 `autogenerate` /
+      `alembic check` 感知，白名单不再遮蔽字段漂移；注释里写明「新增条目请优先补模型」。
+- [x] 顺带修正 `quality/qms/reagent_service.py` 的列表/详情查询：软删除过滤已在 A 批加入。
+
+**验证**（临时 postgres:17 容器，用完即删）：
+- `alembic upgrade head` 全量迁移通过
+- `alembic check` → **No new upgrade operations detected**（证明三张表模型与迁移/实际表结构一致）
+- `Base.metadata` 中三张表均已注册：`qms.qms_reagent_item_reminder_config`、
+  `qms.qms_deviation_reminder_rules`、`hr.system_settings`
+- `ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+  `pytest tests/unit` 220 passed；`openapi.json` 无漂移（补模型不影响接口契约）
+
+**未纳入**：`module_registry` 未登记 `permission` schema —— 与 `identity`/`audit`/`core` 等平台 schema
+现状一致（都未登记），单独补 `permission` 反而不一致，需与架构负责人一并决定平台 schema 的登记口径。
