@@ -5503,3 +5503,6 @@ Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需
       `login/password`。
       采用 `sr-only` 的 h1（视觉仍由 Card / antd Title 承担，零布局变化）；
       `deviation-automation/templates` 早已是「Card title 内嵌 h1」的写法，未改。
+
+- [x] Cat 16 — `production/WorkshopRankingTrend.tsx`：`visibleSet` 由「useEffect 里 setState + ref 防抖」
+      改为派生值（`userVisibleSet ?? 默认前三个车间`），去掉一轮多余渲染与 ref。
