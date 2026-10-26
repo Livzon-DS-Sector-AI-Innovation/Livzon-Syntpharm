@@ -1,4 +1,5 @@
 # mypy: ignore-errors
+import asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -248,7 +249,8 @@ async def handler(  # noqa: F811
 
     video_service = LabelVerificationVideoService(settings.UPLOAD_DIR)
 
-    frames = video_service.extract_frames(video_path, fps=fps, max_frames=20)
+    # OpenCV 抽帧是同步阻塞调用，放线程池执行，避免卡住事件循环（其他请求会一起变慢）
+    frames = await asyncio.to_thread(video_service.extract_frames, video_path, fps, 20)
 
     if not frames:
         from fastapi import HTTPException

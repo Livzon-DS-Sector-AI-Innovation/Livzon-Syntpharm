@@ -5530,3 +5530,38 @@ Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需
 `pytest tests/unit + tests/modules/registration` 223 passed（2 errors 为本地无 PostgreSQL）；
 临时 postgres:17 上 `alembic upgrade head` + `alembic check` → **No new upgrade operations detected**（容器已删）；
 `openapi.json` 与前端 `schema.ts` 已重生成；`tsc --noEmit` / `eslint src --max-warnings=0` 通过。
+
+#### PR #121 第十四轮修复（Cat 16 hooks + Cat 7 阻塞调用，2026-10-26）
+
+**Cat 16 — `useEffect` 取数改 React Query（12 处中已改 9 处）**
+
+| 位置 | 处理 |
+|---|---|
+| `layout/Sidebar.tsx` | 仓储飞书表菜单项 → `useQuery` + `enabled: moduleKey === 'warehouse'` |
+| `equipment/MaintenancePlanDrawer.tsx` | 责任人候选 → `useQuery(enabled: open)`；表单回填仍用 effect（无取数） |
+| `equipment/WorkOrderDetailDrawer.tsx` | 维修人候选 → `useQuery(enabled: open)` |
+| `equipment/inspection/InspectionTaskDrawer.tsx` | 线路模板 + 人员 → 两个 `useQuery(enabled: open, select)` |
+| `quality/doc-check/page.tsx` | 记录列表 → `useQuery`，确认通过后 `refetch()` |
+| `quality/inspection-table/[id]/page.tsx` | 详情 → `useQuery`；行数据改「渲染期派生 + 带版本号的本地编辑副本」，避免 effect 里 setState |
+| `settings/AgentSkillManagementClient.tsx` | 列表 → `useQuery`，增删改后 `refetch()` |
+| `quality/deviation-flow/settings/page.tsx` | 六连 `fetch` → 单个 `useQuery`（并行）+ 派生六个列表，保存后 `refetch()` |
+| `research/pilot-workflow/PilotWorkflowDetail.tsx` | `setInterval` 轮询 → `useQuery.refetchInterval`（仅 running/waiting_approval 时 3s） |
+| `components/production/WorkshopRankingTrend.tsx` | 已在前一轮改为派生值 |
+
+**仍保留（需独立重构，不在本轮）**：
+`research/route-development/RouteWorkflowPage.tsx`（后端数据要摊进 6+ 个可编辑且本地持久化的状态，
+改 React Query 等于重做页面状态模型）、`safety/HazardInspectionForm.tsx`（effect 是表单回填与
+防抖搜索，不是渲染取数）。
+
+**Cat 7 — 只处理「阻塞事件循环」的两处（其余是慢接口，需改契约）**
+- `quality/label_verification/api.py`：OpenCV 抽帧是同步阻塞调用，改 `asyncio.to_thread`，不再卡事件循环。
+- `quality/ai/service.py:160`：`new_event_loop().run_until_complete()` 创建的事件循环从不关闭，
+  改为 `asyncio.run()`。
+
+**仍开放（需要「提交任务 + 轮询」的接口契约变更）**：hr `ai_exam`、hr 简历解析、`hr/analysis_api.py`、
+`quality/qms/doc_check`（服务内自带同步 httpx 客户端，要改 AsyncClient）、`quality/ai/api.py`、
+`registration/api/validation_audit.py`、`energy/api.py`、`research/api.py`、`equipment/api/inspection.py`
+—— 这些是「接口本身耗时 >5s」，不是「阻塞事件循环」，单靠 `to_thread` 无法解决，必须改成异步任务。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）、`mypy app tests`（901 文件）0 issues、
+`pytest tests/unit` 220 passed、`tsc --noEmit`、`eslint src --max-warnings=0` 全部通过。

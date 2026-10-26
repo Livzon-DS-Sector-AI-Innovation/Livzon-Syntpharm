@@ -157,7 +157,9 @@ def log_ai_interaction(
     import concurrent.futures
 
     def _save_log() -> Any:
-        return asyncio.new_event_loop().run_until_complete(
+        # 用 asyncio.run 而不是 new_event_loop().run_until_complete()：
+        # 后者创建的事件循环从不关闭，会一直堆积（线程池里反复调用时尤其明显）。
+        return asyncio.run(
             service.save_ai_log(
                 operate_type=operate_type,
                 operator=operator,
