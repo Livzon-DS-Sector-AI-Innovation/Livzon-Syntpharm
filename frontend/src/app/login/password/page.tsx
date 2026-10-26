@@ -22,6 +22,7 @@ export default function PasswordLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-sm shadow-lg" variant="borderless">
         <div className="mb-6 text-center">
+          <h1 className="sr-only">账号密码登录</h1>
           <Typography.Title level={3} style={{ marginBottom: 4 }}>
             账号密码登录
           </Typography.Title>

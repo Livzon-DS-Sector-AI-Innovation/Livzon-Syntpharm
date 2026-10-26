@@ -454,6 +454,7 @@ export default function InspectionTableDetailPage({
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">数据表详情</h1>
       <Card
         title={`数据表详情 - ${tableData.table_name}`}
         extra={

@@ -424,6 +424,8 @@ export default function DocCheckDetailPage({ params }: PageProps) {
         </Button>
       </div>
 
+      <h1 className="sr-only">校验记录详情</h1>
+
       {/* 基本信息卡片 */}
       <Card title="校验记录详情" style={{ marginBottom: 16 }}>
         <Descriptions column={4} bordered>

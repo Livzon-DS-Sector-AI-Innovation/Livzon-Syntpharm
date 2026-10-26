@@ -155,6 +155,8 @@ export default function AiConfigPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      {/* 页面级语义标题（视觉上由下方 Card 标题承担，避免布局变化） */}
+      <h1 className="sr-only">AI 配置设置</h1>
       <Card
         title={
           <Space>

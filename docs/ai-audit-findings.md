@@ -5494,3 +5494,12 @@ Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需
 
 验证：`ruff`/`format`（1039 文件）、`mypy app tests`（901 文件）通过；`pytest tests/unit` 220 passed；
 `openapi.json` 与前端 `schema.ts` 重生成；`tsc --noEmit` / `eslint src --max-warnings=0` 通过。
+
+#### PR #121 第十二轮修复（Cat 9 语义 h1，2026-10-26）
+
+- [x] Cat 9 — 9 个页面补页面级语义 `h1`：`quality/ai-config`、`quality/ai-log`（原 h2 提升）、
+      `quality/deviation-automation/sop`、`quality/deviation`、`quality/doc-check/[id]`、
+      `quality/inspection-table/[id]`、`home`（`HomeWorkspace`）、`change-password`（`ChangePasswordClient`）、
+      `login/password`。
+      采用 `sr-only` 的 h1（视觉仍由 Card / antd Title 承担，零布局变化）；
+      `deviation-automation/templates` 早已是「Card title 内嵌 h1」的写法，未改。

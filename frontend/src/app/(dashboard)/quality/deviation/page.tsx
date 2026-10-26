@@ -2116,6 +2116,7 @@ export default function DeviationPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">AI智能偏差管理系统</h1>
       <Card
         title={
           <Space>
