@@ -349,6 +349,9 @@ export interface paths {
         /**
          * 发起飞书 SSO 登录
          * @description Generate state token and redirect user to Feishu authorization page.
+         *
+         *     state 同时写进短时 httpOnly cookie（`oauth_state`），回调时与 query 里的 state
+         *     做双击提交比对 —— 只校验 JWT 签名无法防「把受害者浏览器导向攻击者 code」的 CSRF。
          */
         get: operations["login_api_v1_identity_auth_login_get"];
         put?: never;
@@ -391,7 +394,10 @@ export interface paths {
         };
         /**
          * 登出
-         * @description Redirect to frontend login page (frontend handles cookie clearing).
+         * @description 登出：吊销当前 token 的会话（写入吊销黑名单）后跳登录页。
+         *
+         *     前端仍负责清 cookie；这里补上「服务端失效」——否则退出登录后 token 在剩余
+         *     有效期内依然可用（Redis 不可用时只记日志，不阻塞登出）。
          */
         get: operations["logout_api_v1_identity_auth_logout_get"];
         put?: never;
@@ -37039,6 +37045,84 @@ export interface components {
             category_id: string;
         };
         /**
+         * PersonnelItem
+         * @description 人员列表项
+         */
+        PersonnelItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Username */
+            username?: string | null;
+            /** En Name */
+            en_name?: string | null;
+            /** Employee No */
+            employee_no?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Enterprise Email */
+            enterprise_email?: string | null;
+            /** Mobile */
+            mobile?: string | null;
+            /** Department */
+            department?: string | null;
+            /** Position */
+            position?: string | null;
+            /** Feishu User Id */
+            feishu_user_id?: string | null;
+            /** Feishu Open Id */
+            feishu_open_id?: string | null;
+            /** Feishu Union Id */
+            feishu_union_id?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            /** Avatar Thumb */
+            avatar_thumb?: string | null;
+            /** Avatar Middle */
+            avatar_middle?: string | null;
+            /** Avatar Big */
+            avatar_big?: string | null;
+            /** Tenant Key */
+            tenant_key?: string | null;
+            /** Feishu Department Ids */
+            feishu_department_ids?: string[] | null;
+        };
+        /**
+         * PersonnelListApiResponse
+         * @description 人员名单响应信封（供路由声明 response_model，避免 inline schema）。
+         */
+        PersonnelListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["PersonnelListResponse"] | null;
+        };
+        /**
+         * PersonnelListResponse
+         * @description 人员分页列表
+         */
+        PersonnelListResponse: {
+            /** Items */
+            items: components["schemas"]["PersonnelItem"][];
+            /** Total */
+            total: number;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+        };
+        /**
          * PersonnelRoleAssign
          * @description 人员角色分配请求
          */
@@ -51005,7 +51089,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["PersonnelListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -51109,7 +51193,7 @@ export interface operations {
         parameters: {
             query: {
                 code: string;
-                state?: string;
+                state: string;
             };
             header?: never;
             path?: never;
@@ -51142,7 +51226,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -51153,6 +51239,15 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

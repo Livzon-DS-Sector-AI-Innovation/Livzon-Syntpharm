@@ -1110,7 +1110,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response List Personnel Api V1 Identity Personnel Get"
+                  "$ref": "#/components/schemas/PersonnelListApiResponse"
                 }
               }
             }
@@ -1231,7 +1231,7 @@
           "\u8ba4\u8bc1"
         ],
         "summary": "\u53d1\u8d77\u98de\u4e66 SSO \u767b\u5f55",
-        "description": "Generate state token and redirect user to Feishu authorization page.",
+        "description": "Generate state token and redirect user to Feishu authorization page.\n\nstate \u540c\u65f6\u5199\u8fdb\u77ed\u65f6 httpOnly cookie\uff08`oauth_state`\uff09\uff0c\u56de\u8c03\u65f6\u4e0e query \u91cc\u7684 state\n\u505a\u53cc\u51fb\u63d0\u4ea4\u6bd4\u5bf9 \u2014\u2014 \u53ea\u6821\u9a8c JWT \u7b7e\u540d\u65e0\u6cd5\u9632\u300c\u628a\u53d7\u5bb3\u8005\u6d4f\u89c8\u5668\u5bfc\u5411\u653b\u51fb\u8005 code\u300d\u7684 CSRF\u3002",
         "operationId": "login_api_v1_identity_auth_login_get",
         "responses": {
           "200": {
@@ -1267,10 +1267,9 @@
           {
             "name": "state",
             "in": "query",
-            "required": false,
+            "required": true,
             "schema": {
               "type": "string",
-              "default": "",
               "title": "State"
             }
           }
@@ -1304,14 +1303,42 @@
           "\u8ba4\u8bc1"
         ],
         "summary": "\u767b\u51fa",
-        "description": "Redirect to frontend login page (frontend handles cookie clearing).",
+        "description": "\u767b\u51fa\uff1a\u540a\u9500\u5f53\u524d token \u7684\u4f1a\u8bdd\uff08\u5199\u5165\u540a\u9500\u9ed1\u540d\u5355\uff09\u540e\u8df3\u767b\u5f55\u9875\u3002\n\n\u524d\u7aef\u4ecd\u8d1f\u8d23\u6e05 cookie\uff1b\u8fd9\u91cc\u8865\u4e0a\u300c\u670d\u52a1\u7aef\u5931\u6548\u300d\u2014\u2014\u5426\u5219\u9000\u51fa\u767b\u5f55\u540e token \u5728\u5269\u4f59\n\u6709\u6548\u671f\u5185\u4f9d\u7136\u53ef\u7528\uff08Redis \u4e0d\u53ef\u7528\u65f6\u53ea\u8bb0\u65e5\u5fd7\uff0c\u4e0d\u963b\u585e\u767b\u51fa\uff09\u3002",
         "operationId": "logout_api_v1_identity_auth_logout_get",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
               }
             }
           }
@@ -133893,6 +133920,275 @@
         ],
         "title": "PersonnelCategoryItem",
         "description": "\u5355\u6761\u5206\u7c7b\u7ed1\u5b9a"
+      },
+      "PersonnelItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username"
+          },
+          "en_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "En Name"
+          },
+          "employee_no": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Employee No"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "enterprise_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enterprise Email"
+          },
+          "mobile": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mobile"
+          },
+          "department": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "feishu_user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu User Id"
+          },
+          "feishu_open_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Open Id"
+          },
+          "feishu_union_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Union Id"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "avatar_thumb": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Thumb"
+          },
+          "avatar_middle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Middle"
+          },
+          "avatar_big": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Big"
+          },
+          "tenant_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tenant Key"
+          },
+          "feishu_department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feishu Department Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PersonnelItem",
+        "description": "\u4eba\u5458\u5217\u8868\u9879"
+      },
+      "PersonnelListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PersonnelListResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "PersonnelListApiResponse",
+        "description": "\u4eba\u5458\u540d\u5355\u54cd\u5e94\u4fe1\u5c01\uff08\u4f9b\u8def\u7531\u58f0\u660e response_model\uff0c\u907f\u514d inline schema\uff09\u3002"
+      },
+      "PersonnelListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PersonnelItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "offset",
+          "limit"
+        ],
+        "title": "PersonnelListResponse",
+        "description": "\u4eba\u5458\u5206\u9875\u5217\u8868"
       },
       "PersonnelRoleAssign": {
         "properties": {

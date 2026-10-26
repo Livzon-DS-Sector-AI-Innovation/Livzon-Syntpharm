@@ -47,37 +47,39 @@ export async function testLLMConnection(token?: string) {
   })
 }
 
-/**
- * 飞书（Livzon 助手）配置相关接口统一返回 `{code, message, data}` 信封，
- * 而组件期望直接拿到 `data`（FeishuConfig / FeishuDiagnosticResult / 同步结果）。
- * 这里统一解包，避免把信封当数据用——曾因此导致配置回显全空、
- * 「诊断权限」无论成败都提示「诊断失败」。
- */
-async function fetchFeishuConfigData<T>(url: string, options: RequestInit): Promise<T> {
-  const envelope = await apiFetch<{ code: number; data: T; message?: string }>(url, options)
+// 飞书（Livzon 助手）配置：接口返回 `{code, message, data}` 信封，这里按生成 schema
+// 标注信封类型并统一解包，避免把信封当数据用（曾导致配置回显全空、诊断恒失败）。
+
+export async function getLivzonFeishuConfig(token?: string) {
+  const envelope = await apiFetch<components['schemas']['FeishuConfigApiResponse']>(
+    `${getApiBaseUrl()}/api/v1/identity/feishu-config`,
+    { headers: token ? { Authorization: `Bearer ${token}` } : undefined },
+  )
   return unwrapResponse(envelope)
 }
 
-export async function getLivzonFeishuConfig(token?: string) {
-  return fetchFeishuConfigData(`${getApiBaseUrl()}/api/v1/identity/feishu-config`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  })
-}
-
 export async function saveLivzonFeishuConfig(data: unknown, token?: string) {
-  return fetchFeishuConfigData(`${getApiBaseUrl()}/api/v1/identity/feishu-config`, {
-    method: 'PUT',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify(data),
-  })
+  const envelope = await apiFetch<components['schemas']['FeishuConfigApiResponse']>(
+    `${getApiBaseUrl()}/api/v1/identity/feishu-config`,
+    {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify(data),
+    },
+  )
+  return unwrapResponse(envelope)
 }
 
 export async function testLivzonFeishuConfig(data: unknown, token?: string) {
-  return fetchFeishuConfigData(`${getApiBaseUrl()}/api/v1/identity/feishu-config/test`, {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify(data || null),
-  })
+  const envelope = await apiFetch<components['schemas']['FeishuDiagnosticApiResponse']>(
+    `${getApiBaseUrl()}/api/v1/identity/feishu-config/test`,
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify(data || null),
+    },
+  )
+  return unwrapResponse(envelope)
 }
 
 export async function syncLivzonFeishuContacts(token?: string) {

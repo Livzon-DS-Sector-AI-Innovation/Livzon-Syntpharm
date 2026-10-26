@@ -328,6 +328,14 @@ class PersonnelListResponse(BaseModel):
     limit: int
 
 
+class PersonnelListApiResponse(BaseModel):
+    """人员名单响应信封（供路由声明 response_model，避免 inline schema）。"""
+
+    code: int = 200
+    message: str = "success"
+    data: PersonnelListResponse | None = None
+
+
 # ── Login Log ──────────────────────────────────────────────────────
 
 

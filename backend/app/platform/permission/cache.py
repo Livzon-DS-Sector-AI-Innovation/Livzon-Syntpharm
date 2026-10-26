@@ -37,7 +37,7 @@ async def get_cached_permission_codes(user_id: str | UUID) -> set[str] | None:
     try:
         raw = await cache_get(_codes_key(user_id))
     except Exception:  # noqa: BLE001 - Redis 故障时降级
-        logger.warning("读取权限码缓存失败，降级为查库", exc_info=True)
+        logger.warning("读取权限码缓存失败，降级为查库", exc_info=True, extra={"user_id": str(user_id)})
         return None
 
     if raw is None:
@@ -45,7 +45,7 @@ async def get_cached_permission_codes(user_id: str | UUID) -> set[str] | None:
     try:
         return set(json.loads(raw))
     except json.JSONDecodeError:
-        logger.warning("权限码缓存格式异常，忽略缓存")
+        logger.warning("权限码缓存格式异常，忽略缓存", extra={"user_id": str(user_id)})
         return None
 
 
@@ -53,14 +53,14 @@ async def set_cached_permission_codes(user_id: str | UUID, codes: set[str]) -> N
     try:
         await cache_set(_codes_key(user_id), json.dumps(sorted(codes)), ex=_DEFAULT_TTL)
     except Exception:  # noqa: BLE001
-        logger.warning("写入权限码缓存失败", exc_info=True)
+        logger.warning("写入权限码缓存失败", exc_info=True, extra={"user_id": str(user_id)})
 
 
 async def get_cached_is_superuser(user_id: str | UUID) -> bool | None:
     try:
         raw = await cache_get(_super_key(user_id))
     except Exception:  # noqa: BLE001
-        logger.warning("读取超管缓存失败，降级为查库", exc_info=True)
+        logger.warning("读取超管缓存失败，降级为查库", exc_info=True, extra={"user_id": str(user_id)})
         return None
 
     if raw is None:
@@ -72,7 +72,7 @@ async def set_cached_is_superuser(user_id: str | UUID, value: bool) -> None:
     try:
         await cache_set(_super_key(user_id), "1" if value else "0", ex=_DEFAULT_TTL)
     except Exception:  # noqa: BLE001
-        logger.warning("写入超管缓存失败", exc_info=True)
+        logger.warning("写入超管缓存失败", exc_info=True, extra={"user_id": str(user_id)})
 
 
 async def evict_user_permission_cache(user_id: str | UUID) -> None:
@@ -81,4 +81,4 @@ async def evict_user_permission_cache(user_id: str | UUID) -> None:
         await cache_delete(_codes_key(user_id))
         await cache_delete(_super_key(user_id))
     except Exception:  # noqa: BLE001
-        logger.warning("驱逐权限缓存失败", exc_info=True)
+        logger.warning("驱逐权限缓存失败", exc_info=True, extra={"user_id": str(user_id)})

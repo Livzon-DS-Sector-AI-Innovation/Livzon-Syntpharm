@@ -5469,3 +5469,28 @@ Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需
 两处真实 422；其余超大字面值均未越限 —— `safety/ai-workflow-configs`（500/上限 500）、
 `energy/workshops`（500/500）、`production/product-output`（5000/5000）、`quality/instrument`（已改 100/100）、
 `quality/standards`（已改 200/200）。
+
+#### PR #121 第十一轮修复（P1 安全语义 + P2 契约收尾，2026-10-26）
+
+**P1**
+- [x] Cat 4（uncertain 升级）— `POST/GET /auth/logout` 现在会**吊销当前会话**（解出 jti → 写吊销黑名单），
+      前端 `logout()` server action 同步通知后端；Redis 故障时只记日志，不阻塞登出。此前"退出登录"后
+      token 仍可继续用到 7 天。
+- [x] Cat 11（uncertain 升级）— `proxy.ts` 的 `consumeLoginRedirect` **回滚**（文件恢复成 main 版本，
+      不再属于本 PR 改动），登录回跳逻辑移入 `loginWithPassword`：读 `login_redirect` cookie → 站内路径校验
+      → 回跳 → 删 cookie。同时修掉"只在 `/` 生效、登录落 `/home` 因此功能失效"的缺陷。
+- [x] Cat 4（uncertain 升级）— OAuth `state` 由可选改为**必填**，并在 `/login` 写入短时 httpOnly
+      `oauth_state` cookie，回调用 `secrets.compare_digest` 与 query 里的 state 比对（双击提交），
+      杜绝"可选 state ⇒ 省略即绕过 CSRF"。
+
+**P2**
+- [x] Cat 5/10 — `/identity/personnel` 补 `response_model=PersonnelListApiResponse`（此前是 inline schema，
+      导致前端只能手写类型）；前端删除 `lib/api/client/equipment.ts` 里无人使用、且把 equipment 人员类型
+      套到 identity 数据上的 `fetchPersonnelList`（dead code）。
+- [x] Cat 10 — `lib/api/server/settings.ts` 的泛型 helper `fetchFeishuConfigData<T>` 删除，三个飞书配置接口
+      改用生成 schema 信封（`FeishuConfigApiResponse` / `FeishuDiagnosticApiResponse`）+ `unwrapResponse`；
+      `actions/settings.ts` 三处 `as` 断言随之移除。
+- [x] Cat 6 — `permission/cache.py` 六处日志补 `extra={"user_id": ...}`。
+
+验证：`ruff`/`format`（1039 文件）、`mypy app tests`（901 文件）通过；`pytest tests/unit` 220 passed；
+`openapi.json` 与前端 `schema.ts` 重生成；`tsc --noEmit` / `eslint src --max-warnings=0` 通过。

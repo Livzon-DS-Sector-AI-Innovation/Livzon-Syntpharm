@@ -1,6 +1,5 @@
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
-import type { Personnel } from '@/types/equipment-personnel'
 import {
   EquipmentCategory, Location, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
@@ -274,11 +273,6 @@ export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<W
 export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfig> {
   return await apiGet<ClaimTimeoutConfig>(`${API_BASE}/equipment/maintenance/config/claim-timeout`)
     || { emergency: 15, high: 30, medium: 60, low: 120 }
-}
-
-export async function fetchPersonnelList(_params?: Record<string, unknown>): Promise<Personnel[]> {
-  // 后端只认 limit（默认 100、上限 500）；写 page_size 会被静默忽略，导致只拿到前 100 人
-  return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?limit=500`) || []
 }
 
 // ═══════════════════════════════════════════════════════════

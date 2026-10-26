@@ -1,9 +1,10 @@
 import logging
+import secrets
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,6 +34,7 @@ from app.platform.identity.schemas import (
     PasswordResetData,
     PasswordResetRequest,
     PersonnelItem,
+    PersonnelListApiResponse,
     PersonnelListResponse,
     SessionListApiResponse,
     SessionRevokeApiResponse,
@@ -205,22 +207,36 @@ async def local_login(
 
 
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
-async def login() -> RedirectResponse:
-    """Generate state token and redirect user to Feishu authorization page."""
+async def login(request: Request) -> RedirectResponse:
+    """Generate state token and redirect user to Feishu authorization page.
+
+    state 同时写进短时 httpOnly cookie（`oauth_state`），回调时与 query 里的 state
+    做双击提交比对 —— 只校验 JWT 签名无法防「把受害者浏览器导向攻击者 code」的 CSRF。
+    """
     from app.platform.identity.service import generate_state_token
     from app.platform.integrations.feishu.oauth import FeishuOAuthClient
 
     state = generate_state_token()
     oauth = FeishuOAuthClient.from_settings()
     authorize_url = oauth.build_authorize_url(state)
-    return RedirectResponse(url=authorize_url, status_code=302)
+    response = RedirectResponse(url=authorize_url, status_code=302)
+    response.set_cookie(
+        "oauth_state",
+        state,
+        max_age=300,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        path="/api/v1/identity/auth",
+    )
+    return response
 
 
 @auth_router.get("/callback", summary="飞书 SSO 回调")
 async def auth_callback(
     request: Request,
     code: str = Query(...),
-    state: str = Query(""),
+    state: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     """Handle the OAuth callback from Feishu.
@@ -238,8 +254,10 @@ async def auth_callback(
     user_agent = request.headers.get("user-agent")
     log_repo = LoginLogRepository()
 
-    # Validate state for CSRF protection
-    if state and not validate_state_token(state):
+    # Validate state for CSRF protection：签名/有效期 + 与本次会话的 cookie 比对
+    cookie_state = request.cookies.get("oauth_state") or ""
+    state_matches = bool(cookie_state) and secrets.compare_digest(cookie_state, state)
+    if not state_matches or not validate_state_token(state):
         await log_repo.create(
             db,
             status="failed",
@@ -249,10 +267,9 @@ async def auth_callback(
             error_message="invalid_state: 登录状态已过期",
         )
         await db.commit()
-        return RedirectResponse(
-            url="/login?error=invalid_state",
-            status_code=302,
-        )
+        response = RedirectResponse(url="/login?error=invalid_state", status_code=302)
+        response.delete_cookie("oauth_state", path="/api/v1/identity/auth")
+        return response
 
     try:
         user, token = await handle_oauth_callback(db, code)
@@ -300,8 +317,34 @@ async def auth_callback(
 
 
 @auth_router.get("/logout", summary="登出")
-async def logout() -> RedirectResponse:
-    """Redirect to frontend login page (frontend handles cookie clearing)."""
+async def logout(
+    request: Request,
+    auth_token: str | None = Cookie(default=None),
+) -> RedirectResponse:
+    """登出：吊销当前 token 的会话（写入吊销黑名单）后跳登录页。
+
+    前端仍负责清 cookie；这里补上「服务端失效」——否则退出登录后 token 在剩余
+    有效期内依然可用（Redis 不可用时只记日志，不阻塞登出）。
+    """
+    token = None
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth.removeprefix("Bearer ")
+    token = token or auth_token
+
+    if token:
+        try:
+            import jwt as pyjwt
+
+            from app.platform.identity.session import revoke_session
+
+            payload = pyjwt.decode(token, get_settings().SECRET_KEY, algorithms=["HS256"])
+            jti = payload.get("jti")
+            if jti:
+                await revoke_session(jti)
+        except Exception:
+            logger.warning("登出时吊销会话失败（不阻塞登出）", exc_info=True)
+
     return RedirectResponse(
         url="/login",
         status_code=302,
@@ -387,7 +430,7 @@ async def get_department(
 # ── Personnel ───────────────────────────────────────────────────────
 
 
-@personnel_router.get("", summary="获取人员名单")
+@personnel_router.get("", response_model=PersonnelListApiResponse, summary="获取人员名单")
 async def list_personnel(
     current_user: RequiredUser,
     department_id: str | None = Query(None, description="按部门 ID 筛选"),
