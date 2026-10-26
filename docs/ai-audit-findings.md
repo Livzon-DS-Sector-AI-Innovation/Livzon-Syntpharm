@@ -5457,3 +5457,15 @@ Playwright 驱动真实页面，复现出 `eU.some is not a function` 与 500；
 `equipment.ts` 的 `Personnel` 手写类型（根因是后端 `/identity/personnel` 无 response_model）、
 `permission/cache.py` 日志 `extra={}`（低危）、session-revocation 保持 fail-open（`04913ddc` 决策）、
 Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需独立轮次）。
+
+#### PR #121 第十轮修复（超限分页 422，2026-10-26）
+
+- [x] `frontend/src/app/(dashboard)/safety/regulation/page.tsx` — 关联规程下拉用 `page_size: 500`，
+      后端 `/safety/regulations` 上限 `le=200` ⇒ 422，下拉静默变空。改 200。
+- [x] `frontend/src/components/production/BatchesPageClient.tsx` — 导出用 `page_size: 10000`，
+      后端 `/production/batches` 上限 `le=200` ⇒ 422，导出恒失败。改为按页（200/页）拉全量后再导出。
+
+**核查结论**（逐个对照 OpenAPI 的 `page_size.maximum`）：`safety/regulation`、`production/batches` 是本轮修掉的
+两处真实 422；其余超大字面值均未越限 —— `safety/ai-workflow-configs`（500/上限 500）、
+`energy/workshops`（500/500）、`production/product-output`（5000/5000）、`quality/instrument`（已改 100/100）、
+`quality/standards`（已改 200/200）。

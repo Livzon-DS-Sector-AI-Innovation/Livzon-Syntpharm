@@ -182,7 +182,9 @@ export default function RegulationPage() {
   const { data: regulationsForSelectData } = useQuery({
     queryKey: ['safety-regulations-for-select'],
     queryFn: async () => {
-      const response = await getRegulations({ page: 1, page_size: 500 })
+      // 后端 /safety/regulations 的 page_size 上限是 200，传 500 会被 422 拒掉，
+      // 下拉会静默变空。
+      const response = await getRegulations({ page: 1, page_size: 200 })
       if (response.code === 200) {
         return response.data
       }
