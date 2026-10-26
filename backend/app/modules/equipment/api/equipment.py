@@ -153,6 +153,7 @@ async def update_equipment_category(
     category_id: uuid.UUID,
     data: EquipmentCategoryUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """更新设备分类"""
@@ -203,6 +204,8 @@ async def get_locations(
 @router.get("/locations/{location_id}", summary="获取位置详情")
 async def get_location(
     location_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取位置详情"""
@@ -227,6 +230,7 @@ async def update_location(
 async def delete_location(
     location_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """删除位置"""
@@ -313,6 +317,8 @@ async def get_equipment_statistics(
 @router.get("/equipments/{equipment_id}", summary="获取设备详情")
 async def get_equipment(
     equipment_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取设备详情"""
@@ -337,6 +343,7 @@ async def update_equipment(
 async def delete_equipment(
     equipment_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:equipment:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """删除设备"""

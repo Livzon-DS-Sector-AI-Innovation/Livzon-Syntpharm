@@ -5341,3 +5341,35 @@ Cat 16 的 `useEffect` 取数改 React Query（风险最高，单独一轮）；
 equipment inspection）—— 都要改成「提交任务 + 轮询」，属接口契约变更，不适合与安全修复混做一个 PR。
 Cat 5 的「`0086`/`0087` 三张表无 ORM model、靠 `RAW_SQL_ONLY_TABLES` 白名单长期遮蔽」需要补 model 并
 在有库环境跑 `alembic check` 验证，同样留待独立一轮。
+
+#### PR #121 第五轮修复（A 批：安全收口，2026-10-26）
+
+本轮针对复核中确认的**匿名可访问 / 缺权限码**缺口，并更正上一轮一处误判。
+
+- [x] Cat 4 — `equipment/api/equipment.py`：`GET /locations/{location_id}`、`GET /equipments/{equipment_id}`
+      原先**没有任何认证依赖**（项目无全局登录中间件、`PERMISSION_ENFORCE_ENABLED` 默认 false
+      ⇒ 匿名可直接读），现补 `RequiredUser` + `equipment:equipment:read`。
+- [x] Cat 4 — 同文件写接口补权限码：`PUT /categories/{id}` → `equipment:equipment:update`；
+      `DELETE /locations/{id}`、`DELETE /equipments/{id}` → `equipment:equipment:delete`
+      （原先仅要求登录）。
+- [x] Cat 4 — `equipment/api/images.py` `GET /{work_order_id}/images` 原先匿名可读，
+      补 `RequiredUser` + `equipment:work-order:read`。
+- [x] Cat 4 — `equipment/api/batch_import.py` 的 `POST /test-validation`（文档写明「without
+      authentication」、接收任意行数据并用 `logger.error` 打印首行）**删除**，同步移除
+      registry 中 `equipment:batch-import:create` 对
+      `/api/v1/equipment/equipments/import/test-validation` 的绑定；OpenAPI 与前端生成类型已重生成。
+- [x] Cat 4 — **更正上一轮误判**：`safety/api/hazard_identifications.py` 的 `/hazard-identifications/stats`
+      与 `/ledger-stats` 此前仍返回裸 `{"code":200,...}` 且无 `response_model`（上一轮标记为已修属误判）。
+      现新增 `HazardIdentificationStatsApiResponse` / `HazardIdentificationLedgerStatsApiResponse`
+      及对应 Data 模型，两个接口改为具体响应模型并纳入 OpenAPI。
+- [x] Cat 4 — `quality/qms/reagent_service.delete_reagent` 由物理 `DELETE FROM` 改为软删除
+      （`is_deleted = true`）；同步给读取路径补过滤：列表、详情、库存提醒查询
+      （`reagent_reminder_service.get_low_stock_reagents`），避免删除后仍出现在列表/提醒里。
+
+**验证**：`ruff check .` / `ruff format --check .`（1038 文件）通过；`mypy app tests`（900 文件）
+0 issues；`pytest tests/unit tests/modules/{safety,equipment}` 346 passed（84 errors 均为本地
+PostgreSQL 未启动）；`openapi.json` 与前端 `schema.ts` 已重生成；`tsc --noEmit` / `eslint` 通过。
+
+**未纳入本轮**（仍在 B/C/D 批次）：45 处 `JSONResponse` 绕过 response_model、`OpaqueDataApiResponse`
+泛型信封、registration 裸 `HTTPException`、`research/api.py` 硬编码 `/tmp` 上传目录、
+`0086/0087` 无 ORM model、identity↔permission 与 shared→platform 循环依赖。

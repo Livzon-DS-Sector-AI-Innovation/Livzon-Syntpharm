@@ -1892,7 +1892,6 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("equipment:batch-import:create", "POST", "/api/v1/equipment/equipments/import/batch"),
     ApiBindingDef("equipment:batch-import:create", "POST", "/api/v1/equipment/equipments/import/preview"),
     ApiBindingDef("equipment:batch-import:read", "GET", "/api/v1/equipment/equipments/import/template"),
-    ApiBindingDef("equipment:batch-import:create", "POST", "/api/v1/equipment/equipments/import/test-validation"),
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/equipments/statistics"),
     ApiBindingDef("equipment:equipment:read", "GET", "/api/v1/equipment/equipments/{equipment_id}"),
     ApiBindingDef("equipment:equipment:update", "PUT", "/api/v1/equipment/equipments/{equipment_id}"),

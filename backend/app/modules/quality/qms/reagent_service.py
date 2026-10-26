@@ -78,9 +78,9 @@ confidence 表示识别置信度（0-1之间）。
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict[str, Any]], int]:
-        """获取试剂列表"""
+        """获取试剂列表（默认排除已软删除记录）"""
         table = ReagentQuality.__table__
-        filters = []
+        filters = [table.c.is_deleted == False]  # noqa: E712
 
         if keyword:
             like = f"%{keyword}%"
@@ -118,11 +118,11 @@ confidence 表示识别置信度（0-1之间）。
         return reagents, total
 
     async def get_reagent_by_id(self, reagent_id: str) -> dict[str, Any] | None:
-        """根据ID获取试剂详情"""
+        """根据ID获取试剂详情（已软删除的视为不存在）"""
         query_sql = text("""
             SELECT *
             FROM qms.qms_reagent_quality
-            WHERE id = :id
+            WHERE id = :id AND is_deleted = false
         """)
         result = await self.session.execute(query_sql, {"id": reagent_id})
         row = result.fetchone()
@@ -257,15 +257,16 @@ confidence 表示识别置信度（0-1之间）。
         return dict(row)
 
     async def delete_reagent(self, reagent_id: str) -> bool:
-        """删除试剂记录"""
+        """软删除试剂记录（模型继承 BaseModel，默认不物理删除）。"""
         delete_sql = text("""
-            DELETE FROM qms.qms_reagent_quality
-            WHERE id = :id
+            UPDATE qms.qms_reagent_quality
+            SET is_deleted = true, updated_at = now()
+            WHERE id = :id AND is_deleted = false
         """)
         result = await self.session.execute(delete_sql, {"id": reagent_id})
         await self.session.commit()
 
-        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]
 
     async def recognize_label(
         self,

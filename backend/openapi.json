@@ -9937,6 +9937,22 @@
               "format": "uuid",
               "title": "Location Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -10547,6 +10563,22 @@
               "type": "string",
               "format": "uuid",
               "title": "Equipment Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
             }
           }
         ],
@@ -14912,6 +14944,22 @@
               "format": "uuid",
               "title": "Work Order Id"
             }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
           }
         ],
         "responses": {
@@ -18647,54 +18695,6 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/equipment/equipments/import/test-validation": {
-      "post": {
-        "tags": [
-          "\u8bbe\u5907\u7ba1\u7406"
-        ],
-        "summary": "\u6d4b\u8bd5\u9a8c\u8bc1\u9519\u8bef",
-        "description": "Test endpoint to debug validation errors without authentication.",
-        "operationId": "test_validation_api_v1_equipment_equipments_import_test_validation_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "items": {
-                  "$ref": "#/components/schemas/EquipmentImportRow"
-                },
-                "type": "array",
-                "title": "Data"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "title": "Response Test Validation Api V1 Equipment Equipments Import Test Validation Post"
                 }
               }
             }
@@ -24043,7 +24043,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response Handler Api V1 Safety Hazard Identifications Stats Get"
+                  "$ref": "#/components/schemas/HazardIdentificationStatsApiResponse"
                 }
               }
             }
@@ -24173,7 +24173,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "title": "Response Handler Api V1 Safety Hazard Identifications Ledger Stats Get"
+                  "$ref": "#/components/schemas/HazardIdentificationLedgerStatsApiResponse"
                 }
               }
             }
@@ -117581,6 +117581,65 @@
         "title": "HazardIdentificationCreate",
         "description": "\u521b\u5efa\u5371\u9669\u6e90\u8fa8\u8bc6\u8bb0\u5f55"
       },
+      "HazardIdentificationLedgerStatsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardIdentificationLedgerStatsData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HazardIdentificationLedgerStatsApiResponse",
+        "description": "\u53f0\u8d26\u7edf\u8ba1\u54cd\u5e94\uff08\u66ff\u4ee3\u88f8 dict\uff09"
+      },
+      "HazardIdentificationLedgerStatsData": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "default": 0
+          },
+          "level_1": {
+            "type": "integer",
+            "title": "Level 1",
+            "default": 0
+          },
+          "level_2": {
+            "type": "integer",
+            "title": "Level 2",
+            "default": 0
+          },
+          "level_3": {
+            "type": "integer",
+            "title": "Level 3",
+            "default": 0
+          },
+          "level_4": {
+            "type": "integer",
+            "title": "Level 4",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "HazardIdentificationLedgerStatsData",
+        "description": "\u5371\u9669\u6e90\u8fa8\u8bc6\u53f0\u8d26\u7edf\u8ba1\uff08\u6309\u56fa\u6709\u98ce\u9669\u7b49\u7ea7\u5206\u7ec4\uff09"
+      },
       "HazardIdentificationListApiResponse": {
         "properties": {
           "code": {
@@ -118295,6 +118354,60 @@
         ],
         "title": "HazardIdentificationRunScript",
         "description": "\u89e6\u53d1\u811a\u672c\u6267\u884c\u8bf7\u6c42"
+      },
+      "HazardIdentificationStatsApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HazardIdentificationStatsData"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "HazardIdentificationStatsApiResponse",
+        "description": "\u5de5\u4f5c\u6d41\u7edf\u8ba1\u54cd\u5e94\uff08\u66ff\u4ee3\u88f8 dict\uff0c\u4fdd\u8bc1 response_model \u6821\u9a8c\u4e0e\u524d\u7aef\u7c7b\u578b\u751f\u6210\uff09"
+      },
+      "HazardIdentificationStatsData": {
+        "properties": {
+          "total_draft": {
+            "type": "integer",
+            "title": "Total Draft",
+            "default": 0
+          },
+          "total_in_progress": {
+            "type": "integer",
+            "title": "Total In Progress",
+            "default": 0
+          },
+          "total_pending_review": {
+            "type": "integer",
+            "title": "Total Pending Review",
+            "default": 0
+          },
+          "total_completed": {
+            "type": "integer",
+            "title": "Total Completed",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "HazardIdentificationStatsData",
+        "description": "\u5371\u9669\u6e90\u8fa8\u8bc6\u5de5\u4f5c\u6d41\u7edf\u8ba1\uff08\u6309 overall_status \u5206\u7ec4\uff09"
       },
       "HazardIdentificationUpdate": {
         "properties": {

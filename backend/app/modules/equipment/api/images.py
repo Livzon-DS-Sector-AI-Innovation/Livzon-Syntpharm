@@ -42,8 +42,11 @@ async def upload_work_order_images(
 @router.get("/{work_order_id}/images", summary="获取工单图片列表")
 async def list_work_order_images(
     work_order_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
+    _require_user(current_user)
     images = await service.get_work_order_images(db, work_order_id)
     return success_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 

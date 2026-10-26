@@ -21,10 +21,14 @@ from app.modules.safety.schemas import (
     HazardIdentificationBatchApiResponse,
     HazardIdentificationBatchCreate,
     HazardIdentificationCreate,
+    HazardIdentificationLedgerStatsApiResponse,
+    HazardIdentificationLedgerStatsData,
     HazardIdentificationListApiResponse,
     HazardIdentificationResponse,
     HazardIdentificationReview,
     HazardIdentificationRunScript,
+    HazardIdentificationStatsApiResponse,
+    HazardIdentificationStatsData,
     HazardIdentificationUpdate,
     HazardLedgerExportRequest,
     HazardRiskOption,
@@ -81,6 +85,7 @@ async def handler(
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/stats",
+    response_model=HazardIdentificationStatsApiResponse,
     summary="获取危险源辨识工作流统计",
 )
 async def handler(  # noqa: F811
@@ -89,12 +94,12 @@ async def handler(  # noqa: F811
     """获取危险源辨识工作流统计（草案/进行中/待审核/已完成）"""
     service = SafetyService(db)
     stats = await service.get_hazard_identification_stats()
-    # stats 是统计对象（非单条记录），不能用 HazardIdentificationApiResponse 包装
-    return {"code": 200, "message": "success", "data": stats}
+    return HazardIdentificationStatsApiResponse(data=HazardIdentificationStatsData(**stats))
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]
     "/hazard-identifications/ledger-stats",
+    response_model=HazardIdentificationLedgerStatsApiResponse,
     summary="获取危险源辨识台账统计",
 )
 async def handler(  # noqa: F811
@@ -115,7 +120,7 @@ async def handler(  # noqa: F811
         date_from,
         date_to,
     )
-    return {"code": 200, "message": "success", "data": stats}
+    return HazardIdentificationLedgerStatsApiResponse(data=HazardIdentificationLedgerStatsData(**stats))
 
 
 @hazard_identifications_router.get(  # type: ignore[no-redef]

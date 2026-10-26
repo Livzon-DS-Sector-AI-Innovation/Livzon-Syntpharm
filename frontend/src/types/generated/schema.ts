@@ -3729,26 +3729,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/equipment/equipments/import/test-validation": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 测试验证错误
-         * @description Test endpoint to debug validation errors without authentication.
-         */
-        post: operations["test_validation_api_v1_equipment_equipments_import_test_validation_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/equipment/equipments/import-v4/batch": {
         parameters: {
             query?: never;
@@ -30251,6 +30231,54 @@ export interface components {
             notes?: string | null;
         };
         /**
+         * HazardIdentificationLedgerStatsApiResponse
+         * @description 台账统计响应（替代裸 dict）
+         */
+        HazardIdentificationLedgerStatsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardIdentificationLedgerStatsData"] | null;
+        };
+        /**
+         * HazardIdentificationLedgerStatsData
+         * @description 危险源辨识台账统计（按固有风险等级分组）
+         */
+        HazardIdentificationLedgerStatsData: {
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+            /**
+             * Level 1
+             * @default 0
+             */
+            level_1: number;
+            /**
+             * Level 2
+             * @default 0
+             */
+            level_2: number;
+            /**
+             * Level 3
+             * @default 0
+             */
+            level_3: number;
+            /**
+             * Level 4
+             * @default 0
+             */
+            level_4: number;
+        };
+        /**
          * HazardIdentificationListApiResponse
          * @description Hazard identification list response wrapper
          */
@@ -30462,6 +30490,49 @@ export interface components {
             ai_output?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /**
+         * HazardIdentificationStatsApiResponse
+         * @description 工作流统计响应（替代裸 dict，保证 response_model 校验与前端类型生成）
+         */
+        HazardIdentificationStatsApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data?: components["schemas"]["HazardIdentificationStatsData"] | null;
+        };
+        /**
+         * HazardIdentificationStatsData
+         * @description 危险源辨识工作流统计（按 overall_status 分组）
+         */
+        HazardIdentificationStatsData: {
+            /**
+             * Total Draft
+             * @default 0
+             */
+            total_draft: number;
+            /**
+             * Total In Progress
+             * @default 0
+             */
+            total_in_progress: number;
+            /**
+             * Total Pending Review
+             * @default 0
+             */
+            total_pending_review: number;
+            /**
+             * Total Completed
+             * @default 0
+             */
+            total_completed: number;
         };
         /**
          * HazardIdentificationUpdate
@@ -55460,7 +55531,9 @@ export interface operations {
             path: {
                 location_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -55717,7 +55790,9 @@ export interface operations {
             path: {
                 equipment_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -58001,7 +58076,9 @@ export interface operations {
             path: {
                 work_order_id: string;
             };
-            cookie?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -59930,41 +60007,6 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_validation_api_v1_equipment_equipments_import_test_validation_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EquipmentImportRow"][];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": {
-                        [key: string]: unknown;
-                    };
                 };
             };
             /** @description Validation Error */
@@ -62544,7 +62586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationStatsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62581,7 +62623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["HazardIdentificationLedgerStatsApiResponse"];
                 };
             };
             /** @description Validation Error */
