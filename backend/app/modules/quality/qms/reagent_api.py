@@ -10,12 +10,13 @@ from typing import Any
 from urllib.parse import quote
 
 import openpyxl
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import PermissionContext, require_permission
+from app.core.exceptions import AppException
 from app.core.storage import save_upload_files
 from app.modules.quality.qms.reagent_schemas import (
     CreateReagentRequest,
@@ -388,7 +389,7 @@ async def post(  # noqa: F811
         }
     except Exception as e:
         logger.exception("创建试剂失败")
-        raise HTTPException(status_code=500, detail=f"创建失败: {e}") from e
+        raise AppException(status_code=500, message=f"创建失败: {e}") from e
 
 
 @router.put("/{reagent_id}", response_model=ReagentDetailApiResponse, summary="更新试剂记录")

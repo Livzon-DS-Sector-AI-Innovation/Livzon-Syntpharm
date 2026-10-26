@@ -14920,7 +14920,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderImageListApiResponse"
+                }
               }
             }
           },
@@ -14975,7 +14977,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderImageListApiResponse"
+                }
               }
             }
           },
@@ -15111,7 +15115,9 @@
             "description": "Successful Response",
             "content": {
               "application/json; charset=utf-8": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/WorkOrderImageDeleteApiResponse"
+                }
               }
             }
           },
@@ -164570,6 +164576,95 @@
         ],
         "title": "WorkOrderCreate",
         "description": "\u521b\u5efa\u5de5\u5355\u8bf7\u6c42"
+      },
+      "WorkOrderImageDeleteApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "WorkOrderImageDeleteApiResponse",
+        "description": "\u5220\u9664\u5de5\u5355\u56fe\u7247\u54cd\u5e94\u3002"
+      },
+      "WorkOrderImageListApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/WorkOrderImageResponse"
+            },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "WorkOrderImageListApiResponse",
+        "description": "\u5de5\u5355\u56fe\u7247\u5217\u8868\u54cd\u5e94\uff08\u58f0\u660e\u5177\u4f53\u54cd\u5e94\u4f53\uff0c\u907f\u514d JSONResponse \u7ed5\u8fc7 response_model \u6821\u9a8c\uff09\u3002"
+      },
+      "WorkOrderImageResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "work_order_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Work Order Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Size"
+          },
+          "uploaded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Uploaded At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "work_order_id",
+          "file_name",
+          "file_size",
+          "uploaded_at"
+        ],
+        "title": "WorkOrderImageResponse",
+        "description": "\u5de5\u5355\u56fe\u7247\u54cd\u5e94"
       },
       "WorkOrderUpdate": {
         "properties": {

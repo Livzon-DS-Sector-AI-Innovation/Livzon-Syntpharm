@@ -2,12 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.exceptions import AppException
 from app.core.response import success_response
 from app.modules.registration.schemas.certificate import (
     CertificateCreate,
@@ -51,7 +52,7 @@ async def get_certificate(
     try:
         cert = await cert_service.get_certificate(db, certificate_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(data=CertificateResponse.model_validate(cert))
 
 
@@ -66,7 +67,7 @@ async def update_certificate(
     try:
         cert = await cert_service.update_certificate(db, certificate_id, data)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(data=CertificateResponse.model_validate(cert))
 
 
@@ -80,5 +81,5 @@ async def delete_certificate(
     try:
         await cert_service.delete_certificate(db, certificate_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(message="删除成功")

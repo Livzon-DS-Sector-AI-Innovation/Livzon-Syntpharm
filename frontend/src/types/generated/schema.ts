@@ -49876,6 +49876,67 @@ export interface components {
             responsible_person_id?: string | null;
         };
         /**
+         * WorkOrderImageDeleteApiResponse
+         * @description 删除工单图片响应。
+         */
+        WorkOrderImageDeleteApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
+         * WorkOrderImageListApiResponse
+         * @description 工单图片列表响应（声明具体响应体，避免 JSONResponse 绕过 response_model 校验）。
+         */
+        WorkOrderImageListApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: components["schemas"]["WorkOrderImageResponse"][];
+        };
+        /**
+         * WorkOrderImageResponse
+         * @description 工单图片响应
+         */
+        WorkOrderImageResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Work Order Id
+             * Format: uuid
+             */
+            work_order_id: string;
+            /** File Name */
+            file_name: string;
+            /** File Size */
+            file_size: number | null;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+        };
+        /**
          * WorkOrderUpdate
          * @description 更新工单请求
          */
@@ -58088,7 +58149,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["WorkOrderImageListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58125,7 +58186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["WorkOrderImageListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -58193,7 +58254,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["WorkOrderImageDeleteApiResponse"];
                 };
             };
             /** @description Validation Error */

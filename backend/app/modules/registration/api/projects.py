@@ -2,12 +2,13 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.exceptions import AppException
 from app.core.response import success_response
 from app.modules.registration.schemas.project import (
     ProjectCreate,
@@ -51,7 +52,7 @@ async def get_project(
     try:
         project = await project_service.get_project(db, project_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(data=ProjectResponse.model_validate(project))
 
 
@@ -66,7 +67,7 @@ async def update_project(
     try:
         project = await project_service.update_project(db, project_id, data)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(data=ProjectResponse.model_validate(project))
 
 
@@ -80,5 +81,5 @@ async def delete_project(
     try:
         await project_service.delete_project(db, project_id)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(message="删除成功")

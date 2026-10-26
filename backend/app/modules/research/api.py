@@ -1,6 +1,7 @@
 """研发项目 API 路由."""
 
 import logging
+import os
 import uuid
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import ApiResponse, build_response, paginated_response
@@ -70,6 +72,16 @@ from app.shared.module_registry import MODULES_BY_CODE
 logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["research"])
+
+# 交付物附件目录：由配置派生，不再硬编码 /tmp（容器重启即丢）。
+# 历史版本写在 /tmp 下，读取时保留兜底，避免升级后旧附件直接 404。
+_DELIVERABLE_SUBDIR: tuple[str, ...] = ("research", "deliverables")
+_LEGACY_DELIVERABLE_DIR = "/tmp/dazah_uploads/research/deliverables"
+
+
+def _deliverable_upload_dir() -> str:
+    """交付物附件的落盘目录（UPLOAD_DIR/research/deliverables）。"""
+    return os.path.join(get_settings().UPLOAD_DIR, *_DELIVERABLE_SUBDIR)
 
 
 @router.post("/projects", summary="创建研发项目")
@@ -665,7 +677,6 @@ async def edbo_generate_scope(  # type: ignore[no-untyped-def]
 # ===== Pilot Workflow API =====
 
 
-import os  # noqa: E402
 import uuid as uuid_module  # noqa: E402
 
 from app.modules.research import repository as pilot_repo  # noqa: E402
@@ -2373,9 +2384,7 @@ async def upload_deliverable_file(
 ) -> list:  # type: ignore[type-arg]
     """上传交付物附件文件（本地存储）"""
 
-    import os
-
-    UPLOAD_DIR = "/tmp/dazah_uploads/research/deliverables"  # noqa: N806
+    UPLOAD_DIR = _deliverable_upload_dir()  # noqa: N806
 
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -2424,8 +2433,6 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
 ):
     """下载交付物附件文件（本地存储）"""
 
-    import os
-
     from fastapi.responses import FileResponse
 
     deliverable = await service.get_rd_stage_deliverable(db, deliverable_id)
@@ -2433,9 +2440,15 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
     if not deliverable.file_name:
         raise HTTPException(status_code=404, detail="未找到附件文件")
 
-    UPLOAD_DIR = "/tmp/dazah_uploads/research/deliverables"  # noqa: N806
+    file_name = f"{deliverable_id}_{deliverable.file_name}"
 
-    file_path = os.path.join(UPLOAD_DIR, f"{deliverable_id}_{deliverable.file_name}")
+    file_path = os.path.join(_deliverable_upload_dir(), file_name)
+
+    if not os.path.exists(file_path):
+        # 兼容历史版本写在 /tmp 下的附件
+        legacy_path = os.path.join(_LEGACY_DELIVERABLE_DIR, file_name)
+        if os.path.exists(legacy_path):
+            file_path = legacy_path
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="文件不存在")

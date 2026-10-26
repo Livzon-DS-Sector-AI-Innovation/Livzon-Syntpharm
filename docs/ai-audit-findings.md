@@ -5437,3 +5437,23 @@ e2e（run 40252813300）在 quality 模块失败。根因是**本 PR 才给 E2E 
 Playwright 驱动真实页面，复现出 `eU.some is not a function` 与 500；修复后
 `/quality/inspection`、`/quality/inspection/standards`、`/quality/instrument/records`
 三页 0 console error、0 4xx/5xx。`tsc --noEmit` / `eslint src --max-warnings=0` 通过。
+
+#### PR #121 第九轮修复（contract tail，2026-10-26）
+
+- [x] Cat 4 — `equipment/api/images.py`：上传/列表/删除三个接口不再返回 `success_response()`（JSONResponse
+      绕过 response_model），改为 `build_response()` + 具体响应模型
+      （新增 `WorkOrderImageListApiResponse` / `WorkOrderImageDeleteApiResponse`）。
+- [x] Cat 4 — `registration/api/projects.py`、`certificates.py`、`quality/qms/reagent_api.py`：
+      裸 `HTTPException(404/500)` 改为 `AppException`，与其他模块统一走全局异常信封。
+- [x] Cat 2 — `research/api.py`：交付物附件目录由硬编码 `/tmp/dazah_uploads/research/deliverables`
+      改为 `settings.UPLOAD_DIR/research/deliverables` 派生；下载保留旧 `/tmp` 兜底，
+      避免升级后已存在的附件 404。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+`pytest tests/unit + tests/modules/{equipment,registration}` 270 passed（83 errors 均为本地 PostgreSQL 未启动）；
+`openapi.json` 与前端 `schema.ts` 已重生成（新增 3 个 images 响应模型）；`tsc --noEmit` / `eslint` 通过。
+
+**仍未处理（已决策/需排期）**：`OpaqueDataApiResponse` 泛型信封（6 个 dossier 接口，需逐接口定模型）、
+`equipment.ts` 的 `Personnel` 手写类型（根因是后端 `/identity/personnel` 无 response_model）、
+`permission/cache.py` 日志 `extra={}`（低危）、session-revocation 保持 fail-open（`04913ddc` 决策）、
+Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需独立轮次）。
