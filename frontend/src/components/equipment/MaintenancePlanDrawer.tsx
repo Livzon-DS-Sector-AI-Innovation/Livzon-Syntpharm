@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Form, Input, Select, InputNumber, DatePicker, Button, Space } from 'antd'
 import dayjs from 'dayjs'
 import { useEquipmentStore } from '@/stores/equipment'
@@ -26,17 +27,24 @@ export function MaintenancePlanDrawer({ equipments, onRefresh }: MaintenancePlan
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const { maintenancePlanDrawerOpen, editingMaintenancePlan, closeMaintenancePlanDrawer } = useEquipmentStore()
-  const [allUsers, setAllUsers] = useState<Maintainer[]>([])
+  // 责任人下拉的候选用户：抽屉打开时才拉，交给 React Query 缓存
+  const { data: allUsersData } = useQuery({
+    queryKey: ['equipment-all-users'],
+    queryFn: () => fetchAllUsersClient(),
+    enabled: maintenancePlanDrawerOpen,
+  })
+  const allUsers: Maintainer[] = allUsersData ?? []
+
+  // 选项到位后补一次 executor_id：antd Select 需要 options 就绪才能把值渲染成姓名
+  useEffect(() => {
+    if (!maintenancePlanDrawerOpen || !allUsersData) return
+    if (editingMaintenancePlan?.responsible_person_id) {
+      form.setFieldsValue({ executor_id: editingMaintenancePlan.executor_id })
+    }
+  }, [allUsersData, maintenancePlanDrawerOpen, editingMaintenancePlan, form])
 
   useEffect(() => {
     if (!maintenancePlanDrawerOpen) return
-    fetchAllUsersClient().then((list: { id: string; name: string }[]) => {
-      setAllUsers(list)
-      // 加载完后重新设置责任人，让 Select 能匹配选项显示姓名
-      if (editingMaintenancePlan?.responsible_person_id) {
-        form.setFieldsValue({ executor_id: editingMaintenancePlan.executor_id })
-      }
-    }).catch(() => {})
 
     // 延迟确保 Form 字段在 destroyOnHidden 后重新挂载完毕
     const timer = setTimeout(() => {

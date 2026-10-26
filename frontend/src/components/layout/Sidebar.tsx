@@ -1,7 +1,8 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Menu } from "antd"
 import type { MenuProps } from "antd"
 import type { SubMenuItem } from "@/lib/menu-config"
@@ -205,7 +206,16 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
   const collapsed = collapsedState && !forceExpanded
   const router = useRouter()
   const moduleKey = pathname.split("/")[1] || "production"
-  const [warehouseTables, setWarehouseTables] = useState<WarehouseFeishuTable[]>([])
+  // 仓储模块的飞书表菜单项：只有进到 warehouse 才拉，交给 React Query 管缓存与去重
+  const { data: warehouseTablesData } = useQuery({
+    queryKey: ["warehouse-feishu-tables"],
+    queryFn: () => fetchWarehouseFeishuTablesByParams({ enabled: true }),
+    enabled: moduleKey === "warehouse",
+  })
+  const warehouseTables: WarehouseFeishuTable[] = useMemo(
+    () => warehouseTablesData ?? [],
+    [warehouseTablesData],
+  )
   const queryString = searchParams.toString()
   const query = useMemo(() => new URLSearchParams(queryString), [queryString])
   const granted = useMemo(() => new Set(permissionView.granted), [permissionView.granted])
@@ -215,26 +225,6 @@ export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: S
     [permissionView, granted],
   )
   const currentModule = resolvedModules.find((mod) => mod.key === moduleKey)
-
-  useEffect(() => {
-    if (moduleKey !== "warehouse") {
-      return
-    }
-
-    let cancelled = false
-    fetchWarehouseFeishuTablesByParams({ enabled: true })
-      .then((tables) => {
-        if (cancelled) return
-        setWarehouseTables(tables)
-      })
-      .catch(() => {
-        if (!cancelled) setWarehouseTables([])
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [moduleKey])
 
   const moduleChildren = useMemo(() => {
     if (!currentModule) return []

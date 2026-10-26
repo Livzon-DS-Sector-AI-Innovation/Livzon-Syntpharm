@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Row,
@@ -130,9 +131,6 @@ export default function DocCheckPage() {
   const [activeTab, setActiveTab] = useState<string>('duplicate')
 
   // 记录列表状态
-  const [_records, setRecords] = useState<CheckMainDetail[]>([])
-  const [_loading, setLoading] = useState(false)
-  const [_total, setTotal] = useState(0)
   const [page, _setPage] = useState(1)
   const [pageSize, _setPageSize] = useState(10)
 
@@ -461,7 +459,7 @@ export default function DocCheckPage() {
       if (data.code === 200) {
         message.success('确认通过成功')
         // 刷新记录
-        loadRecords()
+        void refetchRecords()
       } else {
         message.error(data.message || '确认失败')
       }
@@ -480,28 +478,15 @@ export default function DocCheckPage() {
 
   // ============ 记录列表 ============
 
-  const loadRecords = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(
-        `/api/v1/doc-check/records?page=${page}&page_size=${pageSize}`
-      )
+  // 记录列表由 React Query 负责拉取与缓存（页面暂未渲染这些数据，保留查询便于后续接入）
+  const { refetch: refetchRecords } = useQuery({
+    queryKey: ['doc-check-records', page, pageSize],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/doc-check/records?page=${page}&page_size=${pageSize}`)
       const data = await response.json()
-
-      if (data.code === 200) {
-        setRecords(data.data.items || [])
-        setTotal(data.data.total || 0)
-      }
-    } catch (error) {
-      console.error('加载记录失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize])
-
-  useEffect(() => {
-    loadRecords()
-  }, [loadRecords])
+      return data.code === 200 ? (data.data?.items ?? []) : []
+    },
+  })
 
   // ============ 表格列定义 ============
 
