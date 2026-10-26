@@ -5415,3 +5415,25 @@ PostgreSQL 未启动）；`openapi.json` 与前端 `schema.ts` 已重生成；`t
 `pytest tests/unit + tests/modules/registration` 223 passed（2 errors 为本地 PostgreSQL 未启动）；
 `openapi.json` 因响应 media-type 由 `application/json; charset=utf-8` 收敛为 `application/json` 有 16 行差异，
 已重导出；前端 `schema.ts` 无变化（生成类型不包含 content-type）。
+
+#### PR #121 第八轮修复（e2e quality 三页失败，2026-10-26）
+
+e2e（run 40252813300）在 quality 模块失败。根因是**本 PR 才给 E2E 账号授予超管**
+（`identity/api.py` test-login 新增 `ensure_superadmin`）：此前该账号无权限，受影响接口一律 403，
+前端 action 抛错被 React Query 吞掉，页面以空表照常渲染；授权后真实数据链路第一次跑通，
+暴露出两个**既有**前端缺陷（与权限改造本身无关）：
+
+- [x] `frontend/src/actions/quality.ts` — `wrap()` 把服务端返回值整体塞进 `data`，而
+      `lib/api/server/quality.ts` 多数函数返回完整信封 `{code,message,data,meta}`，
+      于是页面把信封当列表传给 antd Table → `dataSource` 非数组 → `eU.some is not a function`
+      整页崩（`/quality/inspection/standards`）。改为识别信封并解包，同时透传 `meta`
+      （顺带修掉分页 `total` 恒为 0）。
+- [x] `quality/instrument/records/page.tsx` — `getInstruments({page_size: 1000})` 超过后端
+      `Query(20, ge=1, le=100)` → 422 → 页面取数整体失败（e2e 报 `[500] POST /quality/instrument/records`）。改 100。
+- [x] `quality/inspection/standards/page.tsx` — 导出时 `page_size: 10000` 超过 `le=200` → 422，
+      导出按钮实际不可用。改 200。
+
+**验证方法**：本地用生产构建（`NEXT_DIST_DIR=.next-prod`，容器内 `next build`）+ 容器内
+Playwright 驱动真实页面，复现出 `eU.some is not a function` 与 500；修复后
+`/quality/inspection`、`/quality/inspection/standards`、`/quality/instrument/records`
+三页 0 console error、0 4xx/5xx。`tsc --noEmit` / `eslint src --max-warnings=0` 通过。

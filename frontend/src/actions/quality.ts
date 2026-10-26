@@ -105,9 +105,33 @@ import {
 } from '@/lib/validation/schemas'
 import * as QualityServer from '@/lib/api/server/quality'
 
+/** 判断服务端函数的返回值是不是完整信封 `{code, message, data, meta}`。 */
+function isEnvelope(value: unknown): value is {
+  code: number
+  message?: string
+  data: unknown
+  meta?: unknown
+} {
+  return typeof value === 'object' && value !== null && 'code' in value && 'data' in value
+}
+
+/**
+ * 统一归一服务端返回值：`lib/api/server/quality.ts` 里有的函数返回完整信封
+ * （直接 `apiFetch`），有的已解包（`unwrapResponse`）。此前一律塞进 `data`，
+ * 于是页面把 `{code,data,meta}` 当列表用，传给 antd Table 的 `dataSource`
+ * 不是数组 → 整页崩（`xxx.some is not a function`）。
+ */
 async function wrap<T>(promise: Promise<unknown>): Promise<ApiResponse<T>> {
-  const data = await promise
-  return { data: data as T, code: 200, message: 'ok' }
+  const raw = await promise
+  if (isEnvelope(raw)) {
+    return {
+      code: raw.code,
+      message: raw.message ?? 'ok',
+      data: raw.data as T,
+      meta: raw.meta,
+    } as ApiResponse<T>
+  }
+  return { data: raw as T, code: 200, message: 'ok' } as ApiResponse<T>
 }
 
 // ============ InspectionStandard Actions ============

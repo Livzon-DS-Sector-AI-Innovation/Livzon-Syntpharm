@@ -292,7 +292,9 @@ export default function InspectionStandardsPage() {
   const handleExport = async () => {
     setExportLoading(true)
     try {
-      const response = await getStandards({ page: 1, page_size: 10000 })
+      // 后端 /quality/standards 的 page_size 上限是 200（Query(20, ge=1, le=200)），
+      // 传 10000 会被 422 拒掉，导出功能直接报错。
+      const response = await getStandards({ page: 1, page_size: 200 })
       if (response.code === 200 && response.data.length > 0) {
         exportStandardsToCsv(response.data)
         message.success(`已导出 ${response.data.length} 条数据`)
