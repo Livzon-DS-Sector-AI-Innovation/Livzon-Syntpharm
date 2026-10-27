@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.ipqc_schemas import (
     IPQCApprovalCreate,
     IPQCApprovalRecordResponse,
@@ -33,9 +33,9 @@ def get_ipqc_service(session: AsyncSession = Depends(get_db)) -> IPQCInspectionS
 @router.post("/inspections", response_model=IPQCInspectionApiResponse, status_code=201)
 async def post(
     data: IPQCInspectionCreate,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:create")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建IPQC检验单"""
     try:
@@ -51,6 +51,7 @@ async def post(
 
 @router.get("/inspections", response_model=IPQCInspectionPageResponse)
 async def get(
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:read")),
     inspection_no: str | None = Query(None, description="检验单号"),
     batch_no: str | None = Query(None, description="批次号"),
@@ -65,7 +66,6 @@ async def get(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取IPQC检验单列表"""
     filters = IPQCInspectionFilter(
@@ -92,9 +92,9 @@ async def get(
 @router.get("/inspections/{inspection_id}", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:read")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取IPQC检验单详情"""
     try:
@@ -108,9 +108,9 @@ async def get(  # noqa: F811
 async def put(
     inspection_id: UUID,
     data: IPQCInspectionUpdate,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:update")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新IPQC检验单"""
     try:
@@ -127,9 +127,9 @@ async def put(
 @router.delete("/inspections/{inspection_id}")
 async def delete(
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:delete")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除IPQC检验单"""
     try:
@@ -143,9 +143,9 @@ async def delete(
 @router.post("/inspections/{inspection_id}/submit", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:submit")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交IPQC检验单审批"""
     try:
@@ -163,9 +163,9 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: IPQCApprovalCreate,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:approve")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """审批IPQC检验单"""
     try:
@@ -187,8 +187,8 @@ async def post(  # noqa: F811
 )
 async def handler(
     inspection_id: UUID,
+    current_user: RequiredUser,
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取审批记录"""
     approvals = await service.get_approval_records(inspection_id)
@@ -198,10 +198,10 @@ async def handler(
 @router.post("/inspections/{inspection_id}/lock-batch", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:update")),
     reason: str = Query(..., description="锁定原因"),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """锁定批次"""
     try:
@@ -218,9 +218,9 @@ async def post(  # noqa: F811
 @router.post("/inspections/{inspection_id}/unlock-batch", response_model=IPQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:ipqc:update")),
     service: IPQCInspectionService = Depends(get_ipqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """解锁批次"""
     try:

@@ -5,6 +5,7 @@ import logging
 import os
 import re
 from datetime import date, datetime
+from functools import cache
 from io import BytesIO
 from typing import Any
 from urllib.parse import quote
@@ -14,7 +15,8 @@ from fastapi import Body, Depends, File, Form, HTTPException, Query, Request, Up
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from sqlalchemy import text
+from sqlalchemy import column, func, literal_column, or_, select, text
+from sqlalchemy import table as sa_table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -2098,45 +2100,53 @@ async def export_annual_training_plan(  # type: ignore[no-untyped-def]
 from types import SimpleNamespace  # noqa: E402
 
 
+@cache
+def _clone_table_ref(base_table: str) -> object:
+    """返回 clone 表的轻量 Table 引用。
+
+    表名/列名均来自 `_CLONE_TABLE_COLUMNS` 常量白名单，由 SQLAlchemy 编译期
+    quote，不通过 f-string 拼进 SQL 文本；取值一律走绑定参数。
+    """
+    allowed = _CLONE_TABLE_COLUMNS.get(base_table)
+    if allowed is None:
+        raise ValueError(f"不支持的数据表: {base_table}")
+    schema_name, _, table_name = base_table.partition(".")
+    return sa_table(table_name, *[column(name) for name in sorted(allowed)], schema=schema_name or None)
+
+
 def _build_where(
     base_table: str,
     filters: list[tuple[str, str | None]],
     keyword_fields: list[str] | None = None,
     keyword: str | None = None,
-) -> tuple[str, dict]:  # type: ignore[type-arg]
-    """Build WHERE clause and params for raw SQL.
-
-    表名与列名必须命中 `_CLONE_TABLE_COLUMNS` 白名单，所有取值一律走绑定参数。
-    PostgreSQL 不允许把标识符作为绑定参数，因此标识符先做白名单校验再拼接。
-    """
+) -> list:  # type: ignore[type-arg]
+    """构造查询条件（列名命中白名单，取值全部绑定参数）。"""
     allowed = _CLONE_TABLE_COLUMNS.get(base_table)
     if allowed is None:
         raise ValueError(f"不支持的数据表: {base_table}")
 
-    conditions = [f"{base_table}.is_deleted = false"]
-    params: dict = {}  # type: ignore[type-arg]
+    tbl = _clone_table_ref(base_table)
+    conditions: list = [tbl.c["is_deleted"].is_(False)]  # type: ignore[index,attr-defined]
     for col, val in filters:
         if val:
             if col not in allowed:
                 raise ValueError(f"不支持的过滤字段: {base_table}.{col}")
-            conditions.append(f"{base_table}.{col} ILIKE :{col}")
-            params[col] = f"%{val}%"
+            conditions.append(tbl.c[col].ilike(f"%{val}%"))  # type: ignore[index,attr-defined]
     if keyword and keyword_fields:
         for field_name in keyword_fields:
             if field_name not in allowed:
                 raise ValueError(f"不支持的搜索字段: {base_table}.{field_name}")
-        ors = [f"{base_table}.{field_name} ILIKE :keyword" for field_name in keyword_fields]
-        conditions.append(f"({' OR '.join(ors)})")
-        params["keyword"] = f"%{keyword}%"
-    return " AND ".join(conditions), params
+        conditions.append(
+            or_(*[tbl.c[field_name].ilike(f"%{keyword}%") for field_name in keyword_fields])  # type: ignore[index,attr-defined]
+        )
+    return conditions
 
 
 async def _query_clone_table(
     session: AsyncSession,
     table: str,
     schema: type,
-    where_sql: str,
-    params: dict,  # type: ignore[type-arg]
+    conditions: list,  # type: ignore[type-arg]
     page: int,
     page_size: int,
     sort_by: str = "created_at",
@@ -2149,27 +2159,28 @@ async def _query_clone_table(
         raise ValueError(f"不支持的排序字段: {table}.{sort_by}")
     if sort_order.lower() not in _CLONE_SORT_ORDERS:
         raise ValueError(f"不支持的排序方向: {sort_order}")
-    sort_order = sort_order.lower()
 
-    count_sql = text(f"SELECT COUNT(*) FROM {table} WHERE {where_sql}")
-    total = (await session.execute(count_sql, params)).scalar()
+    tbl = _clone_table_ref(table)
+    count_stmt = select(func.count()).select_from(tbl).where(*conditions)  # type: ignore[arg-type]
+    total = (await session.execute(count_stmt)).scalar() or 0
 
-    sql = text(f"""
-        SELECT * FROM {table}
-        WHERE {where_sql}
-        ORDER BY {sort_by} {sort_order}
-        LIMIT :limit OFFSET :offset
-    """)
-    params["limit"] = page_size
-    params["offset"] = (page - 1) * page_size
+    order_col = tbl.c[sort_by]  # type: ignore[index,attr-defined]
+    stmt = (
+        select(literal_column("*"))
+        .select_from(tbl)  # type: ignore[arg-type]
+        .where(*conditions)  # type: ignore[arg-type]
+        .order_by(order_col.desc() if sort_order.lower() == "desc" else order_col.asc())
+        .limit(page_size)
+        .offset((page - 1) * page_size)
+    )
 
-    result = await session.execute(sql, params)
+    result = await session.execute(stmt)
     rows = result.mappings().all()
     data = [
         schema.model_validate(SimpleNamespace(**dict(row))).model_dump(mode="json")  # type: ignore[attr-defined]
         for row in rows
     ]
-    return data, total  # type: ignore[return-value]
+    return data, total
 
 
 @router.get("/new/employees", summary="新厂员工列表")
@@ -2190,7 +2201,7 @@ async def list_new_employees(  # type: ignore[no-untyped-def]
         dept_filter = "多肽车间"
         team_filter = department.replace("多肽车间-", "")
 
-    where, params = _build_where(
+    where = _build_where(
         "hr.employees_new",
         [("department", dept_filter), ("status", status), ("team", team_filter)],
         keyword_fields=["name", "employee_number"],
@@ -2202,7 +2213,6 @@ async def list_new_employees(  # type: ignore[no-untyped-def]
         "hr.employees_new",
         EmployeeResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
     )
@@ -2224,7 +2234,7 @@ async def list_new_onboarding_records(  # type: ignore[no-untyped-def]
     page_params: PageParams = Depends(),
     session: AsyncSession = Depends(get_db),
 ):
-    where, params = _build_where(
+    where = _build_where(
         "hr.onboarding_records_new",
         [("department", department), ("position", position)],
         keyword_fields=["name", "employee_number"],
@@ -2235,7 +2245,6 @@ async def list_new_onboarding_records(  # type: ignore[no-untyped-def]
         "hr.onboarding_records_new",
         OnboardingRecordResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
         sort_by="hire_date",
@@ -2259,7 +2268,7 @@ async def list_new_departure_records(  # type: ignore[no-untyped-def]
     page_params: PageParams = Depends(),
     session: AsyncSession = Depends(get_db),
 ):
-    where, params = _build_where(
+    where = _build_where(
         "hr.departure_records_new",
         [("department", department), ("offboarding_type", offboarding_type)],
         keyword_fields=["name", "department", "position"],
@@ -2270,7 +2279,6 @@ async def list_new_departure_records(  # type: ignore[no-untyped-def]
         "hr.departure_records_new",
         DepartureRecordResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
         sort_by="offboarding_date",
@@ -2295,7 +2303,7 @@ async def list_new_offboarding_records(  # type: ignore[no-untyped-def]
     session: AsyncSession = Depends(get_db),
 ):
     # Reuse departure_records_new as offboarding data for new factory
-    where, params = _build_where(
+    where = _build_where(
         "hr.departure_records_new",
         [("department", department), ("offboarding_type", offboarding_type)],
         keyword_fields=["name", "department", "position"],
@@ -2306,7 +2314,6 @@ async def list_new_offboarding_records(  # type: ignore[no-untyped-def]
         "hr.departure_records_new",
         DepartureRecordResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
         sort_by="offboarding_date",
