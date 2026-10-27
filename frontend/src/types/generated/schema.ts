@@ -3589,8 +3589,28 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** AI 分析巡检照片 */
+        /**
+         * 提交巡检照片 AI 分析任务
+         * @description 提交后台 AI 分析任务（视觉模型调用 >5s），立即返回 job_id；结果走轮询。
+         */
         post: operations["ai_analyze_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__ai_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/ai-analyze/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询巡检照片 AI 分析任务状态 */
+        get: operations["get_ai_analyze_job_status_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__ai_analyze_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -60147,7 +60167,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_analyze_job_status_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__ai_analyze_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+                equipment_id: string;
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */

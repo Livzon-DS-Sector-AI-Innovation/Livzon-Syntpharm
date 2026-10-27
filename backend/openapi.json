@@ -17946,7 +17946,8 @@
         "tags": [
           "\u8bbe\u5907\u7ba1\u7406"
         ],
-        "summary": "AI \u5206\u6790\u5de1\u68c0\u7167\u7247",
+        "summary": "\u63d0\u4ea4\u5de1\u68c0\u7167\u7247 AI \u5206\u6790\u4efb\u52a1",
+        "description": "\u63d0\u4ea4\u540e\u53f0 AI \u5206\u6790\u4efb\u52a1\uff08\u89c6\u89c9\u6a21\u578b\u8c03\u7528 >5s\uff09\uff0c\u7acb\u5373\u8fd4\u56de job_id\uff1b\u7ed3\u679c\u8d70\u8f6e\u8be2\u3002",
         "operationId": "ai_analyze_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__ai_analyze_post",
         "parameters": [
           {
@@ -18002,7 +18003,85 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponse"
+                  "$ref": "#/components/schemas/AsyncJobAcceptedResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/ai-analyze/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "\u8bbe\u5907\u7ba1\u7406"
+        ],
+        "summary": "\u67e5\u8be2\u5de1\u68c0\u7167\u7247 AI \u5206\u6790\u4efb\u52a1\u72b6\u6001",
+        "operationId": "get_ai_analyze_job_status_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__ai_analyze_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "equipment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Equipment Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/AsyncJobStateResponse"
                 }
               }
             }

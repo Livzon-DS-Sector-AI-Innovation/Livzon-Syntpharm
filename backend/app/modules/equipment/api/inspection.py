@@ -9,9 +9,10 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
+from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment.models.inspection import InspectionTask
@@ -39,9 +40,17 @@ from app.modules.equipment.schemas.inspection import (
     RouteLocationsBatch,
 )
 from app.modules.equipment.service import inspection as inspection_svc
-from app.shared.schemas import ApiResponse
+from app.shared.schemas import (
+    ApiResponse,
+    AsyncJobAccepted,
+    AsyncJobAcceptedResponse,
+    AsyncJobStateResponse,
+)
 
 router = APIRouter()
+
+# 巡检照片 AI 分析任务状态（进程内，重启即丢；轮询方须处理「查不到」）
+_INSPECTION_AI_JOB_STORE = JobStore()
 
 
 def _task_to_response(task: InspectionTask) -> InspectionTaskResponse:
@@ -455,7 +464,8 @@ async def remove_photo(
 # ═══════════ AI 分析 ═══════════
 @router.post(
     "/tasks/{task_id}/equipments/{equipment_id}/ai-analyze",
-    summary="AI 分析巡检照片",
+    response_model=AsyncJobAcceptedResponse,
+    summary="提交巡检照片 AI 分析任务",
 )
 async def ai_analyze_photo(
     task_id: uuid.UUID,
@@ -463,30 +473,54 @@ async def ai_analyze_photo(
     data: InspectionAIAnalyzeRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    from app.modules.equipment.service.ai import analyze_inspection_photo
+) -> AsyncJobAcceptedResponse:
+    """提交后台 AI 分析任务（视觉模型调用 >5s），立即返回 job_id；结果走轮询。"""
+    image_base64 = data.image_base64
+    image_mime_type = data.image_mime_type
 
-    results = await analyze_inspection_photo(
-        db=db,
-        task_id=task_id,
-        equipment_id=equipment_id,
-        image_base64=data.image_base64,
-        image_mime_type=data.image_mime_type,
-    )
-    return build_response(
-        data=[
-            InspectionAIItemResult(
-                template_item_id=uuid.UUID(r["template_item_id"]),
-                item_name=r["item_name"],
-                expected_result=r["expected_result"],
-                result=r["result"],
-                actual_value=r["actual_value"],
-                remark=r["remark"],
+    async def _run(_job_id: str) -> dict[str, Any]:
+        from app.modules.equipment.service.ai import analyze_inspection_photo
+
+        async with async_session_factory() as job_db:
+            results = await analyze_inspection_photo(
+                db=job_db,
+                task_id=task_id,
+                equipment_id=equipment_id,
+                image_base64=image_base64,
+                image_mime_type=image_mime_type,
             )
-            for r in results
-        ]
-    )
+        return {
+            "items": [
+                InspectionAIItemResult(
+                    template_item_id=uuid.UUID(r["template_item_id"]),
+                    item_name=r["item_name"],
+                    expected_result=r["expected_result"],
+                    result=r["result"],
+                    actual_value=r["actual_value"],
+                    remark=r["remark"],
+                ).model_dump(mode="json")
+                for r in results
+            ]
+        }
+
+    job_id = start_job(_INSPECTION_AI_JOB_STORE, "equipment-inspection-ai", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
+
+
+@router.get(
+    "/tasks/{task_id}/equipments/{equipment_id}/ai-analyze/jobs/{job_id}",
+    response_model=AsyncJobStateResponse,
+    summary="查询巡检照片 AI 分析任务状态",
+)
+async def get_ai_analyze_job_status(
+    task_id: uuid.UUID,
+    equipment_id: uuid.UUID,
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection:create")),
+) -> AsyncJobStateResponse:
+    # 权限与提交端点保持一致：能发起分析的人必须能查自己的任务状态
+    return AsyncJobStateResponse(data=get_job_state_or_404(_INSPECTION_AI_JOB_STORE, job_id))
 
 
 # ═══════════ 历史 ═══════════
