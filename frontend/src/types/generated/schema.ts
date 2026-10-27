@@ -7872,10 +7872,27 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * AI 能耗分析 V2（支持多产品和单耗）
-         * @description 执行 AI 能耗分析，支持多产品产量输入和单耗计算
+         * 提交 AI 能耗分析任务 V2（支持多产品和单耗）
+         * @description 提交 AI 能耗分析后台任务（含 AI 建议生成 >5s）；轮询 GET /ai-analysis-v2/jobs/{job_id}。
          */
         post: operations["ai_analysis_v2_api_v1_energy_ai_analysis_v2_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/energy/ai-analysis-v2/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询 AI 能耗分析任务状态 */
+        get: operations["get_ai_analysis_job_status_api_v1_energy_ai_analysis_v2_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -9476,13 +9493,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 人员流动分析
-         * @description 分析最近6个月老厂人员流动数据并生成AI报告.
-         */
-        get: operations["get_api_v1_hr_turnover_analysis_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * 提交人员流动分析任务
+         * @description 提交分析后台任务（LLM 报告生成 >5s，不再在 GET 请求里内联执行）。
+         *
+         *     轮询 GET /api/v1/hr/jobs/{job_id}；`result.data` 即原响应体 `data`。
+         */
+        post: operations["submit_api_v1_hr_turnover_analysis_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9510,6 +9529,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/hr/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询 HR 后台任务状态 */
+        get: operations["get_hr_job_status_api_v1_hr_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/hr/candidates/parse-preview": {
         parameters: {
             query?: never;
@@ -9521,7 +9557,7 @@ export interface paths {
         put?: never;
         /**
          * 预览简历AI解析结果
-         * @description 上传简历 PDF，转为图片后由 AI 视觉识别并返回预览字段（不保存）。
+         * @description 提交简历解析后台任务（PDF 转图 + vision AI 耗时 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。
          */
         post: operations["preview_resume_parse_api_v1_hr_candidates_parse_preview_post"];
         delete?: never;
@@ -9898,7 +9934,7 @@ export interface paths {
         put?: never;
         /**
          * 生成考试题目
-         * @description 上传培训材料（docx/txt），AI 自动识别内容并按指定题型/题量生成试卷。
+         * @description 提交出题后台任务（LLM 耗时 >5s）；轮询 GET /api/v1/hr/jobs/{job_id} 拿结果。
          */
         post: operations["post_api_v1_hr_ai_exam_generate_post"];
         delete?: never;
@@ -11219,8 +11255,30 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 使用 AI 生成报告 */
+        /**
+         * 提交 AI 报告生成任务
+         * @description 提交报告生成后台任务（多轮 LLM 调用 >5s）；轮询 GET /research/jobs/{job_id}。
+         *
+         *     `result` 即原响应体：`{content, structure, data_sources}`。
+         */
         post: operations["generate_report_api_v1_research_generate_report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/research/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询 AI 报告生成任务状态 */
+        get: operations["get_research_job_status_api_v1_research_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -11869,7 +11927,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 解析文件 */
+        /**
+         * 解析文件
+         * @description 提交文件解析后台任务（解析耗时 >5s，不再阻塞请求；前端轮询任务状态）。
+         */
         post: operations["post_api_v1_registration_validation_audit_tasks__task_id__parse_post"];
         delete?: never;
         options?: never;
@@ -11886,7 +11947,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 执行审核 */
+        /**
+         * 执行审核
+         * @description 提交 AI 审核后台任务（多轮 LLM 调用 >5s，不再阻塞请求；前端轮询任务状态）。
+         */
         post: operations["post_api_v1_registration_validation_audit_tasks__task_id__audit_post"];
         delete?: never;
         options?: never;
@@ -14450,7 +14514,7 @@ export interface paths {
         put?: never;
         /**
          * 执行校验
-         * @description 执行校验（调用 AI）
+         * @description 提交校验后台任务（AI 调用 >5s，不再阻塞请求；前端轮询 GET /check/{check_id}/progress）。
          */
         post: operations["handler_api_v1_quality_check__check_id__execute_post"];
         delete?: never;
@@ -16701,8 +16765,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 分析标签复核视频
-         * @description 分析视频中的标签信息，返回 AI 识别结果
+         * 提交标签复核视频分析任务
+         * @description 提交视频标签识别后台任务；轮询 GET /label-verifications/jobs/{job_id} 拿结果。
          */
         post: operations["handler_api_v1_quality_label_verifications_analyze_video_post"];
         delete?: never;
@@ -16721,12 +16785,27 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * 自动对比视频与表单数据
-         * @description 自动分析视频中的标签信息，与表单数据逐项对比，返回 8 项核对结论。
-         *
-         *     如果识别不全，会自动降低帧率重新分析。
+         * 提交视频与表单数据自动对比任务
+         * @description 提交自动对比后台任务；轮询 GET /label-verifications/jobs/{job_id} 拿结果。
          */
-        post: operations["handler_api_v1_quality_label_verifications_auto_compare_post"];
+        post: operations["auto_compare_handler_api_v1_quality_label_verifications_auto_compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/label-verifications/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询视频分析/对比任务状态 */
+        get: operations["get_label_job_status_api_v1_quality_label_verifications_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -18065,9 +18144,31 @@ export interface paths {
         put?: never;
         /**
          * Ai Preview Extraction
-         * @description AI 智能解析预览：提取素材中的字段值（不写入文档）
+         * @description 提交 AI 智能解析预览后台任务（逐类目 LLM 调用 >5s）。
+         *
+         *     轮询 GET /dossier-writer/jobs/{job_id}；`result` 为原 AiPreviewData 载荷。
          */
         post: operations["ai_preview_extraction_api_v1_registration_dossier_writer_chapters__chapter_id__ai_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/registration/dossier-writer/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dossier Job Status
+         * @description 查询 AI 预览后台任务状态（404 = 查不到，前端按兜底态处理）。
+         */
+        get: operations["get_dossier_job_status_api_v1_registration_dossier_writer_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -18424,6 +18525,26 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * AIAnalysisApiResponse
+         * @description AI analysis response wrapper
+         */
+        AIAnalysisApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /**
          * AIAnalysisRequest
          * @description AI 能耗分析请求（V2 - 支持单耗分析）
          */
@@ -18451,36 +18572,6 @@ export interface components {
              * @default true
              */
             include_ai_suggestion: boolean;
-        };
-        /**
-         * AIAnalysisResponse
-         * @description AI 能耗分析响应（支持多产品）
-         */
-        AIAnalysisResponse: {
-            /** Workshop Id */
-            workshop_id: string;
-            /** Workshop Name */
-            workshop_name: string;
-            /** Analysis Month */
-            analysis_month: string;
-            /** Total Energy Kwh */
-            total_energy_kwh: number;
-            /** Production Items */
-            production_items: components["schemas"]["ProductionItemDetail"][];
-            /** Converted Production */
-            converted_production: number;
-            /** Actual Unit Consumption */
-            actual_unit_consumption: number;
-            /** Target Unit Consumption */
-            target_unit_consumption?: number | null;
-            /** Deviation Rate */
-            deviation_rate?: number | null;
-            /**
-             * Deviation Status
-             * @enum {string}
-             */
-            deviation_status: "normal" | "warning" | "critical" | "unknown";
-            ai_suggestion?: components["schemas"]["AISuggestion"] | null;
         };
         /**
          * AIConfirmData
@@ -18526,38 +18617,6 @@ export interface components {
             status: string;
             /** Message */
             message: string;
-        };
-        /**
-         * AISuggestion
-         * @description AI 建议对象
-         */
-        AISuggestion: {
-            /**
-             * Status
-             * @description 状态：normal/warning/critical/info/unknown
-             */
-            status: string;
-            /**
-             * Summary
-             * @description 一句话总结
-             */
-            summary: string;
-            /**
-             * Detailed Analysis
-             * @description 详细分析
-             */
-            detailed_analysis: string;
-            /**
-             * Recommendations
-             * @description 建议列表
-             */
-            recommendations: string[];
-            /**
-             * Confidence Level
-             * @description 置信度
-             * @enum {string}
-             */
-            confidence_level: "high" | "medium" | "low";
         };
         /**
          * AIWorkflowConfigApiResponse
@@ -19260,62 +19319,6 @@ export interface components {
              */
             notes?: string | null;
         };
-        /** AiPreviewApiResponse */
-        AiPreviewApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data?: components["schemas"]["AiPreviewData"] | null;
-        };
-        /** AiPreviewData */
-        AiPreviewData: {
-            /** Success */
-            success: boolean;
-            /** Message */
-            message?: string | null;
-            /** Fields */
-            fields?: components["schemas"]["AiPreviewFieldItem"][];
-            /**
-             * Partial Success
-             * @default false
-             */
-            partial_success: boolean;
-            /**
-             * Failed Count
-             * @default 0
-             */
-            failed_count: number;
-            /**
-             * Llm Error
-             * @default false
-             */
-            llm_error: boolean;
-        };
-        /** AiPreviewFieldItem */
-        AiPreviewFieldItem: {
-            /** Field Name */
-            field_name: string;
-            /** Field Type */
-            field_type?: string | null;
-            /** Value */
-            value?: string | null;
-            /**
-             * Confidence
-             * @default 0
-             */
-            confidence: number;
-            /** Source */
-            source?: string | null;
-            /** Field Mapping Id */
-            field_mapping_id?: string | null;
-        };
         /** AlertRecordProcessRequest */
         AlertRecordProcessRequest: {
             /**
@@ -19966,6 +19969,69 @@ export interface components {
             data: components["schemas"]["AssetUsageToggleData"];
             /** Message */
             message: string;
+        };
+        /**
+         * AsyncJobAccepted
+         * @description 异步任务的受理回执（提交端点立即返回，结果需轮询拿）。
+         */
+        AsyncJobAccepted: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @default running
+             * @constant
+             */
+            status: "running";
+        };
+        /** AsyncJobAcceptedResponse */
+        AsyncJobAcceptedResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AsyncJobAccepted"];
+        };
+        /**
+         * AsyncJobState
+         * @description 异步任务的当前状态（轮询端点返回）。
+         *
+         *     404（任务不存在）不代表失败：状态存进程内，重启即丢（`D-11`）。
+         */
+        AsyncJobState: {
+            /** Job Id */
+            job_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed";
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
+        };
+        /** AsyncJobStateResponse */
+        AsyncJobStateResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["AsyncJobState"];
         };
         /**
          * AuditLogItem
@@ -38958,20 +39024,6 @@ export interface components {
             description?: string | null;
         };
         /**
-         * ProductionItemDetail
-         * @description 产品产量明细
-         */
-        ProductionItemDetail: {
-            /** Product Name */
-            product_name: string;
-            /** Quantity */
-            quantity: number;
-            /** Conversion Factor */
-            conversion_factor: number;
-            /** Converted Quantity */
-            converted_quantity: number;
-        };
-        /**
          * ProductionPlanApiResponse
          * @description 生产计划响应包装
          */
@@ -50446,20 +50498,6 @@ export interface components {
              */
             batch_count: number;
         };
-        /** AIAnalysisApiResponse */
-        app__modules__energy__schemas__AIAnalysisApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            data: components["schemas"]["AIAnalysisResponse"];
-        };
         /**
          * CalibrationRecordCreate
          * @description 创建校准记录请求
@@ -50643,26 +50681,6 @@ export interface components {
          * @enum {string}
          */
         app__modules__production__schemas__OperationType: "material_add" | "transfer" | "sampling" | "equipment_check" | "parameter_record" | "packaging";
-        /**
-         * AIAnalysisApiResponse
-         * @description AI analysis response wrapper
-         */
-        app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
-        };
         /**
          * MessageApiResponse
          * @description Message-only response wrapper for actions that return no data payload
@@ -69951,7 +69969,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__energy__schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_analysis_job_status_api_v1_energy_ai_analysis_v2_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73843,7 +73894,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_hr_turnover_analysis_get: {
+    submit_api_v1_hr_turnover_analysis_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -73860,7 +73911,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -73953,6 +74004,39 @@ export interface operations {
             };
         };
     };
+    get_hr_job_status_api_v1_hr_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_resume_parse_api_v1_hr_candidates_parse_preview_post: {
         parameters: {
             query?: never;
@@ -73974,7 +74058,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -74968,7 +75052,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -78968,7 +79052,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["ApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_research_job_status_api_v1_research_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84345,7 +84462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84391,7 +84508,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84429,7 +84546,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84469,7 +84586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84509,7 +84626,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84549,7 +84666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -84589,7 +84706,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__deviation_schemas__AIAnalysisApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AIAnalysisApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92293,7 +92410,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
                 };
             };
             /** @description Validation Error */
@@ -92307,7 +92424,7 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_quality_label_verifications_auto_compare_post: {
+    auto_compare_handler_api_v1_quality_label_verifications_auto_compare_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -92328,7 +92445,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": unknown;
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_label_job_status_api_v1_quality_label_verifications_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */
@@ -95187,7 +95337,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["AiPreviewApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobAcceptedResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_dossier_job_status_api_v1_registration_dossier_writer_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["AsyncJobStateResponse"];
                 };
             };
             /** @description Validation Error */

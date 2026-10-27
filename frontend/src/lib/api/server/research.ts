@@ -586,7 +586,7 @@ export async function publishConclusionVersion(trackId: string, data: {
 
 // ===== rd-project.ts - AI Report Generation =====
 
-export async function generateReport(data: {
+export async function submitReportJob(data: {
   project_id: string
   deliverable_type: string
   template_id?: string
@@ -596,6 +596,10 @@ export async function generateReport(data: {
     method: 'POST',
     body: JSON.stringify(data),
   })
+}
+
+export async function fetchResearchJob(jobId: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/jobs/${jobId}`)
 }
 
 // ===== research.ts - Projects =====

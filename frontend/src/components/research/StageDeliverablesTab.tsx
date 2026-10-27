@@ -12,7 +12,7 @@ import { fetchDeliverables } from '@/lib/api/client/research/rd-project'
 import { createDeliverable, updateDeliverable, deleteDeliverable, uploadDeliverableFile } from '@/actions/research/deliverables'
 import { VersionHistoryDrawer } from './VersionHistoryDrawer'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
-import { generateReport } from '@/actions/research/rd-project'
+import { fetchResearchReportJob, submitReportJob } from '@/actions/research/rd-project'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { PERM } from '@/lib/permissions/codes'
 
@@ -253,14 +253,43 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
     if (!aiGenerateTarget) return
     setAiGenerating(true)
     try {
-      const result = await generateReport({
+      // 生成是后台任务：提交拿 job_id 后轮询（多轮 LLM 调用 >5s）
+      const jobId = await submitReportJob({
         project_id: projectId,
         deliverable_type: aiGenerateTarget.type,
         template_id: selectedTemplateId || undefined,
         additional_context: additionalContext || undefined,
       })
-      setAiResult(result.content)
-      msgApi.success('报告生成成功')
+      const POLL_MS = 3000
+      const TIMEOUT_MS = 10 * 60_000
+      const startedAt = Date.now()
+      for (;;) {
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          msgApi.error('报告生成超时，请重试')
+          return
+        }
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS))
+        let state
+        try {
+          state = await fetchResearchReportJob(jobId)
+        } catch {
+          msgApi.error('查询生成任务失败（服务可能已重启），请重试')
+          return
+        }
+        if (state.status === 'failed') {
+          msgApi.error(state.error || 'AI 生成失败')
+          return
+        }
+        if (state.status === 'done') {
+          if (state.result?.content) {
+            setAiResult(state.result.content)
+            msgApi.success('报告生成成功')
+          } else {
+            msgApi.error('AI 服务返回为空，请稍后重试')
+          }
+          return
+        }
+      }
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : 'AI 生成失败')
     } finally {
