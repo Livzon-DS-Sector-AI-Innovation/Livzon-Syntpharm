@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config_model import ModuleSetting
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import ApiResponse
 from app.shared.schemas import PaginationMeta
 
@@ -72,6 +72,7 @@ class ModuleSettingCreate(BaseModel):
 @router.get("", response_model=ModuleSettingListApiResponse)
 async def get(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:module-setting:read")),
     module: str | None = Query(None, description="Filter by module name"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -108,6 +109,7 @@ async def get(  # noqa: F811
     module: str,
     key: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:module-setting:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Get a specific setting by module and key."""
@@ -143,6 +145,7 @@ async def put(
     key: str,
     data: ModuleSettingUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:module-setting:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Update a setting value."""
@@ -182,6 +185,7 @@ async def put(
 async def post(
     data: ModuleSettingCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:module-setting:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Create a new module setting."""
@@ -230,6 +234,7 @@ async def delete(
     module: str,
     key: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:module-setting:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Soft delete a module setting."""

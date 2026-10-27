@@ -1274,6 +1274,7 @@ async def post(  # noqa: F811
 )
 async def get_standard_stats(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:static-data:read")),
     service: StaticDataService = Depends(_get_service),
 ) -> Any:
     """Counts the standards page renders, in one request (see #103)."""

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory, get_db
-from app.core.deps import CurrentUser, require_route_permission
+from app.core.deps import RequiredUser, require_route_permission
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.response import ApiResponse, build_response, error_response
 from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse
@@ -96,7 +96,7 @@ _dossier_job_store = JobStore()
 
 @router.post("/products", response_model=ProductDossierApiResponse)
 async def create_product_dossier(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     data: ProductDossierCreate,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -111,7 +111,7 @@ async def create_product_dossier(
 
 @router.get("/products", response_model=ProductDossierListApiResponse)
 async def list_product_dossiers(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     db: AsyncSession = Depends(get_db),
@@ -132,7 +132,7 @@ async def list_product_dossiers(
 
 @router.get("/products/{dossier_id}", response_model=ProductDossierApiResponse)
 async def get_product_dossier(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -146,7 +146,7 @@ async def get_product_dossier(
 
 @router.put("/products/{dossier_id}", response_model=ProductDossierApiResponse)
 async def update_product_dossier(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     data: ProductDossierUpdate,
     db: AsyncSession = Depends(get_db),
@@ -161,7 +161,7 @@ async def update_product_dossier(
 
 @router.delete("/products/{dossier_id}", response_model=MessageApiResponse)
 async def delete_product_dossier(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -178,7 +178,7 @@ async def delete_product_dossier(
 
 @router.post("/products/{dossier_id}/templates", response_model=TemplateUploadApiResponse)
 async def upload_templates(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
@@ -248,7 +248,7 @@ async def upload_templates(
 
 @router.post("/products/{dossier_id}/parse", response_model=ParseResultApiResponse)
 async def parse_templates(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -267,7 +267,7 @@ async def parse_templates(
 
 @router.get("/products/{dossier_id}/chapters", response_model=ChapterTreeApiResponse)
 async def get_chapter_tree(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -279,7 +279,7 @@ async def get_chapter_tree(
 
 @router.get("/chapters/{chapter_id}", response_model=ChapterDetailApiResponse)
 async def get_chapter_detail(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -296,7 +296,7 @@ async def get_chapter_detail(
 
 @router.post("/chapters/{chapter_id}/assets", response_model=AssetUploadBatchApiResponse)
 async def upload_asset(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     files: list[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
@@ -333,7 +333,7 @@ async def upload_asset(
 
 @router.get("/chapters/{chapter_id}/assets", response_model=AssetListApiResponse)
 async def list_assets(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -348,7 +348,7 @@ async def list_assets(
 
 @router.delete("/assets/{asset_id}", response_model=MessageApiResponse)
 async def delete_asset(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     asset_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -362,7 +362,7 @@ async def delete_asset(
 
 @router.patch("/assets/{asset_id}", response_model=AssetCategoryUpdateResponse)
 async def update_asset_category(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     asset_id: UUID,
     body: AssetCategoryUpdateRequest,
     db: AsyncSession = Depends(get_db),
@@ -392,7 +392,7 @@ async def update_asset_category(
 
 @router.post("/products/{dossier_id}/export", response_model=ExportApiResponse)
 async def export_dossier(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     data: ExportRequest,
     db: AsyncSession = Depends(get_db),
@@ -409,7 +409,7 @@ async def export_dossier(
 
 @router.get("/products/{dossier_id}/download")
 async def download_exported_file(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     filename: str = Query(..., description="文件名"),
     db: AsyncSession = Depends(get_db),
@@ -435,7 +435,7 @@ async def download_exported_file(
 
 @router.get("/chapters/{chapter_id}/preview", response_model=ChapterPreviewApiResponse)
 async def get_chapter_preview(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -451,7 +451,7 @@ async def get_chapter_preview(
 
 @router.get("/chapters/{chapter_id}/docx-file")
 async def get_chapter_docx_file(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> FileResponse:
@@ -483,7 +483,7 @@ async def get_chapter_docx_file(
 
 @router.post("/products/{dossier_id}/match-assets", response_model=AssetMatchApiResponse)
 async def match_assets_to_chapters(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     dossier_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -506,7 +506,7 @@ from .field_fill_service import FieldFillService  # noqa: E402
 
 @router.post("/chapters/{chapter_id}/fill-fields", response_model=FieldFillApiResponse)
 async def fill_chapter_fields(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -540,7 +540,7 @@ async def fill_chapter_fields(
 
 @router.get("/chapters/{chapter_code}/field-mappings", response_model=FieldMappingListApiResponse)
 async def get_field_mappings(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_code: str,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -572,7 +572,7 @@ async def get_field_mappings(
 
 @router.post("/field-mappings/init-s6", response_model=InitChapterConfigApiResponse)
 async def init_s6_field_mappings(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """初始化 S.6 包装系统的字段映射配置（从数据库 seed 数据）"""
@@ -585,7 +585,7 @@ async def init_s6_field_mappings(
 
 @router.post("/field-mappings/init-s7", response_model=InitS7ApiResponse)
 async def init_s7_field_mappings(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """初始化 S.7 稳定性模块的字段映射配置（从 seed_data_s7.py）
@@ -615,7 +615,7 @@ async def init_s7_field_mappings(
 
 @router.get("/chapters/{chapter_id}/fill-results", response_model=FillResultListApiResponse)
 async def get_fill_results(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -654,7 +654,7 @@ async def get_fill_results(
 
 @router.post("/chapters/{chapter_id}/ai-preview", response_model=AsyncJobAcceptedResponse)
 async def ai_preview_extraction(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -696,7 +696,7 @@ async def ai_preview_extraction(
 
 @router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse)
 async def get_dossier_job_status(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     job_id: str,
 ) -> AsyncJobStateResponse:
     """查询 AI 预览后台任务状态（404 = 查不到，前端按兜底态处理）。"""
@@ -705,7 +705,7 @@ async def get_dossier_job_status(
 
 @router.post("/chapters/{chapter_id}/ai-confirm", response_model=AIConfirmResponse)
 async def ai_confirm_and_fill(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     data: AIConfirmRequest,
     db: AsyncSession = Depends(get_db),
@@ -739,7 +739,7 @@ async def ai_confirm_and_fill(
 
 @router.get("/chapters/{chapter_code}/asset-categories", response_model=AssetCategoryListApiResponse)
 async def get_asset_categories(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_code: str,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -754,7 +754,7 @@ async def get_asset_categories(
 
 @router.post("/assets/{asset_id}/split-preview", response_model=SplitPreviewResponse)
 async def split_preview(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     asset_id: UUID,
     data: SplitPreviewRequest,
     db: AsyncSession = Depends(get_db),
@@ -783,7 +783,7 @@ async def split_preview(
 
 @router.post("/chapters/{chapter_id}/split-confirm", response_model=SplitConfirmResponse)
 async def split_confirm_and_insert(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     data: SplitConfirmRequest,
     db: AsyncSession = Depends(get_db),
@@ -819,7 +819,7 @@ async def split_confirm_and_insert(
 
 @router.get("/chapters/{chapter_code}/appendix-slots", response_model=StringListApiResponse)
 async def get_appendix_slots(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_code: str,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -845,7 +845,7 @@ async def get_appendix_slots(
 
 @router.get("/chapters/{chapter_id}/available-assets", response_model=AvailableAssetListApiResponse)
 async def list_available_assets(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -884,7 +884,7 @@ async def list_available_assets(
 
 @router.patch("/chapters/{chapter_id}/asset-usages/{asset_id}", response_model=AssetUsageToggleResponse)
 async def toggle_asset_usage(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     asset_id: UUID,
     body: AssetUsageToggleRequest,
@@ -904,7 +904,7 @@ async def toggle_asset_usage(
 
 @router.get("/chapters/{chapter_id}/selected-assets", response_model=AssetListApiResponse)
 async def list_selected_assets(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:

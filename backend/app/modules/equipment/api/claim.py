@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
 from app.core.tasks import spawn_task
@@ -20,12 +20,6 @@ from app.platform.integrations.feishu.message import send_claim_notification
 router = APIRouter()
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 @router.put("/{work_order_id}/claim", summary="抢单（维修人员自主接单）")
 async def claim_work_order(
     work_order_id: uuid.UUID,
@@ -34,7 +28,6 @@ async def claim_work_order(
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
-    _require_user(current_user)
     assert current_user is not None
 
     dept_id = settings.feishu.platform.equipment_dept_id

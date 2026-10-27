@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.job_store import start_job
 from app.modules.hr.analysis_service import TurnoverAnalysisService
 from app.modules.hr.job_store import hr_job_store
@@ -23,7 +23,7 @@ def get_turnover_analysis_service(
 
 @router.post("", response_model=AsyncJobAcceptedResponse, summary="提交人员流动分析任务")
 async def submit(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:turnover-analysis:read")),
     service: TurnoverAnalysisService = Depends(get_turnover_analysis_service),
 ) -> AsyncJobAcceptedResponse:

@@ -79,6 +79,10 @@ PLATFORM_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("platform:api-binding:read", "查看接口绑定登记簿", "platform", "api-binding", "read"),
     PermissionDef("platform:ops:read", "查看系统运维", "platform", "ops", "read"),
     PermissionDef("platform:ops:manage", "系统运维操作", "platform", "ops", "manage"),
+    PermissionDef("platform:llm-config:read", "查看模型配置", "platform", "llm-config", "read"),
+    PermissionDef("platform:llm-config:manage", "管理模型配置", "platform", "llm-config", "manage"),
+    PermissionDef("platform:module-setting:read", "查看模块配置", "platform", "module-setting", "read"),
+    PermissionDef("platform:module-setting:manage", "管理模块配置", "platform", "module-setting", "manage"),
 )
 
 
@@ -1186,6 +1190,19 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("platform:user:read", "GET", "/api/v1/identity/personnel"),
     # 登录记录（审计类）
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/identity/login-logs"),
+    # 模型配置（含 API key，仅平台管理员）
+    ApiBindingDef("platform:llm-config:read", "GET", "/api/v1/llm/configs"),
+    ApiBindingDef("platform:llm-config:read", "GET", "/api/v1/llm/configs/{config_id}"),
+    ApiBindingDef("platform:llm-config:manage", "POST", "/api/v1/llm/configs"),
+    ApiBindingDef("platform:llm-config:manage", "PUT", "/api/v1/llm/configs/{config_id}"),
+    ApiBindingDef("platform:llm-config:manage", "DELETE", "/api/v1/llm/configs/{config_id}"),
+    ApiBindingDef("platform:llm-config:manage", "POST", "/api/v1/llm/configs/test"),
+    # 模块运行时配置
+    ApiBindingDef("platform:module-setting:read", "GET", "/api/v1/module-settings"),
+    ApiBindingDef("platform:module-setting:read", "GET", "/api/v1/module-settings/{module}/{key}"),
+    ApiBindingDef("platform:module-setting:manage", "POST", "/api/v1/module-settings"),
+    ApiBindingDef("platform:module-setting:manage", "PUT", "/api/v1/module-settings/{module}/{key}"),
+    ApiBindingDef("platform:module-setting:manage", "DELETE", "/api/v1/module-settings/{module}/{key}"),
     # 操作记录
     ApiBindingDef("platform:audit:read", "GET", "/api/v1/audit/logs"),
     # Livzon 助手飞书配置与通讯录同步
@@ -1929,6 +1946,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ),
     ApiBindingDef(
         "equipment:inspection:create",
+        "GET",
+        "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/ai-analyze/jobs/{job_id}",
+    ),
+    ApiBindingDef(
+        "equipment:inspection:create",
         "POST",
         "/api/v1/equipment/inspection/tasks/{task_id}/equipments/{equipment_id}/check",
     ),
@@ -2562,12 +2584,14 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:static-data:delete", "DELETE", "/api/v1/quality/static-data/hplc-reference/{id}"),
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/hplc-reference/{id}/usage-history"),
     ApiBindingDef("quality:static-data:update", "POST", "/api/v1/quality/static-data/hplc-reference/{id}/use"),
+    ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/medium/stats"),
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/medium"),
     ApiBindingDef("quality:static-data:create", "POST", "/api/v1/quality/static-data/medium"),
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/medium/{id}"),
     ApiBindingDef("quality:static-data:update", "PUT", "/api/v1/quality/static-data/medium/{id}"),
     ApiBindingDef("quality:static-data:delete", "DELETE", "/api/v1/quality/static-data/medium/{id}"),
     ApiBindingDef("quality:static-data:update", "POST", "/api/v1/quality/static-data/medium/{id}/adjust-stock"),
+    ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/standard/stats"),
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/standard"),
     ApiBindingDef("quality:static-data:create", "POST", "/api/v1/quality/static-data/standard"),
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/standard/{id}"),
@@ -2686,7 +2710,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("hr:system-settings:read", "GET", "/api/v1/hr/system-settings"),
     ApiBindingDef("hr:system-settings:update", "PUT", "/api/v1/hr/system-settings"),
     ApiBindingDef("hr:departments:update", "PUT", "/api/v1/hr/departments/{department_id}/production-settings"),
-    ApiBindingDef("hr:turnover-analysis:read", "GET", "/api/v1/hr/turnover-analysis"),
+    ApiBindingDef("hr:turnover-analysis:read", "POST", "/api/v1/hr/turnover-analysis"),
     ApiBindingDef("hr:ai-exam:generate", "POST", "/api/v1/hr/ai-exam/generate"),
     ApiBindingDef("hr:ai-exam:export", "POST", "/api/v1/hr/ai-exam/export"),
     ApiBindingDef("production:batches:read", "GET", "/api/v1/production/batches"),

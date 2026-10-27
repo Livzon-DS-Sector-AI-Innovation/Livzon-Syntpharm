@@ -10,8 +10,8 @@ from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
-from app.core.exceptions import AppException, NotFoundException
+from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import NotFoundException
 from app.core.response import build_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment import service
@@ -22,12 +22,6 @@ from app.modules.equipment.schemas import (
 )
 
 router = APIRouter()
-
-
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
 
 
 @router.post(
@@ -42,7 +36,6 @@ async def upload_work_order_images(
     files: list[UploadFile] = File(..., description="图片文件"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    _require_user(current_user)
     images = await service.upload_images(db, work_order_id, files)
     return build_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 
@@ -58,7 +51,6 @@ async def list_work_order_images(
     ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    _require_user(current_user)
     images = await service.get_work_order_images(db, work_order_id)
     return build_response(data=[WorkOrderImageResponse.model_validate(img) for img in images])
 
@@ -101,6 +93,5 @@ async def remove_work_order_image(
     ctx: PermissionContext = Depends(require_permission("equipment:work-order:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    _require_user(current_user)
     await service.delete_work_order_image(db, image_id)
     return build_response(message="图片已删除")

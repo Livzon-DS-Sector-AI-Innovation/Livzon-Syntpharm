@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.service import SupplementaryReplyService
@@ -23,7 +23,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> SupplementaryReplySe
 
 @router.post("/generate", summary="生成发补回复文档")
 async def post(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     notice: UploadFile,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:create")),
     template: UploadFile | None = None,
@@ -63,7 +63,7 @@ async def post(
 
 @router.get("", summary="发补回复记录列表")
 async def get(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
@@ -85,7 +85,7 @@ async def get(
 
 @router.get("/{reply_id}", summary="发补回复记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
@@ -96,7 +96,7 @@ async def get(  # noqa: F811
 
 @router.get("/{reply_id}/download-url", summary="获取发补回复文件下载URL")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
@@ -114,7 +114,7 @@ async def get(  # noqa: F811
 
 @router.get("/{reply_id}/download", summary="下载生成的发补回复文件")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:read")),
     service: SupplementaryReplyService = Depends(get_service),
@@ -136,7 +136,7 @@ async def get(  # noqa: F811
 
 @router.delete("/{reply_id}", summary="删除发补回复记录")
 async def delete(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     reply_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:supplementary-reply:delete")),
     service: SupplementaryReplyService = Depends(get_service),
