@@ -355,7 +355,8 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     if exc.status_code >= 500:
-        logger.exception(
+        # 这里不在 except 上下文中，logger.exception 会产生无意义的 "NoneType: None" 堆栈。
+        logger.error(
             "HTTP %d on %s %s: %s",
             exc.status_code,
             request.method,
@@ -370,22 +371,22 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    import logging
+    """422 只记录出错字段的位置与错误类型，绝不记录请求体内容。
 
-    logger = logging.getLogger(__name__)
+    请求体可能包含明文密码、token、API key（登录、改密、凭证配置等接口），
+    一旦写入日志即等价泄露，且日志通常会被收集到集中平台。
+    """
     errors = exc.errors()
-    logger.error(f"[VALIDATION ERROR] Path: {request.url.path}")
-    logger.error(f"[VALIDATION ERROR] Errors: {errors}")
-    logger.error(f"[VALIDATION ERROR] Body type: {type(exc.body)}")
-    if exc.body:
-        # Try to get more details about the body
-        if isinstance(exc.body, list):
-            logger.error(f"[VALIDATION ERROR] Body is list with {len(exc.body)} items")
-            if exc.body:
-                logger.error(f"[VALIDATION ERROR] First item: {exc.body[0]}")
-                logger.error(f"[VALIDATION ERROR] First item type: {type(exc.body[0])}")
-        body_str = str(exc.body)[:2000]
-        logger.error(f"[VALIDATION ERROR] Body: {body_str}")
+    fields = [
+        {"loc": [str(part) for part in e.get("loc", ())], "type": e.get("type", "")}
+        for e in errors
+    ]
+    logger.warning(
+        "request validation failed: method=%s path=%s fields=%s",
+        request.method,
+        request.url.path,
+        fields,
+    )
     detail = "; ".join(f"{e.get('loc', [''])[-1]}: {e.get('msg', '')}" for e in errors)
     return error_response(
         message="请求参数校验失败",

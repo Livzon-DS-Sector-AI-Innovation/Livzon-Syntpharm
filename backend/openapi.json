@@ -71768,9 +71768,8 @@
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
-        "summary": "\u83b7\u53d6\u914d\u7f6e\u5217\u8868",
-        "description": "\u83b7\u53d6\u914d\u7f6e\u5217\u8868",
-        "operationId": "get_api_v1_quality_config_get",
+        "summary": "\u83b7\u53d6\u6587\u6863\u6821\u9a8c\u914d\u7f6e\u5217\u8868",
+        "operationId": "list_configs_api_v1_quality_config_get",
         "parameters": [
           {
             "name": "auth_token",
@@ -71816,9 +71815,8 @@
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
-        "summary": "\u521b\u5efa\u914d\u7f6e",
-        "description": "\u521b\u5efa\u914d\u7f6e",
-        "operationId": "post_api_v1_quality_config_post",
+        "summary": "\u65b0\u589e\u6587\u6863\u6821\u9a8c\u914d\u7f6e",
+        "operationId": "create_config_api_v1_quality_config_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -71876,9 +71874,8 @@
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
-        "summary": "\u83b7\u53d6\u914d\u7f6e\u8be6\u60c5",
-        "description": "\u83b7\u53d6\u914d\u7f6e\u8be6\u60c5",
-        "operationId": "get_api_v1_quality_config__config_id__get",
+        "summary": "\u83b7\u53d6\u6587\u6863\u6821\u9a8c\u914d\u7f6e\u8be6\u60c5",
+        "operationId": "get_config_api_v1_quality_config__config_id__get",
         "parameters": [
           {
             "name": "config_id",
@@ -71886,7 +71883,6 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
               "title": "Config Id"
             }
           },
@@ -71934,9 +71930,8 @@
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
-        "summary": "\u66f4\u65b0\u914d\u7f6e",
-        "description": "\u66f4\u65b0\u914d\u7f6e",
-        "operationId": "put_api_v1_quality_config__config_id__put",
+        "summary": "\u4fee\u6539\u6587\u6863\u6821\u9a8c\u914d\u7f6e",
+        "operationId": "update_config_api_v1_quality_config__config_id__put",
         "parameters": [
           {
             "name": "config_id",
@@ -71944,7 +71939,6 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
               "title": "Config Id"
             }
           },
@@ -71999,14 +71993,240 @@
         }
       }
     },
+    "/api/v1/quality/upload": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u4e0a\u4f20\u5f85\u6821\u9a8c\u6587\u6863",
+        "operationId": "upload_document_api_v1_quality_upload_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_document_api_v1_quality_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckUploadApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/upload/{upload_id}/progress": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u67e5\u8be2\u4e0a\u4f20\u8fdb\u5ea6",
+        "operationId": "get_upload_progress_api_v1_quality_upload__upload_id__progress_get",
+        "parameters": [
+          {
+            "name": "upload_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Upload Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckUploadProgressApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/quality/check": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u83b7\u53d6\u6821\u9a8c\u4efb\u52a1\u5217\u8868",
+        "operationId": "list_checks_api_v1_quality_check_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u72b6\u6001\u8fc7\u6ee4",
+              "title": "Status"
+            },
+            "description": "\u72b6\u6001\u8fc7\u6ee4"
+          },
+          {
+            "name": "file_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6587\u4ef6\u7c7b\u578b\u8fc7\u6ee4",
+              "title": "File Type"
+            },
+            "description": "\u6587\u4ef6\u7c7b\u578b\u8fc7\u6ee4"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "\u9875\u7801",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "\u9875\u7801"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "\u6bcf\u9875\u6761\u6570",
+              "default": 20,
+              "title": "Page Size"
+            },
+            "description": "\u6bcf\u9875\u6761\u6570"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
         "summary": "\u521b\u5efa\u6821\u9a8c\u4efb\u52a1",
-        "description": "\u521b\u5efa\u6821\u9a8c\u4efb\u52a1",
-        "operationId": "post_api_v1_quality_check_post",
+        "operationId": "create_check_api_v1_quality_check_post",
         "parameters": [
           {
             "name": "auth_token",
@@ -72057,15 +72277,662 @@
             }
           }
         }
-      },
+      }
+    },
+    "/api/v1/quality/batch": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u6279\u91cf\u521b\u5efa\u6821\u9a8c\u4efb\u52a1",
+        "operationId": "create_batch_api_v1_quality_batch_post",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocCheckBatchCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckBatchApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/check/{check_id}": {
       "get": {
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
-        "summary": "\u83b7\u53d6\u6821\u9a8c\u5217\u8868",
-        "description": "\u83b7\u53d6\u6821\u9a8c\u5217\u8868",
-        "operationId": "get_api_v1_quality_check_get",
+        "summary": "\u83b7\u53d6\u6821\u9a8c\u4efb\u52a1\u8be6\u60c5",
+        "operationId": "get_check_api_v1_quality_check__check_id__get",
         "parameters": [
+          {
+            "name": "check_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Check Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u4fee\u6539\u6821\u9a8c\u4efb\u52a1",
+        "operationId": "update_check_api_v1_quality_check__check_id__put",
+        "parameters": [
+          {
+            "name": "check_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Check Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocCheckUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u5220\u9664\u6821\u9a8c\u4efb\u52a1",
+        "operationId": "delete_check_api_v1_quality_check__check_id__delete",
+        "parameters": [
+          {
+            "name": "check_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Check Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/app__modules__quality__qms__doc_check__schemas__MessageApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/check/{check_id}/cancel": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u53d6\u6d88\u6821\u9a8c\u4efb\u52a1",
+        "operationId": "cancel_check_api_v1_quality_check__check_id__cancel_post",
+        "parameters": [
+          {
+            "name": "check_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Check Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckTaskApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/check/{check_id}/execute": {
+      "post": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u6267\u884c\u6821\u9a8c\u4efb\u52a1",
+        "operationId": "execute_check_api_v1_quality_check__check_id__execute_post",
+        "parameters": [
+          {
+            "name": "check_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Check Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocCheckExecuteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckTaskApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/check/{check_id}/progress": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u67e5\u8be2\u6821\u9a8c\u8fdb\u5ea6",
+        "operationId": "get_check_progress_api_v1_quality_check__check_id__progress_get",
+        "parameters": [
+          {
+            "name": "check_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Check Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocCheckProgressApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/problems": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u83b7\u53d6\u95ee\u9898\u660e\u7ec6\u5217\u8868",
+        "operationId": "list_problems_api_v1_quality_problems_get",
+        "parameters": [
+          {
+            "name": "check_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "\u6821\u9a8c\u4efb\u52a1 ID",
+              "title": "Check Id"
+            },
+            "description": "\u6821\u9a8c\u4efb\u52a1 ID"
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemListApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/problems/batch": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u6279\u91cf\u5904\u7406\u95ee\u9898",
+        "operationId": "batch_update_problems_api_v1_quality_problems_batch_put",
+        "parameters": [
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProblemBatchUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemBatchApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/problems/{problem_id}": {
+      "put": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u5904\u7406\u5355\u4e2a\u95ee\u9898",
+        "operationId": "update_problem_api_v1_quality_problems__problem_id__put",
+        "parameters": [
+          {
+            "name": "problem_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Problem Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProblemUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/records": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u5217\u8868",
+        "operationId": "list_records_api_v1_quality_records_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u72b6\u6001\u8fc7\u6ee4",
+              "title": "Status"
+            },
+            "description": "\u72b6\u6001\u8fc7\u6ee4"
+          },
+          {
+            "name": "file_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "\u6587\u4ef6\u7c7b\u578b\u8fc7\u6ee4",
+              "title": "File Type"
+            },
+            "description": "\u6587\u4ef6\u7c7b\u578b\u8fc7\u6ee4"
+          },
           {
             "name": "page",
             "in": "query",
@@ -72085,67 +72952,13 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 100,
               "minimum": 1,
-              "description": "\u6bcf\u9875\u6570\u91cf",
+              "description": "\u6bcf\u9875\u6761\u6570",
               "default": 20,
               "title": "Page Size"
             },
-            "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6821\u9a8c\u72b6\u6001",
-              "title": "Status"
-            },
-            "description": "\u6821\u9a8c\u72b6\u6001"
-          },
-          {
-            "name": "doc_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6587\u6863\u7c7b\u578b",
-              "title": "Doc Type"
-            },
-            "description": "\u6587\u6863\u7c7b\u578b"
-          },
-          {
-            "name": "operator",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u64cd\u4f5c\u4eba",
-              "title": "Operator"
-            },
-            "description": "\u64cd\u4f5c\u4eba"
+            "description": "\u6bcf\u9875\u6761\u6570"
           },
           {
             "name": "auth_token",
@@ -72188,906 +73001,13 @@
         }
       }
     },
-    "/api/v1/quality/check/{check_id}/execute": {
-      "post": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u6267\u884c\u6821\u9a8c",
-        "description": "\u63d0\u4ea4\u6821\u9a8c\u540e\u53f0\u4efb\u52a1\uff08AI \u8c03\u7528 >5s\uff0c\u4e0d\u518d\u963b\u585e\u8bf7\u6c42\uff1b\u524d\u7aef\u8f6e\u8be2 GET /check/{check_id}/progress\uff09\u3002",
-        "operationId": "handler_api_v1_quality_check__check_id__execute_post",
-        "parameters": [
-          {
-            "name": "check_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Check Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckDetailApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/check/{check_id}": {
-      "get": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u83b7\u53d6\u6821\u9a8c\u8be6\u60c5",
-        "description": "\u83b7\u53d6\u6821\u9a8c\u8be6\u60c5",
-        "operationId": "get_api_v1_quality_check__check_id__get",
-        "parameters": [
-          {
-            "name": "check_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Check Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckDetailApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u66f4\u65b0\u6821\u9a8c\u4efb\u52a1",
-        "description": "\u66f4\u65b0\u6821\u9a8c\u4efb\u52a1",
-        "operationId": "put_api_v1_quality_check__check_id__put",
-        "parameters": [
-          {
-            "name": "check_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Check Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DocCheckUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckTaskApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u5220\u9664\u6821\u9a8c\u4efb\u52a1",
-        "description": "\u5220\u9664\u6821\u9a8c\u4efb\u52a1",
-        "operationId": "delete_api_v1_quality_check__check_id__delete",
-        "parameters": [
-          {
-            "name": "check_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Check Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckMessageApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/problems": {
-      "get": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u83b7\u53d6\u95ee\u9898\u5217\u8868",
-        "description": "\u83b7\u53d6\u95ee\u9898\u5217\u8868",
-        "operationId": "get_api_v1_quality_problems_get",
-        "parameters": [
-          {
-            "name": "check_main_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "description": "\u6821\u9a8c\u4e3b\u8868ID",
-              "title": "Check Main Id"
-            },
-            "description": "\u6821\u9a8c\u4e3b\u8868ID"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckProblemListApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/vector-cache": {
-      "get": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u83b7\u53d6\u5411\u91cf\u7f13\u5b58\u5217\u8868",
-        "description": "\u83b7\u53d6\u5411\u91cf\u7f13\u5b58\u5217\u8868",
-        "operationId": "get_api_v1_quality_vector_cache_get",
-        "parameters": [
-          {
-            "name": "doc_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6587\u6863\u7c7b\u578b",
-              "title": "Doc Type"
-            },
-            "description": "\u6587\u6863\u7c7b\u578b"
-          },
-          {
-            "name": "doc_hash",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6587\u6863\u54c8\u5e0c",
-              "title": "Doc Hash"
-            },
-            "description": "\u6587\u6863\u54c8\u5e0c"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckVectorCacheListApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/upload": {
-      "post": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u4e0a\u4f20\u6587\u4ef6",
-        "description": "\u4e0a\u4f20\u6587\u4ef6\u5230\u670d\u52a1\u5668",
-        "operationId": "post_api_v1_quality_upload_post",
-        "parameters": [
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_post_api_v1_quality_upload_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckUploadApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/upload/{upload_id}/progress": {
-      "get": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u83b7\u53d6\u4e0a\u4f20\u8fdb\u5ea6",
-        "description": "\u83b7\u53d6\u4e0a\u4f20\u8fdb\u5ea6",
-        "operationId": "handler_api_v1_quality_upload__upload_id__progress_get",
-        "parameters": [
-          {
-            "name": "upload_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Upload Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckProgressApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/check/{check_id}/progress": {
-      "get": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u83b7\u53d6\u6821\u9a8c\u8fdb\u5ea6",
-        "description": "\u83b7\u53d6\u6821\u9a8c\u8fdb\u5ea6",
-        "operationId": "handler_api_v1_quality_check__check_id__progress_get",
-        "parameters": [
-          {
-            "name": "check_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Check Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckProgressApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/check/{check_id}/cancel": {
-      "post": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u53d6\u6d88\u6821\u9a8c",
-        "description": "\u53d6\u6d88\u6821\u9a8c\u4efb\u52a1",
-        "operationId": "post_api_v1_quality_check__check_id__cancel_post",
-        "parameters": [
-          {
-            "name": "check_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Check Id"
-            }
-          },
-          {
-            "name": "operator",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Operator"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckSuccessApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/batch": {
-      "post": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u6279\u91cf\u6821\u9a8c",
-        "description": "\u6279\u91cf\u521b\u5efa\u6821\u9a8c\u4efb\u52a1",
-        "operationId": "post_api_v1_quality_batch_post",
-        "parameters": [
-          {
-            "name": "operator",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Operator"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_post_api_v1_quality_batch_post"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckSuccessApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/records": {
-      "get": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u5217\u8868",
-        "description": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u5217\u8868",
-        "operationId": "get_api_v1_quality_records_get",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "description": "\u9875\u7801",
-              "default": 1,
-              "title": "Page"
-            },
-            "description": "\u9875\u7801"
-          },
-          {
-            "name": "page_size",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 200,
-              "minimum": 1,
-              "description": "\u6bcf\u9875\u6570\u91cf",
-              "default": 20,
-              "title": "Page Size"
-            },
-            "description": "\u6bcf\u9875\u6570\u91cf"
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6821\u9a8c\u72b6\u6001",
-              "title": "Status"
-            },
-            "description": "\u6821\u9a8c\u72b6\u6001"
-          },
-          {
-            "name": "file_no",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6587\u4ef6\u7f16\u53f7",
-              "title": "File No"
-            },
-            "description": "\u6587\u4ef6\u7f16\u53f7"
-          },
-          {
-            "name": "file_type",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u6587\u4ef6\u7c7b\u578b",
-              "title": "File Type"
-            },
-            "description": "\u6587\u4ef6\u7c7b\u578b"
-          },
-          {
-            "name": "start_date",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u5f00\u59cb\u65e5\u671f",
-              "title": "Start Date"
-            },
-            "description": "\u5f00\u59cb\u65e5\u671f"
-          },
-          {
-            "name": "end_date",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "\u7ed3\u675f\u65e5\u671f",
-              "title": "End Date"
-            },
-            "description": "\u7ed3\u675f\u65e5\u671f"
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckRecordsApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/quality/records/{record_id}": {
       "get": {
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
         "summary": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u8be6\u60c5",
-        "description": "\u83b7\u53d6\u6821\u9a8c\u8bb0\u5f55\u8be6\u60c5",
-        "operationId": "handler_api_v1_quality_records__record_id__get",
+        "operationId": "get_record_api_v1_quality_records__record_id__get",
         "parameters": [
           {
             "name": "record_id",
@@ -73095,7 +73015,6 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
               "title": "Record Id"
             }
           },
@@ -73122,7 +73041,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DocCheckRecordsApiResponse"
+                  "$ref": "#/components/schemas/DocCheckDetailApiResponse"
                 }
               }
             }
@@ -73145,9 +73064,8 @@
         "tags": [
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
-        "summary": "\u786e\u8ba4\u901a\u8fc7",
-        "description": "\u786e\u8ba4\u6821\u9a8c\u901a\u8fc7",
-        "operationId": "handler_api_v1_quality_records__record_id__confirm_post",
+        "summary": "\u786e\u8ba4\u6821\u9a8c\u8bb0\u5f55\u901a\u8fc7",
+        "operationId": "confirm_record_api_v1_quality_records__record_id__confirm_post",
         "parameters": [
           {
             "name": "record_id",
@@ -73155,27 +73073,10 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
               "title": "Record Id"
             }
           },
           {
-            "name": "operator",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Operator"
-            }
-          },
-          {
             "name": "auth_token",
             "in": "cookie",
             "required": false,
@@ -73198,182 +73099,7 @@
             "content": {
               "application/json; charset=utf-8": {
                 "schema": {
-                  "$ref": "#/components/schemas/DocCheckSuccessApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/problems/{problem_id}": {
-      "put": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u66f4\u65b0\u95ee\u9898",
-        "description": "\u66f4\u65b0\u95ee\u9898",
-        "operationId": "put_api_v1_quality_problems__problem_id__put",
-        "parameters": [
-          {
-            "name": "problem_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Problem Id"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProblemUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckProblemUpdateApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/quality/problems/batch": {
-      "put": {
-        "tags": [
-          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
-        ],
-        "summary": "\u6279\u91cf\u66f4\u65b0\u95ee\u9898",
-        "description": "\u6279\u91cf\u66f4\u65b0\u95ee\u9898",
-        "operationId": "put_api_v1_quality_problems_batch_put",
-        "parameters": [
-          {
-            "name": "handle_status",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Handle Status"
-            }
-          },
-          {
-            "name": "ignore_reason",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Ignore Reason"
-            }
-          },
-          {
-            "name": "operator",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Operator"
-            }
-          },
-          {
-            "name": "auth_token",
-            "in": "cookie",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Auth Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                },
-                "title": "Problem Ids"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json; charset=utf-8": {
-                "schema": {
-                  "$ref": "#/components/schemas/DocCheckBatchUpdateApiResponse"
+                  "$ref": "#/components/schemas/DocCheckConfirmApiResponse"
                 }
               }
             }
@@ -73397,8 +73123,7 @@
           "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
         ],
         "summary": "\u5bfc\u51fa\u6821\u9a8c\u62a5\u544a",
-        "description": "\u5bfc\u51fa\u6821\u9a8c\u62a5\u544a",
-        "operationId": "get_api_v1_quality_export__record_id__get",
+        "operationId": "export_report_api_v1_quality_export__record_id__get",
         "parameters": [
           {
             "name": "record_id",
@@ -73406,7 +73131,6 @@
             "required": true,
             "schema": {
               "type": "string",
-              "format": "uuid",
               "title": "Record Id"
             }
           },
@@ -73416,11 +73140,11 @@
             "required": false,
             "schema": {
               "type": "string",
-              "description": "\u5bfc\u51fa\u683c\u5f0f",
-              "default": "pdf",
+              "description": "\u5bfc\u51fa\u683c\u5f0f\uff0c\u5f53\u524d\u4ec5\u652f\u6301 html",
+              "default": "html",
               "title": "Format"
             },
-            "description": "\u5bfc\u51fa\u683c\u5f0f"
+            "description": "\u5bfc\u51fa\u683c\u5f0f\uff0c\u5f53\u524d\u4ec5\u652f\u6301 html"
           },
           {
             "name": "auth_token",
@@ -73446,6 +73170,64 @@
               "application/json; charset=utf-8": {
                 "schema": {
                   "$ref": "#/components/schemas/DocCheckExportApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/quality/export/{record_id}/file": {
+      "get": {
+        "tags": [
+          "\u8d28\u91cf\u7ba1\u7406 - \u6587\u4ef6\u68c0\u67e5"
+        ],
+        "summary": "\u4e0b\u8f7d\u6821\u9a8c\u62a5\u544a\u6587\u4ef6",
+        "operationId": "download_report_api_v1_quality_export__record_id__file_get",
+        "parameters": [
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "auth_token",
+            "in": "cookie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Auth Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -96528,34 +96310,6 @@
         ],
         "title": "Body_post_api_v1_hr_ai_exam_generate_post"
       },
-      "Body_post_api_v1_quality_batch_post": {
-        "properties": {
-          "file_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "File Ids"
-          },
-          "check_config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Check Config"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file_ids"
-        ],
-        "title": "Body_post_api_v1_quality_batch_post"
-      },
       "Body_post_api_v1_quality_instrument_feishu_contacts_resolve_user_post": {
         "properties": {
           "mobile": {
@@ -96784,86 +96538,6 @@
           "quantity"
         ],
         "title": "Body_post_api_v1_quality_static_data_standard__id__adjust_quantity_post"
-      },
-      "Body_post_api_v1_quality_upload_post": {
-        "properties": {
-          "file": {
-            "type": "string",
-            "contentMediaType": "application/octet-stream",
-            "title": "File"
-          },
-          "file_name": {
-            "type": "string",
-            "title": "File Name",
-            "description": "\u6587\u4ef6\u540d"
-          },
-          "file_no": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File No",
-            "description": "\u6587\u4ef6\u7f16\u53f7"
-          },
-          "file_version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Version",
-            "description": "\u6587\u4ef6\u7248\u672c"
-          },
-          "file_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Type",
-            "description": "\u6587\u4ef6\u7c7b\u578b"
-          },
-          "preparer": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Preparer",
-            "description": "\u7f16\u5236\u4eba"
-          },
-          "prepare_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Prepare Date",
-            "description": "\u7f16\u5236\u65e5\u671f"
-          }
-        },
-        "type": "object",
-        "required": [
-          "file",
-          "file_name"
-        ],
-        "title": "Body_post_api_v1_quality_upload_post"
       },
       "Body_post_api_v1_registration_authorization_letters_generate_post": {
         "properties": {
@@ -97438,6 +97112,21 @@
           "file"
         ],
         "title": "Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post"
+      },
+      "Body_upload_document_api_v1_quality_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "\u5f85\u6821\u9a8c\u6587\u6863\uff0c\u652f\u6301 docx/pdf/txt\uff0c\u4e0d\u8d85\u8fc7 20MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_document_api_v1_quality_upload_post"
       },
       "Body_upload_equipment_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__photos_post": {
         "properties": {
@@ -99912,17 +99601,6 @@
         },
         "type": "object",
         "title": "ChapterTreeApiResponse"
-      },
-      "CheckStatus": {
-        "type": "string",
-        "enum": [
-          "pending",
-          "processing",
-          "completed",
-          "failed"
-        ],
-        "title": "CheckStatus",
-        "description": "\u6821\u9a8c\u72b6\u6001"
       },
       "CheckType": {
         "type": "string",
@@ -107912,7 +107590,7 @@
         ],
         "title": "DiskUsage"
       },
-      "DocCheckBatchUpdateApiResponse": {
+      "DocCheckApiResponse": {
         "properties": {
           "code": {
             "type": "integer",
@@ -107925,17 +107603,96 @@
             "default": "success"
           },
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+            "$ref": "#/components/schemas/DocCheckResponse"
           }
         },
         "type": "object",
         "required": [
           "data"
         ],
-        "title": "DocCheckBatchUpdateApiResponse",
-        "description": "\u6279\u91cf\u66f4\u65b0\u54cd\u5e94\u5305\u88c5"
+        "title": "DocCheckApiResponse",
+        "description": "\u6821\u9a8c\u4efb\u52a1\u54cd\u5e94\u5305\u88c5"
+      },
+      "DocCheckBatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocCheckBatchResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocCheckBatchApiResponse",
+        "description": "\u6279\u91cf\u521b\u5efa\u54cd\u5e94\u5305\u88c5"
+      },
+      "DocCheckBatchCreate": {
+        "properties": {
+          "file_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "File Ids",
+            "description": "\u6587\u4ef6\u6807\u8bc6\u5217\u8868"
+          },
+          "check_type": {
+            "type": "string",
+            "enum": [
+              "single",
+              "batch",
+              "scheduled"
+            ],
+            "title": "Check Type",
+            "default": "batch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_ids"
+        ],
+        "title": "DocCheckBatchCreate",
+        "description": "\u6279\u91cf\u521b\u5efa\u6821\u9a8c\u4efb\u52a1"
+      },
+      "DocCheckBatchResponse": {
+        "properties": {
+          "created": {
+            "type": "integer",
+            "title": "Created"
+          },
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped"
+          },
+          "check_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Check Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created"
+        ],
+        "title": "DocCheckBatchResponse",
+        "description": "\u6279\u91cf\u521b\u5efa\u7ed3\u679c"
       },
       "DocCheckConfigApiResponse": {
         "properties": {
@@ -107950,30 +107707,28 @@
             "default": "success"
           },
           "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocCheckConfigResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/DocCheckConfigResponse"
           }
         },
         "type": "object",
+        "required": [
+          "data"
+        ],
         "title": "DocCheckConfigApiResponse",
-        "description": "\u914d\u7f6e\u54cd\u5e94\u5305\u88c5"
+        "description": "\u5355\u6761\u914d\u7f6e\u54cd\u5e94\u5305\u88c5"
       },
       "DocCheckConfigCreate": {
         "properties": {
           "config_key": {
             "type": "string",
             "maxLength": 100,
+            "minLength": 1,
             "title": "Config Key",
             "description": "\u914d\u7f6e\u952e"
           },
           "config_value": {
             "type": "string",
+            "minLength": 1,
             "title": "Config Value",
             "description": "\u914d\u7f6e\u503c"
           },
@@ -107988,7 +107743,7 @@
               }
             ],
             "title": "Description",
-            "description": "\u63cf\u8ff0"
+            "description": "\u914d\u7f6e\u8bf4\u660e"
           }
         },
         "type": "object",
@@ -107997,7 +107752,7 @@
           "config_value"
         ],
         "title": "DocCheckConfigCreate",
-        "description": "\u521b\u5efa\u914d\u7f6e"
+        "description": "\u65b0\u589e\u914d\u7f6e\u9879"
       },
       "DocCheckConfigListApiResponse": {
         "properties": {
@@ -108029,14 +107784,7 @@
       "DocCheckConfigResponse": {
         "properties": {
           "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Id"
           },
           "config_key": {
@@ -108058,16 +107806,15 @@
             ],
             "title": "Description"
           },
-          "operator": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Operator"
+          "is_enabled": {
+            "type": "boolean",
+            "title": "Is Enabled",
+            "default": true
+          },
+          "sort_order": {
+            "type": "integer",
+            "title": "Sort Order",
+            "default": 0
           },
           "created_at": {
             "anyOf": [
@@ -108096,18 +107843,20 @@
         },
         "type": "object",
         "required": [
+          "id",
           "config_key",
           "config_value"
         ],
         "title": "DocCheckConfigResponse",
-        "description": "\u914d\u7f6e\u54cd\u5e94\uff08\u4e0e SopAiConfig \u5339\u914d\uff09"
+        "description": "\u914d\u7f6e\u9879"
       },
       "DocCheckConfigUpdate": {
         "properties": {
           "config_value": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -108127,74 +107876,93 @@
               }
             ],
             "title": "Description",
-            "description": "\u63cf\u8ff0"
+            "description": "\u914d\u7f6e\u8bf4\u660e"
           }
         },
         "type": "object",
         "title": "DocCheckConfigUpdate",
-        "description": "\u66f4\u65b0\u914d\u7f6e"
+        "description": "\u4fee\u6539\u914d\u7f6e\u9879"
+      },
+      "DocCheckConfirmApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DocCheckConfirmResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocCheckConfirmApiResponse",
+        "description": "\u786e\u8ba4\u901a\u8fc7\u54cd\u5e94\u5305\u88c5"
+      },
+      "DocCheckConfirmResponse": {
+        "properties": {
+          "check_id": {
+            "type": "string",
+            "title": "Check Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "confirmed_problems": {
+            "type": "integer",
+            "title": "Confirmed Problems"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_id",
+          "status",
+          "confirmed_problems"
+        ],
+        "title": "DocCheckConfirmResponse",
+        "description": "\u786e\u8ba4\u901a\u8fc7\u7ed3\u679c"
       },
       "DocCheckCreate": {
         "properties": {
           "doc_type": {
             "type": "string",
             "maxLength": 50,
+            "minLength": 1,
             "title": "Doc Type",
-            "description": "\u6587\u6863\u7c7b\u578b",
-            "default": "SOP"
+            "description": "\u6587\u4ef6\u7c7b\u578b\uff0c\u5982 SOP"
           },
           "doc_title": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
             "title": "Doc Title",
-            "description": "\u6587\u6863\u6807\u9898"
+            "description": "\u6587\u4ef6\u540d\u79f0"
           },
-          "doc_content": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+          "check_type": {
+            "type": "string",
+            "enum": [
+              "single",
+              "batch",
+              "scheduled"
             ],
-            "title": "Doc Content",
-            "description": "\u6587\u6863\u5185\u5bb9"
-          },
-          "file_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "File Id",
-            "description": "\u4e0a\u4f20\u6587\u4ef6ID"
-          },
-          "check_config": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Check Config",
-            "description": "\u6821\u9a8c\u914d\u7f6e(\u524d\u7aef\u6269\u5c55\u5b57\u6bb5)"
+            "title": "Check Type",
+            "description": "\u6821\u9a8c\u7c7b\u578b",
+            "default": "single"
           }
         },
         "type": "object",
+        "required": [
+          "doc_type",
+          "doc_title"
+        ],
         "title": "DocCheckCreate",
         "description": "\u521b\u5efa\u6821\u9a8c\u4efb\u52a1"
       },
@@ -108211,25 +107979,20 @@
             "default": "success"
           },
           "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/DocCheckDetailResponse"
-              },
-              {
-                "type": "null"
-              }
-            ]
+            "$ref": "#/components/schemas/DocCheckDetailResponse"
           }
         },
         "type": "object",
+        "required": [
+          "data"
+        ],
         "title": "DocCheckDetailApiResponse",
-        "description": "\u6821\u9a8c\u8be6\u60c5\u54cd\u5e94\u5305\u88c5"
+        "description": "\u6821\u9a8c\u4efb\u52a1\u8be6\u60c5\u54cd\u5e94\u5305\u88c5"
       },
       "DocCheckDetailResponse": {
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid",
             "title": "Id"
           },
           "file_code": {
@@ -108265,8 +108028,20 @@
             ],
             "title": "File Type"
           },
+          "check_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Type"
+          },
           "status": {
-            "$ref": "#/components/schemas/CheckStatus"
+            "type": "string",
+            "title": "Status"
           },
           "result_summary": {
             "anyOf": [
@@ -108336,11 +108111,10 @@
           },
           "problems": {
             "items": {
-              "$ref": "#/components/schemas/ProblemItem"
+              "$ref": "#/components/schemas/ProblemResponse"
             },
             "type": "array",
-            "title": "Problems",
-            "description": "\u95ee\u9898\u5217\u8868"
+            "title": "Problems"
           }
         },
         "type": "object",
@@ -108349,7 +108123,39 @@
           "status"
         ],
         "title": "DocCheckDetailResponse",
-        "description": "\u6821\u9a8c\u4efb\u52a1\u8be6\u60c5\u54cd\u5e94(\u542b\u95ee\u9898\u5217\u8868)"
+        "description": "\u6821\u9a8c\u4efb\u52a1\u8be6\u60c5\uff08\u542b\u95ee\u9898\u660e\u7ec6\uff09"
+      },
+      "DocCheckExecuteRequest": {
+        "properties": {
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id",
+            "description": "\u4e0a\u4f20\u63a5\u53e3\u8fd4\u56de\u7684\u6587\u4ef6\u6807\u8bc6"
+          },
+          "doc_content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doc Content",
+            "description": "\u76f4\u63a5\u63d0\u4ea4\u7684\u6587\u6863\u6b63\u6587"
+          }
+        },
+        "type": "object",
+        "title": "DocCheckExecuteRequest",
+        "description": "\u6267\u884c\u6821\u9a8c\uff1a\u4e8c\u9009\u4e00\u63d0\u4f9b\u4e0a\u4f20\u6587\u4ef6\u6807\u8bc6\u6216\u76f4\u63a5\u6587\u672c\u5185\u5bb9"
       },
       "DocCheckExportApiResponse": {
         "properties": {
@@ -108364,21 +108170,39 @@
             "default": "success"
           },
           "data": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
+            "$ref": "#/components/schemas/DocCheckExportResponse"
           }
         },
         "type": "object",
+        "required": [
+          "data"
+        ],
         "title": "DocCheckExportApiResponse",
         "description": "\u5bfc\u51fa\u54cd\u5e94\u5305\u88c5"
+      },
+      "DocCheckExportResponse": {
+        "properties": {
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "download_url": {
+            "type": "string",
+            "title": "Download Url"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_name",
+          "download_url",
+          "format"
+        ],
+        "title": "DocCheckExportResponse",
+        "description": "\u5bfc\u51fa\u7ed3\u679c"
       },
       "DocCheckListApiResponse": {
         "properties": {
@@ -108402,14 +108226,12 @@
           "meta": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/PaginationMeta"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Meta"
+            ]
           }
         },
         "type": "object",
@@ -108417,80 +108239,7 @@
           "data"
         ],
         "title": "DocCheckListApiResponse",
-        "description": "\u6821\u9a8c\u5217\u8868\u54cd\u5e94\u5305\u88c5"
-      },
-      "DocCheckMessageApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "type": "null",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "title": "DocCheckMessageApiResponse",
-        "description": "\u6d88\u606f\u54cd\u5e94\u5305\u88c5"
-      },
-      "DocCheckProblemListApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "items": {
-              "$ref": "#/components/schemas/ProblemResponse"
-            },
-            "type": "array",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocCheckProblemListApiResponse",
-        "description": "\u95ee\u9898\u5217\u8868\u54cd\u5e94\u5305\u88c5"
-      },
-      "DocCheckProblemUpdateApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocCheckProblemUpdateApiResponse",
-        "description": "\u95ee\u9898\u66f4\u65b0\u54cd\u5e94\u5305\u88c5"
+        "description": "\u6821\u9a8c\u4efb\u52a1\u5217\u8868\u54cd\u5e94\u5305\u88c5"
       },
       "DocCheckProgressApiResponse": {
         "properties": {
@@ -108505,9 +108254,7 @@
             "default": "success"
           },
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+            "$ref": "#/components/schemas/DocCheckProgressResponse"
           }
         },
         "type": "object",
@@ -108515,38 +108262,43 @@
           "data"
         ],
         "title": "DocCheckProgressApiResponse",
-        "description": "\u6821\u9a8c\u8fdb\u5ea6\u54cd\u5e94\u5305\u88c5"
+        "description": "\u4efb\u52a1\u8fdb\u5ea6\u54cd\u5e94\u5305\u88c5"
       },
-      "DocCheckRecordsApiResponse": {
+      "DocCheckProgressResponse": {
         "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
+          "check_id": {
             "type": "string",
-            "title": "Message",
-            "default": "success"
+            "title": "Check Id"
           },
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress"
+          },
+          "current_step": {
+            "type": "string",
+            "title": "Current Step"
           }
         },
         "type": "object",
         "required": [
-          "data"
+          "check_id",
+          "status",
+          "progress",
+          "current_step"
         ],
-        "title": "DocCheckRecordsApiResponse",
-        "description": "\u6821\u9a8c\u8bb0\u5f55\u54cd\u5e94\u5305\u88c5"
+        "title": "DocCheckProgressResponse",
+        "description": "\u4efb\u52a1\u8fdb\u5ea6"
       },
       "DocCheckResponse": {
         "properties": {
           "id": {
             "type": "string",
-            "format": "uuid",
             "title": "Id"
           },
           "file_code": {
@@ -108582,8 +108334,20 @@
             ],
             "title": "File Type"
           },
+          "check_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Type"
+          },
           "status": {
-            "$ref": "#/components/schemas/CheckStatus"
+            "type": "string",
+            "title": "Status"
           },
           "result_summary": {
             "anyOf": [
@@ -108658,32 +108422,7 @@
           "status"
         ],
         "title": "DocCheckResponse",
-        "description": "\u6821\u9a8c\u4efb\u52a1\u54cd\u5e94"
-      },
-      "DocCheckSuccessApiResponse": {
-        "properties": {
-          "code": {
-            "type": "integer",
-            "title": "Code",
-            "default": 200
-          },
-          "message": {
-            "type": "string",
-            "title": "Message",
-            "default": "success"
-          },
-          "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "data"
-        ],
-        "title": "DocCheckSuccessApiResponse",
-        "description": "\u6210\u529f\u54cd\u5e94\u5305\u88c5"
+        "description": "\u6821\u9a8c\u4efb\u52a1"
       },
       "DocCheckTaskApiResponse": {
         "properties": {
@@ -108698,21 +108437,45 @@
             "default": "success"
           },
           "data": {
+            "$ref": "#/components/schemas/DocCheckTaskResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "DocCheckTaskApiResponse",
+        "description": "\u4efb\u52a1\u63d0\u4ea4\u54cd\u5e94\u5305\u88c5"
+      },
+      "DocCheckTaskResponse": {
+        "properties": {
+          "check_id": {
+            "type": "string",
+            "title": "Check Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "job_id": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Data"
+            "title": "Job Id"
           }
         },
         "type": "object",
-        "title": "DocCheckTaskApiResponse",
-        "description": "\u6821\u9a8c\u4efb\u52a1\u54cd\u5e94\u5305\u88c5"
+        "required": [
+          "check_id",
+          "status"
+        ],
+        "title": "DocCheckTaskResponse",
+        "description": "\u4efb\u52a1\u63d0\u4ea4\u7ed3\u679c"
       },
       "DocCheckUpdate": {
         "properties": {
@@ -108720,56 +108483,48 @@
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 50
+                "maxLength": 50,
+                "minLength": 1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Doc Type",
-            "description": "\u6587\u6863\u7c7b\u578b"
+            "title": "Doc Type"
           },
           "doc_title": {
             "anyOf": [
               {
                 "type": "string",
-                "maxLength": 255
+                "maxLength": 500,
+                "minLength": 1
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Doc Title",
-            "description": "\u6587\u6863\u6807\u9898"
+            "title": "Doc Title"
           },
-          "doc_content": {
+          "check_type": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "single",
+                  "batch",
+                  "scheduled"
+                ]
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Doc Content",
-            "description": "\u6587\u6863\u5185\u5bb9"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status",
-            "description": "\u6821\u9a8c\u72b6\u6001"
+            "title": "Check Type"
           }
         },
         "type": "object",
         "title": "DocCheckUpdate",
-        "description": "\u66f4\u65b0\u6821\u9a8c\u4efb\u52a1"
+        "description": "\u4fee\u6539\u6821\u9a8c\u4efb\u52a1\uff08\u4ec5\u5f85\u5904\u7406\u72b6\u6001\u53ef\u6539\uff09"
       },
       "DocCheckUploadApiResponse": {
         "properties": {
@@ -108784,9 +108539,7 @@
             "default": "success"
           },
           "data": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Data"
+            "$ref": "#/components/schemas/DocCheckUploadResponse"
           }
         },
         "type": "object",
@@ -108794,9 +108547,9 @@
           "data"
         ],
         "title": "DocCheckUploadApiResponse",
-        "description": "\u6587\u4ef6\u4e0a\u4f20\u54cd\u5e94\u5305\u88c5"
+        "description": "\u4e0a\u4f20\u54cd\u5e94\u5305\u88c5"
       },
-      "DocCheckVectorCacheListApiResponse": {
+      "DocCheckUploadProgressApiResponse": {
         "properties": {
           "code": {
             "type": "integer",
@@ -108809,20 +108562,70 @@
             "default": "success"
           },
           "data": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Data"
+            "$ref": "#/components/schemas/DocCheckUploadProgressResponse"
           }
         },
         "type": "object",
         "required": [
           "data"
         ],
-        "title": "DocCheckVectorCacheListApiResponse",
-        "description": "\u5411\u91cf\u7f13\u5b58\u5217\u8868\u54cd\u5e94\u5305\u88c5"
+        "title": "DocCheckUploadProgressApiResponse",
+        "description": "\u4e0a\u4f20\u8fdb\u5ea6\u54cd\u5e94\u5305\u88c5"
+      },
+      "DocCheckUploadProgressResponse": {
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "title": "File Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Progress"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_id",
+          "status",
+          "progress"
+        ],
+        "title": "DocCheckUploadProgressResponse",
+        "description": "\u4e0a\u4f20\u8fdb\u5ea6\uff08\u540c\u6b65\u843d\u76d8\uff0c\u8fd4\u56de\u5373\u5b8c\u6210\uff09"
+      },
+      "DocCheckUploadResponse": {
+        "properties": {
+          "file_id": {
+            "type": "string",
+            "title": "File Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "file_size": {
+            "type": "integer",
+            "title": "File Size"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_id",
+          "file_name",
+          "file_size",
+          "content_type"
+        ],
+        "title": "DocCheckUploadResponse",
+        "description": "\u4e0a\u4f20\u7ed3\u679c"
       },
       "DomesticApprovalCreate": {
         "properties": {
@@ -135920,17 +135723,113 @@
         "title": "PrejobTemplateItem",
         "description": "\u5c97\u524d\u57f9\u8bad\u8ba1\u5212\u5355\u884c\u6761\u76ee\uff08\u517110\u884c\uff09\u3002"
       },
-      "ProblemCategory": {
-        "type": "string",
-        "enum": [
-          "format",
-          "content",
-          "compliance",
-          "logic",
-          "missing"
+      "ProblemApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProblemResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
         ],
-        "title": "ProblemCategory",
-        "description": "\u95ee\u9898\u5206\u7c7b"
+        "title": "ProblemApiResponse",
+        "description": "\u5355\u6761\u95ee\u9898\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProblemBatchApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/ProblemBatchResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ProblemBatchApiResponse",
+        "description": "\u6279\u91cf\u5904\u7406\u54cd\u5e94\u5305\u88c5"
+      },
+      "ProblemBatchResult": {
+        "properties": {
+          "updated": {
+            "type": "integer",
+            "title": "Updated"
+          },
+          "skipped": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated"
+        ],
+        "title": "ProblemBatchResult",
+        "description": "\u6279\u91cf\u5904\u7406\u7ed3\u679c"
+      },
+      "ProblemBatchUpdate": {
+        "properties": {
+          "problem_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Problem Ids"
+          },
+          "handle_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "ignored",
+              "fixed"
+            ],
+            "title": "Handle Status"
+          },
+          "ignore_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ignore Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "problem_ids",
+          "handle_status"
+        ],
+        "title": "ProblemBatchUpdate",
+        "description": "\u6279\u91cf\u5904\u7406\u95ee\u9898"
       },
       "ProblemHandleRequest": {
         "properties": {
@@ -135971,117 +135870,97 @@
         "title": "ProblemHandleRequest",
         "description": "\u95ee\u9898\u5904\u7406\u8bf7\u6c42"
       },
-      "ProblemItem": {
+      "ProblemListApiResponse": {
         "properties": {
-          "problem_no": {
+          "code": {
             "type": "integer",
-            "title": "Problem No",
-            "description": "\u95ee\u9898\u5e8f\u53f7"
+            "title": "Code",
+            "default": 200
           },
-          "category": {
-            "$ref": "#/components/schemas/ProblemCategory"
-          },
-          "severity": {
-            "$ref": "#/components/schemas/ProblemSeverity",
-            "description": "\u4e25\u91cd\u7a0b\u5ea6"
-          },
-          "title": {
+          "message": {
             "type": "string",
-            "maxLength": 255,
-            "title": "Title",
-            "description": "\u95ee\u9898\u6807\u9898"
+            "title": "Message",
+            "default": "success"
           },
-          "description": {
-            "type": "string",
-            "title": "Description",
-            "description": "\u95ee\u9898\u63cf\u8ff0"
-          },
-          "location": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 255
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Location",
-            "description": "\u4f4d\u7f6e\u4fe1\u606f"
-          },
-          "suggestion": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Suggestion",
-            "description": "\u6539\u8fdb\u5efa\u8bae"
-          },
-          "reference": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reference",
-            "description": "\u53c2\u8003\u4f9d\u636e"
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/ProblemResponse"
+            },
+            "type": "array",
+            "title": "Data"
           }
         },
         "type": "object",
         "required": [
-          "problem_no",
-          "category",
-          "severity",
-          "title",
-          "description"
+          "data"
         ],
-        "title": "ProblemItem",
-        "description": "\u95ee\u9898\u660e\u7ec6"
+        "title": "ProblemListApiResponse",
+        "description": "\u95ee\u9898\u5217\u8868\u54cd\u5e94\u5305\u88c5"
       },
       "ProblemResponse": {
         "properties": {
-          "problem_no": {
-            "type": "integer",
-            "title": "Problem No",
-            "description": "\u95ee\u9898\u5e8f\u53f7"
-          },
-          "category": {
-            "$ref": "#/components/schemas/ProblemCategory"
-          },
-          "severity": {
-            "$ref": "#/components/schemas/ProblemSeverity",
-            "description": "\u4e25\u91cd\u7a0b\u5ea6"
-          },
-          "title": {
+          "id": {
             "type": "string",
-            "maxLength": 255,
-            "title": "Title",
-            "description": "\u95ee\u9898\u6807\u9898"
+            "title": "Id"
           },
-          "description": {
+          "main_id": {
             "type": "string",
-            "title": "Description",
-            "description": "\u95ee\u9898\u63cf\u8ff0"
+            "title": "Main Id"
           },
-          "location": {
+          "problem_type": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Location",
-            "description": "\u4f4d\u7f6e\u4fe1\u606f"
+            "title": "Problem Type"
+          },
+          "risk_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Level"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "source_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source File"
           },
           "suggestion": {
             "anyOf": [
@@ -136092,10 +135971,13 @@
                 "type": "null"
               }
             ],
-            "title": "Suggestion",
-            "description": "\u6539\u8fdb\u5efa\u8bae"
+            "title": "Suggestion"
           },
-          "reference": {
+          "handle_status": {
+            "type": "string",
+            "title": "Handle Status"
+          },
+          "ignore_reason": {
             "anyOf": [
               {
                 "type": "string"
@@ -136104,69 +135986,64 @@
                 "type": "null"
               }
             ],
-            "title": "Reference",
-            "description": "\u53c2\u8003\u4f9d\u636e"
+            "title": "Ignore Reason"
           },
-          "id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Id"
-          },
-          "check_main_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Check Main Id"
+          "operator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator"
           },
           "created_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Created At"
           },
           "updated_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Updated At"
           }
         },
         "type": "object",
         "required": [
-          "problem_no",
-          "category",
-          "severity",
-          "title",
-          "description",
           "id",
-          "check_main_id",
-          "created_at",
-          "updated_at"
+          "main_id",
+          "handle_status"
         ],
         "title": "ProblemResponse",
-        "description": "\u95ee\u9898\u54cd\u5e94"
-      },
-      "ProblemSeverity": {
-        "type": "string",
-        "enum": [
-          "info",
-          "warning",
-          "error",
-          "critical"
-        ],
-        "title": "ProblemSeverity",
-        "description": "\u95ee\u9898\u4e25\u91cd\u7a0b\u5ea6"
+        "description": "\u95ee\u9898\u660e\u7ec6"
       },
       "ProblemUpdate": {
         "properties": {
           "handle_status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "type": "string",
+            "enum": [
+              "pending",
+              "confirmed",
+              "ignored",
+              "fixed"
             ],
-            "title": "Handle Status",
-            "description": "\u5904\u7406\u72b6\u6001"
+            "title": "Handle Status"
           },
           "ignore_reason": {
             "anyOf": [
@@ -136178,24 +136055,15 @@
               }
             ],
             "title": "Ignore Reason",
-            "description": "\u5ffd\u7565\u539f\u56e0"
-          },
-          "operator": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Operator",
-            "description": "\u64cd\u4f5c\u4eba"
+            "description": "\u5ffd\u7565\u539f\u56e0\uff0chandle_status=ignored \u65f6\u5fc5\u586b"
           }
         },
         "type": "object",
+        "required": [
+          "handle_status"
+        ],
         "title": "ProblemUpdate",
-        "description": "\u95ee\u9898\u66f4\u65b0\u8bf7\u6c42"
+        "description": "\u5904\u7406\u5355\u4e2a\u95ee\u9898"
       },
       "ProcessParameterApiResponse": {
         "properties": {
@@ -166585,6 +166453,27 @@
         "type": "object",
         "title": "MessageApiResponse",
         "description": "Message-only response wrapper for actions that return no data payload"
+      },
+      "app__modules__quality__qms__doc_check__schemas__MessageApiResponse": {
+        "properties": {
+          "code": {
+            "type": "integer",
+            "title": "Code",
+            "default": 200
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "success"
+          },
+          "data": {
+            "type": "null",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "title": "MessageApiResponse",
+        "description": "\u65e0\u6570\u636e\u54cd\u5e94\u5305\u88c5"
       },
       "app__modules__quality__qms__instrument_schemas__CalibrationRecordCreate": {
         "properties": {

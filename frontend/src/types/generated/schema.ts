@@ -14458,17 +14458,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取配置列表
-         * @description 获取配置列表
-         */
-        get: operations["get_api_v1_quality_config_get"];
+        /** 获取文档校验配置列表 */
+        get: operations["list_configs_api_v1_quality_config_get"];
         put?: never;
-        /**
-         * 创建配置
-         * @description 创建配置
-         */
-        post: operations["post_api_v1_quality_config_post"];
+        /** 新增文档校验配置 */
+        post: operations["create_config_api_v1_quality_config_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14482,128 +14476,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取配置详情
-         * @description 获取配置详情
-         */
-        get: operations["get_api_v1_quality_config__config_id__get"];
-        /**
-         * 更新配置
-         * @description 更新配置
-         */
-        put: operations["put_api_v1_quality_config__config_id__put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/check": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取校验列表
-         * @description 获取校验列表
-         */
-        get: operations["get_api_v1_quality_check_get"];
-        put?: never;
-        /**
-         * 创建校验任务
-         * @description 创建校验任务
-         */
-        post: operations["post_api_v1_quality_check_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/check/{check_id}/execute": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 执行校验
-         * @description 提交校验后台任务（AI 调用 >5s，不再阻塞请求；前端轮询 GET /check/{check_id}/progress）。
-         */
-        post: operations["handler_api_v1_quality_check__check_id__execute_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/check/{check_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取校验详情
-         * @description 获取校验详情
-         */
-        get: operations["get_api_v1_quality_check__check_id__get"];
-        /**
-         * 更新校验任务
-         * @description 更新校验任务
-         */
-        put: operations["put_api_v1_quality_check__check_id__put"];
-        post?: never;
-        /**
-         * 删除校验任务
-         * @description 删除校验任务
-         */
-        delete: operations["delete_api_v1_quality_check__check_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/problems": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取问题列表
-         * @description 获取问题列表
-         */
-        get: operations["get_api_v1_quality_problems_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/vector-cache": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 获取向量缓存列表
-         * @description 获取向量缓存列表
-         */
-        get: operations["get_api_v1_quality_vector_cache_get"];
-        put?: never;
+        /** 获取文档校验配置详情 */
+        get: operations["get_config_api_v1_quality_config__config_id__get"];
+        /** 修改文档校验配置 */
+        put: operations["update_config_api_v1_quality_config__config_id__put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -14620,11 +14496,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 上传文件
-         * @description 上传文件到服务器
-         */
-        post: operations["post_api_v1_quality_upload_post"];
+        /** 上传待校验文档 */
+        post: operations["upload_document_api_v1_quality_upload_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14638,11 +14511,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取上传进度
-         * @description 获取上传进度
-         */
-        get: operations["handler_api_v1_quality_upload__upload_id__progress_get"];
+        /** 查询上传进度 */
+        get: operations["get_upload_progress_api_v1_quality_upload__upload_id__progress_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -14651,40 +14521,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/quality/check/{check_id}/progress": {
+    "/api/v1/quality/check": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取校验进度
-         * @description 获取校验进度
-         */
-        get: operations["handler_api_v1_quality_check__check_id__progress_get"];
+        /** 获取校验任务列表 */
+        get: operations["list_checks_api_v1_quality_check_get"];
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/check/{check_id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 取消校验
-         * @description 取消校验任务
-         */
-        post: operations["post_api_v1_quality_check__check_id__cancel_post"];
+        /** 创建校验任务 */
+        post: operations["create_check_api_v1_quality_check_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14700,11 +14548,129 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 批量校验
-         * @description 批量创建校验任务
-         */
-        post: operations["post_api_v1_quality_batch_post"];
+        /** 批量创建校验任务 */
+        post: operations["create_batch_api_v1_quality_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/check/{check_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取校验任务详情 */
+        get: operations["get_check_api_v1_quality_check__check_id__get"];
+        /** 修改校验任务 */
+        put: operations["update_check_api_v1_quality_check__check_id__put"];
+        post?: never;
+        /** 删除校验任务 */
+        delete: operations["delete_check_api_v1_quality_check__check_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/check/{check_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 取消校验任务 */
+        post: operations["cancel_check_api_v1_quality_check__check_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/check/{check_id}/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 执行校验任务 */
+        post: operations["execute_check_api_v1_quality_check__check_id__execute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/check/{check_id}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 查询校验进度 */
+        get: operations["get_check_progress_api_v1_quality_check__check_id__progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/problems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 获取问题明细列表 */
+        get: operations["list_problems_api_v1_quality_problems_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/problems/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 批量处理问题 */
+        put: operations["batch_update_problems_api_v1_quality_problems_batch_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/problems/{problem_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** 处理单个问题 */
+        put: operations["update_problem_api_v1_quality_problems__problem_id__put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -14718,11 +14684,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取校验记录列表
-         * @description 获取校验记录列表
-         */
-        get: operations["get_api_v1_quality_records_get"];
+        /** 获取校验记录列表 */
+        get: operations["list_records_api_v1_quality_records_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -14738,11 +14701,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 获取校验记录详情
-         * @description 获取校验记录详情
-         */
-        get: operations["handler_api_v1_quality_records__record_id__get"];
+        /** 获取校验记录详情 */
+        get: operations["get_record_api_v1_quality_records__record_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -14760,51 +14720,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * 确认通过
-         * @description 确认校验通过
-         */
-        post: operations["handler_api_v1_quality_records__record_id__confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/problems/{problem_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 更新问题
-         * @description 更新问题
-         */
-        put: operations["put_api_v1_quality_problems__problem_id__put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/quality/problems/batch": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * 批量更新问题
-         * @description 批量更新问题
-         */
-        put: operations["put_api_v1_quality_problems_batch_put"];
-        post?: never;
+        /** 确认校验记录通过 */
+        post: operations["confirm_record_api_v1_quality_records__record_id__confirm_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -14818,11 +14735,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * 导出校验报告
-         * @description 导出校验报告
-         */
-        get: operations["get_api_v1_quality_export__record_id__get"];
+        /** 导出校验报告 */
+        get: operations["export_report_api_v1_quality_export__record_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/quality/export/{record_id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 下载校验报告文件 */
+        get: operations["download_report_api_v1_quality_export__record_id__file_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -21200,15 +21131,6 @@ export interface components {
              */
             fill_blank_count: number;
         };
-        /** Body_post_api_v1_quality_batch_post */
-        Body_post_api_v1_quality_batch_post: {
-            /** File Ids */
-            file_ids: string[];
-            /** Check Config */
-            check_config?: {
-                [key: string]: unknown;
-            } | null;
-        };
         /** Body_post_api_v1_quality_instrument_feishu_contacts_resolve_user_post */
         Body_post_api_v1_quality_instrument_feishu_contacts_resolve_user_post: {
             /**
@@ -21328,41 +21250,6 @@ export interface components {
              * @description Quantity change (positive or negative)
              */
             quantity: number;
-        };
-        /** Body_post_api_v1_quality_upload_post */
-        Body_post_api_v1_quality_upload_post: {
-            /** File */
-            file: string;
-            /**
-             * File Name
-             * @description 文件名
-             */
-            file_name: string;
-            /**
-             * File No
-             * @description 文件编号
-             */
-            file_no?: string | null;
-            /**
-             * File Version
-             * @description 文件版本
-             */
-            file_version?: string | null;
-            /**
-             * File Type
-             * @description 文件类型
-             */
-            file_type?: string | null;
-            /**
-             * Preparer
-             * @description 编制人
-             */
-            preparer?: string | null;
-            /**
-             * Prepare Date
-             * @description 编制日期
-             */
-            prepare_date?: string | null;
         };
         /** Body_post_api_v1_registration_authorization_letters_generate_post */
         Body_post_api_v1_registration_authorization_letters_generate_post: {
@@ -21610,6 +21497,14 @@ export interface components {
         /** Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post */
         Body_upload_deliverable_file_api_v1_research_rd_stage_deliverables__deliverable_id__upload_post: {
             /** File */
+            file: string;
+        };
+        /** Body_upload_document_api_v1_quality_upload_post */
+        Body_upload_document_api_v1_quality_upload_post: {
+            /**
+             * File
+             * @description 待校验文档，支持 docx/pdf/txt，不超过 20MB
+             */
             file: string;
         };
         /** Body_upload_equipment_photo_api_v1_equipment_inspection_tasks__task_id__equipments__equipment_id__photos_post */
@@ -22479,12 +22374,6 @@ export interface components {
             /** Data */
             data?: components["schemas"]["ChapterResponse"][] | null;
         };
-        /**
-         * CheckStatus
-         * @description 校验状态
-         * @enum {string}
-         */
-        CheckStatus: "pending" | "processing" | "completed" | "failed";
         /**
          * CheckType
          * @description 检查类型枚举（16种）
@@ -26023,10 +25912,10 @@ export interface components {
             percent: number;
         };
         /**
-         * DocCheckBatchUpdateApiResponse
-         * @description 批量更新响应包装
+         * DocCheckApiResponse
+         * @description 校验任务响应包装
          */
-        DocCheckBatchUpdateApiResponse: {
+        DocCheckApiResponse: {
             /**
              * Code
              * @default 200
@@ -26037,14 +25926,57 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+            data: components["schemas"]["DocCheckResponse"];
+        };
+        /**
+         * DocCheckBatchApiResponse
+         * @description 批量创建响应包装
+         */
+        DocCheckBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocCheckBatchResponse"];
+        };
+        /**
+         * DocCheckBatchCreate
+         * @description 批量创建校验任务
+         */
+        DocCheckBatchCreate: {
+            /**
+             * File Ids
+             * @description 文件标识列表
+             */
+            file_ids: string[];
+            /**
+             * Check Type
+             * @default batch
+             * @enum {string}
+             */
+            check_type: "single" | "batch" | "scheduled";
+        };
+        /**
+         * DocCheckBatchResponse
+         * @description 批量创建结果
+         */
+        DocCheckBatchResponse: {
+            /** Created */
+            created: number;
+            /** Skipped */
+            skipped?: string[];
+            /** Check Ids */
+            check_ids?: string[];
         };
         /**
          * DocCheckConfigApiResponse
-         * @description 配置响应包装
+         * @description 单条配置响应包装
          */
         DocCheckConfigApiResponse: {
             /**
@@ -26057,11 +25989,11 @@ export interface components {
              * @default success
              */
             message: string;
-            data?: components["schemas"]["DocCheckConfigResponse"] | null;
+            data: components["schemas"]["DocCheckConfigResponse"];
         };
         /**
          * DocCheckConfigCreate
-         * @description 创建配置
+         * @description 新增配置项
          */
         DocCheckConfigCreate: {
             /**
@@ -26076,7 +26008,7 @@ export interface components {
             config_value: string;
             /**
              * Description
-             * @description 描述
+             * @description 配置说明
              */
             description?: string | null;
         };
@@ -26100,19 +26032,27 @@ export interface components {
         };
         /**
          * DocCheckConfigResponse
-         * @description 配置响应（与 SopAiConfig 匹配）
+         * @description 配置项
          */
         DocCheckConfigResponse: {
             /** Id */
-            id?: string | null;
+            id: string;
             /** Config Key */
             config_key: string;
             /** Config Value */
             config_value: string;
             /** Description */
             description?: string | null;
-            /** Operator */
-            operator?: string | null;
+            /**
+             * Is Enabled
+             * @default true
+             */
+            is_enabled: boolean;
+            /**
+             * Sort Order
+             * @default 0
+             */
+            sort_order: number;
             /** Created At */
             created_at?: string | null;
             /** Updated At */
@@ -26120,7 +26060,7 @@ export interface components {
         };
         /**
          * DocCheckConfigUpdate
-         * @description 更新配置
+         * @description 修改配置项
          */
         DocCheckConfigUpdate: {
             /**
@@ -26130,9 +26070,38 @@ export interface components {
             config_value?: string | null;
             /**
              * Description
-             * @description 描述
+             * @description 配置说明
              */
             description?: string | null;
+        };
+        /**
+         * DocCheckConfirmApiResponse
+         * @description 确认通过响应包装
+         */
+        DocCheckConfirmApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["DocCheckConfirmResponse"];
+        };
+        /**
+         * DocCheckConfirmResponse
+         * @description 确认通过结果
+         */
+        DocCheckConfirmResponse: {
+            /** Check Id */
+            check_id: string;
+            /** Status */
+            status: string;
+            /** Confirmed Problems */
+            confirmed_problems: number;
         };
         /**
          * DocCheckCreate
@@ -26141,36 +26110,25 @@ export interface components {
         DocCheckCreate: {
             /**
              * Doc Type
-             * @description 文档类型
-             * @default SOP
+             * @description 文件类型，如 SOP
              */
             doc_type: string;
             /**
              * Doc Title
-             * @description 文档标题
+             * @description 文件名称
              */
-            doc_title?: string | null;
+            doc_title: string;
             /**
-             * Doc Content
-             * @description 文档内容
+             * Check Type
+             * @description 校验类型
+             * @default single
+             * @enum {string}
              */
-            doc_content?: string | null;
-            /**
-             * File Id
-             * @description 上传文件ID
-             */
-            file_id?: string | null;
-            /**
-             * Check Config
-             * @description 校验配置(前端扩展字段)
-             */
-            check_config?: {
-                [key: string]: unknown;
-            } | null;
+            check_type: "single" | "batch" | "scheduled";
         };
         /**
          * DocCheckDetailApiResponse
-         * @description 校验详情响应包装
+         * @description 校验任务详情响应包装
          */
         DocCheckDetailApiResponse: {
             /**
@@ -26183,17 +26141,14 @@ export interface components {
              * @default success
              */
             message: string;
-            data?: components["schemas"]["DocCheckDetailResponse"] | null;
+            data: components["schemas"]["DocCheckDetailResponse"];
         };
         /**
          * DocCheckDetailResponse
-         * @description 校验任务详情响应(含问题列表)
+         * @description 校验任务详情（含问题明细）
          */
         DocCheckDetailResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
+            /** Id */
             id: string;
             /** File Code */
             file_code?: string | null;
@@ -26201,7 +26156,10 @@ export interface components {
             file_name?: string | null;
             /** File Type */
             file_type?: string | null;
-            status: components["schemas"]["CheckStatus"];
+            /** Check Type */
+            check_type?: string | null;
+            /** Status */
+            status: string;
             /** Result Summary */
             result_summary?: string | null;
             /**
@@ -26230,11 +26188,24 @@ export interface components {
             created_at?: string | null;
             /** Updated At */
             updated_at?: string | null;
+            /** Problems */
+            problems?: components["schemas"]["ProblemResponse"][];
+        };
+        /**
+         * DocCheckExecuteRequest
+         * @description 执行校验：二选一提供上传文件标识或直接文本内容
+         */
+        DocCheckExecuteRequest: {
             /**
-             * Problems
-             * @description 问题列表
+             * File Id
+             * @description 上传接口返回的文件标识
              */
-            problems?: components["schemas"]["ProblemItem"][];
+            file_id?: string | null;
+            /**
+             * Doc Content
+             * @description 直接提交的文档正文
+             */
+            doc_content?: string | null;
         };
         /**
          * DocCheckExportApiResponse
@@ -26251,14 +26222,23 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data?: {
-                [key: string]: unknown;
-            } | null;
+            data: components["schemas"]["DocCheckExportResponse"];
+        };
+        /**
+         * DocCheckExportResponse
+         * @description 导出结果
+         */
+        DocCheckExportResponse: {
+            /** File Name */
+            file_name: string;
+            /** Download Url */
+            download_url: string;
+            /** Format */
+            format: string;
         };
         /**
          * DocCheckListApiResponse
-         * @description 校验列表响应包装
+         * @description 校验任务列表响应包装
          */
         DocCheckListApiResponse: {
             /**
@@ -26273,70 +26253,11 @@ export interface components {
             message: string;
             /** Data */
             data: components["schemas"]["DocCheckResponse"][];
-            /** Meta */
-            meta?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-         * DocCheckMessageApiResponse
-         * @description 消息响应包装
-         */
-        DocCheckMessageApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data?: null;
-        };
-        /**
-         * DocCheckProblemListApiResponse
-         * @description 问题列表响应包装
-         */
-        DocCheckProblemListApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data: components["schemas"]["ProblemResponse"][];
-        };
-        /**
-         * DocCheckProblemUpdateApiResponse
-         * @description 问题更新响应包装
-         */
-        DocCheckProblemUpdateApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["PaginationMeta"] | null;
         };
         /**
          * DocCheckProgressApiResponse
-         * @description 校验进度响应包装
+         * @description 任务进度响应包装
          */
         DocCheckProgressApiResponse: {
             /**
@@ -26349,40 +26270,28 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+            data: components["schemas"]["DocCheckProgressResponse"];
         };
         /**
-         * DocCheckRecordsApiResponse
-         * @description 校验记录响应包装
+         * DocCheckProgressResponse
+         * @description 任务进度
          */
-        DocCheckRecordsApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+        DocCheckProgressResponse: {
+            /** Check Id */
+            check_id: string;
+            /** Status */
+            status: string;
+            /** Progress */
+            progress: number;
+            /** Current Step */
+            current_step: string;
         };
         /**
          * DocCheckResponse
-         * @description 校验任务响应
+         * @description 校验任务
          */
         DocCheckResponse: {
-            /**
-             * Id
-             * Format: uuid
-             */
+            /** Id */
             id: string;
             /** File Code */
             file_code?: string | null;
@@ -26390,7 +26299,10 @@ export interface components {
             file_name?: string | null;
             /** File Type */
             file_type?: string | null;
-            status: components["schemas"]["CheckStatus"];
+            /** Check Type */
+            check_type?: string | null;
+            /** Status */
+            status: string;
             /** Result Summary */
             result_summary?: string | null;
             /**
@@ -26421,28 +26333,8 @@ export interface components {
             updated_at?: string | null;
         };
         /**
-         * DocCheckSuccessApiResponse
-         * @description 成功响应包装
-         */
-        DocCheckSuccessApiResponse: {
-            /**
-             * Code
-             * @default 200
-             */
-            code: number;
-            /**
-             * Message
-             * @default success
-             */
-            message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
-        };
-        /**
          * DocCheckTaskApiResponse
-         * @description 校验任务响应包装
+         * @description 任务提交响应包装
          */
         DocCheckTaskApiResponse: {
             /**
@@ -26455,40 +26347,35 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data?: {
-                [key: string]: unknown;
-            } | null;
+            data: components["schemas"]["DocCheckTaskResponse"];
+        };
+        /**
+         * DocCheckTaskResponse
+         * @description 任务提交结果
+         */
+        DocCheckTaskResponse: {
+            /** Check Id */
+            check_id: string;
+            /** Status */
+            status: string;
+            /** Job Id */
+            job_id?: string | null;
         };
         /**
          * DocCheckUpdate
-         * @description 更新校验任务
+         * @description 修改校验任务（仅待处理状态可改）
          */
         DocCheckUpdate: {
-            /**
-             * Doc Type
-             * @description 文档类型
-             */
+            /** Doc Type */
             doc_type?: string | null;
-            /**
-             * Doc Title
-             * @description 文档标题
-             */
+            /** Doc Title */
             doc_title?: string | null;
-            /**
-             * Doc Content
-             * @description 文档内容
-             */
-            doc_content?: string | null;
-            /**
-             * Status
-             * @description 校验状态
-             */
-            status?: string | null;
+            /** Check Type */
+            check_type?: ("single" | "batch" | "scheduled") | null;
         };
         /**
          * DocCheckUploadApiResponse
-         * @description 文件上传响应包装
+         * @description 上传响应包装
          */
         DocCheckUploadApiResponse: {
             /**
@@ -26501,16 +26388,13 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            };
+            data: components["schemas"]["DocCheckUploadResponse"];
         };
         /**
-         * DocCheckVectorCacheListApiResponse
-         * @description 向量缓存列表响应包装
+         * DocCheckUploadProgressApiResponse
+         * @description 上传进度响应包装
          */
-        DocCheckVectorCacheListApiResponse: {
+        DocCheckUploadProgressApiResponse: {
             /**
              * Code
              * @default 200
@@ -26521,10 +26405,33 @@ export interface components {
              * @default success
              */
             message: string;
-            /** Data */
-            data: {
-                [key: string]: unknown;
-            }[];
+            data: components["schemas"]["DocCheckUploadProgressResponse"];
+        };
+        /**
+         * DocCheckUploadProgressResponse
+         * @description 上传进度（同步落盘，返回即完成）
+         */
+        DocCheckUploadProgressResponse: {
+            /** File Id */
+            file_id: string;
+            /** Status */
+            status: string;
+            /** Progress */
+            progress: number;
+        };
+        /**
+         * DocCheckUploadResponse
+         * @description 上传结果
+         */
+        DocCheckUploadResponse: {
+            /** File Id */
+            file_id: string;
+            /** File Name */
+            file_name: string;
+            /** File Size */
+            file_size: number;
+            /** Content Type */
+            content_type: string;
         };
         /** DomesticApprovalCreate */
         DomesticApprovalCreate: {
@@ -37872,11 +37779,64 @@ export interface components {
             trainer: string;
         };
         /**
-         * ProblemCategory
-         * @description 问题分类
-         * @enum {string}
+         * ProblemApiResponse
+         * @description 单条问题响应包装
          */
-        ProblemCategory: "format" | "content" | "compliance" | "logic" | "missing";
+        ProblemApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ProblemResponse"];
+        };
+        /**
+         * ProblemBatchApiResponse
+         * @description 批量处理响应包装
+         */
+        ProblemBatchApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            data: components["schemas"]["ProblemBatchResult"];
+        };
+        /**
+         * ProblemBatchResult
+         * @description 批量处理结果
+         */
+        ProblemBatchResult: {
+            /** Updated */
+            updated: number;
+            /** Skipped */
+            skipped?: string[];
+        };
+        /**
+         * ProblemBatchUpdate
+         * @description 批量处理问题
+         */
+        ProblemBatchUpdate: {
+            /** Problem Ids */
+            problem_ids: string[];
+            /**
+             * Handle Status
+             * @enum {string}
+             */
+            handle_status: "pending" | "confirmed" | "ignored" | "fixed";
+            /** Ignore Reason */
+            ignore_reason?: string | null;
+        };
         /**
          * ProblemHandleRequest
          * @description 问题处理请求
@@ -37899,129 +37859,70 @@ export interface components {
             operator?: string | null;
         };
         /**
-         * ProblemItem
-         * @description 问题明细
+         * ProblemListApiResponse
+         * @description 问题列表响应包装
          */
-        ProblemItem: {
+        ProblemListApiResponse: {
             /**
-             * Problem No
-             * @description 问题序号
+             * Code
+             * @default 200
              */
-            problem_no: number;
-            category: components["schemas"]["ProblemCategory"];
-            /** @description 严重程度 */
-            severity: components["schemas"]["ProblemSeverity"];
+            code: number;
             /**
-             * Title
-             * @description 问题标题
+             * Message
+             * @default success
              */
-            title: string;
-            /**
-             * Description
-             * @description 问题描述
-             */
-            description: string;
-            /**
-             * Location
-             * @description 位置信息
-             */
-            location?: string | null;
-            /**
-             * Suggestion
-             * @description 改进建议
-             */
-            suggestion?: string | null;
-            /**
-             * Reference
-             * @description 参考依据
-             */
-            reference?: string | null;
+            message: string;
+            /** Data */
+            data: components["schemas"]["ProblemResponse"][];
         };
         /**
          * ProblemResponse
-         * @description 问题响应
+         * @description 问题明细
          */
         ProblemResponse: {
-            /**
-             * Problem No
-             * @description 问题序号
-             */
-            problem_no: number;
-            category: components["schemas"]["ProblemCategory"];
-            /** @description 严重程度 */
-            severity: components["schemas"]["ProblemSeverity"];
-            /**
-             * Title
-             * @description 问题标题
-             */
-            title: string;
-            /**
-             * Description
-             * @description 问题描述
-             */
-            description: string;
-            /**
-             * Location
-             * @description 位置信息
-             */
-            location?: string | null;
-            /**
-             * Suggestion
-             * @description 改进建议
-             */
-            suggestion?: string | null;
-            /**
-             * Reference
-             * @description 参考依据
-             */
-            reference?: string | null;
-            /**
-             * Id
-             * Format: uuid
-             */
+            /** Id */
             id: string;
-            /**
-             * Check Main Id
-             * Format: uuid
-             */
-            check_main_id: string;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
+            /** Main Id */
+            main_id: string;
+            /** Problem Type */
+            problem_type?: string | null;
+            /** Risk Level */
+            risk_level?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Source File */
+            source_file?: string | null;
+            /** Suggestion */
+            suggestion?: string | null;
+            /** Handle Status */
+            handle_status: string;
+            /** Ignore Reason */
+            ignore_reason?: string | null;
+            /** Operator */
+            operator?: string | null;
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
         };
         /**
-         * ProblemSeverity
-         * @description 问题严重程度
-         * @enum {string}
-         */
-        ProblemSeverity: "info" | "warning" | "error" | "critical";
-        /**
          * ProblemUpdate
-         * @description 问题更新请求
+         * @description 处理单个问题
          */
         ProblemUpdate: {
             /**
              * Handle Status
-             * @description 处理状态
+             * @enum {string}
              */
-            handle_status?: string | null;
+            handle_status: "pending" | "confirmed" | "ignored" | "fixed";
             /**
              * Ignore Reason
-             * @description 忽略原因
+             * @description 忽略原因，handle_status=ignored 时必填
              */
             ignore_reason?: string | null;
-            /**
-             * Operator
-             * @description 操作人
-             */
-            operator?: string | null;
         };
         /**
          * ProcessParameterApiResponse
@@ -50706,6 +50607,24 @@ export interface components {
          * @description Message-only response wrapper for actions that return no data payload
          */
         app__modules__quality__qms__deviation_schemas__MessageApiResponse: {
+            /**
+             * Code
+             * @default 200
+             */
+            code: number;
+            /**
+             * Message
+             * @default success
+             */
+            message: string;
+            /** Data */
+            data?: null;
+        };
+        /**
+         * MessageApiResponse
+         * @description 无数据响应包装
+         */
+        app__modules__quality__qms__doc_check__schemas__MessageApiResponse: {
             /**
              * Code
              * @default 200
@@ -86872,7 +86791,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_config_get: {
+    list_configs_api_v1_quality_config_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -86903,7 +86822,7 @@ export interface operations {
             };
         };
     };
-    post_api_v1_quality_config_post: {
+    create_config_api_v1_quality_config_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -86938,7 +86857,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_config__config_id__get: {
+    get_config_api_v1_quality_config__config_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -86971,7 +86890,7 @@ export interface operations {
             };
         };
     };
-    put_api_v1_quality_config__config_id__put: {
+    update_config_api_v1_quality_config__config_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -87008,19 +86927,85 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_check_get: {
+    upload_document_api_v1_quality_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_api_v1_quality_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckUploadApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_upload_progress_api_v1_quality_upload__upload_id__progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                upload_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckUploadProgressApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_checks_api_v1_quality_check_get: {
         parameters: {
             query?: {
+                /** @description 状态过滤 */
+                status?: string | null;
+                /** @description 文件类型过滤 */
+                file_type?: string | null;
                 /** @description 页码 */
                 page?: number;
-                /** @description 每页数量 */
+                /** @description 每页条数 */
                 page_size?: number;
-                /** @description 校验状态 */
-                status?: string | null;
-                /** @description 文档类型 */
-                doc_type?: string | null;
-                /** @description 操作人 */
-                operator?: string | null;
             };
             header?: never;
             path?: never;
@@ -87050,7 +87035,7 @@ export interface operations {
             };
         };
     };
-    post_api_v1_quality_check_post: {
+    create_check_api_v1_quality_check_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -87085,7 +87070,42 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_quality_check__check_id__execute_post: {
+    create_batch_api_v1_quality_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocCheckBatchCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckBatchApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_check_api_v1_quality_check__check_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -87104,7 +87124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckDetailApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87118,40 +87138,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_check__check_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                check_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckDetailApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    put_api_v1_quality_check__check_id__put: {
+    update_check_api_v1_quality_check__check_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -87165,6 +87152,109 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["DocCheckUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_check_api_v1_quality_check__check_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                check_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["app__modules__quality__qms__doc_check__schemas__MessageApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_check_api_v1_quality_check__check_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                check_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckTaskApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    execute_check_api_v1_quality_check__check_id__execute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                check_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocCheckExecuteRequest"];
             };
         };
         responses: {
@@ -87188,7 +87278,7 @@ export interface operations {
             };
         };
     };
-    delete_api_v1_quality_check__check_id__delete: {
+    get_check_progress_api_v1_quality_check__check_id__progress_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -87207,7 +87297,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckMessageApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckProgressApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87221,11 +87311,11 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_problems_get: {
+    list_problems_api_v1_quality_problems_get: {
         parameters: {
             query: {
-                /** @description 校验主表ID */
-                check_main_id: string;
+                /** @description 校验任务 ID */
+                check_id: string;
             };
             header?: never;
             path?: never;
@@ -87241,7 +87331,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckProblemListApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProblemListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87255,43 +87345,7 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_vector_cache_get: {
-        parameters: {
-            query?: {
-                /** @description 文档类型 */
-                doc_type?: string | null;
-                /** @description 文档哈希 */
-                doc_hash?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckVectorCacheListApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_quality_upload_post: {
+    batch_update_problems_api_v1_quality_problems_batch_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -87302,7 +87356,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "multipart/form-data": components["schemas"]["Body_post_api_v1_quality_upload_post"];
+                "application/json": components["schemas"]["ProblemBatchUpdate"];
             };
         };
         responses: {
@@ -87312,7 +87366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckUploadApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProblemBatchApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87326,259 +87380,7 @@ export interface operations {
             };
         };
     };
-    handler_api_v1_quality_upload__upload_id__progress_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                upload_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckProgressApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handler_api_v1_quality_check__check_id__progress_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                check_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckProgressApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_quality_check__check_id__cancel_post: {
-        parameters: {
-            query?: {
-                operator?: string | null;
-            };
-            header?: never;
-            path: {
-                check_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckSuccessApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_api_v1_quality_batch_post: {
-        parameters: {
-            query?: {
-                operator?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Body_post_api_v1_quality_batch_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckSuccessApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_api_v1_quality_records_get: {
-        parameters: {
-            query?: {
-                /** @description 页码 */
-                page?: number;
-                /** @description 每页数量 */
-                page_size?: number;
-                /** @description 校验状态 */
-                status?: string | null;
-                /** @description 文件编号 */
-                file_no?: string | null;
-                /** @description 文件类型 */
-                file_type?: string | null;
-                /** @description 开始日期 */
-                start_date?: string | null;
-                /** @description 结束日期 */
-                end_date?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckRecordsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handler_api_v1_quality_records__record_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckRecordsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    handler_api_v1_quality_records__record_id__confirm_post: {
-        parameters: {
-            query?: {
-                operator?: string | null;
-            };
-            header?: never;
-            path: {
-                record_id: string;
-            };
-            cookie?: {
-                auth_token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckSuccessApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    put_api_v1_quality_problems__problem_id__put: {
+    update_problem_api_v1_quality_problems__problem_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -87601,7 +87403,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckProblemUpdateApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["ProblemApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87615,12 +87417,17 @@ export interface operations {
             };
         };
     };
-    put_api_v1_quality_problems_batch_put: {
+    list_records_api_v1_quality_records_get: {
         parameters: {
-            query: {
-                handle_status: string;
-                ignore_reason?: string | null;
-                operator?: string | null;
+            query?: {
+                /** @description 状态过滤 */
+                status?: string | null;
+                /** @description 文件类型过滤 */
+                file_type?: string | null;
+                /** @description 页码 */
+                page?: number;
+                /** @description 每页条数 */
+                page_size?: number;
             };
             header?: never;
             path?: never;
@@ -87628,11 +87435,7 @@ export interface operations {
                 auth_token?: string | null;
             };
         };
-        requestBody: {
-            content: {
-                "application/json": string[];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -87640,7 +87443,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json; charset=utf-8": components["schemas"]["DocCheckBatchUpdateApiResponse"];
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckListApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -87654,10 +87457,76 @@ export interface operations {
             };
         };
     };
-    get_api_v1_quality_export__record_id__get: {
+    get_record_api_v1_quality_records__record_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckDetailApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_record_api_v1_quality_records__record_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json; charset=utf-8": components["schemas"]["DocCheckConfirmApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_report_api_v1_quality_export__record_id__get: {
         parameters: {
             query?: {
-                /** @description 导出格式 */
+                /** @description 导出格式，当前仅支持 html */
                 format?: string;
             };
             header?: never;
@@ -87677,6 +87546,39 @@ export interface operations {
                 };
                 content: {
                     "application/json; charset=utf-8": components["schemas"]["DocCheckExportApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_report_api_v1_quality_export__record_id__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                record_id: string;
+            };
+            cookie?: {
+                auth_token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
                 };
             };
             /** @description Validation Error */

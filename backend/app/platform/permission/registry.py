@@ -2607,7 +2607,6 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:static-data:delete", "DELETE", "/api/v1/quality/static-data/storage-condition/{id}"),
     ApiBindingDef("quality:static-data:read", "GET", "/api/v1/quality/static-data/unit/options"),
     ApiBindingDef("quality:doc-check:create", "POST", "/api/v1/quality/upload"),
-    ApiBindingDef("quality:doc-check:read", "GET", "/api/v1/quality/vector-cache"),
     ApiBindingDef("hr:employees:read", "GET", "/api/v1/hr/employees"),
     ApiBindingDef("hr:employees:create", "POST", "/api/v1/hr/employees"),
     ApiBindingDef("hr:employees:sync", "POST", "/api/v1/hr/employees/sync-from-feishu"),
