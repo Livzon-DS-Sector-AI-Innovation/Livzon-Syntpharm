@@ -31,7 +31,8 @@ export function usePermission() {
   })
 
   const { data, isLoading: permissionLoading } = useQuery({
-    queryKey: ['my-permissions'],
+    // key 带上用户维度：换账号后不会命中上一个账号的权限缓存
+    queryKey: ['my-permissions', user?.id ?? 'anonymous'],
     queryFn: fetchMyPermissions,
     enabled: !!user,
     staleTime: 0,
