@@ -234,8 +234,8 @@ Full audit
 - 禁止在日志或异常中输出 API key、token、密码等敏感信息
 - 禁止提交 `.env` 文件
 
-**后端 / LLM_ENCRYPTION_KEY:**
-- `LLM_ENCRYPTION_KEY` 必须存放在部署环境变量中，不进入数据库，不进入 Git，不进入 `.env.example`
+**后端 / ENCRYPTION_KEY:**
+- `ENCRYPTION_KEY` 必须存放在部署环境变量中，不进入数据库，不进入 Git，不进入 `.env.example`
 - 禁止在日志、异常、API 响应中输出明文 API key
 
 **前端 / API 调用架构 / 禁止:**
@@ -260,7 +260,7 @@ Full audit
    - Docker service discovery names (e.g., `http://backend:8000` in docker-compose.yml, Dockerfile)
 3. Are there hardcoded absolute file paths (e.g. `D:/`, `C:/`, `/home/` as string literals)?
 4. Is `NEXT_PUBLIC_API_BASE_URL` used anywhere in the frontend?
-5. Does `LLM_ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?
+5. Does `ENCRYPTION_KEY` appear in `.env.example`, the database, or any git-tracked file?
 6. Are there any API key patterns in source code or log statements? (Patterns: `sk-[a-zA-Z0-9]{20,}`, `api_key\s*=\s*'[^']{20,}'`, `token\s*=\s*'[^']{20,}'`)
 7. Are there plaintext credentials in configuration files?
 8. Are environment variable files (`.env`, `.env.uat`) properly gitignored?
@@ -601,7 +601,7 @@ Full audit
 
 **LLM 调用规范:**
 - 使用全局单例 `llm_client`（`app/core/llm/`），不要手动构造客户端
-- API keys → 加密存储在 `core.llm_configs` 表，加密密钥 `LLM_ENCRYPTION_KEY` 在环境变量中
+- API keys → 加密存储在 `core.llm_configs` 表，加密密钥 `ENCRYPTION_KEY` 在环境变量中
 - 异常处理：使用 `LLMOutputError`、`LLMProviderError`、`LLMRateLimitError`
 
 **文件存储与 OCR:**

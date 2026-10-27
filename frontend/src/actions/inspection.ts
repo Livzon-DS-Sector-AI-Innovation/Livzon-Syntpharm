@@ -17,6 +17,7 @@ import {
   deleteInspectionPhotoApi,
   submitRouteCheckApiTyped,
   analyzeInspectionPhotoApi,
+  getInspectionAIJobApi,
   createScheduleApiTyped, updateScheduleApiTyped, deleteScheduleApi,
 } from '@/lib/api/server/inspection'
 import {
@@ -110,14 +111,41 @@ export async function uploadTaskPhoto(taskId: string, formData: FormData) {
   return result
 }
 
+const AI_ANALYZE_POLL_INTERVAL_MS = 1500
+const AI_ANALYZE_TIMEOUT_MS = 180_000
+
+interface AIJobState {
+  status?: 'running' | 'done' | 'failed'
+  result?: { items?: InspectionAIItemResult[] } | null
+  error?: string | null
+}
+
+/**
+ * 提交巡检照片 AI 分析任务并等待结果。
+ *
+ * 后端已改为「提交任务 + 轮询状态」（视觉模型调用 >5s，不再占用 HTTP 请求），
+ * 轮询放在这里完成，调用方仍然拿到最终检查项结果，无需改造组件。
+ */
 export async function analyzeInspectionPhoto(
   taskId: string,
   equipmentId: string,
   imageBase64: string,
   imageMimeType: string,
 ): Promise<InspectionAIItemResult[]> {
-  const result = await analyzeInspectionPhotoApi(taskId, equipmentId, imageBase64, imageMimeType, await authHeaders())
-  return result ?? []
+  const headers = await authHeaders()
+  const accepted = await analyzeInspectionPhotoApi(taskId, equipmentId, imageBase64, imageMimeType, headers)
+  const jobId = (accepted as { data?: { job_id?: string } } | null)?.data?.job_id
+  if (!jobId) throw new Error('AI 分析任务提交失败')
+
+  const deadline = Date.now() + AI_ANALYZE_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, AI_ANALYZE_POLL_INTERVAL_MS))
+    const state = await getInspectionAIJobApi(taskId, equipmentId, jobId, headers)
+    const job = (state as { data?: AIJobState } | null)?.data
+    if (job?.status === 'done') return job.result?.items ?? []
+    if (job?.status === 'failed') throw new Error(job.error || 'AI 分析失败')
+  }
+  throw new Error('AI 分析超时，请稍后重试')
 }
 
 export async function createSchedule(routeId: string, data: CreateInspectionScheduleInput) {

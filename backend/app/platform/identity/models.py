@@ -32,6 +32,26 @@ class User(BaseModel):
     name: Mapped[str] = mapped_column(String(100))
     username: Mapped[str | None] = mapped_column(String(64), nullable=True)
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        comment="是否强制修改密码（管理员重置后为 true）",
+    )
+    password_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="密码最后修改时间"
+    )
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+        comment="连续登录失败次数",
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, comment="账号锁定截止时间（失败次数超限后锁定）"
+    )
     status: Mapped[str] = mapped_column(String(20), default="active", server_default="active")
     auth_source: Mapped[str] = mapped_column(String(20), default="feishu", server_default="feishu")
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -183,3 +203,26 @@ class FeishuCardAction(BaseModel):
     )
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="动作过期时间")
     executed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, comment="处理时间")
+
+
+class RevokedSession(BaseModel):
+    """被吊销的会话（jti）持久化记录。
+
+    主存储仍是 Redis 吊销黑名单（TTL 覆盖 token 剩余有效期）；本表是
+    Redis 故障时的降级查库兜底——认证依赖在 Redis 不可用时查本表判定
+    吊销状态，避免 fail-open 放行已被踢下线的 token。
+    """
+
+    __tablename__ = "revoked_sessions"
+    __table_args__ = (
+        Index("ix_identity_revoked_sessions_expires_at", "expires_at"),
+        {"schema": "identity"},
+    )
+
+    jti: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True, comment="JWT jti")
+    user_id: Mapped[UUID | None] = mapped_column(  # type: ignore[type-arg]
+        UUID(as_uuid=True), nullable=True, index=True, comment="所属用户（旧 token 可能缺失）"
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, comment="token 过期时间（过期后本记录可清理）"
+    )

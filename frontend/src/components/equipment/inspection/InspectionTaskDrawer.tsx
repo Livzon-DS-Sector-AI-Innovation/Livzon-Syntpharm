@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Avatar, Card, DatePicker, Drawer, Form, Select, Tag, Typography } from 'antd'
 import { UserOutlined, CheckSquareOutlined, CalendarOutlined } from '@ant-design/icons'
 import { useInspectionStore } from '@/stores/inspection'
@@ -28,17 +28,24 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
   const { message } = App.useApp()
   const { taskDrawerOpen, closeTaskDrawer, triggerTasksRefresh } = useInspectionStore()
   const [form] = Form.useForm()
-  const [routes, setRoutes] = useState<InspectionRoute[]>([])
-  const [personnel, setPersonnel] = useState<Personnel[]>([])
+  // 抽屉打开时才拉线路模板与人员名单（React Query 负责缓存与去重）
+  const { data: routesData } = useQuery({
+    queryKey: ['inspection-routes', 'active'],
+    queryFn: () => fetchInspectionRoutes({ page: 1, page_size: 200 }),
+    enabled: taskDrawerOpen,
+    select: (r) => r.items.filter((x) => x.is_active),
+  })
+  const routes: InspectionRoute[] = routesData ?? []
+
+  const { data: personnelData } = useQuery({
+    queryKey: ['equipment-personnel', 'active'],
+    queryFn: () => fetchPersonnelList({}),
+    enabled: taskDrawerOpen,
+    select: (r) => r.items.filter((p) => p.is_active),
+  })
+  const personnel: Personnel[] = personnelData ?? []
   const planType = Form.useWatch('plan_type', form) || '设备巡检'
   const selectedEquipmentIds: string[] = Form.useWatch('equipment_ids', form) || []
-
-  useEffect(() => {
-    if (taskDrawerOpen) {
-      if (routes.length === 0) fetchInspectionRoutes({ page: 1, page_size: 200 }).then(r => setRoutes(r.items.filter(x => x.is_active))).catch(() => {})
-      fetchPersonnelList({}).then(r => setPersonnel(r.items.filter((p: { is_active: boolean }) => p.is_active))).catch(() => {})
-    }
-  }, [taskDrawerOpen, routes.length])
 
   const handleSubmit = async () => {
     try {
@@ -210,7 +217,11 @@ export function InspectionTaskDrawer({ templates, equipments }: Props) {
             <Form.Item name="assigned_to" noStyle rules={[{ required: true, message: '请选择巡检人员' }]}>
               <Select showSearch optionFilterProp='label' placeholder="选择巡检人员"
                 popupMatchSelectWidth={false} style={{ width: '100%' }}
-                options={personnel.map(p => ({ label: `${p.name}${p.department ? ' · ' + p.department : ''}`, value: p.user_id || p.id }))}
+                options={personnel.map(p => ({
+                  // 统一「姓名（账号）」
+                  label: `${p.name}${p.username ? `（${p.username}）` : ''}${p.department ? ' · ' + p.department : ''}`,
+                  value: p.user_id || p.id,
+                }))}
                 optionRender={o => {
                   const p = personnel.find(pe => (pe.user_id || pe.id) === o.value)
                   if (!p) return <Text>{o.label}</Text>

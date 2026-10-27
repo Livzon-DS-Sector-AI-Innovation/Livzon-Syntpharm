@@ -457,6 +457,7 @@ export default function SopManagementPage() {
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">SOP规则管理</h1>
       <Card title="SOP规则管理">
         {/* 查询条件 */}
         <Form form={form} layout="inline" style={{ marginBottom: 16 }}>
@@ -588,7 +589,7 @@ export default function SopManagementPage() {
             {parseResult && (
               <Alert
                 type="info"
-                message="AI解析结果"
+                title="AI解析结果"
                 description={
                   <pre style={{ maxHeight: 200, overflow: 'auto', fontSize: 12, whiteSpace: 'pre-wrap' }}>
                     {parseResult}

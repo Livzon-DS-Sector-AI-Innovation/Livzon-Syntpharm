@@ -223,15 +223,15 @@ CI 会自动检查（`scripts/ci/check_migration_scope.py` 与 `scripts/ci/check
 使用全局单例 `llm_client`（`app/core/llm/`），不要手动构造客户端。参考 `app/modules/safety/service/hazard.py` 中的用法。
 
 **配置分层**：
-- **API keys** → 加密存储在 `core.llm_configs` 表，加密密钥 `LLM_ENCRYPTION_KEY` 在环境变量中
+- **API keys** → 加密存储在 `core.llm_configs` 表，加密密钥 `ENCRYPTION_KEY` 在环境变量中
 - **模型名称、参数** → 通过管理界面配置，存储在数据库
 - **本地开发** → 可回退到环境变量 `LLM_API_KEY`
 
 **异常处理**：使用 `LLMOutputError`、`LLMProviderError`、`LLMRateLimitError`（`app/core/llm/exceptions.py`）。
 
-### LLM_ENCRYPTION_KEY 安全规则
+### ENCRYPTION_KEY 安全规则
 
-`LLM_ENCRYPTION_KEY` 必须存放在部署环境变量中，不进入数据库，不进入 Git，不进入 `.env.example`。Admin UI 保存 API key 后，只允许显示脱敏值（如 `sk-****abcd`）。
+`ENCRYPTION_KEY` 必须存放在部署环境变量中，不进入数据库，不进入 Git，不进入 `.env.example`。Admin UI 保存 API key 后，只允许显示脱敏值（如 `sk-****abcd`）。
 
 **禁止**在日志、异常、API 响应中输出明文 API key。
 

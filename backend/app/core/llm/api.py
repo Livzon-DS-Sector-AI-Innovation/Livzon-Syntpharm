@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 
 from .config import LLMConfigModel
 from .encryption import encrypt_api_key, mask_api_key
@@ -66,6 +66,7 @@ class LLMConfigResponse(BaseModel):
 @router.get("", response_model=list[LLMConfigResponse])
 async def list_configs(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:llm-config:read")),
     config_type: str | None = Query(None, pattern="^(text|vision)$"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
@@ -103,6 +104,7 @@ async def list_configs(  # type: ignore[no-untyped-def]
 async def post(  # type: ignore[no-untyped-def]
     data: LLMConfigCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Create a new LLM configuration (admin only)."""
@@ -155,6 +157,7 @@ async def post(  # type: ignore[no-untyped-def]
 async def get(  # type: ignore[no-untyped-def]
     config_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:llm-config:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Get a specific LLM configuration."""
@@ -190,6 +193,7 @@ async def put(  # type: ignore[no-untyped-def]
     config_id: str,
     data: LLMConfigUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """Update an LLM configuration (admin only)."""
@@ -251,6 +255,7 @@ async def put(  # type: ignore[no-untyped-def]
 async def delete(  # type: ignore[no-untyped-def]
     config_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> None:
     """Soft delete an LLM configuration (admin only)."""
@@ -274,6 +279,7 @@ async def delete(  # type: ignore[no-untyped-def]
 @router.post("/test", summary="Test LLM connection")  # type: ignore[no-redef]
 async def post(  # noqa: F811  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("platform:llm-config:manage")),
 ) -> Any:
     """Test LLM connectivity using active config."""
     from .client import llm_client

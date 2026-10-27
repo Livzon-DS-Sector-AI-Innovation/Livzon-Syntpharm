@@ -376,7 +376,7 @@ export default function TemplateManagementPage() {
       >
         <div style={{ padding: '16px 0' }}>
           <Alert
-            message="上传说明"
+            title="上传说明"
             description="请上传标准的偏差报告Word模板文件（.docx或.doc格式）。模板中可以使用占位符如 {{偏差编号}}、{{编制人}} 等。"
             type="info"
             showIcon

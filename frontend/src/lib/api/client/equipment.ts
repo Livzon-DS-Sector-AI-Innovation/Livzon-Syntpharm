@@ -1,6 +1,5 @@
 import type { DepartmentOption } from '@/types/equipment/generated-bridge'
 export type { DepartmentOption } from '@/types/equipment/generated-bridge'
-import type { Personnel } from '@/types/equipment-personnel'
 import {
   EquipmentCategory, Location, EquipmentListResponse, EquipmentStatistics,
   FailureCode, WorkOrderFilters, WorkOrderListResponse, WorkOrderStatistics, WorkOrder,
@@ -15,17 +14,12 @@ import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 
-// 设备列表查询参数取生成契约（含排序白名单），不在此手写一份
-import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipment-query'
-
-export interface GetStatisticsQuery {
-  category_id?: string | null
-  location_id?: string | null
-  department_id?: string | null
-  status?: string | null
-}
-
-
+// 设备列表与设备统计的查询参数都取生成契约（含排序白名单），不在此手写一份
+import {
+  buildEquipmentQuery,
+  type EquipmentListQuery,
+  type EquipmentStatsQuery,
+} from '@/lib/api/equipment-query'
 
 // ═══════════════════════════════════════════════════════════
 //  设备分类
@@ -61,9 +55,9 @@ export async function fetchEquipments(query: EquipmentListQuery = {}): Promise<E
   return apiFetchPaginated(url)
 }
 
-// Use GetStatisticsQuery from generated types
+// 统计端点（GET /equipment/equipments/statistics）的 query 参数类型见 lib/api/equipment-query，不在此手写一份。
 
-export async function fetchEquipmentStatistics(filters: GetStatisticsQuery = {}): Promise<EquipmentStatistics> {
+export async function fetchEquipmentStatistics(filters: EquipmentStatsQuery = {}): Promise<EquipmentStatistics> {
   const params = new URLSearchParams()
   if (filters.category_id) params.append('category_id', filters.category_id)
   if (filters.location_id) params.append('location_id', filters.location_id)
@@ -110,11 +104,11 @@ export async function fetchWorkOrderStatistics(exclude_status?: string): Promise
   const params = new URLSearchParams()
   if (exclude_status) params.append('exclude_status', exclude_status)
   const qs = params.toString()
-  return apiGet(`${API_BASE}/equipment/maintenance/work-ordersstatistics${qs ? `?${qs}` : ''}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/statistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkOrderById(id: string): Promise<WorkOrder> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${id}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -244,7 +238,7 @@ export async function fetchInspectionTemplateById(id: string): Promise<Inspectio
 //  工单物料
 // ═══════════════════════════════════════════════════════════
 export async function fetchWorkOrderMaterials(workOrderId: string): Promise<MaterialRecord[]> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/materials`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/materials`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -268,16 +262,12 @@ export async function fetchAllUsersClient(): Promise<Maintainer[]> {
 }
 
 export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<WorkOrderImage[]> {
-  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/images`) || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`) || []
 }
 
 export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfig> {
   return await apiGet<ClaimTimeoutConfig>(`${API_BASE}/equipment/maintenance/config/claim-timeout`)
     || { emergency: 15, high: 30, medium: 60, low: 120 }
-}
-
-export async function fetchPersonnelList(_params?: Record<string, unknown>): Promise<Personnel[]> {
-  return await apiGet<Personnel[]>(`${API_BASE}/identity/personnel?page_size=1000`) || []
 }
 
 // ═══════════════════════════════════════════════════════════

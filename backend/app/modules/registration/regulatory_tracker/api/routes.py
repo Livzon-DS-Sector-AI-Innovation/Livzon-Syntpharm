@@ -1,16 +1,17 @@
 """Regulatory Tracker API routes V4 - 系统分类支持。"""
 # ruff: noqa: N803  # API query params use camelCase for frontend compatibility
 
+import logging
 import uuid
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import error_response, success_response
 from app.modules.registration.regulatory_tracker import repository as repo
 from app.modules.registration.regulatory_tracker.schemas import (
@@ -23,6 +24,8 @@ from app.modules.registration.regulatory_tracker.services.classification_service
 from app.modules.registration.regulatory_tracker.utils.excel_export import (
     generate_regulatory_excel,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -65,7 +68,11 @@ def _extract_impact_data(doc) -> Any:  # type: ignore[no-untyped-def]
 
 
 @router.get("/regulatory-tracker/dashboard", summary="Dashboard 工作台数据")
-async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(get_db)) -> Any:
+async def get_dashboard(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
     """
     返回 Dashboard 工作台数据：
     - 今日新增统计（总数、高影响数、一般法规数）
@@ -139,7 +146,11 @@ async def get_dashboard(current_user: CurrentUser, db: AsyncSession = Depends(ge
 
 
 @router.get("/regulatory-tracker/summary", summary="法规追踪统计摘要")
-async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_db)) -> Any:
+async def get_summary(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:read")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
     stats = await repo.get_summary_stats(db)
     return {
         "code": 200,
@@ -153,7 +164,8 @@ async def get_summary(current_user: CurrentUser, db: AsyncSession = Depends(get_
 
 @router.get("/regulatory-documents", summary="法规文档列表")
 async def get(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:read")),
     keyword: str | None = Query(None, description="关键词搜索"),
     publishDateFrom: date | None = Query(None, description="发布日期起始"),
     publishDateTo: date | None = Query(None, description="发布日期结束"),
@@ -247,7 +259,10 @@ async def get(
 
 @router.get("/regulatory-documents/{doc_id}/detail", summary="法规文档详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)
+    current_user: RequiredUser,
+    doc_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:read")),
+    db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取法规文档详情，包含来源和栏目名称。"""
     doc_detail = await repo.get_document_detail(db, doc_id)
@@ -282,7 +297,8 @@ async def get(  # noqa: F811
 
 @router.get("/regulatory-documents/export", summary="导出法规文档为 Excel")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:read")),
     format: str = Query("xlsx", description="导出格式: xlsx"),
     keyword: str | None = Query(None),
     publishDateFrom: date | None = Query(None),
@@ -306,9 +322,9 @@ async def get(  # noqa: F811
     )
 
     if format == "xlsx":
-        excel_file = await generate_regulatory_excel(documents)
+        excel_file = generate_regulatory_excel(documents)
         return StreamingResponse(
-            excel_file,
+            iter([excel_file.getvalue()]),
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             headers={"Content-Disposition": "attachment; filename=regulatory_documents.xlsx"},
         )
@@ -320,7 +336,12 @@ async def get(  # noqa: F811
 
 
 @router.patch("/regulatory-documents/{doc_id}/read", summary="标记文档为已读")
-async def patch(current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession = Depends(get_db)) -> Any:
+async def patch(
+    current_user: RequiredUser,
+    doc_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
     """标记单个文档为已读"""
     doc = await repo.get_document_by_id(db, doc_id)
     if not doc:
@@ -333,8 +354,9 @@ async def patch(current_user: CurrentUser, doc_id: uuid.UUID, db: AsyncSession =
 
 @router.post("/regulatory-documents/batch-read", summary="批量标记文档已读")
 async def post(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request: BatchReadRequest,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """批量标记文档为已读"""
@@ -348,9 +370,9 @@ async def post(
 
 @router.post("/sync-jobs/trigger", summary="手动触发同步任务")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     request: SyncTriggerRequest,
-    background_tasks: BackgroundTasks,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """手动触发数据源同步任务（后台异步执行，含自动 AI 分析）"""
@@ -377,26 +399,37 @@ async def post(  # noqa: F811
     )
     await db.commit()
 
-    # 后台执行同步（不阻塞响应）
-    # AI 分析现在在 sync_service 中自动执行
+    # 后台执行同步（不阻塞响应）。用 spawn_task 而不是 BackgroundTasks：
+    # 后者在响应结束后脱离请求上下文执行，异常只会静默丢失，任务状态永远停在 pending。
+    # AI 分析在 sync_service 内部自动执行。
+    from app.core.tasks import spawn_task
     from app.modules.registration.regulatory_tracker.services.sync_service import (
         run_sync_job,
     )
 
-    async def _run_sync(current_user: CurrentUser) -> Any:
+    async def _run_sync() -> None:
         from app.core.database import async_session_factory
 
-        async with async_session_factory() as session:
-            await run_sync_job(
-                db=session,
-                source=source,
-                channel=channel,
-                job_type="manual_sync",
-                start_page=request.startPage,
-                end_page=request.endPage,
-            )
+        try:
+            async with async_session_factory() as session:
+                await run_sync_job(
+                    db=session,
+                    source=source,
+                    channel=channel,
+                    job_type="manual_sync",
+                    start_page=request.startPage,
+                    end_page=request.endPage,
+                )
+        except Exception:
+            logger.exception("法规同步任务执行失败 jobId=%s", job.id)
+            try:
+                async with async_session_factory() as session:
+                    await repo.update_sync_job(session, job.id, {"status": "failed"})
+                    await session.commit()
+            except Exception:
+                logger.exception("标记同步任务失败状态时出错 jobId=%s", job.id)
 
-    background_tasks.add_task(_run_sync)
+    spawn_task(_run_sync(), name=f"regulatory-sync-{job.id}")
 
     return {
         "code": 200,
@@ -415,7 +448,8 @@ async def post(  # noqa: F811
 
 @router.get("/sync-jobs", summary="同步任务列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("registration:regulatory-tracker:read")),
     page: int = Query(1, ge=1),
     pageSize: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def spawn_task(
-    coro: Awaitable[None],
+    coro: Awaitable[Any],
     name: str | None = None,
 ) -> asyncio.Task[None]:
     """Spawn a background task with proper error handling.

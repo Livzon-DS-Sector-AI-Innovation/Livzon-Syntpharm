@@ -18,6 +18,12 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import get_settings
 from app.platform.integrations.feishu.im import FeishuIM
 
+# 只涉及两张固定的员工表，SQL 以静态语句维护，不做表名拼接
+_UPDATE_OPEN_ID_SQL = {
+    "hr.employees_old": text("UPDATE hr.employees_old SET feishu_open_id = :open_id WHERE id = :id"),
+    "hr.employees_new": text("UPDATE hr.employees_new SET feishu_open_id = :open_id WHERE id = :id"),
+}
+
 
 async def main():
     settings = get_settings()
@@ -69,7 +75,7 @@ async def main():
                 table = "hr.employees_old" if emp in employees_old else "hr.employees_new"
                 if open_id:
                     await session.execute(
-                        text(f"UPDATE {table} SET feishu_open_id = :open_id WHERE id = :id"),
+                        _UPDATE_OPEN_ID_SQL[table],
                         {"open_id": open_id, "id": str(emp.id)},
                     )
                     updated += 1

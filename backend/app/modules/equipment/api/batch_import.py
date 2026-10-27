@@ -11,7 +11,7 @@ from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import BadRequestException
 from app.core.response import ApiResponse, build_response
 from app.modules.equipment import repository as repo
@@ -205,7 +205,9 @@ def fuzzy_match_department(dept_name: str, departments: list[str], threshold: fl
 
 
 @router.get("/template", summary="下载导入模板")
-async def download_template() -> ApiResponse:
+async def download_template(
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:read")),
+) -> ApiResponse:
     from openpyxl import Workbook
     from openpyxl.styles import Font
 
@@ -227,6 +229,7 @@ async def download_template() -> ApiResponse:
 async def preview_import(
     data: list[EquipmentImportRow],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     import logging
@@ -305,6 +308,7 @@ async def preview_import(
 async def batch_import(
     data: list[EquipmentImportRow],
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     created = 0
@@ -388,7 +392,11 @@ async def batch_import(
 
 
 @router.post("/", summary="上传Excel文件并解析")
-async def import_excel(current_user: RequiredUser, file: UploadFile = File(...)) -> ApiResponse:
+async def import_excel(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
+    file: UploadFile = File(...),
+) -> ApiResponse:
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
         raise BadRequestException(message="仅支持 .xlsx 或 .xls 文件")
     from openpyxl import load_workbook
@@ -415,17 +423,3 @@ async def import_excel(current_user: RequiredUser, file: UploadFile = File(...))
             row_dict = {str(headers[i]): row[i] for i in range(len(headers)) if i < len(row) and headers[i]}
             data.append(row_dict)
     return build_response(data=data)
-
-
-# Temporary test endpoint for debugging validation errors
-@router.post("/test-validation", summary="测试验证错误")
-async def test_validation(data: list[EquipmentImportRow]) -> dict[str, Any]:
-    """Test endpoint to debug validation errors without authentication."""
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.error(f"[TEST] Received {len(data)} rows")
-    if data:
-        logger.error(f"[TEST] First row: {data[0]}")
-        logger.error(f"[TEST] First row dict: {data[0].model_dump()}")
-    return {"status": "ok", "count": len(data)}

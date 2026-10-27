@@ -1,6 +1,6 @@
 import type { components } from '@/types/generated/schema'
-export type CreateRoleInput = components['schemas']['RoleCreate']
-export type UpdateRoleInput = components['schemas']['RoleUpdate']
+export type CreateRoleInput = components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate']
+export type UpdateRoleInput = components['schemas']['app__modules__equipment__schemas__personnel__RoleUpdate']
 export type AddPersonnelInput = components['schemas']['PersonnelAddRequest']
 export type AssignRolesInput = components['schemas']['PersonnelRoleAssign']
 export type AssignCategoriesInput = components['schemas']['PersonnelCategoryAssign']
@@ -39,6 +39,8 @@ export interface Personnel {
   id: string
   user_id: string | null
   name: string
+  /** 登录账号（来自 identity.users，选人下拉用「姓名（账号）」展示） */
+  username?: string | null
   employee_no: string | null
   department: string | null
   position: string | null

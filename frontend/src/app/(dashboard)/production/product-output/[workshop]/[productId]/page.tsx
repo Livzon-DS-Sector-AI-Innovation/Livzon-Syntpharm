@@ -664,7 +664,9 @@ export default function ProductOutputRecordsPage() {
       ]} />
 
       <div className="mb-6">
-        <Title level={4}>{product?.name} - 产量记录</Title>
+        <Title level={1} style={{ fontSize: 20 }}>
+          {product?.name} - 产量记录
+        </Title>
         <Text type="secondary">{workshop}</Text>
       </div>
 
@@ -780,7 +782,7 @@ export default function ProductOutputRecordsPage() {
 
       {lastBatchId && (
         <Alert
-          message={
+          title={
             <div className="flex items-center justify-between">
               <div>
                 <CheckCircleOutlined className="text-green-500 mr-2" />

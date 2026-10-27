@@ -11,6 +11,7 @@ export UV_HTTP_TIMEOUT=120
 #   typecheck         Mypy type check
 #   alembic           Apply migrations + drift check (requires PostgreSQL)
 #   migration-scope   Check each migration touches only one module
+#   permissions       Check permission registry: mounted routes ↔ bindings, codes, roles
 #   test              Run pytest (requires PostgreSQL, runs migrations first)
 #
 #
@@ -286,6 +287,19 @@ run_migration_scope() {
     fi
 }
 
+run_permissions() {
+    echo ""
+    echo "=== Permission Registry Check ==="
+    # 需要能构建 FastAPI 应用（依赖 FEISHU__PLATFORM__* / FRONTEND_URL 等配置），
+    # 与 typecheck job 同样的 env 即可，不需要 PostgreSQL。
+    if ! uv run python scripts/ci/check_permissions.py; then
+        log_error "Permission registry check failed!"
+        FAILED=1
+    else
+        log_info "Permission registry check passed"
+    fi
+}
+
 run_tests() {
     echo ""
     echo "=== Tests ==="
@@ -317,6 +331,7 @@ for cmd in "${SUBCOMMANDS[@]}"; do
         typecheck|mypy)  run_typecheck ;;
         alembic)         run_alembic ;;
         migration-scope) run_migration_scope ;;
+        permissions)     run_permissions ;;
         test)            run_tests ;;
         *)
             echo "Unknown subcommand: ${cmd}"

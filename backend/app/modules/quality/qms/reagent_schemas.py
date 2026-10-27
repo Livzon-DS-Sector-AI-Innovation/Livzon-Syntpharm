@@ -7,6 +7,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, Field
 
+from app.shared.schemas import PaginationMeta
+
 # ============ 请求模型 ============
 
 
@@ -96,6 +98,65 @@ class AiRecognizeResponse(BaseModel):
     production_date: str | None = None
     confidence: float = 0.0
     raw_response: str | None = None
+
+
+class ReagentRecognizeData(BaseModel):
+    """AI识别试剂标签接口的 data 负载（与 reagent_api 实际返回字段一致）"""
+
+    reagent_name: str | None = None
+    lot_no: str | None = None
+    content: str | None = None
+    manufacturer: str | None = None
+    production_date: str | None = None
+    expiration_date: str | None = None
+    specification: str | None = None
+    confidence: float = 0.0
+
+
+class ReagentNextLotNoData(BaseModel):
+    """下一个入场批号"""
+
+    incoming_lot_no: str
+
+
+# ============ 响应信封（具体 response_model，供 OpenAPI 生成前端类型） ============
+
+
+class ReagentListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ReagentListResponse
+    meta: PaginationMeta | None = None
+
+
+class ReagentDetailApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ReagentResponse | None = None
+    meta: PaginationMeta | None = None
+
+
+class ReagentRecognizeApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ReagentRecognizeData | None = None
+    meta: PaginationMeta | None = None
+
+
+class ReagentNextLotNoApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ReagentNextLotNoData | None = None
+    meta: PaginationMeta | None = None
+
+
+class ReagentMessageApiResponse(BaseModel):
+    """无 data 的响应（删除等）"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None
+    meta: PaginationMeta | None = None
 
 
 # ============ 查询参数 ============

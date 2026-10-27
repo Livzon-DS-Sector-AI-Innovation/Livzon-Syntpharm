@@ -614,7 +614,7 @@ export default function HplcReferencePage() {
           showIcon
           icon={<WarningOutlined />}
           style={{ marginBottom: 16, borderLeft: '4px solid #ef4444' }}
-          message={
+          title={
             <span>
               <strong>复标提醒：</strong>
               当前有 <strong style={{ color: '#ef4444' }}>{recalAlertCount}</strong> 个对照品剩余量低于复标阈值，请及时处理。

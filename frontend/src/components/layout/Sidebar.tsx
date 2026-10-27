@@ -1,20 +1,41 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { Menu } from "antd"
 import type { MenuProps } from "antd"
-import { getModuleByKey } from "@/lib/menu-config"
-import { usePermission } from "@/hooks/usePermission"
 import type { SubMenuItem } from "@/lib/menu-config"
+import { resolveMenus } from "@/lib/menu/resolve"
+import type { PermissionView } from "@/lib/permissions/modules"
 import { fetchWarehouseFeishuTablesByParams } from "@/lib/api/client/warehouse"
 import type { WarehouseFeishuBusinessDomain, WarehouseFeishuTable } from "@/types/warehouse"
-import { SettingOutlined } from "@ant-design/icons"
+import { HomeOutlined, IdcardOutlined, SettingOutlined } from "@ant-design/icons"
 import { useSidebarStore } from "@/stores/sidebar"
-import { getCurrentUser } from "@/actions/auth"
-import type { User } from "@/types/user"
 
 type MenuItem = Required<MenuProps>['items'][number]
+
+/**
+ * 不属于任何业务模块的独立页面（/home、/profile）：
+ * 仍渲染简化的侧栏骨架，避免内容区宽度跳变。
+ */
+const SIMPLE_PAGES: Record<
+  string,
+  { title: string; selectedKey: string; path: string; items: MenuItem[] }
+> = {
+  home: {
+    title: "首页",
+    selectedKey: "home",
+    path: "/home",
+    items: [{ key: "home", label: "工作台", icon: <HomeOutlined /> }],
+  },
+  profile: {
+    title: "个人中心",
+    selectedKey: "profile",
+    path: "/profile",
+    items: [{ key: "profile", label: "个人信息", icon: <IdcardOutlined /> }],
+  },
+}
 
 const warehouseDomainMeta: Record<
   WarehouseFeishuBusinessDomain,
@@ -128,6 +149,8 @@ function collectLeaves(items: SubMenuItem[]): SubMenuItem[] {
   })
 }
 
+/** 子菜单的过滤 + 排序 + 自定义项合并，统一由 `resolveMenus` 完成（见 lib/menu/resolve.ts）。 */
+
 function findSelectedKey(
   items: SubMenuItem[],
   pathname: string,
@@ -173,51 +196,41 @@ interface SidebarProps {
   onNavigate?: () => void
   /** 移动端抽屉内使用：强制展开，忽略桌面折叠状态 */
   forceExpanded?: boolean
+  permissionView: PermissionView
 }
 
-export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
+export function Sidebar({ onNavigate, forceExpanded = false, permissionView }: SidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { collapsed: collapsedState } = useSidebarStore()
   const collapsed = collapsedState && !forceExpanded
   const router = useRouter()
-  const { user: _currentUser } = usePermission()
   const moduleKey = pathname.split("/")[1] || "production"
-  const currentModule = getModuleByKey(moduleKey)
-  const [_user, setUser] = useState<User | null>(null)
-  const [warehouseTables, setWarehouseTables] = useState<WarehouseFeishuTable[]>([])
+  // 仓储模块的飞书表菜单项：只有进到 warehouse 才拉，交给 React Query 管缓存与去重
+  const { data: warehouseTablesData } = useQuery({
+    queryKey: ["warehouse-feishu-tables"],
+    queryFn: () => fetchWarehouseFeishuTablesByParams({ enabled: true }),
+    enabled: moduleKey === "warehouse",
+  })
+  const warehouseTables: WarehouseFeishuTable[] = useMemo(
+    () => warehouseTablesData ?? [],
+    [warehouseTablesData],
+  )
   const queryString = searchParams.toString()
   const query = useMemo(() => new URLSearchParams(queryString), [queryString])
-
-  useEffect(() => {
-    getCurrentUser().then(setUser)
-  }, [])
-
-  useEffect(() => {
-    if (moduleKey !== "warehouse") {
-      return
-    }
-
-    let cancelled = false
-    fetchWarehouseFeishuTablesByParams({ enabled: true })
-      .then((tables) => {
-        if (cancelled) return
-        setWarehouseTables(tables)
-      })
-      .catch(() => {
-        if (!cancelled) setWarehouseTables([])
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [moduleKey])
+  const granted = useMemo(() => new Set(permissionView.granted), [permissionView.granted])
+  // 菜单树 = 代码结构 + 服务端下发的菜单配置（显隐 / 权重 / 权限 / 自定义项）
+  const resolvedModules = useMemo(
+    () => resolveMenus(permissionView.menuConfig, granted, permissionView.isSuperuser),
+    [permissionView, granted],
+  )
+  const currentModule = resolvedModules.find((mod) => mod.key === moduleKey)
 
   const moduleChildren = useMemo(() => {
     if (!currentModule) return []
-    const filtered = currentModule.children
-    if (moduleKey !== "warehouse") return filtered
-    return withWarehouseTables(filtered, warehouseTables)
+    return moduleKey === "warehouse"
+      ? withWarehouseTables(currentModule.children, warehouseTables)
+      : currentModule.children
   }, [currentModule, moduleKey, warehouseTables])
 
   const menuItems = buildMenuItems(moduleChildren)
@@ -253,7 +266,40 @@ export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
     }
   }
 
-  if (!currentModule) return null
+  // 首页 / 个人中心不属于任何业务模块：渲染简化侧栏，避免内容区宽度跳变
+  if (!currentModule) {
+    const simple = SIMPLE_PAGES[moduleKey]
+    if (!simple) return null
+    return (
+      <aside
+        className={`bg-[var(--color-canvas)] border-r border-[var(--color-hairline)] flex flex-col shrink-0 overflow-hidden transition-all duration-200 ${
+          collapsed ? "w-0 border-r-0" : "w-56"
+        }`}
+      >
+        <div className="flex-1 overflow-y-auto min-w-[224px]">
+          <div className="px-4 pt-5 pb-3">
+            <h2 className="text-[18px] font-semibold text-[var(--color-charcoal)]">
+              {simple.title}
+            </h2>
+          </div>
+          <Menu
+            mode="inline"
+            selectedKeys={[simple.selectedKey]}
+            items={simple.items}
+            onClick={() => {
+              router.push(simple.path)
+              onNavigate?.()
+            }}
+            className="sidebar-menu"
+            style={{ borderInlineEnd: "none" }}
+          />
+        </div>
+        <div className="px-4 py-3 border-t border-[var(--color-hairline-soft)]">
+          <p className="text-[12px] text-[var(--color-stone)]">v0.1.1</p>
+        </div>
+      </aside>
+    )
+  }
 
   return (
     <aside
@@ -291,13 +337,15 @@ export function Sidebar({ onNavigate, forceExpanded = false }: SidebarProps) {
         <p className="text-[12px] text-[var(--color-stone)]">
           v0.1.1
         </p>
-        <button
-          onClick={() => router.push("/settings")}
-          className="text-[var(--color-stone)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
-          title="系统设置"
-        >
-          <SettingOutlined style={{ fontSize: 16 }} />
-        </button>
+        {permissionView.visibleModuleKeys.includes("settings") && (
+          <button
+            onClick={() => router.push("/settings")}
+            className="text-[var(--color-stone)] hover:text-[var(--color-primary)] transition-colors cursor-pointer"
+            title="系统设置"
+          >
+            <SettingOutlined style={{ fontSize: 16 }} />
+          </button>
+        )}
       </div>
     </aside>
   )

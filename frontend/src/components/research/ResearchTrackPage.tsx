@@ -14,6 +14,8 @@ import {
 } from '@/types/research/rd-project'
 import dayjs from 'dayjs'
 import { createTrack, updateTrack, createFinding, updateFinding } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 
 // JSON structure interfaces for ResearchTrackPage
@@ -381,10 +383,14 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       width: 120,
       render: (_: unknown, record: RdResearchTrack) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEditTrack(record)} />
-          <Popconfirm title="确定删除？" onConfirm={() => handleDeleteTrack(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchTrackUpdate}>
+            <Button type="link" icon={<EditOutlined />} onClick={() => openEditTrack(record)} />
+          </PermissionGate>
+          <PermissionGate code={PERM.researchTrackDelete}>
+            <Popconfirm title="确定删除？" onConfirm={() => handleDeleteTrack(record.id)}>
+              <Button type="link" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -435,10 +441,14 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       width: 100,
       render: (_: unknown, record: RdResearchFinding) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEditFinding(record)} />
-          <Popconfirm title="确定删除？" onConfirm={() => handleDeleteFinding(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchTrackUpdate}>
+            <Button type="link" icon={<EditOutlined />} onClick={() => openEditFinding(record)} />
+          </PermissionGate>
+          <PermissionGate code={PERM.researchTrackDelete}>
+            <Popconfirm title="确定删除？" onConfirm={() => handleDeleteFinding(record.id)}>
+              <Button type="link" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -459,8 +469,12 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
       }
       extra={
         <Space>
-          <Button icon={<HistoryOutlined />} onClick={openConclusionModal}>发布结论</Button>
-          <Button icon={<EditOutlined />} onClick={() => openEditTrack(selectedTrack)}>编辑</Button>
+          <PermissionGate code={PERM.researchTrackCreate}>
+            <Button icon={<HistoryOutlined />} onClick={openConclusionModal}>发布结论</Button>
+          </PermissionGate>
+          <PermissionGate code={PERM.researchTrackUpdate}>
+            <Button icon={<EditOutlined />} onClick={() => openEditTrack(selectedTrack)}>编辑</Button>
+          </PermissionGate>
           <Button onClick={() => setSelectedTrackId(null)}>返回列表</Button>
         </Space>
       }
@@ -493,7 +507,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
             <Card
               size="small"
               title={<Space><ExperimentOutlined />研究发现列表</Space>}
-              extra={<Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreateFinding}>添加发现</Button>}
+              extra={<PermissionGate code={PERM.researchTrackCreate}><Button type="primary" size="small" icon={<PlusOutlined />} onClick={openCreateFinding}>添加发现</Button></PermissionGate>}
             >
               <Table
                 scroll={{ x: "max-content" }}
@@ -513,7 +527,7 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
             <Card
               size="small"
               title={<Space><FileTextOutlined />结论版本历史</Space>}
-              extra={<Button size="small" icon={<PlusOutlined />} onClick={openConclusionModal}>发布新版本</Button>}
+              extra={<PermissionGate code={PERM.researchTrackCreate}><Button size="small" icon={<PlusOutlined />} onClick={openConclusionModal}>发布新版本</Button></PermissionGate>}
             >
               {conclusionHistory.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无结论版本记录</div>
@@ -679,10 +693,14 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
           title="研究项管理"
           extra={
             <Space>
-              <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
-              <Button type="primary" icon={<PlusOutlined />} onClick={openCreateTrack}>
-                新建研究项
-              </Button>
+              <PermissionGate code={PERM.researchTrackExport}>
+                <Button icon={<DownloadOutlined />} onClick={handleExport}>导出</Button>
+              </PermissionGate>
+              <PermissionGate code={PERM.researchTrackCreate}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={openCreateTrack}>
+                  新建研究项
+                </Button>
+              </PermissionGate>
             </Space>
           }
         >
@@ -707,7 +725,9 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         extra={
           <Space>
             <Button onClick={() => setTrackDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={handleSaveTrack}>保存</Button>
+            <PermissionGate code={editingTrack ? PERM.researchTrackUpdate : PERM.researchTrackCreate}>
+              <Button type="primary" onClick={handleSaveTrack}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >
@@ -745,7 +765,9 @@ export function ResearchTrackPage({ projectId, trackTypeFilter }: Props) {
         extra={
           <Space>
             <Button onClick={() => setFindingDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={handleSaveFinding}>保存</Button>
+            <PermissionGate code={editingFinding ? PERM.researchTrackUpdate : PERM.researchTrackCreate}>
+              <Button type="primary" onClick={handleSaveFinding}>保存</Button>
+            </PermissionGate>
           </Space>
         }
       >

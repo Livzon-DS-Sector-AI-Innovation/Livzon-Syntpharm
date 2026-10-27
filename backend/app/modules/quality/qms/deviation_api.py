@@ -3,10 +3,10 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.core.database import AsyncSession, get_db  # type: ignore[attr-defined]
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.deviation_schemas import (
     AIAnalysisApiResponse,
     BatchLockRequest,
@@ -60,6 +60,7 @@ def get_closing_service(session=Depends(get_db)) -> Any:  # type: ignore[no-unty
 @router.get("", response_model=DeviationListApiResponse)
 async def get(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     deviation_no: str | None = Query(None, description="偏差编号"),
     deviation_type: str | None = Query(None, description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差等级"),
@@ -152,6 +153,7 @@ async def get(
 @router.get("/statistics", response_model=DeviationStatisticsApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """获取统计数据"""
@@ -165,6 +167,7 @@ async def get(  # noqa: F811
 @router.post("/ai/generate-description", response_model=AIAnalysisApiResponse)
 async def post(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str | None = Query(None, description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差级别"),
     occurrence_date: str | None = Query(None, description="发生日期"),
@@ -245,6 +248,7 @@ async def post(
 @router.post("/ai/analyze-impact", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str | None = Query(None, description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差级别"),
     occurrence_date: str | None = Query(None, description="发生日期"),
@@ -311,6 +315,7 @@ async def post(  # noqa: F811
 @router.post("/ai/generate-emergency-measures", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str = Query(..., description="偏差类型"),
     deviation_level: str | None = Query(None, description="偏差等级"),
     description: str | None = Query(None, description="偏差描述"),
@@ -367,6 +372,7 @@ async def post(  # noqa: F811
 @router.post("/ai/analyze-root-cause", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str = Query(..., description="偏差类型"),
     description: str | None = Query(None, description="偏差描述"),
     direct_cause: str | None = Query(None, description="直接原因"),
@@ -426,6 +432,7 @@ async def post(  # noqa: F811
 @router.post("/ai/analyze-direct-cause", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str = Query(..., description="偏差类型"),
     description: str | None = Query(None, description="偏差描述"),
     product_name: str | None = Query(None, description="产品/物料名称"),
@@ -476,6 +483,7 @@ async def post(  # noqa: F811
 @router.post("/ai/generate-capa", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str = Query(..., description="偏差类型"),
     root_cause: str | None = Query(None, description="根本原因"),
     deviation_level: str | None = Query(None, description="偏差等级"),
@@ -541,6 +549,7 @@ CAPA结构：
 @router.post("/ai/generate-prevention", response_model=AIAnalysisApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     deviation_type: str = Query(..., description="偏差类型"),
     root_cause: str | None = Query(None, description="根本原因"),
     deviation_level: str | None = Query(None, description="偏差等级"),
@@ -600,6 +609,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """获取偏差详情"""
@@ -705,6 +715,7 @@ async def get(  # noqa: F811
 async def post(  # noqa: F811
     data: DeviationCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """创建偏差"""
@@ -727,6 +738,7 @@ async def put(
     deviation_id: UUID,
     data: DeviationUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """更新偏差"""
@@ -748,6 +760,7 @@ async def put(
 async def delete(
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:delete")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> MessageApiResponse:
     """删除偏差"""
@@ -764,6 +777,7 @@ async def delete(
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:submit")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """提交偏差"""
@@ -779,6 +793,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:approve")),
     approved: bool = Query(..., description="是否批准"),
     comments: str | None = Query(None, description="审批意见"),
     approval_type: str = Query("admin", description="审批类型"),
@@ -799,6 +814,7 @@ async def post(  # noqa: F811
     deviation_id: UUID,
     data: BatchLockRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """锁定批次"""
@@ -813,6 +829,7 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: DeviationService = Depends(get_deviation_service),
 ) -> Any:
     """解锁批次"""
@@ -829,6 +846,7 @@ async def post(  # noqa: F811
 @router.get("/investigations/list", response_model=InvestigationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: InvestigationService = Depends(get_investigation_service),
@@ -894,6 +912,7 @@ async def post(  # noqa: F811
     deviation_id: UUID,
     data: InvestigationCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     service: InvestigationService = Depends(get_investigation_service),
 ) -> Any:
     """创建调查"""
@@ -909,6 +928,7 @@ async def put(  # noqa: F811
     deviation_id: UUID,
     data: InvestigationUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: InvestigationService = Depends(get_investigation_service),
 ) -> Any:
     """更新调查"""
@@ -925,6 +945,7 @@ async def put(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: InvestigationService = Depends(get_investigation_service),
 ) -> Any:
     """完成调查"""
@@ -941,6 +962,7 @@ async def post(  # noqa: F811
 @router.get("/corrections/list", response_model=DeviationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: CorrectionService = Depends(get_correction_service),
@@ -1003,6 +1025,7 @@ async def post(  # noqa: F811
     deviation_id: UUID,
     data: CorrectionCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     service: CorrectionService = Depends(get_correction_service),
 ) -> Any:
     """创建整改"""
@@ -1018,6 +1041,7 @@ async def put(  # noqa: F811
     deviation_id: UUID,
     data: CorrectionUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: CorrectionService = Depends(get_correction_service),
 ) -> Any:
     """更新整改"""
@@ -1034,6 +1058,7 @@ async def put(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     progress: int = Query(..., ge=0, le=100),
     service: CorrectionService = Depends(get_correction_service),
 ) -> Any:
@@ -1051,6 +1076,7 @@ async def post(  # noqa: F811
 @router.get("/closings/list", response_model=DeviationListApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:read")),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     service: ClosingService = Depends(get_closing_service),
@@ -1111,6 +1137,7 @@ async def post(  # noqa: F811
     deviation_id: UUID,
     data: ClosingCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:create")),
     service: ClosingService = Depends(get_closing_service),
 ) -> Any:
     """创建关闭申请"""
@@ -1126,6 +1153,7 @@ async def put(  # noqa: F811
     deviation_id: UUID,
     data: ClosingUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: ClosingService = Depends(get_closing_service),
 ) -> Any:
     """更新关闭记录"""
@@ -1142,6 +1170,7 @@ async def put(  # noqa: F811
 async def post(  # noqa: F811
     deviation_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:deviation:update")),
     service: ClosingService = Depends(get_closing_service),
 ) -> Any:
     """完成关闭"""
@@ -1150,7 +1179,3 @@ async def post(  # noqa: F811
         return DeviationApiResponse(message="偏差已关闭")
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-
-# 添加 HTTPException 导入
-from fastapi import HTTPException  # noqa: E402

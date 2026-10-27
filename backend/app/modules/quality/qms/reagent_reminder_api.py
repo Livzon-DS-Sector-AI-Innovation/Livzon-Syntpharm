@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.secrets import decrypt_secret, mask_secret
 from app.modules.quality.qms.reagent_reminder_schemas import (
     ItemReminderConfigResponse,
@@ -30,7 +30,11 @@ router = APIRouter(prefix="/reagent-reminder", tags=["试剂提醒管理"])
 
 
 @router.get("/config", response_model=ReagentReminderConfigResponse, summary="获取提醒配置")
-async def get_config(current_user: RequiredUser, session: AsyncSession = Depends(get_db_session)) -> Any:
+async def get_config(
+    current_user: RequiredUser,
+    session: AsyncSession = Depends(get_db_session),
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:read")),
+) -> Any:
     """获取当前的提醒配置"""
     service = ReagentReminderService(session)
     config = await service.get_config()
@@ -62,6 +66,7 @@ async def get_config(current_user: RequiredUser, session: AsyncSession = Depends
 async def post(
     current_user: RequiredUser,
     request: ReminderConfigRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """保存提醒配置"""
@@ -88,7 +93,11 @@ async def post(
 
 
 @router.post("/check", response_model=ReminderCheckResponse, summary="手动检查并发送提醒")
-async def check_and_remind(current_user: RequiredUser, session: AsyncSession = Depends(get_db_session)) -> Any:
+async def check_and_remind(
+    current_user: RequiredUser,
+    session: AsyncSession = Depends(get_db_session),
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:create")),
+) -> Any:
     """手动触发库存检查和提醒"""
     service = ReagentReminderService(session)
     result = await service.check_and_remind()
@@ -98,6 +107,7 @@ async def check_and_remind(current_user: RequiredUser, session: AsyncSession = D
 @router.get("/low-stock", response_model=LowStockResponse, summary="获取库存不足的试剂列表")
 async def get(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:read")),
     threshold: int = 2,
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
@@ -119,6 +129,7 @@ async def get(
 async def post(  # noqa: F811
     current_user: RequiredUser,
     request: ItemReminderRequest,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:create")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """设置单个试剂的提醒开关（启用/禁用）"""
@@ -131,6 +142,7 @@ async def post(  # noqa: F811
 async def get(  # noqa: F811
     current_user: RequiredUser,
     reagent_name: str,
+    ctx: PermissionContext = Depends(require_permission("quality:reagent-reminder:read")),
     session: AsyncSession = Depends(get_db_session),
 ) -> Any:
     """获取单个试剂的提醒配置"""

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.quality.cpv import service
 from app.modules.quality.cpv.schemas import (
@@ -19,7 +19,8 @@ router = APIRouter()
 
 @router.post("/import/preview", summary="上传Excel预览", response_model=None)
 async def preview_import(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:import")),
     file: UploadFile = File(...),
     product_id: uuid.UUID = Query(..., description="产品ID"),
     data_type: str = Query(..., description="数据类型: CPP/CQA"),
@@ -44,7 +45,8 @@ async def preview_import(
 
 @router.post("/import/confirm", summary="确认导入")
 async def confirm_import(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:import")),
     file: UploadFile = File(...),
     product_id: uuid.UUID = Form(..., description="产品ID"),
     data_type: str = Form(..., description="数据类型: CPP/CQA"),
@@ -77,7 +79,8 @@ async def confirm_import(
 
 @router.get("/import/tasks", summary="获取导入任务列表")
 async def get_import_tasks(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:import")),
     product_id: uuid.UUID | None = Query(None, description="产品ID"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
@@ -97,8 +100,9 @@ async def get_import_tasks(
 
 @router.get("/import/tasks/{task_id}", summary="获取导入任务详情")
 async def get_import_task(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     task_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("quality:cpv:import")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     """获取导入任务详情"""

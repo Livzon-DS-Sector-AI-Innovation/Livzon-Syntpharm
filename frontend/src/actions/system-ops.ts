@@ -1,0 +1,146 @@
+'use server'
+
+import { cookies } from 'next/headers'
+import { unwrapResponse } from '@/lib/api/server/base'
+import { normalizeBatchResult } from '@/lib/api/batch'
+import {
+  batchSetApiSwitch as batchSetApiSwitchApi,
+  batchToggleScheduledTasks as batchToggleScheduledTasksApi,
+  clearLogs as clearLogsApi,
+  deleteRedisKeys as deleteRedisKeysApi,
+  getApiRoutes as getApiRoutesApi,
+  getDbTableColumns as getDbTableColumnsApi,
+  getDbTables as getDbTablesApi,
+  getHealth,
+  getLogs as getLogsApi,
+  getRedisKeys as getRedisKeysApi,
+  getRedisOverview,
+  getResources,
+  getScheduledTasks,
+  getSystemInfo,
+  setApiSwitch as setApiSwitchApi,
+  toggleScheduledTask as toggleScheduledTaskApi,
+} from '@/lib/api/server/system-ops'
+import type {
+  ApiRouteItem,
+  ApiSwitchBatchItem,
+  ApiSwitchResult,
+  BatchResult,
+  ComponentHealth,
+  DbColumnsData,
+  DbTablesData,
+  LogClearResult,
+  LogsData,
+  RedisDeleteResult,
+  RedisKeysData,
+  RedisOverviewData,
+  ResourcesData,
+  ScheduledTaskItem,
+  SystemInfoData,
+} from '@/types/system-ops'
+
+async function getAuthToken(): Promise<string | undefined> {
+  const cookieStore = await cookies()
+  return cookieStore.get('auth_token')?.value
+}
+
+export async function fetchHealth(): Promise<ComponentHealth[]> {
+  const token = await getAuthToken()
+  const data = unwrapResponse(await getHealth(token))
+  return data ?? []
+}
+
+export async function fetchSystemInfo(): Promise<SystemInfoData | null> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getSystemInfo(token)) ?? null
+}
+
+export async function fetchResources(): Promise<ResourcesData | null> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getResources(token)) ?? null
+}
+
+export async function fetchRedisOverview(): Promise<RedisOverviewData | null> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getRedisOverview(token)) ?? null
+}
+
+export async function fetchRedisKeys(prefix: string): Promise<RedisKeysData> {
+  const token = await getAuthToken()
+  const data = unwrapResponse(await getRedisKeysApi(prefix, 200, token))
+  return data ?? { keys: [], total_scanned: 0, truncated: false }
+}
+
+export async function deleteRedisKeys(prefix: string): Promise<RedisDeleteResult> {
+  const token = await getAuthToken()
+  return unwrapResponse(await deleteRedisKeysApi(prefix, token))
+}
+
+export async function fetchScheduledTasks(): Promise<ScheduledTaskItem[]> {
+  const token = await getAuthToken()
+  const data = unwrapResponse(await getScheduledTasks(token))
+  return data ?? []
+}
+
+export async function toggleScheduledTask(name: string, enabled: boolean): Promise<void> {
+  const token = await getAuthToken()
+  await toggleScheduledTaskApi(name, enabled, token)
+}
+
+/** 批量启用 / 禁用定时任务（运行时临时，重启恢复默认）。 */
+export async function batchToggleScheduledTasks(names: string[], enabled: boolean): Promise<BatchResult> {
+  const token = await getAuthToken()
+  return normalizeBatchResult(unwrapResponse(await batchToggleScheduledTasksApi({ names, enabled }, token)))
+}
+
+/** 批量启用 / 禁用接口（保护名单内的接口由后端拒绝并返回原因）。 */
+export async function batchSetApiSwitch(
+  items: ApiSwitchBatchItem[],
+  enabled: boolean,
+  reason: string | null,
+): Promise<BatchResult> {
+  const token = await getAuthToken()
+  return normalizeBatchResult(unwrapResponse(await batchSetApiSwitchApi({ items, enabled, reason }, token)))
+}
+
+export async function fetchApiRoutes(): Promise<ApiRouteItem[]> {
+  const token = await getAuthToken()
+  const data = unwrapResponse(await getApiRoutesApi(token))
+  return data ?? []
+}
+
+export async function setApiSwitch(
+  method: string,
+  route: string,
+  enabled: boolean,
+  reason: string | null,
+): Promise<ApiSwitchResult> {
+  const token = await getAuthToken()
+  return unwrapResponse(await setApiSwitchApi({ method, route, enabled, reason }, token))
+}
+
+export async function fetchLogs(level = '', keyword = ''): Promise<LogsData> {
+  const token = await getAuthToken()
+  const data = unwrapResponse(await getLogsApi(level, keyword, 500, token))
+  return data ?? { items: [], total: 0, buffer_size: 0 }
+}
+
+export async function clearLogs(): Promise<LogClearResult> {
+  const token = await getAuthToken()
+  return unwrapResponse(await clearLogsApi(token))
+}
+
+/** 数据库概览 + 业务表清单（只读，不含数据内容）。 */
+export async function fetchDbTables(): Promise<DbTablesData | null> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getDbTablesApi(token)) ?? null
+}
+
+/** 单表字段结构（只读，不含数据内容）。 */
+export async function fetchDbTableColumns(
+  schema: string,
+  table: string,
+): Promise<DbColumnsData | null> {
+  const token = await getAuthToken()
+  return unwrapResponse(await getDbTableColumnsApi(schema, table, token)) ?? null
+}

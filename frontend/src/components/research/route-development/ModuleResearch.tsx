@@ -6,6 +6,8 @@ import {Card, Button, Space, Tag, Collapse, App, Alert, Progress, Spin, Tabs, De
 import { ExperimentOutlined, FileTextOutlined, DownloadOutlined, EditOutlined, SaveOutlined, CheckCircleOutlined } from '@ant-design/icons'
 import type { CandidateRoute, ExperimentPlan } from '@/types/research'
 import { updateRouteAction } from '@/actions/research/route-development'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface ModuleResearchProps {
   routeId: string
@@ -91,7 +93,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
         
         // 读取 SSE 流
         const reader = response.body.getReader()
-        const decoder = new TextDecoder()
+        const decoder = new TextDecoder('utf-8')
         let buffer = ''
         
         while (true) {
@@ -258,7 +260,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     return (
       <div style={{ padding: 40 }}>
         <Alert
-          message="需要上传文献文件"
+          title="需要上传文献文件"
           description="请返回上一步上传文献文件，或重新开始工作流"
           type="warning"
           showIcon
@@ -278,7 +280,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     return (
       <div style={{ padding: 40 }}>
         <Alert
-          message="文献解析失败"
+          title="文献解析失败"
           description={parseError}
           type="error"
           showIcon
@@ -290,9 +292,11 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
               重新上传
             </Button>
             {onSaveAndExit && (
-              <Button type="primary" onClick={handleSaveAndExit}>
-                保存并退出
-              </Button>
+              <PermissionGate code={PERM.researchRouteUpdate}>
+                <Button type="primary" onClick={handleSaveAndExit}>
+                  保存并退出
+                </Button>
+              </PermissionGate>
             )}
           </Space>
         </div>
@@ -304,7 +308,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
     <div>
       {parseError && (
         <Alert
-          message="解析警告"
+          title="解析警告"
           description={parseError}
           type="warning"
           showIcon
@@ -335,7 +339,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
               children: (
                 <div>
                   <Alert
-                    message="请评估并选择要实验验证的路线"
+                    title="请评估并选择要实验验证的路线"
                     description="系统已根据文献提取了所有合成路线，请根据反应安全性、放大可行性、质量可控性和成本经济性四个维度进行评估，选择 1-3 条路线进入实验验证阶段。"
                     type="info"
                     showIcon
@@ -406,7 +410,7 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
               children: (
                 <div>
                   <Alert
-                    message="实验方案已根据候选路线自动生成"
+                    title="实验方案已根据候选路线自动生成"
                     description="每个实验方案包含详细的操作步骤、所需物料、设备需求、分析方法和安全注意事项。可以下载方案文档用于实验操作。"
                     type="success"
                     showIcon
@@ -598,24 +602,28 @@ export function ModuleResearch({ routeId, literatureSource = '', literatureFile,
           </div>
           <Space>
             {onSaveAndExit && (
-              <Button 
-                icon={<SaveOutlined />} 
-                onClick={handleSaveAndExit}
+              <PermissionGate code={PERM.researchRouteUpdate}>
+                <Button 
+                  icon={<SaveOutlined />} 
+                  onClick={handleSaveAndExit}
+                  size="large"
+                  disabled={selectedRouteIds.length === 0}
+                >
+                  💾 保存并退出（稍后继续）
+                </Button>
+              </PermissionGate>
+            )}
+            <PermissionGate code={PERM.researchRouteUpdate}>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                onClick={handleConfirm}
                 size="large"
                 disabled={selectedRouteIds.length === 0}
               >
-                💾 保存并退出（稍后继续）
+                ✓ 方案确认，开始做实验 →
               </Button>
-            )}
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              onClick={handleConfirm}
-              size="large"
-              disabled={selectedRouteIds.length === 0}
-            >
-              ✓ 方案确认，开始做实验 →
-            </Button>
+            </PermissionGate>
           </Space>
         </div>
       </Card>

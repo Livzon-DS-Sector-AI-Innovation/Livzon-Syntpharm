@@ -893,7 +893,7 @@ export default function IPQCPage() {
         <Divider>检验结果明细</Divider>
         {editingRecord?.inspection_conclusion === IPQCInspectionConclusion.UNQUALIFIED && (
           <Alert
-            message="检验结论为不合格，检验完成后请确认是否需要生成偏差或OOS报告"
+            title="检验结论为不合格，检验完成后请确认是否需要生成偏差或OOS报告"
             type="warning"
             showIcon
             style={{ marginBottom: 16 }}
@@ -1050,7 +1050,7 @@ export default function IPQCPage() {
           <>
             {viewRecord.batch_locked && (
               <Alert
-                message="批次已锁定"
+                title="批次已锁定"
                 description={viewRecord.batch_lock_reason}
                 type="error"
                 showIcon
@@ -1135,7 +1135,7 @@ export default function IPQCPage() {
             {viewRecord.deviation_id && (
               <>
                 <Divider>关联偏差</Divider>
-                <Alert message={`偏差ID: ${viewRecord.deviation_id}`} type="info" showIcon />
+                <Alert title={`偏差ID: ${viewRecord.deviation_id}`} type="info" showIcon />
               </>
             )}
           </>

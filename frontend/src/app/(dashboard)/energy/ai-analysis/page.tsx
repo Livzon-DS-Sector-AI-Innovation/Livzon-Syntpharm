@@ -14,7 +14,8 @@ import { Card, Button, DatePicker, Select, App, Spin, Alert, Typography, InputNu
 import { PlusOutlined, SyncOutlined, DeleteOutlined } from '@ant-design/icons'
 import TargetModal from '@/components/energy/TargetModal'
 import { 
-  analyzeEnergyV2, 
+  fetchEnergyAiJob,
+  submitEnergyAnalysisJob, 
   getTarget, 
   fetchWorkshopsClient,
   type AIAnalysisResult, 
@@ -120,13 +121,38 @@ const handleAnalyze = async () => {
 
     setLoading(true)
     try {
-      const data = await analyzeEnergyV2({
+      // 分析是后台任务：提交拿 job_id 后轮询（AI 建议生成 >5s，不再同步等待）
+      const jobId = await submitEnergyAnalysisJob({
         workshop_id: workshopId,
         analysis_month: analysisMonth,
         production_items: items,
         include_ai_suggestion: true,
       })
-      setResult(data)
+      const POLL_MS = 2000
+      const TIMEOUT_MS = 5 * 60_000
+      const startedAt = Date.now()
+      for (;;) {
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          message.error('分析超时，请稍后重试')
+          return
+        }
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS))
+        let state
+        try {
+          state = await fetchEnergyAiJob(jobId)
+        } catch {
+          message.error('查询分析任务失败（服务可能已重启），请重试')
+          return
+        }
+        if (state.status === 'failed') {
+          message.error(state.error || '分析失败')
+          return
+        }
+        if (state.status === 'done') {
+          if (state.result) setResult(state.result)
+          return
+        }
+      }
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "操作失败") || '分析请求失败')
     } finally {
@@ -165,7 +191,7 @@ const handleAnalyze = async () => {
 
   return (
     <div style={{ padding: '24px', background: '#f5f5f5', minHeight: '100vh' }}>
-      <Title level={2}>AI 能耗智能分析</Title>
+      <Title level={1} style={{ fontSize: 24 }}>AI 能耗智能分析</Title>
       
       <Card style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>

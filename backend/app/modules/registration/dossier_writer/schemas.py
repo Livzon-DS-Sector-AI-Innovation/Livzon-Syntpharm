@@ -326,6 +326,316 @@ class AssetCategoryUpdateResponse(BaseModel):
     message: str
 
 
+# ====== API 响应信封（具体 response_model，替换 response_model=dict） ======
+
+
+class MessageApiResponse(BaseModel):
+    """无 data 的响应（删除等）"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None
+
+
+class ProductDossierApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ProductDossierResponse | None = None
+
+
+class ProductDossierListData(BaseModel):
+    items: list[ProductDossierListResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class ProductDossierListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ProductDossierListData | None = None
+
+
+class TemplateUploadItem(BaseModel):
+    filename: str | None = None
+    status: str
+    error: str | None = None
+    file_id: str | None = None
+    file_path: str | None = None
+    file_size: str | None = None
+
+
+class TemplateUploadData(BaseModel):
+    results: list[TemplateUploadItem]
+    success_count: int
+    failed_count: int
+    matched_count: int
+    unmatched_files: list[str]
+
+
+class TemplateUploadApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: TemplateUploadData | None = None
+
+
+class ParseResultApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ParseResultResponse | None = None
+
+
+class ChapterTreeApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[ChapterResponse] | None = None
+
+
+class ChapterDetailApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ChapterDetailResponse | None = None
+
+
+class AssetUploadBatchData(BaseModel):
+    assets: list[AssetUploadResponse]
+    count: int
+
+
+class AssetUploadBatchApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AssetUploadBatchData | None = None
+
+
+class AssetListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[AssetResponse] | None = None
+
+
+class ExportApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ExportResponse | None = None
+
+
+class FillResultItem(BaseModel):
+    id: str
+    field_name: str
+    filled_value: str | None = None
+    fill_method: str | None = None
+    status: str | None = None
+    created_at: str | None = None
+
+
+class FillResultListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[FillResultItem] | None = None
+
+
+class StringListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[str] | None = None
+
+
+class InitS7Data(BaseModel):
+    chapters: list[dict[str, Any]]
+
+
+class InitS7ApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: InitS7Data | None = None
+
+
+# ── 章节预览（GET /chapters/{id}/preview）──────────────────────────
+
+
+class ChapterPreviewParagraph(BaseModel):
+    """预览段落（取自工作副本 docx）"""
+
+    text: str
+    style: str = "Normal"
+
+
+class ChapterPreviewData(BaseModel):
+    """章节预览：成功时带段落/表格，失败时只有 success + message"""
+
+    success: bool
+    message: str | None = None
+    chapter_code: str | None = None
+    chapter_title: str | None = None
+    paragraphs: list[ChapterPreviewParagraph] = Field(default_factory=list)
+    tables: list[list[str]] = Field(default_factory=list)
+
+
+class ChapterPreviewApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: ChapterPreviewData | None = None
+
+
+# ── 素材匹配（POST /products/{id}/match-assets）─────────────────────
+
+
+class AssetMatchDetail(BaseModel):
+    """单个模板文件的匹配结果"""
+
+    filename: str
+    chapters_generated: list[str] = Field(default_factory=list)
+
+
+class AssetMatchData(BaseModel):
+    success: bool
+    message: str | None = None
+    matched_count: int = 0
+    unmatched_files: list[str] = Field(default_factory=list)
+    details: list[AssetMatchDetail] = Field(default_factory=list)
+
+
+class AssetMatchApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AssetMatchData | None = None
+
+
+# ── 字段填充（POST /chapters/{id}/fill-fields）──────────────────────
+
+
+class FieldFillResultItem(BaseModel):
+    field_name: str
+    status: str
+    filled_value: str | None = None
+
+
+class FieldFillData(BaseModel):
+    success: bool
+    message: str | None = None
+    filled_count: int = 0
+    total_fields: int = 0
+    results: list[FieldFillResultItem] = Field(default_factory=list)
+
+
+class FieldFillApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: FieldFillData | None = None
+
+
+# ── 字段映射配置（GET /chapters/{code}/field-mappings）──────────────
+
+
+class FieldMappingItem(BaseModel):
+    id: str
+    field_name: str
+    field_type: str | None = None
+    location_type: str | None = None
+    location_hint: str | None = None
+    extraction_prompt: str | None = None
+    source_type: str | None = None
+    source_category: str | None = None
+    fixed_value: str | None = None
+    appendix_slot: str | None = None
+    sort_order: int | None = None
+    is_required: bool | None = None
+
+
+class FieldMappingListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[FieldMappingItem] | None = None
+
+
+# ── 章节 AI 配置初始化（POST /field-mappings/init-s6）───────────────
+
+
+class InitChapterConfigData(BaseModel):
+    success: bool
+    message: str
+    chapter_code: str | None = None
+    field_mappings_created: int = 0
+    field_mappings_skipped: int = 0
+    asset_categories_created: int = 0
+    asset_categories_skipped: int = 0
+
+
+class InitChapterConfigApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: InitChapterConfigData | None = None
+
+
+# ── 素材分类（GET /chapters/{code}/asset-categories）────────────────
+
+
+class AssetCategoryItem(BaseModel):
+    id: str
+    category_name: str
+    category_type: str | None = None
+    appendix_slot: str | None = None
+    description: str | None = None
+    sort_order: int | None = None
+
+
+class AssetCategoryListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[AssetCategoryItem] | None = None
+
+
+# ── AI 解析预览（POST /chapters/{id}/ai-preview）────────────────────
+
+
+class AiPreviewFieldItem(BaseModel):
+    field_name: str
+    field_type: str | None = None
+    value: str | None = None
+    confidence: float = 0.0
+    source: str | None = None
+    field_mapping_id: str | None = None
+
+
+class AiPreviewData(BaseModel):
+    success: bool
+    message: str | None = None
+    fields: list[AiPreviewFieldItem] = Field(default_factory=list)
+    partial_success: bool = False
+    failed_count: int = 0
+    llm_error: bool = False
+
+
+class AiPreviewApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AiPreviewData | None = None
+
+
+# ── 可用素材列表（GET /chapters/{id}/available-assets）──────────────
+
+
+class AvailableAssetItem(BaseModel):
+    id: str
+    chapter_id: str
+    original_filename: str
+    file_path: str | None = None
+    file_type: str | None = None
+    file_size: int | None = None
+    uploaded_at: str | None = None
+    category_id: str | None = None
+    is_inherited: bool = False
+    is_selected: bool = False
+    parent_chapter_code: str | None = None
+
+
+class AvailableAssetListApiResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: list[AvailableAssetItem] | None = None
+
+
 # 解决循环引用
 ChapterResponse.model_rebuild()
 ChapterDetailResponse.model_rebuild()

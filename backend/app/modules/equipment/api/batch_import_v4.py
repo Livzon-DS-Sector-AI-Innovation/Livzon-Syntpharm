@@ -9,7 +9,7 @@ from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import ApiResponse, build_response
 from app.modules.equipment import repository as repo
 from app.modules.equipment.config.dept_mapping import normalize_department_name
@@ -230,6 +230,7 @@ async def log_audit(db: AsyncSession, batch_id: str, operation_type: str, **kwar
 async def batch_import_v4(
     current_user: RequiredUser,
     request: Annotated[dict[str, Any], Body(...)],
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     data = request.get("data", [])
@@ -343,6 +344,7 @@ async def preview_import_v4(
     current_user: RequiredUser,
     data: Annotated[list[dict[str, Any]], Body(...)],
     force_override: bool = Body(False),
+    ctx: PermissionContext = Depends(require_permission("equipment:batch-import:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
     results = []

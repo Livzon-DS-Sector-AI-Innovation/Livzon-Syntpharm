@@ -7,11 +7,12 @@ from typing import Literal
 from alembic import context
 from app.core.config import get_settings
 from app.shared.base_model import Base
-from app.shared.module_registry import BUSINESS_MODULES, BUSINESS_SCHEMAS
+from app.shared.module_registry import BUSINESS_MODULES, BUSINESS_SCHEMAS, PLATFORM_SCHEMAS
 
 # Import platform and module models so Alembic can detect them.
 import_module("app.platform.audit.models")
 import_module("app.platform.identity.models")
+import_module("app.platform.permission.models")
 import_module("app.core.llm.config")
 import_module("app.modules.registration.dossier_writer.models")
 import_module("app.modules.quality.ai.models")
@@ -29,17 +30,31 @@ target_metadata = Base.metadata
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
-PROJECT_SCHEMAS = frozenset(("identity", "audit", "core", "permission", "dossier_writer", *BUSINESS_SCHEMAS))
+PROJECT_SCHEMAS = frozenset((*PLATFORM_SCHEMAS, *BUSINESS_SCHEMAS))
 
 # Get target schema from environment variable (for single-module migration generation)
 TARGET_SCHEMA = os.environ.get("ALEMBIC_TARGET_SCHEMA")
 
 
+# 由迁移直接建表、代码里用原生 SQL 访问、且**确实无法/无需**建 ORM 模型的表。
+# autogenerate / alembic check 会把它们误判成「数据库多余的表」并生成 DROP，这里显式排除。
+#
+# 2026-10-26 清空：原来的三张表（qms_reagent_item_reminder_config、
+# qms_deviation_reminder_rules、hr_system_settings）已补模型
+# （quality/qms/reminder_models.py、hr/models.py:SystemSetting），
+# 白名单长期遮蔽会让这些表的字段漂移永远发现不了。新增条目请谨慎：
+# 优先补模型，只有「物理表无法建模」时才允许加白名单。
+RAW_SQL_ONLY_TABLES: frozenset[tuple[str | None, str]] = frozenset()
+
+
 def include_object(object, name, type_, reflected, compare_to):
     """Limit autogenerate to specific schema.
-    
+
     If ALEMBIC_TARGET_SCHEMA is set, only include objects in that schema.
     """
+    if type_ == "table" and (getattr(object, "schema", None), name) in RAW_SQL_ONLY_TABLES:
+        return False
+
     if not TARGET_SCHEMA:
         return True
     

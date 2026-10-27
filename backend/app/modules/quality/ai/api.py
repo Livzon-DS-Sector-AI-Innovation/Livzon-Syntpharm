@@ -16,8 +16,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.deps import RequiredUser
+from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.llm import llm_client
-from app.core.response import success_response
 from app.modules.administration.public_api import (  # type: ignore[attr-defined]
     VehicleRequest,
     count_vehicle_requests,
@@ -42,9 +42,17 @@ from app.modules.quality.ai.schemas import (
     ExamGenerateResponse,
     TrueFalseQuestion,
 )
+from app.shared.schemas import (
+    AsyncJobAccepted,
+    AsyncJobAcceptedResponse,
+    AsyncJobStateResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# AI 出题后台任务状态表（进程内）
+_quality_ai_job_store = JobStore()
 
 
 def _extract_names(text: str) -> list[str]:
@@ -426,7 +434,7 @@ async def chat_stream(
             if system_prompt:
                 all_messages.append({"role": "system", "content": system_prompt})
             all_messages.extend(messages)
-            async for chunk in llm_client.stream_chat(all_messages, temperature=0.1, max_tokens=4096):  # type: ignore[attr-defined]
+            async for chunk in llm_client.stream_chat(all_messages, temperature=0.1, max_tokens=4096):
                 text = chunk.get("text", "") if isinstance(chunk, dict) else str(chunk)
                 payload = json.dumps({"content": text}, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
@@ -548,12 +556,12 @@ async def _call_moonshot_for_exam(
     )
 
 
-@router.post("/exam/generate", summary="AI 出题：上传文件生成试卷题目")
+@router.post("/exam/generate", response_model=AsyncJobAcceptedResponse, summary="AI 出题：上传文件生成试卷题目")
 async def post(
     current_user: RequiredUser,
     file: UploadFile = File(..., description="上传的文件（支持 .docx, .txt）"),
-) -> Any:
-    """上传培训文件，AI 自动识别内容并生成选择题和判断题."""
+) -> AsyncJobAcceptedResponse:
+    """提交出题后台任务（LLM 耗时 >5s）；轮询 GET /ai/jobs/{job_id} 拿结果。"""
     if not file.content_type or file.content_type not in _SUPPORTED_MIME_TYPES:
         raise HTTPException(
             status_code=400,
@@ -574,18 +582,23 @@ async def post(
     if len(file_content.strip()) < 50:
         raise HTTPException(status_code=400, detail="文件内容过短，无法生成题目")
 
-    try:
-        result = await _call_moonshot_for_exam(file_content, "moonshot-v1-128k")
-    except json.JSONDecodeError as exc:
-        raise HTTPException(status_code=500, detail=f"AI 返回格式解析失败: {exc}") from exc
-    except Exception as exc:
-        logger.exception("AI 出题失败")
-        raise HTTPException(status_code=500, detail=f"AI 出题失败: {exc}") from exc
+    async def _run(_job: str) -> dict[str, Any]:
+        try:
+            result = await _call_moonshot_for_exam(file_content, "moonshot-v1-128k")
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(f"AI 返回格式解析失败: {exc}") from exc
+        except Exception as exc:
+            logger.exception("AI 出题失败")
+            raise RuntimeError(f"AI 出题失败: {exc}") from exc
+        return result.model_dump(mode="json")
 
-    return success_response(
-        data=result.model_dump(mode="json"),
-        message="试卷题目生成成功",
-    )
+    job_id = start_job(_quality_ai_job_store, "quality-ai-exam", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
+
+
+@router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse, summary="查询出题任务状态")
+async def get_exam_job_status(job_id: str, current_user: RequiredUser) -> AsyncJobStateResponse:
+    return AsyncJobStateResponse(data=get_job_state_or_404(_quality_ai_job_store, job_id))
 
 
 @router.post("/exam/export", summary="导出试卷 Word 文档")  # type: ignore[no-redef]

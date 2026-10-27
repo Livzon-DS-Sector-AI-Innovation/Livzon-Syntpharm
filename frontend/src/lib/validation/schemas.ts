@@ -352,29 +352,6 @@ export const DeviationTemplateCreateSchema = z.object({
 export type DeviationTemplateCreate = z.infer<typeof DeviationTemplateCreateSchema>
 
 // ============================================
-// 质量模块 - AI 配置 schemas
-// ============================================
-
-/** AI 配置保存 */
-export const AIConfigSaveSchema = z.object({
-  provider: z.string(),
-  api_key: z.string(),
-  model: z.string(),
-  temperature: z.number().min(0).max(2).optional(),
-  max_tokens: z.number().int().positive().optional(),
-})
-
-export type AIConfigSave = z.infer<typeof AIConfigSaveSchema>
-
-/** AI 连接测试 */
-export const AIConfigTestSchema = z.object({
-  provider: z.string(),
-  api_key: z.string(),
-  model: z.string(),
-})
-
-export type AIConfigTest = z.infer<typeof AIConfigTestSchema>
-
 // ============================================
 // 质量模块 - SOP schemas
 // ============================================

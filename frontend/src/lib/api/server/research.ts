@@ -572,12 +572,10 @@ export async function deleteStageDeliverable(id: string) {
 
 // ===== rd-project.ts - Conclusion Versions =====
 
-export async function publishConclusionVersion(trackId: string, data: {
-  conclusion?: string
-  confidence: string
-  change_summary?: string
-  evidence_refs?: Record<string, unknown>
-}) {
+export async function publishConclusionVersion(
+  trackId: string,
+  data: Omit<components['schemas']['RdTrackConclusionVersionCreate'], 'track_id'>,
+) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/tracks/${trackId}/conclusion-versions`, {
     method: 'POST',
     body: JSON.stringify(data),
@@ -586,7 +584,7 @@ export async function publishConclusionVersion(trackId: string, data: {
 
 // ===== rd-project.ts - AI Report Generation =====
 
-export async function generateReport(data: {
+export async function submitReportJob(data: {
   project_id: string
   deliverable_type: string
   template_id?: string
@@ -596,6 +594,10 @@ export async function generateReport(data: {
     method: 'POST',
     body: JSON.stringify(data),
   })
+}
+
+export async function fetchResearchJob(jobId: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/research/jobs/${jobId}`)
 }
 
 // ===== research.ts - Projects =====

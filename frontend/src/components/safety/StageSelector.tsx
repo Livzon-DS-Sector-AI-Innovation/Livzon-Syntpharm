@@ -74,7 +74,7 @@ export default function StageSelector({
     return (
       <Alert
         type="warning"
-        message="无法获取工艺阶段"
+        title="无法获取工艺阶段"
         description={error}
         showIcon
       />
@@ -85,7 +85,7 @@ export default function StageSelector({
     return (
       <Alert
         type="info"
-        message="该操规暂无工艺阶段"
+        title="该操规暂无工艺阶段"
         description="请确认操规第7章包含 ## 标题的工艺阶段"
         showIcon
       />

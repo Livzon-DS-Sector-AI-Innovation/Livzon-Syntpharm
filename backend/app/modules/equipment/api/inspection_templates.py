@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
-from app.core.exceptions import AppException
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
@@ -24,20 +23,14 @@ from app.shared.schemas import ApiResponse
 router = APIRouter()
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 # ---------- 巡检模板 ----------
 @router.post("/", summary="新增巡检模板")
 async def create_inspection_template(
     data: InspectionTemplateCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     template = await service.create_inspection_template(db, data)
     return build_response(data=InspectionTemplateResponse.model_validate(template))
 
@@ -45,6 +38,7 @@ async def create_inspection_template(
 @router.get("/", summary="巡检模板列表")
 async def list_inspection_templates(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:read")),
     equipment_category_id: uuid.UUID | None = Query(None, description="设备分类ID"),
     is_active: bool | None = Query(None, description="是否启用"),
     keyword: str | None = Query(None, description="关键词搜索"),
@@ -52,7 +46,6 @@ async def list_inspection_templates(
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     templates, total = await service.get_inspection_templates(
         db,
         equipment_category_id=equipment_category_id,
@@ -73,9 +66,9 @@ async def list_inspection_templates(
 async def get_inspection_template(
     template_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     template = await service.get_inspection_template_by_id(db, template_id)
     return build_response(data=InspectionTemplateResponse.model_validate(template))
 
@@ -87,7 +80,6 @@ async def update_inspection_template(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     template = await service.update_inspection_template(db, template_id, data)
     return build_response(data=InspectionTemplateResponse.model_validate(template))
 
@@ -96,9 +88,9 @@ async def update_inspection_template(
 async def delete_inspection_template(
     template_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     await service.delete_inspection_template(db, template_id)
     return build_response(message="删除成功")
 
@@ -111,7 +103,6 @@ async def add_template_item(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     await service.add_template_item(db, template_id, data)
     return build_response(message="添加成功")
 
@@ -121,9 +112,9 @@ async def update_template_item(
     item_id: uuid.UUID,
     data: InspectionTemplateItemUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     await service.update_template_item(db, item_id, data)
     return build_response(message="修改成功")
 
@@ -134,7 +125,6 @@ async def delete_template_item(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     await service.delete_template_item(db, item_id)
     return build_response(message="删除成功")
 
@@ -145,8 +135,8 @@ async def complete_inspection(
     work_order_id: uuid.UUID,
     data: InspectionCompleteRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:inspection-template:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.complete_inspection(db, work_order_id, data)
     return build_response(data=WorkOrderResponse.model_validate(wo))

@@ -7,7 +7,8 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.exceptions import AppException
 from app.core.response import success_response
 from app.modules.registration.schemas.certificate import (
     CertificateCreate,
@@ -21,7 +22,8 @@ router = APIRouter()
 
 @router.get("/", summary="获取注册证书列表")
 async def list_certificates(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     certs = await cert_service.get_certificates(db)
@@ -31,8 +33,9 @@ async def list_certificates(
 
 @router.post("/", summary="创建注册证书")
 async def create_certificate(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     data: CertificateCreate,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
     cert = await cert_service.create_certificate(db, data)
@@ -41,30 +44,42 @@ async def create_certificate(
 
 @router.get("/{certificate_id}", summary="获取注册证书详情")
 async def get_certificate(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     certificate_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    cert = await cert_service.get_certificate(db, certificate_id)
+    try:
+        cert = await cert_service.get_certificate(db, certificate_id)
+    except ValueError as exc:
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(data=CertificateResponse.model_validate(cert))
 
 
 @router.put("/{certificate_id}", summary="更新注册证书")
 async def update_certificate(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     certificate_id: uuid.UUID,
     data: CertificateUpdate,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    cert = await cert_service.update_certificate(db, certificate_id, data)
+    try:
+        cert = await cert_service.update_certificate(db, certificate_id, data)
+    except ValueError as exc:
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(data=CertificateResponse.model_validate(cert))
 
 
 @router.delete("/{certificate_id}", summary="删除注册证书")
 async def delete_certificate(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     certificate_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("registration:certificate:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    await cert_service.delete_certificate(db, certificate_id)
+    try:
+        await cert_service.delete_certificate(db, certificate_id)
+    except ValueError as exc:
+        raise AppException(status_code=404, message=str(exc)) from exc
     return success_response(message="删除成功")

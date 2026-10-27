@@ -1,49 +1,46 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Dropdown, Avatar } from "antd"
-import { LogoutOutlined, UserOutlined, MenuOutlined, MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons"
-import { moduleMenus } from "@/lib/menu-config"
+import { useQueryClient } from "@tanstack/react-query"
+import {
+  LogoutOutlined,
+  UserOutlined,
+  MenuOutlined,
+  MenuUnfoldOutlined,
+  MenuFoldOutlined,
+  KeyOutlined,
+  HomeOutlined,
+  IdcardOutlined,
+} from "@ant-design/icons"
+import { resolveMenus } from "@/lib/menu/resolve"
 import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
-import { logout, getCurrentUser } from "@/actions/auth"
-import type { User, ImpersonateUserInfo } from "@/types/user"
-import { usePermission } from "@/hooks/usePermission"
+import { logout } from "@/actions/auth"
+import type { PermissionView } from "@/lib/permissions/modules"
 import { useSidebarStore } from "@/stores/sidebar"
-
-interface ImpersonationStatus {
-  is_impersonating: boolean
-  original_user?: ImpersonateUserInfo
-  impersonated_user?: ImpersonateUserInfo
-}
-
-async function getImpersonationStatus(): Promise<ImpersonationStatus | null> {
-  return null
-}
 
 interface TopNavProps {
   onMenuClick?: () => void
+  permissionView: PermissionView
+  /** 当前登录用户（服务端下发，避免首屏先显示「未登录」再跳成用户名） */
+  userName: string
+  avatarUrl?: string | null
 }
 
-export function TopNav({ onMenuClick }: TopNavProps) {
+export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: TopNavProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const activeModule = pathname.split("/")[1] || "production"
   const [loggingOut, setLoggingOut] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const { loading } = usePermission()
-  const isLoaded = !loading
   const { collapsed, toggle: toggleSidebar } = useSidebarStore()
-
-  const [_impersonation, setImpersonation] = useState<ImpersonationStatus | null>(null)
-
-  useEffect(() => {
-    getCurrentUser().then(setUser)
-    getImpersonationStatus().then(setImpersonation)
-  }, [isLoaded])
 
   const handleLogout = async () => {
     setLoggingOut(true)
+    // 退出前清空客户端缓存：否则下一个账号登录后会先复用上一个账号的用户/权限数据
+    queryClient.clear()
     try {
       await logout()
     } catch {
@@ -51,10 +48,14 @@ export function TopNav({ onMenuClick }: TopNavProps) {
     }
   }
 
-  const avatarSrc = user?.avatar_url || undefined
-  const displayName = user?.name || "未登录"
+  const avatarSrc = avatarUrl || undefined
+  const displayName = userName
 
-  const _visibleMenus = moduleMenus
+  // 可见模块与排序 = 「代码菜单结构 + 服务端下发的菜单配置」合并结果（见 lib/menu/resolve.ts）
+  const visibleMenus = useMemo(
+    () => resolveMenus(permissionView.menuConfig, new Set(permissionView.granted), permissionView.isSuperuser),
+    [permissionView],
+  )
 
   return (
     <header className="h-16 bg-[var(--color-canvas)] border-b border-[var(--color-hairline)] flex items-center px-5 shrink-0">
@@ -66,8 +67,8 @@ export function TopNav({ onMenuClick }: TopNavProps) {
         <MenuOutlined style={{ fontSize: 18 }} />
       </button>
 
-      {/* Logo */}
-      <div className="flex items-center gap-2.5 mr-6 shrink-0">
+      {/* Logo：点击回到首页工作台 */}
+      <Link href="/home" className="flex items-center gap-2.5 mr-6 shrink-0">
         <div className="w-7 h-7 rounded-[var(--rounded-md)] bg-[var(--color-primary)] flex items-center justify-center">
           <span className="text-white text-xs font-semibold">API</span>
         </div>
@@ -79,30 +80,53 @@ export function TopNav({ onMenuClick }: TopNavProps) {
             珠海保税区丽珠合成制药有限公司
           </span>
         </div>
-      </div>
+      </Link>
 
       {/* 移动端：当前模块名（点击下拉切换模块） */}
       <Dropdown
         trigger={["click"]}
         placement="bottomLeft"
         menu={{
-          items: moduleMenus.map((mod) => ({
-            key: mod.key,
-            label: <Link href={mod.path}>{mod.label}</Link>,
-            icon: <ModuleIcon name={mod.icon} className="w-4 h-4" />,
-          })),
+          items: [
+            {
+              key: "home",
+              label: <Link href="/home">首页</Link>,
+              icon: <HomeOutlined className="w-4 h-4" />,
+            },
+            ...visibleMenus.map((mod) => ({
+              key: mod.key,
+              label: <Link href={mod.path}>{mod.label}</Link>,
+              icon: <ModuleIcon name={mod.icon} className="w-4 h-4" />,
+            })),
+          ],
           selectedKeys: [activeModule],
         }}
       >
         <button className="md:hidden flex items-center gap-1 ml-2 mr-auto text-[15px] font-semibold text-[var(--color-ink)]">
-          {moduleMenus.find((m) => m.key === activeModule)?.label || ""}
+          {visibleMenus.find((m) => m.key === activeModule)?.label || ""}
           <span className="text-[10px] text-[var(--color-steel)]">▾</span>
         </button>
       </Dropdown>
 
       {/* Module Tabs（仅桌面显示；移动端模块切换走导航抽屉） */}
       <nav className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-hide h-full ml-8">
-        {moduleMenus.map((mod) => {
+        <Link
+          href="/home"
+          className={`
+            flex items-center gap-1.5 px-3 h-full text-[14px] font-medium transition-colors whitespace-nowrap relative
+            ${activeModule === "home"
+              ? "text-[var(--color-ink)]"
+              : "text-[var(--color-steel)] hover:text-[var(--color-charcoal)]"
+            }
+          `}
+        >
+          <HomeOutlined className="w-4 h-4" />
+          首页
+          {activeModule === "home" && (
+            <span className="absolute bottom-0 left-3 right-3 h-[2px] bg-[var(--color-primary)] rounded-full" />
+          )}
+        </Link>
+        {visibleMenus.map((mod) => {
           const isActive = activeModule === mod.key
           return (
             <Link
@@ -146,6 +170,17 @@ export function TopNav({ onMenuClick }: TopNavProps) {
           menu={{
             items: [
               {
+                key: 'profile',
+                label: '个人信息',
+                icon: <IdcardOutlined />,
+              },
+              {
+                key: 'change-password',
+                label: '修改密码',
+                icon: <KeyOutlined />,
+              },
+              { type: 'divider' as const },
+              {
                 key: 'logout',
                 label: '退出登录',
                 icon: <LogoutOutlined />,
@@ -153,6 +188,8 @@ export function TopNav({ onMenuClick }: TopNavProps) {
               },
             ],
             onClick: (info) => {
+              if (info.key === 'profile') router.push('/profile')
+              if (info.key === 'change-password') router.push('/change-password')
               if (info.key === 'logout') handleLogout()
             },
           }}

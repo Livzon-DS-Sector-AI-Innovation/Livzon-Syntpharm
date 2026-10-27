@@ -1,7 +1,7 @@
 'use client'
 
 
-import { useState, useCallback, type JSX } from 'react'
+import { useState, useCallback, useEffect, useRef, type JSX } from 'react'
 import { UploadFile, 
   Button, Space, Tag, App, Card, Descriptions, Upload, Select, Empty, Typography,
 } from 'antd'
@@ -124,30 +124,72 @@ export default function ValidationAuditDetailClient({
     }
   }
 
+  // 解析/审核是后台任务（提交后立即返回），提交后轮询任务状态直至出结果
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined)
+
+  useEffect(() => {
+    return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    }
+  }, [])
+
   const handleParse = async () => {
     setParsing(true)
     const result = await parseValidationAuditFiles(task.id)
     if (result.success) {
-      message.success('文件解析完成')
-      // Refresh data from backend
-      await refreshData()
+      message.info('文件解析已开始')
+      startPolling('parse')
     } else {
       message.error(result.message)
+      setParsing(false)
     }
-    setParsing(false)
   }
 
   const handleAudit = async () => {
     setAuditing(true)
     const result = await runValidationAudit(task.id)
     if (result.success) {
-      message.success('审核完成')
-      // Refresh data from backend
-      await refreshData()
+      message.info('审核已开始')
+      startPolling('audit')
     } else {
       message.error(result.message)
+      setAuditing(false)
     }
-    setAuditing(false)
+  }
+
+  const startPolling = (op: 'parse' | 'audit') => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    const startedAt = Date.now()
+    const POLL_MS = 3000
+    const TIMEOUT_MS = 15 * 60_000
+    pollTimerRef.current = setInterval(async () => {
+      if (Date.now() - startedAt > TIMEOUT_MS) {
+        stopPolling(op)
+        message.error('后台任务超时，请稍后刷新页面查看结果')
+        return
+      }
+      try {
+        const taskRes = await fetchValidationAuditTaskById(task.id)
+        const t = taskRes?.data
+        if (!t) return
+        setTask(t)
+        const done = op === 'parse' ? t.status !== 'parsing' : ['completed', 'failed'].includes(t.status)
+        if (done) {
+          stopPolling(op)
+          if (op === 'parse') message.success(t.status === 'failed' ? '文件解析失败' : '文件解析完成')
+          else message.success(t.status === 'completed' ? '审核完成' : '审核失败')
+          await refreshData()
+        }
+      } catch {
+        // 轮询失败不中断，等下一轮
+      }
+    }, POLL_MS)
+  }
+
+  const stopPolling = (op: 'parse' | 'audit') => {
+    if (pollTimerRef.current) clearInterval(pollTimerRef.current)
+    if (op === 'parse') setParsing(false)
+    else setAuditing(false)
   }
 
   // Workflow conditions based on CURRENT state (not stale initial state)

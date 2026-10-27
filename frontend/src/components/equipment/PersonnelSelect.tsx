@@ -26,7 +26,8 @@ export function PersonnelSelect({ personnel, ...rest }: Props) {
       showSearch optionFilterProp='label'
       popupMatchSelectWidth={false}
       options={personnel.map(p => ({
-        label: `${p.name}${p.department ? ' · ' + p.department : ''}`,
+        // 统一「姓名（账号）」；设备人员池没有账号时只显示姓名
+        label: `${p.name}${p.username ? `（${p.username}）` : ''}${p.department ? ' · ' + p.department : ''}`,
         value: p.user_id || p.id,
       }))}
       optionRender={o => {

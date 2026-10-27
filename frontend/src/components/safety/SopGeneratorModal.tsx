@@ -416,10 +416,6 @@ export default function SopGeneratorModal({
     }
   }
 
-  /* ── prevent modal close via mask click during generation ── */
-
-  const maskClosable = !uploading
-
   return (
     <App>
     <Modal
@@ -429,7 +425,7 @@ export default function SopGeneratorModal({
       width={640}
       footer={null}
       destroyOnHidden
-      maskClosable={maskClosable}
+      mask={{ closable: !uploading }}
       closable={!uploading}
       styles={{
         body: { padding: 24 }

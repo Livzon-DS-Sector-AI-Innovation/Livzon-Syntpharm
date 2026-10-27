@@ -17,7 +17,6 @@ import {
   TrainingAssessmentResponse,
   TrainingApprovalListResponse,
   TrainingApprovalResponse,
-  TurnoverAnalysisResponse,
   TrainingLedgerListResponse,
   TrainingLedgerPageListResponse,
   AnnualTrainingPlanListResponse,
@@ -351,12 +350,33 @@ export async function fetchTrainingApprovalById(id: string): Promise<TrainingApp
 
 export { fetchTrainingPlanSops as fetchTrainingSops }
 
-export async function fetchTurnoverAnalysis(): Promise<TurnoverAnalysisResponse> {
+/** 提交人员流动分析后台任务，返回 job_id（结果轮询 fetchHrJob）。 */
+export async function submitTurnoverAnalysisJob(): Promise<string> {
   const res = await fetch(`${API_BASE}/hr/turnover-analysis`, {
+    method: 'POST',
     cache: 'no-store',
   })
-  if (!res.ok) throw new Error('获取人员流动分析失败')
-  return res.json()
+  if (!res.ok) throw new Error('提交人员流动分析任务失败')
+  const json = (await res.json()) as { data?: { job_id?: string } }
+  if (!json.data?.job_id) throw new Error('任务提交失败：响应缺少 job_id')
+  return json.data.job_id
+}
+
+export interface HrJobState {
+  status: 'running' | 'done' | 'failed'
+  result: Record<string, unknown> | null
+  error: string | null
+}
+
+/** 轮询 HR 后台任务状态（简历解析/出题/流动分析共用 GET /hr/jobs/{job_id}）。 */
+export async function fetchHrJob(jobId: string): Promise<HrJobState> {
+  const res = await fetch(`${API_BASE}/hr/jobs/${jobId}`, {
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error('查询后台任务失败')
+  const json = (await res.json()) as { data?: HrJobState }
+  if (!json.data) throw new Error('查询后台任务失败：响应缺少 data')
+  return json.data
 }
 
 export async function fetchOnboardingTrainingRecord(
