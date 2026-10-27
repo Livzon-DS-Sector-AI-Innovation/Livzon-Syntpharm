@@ -15,7 +15,7 @@ export default function DashboardNotFound() {
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center px-6 text-center">
       <div className="text-[52px] font-semibold leading-none text-[var(--color-steel)]">404</div>
-      <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-charcoal)]">页面不存在</h2>
+      <h1 className="mt-4 text-[20px] font-semibold text-[var(--color-charcoal)]">页面不存在</h1>
       <p className="mt-2 max-w-[560px] text-[13px] text-[var(--color-steel)]">
         若你是从菜单点进来的，可能是该菜单的「跳转路径」配置有误（对应的页面不存在）。
       </p>

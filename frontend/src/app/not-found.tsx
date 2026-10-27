@@ -10,7 +10,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-6 text-center">
       <div className="text-[52px] font-semibold leading-none text-[var(--color-steel)]">404</div>
-      <h2 className="mt-4 text-[20px] font-semibold text-[var(--color-charcoal)]">页面不存在</h2>
+      <h1 className="mt-4 text-[20px] font-semibold text-[var(--color-charcoal)]">页面不存在</h1>
       <p className="mt-2 max-w-[560px] text-[13px] text-[var(--color-steel)]">
         你访问的地址没有对应的页面，可能已被移除或路径输入有误。
       </p>
