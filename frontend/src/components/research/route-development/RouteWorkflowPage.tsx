@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Steps, Card, Button, Space, Tag, App } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import { ModuleResearch } from './ModuleResearch'
@@ -8,6 +9,7 @@ import { ModuleTrial } from './ModuleTrial'
 import { ModuleAssessment } from './ModuleAssessment'
 import { ModuleConfirmation } from './ModuleConfirmation'
 import type { WorkflowModule, CandidateRoute, ExperimentRecord, DimensionAssessment, ExperimentPlan, RouteStatus } from '@/types/research'
+import type { RouteDevelopment } from '@/types/research/route-development'
 import { fetchRouteById } from '@/lib/api/client/research'
 import { updateRouteAction } from '@/actions/research/route-development'
 import { PermissionGate } from '@/components/auth/PermissionGate'
@@ -110,39 +112,37 @@ export function RouteWorkflowPage({ routeId, routeName, literatureSource = '', l
     return () => clearTimeout(timer)
   }, [saveState])
 
-  // 从后端加载最新数据
-  useEffect(() => {
-    const loadFromBackend = async () => {
-      try {
-        const route = await fetchRouteById(routeId)
-        if (route) {
-          // Sync selected routes
-          if (route.candidate_routes && route.candidate_routes.length > 0) {
-            setSelectedRoutes(route.candidate_routes)
-            if (route.selected_route_ids) {
-              setSelectedRouteIds(route.selected_route_ids)
-            }
-          }
-          if (route.experiment_plans && route.experiment_plans.length > 0) {
-            setExperimentPlans(route.experiment_plans)
-          }
-          if (route.assessment) {
-            setAssessment(route.assessment)
-          }
-          // Set current step based on current_module
-          if (route.current_module) {
-            const stepIndex = stepConfig.findIndex(s => s.key === route.current_module)
-            if (stepIndex >= 0) {
-              setCurrentStep(stepIndex)
-            }
-          }
-        }
-      } catch (e) {
-        console.error('从后端加载失败', e)
+  // 从后端加载最新数据（React Query），到达后合并进本地可编辑状态
+  const { data: serverRoute } = useQuery({
+    queryKey: ['route-workflow', routeId],
+    queryFn: () => fetchRouteById(routeId),
+    staleTime: 0,
+  })
+
+  // 渲染期同步（React 官方「props 变化时调整 state」模式）：同一份服务端数据只合并一次，
+  // 之后用户编辑本地状态；服务端数据刷新（refetch）会带来新对象，从而重新合并。
+  const [appliedRoute, setAppliedRoute] = useState<RouteDevelopment | null>(null)
+  if (serverRoute && serverRoute !== appliedRoute) {
+    setAppliedRoute(serverRoute)
+    if (serverRoute.candidate_routes && serverRoute.candidate_routes.length > 0) {
+      setSelectedRoutes(serverRoute.candidate_routes)
+      if (serverRoute.selected_route_ids) {
+        setSelectedRouteIds(serverRoute.selected_route_ids)
       }
     }
-    loadFromBackend()
-  }, [routeId])
+    if (serverRoute.experiment_plans && serverRoute.experiment_plans.length > 0) {
+      setExperimentPlans(serverRoute.experiment_plans)
+    }
+    if (serverRoute.assessment) {
+      setAssessment(serverRoute.assessment)
+    }
+    if (serverRoute.current_module) {
+      const stepIndex = stepConfig.findIndex(s => s.key === serverRoute.current_module)
+      if (stepIndex >= 0) {
+        setCurrentStep(stepIndex)
+      }
+    }
+  }
 
   // 保存并退出
   const handleSaveAndExit = () => {

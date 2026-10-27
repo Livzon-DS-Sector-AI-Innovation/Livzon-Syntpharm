@@ -71,6 +71,16 @@ export default function HazardInspectionForm({
   const [userOptions, setUserOptions] = useState<UserOption[]>([])
   const [userSearchLoading, setUserSearchLoading] = useState(false)
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // 组件卸载标记：定时器回调与异步回填不再 setState
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    }
+  }, [])
 
   const handleUserSearch = useCallback((keyword: string) => {
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
@@ -78,8 +88,6 @@ export default function HazardInspectionForm({
       setUserOptions([])
       return
     }
-    // 组件卸载标记，防止在已卸载组件上 setState
-    const cancelled = false
     searchTimerRef.current = setTimeout(async () => {
       setUserSearchLoading(true)
       try {
@@ -98,9 +106,9 @@ export default function HazardInspectionForm({
           }))
         }
       } catch {
-        if (!cancelled) setUserOptions([])
+        if (mountedRef.current) setUserOptions([])
       } finally {
-        if (!cancelled) setUserSearchLoading(false)
+        if (mountedRef.current) setUserSearchLoading(false)
       }
     }, 300)
   }, [])
@@ -136,8 +144,9 @@ export default function HazardInspectionForm({
   // 从飞书登录信息自动填充检查人员姓名和部门（仅新建表单，草稿不覆盖）
   useEffect(() => {
     if (initialValues) return // 有草稿数据时不覆盖
+    let cancelled = false
     getCurrentUser().then((user) => {
-      if (!user) return
+      if (cancelled || !user) return
       const patch: Record<string, unknown> = {}
       if (user.name && user.id) {
         patch.discovered_by = user.id
@@ -162,6 +171,9 @@ export default function HazardInspectionForm({
         form.setFieldsValue(patch)
       }
     })
+    return () => {
+      cancelled = true
+    }
   }, [initialValues, form])
 
   // 规范化表单值：mode="multiple" 字段返回数组，需转为逗号分隔字符串（匹配 Bitable multi_select）
