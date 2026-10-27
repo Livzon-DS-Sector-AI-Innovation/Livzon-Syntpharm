@@ -377,10 +377,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     一旦写入日志即等价泄露，且日志通常会被收集到集中平台。
     """
     errors = exc.errors()
-    fields = [
-        {"loc": [str(part) for part in e.get("loc", ())], "type": e.get("type", "")}
-        for e in errors
-    ]
+    fields = [{"loc": [str(part) for part in e.get("loc", ())], "type": e.get("type", "")} for e in errors]
     logger.warning(
         "request validation failed: method=%s path=%s fields=%s",
         request.method,

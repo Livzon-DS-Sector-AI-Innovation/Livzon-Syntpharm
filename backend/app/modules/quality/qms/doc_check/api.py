@@ -126,11 +126,11 @@ th {{ background: #f5f5f5; }}
 </head>
 <body>
 <h1>文档校验报告 - {escape(check.file_name or check.file_code or check.id)}</h1>
-<p>文件编号：{escape(check.file_code or '-')}</p>
-<p>文件类型：{escape(check.file_type or '-')}</p>
+<p>文件编号：{escape(check.file_code or "-")}</p>
+<p>文件类型：{escape(check.file_type or "-")}</p>
 <p>校验状态：{escape(_status_of(check))}</p>
 <p>问题总数：{len(problems)}（高 {check.risk_high} / 中 {check.risk_medium} / 低 {check.risk_low}）</p>
-<p>总体结论：{escape(check.result_summary or '-')}</p>
+<p>总体结论：{escape(check.result_summary or "-")}</p>
 <table>
 <thead>
 <tr><th>#</th><th>问题类型</th><th>风险等级</th><th>位置</th><th>问题描述</th><th>整改建议</th><th>处理状态</th></tr>
@@ -230,9 +230,7 @@ async def get_upload_progress(
 ) -> Any:
     if await load_upload_bytes(upload_id) is None:
         raise BadRequestException("上传记录不存在或已失效")
-    return build_response(
-        data=DocCheckUploadProgressResponse(file_id=upload_id, status="completed", progress=100)
-    )
+    return build_response(data=DocCheckUploadProgressResponse(file_id=upload_id, status="completed", progress=100))
 
 
 # ============ 校验任务 ============
