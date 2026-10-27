@@ -60,7 +60,7 @@ export async function fetchEquipments(query: EquipmentListQuery = {}): Promise<E
   return apiFetchPaginated(url)
 }
 
-// Use GetStatisticsQuery from generated types
+// 统计端点（GET /equipment/statistics）在后端是散参数，没有 query 模型可生成，故此处手写一份。
 
 export async function fetchEquipmentStatistics(filters: GetStatisticsQuery = {}): Promise<EquipmentStatistics> {
   const params = new URLSearchParams()
