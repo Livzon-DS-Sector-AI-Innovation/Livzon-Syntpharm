@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import success_response
 from app.modules.equipment.models.personnel import EquipmentPersonnel
-from app.platform.identity.models import User
+from app.platform.identity import User
 
 logger = logging.getLogger(__name__)
 

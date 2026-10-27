@@ -37,7 +37,7 @@ logging.basicConfig(
 )
 
 # 运行日志内存环形缓冲（供「系统运维 → 日志管理」查看，不落盘）
-from app.shared.log_buffer import install_log_buffer  # noqa: E402
+from app.core.log_buffer import install_log_buffer  # noqa: E402
 
 install_log_buffer()
 

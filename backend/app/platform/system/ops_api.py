@@ -5,6 +5,7 @@
 
 from fastapi import APIRouter, Depends, Query, Request
 
+from app.core import log_buffer
 from app.core.deps import PermissionContext, require_permission
 from app.core.exceptions import BadRequestException
 from app.platform.system import api_switch_service, ops_service
@@ -37,7 +38,6 @@ from app.platform.system.ops_schemas import (
     TaskToggleResponse,
     TaskToggleResult,
 )
-from app.shared import log_buffer
 
 router = APIRouter(tags=["系统运维"])
 
