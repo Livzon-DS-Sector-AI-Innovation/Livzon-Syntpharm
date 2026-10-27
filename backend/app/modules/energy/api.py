@@ -1252,6 +1252,7 @@ async def ai_analysis_v2(
     body: AIAnalysisRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("energy:analysis:create")),
+    db: AsyncSession = Depends(get_db),
 ) -> AsyncJobAcceptedResponse:
     """提交 AI 能耗分析后台任务（含 AI 建议生成 >5s）；轮询 GET /ai-analysis-v2/jobs/{job_id}。"""
     from uuid import UUID
@@ -1260,6 +1261,10 @@ async def ai_analysis_v2(
     analysis_month = body.analysis_month
     production_items = body.production_items
     include_ai_suggestion = body.include_ai_suggestion
+
+    # 提交前同步校验「车间范围 / 折算总产量 >0」：用户输入问题必须立刻 400，
+    # 不能藏进后台任务变成一句「任务失败」。prepare 只读，且不会触发 LLM。
+    await service.prepare_ai_analysis_data(db, workshop_id, analysis_month, production_items)
 
     async def _run(_job: str) -> dict[str, Any]:
         async with async_session_factory() as job_db:
