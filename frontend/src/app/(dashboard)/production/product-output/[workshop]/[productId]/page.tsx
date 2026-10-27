@@ -664,8 +664,9 @@ export default function ProductOutputRecordsPage() {
       ]} />
 
       <div className="mb-6">
-        <h1 className="sr-only">{product?.name} - 产量记录</h1>
-        <Title level={4}>{product?.name} - 产量记录</Title>
+        <Title level={1} style={{ fontSize: 20 }}>
+          {product?.name} - 产量记录
+        </Title>
         <Text type="secondary">{workshop}</Text>
       </div>
 
