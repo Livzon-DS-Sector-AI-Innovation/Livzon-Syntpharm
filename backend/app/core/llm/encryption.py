@@ -1,16 +1,29 @@
 """Fernet encryption for API keys."""
 
+import logging
+
 from cryptography.fernet import Fernet, InvalidToken
 
 from .exceptions import LLMConfigError
 
+logger = logging.getLogger(__name__)
+_missing_key_warned = False
+
 
 def _get_fernet() -> Fernet | None:
     """Get Fernet instance if encryption key is configured."""
+    global _missing_key_warned
+
     from app.core.config import get_settings
 
     key = get_settings().ENCRYPTION_KEY
     if not key:
+        if not _missing_key_warned:
+            logger.warning(
+                "ENCRYPTION_KEY 未配置：LLM API key 将以明文存入数据库。"
+                "请在部署环境配置合法的 Fernet key（44 位 base64），并重新保存已有配置"
+            )
+            _missing_key_warned = True
         return None
     try:
         return Fernet(key.encode() if isinstance(key, str) else key)
