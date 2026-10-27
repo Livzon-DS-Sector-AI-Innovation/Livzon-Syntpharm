@@ -8,8 +8,9 @@ from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.job_store import JobStore, start_job
 from app.core.response import build_response, error_response
 from app.modules.registration.schemas.validation_audit import (
     ValidationAuditFileListApiResponse,
@@ -32,6 +33,9 @@ from app.modules.registration.service.validation_audit import ValidationAuditSer
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# 解析/审核后台任务的状态表（进程内，前端轮询 GET /tasks/{task_id} 的任务状态）
+_job_store = JobStore()
 
 
 # ── 任务管理 ──────────────────────────────────────────────
@@ -216,21 +220,33 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
+    """提交文件解析后台任务（解析耗时 >5s，不再阻塞请求；前端轮询任务状态）。"""
     service = ValidationAuditService(db)
     task = await service.get_task(task_id)
     if not task:
         return error_response(message="任务不存在", status_code=404)
 
-    try:
-        await service.parse_files(task)
-        # Re-fetch task after status update
-        task = await service.get_task(task_id)
-        return build_response(
-            data=ValidationAuditTaskResponse.model_validate(task),
-            message="文件解析完成",
-        )
-    except RuntimeError as e:
-        return error_response(message=str(e))
+    # 同步置 parsing，避免前端轮询期出现「后台还没起、状态没变」的竞态
+    await service.mark_parsing(task)
+    await db.commit()
+
+    async def _run(job_id: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            job_service = ValidationAuditService(job_db)
+            job_task = await job_service.get_task(task_id)
+            if not job_task:
+                raise RuntimeError("任务不存在")
+            await job_service.parse_files(job_task)
+            await job_db.commit()
+        return None
+
+    start_job(_job_store, "validation-audit-parse", _run)
+
+    task = await service.get_task(task_id)
+    return build_response(
+        data=ValidationAuditTaskResponse.model_validate(task),
+        message="文件解析已开始",
+    )
 
 
 @router.post("/tasks/{task_id}/audit", response_model=ValidationAuditTaskApiResponse, summary="执行审核")  # type: ignore[no-redef]
@@ -240,24 +256,34 @@ async def post(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("registration:validation-audit:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
+    """提交 AI 审核后台任务（多轮 LLM 调用 >5s，不再阻塞请求；前端轮询任务状态）。"""
     service = ValidationAuditService(db)
     task = await service.get_task(task_id)
     if not task:
         return error_response(message="任务不存在", status_code=404)
 
-    try:
-        result = await service.run_audit(task)
-        await service.save_issues(task, result)
-        await service.generate_report(task, result)
+    await service.mark_auditing(task)
+    await db.commit()
 
-        # Re-fetch task after updates
-        task = await service.get_task(task_id)
-        return build_response(
-            data=ValidationAuditTaskResponse.model_validate(task),
-            message="审核完成",
-        )
-    except RuntimeError as e:
-        return error_response(message=str(e))
+    async def _run(job_id: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            job_service = ValidationAuditService(job_db)
+            job_task = await job_service.get_task(task_id)
+            if not job_task:
+                raise RuntimeError("任务不存在")
+            result = await job_service.run_audit(job_task)
+            await job_service.save_issues(job_task, result)
+            await job_service.generate_report(job_task, result)
+            await job_db.commit()
+        return None
+
+    start_job(_job_store, "validation-audit-run", _run)
+
+    task = await service.get_task(task_id)
+    return build_response(
+        data=ValidationAuditTaskResponse.model_validate(task),
+        message="审核已开始",
+    )
 
 
 # ── 问题与报告 ────────────────────────────────────────────

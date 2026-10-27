@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
@@ -10,14 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
+from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.jobs import spawn_task
 from app.modules.energy import service
 from app.modules.energy.adapters import ADAPTERS
 from app.modules.energy.job_store import sync_job_store
 from app.modules.energy.schemas import (
-    AIAnalysisApiResponse,
     AIAnalysisRequest,
-    AIAnalysisResponse,
     AlertRecordProcessRequest,
     BitableCrossImportRequest,
     CollectLogDetailApiResponse,
@@ -73,10 +73,14 @@ from app.modules.energy.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
+from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse
 
 logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["energy"])
+
+# AI 能耗分析后台任务状态表（进程内；与飞书同步的 sync_job_store 分开，结果 schema 不同）
+_energy_ai_job_store = JobStore()
 device_router = APIRouter()
 data_router = APIRouter()
 collect_router = APIRouter()
@@ -1239,49 +1243,42 @@ async def update_target(
     )
 
 
-@router.post("/ai-analysis-v2", summary="AI 能耗分析 V2（支持多产品和单耗）")
+@router.post(
+    "/ai-analysis-v2",
+    response_model=AsyncJobAcceptedResponse,
+    summary="提交 AI 能耗分析任务 V2（支持多产品和单耗）",
+)
 async def ai_analysis_v2(
     body: AIAnalysisRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("energy:analysis:create")),
-    db: AsyncSession = Depends(get_db),
-) -> AIAnalysisApiResponse:
-    """执行 AI 能耗分析，支持多产品产量输入和单耗计算"""
+) -> AsyncJobAcceptedResponse:
+    """提交 AI 能耗分析后台任务（含 AI 建议生成 >5s）；轮询 GET /ai-analysis-v2/jobs/{job_id}。"""
     from uuid import UUID
 
-    from app.modules.energy.schemas import ProductionItemDetail
+    workshop_id = UUID(body.workshop_id)
+    analysis_month = body.analysis_month
+    production_items = body.production_items
+    include_ai_suggestion = body.include_ai_suggestion
 
-    result = await service.analyze_energy_v2(
-        db,
-        workshop_id=UUID(body.workshop_id),
-        analysis_month=body.analysis_month,
-        production_items=body.production_items,
-        include_ai_suggestion=body.include_ai_suggestion,
-    )
+    async def _run(_job: str) -> dict[str, Any]:
+        async with async_session_factory() as job_db:
+            return await service.analyze_energy_v2(
+                job_db,
+                workshop_id=workshop_id,
+                analysis_month=analysis_month,
+                production_items=production_items,
+                include_ai_suggestion=include_ai_suggestion,
+            )
 
-    # 构造产品明细
-    production_items_detail = [
-        ProductionItemDetail(
-            product_name=item["product_name"],
-            quantity=item["quantity"],
-            conversion_factor=item["conversion_factor"],
-            converted_quantity=item["converted_quantity"],
-        )
-        for item in result["production_items"]
-    ]
+    job_id = start_job(_energy_ai_job_store, "energy-ai-analysis", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
-    response = AIAnalysisResponse(
-        workshop_id=result["workshop_id"],
-        workshop_name=result["workshop_name"],
-        analysis_month=result["analysis_month"],
-        total_energy_kwh=result["total_energy_kwh"],
-        production_items=production_items_detail,
-        converted_production=result["converted_production"],
-        actual_unit_consumption=result["actual_unit_consumption"],
-        target_unit_consumption=result["target_unit_consumption"],
-        deviation_rate=result["deviation_rate"],
-        deviation_status=result["deviation_status"],
-        ai_suggestion=result["ai_suggestion"],
-    )
 
-    return AIAnalysisApiResponse(data=response)
+@router.get("/ai-analysis-v2/jobs/{job_id}", response_model=AsyncJobStateResponse, summary="查询 AI 能耗分析任务状态")
+async def get_ai_analysis_job_status(
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("energy:job:read")),
+) -> AsyncJobStateResponse:
+    return AsyncJobStateResponse(data=get_job_state_or_404(_energy_ai_job_store, job_id))

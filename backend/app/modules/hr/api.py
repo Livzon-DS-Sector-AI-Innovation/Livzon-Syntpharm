@@ -6,6 +6,7 @@ import os
 import re
 from datetime import date, datetime
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
@@ -17,8 +18,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.job_store import get_job_state_or_404, start_job
 from app.core.redis import cache_get, cache_set
 from app.core.response import paginated_response, success_response
 from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
@@ -93,6 +95,7 @@ try:
     from app.modules.hr.attendance_api import router as attendance_router  # type: ignore[import-not-found]
 except ImportError:
     attendance_router = None  # type: ignore
+from app.modules.hr.job_store import hr_job_store
 from app.modules.hr.repository import (
     PrejobTemplateRepository,
     TrainingSpecialistRepository,
@@ -114,11 +117,18 @@ from app.modules.hr.service import (  # type: ignore[attr-defined]
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.schemas import PageParams
+from app.shared.schemas import (
+    AsyncJobAccepted,
+    AsyncJobAcceptedResponse,
+    AsyncJobStateResponse,
+    PageParams,
+)
 
 router = create_module_router(MODULES_BY_CODE["hr"])
 
 logger = logging.getLogger(__name__)
+
+# HR 模块后台任务状态表（进程内）见 app/modules/hr/job_store.py：hr/api.py 与 ai_exam 子包共用
 
 # ─── 原生 SQL 白名单 ───
 # 老厂/新厂员工数据分布在两张固定表中，SQL 以静态语句维护，不做表名拼接
@@ -2428,18 +2438,32 @@ async def list_candidates(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/candidates/parse-preview", summary="预览简历AI解析结果")
+@router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse, summary="查询 HR 后台任务状态")
+async def get_hr_job_status(
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("hr:candidates:read")),
+) -> AsyncJobStateResponse:
+    return AsyncJobStateResponse(data=get_job_state_or_404(hr_job_store, job_id))
+
+
+@router.post("/candidates/parse-preview", response_model=AsyncJobAcceptedResponse, summary="预览简历AI解析结果")
 async def preview_resume_parse(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:candidates:read")),
     resume: UploadFile = File(..., description="简历 PDF 附件"),
     position: str = Form(..., max_length=64, description="应聘职位名称"),
-    service: CandidateService = Depends(get_candidate_service),
-):
-    """上传简历 PDF，转为图片后由 AI 视觉识别并返回预览字段（不保存）。"""
+) -> AsyncJobAcceptedResponse:
+    """提交简历解析后台任务（PDF 转图 + vision AI 耗时 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。"""
     resume_bytes = await resume.read()
-    result = await service.parse_resume_preview(resume_bytes, position)
-    return success_response(data=result)
+
+    async def _run(_job: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            job_service = CandidateService(job_db)
+            return await job_service.parse_resume_preview(resume_bytes, position)
+
+    job_id = start_job(hr_job_store, "hr-resume-preview", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
 @router.post("/candidates", summary="新建候选人")

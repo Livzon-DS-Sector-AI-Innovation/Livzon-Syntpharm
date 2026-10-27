@@ -11,8 +11,9 @@ from typing import Any
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.job_store import JobStore, start_job
 from app.modules.quality.qms.doc_check.schemas import (
     DocCheckBatchUpdateApiResponse,
     DocCheckConfigApiResponse,
@@ -44,6 +45,9 @@ from app.modules.quality.qms.doc_check.service import DocCheckService
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# 校验执行后台任务状态表（进程内单例；任务进度由 check 记录自身状态承载）
+_doc_check_job_store = JobStore()
 
 
 # 模拟上传存储（生产环境应使用对象存储）
@@ -158,18 +162,24 @@ async def handler(
     ctx: PermissionContext = Depends(require_permission("quality:doc-check:execute")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """执行校验（调用 AI）"""
+    """提交校验后台任务（AI 调用 >5s，不再阻塞请求；前端轮询 GET /check/{check_id}/progress）。"""
     service = DocCheckService(db)
     operator = current_user.username
-    try:
-        check = await service.execute_check(check_id, operator=operator)
-        if not check:
-            return DocCheckDetailApiResponse(code=404, message="校验任务不存在")
-        await db.commit()
-        return DocCheckDetailApiResponse(data=DocCheckDetailResponse.model_validate(check))
-    except Exception as e:
-        logger.exception("Failed to execute doc check")
-        return DocCheckDetailApiResponse(code=500, message=str(e))
+    check = await service.get_check(check_id)
+    if not check:
+        return DocCheckDetailApiResponse(code=404, message="校验任务不存在")
+
+    async def _run(job_id: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            job_service = DocCheckService(job_db)
+            await job_service.execute_check(check_id, operator=operator)
+            await job_db.commit()
+        return None
+
+    start_job(_doc_check_job_store, "doc-check-execute", _run)
+
+    # 立即返回当前任务（execute_check 内部已把状态置为 processing）
+    return DocCheckDetailApiResponse(data=DocCheckDetailResponse.model_validate(check))
 
 
 @router.get("/check", response_model=DocCheckListApiResponse, summary="获取校验列表")  # type: ignore[no-redef]

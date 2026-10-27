@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+from typing import Any
 from uuid import UUID
 
 from fastapi import Body, Depends, File, HTTPException, Query, UploadFile
@@ -11,8 +12,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.response import ApiResponse, build_response, paginated_response
 from app.modules.research import service
 from app.modules.research.schemas import (
@@ -68,20 +70,26 @@ from app.modules.research.schemas import (
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
+from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse
 
 logger = logging.getLogger(__name__)
 
 router = create_module_router(MODULES_BY_CODE["research"])
 
 # 交付物附件目录：由配置派生，不再硬编码 /tmp（容器重启即丢）。
-# 历史版本写在 /tmp 下，读取时保留兜底，避免升级后旧附件直接 404。
+# 历史版本写在 /tmp 下，读取时保留兜底（LEGACY_UPLOAD_DIR，可置空关闭），避免升级后旧附件直接 404。
 _DELIVERABLE_SUBDIR: tuple[str, ...] = ("research", "deliverables")
-_LEGACY_DELIVERABLE_DIR = "/tmp/dazah_uploads/research/deliverables"
 
 
 def _deliverable_upload_dir() -> str:
     """交付物附件的落盘目录（UPLOAD_DIR/research/deliverables）。"""
     return os.path.join(get_settings().UPLOAD_DIR, *_DELIVERABLE_SUBDIR)
+
+
+def _legacy_deliverable_dir() -> str | None:
+    """历史版本附件目录（LEGACY_UPLOAD_DIR/research/deliverables），未配置则不兜底。"""
+    legacy_root = get_settings().LEGACY_UPLOAD_DIR
+    return os.path.join(legacy_root, *_DELIVERABLE_SUBDIR) if legacy_root else None
 
 
 @router.post("/projects", summary="创建研发项目")
@@ -2446,9 +2454,11 @@ async def download_deliverable_file(  # type: ignore[no-untyped-def]
 
     if not os.path.exists(file_path):
         # 兼容历史版本写在 /tmp 下的附件
-        legacy_path = os.path.join(_LEGACY_DELIVERABLE_DIR, file_name)
-        if os.path.exists(legacy_path):
-            file_path = legacy_path
+        legacy_dir = _legacy_deliverable_dir()
+        if legacy_dir:
+            legacy_path = os.path.join(legacy_dir, file_name)
+            if os.path.exists(legacy_path):
+                file_path = legacy_path
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="文件不存在")
@@ -3477,20 +3487,51 @@ async def delete_deliverable_template(
 
 # ===== AI 报告生成 API =====
 
+# AI 报告生成后台任务状态表（进程内）
+_research_job_store = JobStore()
 
-@router.post("/generate-report", summary="使用 AI 生成报告")
+
+@router.post(
+    "/generate-report",
+    response_model=AsyncJobAcceptedResponse,
+    summary="提交 AI 报告生成任务",
+)
 async def generate_report(
     data: RdReportGenerateRequest,
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("research:report:create")),
-    db: AsyncSession = Depends(get_db),
-) -> ApiResponse:
-    result = await service.generate_report_with_ai(
-        db,
-        data.project_id,
-        data.deliverable_type,
-        data.template_id,
-        data.additional_context,
-    )
+) -> AsyncJobAcceptedResponse:
+    """提交报告生成后台任务（多轮 LLM 调用 >5s）；轮询 GET /research/jobs/{job_id}。
 
-    return build_response(data=result, message="生成成功")
+    `result` 即原响应体：`{content, structure, data_sources}`。
+    """
+    project_id = data.project_id
+    deliverable_type = data.deliverable_type
+    template_id = data.template_id
+    additional_context = data.additional_context
+
+    async def _run(_job: str) -> dict[str, Any]:
+        async with async_session_factory() as job_db:
+            return await service.generate_report_with_ai(
+                job_db,
+                project_id,
+                deliverable_type,
+                template_id,
+                additional_context,
+            )
+
+    job_id = start_job(_research_job_store, "research-report", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
+
+
+@router.get(
+    "/jobs/{job_id}",
+    response_model=AsyncJobStateResponse,
+    summary="查询 AI 报告生成任务状态",
+)
+async def get_research_job_status(
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("research:report:read")),
+) -> AsyncJobStateResponse:
+    return AsyncJobStateResponse(data=get_job_state_or_404(_research_job_store, job_id))

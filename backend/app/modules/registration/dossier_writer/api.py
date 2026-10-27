@@ -9,16 +9,17 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import CurrentUser, require_route_permission
+from app.core.job_store import JobStore, get_job_state_or_404, start_job
 from app.core.response import ApiResponse, build_response, error_response
+from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse, AsyncJobStateResponse
 
 from .field_models import FieldFillResult, FieldMapping
 from .models import ChapterAsset, DossierChapter, ProductDossier
 from .schemas import (
     AIConfirmRequest,
     AIConfirmResponse,
-    AiPreviewApiResponse,
     AssetCategoryListApiResponse,
     AssetCategoryUpdateRequest,
     AssetCategoryUpdateResponse,
@@ -85,6 +86,9 @@ def resolve_dossier_code(method: str, path: str) -> str:
 
 
 router = APIRouter(dependencies=[Depends(require_route_permission(resolve_dossier_code))])
+
+# AI 预览后台任务状态表（进程内）
+_dossier_job_store = JobStore()
 
 
 # ====== Product Dossier ======
@@ -648,45 +652,55 @@ async def get_fill_results(
 # ====== AI Fill Service ======
 
 
-@router.post("/chapters/{chapter_id}/ai-preview", response_model=AiPreviewApiResponse)
+@router.post("/chapters/{chapter_id}/ai-preview", response_model=AsyncJobAcceptedResponse)
 async def ai_preview_extraction(
     current_user: CurrentUser,
     chapter_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """AI 智能解析预览：提取素材中的字段值（不写入文档）"""
+    """提交 AI 智能解析预览后台任务（逐类目 LLM 调用 >5s）。
+
+    轮询 GET /dossier-writer/jobs/{job_id}；`result` 为原 AiPreviewData 载荷。
+    """
     from .ai_fill_service import AIFillService
     from .models import DossierChapter, ProductDossier
 
-    # 获取章节和品种信息
+    # 校验章节与品种存在（快速失败），后台任务里重新加加载
     ch_stmt = select(DossierChapter).where(DossierChapter.id == chapter_id)
     ch_result = await db.execute(ch_stmt)
     chapter = ch_result.scalar_one_or_none()
-
     if not chapter:
         return error_response(message="章节不存在", status_code=404)
 
     pd_stmt = select(ProductDossier).where(ProductDossier.id == chapter.product_dossier_id)
     pd_result = await db.execute(pd_stmt)
-    dossier = pd_result.scalar_one_or_none()
-
-    if not dossier:
+    if not pd_result.scalar_one_or_none():
         return error_response(message="品种资料不存在", status_code=404)
 
-    try:
-        service = AIFillService(db)
-        result = await service.preview_extraction(dossier, chapter)
-        return build_response(data=result, message=result.get("message", "完成"))
-    except Exception as e:
-        # logger.exception 自带 traceback，不要用 print 输出（容器里会落到 stdout 丢上下文）
-        logger.exception("AI 解析预览失败 chapter_id=%s", chapter_id)
+    async def _run(_job: str) -> dict[str, Any]:
+        async with async_session_factory() as job_db:
+            job_ch_result = await job_db.execute(ch_stmt)
+            job_chapter = job_ch_result.scalar_one_or_none()
+            if not job_chapter:
+                raise RuntimeError("章节不存在")
+            job_pd_result = await job_db.execute(pd_stmt)
+            job_dossier = job_pd_result.scalar_one_or_none()
+            if not job_dossier:
+                raise RuntimeError("品种资料不存在")
+            service = AIFillService(job_db)
+            return await service.preview_extraction(job_dossier, job_chapter)
 
-        # 返回 JSON 错误响应
-        return error_response(
-            message=f"AI解析失败：{str(e)}",
-            status_code=500,
-            detail={"error_type": type(e).__name__, "error_detail": str(e)},
-        )
+    job_id = start_job(_dossier_job_store, "dossier-ai-preview", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
+
+
+@router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse)
+async def get_dossier_job_status(
+    current_user: CurrentUser,
+    job_id: str,
+) -> AsyncJobStateResponse:
+    """查询 AI 预览后台任务状态（404 = 查不到，前端按兜底态处理）。"""
+    return AsyncJobStateResponse(data=get_job_state_or_404(_dossier_job_store, job_id))
 
 
 @router.post("/chapters/{chapter_id}/ai-confirm", response_model=AIConfirmResponse)

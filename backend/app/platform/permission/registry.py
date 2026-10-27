@@ -1248,6 +1248,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     # create_module_router 注册的是 GET "/" → 实际路径带尾斜杠；中间件在路由重定向前执行，两种写法都要登记
     ApiBindingDef("research:module:read", "GET", "/api/v1/research"),
     ApiBindingDef("research:module:read", "GET", "/api/v1/research/"),
+    ApiBindingDef("research:report:read", "GET", "/api/v1/research/jobs/{job_id}"),
     ApiBindingDef(
         "research:deliverable-template:delete", "DELETE", "/api/v1/research/deliverable-templates/{template_id}"
     ),
@@ -1843,6 +1844,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("energy:target:read", "GET", "/api/v1/energy/targets/{workshop_id}/{target_month}"),
     ApiBindingDef("energy:target:update", "PUT", "/api/v1/energy/targets/{target_id}"),
     ApiBindingDef("energy:analysis:create", "POST", "/api/v1/energy/ai-analysis-v2"),
+    ApiBindingDef("energy:job:read", "GET", "/api/v1/energy/ai-analysis-v2/jobs/{job_id}"),
     # devices
     ApiBindingDef("energy:device:read", "GET", "/api/v1/energy/devices"),
     ApiBindingDef("energy:device:create", "POST", "/api/v1/energy/devices"),
@@ -2455,6 +2457,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:label-verification:create", "POST", "/api/v1/quality/label-verifications"),
     ApiBindingDef("quality:label-verification:read", "GET", "/api/v1/quality/label-verifications/batch/{batch_number}"),
     ApiBindingDef("quality:label-verification:read", "GET", "/api/v1/quality/label-verifications/statistics"),
+    ApiBindingDef("quality:label-verification:read", "GET", "/api/v1/quality/label-verifications/jobs/{job_id}"),
     ApiBindingDef("quality:label-verification:read", "GET", "/api/v1/quality/label-verifications/{verification_id}"),
     ApiBindingDef("quality:label-verification:update", "PUT", "/api/v1/quality/label-verifications/{verification_id}"),
     ApiBindingDef(
@@ -2650,6 +2653,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("hr:new-departure-records:read", "GET", "/api/v1/hr/new/departure-records"),
     ApiBindingDef("hr:new-offboarding-records:read", "GET", "/api/v1/hr/new/offboarding-records"),
     ApiBindingDef("hr:new-departments:read", "GET", "/api/v1/hr/new/departments"),
+    ApiBindingDef("hr:candidates:read", "GET", "/api/v1/hr/jobs/{job_id}"),
     ApiBindingDef("hr:candidates:read", "GET", "/api/v1/hr/candidates"),
     ApiBindingDef("hr:candidates:read", "POST", "/api/v1/hr/candidates/parse-preview"),
     ApiBindingDef("hr:candidates:create", "POST", "/api/v1/hr/candidates"),
@@ -2915,6 +2919,11 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
         "registration:dossier:read",
         "POST",
         "/api/v1/registration/dossier-writer/chapters/{chapter_id}/ai-preview",
+    ),
+    ApiBindingDef(
+        "registration:dossier:read",
+        "GET",
+        "/api/v1/registration/dossier-writer/jobs/{job_id}",
     ),
     ApiBindingDef(
         "registration:dossier:update",
