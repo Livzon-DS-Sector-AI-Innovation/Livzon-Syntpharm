@@ -14,17 +14,12 @@ import { apiGet, apiFetchPaginated, fetchApi } from '@/lib/api/client'
 
 const API_BASE = '/api/v1'
 
-// 设备列表查询参数取生成契约（含排序白名单），不在此手写一份
-import { buildEquipmentQuery, type EquipmentListQuery } from '@/lib/api/equipment-query'
-
-export interface GetStatisticsQuery {
-  category_id?: string | null
-  location_id?: string | null
-  department_id?: string | null
-  status?: string | null
-}
-
-
+// 设备列表与设备统计的查询参数都取生成契约（含排序白名单），不在此手写一份
+import {
+  buildEquipmentQuery,
+  type EquipmentListQuery,
+  type EquipmentStatsQuery,
+} from '@/lib/api/equipment-query'
 
 // ═══════════════════════════════════════════════════════════
 //  设备分类
@@ -60,9 +55,9 @@ export async function fetchEquipments(query: EquipmentListQuery = {}): Promise<E
   return apiFetchPaginated(url)
 }
 
-// 统计端点（GET /equipment/statistics）在后端是散参数，没有 query 模型可生成，故此处手写一份。
+// 统计端点（GET /equipment/equipments/statistics）的 query 参数类型见 lib/api/equipment-query，不在此手写一份。
 
-export async function fetchEquipmentStatistics(filters: GetStatisticsQuery = {}): Promise<EquipmentStatistics> {
+export async function fetchEquipmentStatistics(filters: EquipmentStatsQuery = {}): Promise<EquipmentStatistics> {
   const params = new URLSearchParams()
   if (filters.category_id) params.append('category_id', filters.category_id)
   if (filters.location_id) params.append('location_id', filters.location_id)

@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import type { EquipmentListQuery } from '@/lib/api/equipment-query'
+import type { EquipmentListQuery, EquipmentStatsQuery } from '@/lib/api/equipment-query'
 import {
   fetchCategoryTree,
   fetchDepartments,
@@ -9,7 +9,6 @@ import {
   fetchEquipmentStatisticsClient,
   fetchLocationTree,
 } from '@/lib/api/client/equipment'
-import type { GetStatisticsQuery } from '@/lib/api/client/equipment'
 import type {
   DepartmentOption,
   EquipmentCategory,
@@ -43,7 +42,7 @@ export function useEquipmentListQuery(query: EquipmentListQuery, initialData?: E
 }
 
 /** 状态统计：与列表共用筛选口径，但不含排序/分页 */
-export function useEquipmentStatisticsQuery(filters: GetStatisticsQuery, initialData?: EquipmentStatistics) {
+export function useEquipmentStatisticsQuery(filters: EquipmentStatsQuery, initialData?: EquipmentStatistics) {
   return useQuery({
     queryKey: [...EQUIPMENT_STATISTICS_KEY, filters],
     queryFn: () => fetchEquipmentStatisticsClient(filters),
