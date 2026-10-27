@@ -263,12 +263,10 @@ export async function deleteStageDeliverable(id: string) {
 }
 
 // Conclusion Versions
-export async function publishConclusionVersion(trackId: string, data: {
-  conclusion?: string
-  confidence: string
-  change_summary?: string
-  evidence_refs?: Record<string, unknown>
-}) {
+export async function publishConclusionVersion(
+  trackId: string,
+  data: Omit<components['schemas']['RdTrackConclusionVersionCreate'], 'track_id'>,
+) {
   const result = await publishConclusionVersionApi(trackId, data)
   revalidatePath('/research')
   return result

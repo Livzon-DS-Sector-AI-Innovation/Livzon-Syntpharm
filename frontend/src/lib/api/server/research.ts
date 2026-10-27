@@ -572,12 +572,10 @@ export async function deleteStageDeliverable(id: string) {
 
 // ===== rd-project.ts - Conclusion Versions =====
 
-export async function publishConclusionVersion(trackId: string, data: {
-  conclusion?: string
-  confidence: string
-  change_summary?: string
-  evidence_refs?: Record<string, unknown>
-}) {
+export async function publishConclusionVersion(
+  trackId: string,
+  data: Omit<components['schemas']['RdTrackConclusionVersionCreate'], 'track_id'>,
+) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/research/tracks/${trackId}/conclusion-versions`, {
     method: 'POST',
     body: JSON.stringify(data),
