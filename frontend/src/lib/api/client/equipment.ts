@@ -109,11 +109,11 @@ export async function fetchWorkOrderStatistics(exclude_status?: string): Promise
   const params = new URLSearchParams()
   if (exclude_status) params.append('exclude_status', exclude_status)
   const qs = params.toString()
-  return apiGet(`${API_BASE}/equipment/maintenance/work-ordersstatistics${qs ? `?${qs}` : ''}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/statistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchWorkOrderById(id: string): Promise<WorkOrder> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${id}`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${id}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -243,7 +243,7 @@ export async function fetchInspectionTemplateById(id: string): Promise<Inspectio
 //  工单物料
 // ═══════════════════════════════════════════════════════════
 export async function fetchWorkOrderMaterials(workOrderId: string): Promise<MaterialRecord[]> {
-  return apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/materials`)
+  return apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/materials`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -267,7 +267,7 @@ export async function fetchAllUsersClient(): Promise<Maintainer[]> {
 }
 
 export async function fetchWorkOrderImagesClient(workOrderId: string): Promise<WorkOrderImage[]> {
-  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders${workOrderId}/images`) || []
+  return await apiGet(`${API_BASE}/equipment/maintenance/work-orders/${workOrderId}/images`) || []
 }
 
 export async function fetchClaimTimeoutConfigClient(): Promise<ClaimTimeoutConfig> {
