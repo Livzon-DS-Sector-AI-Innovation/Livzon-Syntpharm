@@ -1,6 +1,7 @@
 """Dossier Writer API endpoints."""
 
 import logging
+from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import async_session_factory, get_db
 from app.core.deps import RequiredUser, require_route_permission
 from app.core.job_store import JobStore, get_job_state_or_404, start_job
@@ -407,6 +409,55 @@ async def export_dossier(
         return error_response(message=result["message"])
 
 
+# 下载白名单根：导出目录默认落在 STORAGE_ROOT 下（service.storage_root），
+# 兼配 UPLOAD_DIR 以兼容历史上的上传根。根目录本身不允许当白名单。
+_DOWNLOAD_ROOT_SETTINGS = ("STORAGE_ROOT", "UPLOAD_DIR")
+
+
+def _allowed_download_roots() -> list[Path]:
+    """允许下载的根目录（绝对路径，已解析符号链接）。"""
+    settings = get_settings()
+    roots: list[Path] = []
+    for name in _DOWNLOAD_ROOT_SETTINGS:
+        raw = getattr(settings, name, None)
+        if not raw:
+            continue
+        try:
+            root = Path(raw).resolve()
+        except (OSError, RuntimeError):
+            continue
+        if root.parent == root:  # 根目录 / 盘符根不能当白名单，否则等于放开整个文件系统
+            continue
+        if root not in roots:
+            roots.append(root)
+    return roots
+
+
+def _resolve_export_file(outputs_path: str | None, filename: str) -> Path | None:
+    """把导出文件名解析成白名单内的真实路径，越界返回 None。
+
+    ``filename`` 来自 query，属外部输入：先拒绝分隔符与上跳（``../x``、``a/b``、
+    ``C:\\x``），再用 ``resolve`` 消解符号链接，最后要求结果仍是 outputs 目录的
+    直接子文件，并且落在 ``STORAGE_ROOT`` / ``UPLOAD_DIR`` 之内。
+    """
+    if not outputs_path or not filename or "\x00" in filename:
+        return None
+    if Path(filename).name != filename or filename in (".", ".."):
+        return None
+    try:
+        base = Path(outputs_path).resolve()
+        candidate = (base / filename).resolve()
+    except (OSError, RuntimeError):
+        return None
+    if candidate.parent != base:
+        return None
+    if not any(root == base or root in base.parents for root in _allowed_download_roots()):
+        return None
+    if not candidate.is_file():
+        return None
+    return candidate
+
+
 @router.get("/products/{dossier_id}/download")
 async def download_exported_file(
     current_user: RequiredUser,
@@ -420,10 +471,8 @@ async def download_exported_file(
     if not dossier:
         raise HTTPException(status_code=404, detail="品种资料不存在")
 
-    from pathlib import Path
-
-    file_path = Path(dossier.outputs_path or "") / filename
-    if not file_path.exists():
+    file_path = _resolve_export_file(dossier.outputs_path, filename)
+    if file_path is None:
         raise HTTPException(status_code=404, detail="文件不存在")
 
     return FileResponse(
