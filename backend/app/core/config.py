@@ -200,6 +200,8 @@ class Settings(BaseSettings):
 
     # Upload
     UPLOAD_DIR: str = "./uploads"
+    # 历史版本附件曾落在 /tmp 下的根目录（读取旧附件时作兜底，可用空串关闭兜底）
+    LEGACY_UPLOAD_DIR: str = "/tmp/dazah_uploads"
 
     # AI
     AI_API_KEY: str = ""
