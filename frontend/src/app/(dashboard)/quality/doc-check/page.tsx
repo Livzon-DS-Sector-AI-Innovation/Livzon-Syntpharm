@@ -202,7 +202,7 @@ export default function DocCheckPage() {
       message.loading({ content: '正在上传文件...', key: 'upload' })
 
       const response = await fetch(
-        `/api/v1/doc-check/upload`,
+        `/api/v1/quality/upload`,
         {
           method: 'POST',
           body: formData,
@@ -242,7 +242,7 @@ export default function DocCheckPage() {
       message.loading({ content: '正在启动AI预审...', key: 'check' })
 
       const response = await fetch(
-        `/api/v1/doc-check/check`,
+        `/api/v1/quality/check`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -281,7 +281,7 @@ export default function DocCheckPage() {
     pollRef.current = setInterval(async () => {
       try {
         const response = await fetch(
-          `/api/v1/doc-check/check/${tid}/progress`
+          `/api/v1/quality/check/${tid}/progress`
         )
         const data = await response.json()
 
@@ -384,7 +384,7 @@ export default function DocCheckPage() {
       if (!selectedProblem) return
 
       const response = await fetch(
-        `/api/v1/doc-check/problems/${selectedProblem.id}`,
+        `/api/v1/quality/problems/${selectedProblem.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -425,7 +425,7 @@ export default function DocCheckPage() {
       message.loading({ content: '正在生成报告...', key: 'export' })
 
       const response = await fetch(
-        `/api/v1/doc-check/export/${checkResult.id}?format=pdf`
+        `/api/v1/quality/export/${checkResult.id}?format=pdf`
       )
 
       const data = await response.json()
@@ -447,7 +447,7 @@ export default function DocCheckPage() {
 
     try {
       const response = await fetch(
-        `/api/v1/doc-check/records/${checkResult.id}/confirm`,
+        `/api/v1/quality/records/${checkResult.id}/confirm`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -482,7 +482,7 @@ export default function DocCheckPage() {
   const { refetch: refetchRecords } = useQuery({
     queryKey: ['doc-check-records', page, pageSize],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/doc-check/records?page=${page}&page_size=${pageSize}`)
+      const response = await fetch(`/api/v1/quality/records?page=${page}&page_size=${pageSize}`)
       const data = await response.json()
       return data.code === 200 ? (data.data?.items ?? []) : []
     },

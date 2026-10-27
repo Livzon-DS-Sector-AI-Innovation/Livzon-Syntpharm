@@ -203,7 +203,6 @@ export const moduleMenus: ModuleMenu[] = [
         label: "AI工具",
         path: "",
         children: [
-          { key: "ai-config", label: "AI配置", path: "/quality/ai-config" },
           { key: "ai-log", label: "AI日志", path: "/quality/ai-log" },
         ],
       },

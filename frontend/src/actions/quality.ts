@@ -95,8 +95,6 @@ import {
   DeviationTaskUpdateSchema,
   DeviationTaskFieldsUpdateSchema,
   DeviationTemplateCreateSchema,
-  AIConfigSaveSchema,
-  AIConfigTestSchema,
   SopTemplateCreateSchema,
   SopFromTemplateCreateSchema,
   SopGenerateSchema,
@@ -734,27 +732,6 @@ export async function resubmitDeviation(deviationId: string) {
   revalidatePath('/quality/deviations')
   revalidatePath(`/quality/deviations/${deviationId}`)
   return result
-}
-
-// ============ AI Config Actions ============
-
-export async function saveAIConfig(data: unknown) {
-  const validated = parse(AIConfigSaveSchema, data)
-  const response = await wrap<unknown>(QualityServer.saveAIConfig(validated))
-  revalidatePath('/quality/ai-config')
-  return response
-}
-
-export async function resetAIConfig(data: unknown) {
-  const validated = parse(AIConfigSaveSchema, data)
-  const response = await wrap<unknown>(QualityServer.resetAIConfig(validated))
-  revalidatePath('/quality/ai-config')
-  return response
-}
-
-export async function testAIConnection(data: unknown) {
-  const validated = parse(AIConfigTestSchema, data)
-  return wrap<unknown>(QualityServer.testAIConnection(validated))
 }
 
 // ============ Deviation Automation Actions ============

@@ -127,7 +127,7 @@ async def put(
     try:
         user_id = current_user.id if current_user else None
         study = await service.update_study(study_id, data, user_id)
-        return StabilityInspectionApiResponse(
+        return StabilityStudyApiResponse(
             message="更新成功",
             data=StabilityStudyResponse.model_validate(study),
         )

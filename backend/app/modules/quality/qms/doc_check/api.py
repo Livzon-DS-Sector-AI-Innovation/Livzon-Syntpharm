@@ -6,9 +6,11 @@
 
 import logging
 import uuid
+from html import escape
 from typing import Any
+from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, Form, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import async_session_factory, get_db
@@ -660,6 +662,47 @@ async def handler(  # noqa: F811
 # ============ 问题处理接口 ============
 
 
+# 注意：/problems/batch 必须声明在 /problems/{problem_id} 之前，
+# 否则 FastAPI 会先用 {problem_id} 匹配 "batch"，UUID 校验失败导致批量接口不可达。
+@router.put("/problems/batch", response_model=DocCheckBatchUpdateApiResponse, summary="批量更新问题")  # type: ignore[no-redef]
+async def put(  # noqa: F811
+    problem_ids: list[str],
+    handle_status: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:problem:create")),
+    ignore_reason: str | None = None,
+    operator: str | None = None,
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """批量更新问题"""
+    operator = operator or (current_user.username)
+
+    from sqlalchemy import update
+
+    from app.modules.quality.qms.doc_check.models import DocCheckProblem
+
+    count = 0
+    for problem_id in problem_ids:
+        result = await db.execute(
+            update(DocCheckProblem)
+            .where(
+                DocCheckProblem.id == uuid.UUID(problem_id),
+                ~DocCheckProblem.is_deleted,
+            )
+            .values(
+                handle_status=handle_status,
+                ignore_reason=ignore_reason,
+                operator=operator,
+            )
+        )
+        if result.rowcount > 0:
+            count += 1
+
+    await db.commit()
+
+    return DocCheckBatchUpdateApiResponse(data={"success_count": count})
+
+
 @router.put("/problems/{problem_id}", response_model=DocCheckProblemUpdateApiResponse, summary="更新问题")  # type: ignore[no-redef]
 async def put(  # noqa: F811
     problem_id: uuid.UUID,
@@ -712,45 +755,6 @@ async def put(  # noqa: F811
     )
 
 
-@router.put("/problems/batch", response_model=DocCheckBatchUpdateApiResponse, summary="批量更新问题")  # type: ignore[no-redef]
-async def put(  # noqa: F811
-    problem_ids: list[str],
-    handle_status: str,
-    current_user: RequiredUser,
-    ctx: PermissionContext = Depends(require_permission("quality:problem:create")),
-    ignore_reason: str | None = None,
-    operator: str | None = None,
-    db: AsyncSession = Depends(get_db),
-) -> Any:
-    """批量更新问题"""
-    operator = operator or (current_user.username)
-
-    from sqlalchemy import update
-
-    from app.modules.quality.qms.doc_check.models import DocCheckProblem
-
-    count = 0
-    for problem_id in problem_ids:
-        result = await db.execute(
-            update(DocCheckProblem)
-            .where(
-                DocCheckProblem.id == uuid.UUID(problem_id),
-                ~DocCheckProblem.is_deleted,
-            )
-            .values(
-                handle_status=handle_status,
-                ignore_reason=ignore_reason,
-                operator=operator,
-            )
-        )
-        if result.rowcount > 0:
-            count += 1
-
-    await db.commit()
-
-    return DocCheckBatchUpdateApiResponse(data={"success_count": count})
-
-
 # ============ 导出报告接口 ============
 
 
@@ -762,19 +766,76 @@ async def get(  # noqa: F811
     format: str = Query("pdf", description="导出格式"),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
-    """导出校验报告"""
+    """导出校验报告（返回可下载地址）"""
     service = DocCheckService(db)
     check = await service.get_check(record_id)
 
     if not check:
         return DocCheckExportApiResponse(code=404, message="校验记录不存在")
 
-    # 生成报告（简化实现）
     file_name = f"{check.file_code or 'report'}_校验报告.{format}"
 
     return DocCheckExportApiResponse(
         data={
-            "download_url": f"/api/v1/doc-check/download/{record_id}",
+            "download_url": f"/api/v1/quality/export/{record_id}/file?format={format}",
             "file_name": file_name,
         }
+    )
+
+
+def _render_report_html(check: Any) -> str:
+    """把校验记录渲染成可直接查看/打印的报告 HTML。"""
+    problems = [p for p in (getattr(check, "problems", None) or []) if not getattr(p, "is_deleted", False)]
+    rows = "".join(
+        "<tr>"
+        f"<td>{escape(str(getattr(p, 'risk_level', '') or ''))}</td>"
+        f"<td>{escape(str(getattr(p, 'problem_type', '') or ''))}</td>"
+        f"<td>{escape(str(getattr(p, 'location', '') or ''))}</td>"
+        f"<td>{escape(str(getattr(p, 'description', '') or ''))}</td>"
+        f"<td>{escape(str(getattr(p, 'suggestion', '') or ''))}</td>"
+        f"<td>{escape(str(getattr(p, 'handle_status', '') or ''))}</td>"
+        "</tr>"
+        for p in problems
+    )
+    summary = escape(str(getattr(check, "result_summary", "") or ""))
+    return (
+        '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">'
+        f"<title>{escape(str(getattr(check, 'file_name', '') or '校验报告'))}</title>"
+        "<style>body{font-family:sans-serif;padding:24px;color:#222}"
+        "table{border-collapse:collapse;width:100%;margin-top:12px}"
+        "th,td{border:1px solid #ccc;padding:6px 8px;font-size:13px;text-align:left}"
+        "th{background:#f5f5f5}</style></head><body>"
+        f"<h1>{escape(str(getattr(check, 'file_code', '') or '校验报告'))}</h1>"
+        f"<p>文件：{escape(str(getattr(check, 'file_name', '') or ''))}</p>"
+        f"<p>状态：{escape(str(getattr(check, 'status', '') or ''))}　"
+        f"问题数：{getattr(check, 'total_problems', 0)}"
+        f"（高 {getattr(check, 'risk_high', 0)} / 中 {getattr(check, 'risk_medium', 0)}"
+        f" / 低 {getattr(check, 'risk_low', 0)}）</p>"
+        f"<p>结论：{summary}</p>"
+        "<table><thead><tr><th>风险等级</th><th>问题类型</th><th>位置</th>"
+        "<th>问题描述</th><th>修改建议</th><th>处理状态</th></tr></thead>"
+        f"<tbody>{rows}</tbody></table></body></html>"
+    )
+
+
+@router.get("/export/{record_id}/file", summary="下载校验报告文件")
+async def get_export_file(
+    record_id: uuid.UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:export:read")),
+    format: str = Query("pdf", description="导出格式（当前输出可打印的 HTML）"),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """返回校验报告文件本体（HTML，可直接查看并打印为 PDF）。"""
+    service = DocCheckService(db)
+    check = await service.get_check(record_id)
+
+    if not check:
+        raise HTTPException(status_code=404, detail="校验记录不存在")
+
+    file_name = quote(f"{check.file_code or 'report'}_校验报告.{format}.html")
+    return Response(
+        content=_render_report_html(check),
+        media_type="text/html; charset=utf-8",
+        headers={"Content-Disposition": f"inline; filename*=UTF-8''{file_name}"},
     )

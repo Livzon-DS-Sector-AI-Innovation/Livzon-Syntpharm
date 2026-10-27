@@ -2413,6 +2413,7 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("quality:deviation:submit", "POST", "/api/v1/quality/deviation/{deviation_id}/submit"),
     ApiBindingDef("quality:deviation:update", "POST", "/api/v1/quality/deviation/{deviation_id}/unlock-batch"),
     ApiBindingDef("quality:export:read", "GET", "/api/v1/quality/export/{record_id}"),
+    ApiBindingDef("quality:export:read", "GET", "/api/v1/quality/export/{record_id}/file"),
     ApiBindingDef("quality:fqc:create", "POST", "/api/v1/quality/fqc/inspections"),
     ApiBindingDef("quality:fqc:read", "GET", "/api/v1/quality/fqc/inspections"),
     ApiBindingDef("quality:fqc:read", "GET", "/api/v1/quality/fqc/inspections/{inspection_id}"),
