@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Form,
   Input,
@@ -141,47 +142,53 @@ export default function HazardInspectionForm({
     }
   }, [initialValues, form])
 
+  // 当前用户走 React Query：同一会话内复用缓存，避免每次挂载都打一次 server action
+  const { data: currentUser } = useQuery({
+    queryKey: ['identity', 'me'],
+    queryFn: () => getCurrentUser(),
+    enabled: !initialValues, // 有草稿数据时不覆盖
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // 当前用户预置到选项列表，确保 Select 正确回显（派生值，不在 effect 里 setState）
+  const mergedUserOptions = useMemo<UserOption[]>(() => {
+    const self: UserOption[] = currentUser?.id && currentUser.name
+      ? [{ value: currentUser.id, label: `${currentUser.name} - ${currentUser.department || ''}` }]
+      : []
+    const seen = new Set(self.map((o) => o.value))
+    return [...self, ...userOptions.filter((o) => !seen.has(o.value))]
+  }, [currentUser, userOptions])
+
   // 从飞书登录信息自动填充检查人员姓名和部门（仅新建表单，草稿不覆盖）
   useEffect(() => {
-    if (initialValues) return // 有草稿数据时不覆盖
-    let cancelled = false
-    getCurrentUser().then((user) => {
-      if (cancelled || !user) return
-      const patch: Record<string, unknown> = {}
-      if (user.name && user.id) {
-        patch.discovered_by = user.id
-        patch.discovered_by_name = user.name
-        // 预填当前用户到选项列表，确保 Select 正确显示
-        setUserOptions([{
-          value: user.id,
-          label: `${user.name} - ${user.department || ''}`,
-        }])
-      }
-      if (user.department) {
-        // inspector_department 是 mode="multiple" Select，需要数组格式
-        // 仅当用户部门在预设选项中时才自动填充（mode="multiple" 不支持自由输入）
-        const isKnownDept = INSPECTOR_DEPARTMENT_OPTIONS.some(
-          (o) => o.value === user.department
-        )
-        if (isKnownDept) {
-          patch.inspector_department = [user.department!]
-        }
-      }
-      if (Object.keys(patch).length > 0) {
-        form.setFieldsValue(patch)
-      }
-    })
-    return () => {
-      cancelled = true
+    if (initialValues || !currentUser) return
+    const user = currentUser
+    const patch: Record<string, unknown> = {}
+    if (user.name && user.id) {
+      patch.discovered_by = user.id
+      patch.discovered_by_name = user.name
     }
-  }, [initialValues, form])
+    if (user.department) {
+      // inspector_department 是 mode="multiple" Select，需要数组格式
+      // 仅当用户部门在预设选项中时才自动填充（mode="multiple" 不支持自由输入）
+      const isKnownDept = INSPECTOR_DEPARTMENT_OPTIONS.some(
+        (o) => o.value === user.department
+      )
+      if (isKnownDept) {
+        patch.inspector_department = [user.department!]
+      }
+    }
+    if (Object.keys(patch).length > 0) {
+      form.setFieldsValue(patch)
+    }
+  }, [currentUser, initialValues, form])
 
   // 规范化表单值：mode="multiple" 字段返回数组，需转为逗号分隔字符串（匹配 Bitable multi_select）
   const normalizeValues = (values: Record<string, unknown>): Record<string, unknown> => {
     // 从选中的用户选项中提取纯姓名（去掉 " - 部门" 后缀）
     let discoveredByName = values.discovered_by_name || ''
     if (!discoveredByName && values.discovered_by) {
-      const selected = userOptions.find((o) => o.value === values.discovered_by)
+      const selected = mergedUserOptions.find((o) => o.value === values.discovered_by)
       if (selected) {
         discoveredByName = selected.label.split(' - ')[0]
       }
@@ -316,12 +323,12 @@ export default function HazardInspectionForm({
                 placeholder="搜索姓名选择检查人员"
                 filterOption={false}
                 onSearch={handleUserSearch}
-                options={userOptions}
+                options={mergedUserOptions}
                 loading={userSearchLoading}
                 notFoundContent={userSearchLoading ? '搜索中...' : '输入姓名搜索'}
                 onChange={(userId: string) => {
                   form.setFieldValue('discovered_by', userId)
-                  const selected = userOptions.find((o) => o.value === userId)
+                  const selected = mergedUserOptions.find((o) => o.value === userId)
                   if (selected) {
                     form.setFieldValue('discovered_by_name', selected.label.split(' - ')[0])
                   }
