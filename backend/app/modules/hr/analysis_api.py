@@ -31,6 +31,7 @@ async def submit(
 
     轮询 GET /api/v1/hr/jobs/{job_id}；`result.data` 即原响应体 `data`。
     """
+
     async def _run(_job: str) -> dict[str, Any]:
         result = await service.analyze()
         return result.model_dump(mode="json")
