@@ -84,7 +84,7 @@ export function AIFileParser({
       <Alert
         type="info"
         showIcon
-        message="AI辅助填写"
+        title="AI辅助填写"
         description={hint || defaultHint}
         style={{ marginBottom: 12 }}
       />
@@ -169,7 +169,7 @@ export function AIFileParser({
         <Alert
           type="info"
           showIcon
-          message="AI正在解析中..."
+          title="AI正在解析中..."
           description="请稍候，AI正在识别文件内容并提取关键信息"
           style={{ marginTop: 12 }}
         />

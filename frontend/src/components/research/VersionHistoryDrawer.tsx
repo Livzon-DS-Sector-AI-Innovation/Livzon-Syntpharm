@@ -8,6 +8,8 @@ import {
   DELIVERABLE_STATUS_LABELS,
 } from '@/types/research/rd-project'
 import { createDeliverable } from '@/actions/research/deliverables'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props {
   open: boolean
@@ -127,19 +129,21 @@ export function VersionHistoryDrawer({ open, onClose, projectId, stage, delivera
             >
               {compareMode ? '退出对比' : '版本对比'}
             </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                newVersionForm.setFieldsValue({
-                  version: latest ? incrementVersion(latest.version) : 'v1.0',
-                  copyContent: true,
-                })
-                setNewVersionModalOpen(true)
-              }}
-            >
-              新版本
-            </Button>
+            <PermissionGate code={PERM.researchStageDeliverableCreate}>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  newVersionForm.setFieldsValue({
+                    version: latest ? incrementVersion(latest.version) : 'v1.0',
+                    copyContent: true,
+                  })
+                  setNewVersionModalOpen(true)
+                }}
+              >
+                新版本
+              </Button>
+            </PermissionGate>
           </Space>
         }
       >

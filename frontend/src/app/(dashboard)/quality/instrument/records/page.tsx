@@ -121,7 +121,9 @@ export default function CalibrationRecordsPage() {
   const { data: instruments = [], isLoading: instrumentsLoading } = useQuery({
     queryKey: ['instruments-for-records'],
     queryFn: async () => {
-      const response = await getInstruments({ page: 1, page_size: 1000 })
+      // 后端 /quality/instrument 的 page_size 上限是 100（Query(20, ge=1, le=100)），
+      // 传 1000 会被 422 拒掉，整个页面取数失败。
+      const response = await getInstruments({ page: 1, page_size: 100 })
       return response.items || []
     },
   })

@@ -9,8 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import NO_VALUE  # type: ignore[attr-defined]
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
-from app.core.exceptions import AppException
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.models.work_order import WorkOrder
@@ -26,13 +25,6 @@ from app.modules.equipment.schemas import (
     WorkOrderVerify,
 )
 from app.shared.schemas import ApiResponse
-
-
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    """要求已认证用户，返回用户ID"""
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
 
 
 def _to_response(wo: WorkOrder) -> WorkOrderResponse:
@@ -75,9 +67,10 @@ router = APIRouter()
 async def create_work_order(
     data: WorkOrderCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    reporter_id = _require_user(current_user)
+    reporter_id = current_user.id
     wo = await service.create_work_order(db, data, reporter_id)
     return build_response(data=_to_response(wo))
 
@@ -89,7 +82,6 @@ async def update_work_order(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.update_work_order(db, work_order_id, data)
     return build_response(data=_to_response(wo))
 
@@ -97,6 +89,7 @@ async def update_work_order(
 @router.get("/", summary="工单列表")
 async def list_work_orders(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     status: str | None = Query(None, description="工单状态"),
     equipment_id: uuid.UUID | None = Query(None, description="设备ID"),
     priority: str | None = Query(None, description="优先级"),
@@ -105,7 +98,6 @@ async def list_work_orders(
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     work_orders, total = await service.get_work_orders(
         db,
         status=status,
@@ -126,9 +118,9 @@ async def list_work_orders(
 @router.get("/statistics", summary="工单统计")
 async def get_work_order_statistics(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     stats = await service.get_work_order_statistics(db)
     return build_response(data=WorkOrderStatistics.model_validate(stats))
 
@@ -139,7 +131,6 @@ async def get_work_order(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.get_work_order_by_id(db, work_order_id)
     return build_response(data=_to_response(wo))
 
@@ -149,9 +140,9 @@ async def assign_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderAssign,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.assign_work_order(db, work_order_id, data.assignee_id)
     return build_response(data=_to_response(wo))
 
@@ -162,7 +153,6 @@ async def start_work_order(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.start_work_order(db, work_order_id)
     return build_response(data=_to_response(wo))
 
@@ -172,9 +162,9 @@ async def complete_work_order(
     work_order_id: uuid.UUID,
     data: WorkOrderComplete,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.complete_work_order(db, work_order_id, data)
     return build_response(data=_to_response(wo))
 
@@ -186,7 +176,7 @@ async def verify_work_order(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    verifier_id = _require_user(current_user)
+    verifier_id = current_user.id
     wo = await service.verify_work_order(db, work_order_id, verifier_id, data)
     return build_response(data=_to_response(wo))
 
@@ -195,9 +185,9 @@ async def verify_work_order(
 async def close_work_order(
     work_order_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:manage")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     wo = await service.close_work_order(db, work_order_id)
     return build_response(data=_to_response(wo))
 
@@ -209,7 +199,6 @@ async def consume_materials(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     items = [item.model_dump() for item in data.items]
     transactions = await service.consume_materials(db, work_order_id, items)
     return build_response(data=[MaterialConsumeResponse.model_validate(t) for t in transactions])
@@ -219,9 +208,9 @@ async def consume_materials(
 async def get_material_consumptions(
     work_order_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     from app.modules.equipment import repository as repo
 
     transactions = await repo.get_material_consumptions(db, work_order_id)

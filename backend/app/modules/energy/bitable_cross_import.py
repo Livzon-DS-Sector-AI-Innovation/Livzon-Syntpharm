@@ -16,31 +16,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
 from app.modules.energy.repository import apply_changed_fields
+from app.modules.energy.workshop_names import (
+    MAPPING_TABLE_NAME,  # noqa: F401  # 测试与调用方沿用本模块的导出路径
+    WORKSHOP_ALIASES,  # noqa: F401
+    load_workshop_alias_map,
+    normalize_workshop_name,
+    resolve_workshop_name,
+)
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
-
-# 多维表格内维护车间映射时使用的表名
-MAPPING_TABLE_NAME = "车间映射"
-
-# 同一部门在 水/电/汽 三个 section 里的同义写法 → 规范名称。
-# 这些是业务事实（QC 与 质量控制部 无字面重叠），正则推不出来，只能显式登记。
-# 未登记会导致同一部门被建成两个车间，月度记录的车间筛选因此只能看到单一能源类型。
-# 多维表格存在「车间映射」表时以表为准，本常量作为兜底。详见 docs/energy-bitable-field-mapping.md
-WORKSHOP_ALIASES: dict[str, str] = {
-    "QC": "质量控制部",
-    "炊事班": "饭堂",
-    "生活办公": "办公楼",
-    "环保中心(含RTO)": "环保中心",
-    "废水站": "环保中心",
-    "303、106": "303、106车间",
-    # 2024/2025 的历史月份表里 303 写成 303车间，与 303、106车间 是同一个车间
-    "303车间": "303、106车间",
-    # RTO 是一台独立的部门设备，电和气分开两处记录，必须归到同一个车间实体
-    "RTO用电": "RTO",
-    "RTO(天然气）": "RTO",
-}
 
 # 一致性校验：合计行与其构成项（同一月份导入批次内比对）
 ROLLUP_COMPONENTS: dict[str, tuple[str, tuple[str, ...]]] = {
@@ -102,27 +88,7 @@ class EnergyBitableCrossImport:
 
     async def _load_workshop_alias_map(self) -> dict[str, str]:
         """读取「车间映射」表的别名列，缺表时回退内置常量。"""
-        alias_map = dict(WORKSHOP_ALIASES)
-
-        tables = await self.list_tables()
-        table_id = next((t.get("table_id") for t in tables if t.get("name") == MAPPING_TABLE_NAME), None)
-        if not table_id:
-            logger.warning(f"未找到「{MAPPING_TABLE_NAME}」表，使用内置车间别名 {len(alias_map)} 条")
-            return alias_map
-
-        for record in await self.list_records(table_id):
-            fields = record.get("fields", {})
-            canonical = str(fields.get("名称") or fields.get("name") or "").strip()
-            if not canonical:
-                continue
-            raw_alias = str(fields.get("别名") or fields.get("alias") or "")
-            for alias in re.split(r"[、,，]", raw_alias):
-                alias = alias.strip()
-                if alias:
-                    alias_map[alias] = canonical
-
-        logger.info(f"从「{MAPPING_TABLE_NAME}」表加载车间别名 {len(alias_map)} 条")
-        return alias_map
+        return await load_workshop_alias_map(self.list_tables, self.list_records)
 
     async def list_tables(self) -> list[dict[str, Any]]:
         """获取多维表格中的所有数据表（自动分页）。"""
@@ -230,16 +196,11 @@ class EnergyBitableCrossImport:
 
     def _normalize_workshop_name(self, name: str) -> str:
         """标准化车间名称。"""
-        name = name.strip()
-        # 纯数字名称自动加"车间"后缀（如 "101" → "101车间"）
-        if re.match(r"^\d+$", name):
-            name = name + "车间"
-        return name
+        return normalize_workshop_name(name)
 
     async def _resolve_workshop_name(self, name: str) -> str:
         """归一化并套用别名，得到规范车间名。"""
-        normalized = self._normalize_workshop_name(name)
-        return (await self._get_alias_map()).get(normalized, normalized)
+        return resolve_workshop_name(name, await self._get_alias_map())
 
     async def _get_or_create_workshop(self, db: AsyncSession, name: str, category: str = "workshop") -> EnergyWorkshop:
         """获取或创建车间。"""

@@ -44,6 +44,8 @@ import {
   purchaseStatusColors,
   purchaseStatusLabels,
 } from './purchaseRequestConstants'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 type PurchaseRequestFormClientProps = {
   category: PurchaseRequestCategory
@@ -258,31 +260,35 @@ export function PurchaseRequestFormClient({
               查看
             </Button>
             {editable && (
-              <Button
-                type="link"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={() => handleEdit(record)}
-              >
-                编辑
-              </Button>
-            )}
-            {editable && (
-              <Popconfirm
-                title="确认提交到部门负责人审批？"
-                okText="提交"
-                cancelText="取消"
-                onConfirm={() => handleSubmitFlow(record)}
-              >
+              <PermissionGate code={PERM.procurementPurchaseRequestUpdate}>
                 <Button
                   type="link"
                   size="small"
-                  icon={<SendOutlined />}
-                  loading={submittingId === record.id}
+                  icon={<EditOutlined />}
+                  onClick={() => handleEdit(record)}
                 >
-                  提交
+                  编辑
                 </Button>
-              </Popconfirm>
+              </PermissionGate>
+            )}
+            {editable && (
+              <PermissionGate code={PERM.procurementPurchaseRequestSubmit}>
+                <Popconfirm
+                  title="确认提交到部门负责人审批？"
+                  okText="提交"
+                  cancelText="取消"
+                  onConfirm={() => handleSubmitFlow(record)}
+                >
+                  <Button
+                    type="link"
+                    size="small"
+                    icon={<SendOutlined />}
+                    loading={submittingId === record.id}
+                  >
+                    提交
+                  </Button>
+                </Popconfirm>
+              </PermissionGate>
             )}
           </Space>
         )
@@ -571,9 +577,11 @@ export function PurchaseRequestFormClient({
 
         <div className="flex justify-end gap-3">
           <Button onClick={resetForm}>重置</Button>
+          <PermissionGate code={editingId ? PERM.procurementPurchaseRequestUpdate : PERM.procurementPurchaseRequestCreate}>
           <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
             {editingId ? '更新申请' : '保存申请'}
           </Button>
+        </PermissionGate>
         </div>
       </Form>
 

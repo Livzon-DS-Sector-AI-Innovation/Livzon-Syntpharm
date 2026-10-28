@@ -614,6 +614,8 @@ export interface ClaimTimeoutConfig {
 export interface Maintainer {
   id: string
   name: string
+  /** 登录账号（选人下拉用「姓名（账号）」展示） */
+  username?: string | null
   employee_id?: string
   employee_no?: string
   user_id?: string
@@ -672,8 +674,8 @@ export type CreateInspectionTemplateItemInput = InspectionTemplateItemCreate
 export type UpdateInspectionTemplateItemInput = InspectionTemplateItemUpdate
 export type InspectionCompleteInput = components['schemas']['InspectionCompleteRequest']
 export type MaterialConsumeInput = components['schemas']['MaterialConsumeRequest']
-export type CreateRoleInput = components['schemas']['RoleCreate']
-export type UpdateRoleInput = components['schemas']['RoleUpdate']
+export type CreateRoleInput = components['schemas']['app__modules__equipment__schemas__personnel__RoleCreate']
+export type UpdateRoleInput = components['schemas']['app__modules__equipment__schemas__personnel__RoleUpdate']
 export type AddPersonnelInput = components['schemas']['SpecialOperationPersonnelCreate']
 
 export type AssignRolesInput = components["schemas"]["PersonnelRoleAssign"]

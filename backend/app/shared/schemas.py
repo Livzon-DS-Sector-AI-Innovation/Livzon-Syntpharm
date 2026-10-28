@@ -1,4 +1,4 @@
-from typing import Any, TypedDict
+from typing import Any, Literal, TypedDict
 
 from pydantic import BaseModel, Field
 
@@ -59,3 +59,34 @@ class DataApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: dict[str, Any] | list[Any] | None = None
+
+
+class AsyncJobAccepted(BaseModel):
+    """异步任务的受理回执（提交端点立即返回，结果需轮询拿）。"""
+
+    job_id: str
+    status: Literal["running"] = "running"
+
+
+class AsyncJobAcceptedResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AsyncJobAccepted
+
+
+class AsyncJobState(BaseModel):
+    """异步任务的当前状态（轮询端点返回）。
+
+    404（任务不存在）不代表失败：状态存进程内，重启即丢（`D-11`）。
+    """
+
+    job_id: str
+    status: Literal["running", "done", "failed"]
+    result: dict[str, Any] | None = None
+    error: str | None = None
+
+
+class AsyncJobStateResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: AsyncJobState

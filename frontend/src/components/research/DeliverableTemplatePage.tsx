@@ -59,6 +59,8 @@ import { enrichDeliverableTemplateSemantics } from '@/actions/research/doc-gen'
 import { DeliverableTemplateAddSlotDrawer } from './DeliverableTemplateAddSlotDrawer'
 import { DeliverableTemplateVersionDrawer } from './DeliverableTemplateVersionDrawer'
 import { SlotMarkdownModal } from './SlotMarkdownModal'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { TextArea } = Input
 
@@ -523,10 +525,17 @@ export function DeliverableTemplatePage() {
       fixed: 'right' as const,
       render: (_: unknown, record: RdDeliverableTemplate) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
-          <Popconfirm title="确定删除该模板？" onConfirm={() => void handleDelete(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchDeliverableTemplateUpdate}>
+            <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)} />
+          </PermissionGate>
+          {record.file_object_key && (
+            <Button type="link" icon={<DownloadOutlined />} onClick={() => void handleDownload(record)} />
+          )}
+          <PermissionGate code={PERM.researchDeliverableTemplateDelete}>
+            <Popconfirm title="确定删除该模板？" onConfirm={() => void handleDelete(record.id)}>
+              <Button type="link" danger icon={<DeleteOutlined />} />
+            </Popconfirm>
+          </PermissionGate>
         </Space>
       ),
     },
@@ -544,9 +553,11 @@ export function DeliverableTemplatePage() {
       <Card
         title="批量上传 Word 模板"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            新建模板
-          </Button>
+          <PermissionGate code={PERM.researchDeliverableTemplateCreate}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              新建模板
+            </Button>
+          </PermissionGate>
         }
         style={{ marginBottom: 16 }}
       >
@@ -603,9 +614,13 @@ export function DeliverableTemplatePage() {
         extra={
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
-            <Button type="primary" onClick={() => void handleSave()} loading={saving}>
-              保存
-            </Button>
+            <PermissionGate
+              code={editingTemplate ? PERM.researchDeliverableTemplateUpdate : PERM.researchDeliverableTemplateCreate}
+            >
+              <Button type="primary" onClick={() => void handleSave()} loading={saving}>
+                保存
+              </Button>
+            </PermissionGate>
           </Space>
         }
       >

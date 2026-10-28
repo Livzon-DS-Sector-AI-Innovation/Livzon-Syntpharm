@@ -29,6 +29,10 @@ ENV UV_PYTHON=/usr/local/bin/python3
 COPY pyproject.toml uv.lock* ./
 RUN uv sync --frozen --no-dev
 
+# Playwright Chromium 浏览器（regulatory_tracker 每日同步需要）
+# --with-deps 安装运行 Chromium 所需的系统库（libatk、libnss3 等）
+RUN .venv/bin/playwright install --with-deps chromium
+
 # Copy application code
 COPY . .
 

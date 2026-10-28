@@ -28,6 +28,8 @@ _DEFAULT_SETTINGS = [
     ("equipment", "EQUIPMENT_FEISHU_WS_ENABLED", "false", "bool", "Enable Feishu WebSocket for equipment module"),
     ("equipment", "MAINTENANCE_PLAN_AUTO_ENABLED", "true", "bool", "Auto-generate maintenance plans"),
     ("energy", "ENERGY_AUTO_COLLECT_ENABLED", "false", "bool", "Enable automatic energy data collection"),
+    ("energy", "ENERGY_BITABLE_AUTO_SYNC_ENABLED", "false", "bool", "Enable daily Feishu bitable monthly sync"),
+    ("energy", "ENERGY_BITABLE_SYNC_HOUR", "17", "int", "Hour (0-23, CST) of daily Feishu bitable sync"),
     ("hr", "FEISHU_BOT_NAME", "", "string", "Feishu bot name for HR module"),
     ("hr", "AI_MODEL", "kimi-k2.5", "string", "AI model for HR analysis"),
     (

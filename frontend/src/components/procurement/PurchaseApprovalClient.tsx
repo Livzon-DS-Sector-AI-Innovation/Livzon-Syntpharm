@@ -39,6 +39,8 @@ import {
   purchaseStatusColors,
   purchaseStatusLabels,
 } from './purchaseRequestConstants'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 type PurchaseApprovalClientProps = {
   category: PurchaseRequestCategory
@@ -197,23 +199,27 @@ export function PurchaseApprovalClient({
           </Button>
           {isPendingView && (
             <>
-              <Button
-                type="link"
-                size="small"
-                icon={<CheckCircleOutlined />}
-                onClick={() => openReview(record, 'approved')}
-              >
-                通过
-              </Button>
-              <Button
-                danger
-                type="link"
-                size="small"
-                icon={<CloseCircleOutlined />}
-                onClick={() => openReview(record, 'rejected')}
-              >
-                驳回
-              </Button>
+              <PermissionGate code={PERM.procurementPurchaseRequestApprove}>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<CheckCircleOutlined />}
+                  onClick={() => openReview(record, 'approved')}
+                >
+                  通过
+                </Button>
+              </PermissionGate>
+              <PermissionGate code={PERM.procurementPurchaseRequestSubmit}>
+                <Button
+                  danger
+                  type="link"
+                  size="small"
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => openReview(record, 'rejected')}
+                >
+                  驳回
+                </Button>
+              </PermissionGate>
             </>
           )}
         </Space>

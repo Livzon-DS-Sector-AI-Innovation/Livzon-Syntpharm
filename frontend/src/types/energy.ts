@@ -41,6 +41,14 @@ export type SyncJobResult = components['schemas']['SyncJobResult']
 // 能源类型枚举
 export type EnergyType = 'electricity' | 'water' | 'steam' | 'natural_gas'
 
+// 手动采集：后端按平台返回执行结果
+export type PlatformCollectResult = {
+  status: 'success' | 'partial' | 'failed'
+  device_count?: number
+  success_count?: number
+  error?: string
+}
+
 // 监控级别
 export type MonitorLevel = 'normal' | 'important' | 'urgent'
 

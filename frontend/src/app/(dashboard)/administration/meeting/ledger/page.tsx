@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Table, Button, Input, Tag, Space, Modal, Form, message, Popconfirm, Select } from 'antd'
 import { PlusOutlined, SearchOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
+import { DevelopmentNotice } from '@/components/administration'
 import { fetchGiftInventories } from '@/lib/api/client/administration/gift-inventory'
 import { createGiftInventory, updateGiftInventory, deleteGiftInventory } from '@/actions/administration'
 
@@ -134,6 +135,7 @@ export default function ItemLedgerPage() {
   return (
     <div className="p-6">
       <h1 className="text-xl font-bold mb-4">物品台账</h1>
+      <DevelopmentNotice feature="物品台账" />
       <div className="flex flex-wrap gap-2 mb-4">
         <Input
           placeholder="搜索物品名称"

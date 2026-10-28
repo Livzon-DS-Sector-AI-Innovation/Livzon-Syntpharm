@@ -11,6 +11,8 @@ import { ModuleScaleUp } from './ModuleScaleUp'
 import { ModuleLabConfirmation } from './ModuleLabConfirmation'
 import { ModuleReport } from './ModuleReport'
 import { updateOptimizationAction } from '@/actions/research/process-optimization'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 import type {
   OptimizationModule,
   DOEExperiment,
@@ -295,9 +297,11 @@ export function ProcessOptimizationWorkflowPage({
                 进入质量标准 →
               </Button>
             )}
-            <Button icon={<SaveOutlined />} onClick={handleSaveAndExit} type="dashed">
-              💾 保存并退出
-            </Button>
+            <PermissionGate code={PERM.researchOptimizationUpdate}>
+              <Button icon={<SaveOutlined />} onClick={handleSaveAndExit} type="dashed">
+                💾 保存并退出
+              </Button>
+            </PermissionGate>
           </Space>
         </Space>
       </Card>
@@ -325,7 +329,7 @@ export function ProcessOptimizationWorkflowPage({
               type="info"
               showIcon
               style={{ marginBottom: 16 }}
-              message="并行研究阶段"
+              title="并行研究阶段"
               description={`DOE实验设计、杂质研究、晶型研究可同时进行，完成全部三项后进入质量标准建立。已完成 ${Object.values(parallelComplete).filter(Boolean).length}/3`}
             />
           )}
@@ -334,7 +338,7 @@ export function ProcessOptimizationWorkflowPage({
               type="success"
               showIcon
               style={{ marginBottom: 16 }}
-              message="✓ 并行研究全部完成"
+              title="✓ 并行研究全部完成"
               description="所有三项研究已完成，可以点击右下方「进入质量标准」继续。您也可以切换 Tab 查看或修改已有结果。"
             />
           )}

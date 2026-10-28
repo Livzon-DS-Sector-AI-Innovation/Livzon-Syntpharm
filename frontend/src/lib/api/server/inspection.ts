@@ -64,11 +64,16 @@ export async function submitRouteCheckApi(taskId: string, data: unknown, headers
 }
 
 export async function analyzeInspectionPhotoApi(taskId: string, equipmentId: string, imageBase64: string, imageMimeType: string, headers?: Record<string, string>) {
+  // 后端已改为异步任务：此处只拿到 job_id，结果需轮询 getInspectionAIJobApi
   return apiFetch(`${BASE}/tasks/${taskId}/equipments/${equipmentId}/ai-analyze`, {
     method: 'POST',
     body: JSON.stringify({ image_base64: imageBase64, image_mime_type: imageMimeType }),
     headers,
   })
+}
+
+export async function getInspectionAIJobApi(taskId: string, equipmentId: string, jobId: string, headers?: Record<string, string>) {
+  return apiFetch(`${BASE}/tasks/${taskId}/equipments/${equipmentId}/ai-analyze/jobs/${jobId}`, { headers })
 }
 
 export async function createScheduleApi(routeId: string, data: unknown, headers?: Record<string, string>) {

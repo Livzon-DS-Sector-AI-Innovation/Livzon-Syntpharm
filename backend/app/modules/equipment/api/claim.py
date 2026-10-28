@@ -1,6 +1,5 @@
 """抢单 API 路由."""
 
-import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -9,9 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import AppException, ForbiddenException
 from app.core.response import success_response
+from app.core.tasks import spawn_task
 from app.modules.equipment import service
 from app.modules.equipment.schemas import WorkOrderResponse
 from app.platform.integrations.feishu.contact import is_department_member
@@ -20,20 +20,14 @@ from app.platform.integrations.feishu.message import send_claim_notification
 router = APIRouter()
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 @router.put("/{work_order_id}/claim", summary="抢单（维修人员自主接单）")
 async def claim_work_order(
     work_order_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:work-order:update")),
     db: AsyncSession = Depends(get_db),
     settings: Settings = Depends(get_settings),
 ) -> JSONResponse:
-    _require_user(current_user)
     assert current_user is not None
 
     dept_id = settings.feishu.platform.equipment_dept_id
@@ -50,7 +44,11 @@ async def claim_work_order(
 
     wo = await service.claim_work_order(db, work_order_id, current_user.id)
 
-    asyncio.ensure_future(send_claim_notification(wo.work_order_no, current_user.name))
+    # 通知失败不应影响接单结果；用 spawn_task 包装后异常会进日志（ensure_future 只是静默丢弃）
+    spawn_task(
+        send_claim_notification(wo.work_order_no, current_user.name),
+        name=f"claim-notify-{wo.work_order_no}",
+    )
 
     resp = WorkOrderResponse.model_validate(wo)
     if wo.reporter:

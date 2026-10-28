@@ -201,7 +201,7 @@ export function ContractSummaryClient({
         <Alert
           type="warning"
           showIcon
-          message="合同汇总首屏加载失败"
+          title="合同汇总首屏加载失败"
           description="已显示空列表，可点击刷新或搜索重新加载。"
         />
       )}
@@ -370,7 +370,7 @@ export function ContractSummaryClient({
                   className="m-4"
                   type="warning"
                   showIcon
-                  message={previewError}
+                  title={previewError}
                 />
               )}
               <div className="max-h-[68vh] overflow-auto p-4">

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -26,6 +26,20 @@ from app.modules.energy.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+CST = timezone(timedelta(hours=8))
+
+
+def _cst_date(value: datetime) -> date:
+    """把查询窗口端点换算成东八区日期。
+
+    前端把本地零点 `toISOString()` 成 UTC，东八区零点是前一天 16:00 UTC；
+    直接取 `.date()` 会让「今日」窗口变成「昨天 + 今天」。
+    """
+    if value.tzinfo is None:
+        # 没带时区的值按调用方已给出的本地时间处理
+        return value.date()
+    return value.astimezone(CST).date()
 
 
 def apply_changed_fields(obj: Any, values: dict[str, Any]) -> bool:
@@ -277,8 +291,8 @@ async def get_energy_statistics(
     end_time: datetime,
 ) -> list[dict[str, Any]]:
     """按车间/产线/设备汇总能耗（从月度记录表查询）"""
-    start_date = start_time.date() if hasattr(start_time, "date") else start_time
-    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+    start_date = _cst_date(start_time)
+    end_date = _cst_date(end_time)
 
     if group_by == "workshop":
         query = (
@@ -356,9 +370,9 @@ async def get_overview_summary(
     end_time: datetime,
 ) -> list[dict[str, Any]]:
     """按能源类型汇总能耗（从月度记录表查询）"""
-    # 将 datetime 转换为 date 用于查询
-    start_date = start_time.date() if hasattr(start_time, "date") else start_time
-    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+    # 将 datetime 换算成东八区日期用于查询
+    start_date = _cst_date(start_time)
+    end_date = _cst_date(end_time)
 
     query = (
         select(
@@ -366,10 +380,15 @@ async def get_overview_summary(
             func.sum(EnergyMonthlyRecord.value).label("total_value"),
             EnergyMonthlyRecord.unit,
         )
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
             _not_rollup_record(),
         )
         .group_by(EnergyMonthlyRecord.energy_type, EnergyMonthlyRecord.unit)
@@ -392,9 +411,9 @@ async def get_overview_trend(
     energy_type: str | None = None,
 ) -> list[dict[str, Any]]:
     """按日期获取能耗趋势数据（从月度记录表查询）"""
-    # 将 datetime 转换为 date 用于查询
-    start_date = start_time.date() if hasattr(start_time, "date") else start_time
-    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+    # 将 datetime 换算成东八区日期用于查询
+    start_date = _cst_date(start_time)
+    end_date = _cst_date(end_time)
 
     query = (
         select(
@@ -402,10 +421,15 @@ async def get_overview_trend(
             EnergyMonthlyRecord.energy_type,
             func.sum(EnergyMonthlyRecord.value).label("total_value"),
         )
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
         )
         .group_by(EnergyMonthlyRecord.record_date, EnergyMonthlyRecord.energy_type)
         .order_by(EnergyMonthlyRecord.record_date.asc())
@@ -782,6 +806,18 @@ async def delete_workshop(db: AsyncSession, workshop_id: UUID) -> bool:
     return True
 
 
+async def count_active_monthly_records_by_workshop(db: AsyncSession, workshop_id: UUID) -> int:
+    result = await db.execute(
+        select(func.count())
+        .select_from(EnergyMonthlyRecord)
+        .where(
+            EnergyMonthlyRecord.workshop_id == workshop_id,
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar() or 0
+
+
 # ── 月度记录 ──
 
 
@@ -865,8 +901,16 @@ async def list_monthly_records(
 ) -> tuple[list[EnergyMonthlyRecord], int]:
     from app.modules.energy.models import EnergyMonthlyRecord
 
-    query = select(EnergyMonthlyRecord).where(
-        EnergyMonthlyRecord.is_deleted == False  # noqa: E712
+    query = (
+        select(EnergyMonthlyRecord, EnergyWorkshop.name)
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
+        .where(
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
     )
     if workshop_id:
         query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
@@ -888,7 +932,12 @@ async def list_monthly_records(
     )
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
-    return list(result.scalars().all()), total
+    records: list[EnergyMonthlyRecord] = []
+    for record, workshop_name in result.all():
+        # 带上规范车间名，前端不必再靠 workshop_id 回查（合并未完成时也不会退化成 UUID 前缀）
+        setattr(record, "workshop_name", workshop_name)
+        records.append(record)
+    return records, total
 
 
 async def get_monthly_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyMonthlyRecord | None:
@@ -920,11 +969,21 @@ async def get_monthly_summary(
     end_date: date | None = None,
 ) -> dict[str, Any]:
     """获取月度记录汇总，按能源类型分组统计总量"""
-    query = select(
-        EnergyMonthlyRecord.energy_type,
-        func.sum(EnergyMonthlyRecord.value).label("total_value"),
-        EnergyMonthlyRecord.unit,
-    ).where(EnergyMonthlyRecord.is_deleted == False)  # noqa: E712
+    query = (
+        select(
+            EnergyMonthlyRecord.energy_type,
+            func.sum(EnergyMonthlyRecord.value).label("total_value"),
+            EnergyMonthlyRecord.unit,
+        )
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
+        .where(
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
+    )
 
     if workshop_id:
         query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)

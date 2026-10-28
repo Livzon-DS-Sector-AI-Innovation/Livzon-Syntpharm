@@ -132,6 +132,8 @@ from app.modules.equipment.schemas.work_order import (
     WorkOrderVerify,
 )
 from app.modules.equipment.schemas.work_order_image import (
+    WorkOrderImageDeleteApiResponse,
+    WorkOrderImageListApiResponse,
     WorkOrderImageResponse,
 )
 
@@ -219,6 +221,8 @@ __all__ = [
     # inspection
     "RouteCheckSubmit",
     # work order image
+    "WorkOrderImageDeleteApiResponse",
+    "WorkOrderImageListApiResponse",
     "WorkOrderImageResponse",
     # personnel
     "CandidateResponse",

@@ -154,16 +154,52 @@ export interface QueryCheckRecordsRequest {
 
 // ============ 响应类型 ============
 
-import type { components } from '@/types/generated/schema'
+// 以下类型是 Server Action 组装后的视图模型（已把后端字段映射为页面字段），
+// 不是后端原始响应体，因此手写；原始契约类型见 @/types/generated/schema。
+export type UploadFileResponse = {
+  file_id: string
+  file_name: string
+  file_path: string
+  file_size: number
+  file_ext: string
+}
 
-// Use generated types for API responses
-export type UploadFileResponse = components['schemas']['DocCheckUploadApiResponse']['data']
-export type StartCheckResponse = components['schemas']['DocCheckTaskApiResponse']['data']
-export type CheckProgressResponse = components['schemas']['DocCheckProgressApiResponse']['data']
-export type CheckRecordResponse = components['schemas']['DocCheckRecordsApiResponse']['data']
-export type CheckRecordDetailResponse = components['schemas']['DocCheckRecordsApiResponse']['data']
-export type ExportReportResponse = components['schemas']['DocCheckExportApiResponse']['data']
-export type HandleProblemResponse = components['schemas']['DocCheckProblemUpdateApiResponse']['data']
+export type StartCheckResponse = {
+  task_id: string
+  status: CheckStatus
+  message?: string
+}
+
+export type CheckProgressResponse = {
+  task_id: string
+  status: CheckStatus
+  progress: number
+  current_step: string
+  message?: string
+}
+
+export type CheckRecordResponse = {
+  items: CheckMain[]
+  total: number
+  page: number
+  page_size: number
+}
+
+export type CheckRecordDetailResponse = CheckMain & {
+  problems: CheckProblem[]
+}
+
+export type ExportReportResponse = {
+  download_url: string
+  file_name: string
+  format?: string
+}
+
+export type HandleProblemResponse = {
+  id: string
+  handle_status: HandleStatus
+  ignore_reason?: string
+}
 
 // ============ 选项配置 ============
 

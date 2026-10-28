@@ -923,7 +923,7 @@ export default function FQCPage() {
         <Divider>检验结果明细</Divider>
         {editingRecord?.inspection_conclusion === FQCInspectionConclusion.UNQUALIFIED && (
           <Alert
-            message="检验结论为不合格，请确认是否已生成OOS报告，批次将被锁定禁止放行"
+            title="检验结论为不合格，请确认是否已生成OOS报告，批次将被锁定禁止放行"
             type="warning"
             showIcon
             style={{ marginBottom: 16 }}
@@ -1089,7 +1089,7 @@ export default function FQCPage() {
           <>
             {viewRecord.batch_locked && (
               <Alert
-                message="批次已锁定"
+                title="批次已锁定"
                 description={viewRecord.batch_lock_reason}
                 type="error"
                 showIcon

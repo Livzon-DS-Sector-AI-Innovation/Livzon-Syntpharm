@@ -1,7 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
-import type { LLMConfig, LLMConfigFormData, LLMConfigUpdate, FeishuConfig, FeishuConfigUpsert, FeishuDiagnosticResult } from '@/types/settings'
+import type { LLMConfig, LLMConfigFormData, LLMConfigUpdate, FeishuConfigUpsert } from '@/types/settings'
 import type { ApiResponse } from '@/types/common'
 import {
   getLLMConfigs as getLLMConfigsServer,
@@ -60,20 +60,20 @@ export async function testLLMConnection() {
 
 export async function getLivzonFeishuConfig() {
   const token = await getAuthToken()
-  return await getLivzonFeishuConfigServer(token) as FeishuConfig
+  return getLivzonFeishuConfigServer(token)
 }
 
 export async function saveLivzonFeishuConfig(data: FeishuConfigUpsert) {
   const token = await getAuthToken()
-  return await saveLivzonFeishuConfigServer(data, token) as FeishuConfig
+  return saveLivzonFeishuConfigServer(data, token)
 }
 
 export async function testLivzonFeishuConfig(data?: FeishuConfigUpsert) {
   const token = await getAuthToken()
-  return await testLivzonFeishuConfigServer(data, token) as FeishuDiagnosticResult
+  return testLivzonFeishuConfigServer(data, token)
 }
 
 export async function syncLivzonFeishuContacts() {
   const token = await getAuthToken()
-  return await syncLivzonFeishuContactsServer(token) as { message?: string; status?: string; departments?: Record<string, unknown>; members?: Record<string, unknown> }
+  return syncLivzonFeishuContactsServer(token)
 }

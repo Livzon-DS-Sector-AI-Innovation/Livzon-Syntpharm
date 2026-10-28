@@ -96,7 +96,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
     queryKey: ['doc-check-detail', resolvedParams.id],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/doc-check/records/${resolvedParams.id}`
+        `/api/v1/quality/records/${resolvedParams.id}`
       )
       const data = await response.json()
 
@@ -125,7 +125,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       if (!selectedProblem) return
 
       const response = await fetch(
-        `/api/v1/doc-check/problems/${selectedProblem.id}`,
+        `/api/v1/quality/problems/${selectedProblem.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -158,7 +158,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
       message.loading({ content: '正在生成报告...', key: 'export' })
 
       const response = await fetch(
-        `/api/v1/doc-check/export/${checkDetail.id}?format=pdf`
+        `/api/v1/quality/export/${checkDetail.id}?format=pdf`
       )
 
       const data = await response.json()
@@ -180,7 +180,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
 
     try {
       const response = await fetch(
-        `/api/v1/doc-check/records/${checkDetail.id}/confirm`,
+        `/api/v1/quality/records/${checkDetail.id}/confirm`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -411,7 +411,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
         <Button icon={<ArrowLeftOutlined />} onClick={() => router.push('/quality/doc-check')}>
           返回列表
         </Button>
-        <Alert type="error" message="未找到该记录" style={{ marginTop: 16 }} />
+        <Alert type="error" title="未找到该记录" style={{ marginTop: 16 }} />
       </div>
     )
   }
@@ -423,6 +423,8 @@ export default function DocCheckDetailPage({ params }: PageProps) {
           返回列表
         </Button>
       </div>
+
+      <h1 className="sr-only">校验记录详情</h1>
 
       {/* 基本信息卡片 */}
       <Card title="校验记录详情" style={{ marginBottom: 16 }}>
@@ -510,7 +512,7 @@ export default function DocCheckDetailPage({ params }: PageProps) {
           <Form form={handleForm} layout="vertical">
             <Alert
               type={selectedProblem.risk_level === 'high' ? 'error' : 'warning'}
-              message={`风险等级: ${RISK_LABELS[selectedProblem.risk_level]}`}
+              title={`风险等级: ${RISK_LABELS[selectedProblem.risk_level]}`}
               style={{ marginBottom: 16 }}
             />
 

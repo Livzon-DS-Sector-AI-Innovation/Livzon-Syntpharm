@@ -87,6 +87,22 @@ jobs:
         python-version: '3.12'
     - run: pip install uv && uv sync --dev
     - run: bash scripts/ci/ci.sh migration-scope
+  backend-permissions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      FEISHU__PLATFORM__APP_ID: ci_dummy
+      FEISHU__PLATFORM__APP_SECRET: ci_dummy
+      FRONTEND_URL: http://localhost:3000
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+    - run: pip install uv && uv sync --dev
+    - run: bash scripts/ci/ci.sh permissions
   frontend-lint:
     runs-on: ubuntu-latest
     defaults:

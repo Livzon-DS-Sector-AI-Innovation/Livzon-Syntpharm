@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.fqc_schemas import (
     FQCApprovalCreate,
     FQCApprovalRecordResponse,
@@ -33,8 +33,9 @@ def get_fqc_service(session: AsyncSession = Depends(get_db)) -> FQCInspectionSer
 @router.post("/inspections", response_model=FQCInspectionApiResponse, status_code=201)
 async def post(
     data: FQCInspectionCreate,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:create")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建FQC检验单"""
     try:
@@ -50,6 +51,8 @@ async def post(
 
 @router.get("/inspections", response_model=FQCPaginatedListApiResponse)
 async def get(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:read")),
     inspection_no: str | None = Query(None, description="检验单号"),
     batch_no: str | None = Query(None, description="成品生产批号"),
     product_code: str | None = Query(None, description="成品物料编码"),
@@ -64,7 +67,6 @@ async def get(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取FQC检验单列表"""
     filters = FQCInspectionFilter(
@@ -94,8 +96,9 @@ async def get(
 @router.get("/inspections/{inspection_id}", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:read")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取FQC检验单详情"""
     try:
@@ -109,8 +112,9 @@ async def get(  # noqa: F811
 async def put(
     inspection_id: UUID,
     data: FQCInspectionUpdate,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:update")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新FQC检验单"""
     try:
@@ -127,8 +131,9 @@ async def put(
 @router.delete("/inspections/{inspection_id}")
 async def delete(
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:delete")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除FQC检验单"""
     try:
@@ -142,8 +147,9 @@ async def delete(
 @router.post("/inspections/{inspection_id}/submit", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:submit")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交FQC检验单审批"""
     try:
@@ -161,8 +167,9 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: FQCApprovalCreate,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:approve")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """审批FQC检验单"""
     try:
@@ -184,8 +191,8 @@ async def post(  # noqa: F811
 )
 async def handler(
     inspection_id: UUID,
+    current_user: RequiredUser,
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取审批记录"""
     approvals = await service.get_approval_records(inspection_id)
@@ -195,9 +202,10 @@ async def handler(
 @router.post("/inspections/{inspection_id}/reinspection", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:create")),
     reason: str = Query(..., description="复检原因"),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """申请复检"""
     try:
@@ -214,9 +222,10 @@ async def post(  # noqa: F811
 @router.post("/inspections/{inspection_id}/release", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:create")),
     release_reason: str | None = Query(None, description="放行说明"),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """放行成品"""
     try:
@@ -233,9 +242,10 @@ async def post(  # noqa: F811
 @router.post("/inspections/{inspection_id}/lock-batch", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:update")),
     reason: str = Query(..., description="锁定原因"),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """锁定批次"""
     try:
@@ -252,8 +262,9 @@ async def post(  # noqa: F811
 @router.post("/inspections/{inspection_id}/unlock-batch", response_model=FQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:fqc:update")),
     service: FQCInspectionService = Depends(get_fqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """解锁批次"""
     try:

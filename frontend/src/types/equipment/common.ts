@@ -26,6 +26,8 @@ export interface UpdateClaimTimeoutInput {
 export interface Maintainer {
   user_id: string
   name: string
+  /** 登录账号（选人下拉用「姓名（账号）」展示） */
+  username?: string | null
   employee_no: string | null
   department_id?: string
 }

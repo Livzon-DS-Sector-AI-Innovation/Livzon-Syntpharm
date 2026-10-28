@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from hashlib import pbkdf2_hmac
 from hmac import compare_digest
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import jwt
 from fastapi import HTTPException, status
@@ -34,6 +34,7 @@ from app.platform.identity.schemas import (
     FeishuDiagnosticStep,
 )
 from app.platform.integrations.feishu.oauth import FeishuOAuthClient
+from app.shared.config_reader import get_module_setting
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +83,64 @@ def verify_password(password: str, stored_hash: str | None) -> bool:
     except (ValueError, TypeError):
         return False
     return compare_digest(expected, digest_hex)
+
+
+# ── 本地账号凭据：默认用户名与随机密码 ──────────────────────────────
+# 飞书首次登录时为账号补齐本地用户名（`{前缀}{6 位自增号}`），但不自动生成密码：
+# 密码由管理员在「用户管理」按需随机生成并**一次性展示**，库里只存哈希。
+# 若在这里生成密码，既没有人在场查看，也等于凭空多出一条无人知晓的登录凭据。
+
+DEFAULT_USERNAME_PREFIX = "YTH"
+USERNAME_PREFIX_SETTING_KEY = "USERNAME_PREFIX"
+
+# 随机密码字符集：剔除 0/O、1/l/I 等易混字符，避免管理员抄错
+PASSWORD_ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+DEFAULT_PASSWORD_LENGTH = 12
+
+
+def generate_random_password(length: int = DEFAULT_PASSWORD_LENGTH) -> str:
+    """生成随机初始密码（只用于一次性展示，不落库明文）。"""
+    if length < 6:
+        length = DEFAULT_PASSWORD_LENGTH
+    return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(length))
+
+
+MIN_PASSWORD_LENGTH = 8
+
+
+def validate_password_strength(password: str) -> str | None:
+    """校验密码复杂度：≥8 位且同时含字母与数字。合规返回 None，否则返回错误文案。"""
+    if len(password) < MIN_PASSWORD_LENGTH:
+        return f"密码长度至少 {MIN_PASSWORD_LENGTH} 位"
+    if not any(c.isalpha() for c in password):
+        return "密码需包含字母"
+    if not any(c.isdigit() for c in password):
+        return "密码需包含数字"
+    return None
+
+
+async def resolve_username_prefix() -> str:
+    """用户名前缀：运行时配置 `identity.USERNAME_PREFIX` 优先，缺省 YTH。"""
+    raw = await get_module_setting("identity", USERNAME_PREFIX_SETTING_KEY, DEFAULT_USERNAME_PREFIX)
+    # 只保留 ASCII 字母数字：中文前缀会生成中文用户名，与新建账号的字符集规则冲突
+    cleaned = "".join(ch for ch in raw.strip().upper() if ch.isascii() and ch.isalnum())[:8]
+    return cleaned or DEFAULT_USERNAME_PREFIX
+
+
+async def allocate_default_username(db: AsyncSession) -> str:
+    """分配默认用户名，如 `YTH000001`。"""
+    return await _repo.allocate_username(db, prefix=await resolve_username_prefix())
+
+
+async def ensure_default_username(db: AsyncSession, user: User) -> str:
+    """补齐本地用户名并返回。
+
+    「先同步、后登录」的账号（`sync_members` 走 `create` 但只写飞书字段）与历史账号
+    都在这里补齐 —— 只在建号时分配的话，这些账号永远无法用账号密码登录。
+    """
+    if not user.username:
+        user.username = await allocate_default_username(db)
+    return user.username
 
 
 def _split_identifiers(raw: str) -> set[str]:
@@ -276,7 +335,7 @@ async def diagnose_livzon_feishu_config(
     db: AsyncSession,
     payload: FeishuConfigUpsert | None = None,
 ) -> FeishuDiagnosticResult:
-    from app.platform.integrations.feishu.contact import (  # type: ignore[attr-defined]
+    from app.platform.integrations.feishu.contact import (
         find_users_by_department,
         get_all_departments,
         get_contact_scope,
@@ -373,12 +432,9 @@ async def diagnose_livzon_feishu_config(
         )
 
     try:
-        departments = await get_all_departments(  # type: ignore[call-arg]
-            root_department_id=root_id,
-            app_id=app_id,
-            app_secret=app_secret,
-            tenant_access_token=token,
-        )
+        # get_all_departments 内部自建客户端与 token（用平台应用凭证），不接受外部凭证参数；
+        # 被检查的 Livzon 应用凭证已在上面「tenant_access_token」「通讯录授权范围」两步验证过。
+        departments = await get_all_departments(root_department_id=root_id)
         steps.append(
             FeishuDiagnosticStep(
                 name="部门列表",
@@ -428,12 +484,7 @@ async def diagnose_livzon_feishu_config(
         try:
             for sample_department_id in sample_department_ids:
                 tried_ids.append(sample_department_id)
-                users = await find_users_by_department(  # type: ignore[call-arg]
-                    sample_department_id,
-                    app_id=app_id,
-                    app_secret=app_secret,
-                    tenant_access_token=token,
-                )
+                users = await find_users_by_department(sample_department_id)
                 if users:
                     sampled_department_id = sample_department_id
                     break
@@ -541,7 +592,7 @@ async def _save_diagnostic_result(
 
 
 async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict[str, Any]:
-    from app.platform.integrations.feishu.contact import get_contact_scope  # type: ignore[attr-defined]
+    from app.platform.integrations.feishu.contact import get_contact_scope
     from app.platform.integrations.feishu.sync import (
         sync_departments,
         sync_members,
@@ -660,6 +711,48 @@ async def run_livzon_feishu_sync_all(db: AsyncSession) -> dict[str, Any]:
         "status": sync_status,
         "message": sync_message,
     }
+
+
+async def sync_livzon_feishu_contacts_all() -> None:
+    """后台任务入口：自建会话跑一次「部门 + 成员」全量同步。
+
+    全量同步耗时可达数十秒，不适合放在 HTTP 请求里（项目规范要求超过 5 秒的操作走后台任务），
+    因此由 `spawn_task` 触发；结果（last_sync_status / last_sync_message / last_synced_at）
+    由 run_livzon_feishu_sync_all 写入飞书配置。后台任务抛异常没人接，故这里兜底后只记日志。
+    """
+    try:
+        async with async_session_factory() as db:
+            await run_livzon_feishu_sync_all(db)
+            await db.commit()
+    except Exception:
+        logger.exception("Livzon Feishu contacts sync (all) failed")
+
+
+async def record_member_sync_result(result: dict[str, Any]) -> None:
+    """把「每日自动成员同步」的结果写入飞书配置的 last_sync_* 字段。
+
+    手动触发的全量同步（run_livzon_feishu_sync_all）已自行写状态；每日 00:00 的
+    自动同步直接调 sync_members，此前不写状态，导致「系统设置 → 飞书设置」里看不到
+    自动同步的结果。此函数补齐这条链路；失败只记日志，不影响同步本身。
+    """
+    try:
+        async with async_session_factory() as db:
+            config = await _feishu_config_repo.get_active(db)
+            if config is None:
+                return
+            errors = result.get("errors") or []
+            user_count = result.get("user_count", 0)
+            config.last_synced_at = datetime.now(UTC)
+            if errors:
+                config.last_sync_status = "warning"
+                preview = "; ".join(str(e) for e in errors[:5])
+                config.last_sync_message = f"自动同步完成：成员 {user_count} 名，部分失败：{preview}"
+            else:
+                config.last_sync_status = "ok"
+                config.last_sync_message = f"自动同步完成：成员 {user_count} 名"
+            await db.commit()
+    except Exception:
+        logger.exception("记录成员自动同步结果失败")
 
 
 async def _active_livzon_feishu_credentials(db: AsyncSession) -> tuple[str, str]:
@@ -1108,8 +1201,13 @@ def _verify_feishu_callback_signature(
     nonce: str | None,
     signature: str | None,
 ) -> bool:
-    if not encrypt_key or not timestamp or not nonce or not signature:
+    # 未配置 Encrypt Key 时无法做签名校验，此时由调用方的 verification token 校验兜底。
+    if not encrypt_key:
         return True
+    # 配置了 Encrypt Key 就必须提供完整签名材料，缺任何一项都判失败（fail-closed），
+    # 否则「删掉签名头」即可绕过校验。
+    if not timestamp or not nonce or not signature:
+        return False
     raw = f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body
     expected = hashlib.sha256(raw).hexdigest()
     return hmac.compare_digest(expected, signature)
@@ -1248,6 +1346,84 @@ async def handle_livzon_feishu_card_action_event(
     }
 
 
+def _apply_contact_profile(user: User, detail: dict[str, Any]) -> None:
+    """把通讯录详情里的 部门 / 职务 / 工号 / 企业邮箱 写入用户记录（只补齐非空值）。"""
+    employee_no = (detail.get("employee_no") or "").strip()
+    if employee_no:
+        user.employee_no = employee_no
+
+    job_title = (detail.get("job_title") or "").strip()
+    if job_title:
+        user.position = job_title
+
+    # 部门名取部门路径的最后一级（最具体的部门）
+    department_path = detail.get("department_path") or []
+    department_name = ""
+    if department_path:
+        department_name = (department_path[-1].get("department_name") or "").strip()
+    if department_name:
+        user.department = department_name
+
+    department_ids = detail.get("department_ids") or []
+    if department_ids:
+        user.feishu_department_ids = json.dumps(list(department_ids), ensure_ascii=False)
+
+    enterprise_email = (detail.get("enterprise_email") or "").strip()
+    if enterprise_email:
+        user.enterprise_email = enterprise_email
+
+    # 头像三档（通讯录返回的是直链 URL）
+    for field in ("avatar_url", "avatar_thumb", "avatar_middle", "avatar_big"):
+        value = (detail.get(field) or "").strip()
+        if value:
+            setattr(user, field, value)
+
+    # 飞书侧已冻结（离职/停用）→ 单向禁用平台账号。
+    # 注意只做单向：飞书恢复正常时不自动启用，避免覆盖管理员在平台上的手工禁用。
+    if detail.get("is_frozen"):
+        user.status = "disabled"
+
+
+async def enrich_user_from_feishu_contact(
+    user: User,
+    *,
+    open_id: str | None,
+    feishu_user_id: str | None,
+) -> None:
+    """登录后尽力补齐通讯录字段（部门 / 职务 / 工号 / 企业邮箱）。
+
+    背景：登录用的 `authen/v1/user_info` 不返回部门、职务、工号，
+    必须另外调通讯录接口 `contact/v3/users/{id}`。
+    通讯录接口需要额外权限，未开通或查不到时**只记日志、不影响登录**——
+    宁可只有登录信息，也不能让用户登不进来。
+    """
+    identifier = (open_id or "").strip() or (feishu_user_id or "").strip()
+    if not identifier:
+        return
+    id_type = "open_id" if (open_id or "").strip() else "user_id"
+    try:
+        from app.platform.integrations.feishu.contact import get_user_detail
+
+        detail = await get_user_detail(identifier, user_id_type=id_type)
+        if not detail:
+            logger.warning(
+                "飞书通讯录详情为空，跳过资料补齐（检查应用是否已开通通讯录权限）: %s=%s",
+                id_type,
+                identifier,
+            )
+            return
+        _apply_contact_profile(user, detail)
+        logger.info(
+            "已补齐飞书通讯录资料: open_id=%s 部门=%s 职务=%s 工号=%s",
+            open_id,
+            user.department,
+            user.position,
+            user.employee_no,
+        )
+    except Exception:  # noqa: BLE001 - 资料补齐失败绝不能影响登录主流程
+        logger.warning("补齐飞书通讯录资料失败（不影响登录）: %s", identifier, exc_info=True)
+
+
 async def handle_oauth_callback(
     db: AsyncSession,
     code: str,
@@ -1273,10 +1449,17 @@ async def handle_oauth_callback(
     union_id = info.get("union_id") or None  # Convert empty to None
     name = info.get("name", "")
     en_name = info.get("en_name")
-    avatar_url = info.get("avatar_url") or info.get("avatar_middle")
-    avatar_thumb = info.get("avatar_thumb")
-    avatar_middle = info.get("avatar_middle")
-    avatar_big = info.get("avatar_big")
+    # 头像：新版接口返回 avatar 对象（avatar_72/240/640），旧版是 avatar_* 平铺字段，两种都兼容
+    avatar_obj = info.get("avatar") or {}
+    avatar_url = (
+        info.get("avatar_url")
+        or info.get("avatar_middle")
+        or avatar_obj.get("avatar_640")
+        or avatar_obj.get("avatar_240")
+    )
+    avatar_thumb = info.get("avatar_thumb") or avatar_obj.get("avatar_72")
+    avatar_middle = info.get("avatar_middle") or avatar_obj.get("avatar_240")
+    avatar_big = info.get("avatar_big") or avatar_obj.get("avatar_640")
     email = info.get("email") or info.get("enterprise_email")
     enterprise_email = info.get("enterprise_email")
     mobile = info.get("mobile")
@@ -1295,6 +1478,7 @@ async def handle_oauth_callback(
         user = await _repo.create(
             db,
             name=name,
+            username=await allocate_default_username(db),
             feishu_user_id=user_id,
             feishu_open_id=open_id,
             feishu_union_id=union_id,
@@ -1330,8 +1514,17 @@ async def handle_oauth_callback(
             pass  # role column removed
         logger.info("Updated user: %s (open_id=%s)", user.name, open_id)
 
+    # 3.05 补齐本地用户名（同步进来/历史建号只有飞书字段的账号在这里补）
+    await ensure_default_username(db, user)
+
+    # 3.1 登录时补齐通讯录资料（部门 / 职务 / 工号 / 企业邮箱 / 冻结状态）
+    #     user_info 不返回这些字段，需另调 contact/v3/users；失败只记日志，不影响登录
+    await enrich_user_from_feishu_contact(user, open_id=open_id, feishu_user_id=user_id)
+
+    # 放在补齐之后判断：若本次发现飞书侧已冻结，当场就拒绝登录
     if user.status == "disabled":
         raise PermissionError("User account is disabled")
+
     user.last_login_at = datetime.now(UTC)
     await db.commit()
 
@@ -1341,7 +1534,10 @@ async def handle_oauth_callback(
 
 
 def generate_jwt(user: User) -> str:
-    """Generate a JWT token for the given user."""
+    """Generate a JWT token for the given user.
+
+    含 `jti`（token 唯一 ID）：会话管理据此在 Redis 索引 / 吊销（踢下线）。
+    """
     settings = get_settings()
     now = datetime.now(UTC)
     payload = {
@@ -1349,6 +1545,7 @@ def generate_jwt(user: User) -> str:
         "open_id": user.feishu_open_id,
         "name": user.name,
         "auth_source": user.auth_source,
+        "jti": str(uuid4()),
         "iat": now,
         "exp": now + timedelta(seconds=settings.JWT_EXPIRE_SECONDS),
     }
@@ -1376,19 +1573,200 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
     return user
 
 
+def lockout_policy() -> tuple[int, int]:
+    """登录失败锁定策略：(最大失败次数, 锁定秒数)。
+
+    从配置读取（`LOGIN_MAX_FAILURES` / `LOGIN_LOCKOUT_SECONDS`），默认 5 次 / 900 秒，
+    与原硬编码一致；运维可只改环境变量调整，不需要改代码。
+    """
+    settings = get_settings()
+    return settings.LOGIN_MAX_FAILURES, settings.LOGIN_LOCKOUT_SECONDS
+
+
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
-    if user is None or not verify_password(password, user.password_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+    if user is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
+
+    now = datetime.now(UTC)
+    if user.locked_until is not None and user.locked_until > now:
+        raise HTTPException(status.HTTP_423_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试")
+
+    max_failures, lockout_seconds = lockout_policy()
+    if not verify_password(password, user.password_hash):
+        user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+        if user.failed_login_attempts >= max_failures:
+            user.locked_until = now + timedelta(seconds=lockout_seconds)
+            user.failed_login_attempts = 0
+        await db.flush()
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
+
     if user.status == "disabled":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "账号已禁用")
-    user.last_login_at = datetime.now(UTC)
+
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = now
     await db.flush()
     return user, generate_jwt(user)
 
 
+# 飞书身份字段（绑定/解绑时整体搬迁或清空）
+FEISHU_IDENTITY_FIELDS: tuple[str, ...] = (
+    "feishu_user_id",
+    "feishu_open_id",
+    "feishu_union_id",
+    "avatar_url",
+    "avatar_thumb",
+    "avatar_middle",
+    "avatar_big",
+    "feishu_department_ids",
+)
+
+
+async def bind_feishu_user(
+    db: AsyncSession,
+    *,
+    target: User,
+    source: User,
+    operator_id: UUID | None = None,
+) -> dict[str, int]:
+    """把一条飞书用户记录「合并」进目标账号（绑定飞书登录）。
+
+    做四件事：
+    1. 迁移角色授权（按 role_id + scope_type 去重：目标已有同款则软删源侧那条）；
+    2. 搬迁飞书身份字段（源侧清空，避免 feishu_user_id 唯一索引冲突）；
+    3. 补齐目标账号缺失的基础资料（邮箱 / 手机 / 工号 / 部门 / 岗位）；
+    4. 软删源记录（其历史引用继续挂在原 id 上，不迁移）。
+
+    目标账号保留自己的 username / password_hash / auth_source —— 本地账号合并后
+    既能继续用账号密码登录，也能用飞书登录（登录回调按 feishu_open_id 命中它）。
+    """
+    from app.platform.permission.public_api import migrate_user_grants
+
+    # 1. 迁移授权（授权数据的读写收敛在 permission 模块，identity 只经 public_api 调用）
+    moved, deduplicated = await migrate_user_grants(
+        db,
+        source_user_id=source.id,
+        target_user_id=target.id,
+        operator_id=operator_id,
+    )
+
+    # 2. 身份字段搬迁
+    for field in FEISHU_IDENTITY_FIELDS:
+        value = getattr(source, field, None)
+        setattr(source, field, None)
+        if value and not getattr(target, field, None):
+            setattr(target, field, value)
+
+    # 3. 补齐基础资料
+    for field in ("email", "mobile", "employee_no", "department", "position"):
+        if not getattr(target, field, None) and getattr(source, field, None):
+            setattr(target, field, getattr(source, field))
+
+    # 4. 软删源记录
+    source.is_deleted = True
+    source.updated_by = operator_id
+    target.updated_by = operator_id
+    await db.commit()
+
+    return {"moved_grants": moved, "deduplicated_grants": deduplicated}
+
+
+async def unbind_feishu_user(
+    db: AsyncSession,
+    *,
+    user: User,
+    operator_id: UUID | None = None,
+    delete_account: bool = False,
+) -> None:
+    """解绑飞书身份。
+
+    - `delete_account=False`：只清空飞书字段，账号本体与角色授权保留；
+    - `delete_account=True`：该账号是飞书首次登录自动创建的（auth_source=feishu），
+      解绑后没有可用的登录身份，直接软删除并禁用。
+    """
+    if delete_account:
+        user.is_deleted = True
+        user.status = "disabled"
+    else:
+        for field in FEISHU_IDENTITY_FIELDS:
+            setattr(user, field, None)
+    user.updated_by = operator_id
+    await db.commit()
+
+
+async def reset_password_by_admin(
+    db: AsyncSession,
+    *,
+    user: User,
+    password: str | None,
+    operator_id: UUID | None = None,
+) -> str:
+    """管理员为账号设置密码；`password` 为空则随机生成。
+
+    返回本次生成的明文密码（管理员自填时返回空串）—— 随机密码**只在此处返回一次**，
+    不落库明文，前端弹窗展示后即不可再查看。两种情况都置 `must_change_password`，
+    强制用户首次登录后自行修改。
+    """
+    plain = (password or "").strip()
+    generated = ""
+    if not plain:
+        generated = generate_random_password()
+        plain = generated
+    else:
+        strength_error = validate_password_strength(plain)
+        if strength_error:
+            from app.core.exceptions import BadRequestException
+
+            raise BadRequestException(strength_error)
+
+    user.password_hash = hash_password(plain)
+    user.password_updated_at = datetime.now(UTC)
+    user.must_change_password = True
+    user.updated_by = operator_id
+    await db.commit()
+    return generated
+
+
+async def change_own_password(
+    db: AsyncSession,
+    *,
+    user: User,
+    old_password: str,
+    new_password: str,
+) -> None:
+    """用户自助改密：校验原密码 → 更新哈希 → 清除强制改密标记。
+
+    原密码错误返回 400（不是 401）：前端把 401 当作会话过期会触发登录跳转。
+    """
+    from app.core.exceptions import BadRequestException
+
+    if not verify_password(old_password, user.password_hash):
+        raise BadRequestException("原密码不正确")
+    if old_password == new_password:
+        raise BadRequestException("新密码不能与原密码相同")
+
+    strength_error = validate_password_strength(new_password)
+    if strength_error:
+        raise BadRequestException(strength_error)
+
+    user.password_hash = hash_password(new_password)
+    user.password_updated_at = datetime.now(UTC)
+    user.must_change_password = False
+    await db.commit()
+
+
 async def bootstrap_local_users() -> None:
+    """创建引导账号（幂等）。
+
+    **只补建、不覆盖**：账号已存在时，每次启动都不再改动它的密码 / 姓名 / 邮箱 /
+    状态 —— 否则用户自己改过的密码会在容器重启后被 `.env` 里的初始值打回，
+    「密码只有本人能改」形同虚设；运维在界面上的改名、禁用也会被静默还原。
+    确实需要按 `.env` 强制回灌时，显式打开 `BOOTSTRAP_ADMIN_FORCE_RESET=true`。
+    """
     settings = get_settings()
+    force_reset = settings.BOOTSTRAP_ADMIN_FORCE_RESET
     entries = [
         (
             settings.BOOTSTRAP_ADMIN_USERNAME,
@@ -1418,17 +1796,30 @@ async def bootstrap_local_users() -> None:
                     email=email or None,
                     status="active",
                     auth_source="local",
+                    # 引导密码是公开的初始值 → 首次登录必须改密
+                    must_change_password=True,
                 )
                 logger.info("Bootstrapped local user: %s", username)
                 continue
 
-            existing.password_hash = hash_password(password)
+            if not force_reset:
+                # 只补建、不覆盖：账号一旦存在，姓名 / 邮箱 / 状态 / 密码都以库内为准，
+                # 避免每次重启把运维在界面上的改动（改名、禁用）静默打回。
+                continue
+
+            if not verify_password(password, existing.password_hash):
+                existing.password_hash = hash_password(password)
+                existing.must_change_password = True
+                logger.warning("Bootstrapped local user password force-reset: %s", username)
+
             existing.name = name or existing.name
             existing.email = email or existing.email
             existing.status = "active"
             existing.auth_source = existing.auth_source or "local"
 
-        await get_or_create_system_admin(session)
+        # 未配置引导管理员时才落「登录关闭模式」的占位管理员，避免与引导账号并存出两个账号
+        if not (settings.BOOTSTRAP_ADMIN_USERNAME and settings.BOOTSTRAP_ADMIN_PASSWORD):
+            await get_or_create_system_admin(session)
         await session.commit()
 
 

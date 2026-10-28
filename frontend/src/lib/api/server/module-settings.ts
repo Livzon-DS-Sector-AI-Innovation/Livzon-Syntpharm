@@ -1,12 +1,16 @@
-import { apiFetch } from '@/lib/api/server/base'
-import type { ModuleSetting, ModuleSettingUpdate, ModuleSettingCreate } from '@/types/module-settings'
+import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import type { ModuleSetting, ModuleSettingUpdate } from '@/types/module-settings'
+
+// 服务端调用统一走 API_BASE_URL（与其它 lib/api/server/* 模块一致），
+// 不依赖 apiFetch 对相对路径的兜底拼接。
+const M = (path: string) => `${getApiBaseUrl()}/api/v1/module-settings${path}`
 
 export async function getModuleSettings(
   headers: Record<string, string>,
   module?: string
 ): Promise<{ data: ModuleSetting[] }> {
   const params = module ? `?module=${module}` : ''
-  return apiFetch(`/api/v1/module-settings${params}`, { headers })
+  return apiFetch<{ data: ModuleSetting[] }>(M(params), { headers })
 }
 
 export async function getModuleSetting(
@@ -14,7 +18,7 @@ export async function getModuleSetting(
   module: string,
   key: string
 ): Promise<{ data: ModuleSetting }> {
-  return apiFetch(`/api/v1/module-settings/${module}/${key}`, { headers })
+  return apiFetch<{ data: ModuleSetting }>(M(`/${module}/${key}`), { headers })
 }
 
 export async function updateModuleSetting(
@@ -23,31 +27,9 @@ export async function updateModuleSetting(
   key: string,
   data: ModuleSettingUpdate
 ): Promise<{ data: ModuleSetting }> {
-  return apiFetch(`/api/v1/module-settings/${module}/${key}`, {
+  return apiFetch<{ data: ModuleSetting }>(M(`/${module}/${key}`), {
     method: 'PUT',
     headers,
     body: JSON.stringify(data),
-  })
-}
-
-export async function createModuleSetting(
-  headers: Record<string, string>,
-  data: ModuleSettingCreate
-): Promise<{ data: ModuleSetting }> {
-  return apiFetch('/api/v1/module-settings', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(data),
-  })
-}
-
-export async function deleteModuleSetting(
-  headers: Record<string, string>,
-  module: string,
-  key: string
-): Promise<{ message: string }> {
-  return apiFetch(`/api/v1/module-settings/${module}/${key}`, {
-    method: 'DELETE',
-    headers,
   })
 }

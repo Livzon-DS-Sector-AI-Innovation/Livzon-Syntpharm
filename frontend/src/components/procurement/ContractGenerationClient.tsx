@@ -21,6 +21,8 @@ import {
 } from '@ant-design/icons'
 import { generateProcurementContract } from '@/actions/procurement'
 import type { ContractCategory, ContractGenerateRequest } from '@/types/procurement'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 type ContractGenerationClientProps = {
   category: ContractCategory
@@ -667,8 +669,9 @@ export function ContractGenerationClient({
 
         <section className="rounded-[12px] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6">
           <div className="flex flex-wrap items-center justify-end gap-4">
-            <Space split={<Divider type="vertical" />}>
+            <Space separator={<Divider type="vertical" />}>
               <Button onClick={() => form.resetFields()}>重置</Button>
+              <PermissionGate code={PERM.procurementContractCreate}>
               <Button
                 type="primary"
                 htmlType="submit"
@@ -677,6 +680,7 @@ export function ContractGenerationClient({
               >
                 生成合同
               </Button>
+            </PermissionGate>
             </Space>
           </div>
         </section>

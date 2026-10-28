@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import RequiredUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.capa_schemas import (
     CapaApiResponse,
     CapaCreate,
@@ -31,6 +31,7 @@ capa_router = APIRouter(prefix="/capas", tags=["CAPA管理"])
 @capa_router.get("", response_model=CapaListApiResponse, summary="获取 CAPA 列表")
 async def list_capas(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:read")),
     db: AsyncSession = Depends(get_db),
     capa_code: str | None = Query(None, description="CAPA编号"),
     source: str | None = Query(None, description="来源"),
@@ -66,6 +67,7 @@ async def list_capas(
 async def get_capa(
     capa_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:read")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """获取 CAPA 详情"""
@@ -81,6 +83,7 @@ async def get_capa(
 async def create_capa(
     data: CapaCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:create")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """创建 CAPA"""
@@ -96,6 +99,7 @@ async def update_capa(
     capa_id: UUID,
     data: CapaUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """更新 CAPA"""
@@ -112,6 +116,7 @@ async def update_capa(
 async def delete_capa(
     capa_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> CapaDeleteApiResponse:
     """删除 CAPA"""
@@ -128,6 +133,7 @@ async def delete_capa(
 async def submit_capa(
     capa_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:submit")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """提交 CAPA"""
@@ -146,6 +152,7 @@ async def submit_capa(
 async def approve_capa(
     capa_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:approve")),
     approved: bool = Query(..., description="是否批准"),
     opinion: str = Query(..., description="审核意见"),
     db: AsyncSession = Depends(get_db),
@@ -172,6 +179,7 @@ async def approve_capa(
 async def resubmit_capa(
     capa_id: UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:submit")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """重新提交 CAPA"""
@@ -191,6 +199,7 @@ async def add_execution_track(
     capa_id: UUID,
     data: ExecutionTrackSubmit,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """添加执行跟踪"""
@@ -215,6 +224,7 @@ async def delete_execution_track(
     capa_id: UUID,
     track_id: str,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:update")),
     db: AsyncSession = Depends(get_db),
 ) -> CapaDeleteApiResponse:
     """删除执行跟踪"""
@@ -232,6 +242,7 @@ async def confirm_execution(
     capa_id: UUID,
     data: ExecutionConfirm,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:approve")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """确认执行"""
@@ -253,6 +264,7 @@ async def evaluate_capa(
     capa_id: UUID,
     data: EvaluationSubmit,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """评估 CAPA"""
@@ -275,6 +287,7 @@ async def complete_part(
     capa_id: UUID,
     data: PartComplete,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:update")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """完成部分"""
@@ -294,6 +307,7 @@ async def confirm_dept_head(
     capa_id: UUID,
     data: DeptHeadConfirm,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("quality:capa:approve")),
     db: AsyncSession = Depends(get_db),
 ) -> Any:
     """部门负责人确认"""

@@ -1,4 +1,5 @@
 import type {
+  EnergyData,
   EnergyDeviceConfig,
   CollectLog,
   AlertRule,
@@ -14,8 +15,9 @@ import type {
   ProcessRecordInput,
   SyncJobStatus,
   BitableCrossImportRequest,
+  PlatformCollectResult,
 } from '@/types/energy'
-import { apiFetchRaw, getApiBaseUrl, apiFetch as baseApiFetch } from './base'
+import { apiFetchPaginated, apiFetchRaw, getApiBaseUrl, apiFetch as baseApiFetch } from './base'
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   const result = await baseApiFetch<T>(url, options)
@@ -38,7 +40,9 @@ export async function fetchEnergyDevices(params?: Record<string, unknown>): Prom
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/devices${query ? `?${query}` : ''}`)
+  return apiFetchPaginated<EnergyDeviceConfig>(
+    `${getApiBaseUrl()}/api/v1/energy/devices${query ? `?${query}` : ''}`,
+  )
 }
 
 export async function fetchEnergyDeviceById(id: string): Promise<EnergyDeviceConfig> {
@@ -47,14 +51,14 @@ export async function fetchEnergyDeviceById(id: string): Promise<EnergyDeviceCon
 
 // ── 能耗数据 ──
 
-export async function fetchEnergyData(params: Record<string, unknown>): Promise<{ items: EnergyDeviceConfig[]; total: number; page: number; page_size: number }> {
+export async function fetchEnergyData(params: Record<string, unknown>): Promise<{ items: EnergyData[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
       searchParams.set(key, String(value))
     }
   })
-  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/data?${searchParams.toString()}`)
+  return apiFetchPaginated<EnergyData>(`${getApiBaseUrl()}/api/v1/energy/data?${searchParams.toString()}`)
 }
 
 export async function fetchEnergyOverview(params: Record<string, unknown>): Promise<EnergyOverviewData> {
@@ -79,7 +83,9 @@ export async function fetchCollectLogs(params?: Record<string, unknown>): Promis
     })
   }
   const query = searchParams.toString()
-  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/collect/logs${query ? `?${query}` : ''}`)
+  return apiFetchPaginated<CollectLog>(
+    `${getApiBaseUrl()}/api/v1/energy/collect/logs${query ? `?${query}` : ''}`,
+  )
 }
 
 // ── 预警规则 ──
@@ -110,7 +116,7 @@ export async function fetchAlertRuleById(id: string): Promise<AlertRule> {
 
 // ── 预警记录 ──
 
-export async function fetchAlertRecords(params?: Record<string, unknown>): Promise<{ items: EnergyDeviceConfig[]; total: number; page: number; page_size: number }> {
+export async function fetchAlertRecords(params?: Record<string, unknown>): Promise<{ items: AlertRecord[]; total: number; page: number; page_size: number }> {
   const searchParams = new URLSearchParams()
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
@@ -154,10 +160,10 @@ export async function deleteEnergyDevice(id: string) {
 
 // ── 采集写操作 ──
 
-export async function triggerCollect(platformCode?: string) {
+export async function triggerCollect(platformCode?: string): Promise<Record<string, PlatformCollectResult>> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/energy/collect/trigger`, {
     method: 'POST',
-    body: JSON.stringify({ platform_code: platformCode || 'all' }),
+    body: JSON.stringify(platformCode ? { platform_code: platformCode } : {}),
   })
 }
 
@@ -208,7 +214,9 @@ export async function fetchWorkshops(params?: Record<string, unknown>): Promise<
     })
   }
   const qs = searchParams.toString()
-  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`)
+  return apiFetchPaginated<EnergyWorkshop>(
+    `${getApiBaseUrl()}/api/v1/energy/workshops${qs ? `?${qs}` : ''}`,
+  )
 }
 
 export async function fetchWorkshopById(id: string): Promise<EnergyWorkshop> {
@@ -245,7 +253,9 @@ export async function fetchMonthlyRecords(params?: Record<string, unknown>): Pro
     })
   }
   const qs = searchParams.toString()
-  return apiFetch(`${getApiBaseUrl()}/api/v1/energy/monthly${qs ? '?' + qs : ''}`)
+  return apiFetchPaginated<EnergyMonthlyRecord>(
+    `${getApiBaseUrl()}/api/v1/energy/monthly${qs ? '?' + qs : ''}`,
+  )
 }
 
 export async function fetchMonthlyRecordById(id: string): Promise<EnergyMonthlyRecord> {

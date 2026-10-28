@@ -24,11 +24,10 @@ import dayjs from 'dayjs'
 import {
   ChoiceQuestion,
   ChoiceOption,
-  ExamGenerateResponse,
   ExamExportData,
   TrueFalseQuestion
 } from '@/types/hr'
-import { generateExamQuestions, exportExam } from '@/actions/ai'
+import { exportExam, fetchExamJobAction, submitExamJobAction } from '@/actions/ai'
 
 const { Title, Text } = Typography
 
@@ -75,22 +74,46 @@ export default function AiExamClient() {
 
     setGenerating(true)
     try {
-      const config = {
+      // 出题是后台任务：提交拿 job_id，再轮询任务状态（LLM 生成耗时 >5s）
+      const jobId = await submitExamJobAction(fileList[0].originFileObj, {
         choice_count: choiceEnabled ? choiceCount : 0,
         true_false_count: tfEnabled ? tfCount : 0,
-        qa_count: qaEnabled ? qaCount : 0,
+      })
+      const POLL_MS = 2000
+      const TIMEOUT_MS = 10 * 60_000
+      const startedAt = Date.now()
+      for (;;) {
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          message.error('出题超时，请重试')
+          return
+        }
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS))
+        let state
+        try {
+          state = await fetchExamJobAction(jobId)
+        } catch {
+          message.error('查询出题任务失败（服务可能已重启），请重试')
+          return
+        }
+        if (state.status === 'failed') {
+          message.error(state.error || '出题失败')
+          return
+        }
+        if (state.status === 'done') {
+          const result = (state.result ?? {}) as {
+            choice_questions?: ChoiceQuestion[]
+            true_false_questions?: TrueFalseQuestion[]
+          }
+          if (result.choice_questions) {
+            setChoiceQuestions(result.choice_questions)
+          }
+          if (result.true_false_questions) {
+            setTrueFalseQuestions(result.true_false_questions)
+          }
+          message.success('试卷题目生成成功')
+          return
+        }
       }
-      const res: ExamGenerateResponse = await generateExamQuestions(
-        fileList[0].originFileObj,
-        config
-      )
-      if (res.data?.choice_questions) {
-        setChoiceQuestions(res.data.choice_questions)
-      }
-      if (res.data?.true_false_questions) {
-        setTrueFalseQuestions(res.data.true_false_questions)
-      }
-      message.success('试卷题目生成成功')
     } catch (err: unknown) {
       message.error(err instanceof Error ? err.message : '出题失败')
     } finally {

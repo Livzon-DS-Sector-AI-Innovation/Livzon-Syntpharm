@@ -26,21 +26,16 @@ from sqlalchemy import text  # noqa: E402
 from sqlalchemy.ext.asyncio import AsyncSession  # noqa: E402
 
 from app.core.database import async_session_factory  # noqa: E402
+from app.modules.energy.models import ROLLUP_WORKSHOPS  # noqa: E402
+from app.modules.energy.workshop_names import WORKSHOP_ALIASES, normalize_workshop_name  # noqa: E402
 
-# 别名实体 -> 规范实体。命中时：规范实体已存在则合并，不存在则原地改名。
+# 别名实体 -> 规范实体，直接复用导入器的别名表（单一事实来源）。
 #
 # 顺序有意义：多条规则指向同一个规范实体时，先跑的那条负责把它「改名」建出来，
-# 后面的才能走「合并」。反过来先跑「废水站」会先把废水站改名成环保中心，
-# 让存活的 workshop_id 落到水侧实体上——结果同样正确，但与本地已执行过的环境不一致。
+# 后面的才能走「合并」。WORKSHOP_ALIASES 里已按「改名优先」排好序，
+# 例如 环保中心(含RTO) 在 废水站 之前、303、106 在 303车间 之前。
 WORKSHOP_UNIFICATION: dict[str, str] = {
-    "QC": "质量控制部",
-    "炊事班": "饭堂",
-    "生活办公": "办公楼",
-    "环保中心(含RTO)": "环保中心",
-    "废水站": "环保中心",
-    "303车间": "303、106车间",
-    # RTO 是一台独立的部门设备，多维表格把它的电耗记成 RTO用电、气耗记成 RTO(天然气）
-    "RTO(天然气）": "RTO",
+    normalize_workshop_name(alias): normalize_workshop_name(canonical) for alias, canonical in WORKSHOP_ALIASES.items()
 }
 
 # 带 workshop_id 外键、需要跟着改挂的业务表
@@ -58,26 +53,78 @@ CONFLICT_COLUMNS: dict[str, tuple[str, ...]] = {
 # 用名称字符串引用车间的表，改名后要一起跟上
 NAME_STRING_TABLES: tuple[tuple[str, str], ...] = (("energy_device_configs", "workshop"),)
 
+# 允许拼进 SQL 的表名/列名（限制在上面的常量集合内）。
+# PostgreSQL 不支持把标识符作为绑定参数，因此拼接前先校验白名单。
+_ALLOWED_TABLES: frozenset[str] = frozenset(t for t, _ in REPOINT_TABLES) | frozenset(t for t, _ in NAME_STRING_TABLES)
+_ALLOWED_COLUMNS: frozenset[str] = frozenset(c for cols in CONFLICT_COLUMNS.values() for c in cols) | frozenset(
+    c for _, c in NAME_STRING_TABLES
+)
+
+
+def _checked_table(name: str) -> str:
+    """校验表名在白名单内，否则抛错。"""
+    if name not in _ALLOWED_TABLES:
+        raise ValueError(f"非法的表名: {name!r}")
+    return name
+
+
+def _checked_column(name: str) -> str:
+    """校验列名在白名单内，否则抛错。"""
+    if name not in _ALLOWED_COLUMNS:
+        raise ValueError(f"非法的列名: {name!r}")
+    return name
+
+
+def _rollup_markers(canonical: str) -> list[str]:
+    """规范实体若是合计行，改名前必须补上排除标记。
+
+    迁移 0073 按名称给存量车间打标；UAT/生产上 RTO 往往在迁移之后才由本脚本
+    从 RTO(天然气) 改名而来，只靠迁移会漏标，全厂电耗因此多算一份 RTO。
+    """
+    return list(ROLLUP_WORKSHOPS.get(canonical, ()))
+
+
+async def _add_rollup_markers(db: AsyncSession, workshop_id: Any, canonical: str) -> None:
+    markers = _rollup_markers(canonical)
+    if not markers:
+        return
+    await db.execute(
+        text(
+            "update energy.energy_workshops "
+            "set excluded_energy_types = ("
+            "  select array_agg(distinct x) from unnest(excluded_energy_types || cast(:markers as varchar[])) x"
+            "), updated_at = now() "
+            "where id = cast(:id as uuid)"
+        ),
+        {"markers": "{" + ",".join(markers) + "}", "id": str(workshop_id)},
+    )
+
 
 async def _find_active(db: AsyncSession, name: str) -> Any:
-    row = (
+    """按名称或编码查找未删除车间。
+
+    逐行做 NFKC 归一后再比对：库里可能存着全角括号写法（如 环保中心（含RTO）），
+    直接 SQL 全等会漏掉这类历史实体。
+    """
+    normalized = normalize_workshop_name(name)
+    rows = (
         await db.execute(
-            text(
-                "select id, name, code from energy.energy_workshops "
-                "where is_deleted = false and (name = :name or code = :name) order by id"
-            ),
-            {"name": name},
+            text("select id, name, code from energy.energy_workshops where is_deleted = false order by id")
         )
     ).fetchall()
-    return row[0] if row else None
+    for row in rows:
+        if normalize_workshop_name(row.name) == normalized or normalize_workshop_name(row.code) == normalized:
+            return row
+    return None
 
 
 async def _find_conflicts(db: AsyncSession, table: str, src_id: str, tgt_id: str) -> list[Any]:
-    cols = CONFLICT_COLUMNS[table]
+    checked_table = _checked_table(table)
+    cols = [_checked_column(c) for c in CONFLICT_COLUMNS[table]]
     on_clause = " and ".join(f"t.{c} = m.{c}" for c in cols)
     sql = (
-        f"select {', '.join('m.' + c for c in cols)} from energy.{table} m "
-        f"join energy.{table} t on t.workshop_id = cast(:tgt as uuid) and {on_clause} "
+        f"select {', '.join('m.' + c for c in cols)} from energy.{checked_table} m "
+        f"join energy.{checked_table} t on t.workshop_id = cast(:tgt as uuid) and {on_clause} "
         "where m.workshop_id = cast(:src as uuid)"
     )
     rows = (await db.execute(text(sql), {"src": str(src_id), "tgt": str(tgt_id)})).fetchall()
@@ -85,9 +132,10 @@ async def _find_conflicts(db: AsyncSession, table: str, src_id: str, tgt_id: str
 
 
 async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply: bool) -> int:
+    checked_table = _checked_table(table)
     row = (
         await db.execute(
-            text(f"select count(*) from energy.{table} where workshop_id = cast(:src as uuid)"),
+            text(f"select count(*) from energy.{checked_table} where workshop_id = cast(:src as uuid)"),
             {"src": str(src_id)},
         )
     ).one()
@@ -95,7 +143,7 @@ async def _repoint(db: AsyncSession, table: str, src_id: str, tgt_id: str, apply
     if count and apply:
         await db.execute(
             text(
-                f"update energy.{table} set workshop_id = cast(:tgt as uuid), updated_at = now() "
+                f"update energy.{checked_table} set workshop_id = cast(:tgt as uuid), updated_at = now() "
                 "where workshop_id = cast(:src as uuid)"
             ),
             {"src": str(src_id), "tgt": str(tgt_id)},
@@ -158,10 +206,16 @@ async def run(apply: bool, audit_path: str | None) -> int:
                         {"name": canonical, "code": canonical, "id": str(src.id)},
                     )
                     for table, column in NAME_STRING_TABLES:
+                        checked_table = _checked_table(table)
+                        checked_column = _checked_column(column)
                         await db.execute(
-                            text(f"update energy.{table} set {column} = :name where {column} = :old"),
+                            text(
+                                f"update energy.{checked_table} set {checked_column} = :name "
+                                f"where {checked_column} = :old"
+                            ),
                             {"name": canonical, "old": alias},
                         )
+                    await _add_rollup_markers(db, src.id, canonical)
                 actions.append({"type": "rename", "from": alias, "to": canonical, "workshop_id": str(src.id)})
                 continue
 
@@ -183,6 +237,7 @@ async def run(apply: bool, audit_path: str | None) -> int:
                     moved[table] = n
             print(f"\n[合并] {alias} -> {canonical}：改挂 {moved}，软删除车间 {src.id}")
             if apply:
+                await _add_rollup_markers(db, tgt.id, canonical)
                 # 一并让出 code：uq_energy_workshop_code 不含 is_deleted，
                 # 软删除行继续占着编码会让日后重建同名车间直接撞唯一约束
                 await db.execute(

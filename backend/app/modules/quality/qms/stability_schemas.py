@@ -483,3 +483,21 @@ class StabilityTrendApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: StabilityTrendResponse | None = None
+
+
+class StabilityStudyPageResponse(BaseModel):
+    """稳定性试验列表分页响应（列表接口直接返回 items/total/page/page_size）"""
+
+    items: list[StabilityStudyListResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class StabilityInspectionPageResponse(BaseModel):
+    """稳定性检验记录列表分页响应"""
+
+    items: list[StabilityInspectionListResponse]
+    total: int
+    page: int
+    page_size: int

@@ -145,7 +145,8 @@ export function RepairDrawer({ equipments, symptoms, onRefresh }: RepairDrawerPr
             showSearch
             optionFilterProp="label"
             options={maintainers.map((m) => ({
-              label: `${m.name} (${m.employee_no || '-'})`,
+              // 统一「姓名（账号）」；没有账号时退回工号
+              label: `${m.name}${m.username ? `（${m.username}）` : m.employee_no ? ` (${m.employee_no})` : ''}`,
               value: m.user_id,
             }))}
           />

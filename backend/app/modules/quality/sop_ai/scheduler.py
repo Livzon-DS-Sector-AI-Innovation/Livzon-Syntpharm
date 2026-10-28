@@ -10,7 +10,7 @@ from typing import Any
 
 from app.modules.quality.sop_ai.scheduler_models import ScheduledJob
 from app.platform.scheduler import ScheduleConfig, ScheduleStrategy, TaskGenerator
-from app.platform.scheduler.registry import scheduler_registry  # type: ignore[attr-defined]
+from app.platform.scheduler.registry import scheduler_registry
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +18,17 @@ _CST = timezone(__import__("datetime").timedelta(hours=8))
 
 
 def _cron_matches(cron_expr: str, now: datetime) -> bool:
-    """检查 cron 表达式是否匹配当前时间（精确到分钟）"""
+    """检查 cron 表达式是否匹配当前时间（精确到分钟）。
+
+    注意用 ``match()`` 而不是 ``get_prev()``：``get_prev`` 返回的是**当前时刻之前**
+    的最近一次匹配，基准时间正好落在匹配分钟时会拿到上一次，导致任务永远不触发。
+    """
     try:
         import croniter  # type: ignore[import-untyped]
 
-        cron = croniter.croniter(cron_expr, now.replace(second=0, microsecond=0))
-        prev = cron.get_prev(datetime)
-        return prev == now.replace(second=0, microsecond=0)  # type: ignore[no-any-return]
+        return bool(croniter.croniter(cron_expr, now).match(now.replace(second=0, microsecond=0)))
     except Exception:
+        logger.exception("cron 表达式解析失败: %s", cron_expr)
         return False
 
 
@@ -65,8 +68,8 @@ class SopAiSchedulerGenerator(TaskGenerator):
                         job.last_run_time = now
                         job.run_count += 1
                         logger.info(f"定时任务执行完成: {job.job_id}")
-                    except Exception as e:
-                        logger.error(f"定时任务执行失败: {job.job_id}, error={e}")
+                    except Exception:
+                        logger.exception("SOP AI 定时任务执行失败: %s", job.job_id)
 
     def add_job(  # type: ignore[no-untyped-def]
         self,

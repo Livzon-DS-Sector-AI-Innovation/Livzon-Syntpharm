@@ -13,6 +13,8 @@ import {
 } from '@/types/pilot-workflow'
 import { fetchPilotWorkflows } from '@/lib/api/client/pilot-workflow'
 import { deletePilotWorkflow } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const statusColors: Record<PilotWorkflowStatus, string> = {
   pending: 'default',
@@ -120,22 +122,24 @@ export function PilotWorkflowList({ initialData }: Props) {
       width: 80,
       render: (_: unknown, record: PilotWorkflowListItem) => {
         return (
-          <Popconfirm
-            title="确认删除"
-            description="删除后不可恢复，确认删除？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="删除"
-            cancelText="取消"
-            okButtonProps={{ danger: true }}
-          >
-            <Button
-              type="text"
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              loading={deletingId === record.id}
-            />
-          </Popconfirm>
+          <PermissionGate code={PERM.researchPilotWorkflowDelete}>
+            <Popconfirm
+              title="确认删除"
+              description="删除后不可恢复，确认删除？"
+              onConfirm={() => handleDelete(record.id)}
+              okText="删除"
+              cancelText="取消"
+              okButtonProps={{ danger: true }}
+            >
+              <Button
+                type="text"
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                loading={deletingId === record.id}
+              />
+            </Popconfirm>
+          </PermissionGate>
         )
       },
     },
@@ -168,13 +172,15 @@ export function PilotWorkflowList({ initialData }: Props) {
               { value: 'failed', label: '失败' },
             ]}
           />
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => router.push('/research/pilot-workflow/new')}
-          >
-            新建工作流
-          </Button>
+          <PermissionGate code={PERM.researchPilotWorkflowCreate}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => router.push('/research/pilot-workflow/new')}
+            >
+              新建工作流
+            </Button>
+          </PermissionGate>
         </Space>
       </div>
 

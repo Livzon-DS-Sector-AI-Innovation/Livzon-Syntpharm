@@ -201,7 +201,7 @@ export default function ReagentReminderPage() {
               <Alert
                 type="info"
                 icon={<ClockCircleOutlined />}
-                message="自动提醒：每天早上 8:30 自动检查库存并发送飞书提醒"
+                title="自动提醒：每天早上 8:30 自动检查库存并发送飞书提醒"
                 className="reminder-alert"
               />
 

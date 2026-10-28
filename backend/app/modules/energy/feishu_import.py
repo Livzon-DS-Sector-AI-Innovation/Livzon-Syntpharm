@@ -32,6 +32,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.energy import repository as repo
 from app.modules.energy.models import EnergyWorkshop
 from app.modules.energy.schemas import EnergyMonthlyRecordCreate
+from app.modules.energy.workshop_names import NORMALIZED_WORKSHOP_ALIASES, resolve_workshop_name
 from app.platform.integrations.feishu.spreadsheet import SpreadsheetClient
 
 logger = logging.getLogger(__name__)
@@ -502,14 +503,16 @@ class FeishuEnergyImporter:
         workshop_map: dict[str, EnergyWorkshop] = {}
 
         for name in workshop_names:
+            resolved_name = resolve_workshop_name(name, NORMALIZED_WORKSHOP_ALIASES)
+
             # Try to find by name first
-            existing = await repo.get_workshop_by_name(db, name)
+            existing = await repo.get_workshop_by_name(db, resolved_name)
             if existing:
                 workshop_map[name] = existing
                 continue
 
             # Auto-create with a generated code
-            code = self._generate_code(name)
+            code = self._generate_code(resolved_name)
             # Check if code exists
             by_code = await repo.get_workshop_by_code(db, code)
             if by_code:
@@ -520,10 +523,10 @@ class FeishuEnergyImporter:
 
             new_ws = EnergyWorkshop(
                 code=code,
-                name=name,
+                name=resolved_name,
                 category="workshop",
                 sort_order=0,
-                excluded_energy_types=list(ROLLUP_WORKSHOPS.get(name, ())),
+                excluded_energy_types=list(ROLLUP_WORKSHOPS.get(resolved_name, ())),
             )
             db.add(new_ws)
             await db.flush()

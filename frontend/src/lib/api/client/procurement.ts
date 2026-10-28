@@ -129,7 +129,7 @@ export async function fetchContractRecord(id: string): Promise<{ data: import('@
 }
 
 export async function fetchContractFile(id: string, filename: string): Promise<{ blob: Blob; filename: string }> {
-  const response = await fetch(`/api/v1/procurement/contracts/${id}/files/${filename}`)
+  const response = await fetch(`/api/v1/procurement/contracts/${id}/file`)
   const blob = await response.blob()
   return { blob, filename }
 }

@@ -1,14 +1,14 @@
 """HR business ORM models live here."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import Boolean, Date, ForeignKey, Index, Integer, String, Text, text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.shared.base_model import BaseModel
+from app.shared.base_model import Base, BaseModel
 
 
 class HrDepartment(BaseModel):
@@ -647,3 +647,18 @@ class PrejobTrainingPlanTemplate(BaseModel):
         server_default=text("'[]'"),
         comment="培训计划条目列表 [{seq, content, deadline, trainer}]",
     )
+
+
+class SystemSetting(Base):
+    """`hr.system_settings`：配置键值表（迁移 0087 建表）。
+
+    物理表以 `key` 为主键、没有 `BaseModel` 的审计列，因此不继承 `BaseModel`。
+    代码里仍用原生 SQL 读写，模型只用于让 `alembic check` / `autogenerate` 感知这张表。
+    """
+
+    __tablename__ = "system_settings"
+    __table_args__ = {"schema": "hr"}
+
+    key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    value: Mapped[str] = mapped_column(Text, server_default=text(""))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

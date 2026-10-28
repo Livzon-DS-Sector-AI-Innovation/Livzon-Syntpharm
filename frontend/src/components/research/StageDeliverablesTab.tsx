@@ -12,7 +12,9 @@ import { fetchDeliverables } from '@/lib/api/client/research/rd-project'
 import { createDeliverable, updateDeliverable, deleteDeliverable, uploadDeliverableFile } from '@/actions/research/deliverables'
 import { VersionHistoryDrawer } from './VersionHistoryDrawer'
 import { fetchDeliverableTemplates } from '@/lib/api/client/research/rd-project'
-import { generateReport } from '@/actions/research/rd-project'
+import { fetchResearchReportJob, submitReportJob } from '@/actions/research/rd-project'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 interface Props {
 
@@ -255,14 +257,43 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
     if (!aiGenerateTarget) return
     setAiGenerating(true)
     try {
-      const result = await generateReport({
+      // 生成是后台任务：提交拿 job_id 后轮询（多轮 LLM 调用 >5s）
+      const jobId = await submitReportJob({
         project_id: projectId,
         deliverable_type: aiGenerateTarget.type,
         template_id: selectedTemplateId || undefined,
         additional_context: additionalContext || undefined,
       })
-      setAiResult(result.content)
-      msgApi.success('报告生成成功')
+      const POLL_MS = 3000
+      const TIMEOUT_MS = 10 * 60_000
+      const startedAt = Date.now()
+      for (;;) {
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          msgApi.error('报告生成超时，请重试')
+          return
+        }
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS))
+        let state
+        try {
+          state = await fetchResearchReportJob(jobId)
+        } catch {
+          msgApi.error('查询生成任务失败（服务可能已重启），请重试')
+          return
+        }
+        if (state.status === 'failed') {
+          msgApi.error(state.error || 'AI 生成失败')
+          return
+        }
+        if (state.status === 'done') {
+          if (state.result?.content) {
+            setAiResult(state.result.content)
+            msgApi.success('报告生成成功')
+          } else {
+            msgApi.error('AI 服务返回为空，请稍后重试')
+          }
+          return
+        }
+      }
     } catch (e: unknown) {
       msgApi.error(e instanceof Error ? e.message : 'AI 生成失败')
     } finally {
@@ -374,14 +405,18 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
                     const hasMultiple = allVersions.length > 1
                     return (
                       <>
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<EditOutlined />}
-                          onClick={() => row.record ? handleEdit(row.record) : handleCreate(stage as RdProjectStage, row.type, row.label)}
+                        <PermissionGate
+                          code={row.record ? PERM.researchStageDeliverableUpdate : PERM.researchStageDeliverableCreate}
                         >
-                          {row.record ? '编辑' : '创建'}
-                        </Button>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => row.record ? handleEdit(row.record) : handleCreate(stage as RdProjectStage, row.type, row.label)}
+                          >
+                            {row.record ? '编辑' : '创建'}
+                          </Button>
+                        </PermissionGate>
                         {hasMultiple && (
                           <Button
                             type="link"
@@ -414,23 +449,27 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
                         >
                           导出
                         </Button>
-                      <Upload
-                        showUploadList={false}
-                        beforeUpload={(file) => { if (row.record) handleUpload(file, row.record.id); return false }}
-                        disabled={!row.record || uploadingId === row.record.id}
-                      >
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<UploadOutlined />}
-                          loading={!!row.record && uploadingId === row.record.id}
+                      <PermissionGate code={PERM.researchStageDeliverableCreate}>
+                        <Upload
+                          showUploadList={false}
+                          beforeUpload={(file) => { if (row.record) handleUpload(file, row.record.id); return false }}
+                          disabled={!row.record || uploadingId === row.record.id}
                         >
-                          上传
-                        </Button>
-                      </Upload>
-                      <Popconfirm title="确认删除？" onConfirm={() => row.record && handleDelete(row.record.id)} okText="删除" cancelText="取消">
-                        <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                      </Popconfirm>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<UploadOutlined />}
+                            loading={!!row.record && uploadingId === row.record.id}
+                          >
+                            上传
+                          </Button>
+                        </Upload>
+                      </PermissionGate>
+                      <PermissionGate code={PERM.researchStageDeliverableDelete}>
+                        <Popconfirm title="确认删除？" onConfirm={() => row.record && handleDelete(row.record.id)} okText="删除" cancelText="取消">
+                          <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                        </Popconfirm>
+                      </PermissionGate>
                     </>
                   )}
                 </Space>
@@ -519,10 +558,14 @@ export function StageDeliverablesTab({ projectId, currentStage }: Props) {
         footer={[
           <Button key="cancel" onClick={() => setAiGenerateModalOpen(false)}>取消</Button>,
           <Button key="export" disabled={!aiResult} onClick={handleExportAiResult} icon={<DownloadOutlined />}>导出文件</Button>,
-          <Button key="save" disabled={!aiResult} loading={savingAi} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>,
-          <Button key="generate" type="primary" loading={aiGenerating} onClick={doAiGenerate} icon={<RobotOutlined />}>
-            {aiResult ? '重新生成' : '生成报告'}
-          </Button>,
+          <PermissionGate key="save" code={PERM.researchStageDeliverableCreate}>
+            <Button disabled={!aiResult} loading={savingAi} onClick={handleSaveAsDeliverable} icon={<FileTextOutlined />}>保存为交付物</Button>
+          </PermissionGate>,
+          <PermissionGate key="generate" code={PERM.researchReportCreate}>
+            <Button type="primary" loading={aiGenerating} onClick={doAiGenerate} icon={<RobotOutlined />}>
+              {aiResult ? '重新生成' : '生成报告'}
+            </Button>
+          </PermissionGate>,
         ]}
       >
         <div style={{ marginBottom: 16 }}>

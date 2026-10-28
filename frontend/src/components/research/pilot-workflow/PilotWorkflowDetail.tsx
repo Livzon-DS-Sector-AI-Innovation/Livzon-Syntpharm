@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import {
   Card,
@@ -32,6 +33,8 @@ import {
 } from '@/types/pilot-workflow'
 import { fetchPilotWorkflow } from '@/lib/api/client/pilot-workflow'
 import { startPilotWorkflow, approvePilotWorkflowStep, uploadPilotWorkflowDocument, deletePilotWorkflow } from '@/actions/research'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { PERM } from '@/lib/permissions/codes'
 
 const { Text } = Typography
 
@@ -68,27 +71,26 @@ interface Props {
 export function PilotWorkflowDetail({ workflowId, initialWorkflow }: Props) {
   const router = useRouter()
   const { message } = App.useApp()
-  const [workflow, setWorkflow] = useState<PilotWorkflow | null>(initialWorkflow)
   const [starting, setStarting] = useState(false)
   const [approving, setApproving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  const loadWorkflow = useCallback(async () => {
-    try {
-      const data = await fetchPilotWorkflow(workflowId)
-      setWorkflow(data)
-    } catch (err) {
-      console.error('加载失败:', err)
-    }
-  }, [workflowId])
+  // 工作流详情：运行中/待审批时由 React Query 每 3 秒自动刷新（原先手写 setInterval）
+  const { data: workflowData, refetch: refetchWorkflow } = useQuery({
+    queryKey: ['pilot-workflow', workflowId],
+    queryFn: () => fetchPilotWorkflow(workflowId),
+    initialData: initialWorkflow ?? undefined,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status
+      return status === 'running' || status === 'waiting_approval' ? 3000 : false
+    },
+  })
+  const workflow: PilotWorkflow | null = workflowData ?? null
 
-  // Poll when running or waiting_approval
-  useEffect(() => {
-    if (workflow?.status !== 'running' && workflow?.status !== 'waiting_approval') return
-    const interval = setInterval(loadWorkflow, 3000)
-    return () => clearInterval(interval)
-  }, [workflow?.status, loadWorkflow])
+  const loadWorkflow = useCallback(async () => {
+    await refetchWorkflow()
+  }, [refetchWorkflow])
 
   const handleStart = async () => {
     setStarting(true)
@@ -188,54 +190,62 @@ export function PilotWorkflowDetail({ workflowId, initialWorkflow }: Props) {
           <Tag color={statusColors[workflow.status]}>
             {statusLabels[workflow.status]}
           </Tag>
-          <Popconfirm
-              title="确认删除"
-              description="删除后不可恢复，确认删除？"
-              onConfirm={handleDelete}
-              okText="删除"
-              cancelText="取消"
-              okButtonProps={{ danger: true }}
-            >
-              <Button
-                danger
-                icon={<DeleteOutlined />}
-                loading={deleting}
+          <PermissionGate code={PERM.researchPilotWorkflowDelete}>
+            <Popconfirm
+                title="确认删除"
+                description="删除后不可恢复，确认删除？"
+                onConfirm={handleDelete}
+                okText="删除"
+                cancelText="取消"
+                okButtonProps={{ danger: true }}
               >
-                删除
-              </Button>
-            </Popconfirm>
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  loading={deleting}
+                >
+                  删除
+                </Button>
+              </Popconfirm>
+          </PermissionGate>
 
           {workflow.status === 'pending' && (
-            <Upload
-              accept=".pdf,.doc,.docx,.txt"
-              showUploadList={false}
-              beforeUpload={handleUpload}
-              disabled={uploading}
-            >
-              <Button loading={uploading}>
-                上传工艺文档
-              </Button>
-            </Upload>
+            <PermissionGate code={PERM.researchPilotWorkflowCreate}>
+              <Upload
+                accept=".pdf,.doc,.docx,.txt"
+                showUploadList={false}
+                beforeUpload={handleUpload}
+                disabled={uploading}
+              >
+                <Button loading={uploading}>
+                  上传工艺文档
+                </Button>
+              </Upload>
+            </PermissionGate>
           )}
           {workflow.status === 'pending' && (
-            <Button
-              type="primary"
-              icon={<PlayCircleOutlined />}
-              loading={starting}
-              onClick={handleStart}
-            >
-              启动执行
-            </Button>
+            <PermissionGate code={PERM.researchPilotWorkflowSubmit}>
+              <Button
+                type="primary"
+                icon={<PlayCircleOutlined />}
+                loading={starting}
+                onClick={handleStart}
+              >
+                启动执行
+              </Button>
+            </PermissionGate>
           )}
           {(workflow.status === 'running' || workflow.status === 'waiting_approval') && hasWaitingStep && (
-            <Button
-              type="primary"
-              icon={<CheckCircleOutlined />}
-              loading={approving}
-              onClick={handleApprove}
-            >
-              确认并继续
-            </Button>
+            <PermissionGate code={PERM.researchPilotWorkflowApprove}>
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={approving}
+                onClick={handleApprove}
+              >
+                确认并继续
+              </Button>
+            </PermissionGate>
           )}
         </Space>
       </div>

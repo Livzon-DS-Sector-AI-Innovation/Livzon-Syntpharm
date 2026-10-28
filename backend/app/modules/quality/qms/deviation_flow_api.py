@@ -27,6 +27,103 @@ router = APIRouter(prefix="/deviation-flow", tags=["偏差流程管理"])
 
 settings = get_settings()
 
+# ============ SQL 常量 ============
+
+# 更新接口允许写入的字段白名单；SQL 固定为静态语句，字段值全部通过绑定参数传入
+_DEVIATION_UPDATABLE_FIELDS = frozenset(
+    {
+        "theme",
+        "occurred_date",
+        "discovered_date",
+        "responsible_department",
+        "occurred_area",
+        "deviation_type",
+        "urgency_level",
+        "product_name",
+        "batch_no",
+        "equipment",
+        "standard_based_on",
+        "deviation_description",
+        "risk_assessment",
+        "temp_measures",
+        "related_deviation_no",
+        "related_capa",
+        "remarks",
+        "qa_feishu_open_id",
+        "qa_feishu_name",
+        "dept_leader_feishu_open_id",
+        "dept_leader_feishu_name",
+        "reporter",
+        "reporter_department",
+        "reporter_feishu_open_id",
+    }
+)
+
+_DEVIATION_DATETIME_FIELDS = frozenset({"occurred_date", "discovered_date", "report_time"})
+
+_UPDATE_DEVIATION_SQL = text(
+    """
+    UPDATE qms.qms_deviation SET
+        theme = COALESCE(:theme, theme),
+        occurred_date = COALESCE(:occurred_date, occurred_date),
+        discovered_date = COALESCE(:discovered_date, discovered_date),
+        responsible_department = COALESCE(:responsible_department, responsible_department),
+        occurred_area = COALESCE(:occurred_area, occurred_area),
+        deviation_type = COALESCE(:deviation_type, deviation_type),
+        urgency_level = COALESCE(:urgency_level, urgency_level),
+        product_name = COALESCE(:product_name, product_name),
+        batch_no = COALESCE(:batch_no, batch_no),
+        equipment = COALESCE(:equipment, equipment),
+        standard_based_on = COALESCE(:standard_based_on, standard_based_on),
+        deviation_description = COALESCE(:deviation_description, deviation_description),
+        risk_assessment = COALESCE(:risk_assessment, risk_assessment),
+        temp_measures = COALESCE(:temp_measures, temp_measures),
+        related_deviation_no = COALESCE(:related_deviation_no, related_deviation_no),
+        related_capa = COALESCE(:related_capa, related_capa),
+        remarks = COALESCE(:remarks, remarks),
+        qa_feishu_open_id = COALESCE(:qa_feishu_open_id, qa_feishu_open_id),
+        qa_feishu_name = COALESCE(:qa_feishu_name, qa_feishu_name),
+        dept_leader_feishu_open_id = COALESCE(:dept_leader_feishu_open_id, dept_leader_feishu_open_id),
+        dept_leader_feishu_name = COALESCE(:dept_leader_feishu_name, dept_leader_feishu_name),
+        reporter = COALESCE(:reporter, reporter),
+        reporter_department = COALESCE(:reporter_department, reporter_department),
+        reporter_feishu_open_id = COALESCE(:reporter_feishu_open_id, reporter_feishu_open_id),
+        updated_at = NOW()
+    WHERE id = :id
+    """
+)
+
+_DEVIATIONS_LIST_SQL = text(
+    """
+    SELECT id, deviation_no, theme, occurred_date, discovered_date,
+           responsible_department, occurred_area, deviation_type, urgency_level, status,
+           reporter, reporter_department, report_time, created_at
+    FROM qms.qms_deviation
+    WHERE is_deleted = FALSE
+      AND (CAST(:keyword AS text) IS NULL OR theme LIKE :keyword OR deviation_no LIKE :keyword)
+      AND (CAST(:status AS text) IS NULL OR status = :status)
+      AND (CAST(:deviation_type AS text) IS NULL OR deviation_type = :deviation_type)
+      AND (CAST(:urgency_level AS text) IS NULL OR urgency_level = :urgency_level)
+      AND (CAST(:start_date AS text) IS NULL OR occurred_date >= CAST(:start_date AS date))
+      AND (CAST(:end_date AS text) IS NULL OR occurred_date <= CAST(:end_date AS date))
+    ORDER BY created_at DESC
+    LIMIT :limit OFFSET :offset
+    """
+)
+
+_DEVIATIONS_COUNT_SQL = text(
+    """
+    SELECT COUNT(*) FROM qms.qms_deviation
+    WHERE is_deleted = FALSE
+      AND (CAST(:keyword AS text) IS NULL OR theme LIKE :keyword OR deviation_no LIKE :keyword)
+      AND (CAST(:status AS text) IS NULL OR status = :status)
+      AND (CAST(:deviation_type AS text) IS NULL OR deviation_type = :deviation_type)
+      AND (CAST(:urgency_level AS text) IS NULL OR urgency_level = :urgency_level)
+      AND (CAST(:start_date AS text) IS NULL OR occurred_date >= CAST(:start_date AS date))
+      AND (CAST(:end_date AS text) IS NULL OR occurred_date <= CAST(:end_date AS date))
+    """
+)
+
 # ============ 常量定义 ============
 
 DEVIATION_TYPES = [
@@ -423,37 +520,27 @@ async def update_deviation(  # type: ignore[no-untyped-def]
     if row[0] not in editable_statuses:
         return {"code": 400, "message": "当前状态不允许编辑", "data": None}
 
-    # 构建更新语句
-    updates = []
-    params = {"id": deviation_id}
-
-    # 需要转换为datetime的字段
-    datetime_fields = ["occurred_date", "discovered_date", "report_time"]
+    # 构建更新参数（仅白名单字段，SQL 语句保持静态，未提交字段传 NULL 由 COALESCE 保留原值）
+    params: dict[str, object] = {field: None for field in _DEVIATION_UPDATABLE_FIELDS}
+    params["id"] = deviation_id
 
     for field, value in request.model_dump(exclude_unset=True).items():
-        if value is not None:
-            updates.append(f"{field} = :{field}")
-            # 转换日期字符串为datetime对象
-            if field in datetime_fields and isinstance(value, str):
-                try:
-                    params[field] = date_parser.parse(value)
-                except Exception:
-                    logger.exception(
-                        "Failed to parse date field '%s' in deviation update request",
-                        field,
-                    )
-                    params[field] = value
-            else:
+        if field not in _DEVIATION_UPDATABLE_FIELDS:
+            continue
+        # 转换日期字符串为datetime对象
+        if field in _DEVIATION_DATETIME_FIELDS and isinstance(value, str) and value is not None:
+            try:
+                params[field] = date_parser.parse(value)
+            except Exception:
+                logger.exception(
+                    "Failed to parse date field '%s' in deviation update request",
+                    field,
+                )
                 params[field] = value
+        else:
+            params[field] = value
 
-    updates.append("updated_at = :updated_at")
-    params["updated_at"] = datetime.now()  # type: ignore[assignment]
-
-    if updates:
-        await session.execute(
-            text(f"UPDATE qms.qms_deviation SET {', '.join(updates)} WHERE id = :id"),
-            params,
-        )
+    await session.execute(_UPDATE_DEVIATION_SQL, params)
 
     await session.commit()
 
@@ -751,51 +838,22 @@ async def list_deviations(  # type: ignore[no-untyped-def]
     session: AsyncSession = Depends(get_db_session),
 ):
     """获取偏差列表"""
-    conditions = ["is_deleted = FALSE"]
-    params = {}
-
-    if keyword:
-        conditions.append("(theme LIKE :keyword OR deviation_no LIKE :keyword)")
-        params["keyword"] = f"%{keyword}%"
-
-    if status:
-        conditions.append("status = :status")
-        params["status"] = status
-
-    if deviation_type:
-        conditions.append("deviation_type = :deviation_type")
-        params["deviation_type"] = deviation_type
-
-    if urgency_level:
-        conditions.append("urgency_level = :urgency_level")
-        params["urgency_level"] = urgency_level
-
-    if start_date:
-        conditions.append("occurred_date >= :start_date")
-        params["start_date"] = start_date
-
-    if end_date:
-        conditions.append("occurred_date <= :end_date")
-        params["end_date"] = end_date
-
-    where_clause = " AND ".join(conditions)
+    params: dict[str, object] = {
+        "keyword": f"%{keyword}%" if keyword else None,
+        "status": status,
+        "deviation_type": deviation_type,
+        "urgency_level": urgency_level,
+        "start_date": start_date,
+        "end_date": end_date,
+    }
 
     # 计数
-    count_result = await session.execute(text(f"SELECT COUNT(*) FROM qms.qms_deviation WHERE {where_clause}"), params)
-    total = count_result.scalar()
+    total = (await session.execute(_DEVIATIONS_COUNT_SQL, params)).scalar()
 
     # 分页查询
     offset = (page - 1) * page_size
     result = await session.execute(
-        text(f"""
-            SELECT id, deviation_no, theme, occurred_date, discovered_date,
-                   responsible_department, occurred_area, deviation_type, urgency_level, status,
-                   reporter, reporter_department, report_time, created_at
-            FROM qms.qms_deviation
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-            LIMIT :limit OFFSET :offset
-        """),
+        _DEVIATIONS_LIST_SQL,
         {**params, "limit": page_size, "offset": offset},
     )
 

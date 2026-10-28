@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import jwt
@@ -9,6 +10,8 @@ from app.core.database import get_db
 from app.core.exceptions import UnauthorizedException
 from app.platform.identity.models import User
 from app.platform.identity.repository import UserRepository
+
+logger = logging.getLogger(__name__)
 
 
 async def get_current_user(
@@ -38,6 +41,15 @@ async def get_current_user(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
     except jwt.InvalidTokenError:
+        return None
+
+    # 会话吊销检查（踢下线）：jti 命中吊销黑名单即视为未登录。
+    # fail-closed：Redis 故障时 session 层降级查 identity.revoked_sessions 持久化吊销记录；
+    # Redis 与库同时不可用时认证链路本身已不可用（下面查用户也要查库），异常向上抛即拒绝认证，
+    # 不再「按未吊销放行」（覆盖 04913ddc 的 fail-open 拍板，2026-10-26）。
+    from app.platform.identity.session import is_session_revoked
+
+    if await is_session_revoked(payload.get("jti"), db):
         return None
 
     repo = UserRepository()

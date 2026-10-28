@@ -175,13 +175,13 @@ export function toEquipmentListQuery(state: EquipmentUrlState): EquipmentListQue
   }
 }
 
-/** 统计口径：与列表同筛选，但不含关键词、排序与分页 */
-export interface EquipmentStatsQuery {
-  category_id?: string
-  location_id?: string
-  department_id?: string
-  status?: string
-}
+/**
+ * 统计口径：与列表同筛选，但不含关键词、排序与分页。
+ * 类型直接取 OpenAPI 生成契约（stats 端点已声明的 query 参数），前端不再手写一份。
+ */
+export type EquipmentStatsQuery = NonNullable<
+  operations['get_equipment_statistics_api_v1_equipment_equipments_statistics_get']['parameters']['query']
+>
 
 export function toEquipmentStatsQuery(state: EquipmentUrlState): EquipmentStatsQuery {
   return {

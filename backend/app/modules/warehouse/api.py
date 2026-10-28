@@ -5,7 +5,7 @@ from fastapi import Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import success_response
 from app.modules.warehouse.schemas import (
     PackagingMaterialListResponse,
@@ -46,7 +46,8 @@ def get_warehouse_service(
     response_model=RawMaterialListResponse,
 )
 async def handler(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:raw-material:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     items = await service.list_raw_materials()
@@ -62,7 +63,8 @@ async def handler(
     response_model=PackagingMaterialListResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:packaging-material:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     items = await service.list_packaging_materials()
@@ -78,7 +80,8 @@ async def handler(  # noqa: F811
     response_model=ProductInventoryListResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:product:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     items = await service.list_products()
@@ -94,7 +97,8 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuConfigApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-config:read")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     data = await service.get_feishu_config_response()
@@ -108,8 +112,9 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuConfigApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     payload: WarehouseFeishuConfigUpsert,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-config:update")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     data = await service.save_feishu_config(payload)
@@ -123,7 +128,8 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuConnectivityApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-config:create")),
     payload: WarehouseFeishuConfigUpsert | None = None,
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
@@ -138,7 +144,8 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuTableListApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:read")),
     business_domain: str | None = None,
     keyword: str | None = None,
     enabled: bool | None = None,
@@ -161,7 +168,8 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuTableListApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:create")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     items = await service.refresh_feishu_tables()
@@ -177,8 +185,9 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuTableBatchEnableApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     payload: WarehouseFeishuTableBatchEnablePayload,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:update")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     items = await service.set_feishu_tables_enabled(
@@ -197,9 +206,10 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuTableEnableApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     table_id: UUID,
     payload: WarehouseFeishuTableEnablePayload,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:update")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     table = await service.set_feishu_table_enabled(table_id, payload.is_enabled)
@@ -215,8 +225,9 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuTableSyncApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     table_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-table:submit")),
     service: WarehouseService = Depends(get_warehouse_service),
 ) -> Any:
     data = await service.sync_feishu_table(table_id)
@@ -230,8 +241,9 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuRawRecordApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     table_id: UUID,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-record:read")),
     keyword: str | None = None,
     field: str | None = None,
     field_operator: str | None = Query(
@@ -262,8 +274,9 @@ async def handler(  # noqa: F811
     response_model=WarehouseFeishuRawRecordApiResponse,
 )
 async def handler(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     business_domain: str,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-record:read")),
     table_id: UUID | None = None,
     keyword: str | None = None,
     field: str | None = None,
@@ -295,7 +308,11 @@ async def handler(  # noqa: F811
     summary="查询仓储飞书 WebSocket 状态",
     response_model=WarehouseFeishuWsStatusApiResponse,
 )
-async def get_feishu_ws_status(current_user: CurrentUser) -> Any:
+async def get_feishu_ws_status(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-ws:read")),
+) -> Any:
+
     from app.modules.warehouse.ws_client import get_ws_status
 
     return success_response(data=(await get_ws_status()).model_dump(mode="json"))
@@ -306,7 +323,11 @@ async def get_feishu_ws_status(current_user: CurrentUser) -> Any:
     summary="重启仓储飞书 WebSocket 长连接",
     response_model=WarehouseFeishuWsStatusApiResponse,
 )
-async def restart_feishu_ws(current_user: CurrentUser) -> Any:
+async def restart_feishu_ws(
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("warehouse:feishu-ws:submit")),
+) -> Any:
+
     from app.modules.warehouse.ws_client import restart_ws_from_db
 
     return success_response(data=(await restart_ws_from_db()).model_dump(mode="json"))

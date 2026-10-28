@@ -51,6 +51,25 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def soft_delete_user(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        operator_id: UUID | None = None,
+    ) -> User:
+        """软删除账号：标记删除并置禁用。
+
+        物理删除不可行——`permission.user_role_grants.user_id` 等外键是 NOT NULL 且
+        没有 ON DELETE 规则（PostgreSQL 默认 NO ACTION），删行会被数据库挡住。
+        """
+        user.is_deleted = True
+        user.status = "disabled"
+        if operator_id is not None:
+            user.updated_by = operator_id
+        await session.flush()
+        return user
+
     async def get_by_login_identifier(
         self,
         session: AsyncSession,
@@ -119,6 +138,7 @@ class UserRepository:
         feishu_department_ids: str | None = None,
         username: str | None = None,
         password_hash: str | None = None,
+        must_change_password: bool = False,
         status: str = "active",
         auth_source: str = "feishu",
     ) -> User:
@@ -126,6 +146,7 @@ class UserRepository:
             name=name,
             username=username,
             password_hash=password_hash,
+            must_change_password=must_change_password,
             status=status,
             auth_source=auth_source,
             feishu_user_id=feishu_user_id,
@@ -149,12 +170,37 @@ class UserRepository:
         await session.flush()
         return user
 
+    async def allocate_username(
+        self,
+        session: AsyncSession,
+        *,
+        prefix: str,
+        max_attempts: int = 20,
+    ) -> str:
+        """分配默认用户名 `{prefix}{6 位自增号}`（如 YTH000001）。
+
+        用 PG 序列 `identity.user_username_seq` 的 nextval 保证并发建号不撞号；
+        若序列值与既有账号重合（例如历史上手工建过同前缀用户名），跳过再取下一个。
+        """
+        for _ in range(max_attempts):
+            result = await session.execute(select(func.nextval("identity.user_username_seq")))
+            candidate = f"{prefix}{int(result.scalar_one()):06d}"
+            # 唯一约束含软删行，判重不能加 is_deleted 过滤
+            existing = await session.execute(select(User.id).where(User.username == candidate).limit(1))
+            if existing.scalar_one_or_none() is None:
+                return candidate
+        raise RuntimeError(f"无法分配唯一用户名（前缀 {prefix}），请检查 identity.user_username_seq 序列状态")
+
     async def list_users(
         self,
         session: AsyncSession,
         *,
         keyword: str | None = None,
         status: str | None = None,
+        auth_source: str | None = None,
+        unbound_only: bool = False,
+        must_change_password: bool | None = None,
+        exclude_user_ids: list[UUID] | None = None,
         offset: int = 0,
         limit: int = 100,
     ) -> tuple[list[User], int]:
@@ -166,6 +212,11 @@ class UserRepository:
                 User.is_deleted == False  # noqa: E712
             )
         )
+
+        # 对非超管隐藏超管账号（调用方传入超管 id 列表）
+        if exclude_user_ids:
+            base = base.where(User.id.not_in(exclude_user_ids))
+            count_stmt = count_stmt.where(User.id.not_in(exclude_user_ids))
 
         if keyword:
             pattern = f"%{keyword}%"
@@ -181,10 +232,34 @@ class UserRepository:
         if status:
             base = base.where(User.status == status)
             count_stmt = count_stmt.where(User.status == status)
+        if auth_source:
+            base = base.where(User.auth_source == auth_source)
+            count_stmt = count_stmt.where(User.auth_source == auth_source)
+        if unbound_only:
+            # 仅返回尚未绑定飞书身份的账号（供「绑定飞书」选择器使用）
+            base = base.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
+            count_stmt = count_stmt.where(User.feishu_user_id.is_(None), User.feishu_open_id.is_(None))
+        if must_change_password is not None:
+            base = base.where(User.must_change_password == must_change_password)
+            count_stmt = count_stmt.where(User.must_change_password == must_change_password)
 
         total = int((await session.execute(count_stmt)).scalar_one())
         result = await session.execute(base.order_by(User.created_at.desc()).offset(offset).limit(limit))
         return list(result.scalars().all()), total
+
+    async def get_roles_for_users(
+        self,
+        session: AsyncSession,
+        user_ids: list[UUID],
+    ) -> dict[UUID, list[str]]:
+        """批量取用户的有效角色名（用户管理列表的「角色」列据此显示）。
+
+        授权数据由 permission 模块读写，这里委托给 `permission.public_api`，
+        避免 identity 反向 import permission 的 models/repository。
+        """
+        from app.platform.permission.public_api import get_role_names_by_user_ids
+
+        return await get_role_names_by_user_ids(session, user_ids)
 
     async def list_all(
         self,
@@ -301,7 +376,7 @@ class LoginLogRepository:
         await session.flush()
         return log
 
-    async def list_logs(  # type: ignore[return]
+    async def list_logs(
         self,
         session: AsyncSession,
         *,
@@ -312,22 +387,24 @@ class LoginLogRepository:
     ) -> tuple[list[Any], int]:
         from app.platform.identity.models import LoginLog
 
-        base = select(LoginLog).where(LoginLog.is_deleted == False)  # noqa: E712
-        count_base = select(LoginLog.id).where(LoginLog.is_deleted == False)  # noqa: E712
-
+        conditions = [LoginLog.is_deleted == False]  # noqa: E712
         if status:
-            base = base.where(LoginLog.status == status)
-            count_base = count_base.where(LoginLog.status == status)
+            conditions.append(LoginLog.status == status)
         if keyword:
-            base = base.where(LoginLog.user_name.ilike(f"%{keyword}%"))
-            count_base = count_base.where(LoginLog.user_name.ilike(f"%{keyword}%"))
+            conditions.append(LoginLog.user_name.ilike(f"%{keyword}%"))
 
-        total_result = await session.execute(count_base)
-        len(total_result.scalars().all())
+        # 用 COUNT(*) 统计总数（原来把符合条件的全部 id 拉回内存再取长度，数据量增长后很慢）
+        total = (await session.execute(select(func.count()).select_from(LoginLog).where(*conditions))).scalar_one()
 
-        stmt = base.order_by(LoginLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+        stmt = (
+            select(LoginLog)
+            .where(*conditions)
+            .order_by(LoginLog.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
         result = await session.execute(stmt)
-        list(result.scalars().all())
+        return list(result.scalars().all()), int(total)
 
 
 class FeishuConfigRepository:

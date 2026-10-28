@@ -505,6 +505,8 @@ async def delete_workshop(db: AsyncSession, workshop_id: UUID) -> None:
     obj = await repo.get_workshop_by_id(db, workshop_id)
     if obj is None:
         raise NotFoundException("车间", str(workshop_id))
+    if await repo.count_active_monthly_records_by_workshop(db, workshop_id):
+        raise BadRequestException("该车间存在月度记录，无法删除；如需停用请关闭「启用」")
     await repo.delete_workshop(db, workshop_id)
 
 

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use, useRef, useCallback } from 'react'
+import { useState, use, useRef, useCallback, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Table,
@@ -54,10 +55,35 @@ export default function InspectionTableDetailPage({
   params: Promise<{ id: string }>
 }) {
   const resolvedParams = use(params)
-  const [loading, setLoading] = useState(false)
+  const {
+    data: tableDetail,
+    isLoading: loading,
+    refetch: refetchTable,
+    dataUpdatedAt,
+  } = useQuery({
+    queryKey: ['inspection-table', resolvedParams.id],
+    queryFn: () => getInspectionTable(resolvedParams.id),
+  })
   const [saving, setSaving] = useState(false)
-  const [tableData, setTableData] = useState<InspectionTableDetail | null>(null)
-  const [rows, setRows] = useState<TableRow[]>([])
+  const tableData = (tableDetail as InspectionTableDetail | undefined) ?? null
+  // 服务端行数据在渲染期派生，不用 effect 同步 state
+  const serverRows = useMemo<TableRow[]>(() => {
+    const data = tableDetail as InspectionTableDetail | undefined
+    if (!data) return []
+    return data.rows.map((row: InspectionTableRow) => ({
+      key: String(row.id),
+      id: row.id,
+      ...row.row_data,
+    }))
+  }, [tableDetail])
+
+  // 本地编辑副本：记录它基于哪一版服务端数据，刷新（dataUpdatedAt 变化）后自动失效
+  const [draft, setDraft] = useState<{ at: number; rows: TableRow[] } | null>(null)
+  const rows = draft && draft.at === dataUpdatedAt ? draft.rows : serverRows
+  const setRows = useCallback(
+    (next: TableRow[]) => setDraft({ at: dataUpdatedAt, rows: next }),
+    [dataUpdatedAt],
+  )
   const [hasChanges, setHasChanges] = useState(false)
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]) // 批量选择
 
@@ -80,7 +106,7 @@ export default function InspectionTableDetailPage({
     try {
       await uploadInspectionTemplate(tableData.id, file)
       message.success('模板上传成功')
-      fetchData()
+      void refetchTable()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "模板上传失败") || '模板上传失败')
     } finally {
@@ -96,7 +122,7 @@ export default function InspectionTableDetailPage({
     try {
       await deleteInspectionTemplate(tableData.id)
       message.success('模板删除成功')
-      fetchData()
+      void refetchTable()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "操作失败") || '模板删除失败')
     }
@@ -162,31 +188,6 @@ export default function InspectionTableDetailPage({
       setExporting(false)
     }
   }
-
-  const fetchData = useCallback(async () => {
-    setLoading(true)
-    try {
-      const result = await getInspectionTable(resolvedParams.id)
-      const data = result as InspectionTableDetail
-      setTableData(data)
-
-      // 转换数据行
-      const rowData: TableRow[] = data.rows.map((row: InspectionTableRow) => ({
-        key: String(row.id),
-        id: row.id,
-        ...row.row_data,
-      }))
-      setRows(rowData)
-    } catch (_error) {
-      message.error('获取数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [resolvedParams.id])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
 
   // 处理多文件上传并识别
   const handleFileUpload = async (fileList: File[]) => {
@@ -346,7 +347,7 @@ export default function InspectionTableDetailPage({
 
       message.success('保存成功')
       setHasChanges(false)
-      fetchData()
+      void refetchTable()
     } catch (error: unknown) {
       message.error((error instanceof Error ? error.message : "操作失败") || '保存失败')
     } finally {
@@ -454,6 +455,7 @@ export default function InspectionTableDetailPage({
 
   return (
     <div style={{ padding: 24 }}>
+      <h1 className="sr-only">数据表详情</h1>
       <Card
         title={`数据表详情 - ${tableData.table_name}`}
         extra={
@@ -596,7 +598,7 @@ export default function InspectionTableDetailPage({
         width={900}
         okText="添加数据"
         cancelText="取消"
-        maskClosable={false}
+        mask={{ closable: false }}
       >
         {recognizeResult && (
           <div>

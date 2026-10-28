@@ -175,9 +175,9 @@ export function MonthlyRecordTable() {
       dataIndex: 'workshop_id',
       key: 'workshop_id',
       width: 150,
-      render: (workshopId: string) => {
+      render: (workshopId: string, record: EnergyMonthlyRecord) => {
         const ws = workshops.find((w) => w.id === workshopId)
-        return ws?.name || workshopId.slice(0, 8)
+        return record.workshop_name || ws?.name || workshopId.slice(0, 8)
       },
     },
     {

@@ -75,10 +75,14 @@ export async function fillChapterFieldsApi(chapterId: string) {
   })
 }
 
-export async function aiPreviewExtractionApi(chapterId: string) {
+export async function aiPreviewSubmitApi(chapterId: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
     method: 'POST',
   })
+}
+
+export async function aiPreviewJobApi(jobId: string) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/registration/dossier-writer/jobs/${jobId}`)
 }
 
 export async function aiConfirmAndFillApi(chapterId: string, data: AIConfirmRequest) {

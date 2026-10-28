@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, RequiredUser
-from app.core.exceptions import AppException
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import build_response, paginated_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas import (
@@ -24,19 +23,13 @@ from app.shared.schemas import ApiResponse
 router = APIRouter()
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 @router.post("/", summary="创建备件")
 async def create_spare_part(
     data: SparePartCreate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     spare_part = await service.create_spare_part(db, data)
     return build_response(data=SparePartResponse.model_validate(spare_part))
 
@@ -44,6 +37,7 @@ async def create_spare_part(
 @router.get("/", summary="备件列表")
 async def list_spare_parts(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:read")),
     category: str | None = Query(None, description="备件分类"),
     keyword: str | None = Query(None, description="关键词搜索"),
     is_active: bool | None = Query(None, description="是否启用"),
@@ -51,7 +45,6 @@ async def list_spare_parts(
     page_size: int = Query(20, ge=1, le=200, description="每页数量"),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     spare_parts, total = await service.get_spare_parts(
         db,
         category=category,
@@ -71,9 +64,9 @@ async def list_spare_parts(
 @router.get("/stock/warnings", summary="库存预警列表")
 async def get_stock_warnings(
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     warnings = await service.get_stock_warnings(db)
     return build_response(
         data=[
@@ -93,7 +86,6 @@ async def get_spare_part(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     spare_part = await service.get_spare_part_by_id(db, spare_part_id)
     return build_response(data=SparePartResponse.model_validate(spare_part))
 
@@ -103,9 +95,9 @@ async def update_spare_part(
     spare_part_id: uuid.UUID,
     data: SparePartUpdate,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:update")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     spare_part = await service.update_spare_part(db, spare_part_id, data)
     return build_response(data=SparePartResponse.model_validate(spare_part))
 
@@ -116,7 +108,6 @@ async def delete_spare_part(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     await service.delete_spare_part(db, spare_part_id)
     return build_response(message="删除成功")
 
@@ -125,9 +116,9 @@ async def delete_spare_part(
 async def get_stock(
     spare_part_id: uuid.UUID,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:read")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     stock = await service.get_stock_by_spare_part_id(db, spare_part_id)
     return build_response(data=StockResponse.model_validate(stock))
 
@@ -139,7 +130,6 @@ async def inbound_stock(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     stock = await service.inbound_stock(db, spare_part_id, data)
     return build_response(data=StockResponse.model_validate(stock))
 
@@ -149,8 +139,8 @@ async def adjust_stock(
     spare_part_id: uuid.UUID,
     data: StockAdjustRequest,
     current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("equipment:spare-part:create")),
     db: AsyncSession = Depends(get_db),
 ) -> ApiResponse:
-    _require_user(current_user)
     stock = await service.adjust_stock(db, spare_part_id, data)
     return build_response(data=StockResponse.model_validate(stock))
