@@ -1,0 +1,304 @@
+"""运行时配置：运营参数走 core.module_settings（Web UI 可改），代码里只留默认值。"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+
+from app.core.llm import get_named_config
+from app.shared.config_reader import (
+    get_module_setting,
+    get_module_setting_bool,
+    get_module_setting_float,
+    get_module_setting_int,
+)
+
+logger = logging.getLogger(__name__)
+
+MODULE = "research"
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeConfig:
+    """文档生成可调参数。"""
+
+    enabled: bool = True
+    max_files: int = 20
+    max_total_pages: int = 150
+    max_file_mb: int = 30
+    # 单次任务资料合计上限：必须 ≤ 前端代理的请求体上限（next.config.ts proxyClientMaxBodySize），
+    # 否则请求会在 Next 层被截断成不完整的 multipart，浏览器侧收不到任何响应
+    max_total_mb: int = 150
+    max_pages_per_file: int = 80
+    max_ocr_pages_per_file: int = 30
+    # 单批槽位数：私有化部署下加大批次可显著减少模型调用次数（同批共享一份上下文，
+    # 上下文预算由 prompts._context 贪心控制，不会因为槽位多而撑爆 prompt）
+    batch_size: int = 6
+    candidate_limit: int = 10
+    max_context_chars: int = 12000
+    # 置信度分级：模型自报 confidence < mid 的已填充槽位降级为「需人工核对」，
+    # [mid, high) 区间保持写入但计入 low_confidence 统计供抽查
+    confidence_high: float = 0.85
+    confidence_mid: float = 0.6
+    max_concurrency: int = 1
+    # 提取/成文阶段 LLM 并发批次数（>1 时多批同时调 LLM，加速但增加网关压力）
+    extract_concurrency: int = 1
+    compose_concurrency: int = 1
+    # 解析阶段文件并发数（>1 时多文件同时解析，OCR 场景提速明显）
+    parse_concurrency: int = 1
+    # 提取结果缓存：重跑/换任务时内容未变的槽位直接复用（进程内 + DB 两级），跳过 LLM 调用
+    extract_cache_enabled: bool = True
+    # 解析结果缓存：同一份文件（内容哈希相同）跨任务复用解析产物，扫描件不再重复 OCR
+    parse_cache_enabled: bool = True
+    # 解析兜底链第二级：快速 OCR（PP-OCR）无结果时，改用 PP-StructureV3 输出 Markdown
+    # （保留表格/标题层级/阅读顺序），比 PP-OCR 慢数倍，按需开启
+    ocr_structured_enabled: bool = False
+    # 解析兜底链第三级：OCR 仍无结果时把页面转图交给视觉模型（需已登记 vision 类型 LLM 配置）
+    vision_fallback_enabled: bool = True
+    # 单文件走视觉模型的最大页数（视觉调用最贵，只兜底前面几页）
+    vision_max_pages: int = 5
+    # 视觉模型图片压缩：JPEG 质量（1-100），越低体积越小但清晰度下降
+    vision_image_quality: int = 60
+    # 视觉模型图片最大宽度（像素），超过会等比缩放
+    vision_max_width: int = 1600
+    # 向量检索：embedding 模型名（留空则不启用向量检索，纯关键词）
+    embedding_model_name: str = ""
+    # 向量检索融合权重：0.0=纯向量，1.0=纯关键词，0.6=关键词为主+向量辅助
+    vector_alpha: float = 0.6
+    # 向量检索开关：默认打开，但需同时配置 embedding 模型名才实际生效
+    # （embedding_model_name 为空时不会发起 embedding 调用）；本地资料很少的
+    # 知识库模式下收益有限，主要服务于任务级上传资料与补充信息的双路召回
+    vector_retrieval_enabled: bool = True
+    lease_seconds: int = 1800
+    max_attempts: int = 3
+    scan_interval_seconds: int = 30
+    # 稳定性护栏：解析/模型调用/整任务三级硬超时 + 租约心跳，卡住能被强制终止
+    parse_timeout_seconds: int = 180
+    llm_call_timeout_seconds: int = 180
+    job_timeout_seconds: float = 2400
+    heartbeat_seconds: int = 60
+    # 对话补全：初抽完成后与用户多轮对话补值（工具调用走 JSON 模拟模式）
+    # 默认关闭 = 直达生成：新建报告即排队，一次跑完「提取 → 成文 → 渲染」，
+    # 中间不停「等待人工确认」、不建对话会话（人工修正走「重新生成」开新任务）
+    chat_enabled: bool = False
+    chat_max_rounds: int = 3
+    # 主模型重试仍失败后的备用模型名（同一网关下的备模型）；为空则不启用备模型
+    fallback_model_name: str = ""
+    # 三档分工模型名（命中 core.llm_configs 的 config_name/model_name 即整份配置切过去，
+    # 端点与密钥随之改变；未命中则只覆盖 model 字段；留空=沿用当前活跃配置）
+    template_model_name: str = ""  # 读模板结构、标注槽位检索词
+    extract_model_name: str = ""  # 逐文件提炼 + 按槽位取证
+    write_model_name: str = ""  # 确认后的成文（AI 报告生成）
+    # 成文开关：关闭时渲染直接用人工确认值，等价改造前行为
+    compose_enabled: bool = True
+    # 直接生成模式：跳过逐槽位提取+成文，一次性把全部资料塞进 context 让模型直接生成报告内容
+    # 开启后 LLM 调用从 30+ 次降到 1-2 次，速度大幅提升，但失去逐槽位证据追溯能力
+    direct_generation_enabled: bool = False
+    # 直接生成模式下的资料来源最大字符数（控制进 prompt 的资料文本量，适配 128K 输入模型）
+    direct_gen_max_chars: int = 180000
+    # 模板分析开关：用 LLM 解析模板结构，为提取阶段提供槽位指引
+    template_analysis_enabled: bool = True
+    # 文件分析开关：用 LLM 异步逐文件分析，提取与模板匹配的结构化摘要
+    file_analysis_enabled: bool = True
+    # 文件分析并发数（同时分析的文件数）
+    file_analysis_concurrency: int = 4
+    # 交叉校验开关：提取完成后对比文件分析与槽位结果，标记不一致
+    cross_validation_enabled: bool = True
+    # 每批上下文字符预算：三层上限里的「模型层」。
+    # 配了 model_max_input_tokens 就按 (输入上限 - 输出预留) × 水位 ÷ 字符系数 派生，
+    # 未配（0）则沿用 max_context_chars 固定值。
+    model_max_input_tokens: int = 0
+    output_reserve_tokens: int = 2048
+    char_per_token: float = 1.6
+    context_water_level: float = 0.6
+    # 项目知识库（RAGFlow）：按槽位召回片段作为虚拟资料参与提取与证据回检
+    # 开关默认开启；项目未挂知识库或知识库服务不可用时自动退回「仅用本地资料」
+    kb_enabled: bool = True
+    # 单槽位从知识库召回的片段数（top_k）
+    kb_top_k: int = 6
+    # 召回相似度下限：低于该值的片段不进入 prompt
+    kb_similarity_threshold: float = 0.2
+    # 混合检索里向量路权重（0=纯关键词，1=纯向量），RAGFlow 侧同名参数
+    kb_vector_weight: float = 0.3
+    # 单槽位知识库召回超时（秒），超时即降级为「本次无知识库资料」
+    kb_timeout_seconds: int = 30
+    # 知识库摸底与事实抽取：把整个知识库先「榨」成结构化事实，填充更完整
+    # （实现见 knowledge_base.facts）。索引与事实都挂在知识库维度、可跨任务复用，
+    # 因此除首次外每次任务只做增量；失败一律静默降级，不影响成文
+    kb_survey_enabled: bool = True
+    # 单次任务镜像的切片数硬上限（0=不限）：大库首次会慢一点，但任务不会被拖垮
+    kb_survey_max_chunks: int = 2000
+    # 摸底并发数：>1 时多文档同时拉取远端切片（写库仍串行）
+    kb_survey_concurrency: int = 4
+    # 后台富化 worker：把「摸底 + 事实抽取」从任务链路移到后台持续增量。
+    # 任务内只做小额增量（保证本稿数据尽可能新），大库全量由后台在空闲时补齐
+    kb_background_enrich_enabled: bool = True
+    kb_background_enrich_interval_seconds: int = 30
+    # 后台单轮抽事实的切片数上限（多轮累计覆盖全库；0=不限，不建议）
+    kb_background_enrich_max_chunks: int = 200
+    fact_extract_enabled: bool = True
+    # 单次任务抽事实的切片数硬上限（0=不限）：增量累计，多跑几轮即可覆盖全库
+    fact_extract_max_chunks: int = 200
+    # 事实抽取每批送入模型的切片数
+    fact_extract_batch_size: int = 4
+    # 事实抽取并发批次数：>1 时多批同时调模型（写库仍串行）；有代码硬顶保护
+    fact_extract_concurrency: int = 4
+    # 后台富化启用时，任务内单次抽事实的切片数上限：后台会持续补齐全库，
+    # 任务内只做小额增量，把时间让给生成；后台关闭时按完整额度跑
+    inline_fact_max_chunks: int = 60
+    # 事实召回开关：填充项优先从本地事实库匹配，无命中再回落实时检索
+    fact_retrieval_enabled: bool = True
+    fact_top_k: int = 8
+    # 事实召回置信度下限：低于该值的事实不参与匹配
+    fact_min_confidence: float = 0.4
+    # 定向补问：对「有候选却没填上」的缺口，把槽位与它自己的候选资料单独再问一次
+    # （一次调用处理全部目标；只接受确有提升的结果）
+    probe_enabled: bool = True
+    # 缺口闭环（B4）：对「资料没命中/模型没返回/依据没核对上」的填充项换一套检索口径再试。
+    # 每轮只跑缺口槽位、且只接受确有提升的结果；轮数设 0 即关闭（回到「跑一轮就结束」）
+    gap_retry_enabled: bool = True
+    gap_retry_rounds: int = 2
+    # 重试轮的候选块上限倍数：默认口径 0 命中的槽位，放宽候选数才有机会捞到
+    gap_retry_candidate_multiplier: int = 2
+    # 重试轮的上下文预算倍数：缺口槽位数量少，预算给足才能让模型看到新捞到的候选
+    gap_retry_context_multiplier: float = 1.5
+    # 知识库覆盖预检（A2）：索引刷到最新后算「哪些填充项库里根本没料」。
+    # 只做离线词面匹配（不调模型、不压知识库），结果随 job.stats 落库，供完成页与看板解释缺口
+    kb_coverage_enabled: bool = True
+    # 参与离线匹配的索引文本条数上限（事实 + 切片）
+    kb_coverage_max_chunks: int = 3000
+    # 无本地索引时实时检索兜底的槽位上限（预检接口用；流水线内已建过索引故不走兜底）
+    kb_coverage_max_slots: int = 60
+
+    @property
+    def context_chars(self) -> int:
+        """模型层预算：单批能进 prompt 的字符上限。
+
+        上传体积（传输层）、解析字符数（解析层）与这里是三层独立上限：模型只吃解析后的
+        文本，MB 与 token 之间没有固定换算，所以模型上限换算成「每批字符预算」来配，
+        而不是放大上传体积。未配 token 上限时沿用固定字符值（改造前行为）。
+        """
+        if self.model_max_input_tokens <= 0:
+            return self.max_context_chars
+        usable = max(1000, self.model_max_input_tokens - self.output_reserve_tokens)
+        chars = int(usable * self.context_water_level / max(0.4, self.char_per_token))
+        return max(2000, min(chars, 200_000))
+
+
+@dataclass(frozen=True, slots=True)
+class ModelChoice:
+    """一次调用该用哪份模型配置（两者都为空即沿用当前活跃配置）。"""
+
+    config_name: str | None = None
+    model_override: str | None = None
+
+
+async def resolve_model(name: str, purpose: str = "text") -> ModelChoice:
+    """把运行时配置里的模型名解析成调用参数。
+
+    - 命中 ``core.llm_configs``（按 config_name 或 model_name）→ 整份配置切过去，
+      端点与密钥跟着换，适用于两个模型不在同一网关的情况；
+    - 没命中 → 只覆盖 model 字段，与 ``DOC_GEN_FALLBACK_MODEL`` 同语义，
+      适用于同一网关下换模型；
+    - 名字留空 → 完全沿用活跃配置，改造前后行为一致。
+    """
+    wanted = (name or "").strip()
+    if not wanted:
+        return ModelChoice()
+    config = await get_named_config(wanted, purpose)
+    if config is not None:
+        return ModelChoice(config_name=config.config_name)
+    logger.warning(
+        "运行时配置的模型未登记为 LLM 配置，按同名模型覆盖活跃配置",
+        extra={"requested_model": wanted},
+    )
+    return ModelChoice(model_override=wanted)
+
+
+async def load_runtime_config() -> RuntimeConfig:
+    """读取运行时配置（缺省即用默认值，未播种也能工作）。"""
+    get = get_module_setting_int
+    enabled = await get_module_setting_bool(MODULE, "DOC_GEN_ENABLED", True)
+    return RuntimeConfig(
+        enabled=enabled,
+        max_files=await get(MODULE, "DOC_GEN_MAX_FILES", 20),
+        max_total_pages=await get(MODULE, "DOC_GEN_MAX_TOTAL_PAGES", 150),
+        max_file_mb=await get(MODULE, "DOC_GEN_MAX_FILE_MB", 30),
+        max_total_mb=await get(MODULE, "DOC_GEN_MAX_TOTAL_MB", 150),
+        max_pages_per_file=await get(MODULE, "DOC_GEN_MAX_PAGES_PER_FILE", 80),
+        max_ocr_pages_per_file=await get(MODULE, "DOC_GEN_MAX_OCR_PAGES_PER_FILE", 30),
+        batch_size=await get(MODULE, "DOC_GEN_BATCH_SIZE", 6),
+        candidate_limit=await get(MODULE, "DOC_GEN_CANDIDATE_LIMIT", 10),
+        max_context_chars=await get(MODULE, "DOC_GEN_MAX_CONTEXT_CHARS", 12000),
+        confidence_high=await get_module_setting_float(MODULE, "DOC_GEN_CONFIDENCE_HIGH", 0.85),
+        confidence_mid=await get_module_setting_float(MODULE, "DOC_GEN_CONFIDENCE_MID", 0.6),
+        max_concurrency=await get(MODULE, "DOC_GEN_MAX_CONCURRENCY", 1),
+        extract_concurrency=await get(MODULE, "DOC_GEN_EXTRACT_CONCURRENCY", 1),
+        compose_concurrency=await get(MODULE, "DOC_GEN_COMPOSE_CONCURRENCY", 1),
+        parse_concurrency=await get(MODULE, "DOC_GEN_PARSE_CONCURRENCY", 1),
+        extract_cache_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_EXTRACT_CACHE_ENABLED", True),
+        parse_cache_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_PARSE_CACHE_ENABLED", True),
+        ocr_structured_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_OCR_STRUCTURED_ENABLED", False),
+        vision_fallback_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_VISION_FALLBACK_ENABLED", True),
+        vision_max_pages=await get(MODULE, "DOC_GEN_VISION_MAX_PAGES", 5),
+        vision_image_quality=await get(MODULE, "DOC_GEN_VISION_IMAGE_QUALITY", 60),
+        vision_max_width=await get(MODULE, "DOC_GEN_VISION_MAX_WIDTH", 1600),
+        embedding_model_name=await get_module_setting(MODULE, "DOC_GEN_EMBEDDING_MODEL", ""),
+        vector_alpha=await get_module_setting_float(MODULE, "DOC_GEN_VECTOR_ALPHA", 0.6),
+        vector_retrieval_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_VECTOR_RETRIEVAL_ENABLED", True),
+        lease_seconds=await get(MODULE, "DOC_GEN_LEASE_SECONDS", 1800),
+        max_attempts=await get(MODULE, "DOC_GEN_MAX_ATTEMPTS", 3),
+        scan_interval_seconds=await get(MODULE, "DOC_GEN_SCAN_INTERVAL_SECONDS", 30),
+        parse_timeout_seconds=await get(MODULE, "DOC_GEN_PARSE_TIMEOUT_SECONDS", 180),
+        llm_call_timeout_seconds=await get(MODULE, "DOC_GEN_LLM_CALL_TIMEOUT_SECONDS", 180),
+        job_timeout_seconds=await get(MODULE, "DOC_GEN_JOB_TIMEOUT_SECONDS", 2400),
+        heartbeat_seconds=await get(MODULE, "DOC_GEN_HEARTBEAT_SECONDS", 60),
+        chat_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_CHAT_ENABLED", False),
+        chat_max_rounds=await get(MODULE, "DOC_GEN_CHAT_MAX_ROUNDS", 3),
+        fallback_model_name=await get_module_setting(MODULE, "DOC_GEN_FALLBACK_MODEL", ""),
+        template_model_name=await get_module_setting(MODULE, "DOC_GEN_TEMPLATE_MODEL", ""),
+        extract_model_name=await get_module_setting(MODULE, "DOC_GEN_EXTRACT_MODEL", ""),
+        write_model_name=await get_module_setting(MODULE, "DOC_GEN_WRITE_MODEL", ""),
+        compose_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_COMPOSE_ENABLED", True),
+        direct_generation_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_DIRECT_GENERATION_ENABLED", False),
+        direct_gen_max_chars=await get(MODULE, "DOC_GEN_DIRECT_GEN_MAX_CHARS", 200000),
+        template_analysis_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_TEMPLATE_ANALYSIS_ENABLED", True),
+        file_analysis_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FILE_ANALYSIS_ENABLED", True),
+        file_analysis_concurrency=await get(MODULE, "DOC_GEN_FILE_ANALYSIS_CONCURRENCY", 4),
+        cross_validation_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_CROSS_VALIDATION_ENABLED", True),
+        model_max_input_tokens=await get(MODULE, "DOC_GEN_MODEL_MAX_INPUT_TOKENS", 0),
+        output_reserve_tokens=await get(MODULE, "DOC_GEN_OUTPUT_RESERVE_TOKENS", 2048),
+        char_per_token=await get_module_setting_float(MODULE, "DOC_GEN_CHAR_PER_TOKEN", 1.6),
+        context_water_level=await get_module_setting_float(MODULE, "DOC_GEN_CONTEXT_WATER_LEVEL", 0.6),
+        kb_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_ENABLED", True),
+        kb_top_k=await get(MODULE, "DOC_GEN_KB_TOP_K", 6),
+        kb_similarity_threshold=await get_module_setting_float(MODULE, "DOC_GEN_KB_SIMILARITY_THRESHOLD", 0.2),
+        kb_vector_weight=await get_module_setting_float(MODULE, "DOC_GEN_KB_VECTOR_WEIGHT", 0.3),
+        kb_timeout_seconds=await get(MODULE, "DOC_GEN_KB_TIMEOUT_SECONDS", 30),
+        kb_survey_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_SURVEY_ENABLED", True),
+        kb_survey_max_chunks=await get(MODULE, "DOC_GEN_KB_SURVEY_MAX_CHUNKS", 2000),
+        kb_survey_concurrency=await get(MODULE, "DOC_GEN_KB_SURVEY_CONCURRENCY", 4),
+        kb_background_enrich_enabled=await get_module_setting_bool(
+            MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_ENABLED", True
+        ),
+        kb_background_enrich_interval_seconds=await get(MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_INTERVAL_SECONDS", 30),
+        kb_background_enrich_max_chunks=await get(MODULE, "DOC_GEN_KB_BACKGROUND_ENRICH_MAX_CHUNKS", 200),
+        fact_extract_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FACT_EXTRACT_ENABLED", True),
+        fact_extract_max_chunks=await get(MODULE, "DOC_GEN_FACT_EXTRACT_MAX_CHUNKS", 200),
+        fact_extract_batch_size=await get(MODULE, "DOC_GEN_FACT_EXTRACT_BATCH_SIZE", 4),
+        fact_extract_concurrency=await get(MODULE, "DOC_GEN_FACT_EXTRACT_CONCURRENCY", 4),
+        inline_fact_max_chunks=await get(MODULE, "DOC_GEN_INLINE_FACT_MAX_CHUNKS", 60),
+        fact_retrieval_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_FACT_RETRIEVAL_ENABLED", True),
+        fact_top_k=await get(MODULE, "DOC_GEN_FACT_TOP_K", 8),
+        fact_min_confidence=await get_module_setting_float(MODULE, "DOC_GEN_FACT_MIN_CONFIDENCE", 0.4),
+        probe_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_PROBE_ENABLED", True),
+        gap_retry_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_GAP_RETRY_ENABLED", True),
+        gap_retry_rounds=await get(MODULE, "DOC_GEN_GAP_RETRY_ROUNDS", 2),
+        gap_retry_candidate_multiplier=await get(MODULE, "DOC_GEN_GAP_RETRY_CANDIDATE_MULTIPLIER", 2),
+        gap_retry_context_multiplier=await get_module_setting_float(
+            MODULE, "DOC_GEN_GAP_RETRY_CONTEXT_MULTIPLIER", 1.5
+        ),
+        kb_coverage_enabled=await get_module_setting_bool(MODULE, "DOC_GEN_KB_COVERAGE_ENABLED", True),
+        kb_coverage_max_chunks=await get(MODULE, "DOC_GEN_KB_COVERAGE_MAX_CHUNKS", 3000),
+        kb_coverage_max_slots=await get(MODULE, "DOC_GEN_KB_COVERAGE_MAX_SLOTS", 60),
+    )

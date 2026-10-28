@@ -115,6 +115,8 @@ RESOURCE_LABELS: dict[str, str] = {
     "ich": "ICH 分析",
     "literature": "文献分析",
     "report": "研发报告",
+    "doc-gen": "研发文档生成",
+    "knowledge-base": "研发知识库",
     # ── warehouse（仓储管理）资源 ──
     "raw-material": "原辅料库存",
     "packaging-material": "包材库存",
@@ -515,6 +517,12 @@ RESEARCH_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef(
         "research:deliverable-template:update", "更新交付物模板", "research", "deliverable-template", "update"
     ),
+    PermissionDef("research:doc-gen:create", "创建文档生成任务", "research", "doc-gen", "create"),
+    PermissionDef("research:doc-gen:delete", "删除文档生成任务", "research", "doc-gen", "delete"),
+    PermissionDef("research:doc-gen:read", "查看文档生成任务", "research", "doc-gen", "read"),
+    PermissionDef(
+        "research:doc-gen:update", "操作文档生成任务（提取/成文/对话/上传资料）", "research", "doc-gen", "update"
+    ),
     PermissionDef("research:experiment-log:create", "创建实验日志", "research", "experiment-log", "create"),
     PermissionDef("research:experiment-log:delete", "删除实验日志", "research", "experiment-log", "delete"),
     PermissionDef("research:experiment-log:export", "导出实验日志", "research", "experiment-log", "export"),
@@ -527,6 +535,10 @@ RESEARCH_PERMISSIONS: tuple[PermissionDef, ...] = (
     PermissionDef("research:initiation:delete", "删除立项", "research", "initiation", "delete"),
     PermissionDef("research:initiation:read", "查看立项", "research", "initiation", "read"),
     PermissionDef("research:initiation:update", "更新立项", "research", "initiation", "update"),
+    PermissionDef("research:knowledge-base:create", "创建研发知识库/文档", "research", "knowledge-base", "create"),
+    PermissionDef("research:knowledge-base:delete", "删除研发知识库/文档", "research", "knowledge-base", "delete"),
+    PermissionDef("research:knowledge-base:read", "查看研发知识库", "research", "knowledge-base", "read"),
+    PermissionDef("research:knowledge-base:update", "更新研发知识库/重新解析", "research", "knowledge-base", "update"),
     PermissionDef("research:literature:create", "创建文献分析", "research", "literature", "create"),
     PermissionDef("research:optimization:create", "创建工艺优化", "research", "optimization", "create"),
     PermissionDef("research:optimization:delete", "删除工艺优化", "research", "optimization", "delete"),
@@ -1397,6 +1409,123 @@ API_BINDINGS: tuple[ApiBindingDef, ...] = (
     ApiBindingDef("research:registration-filing:update", "PUT", "/api/v1/research/registration-filings/{filing_id}"),
     ApiBindingDef("research:report:update", "PUT", "/api/v1/research/reports/{report_id}"),
     ApiBindingDef("research:route:update", "PUT", "/api/v1/research/routes/{route_id}"),
+    # ── research 文档生成（doc-gen）与知识库（knowledge-base）──
+    # 说明：这批接口当前只声明了登录态（require_user），绑定登记用于满足
+    # 中间件 fail-closed 兜底与 CI 完整性门禁；接口级鉴权码已就绪，待逐个
+    # 补 require_permission 后即生效。
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/builtin-templates"),
+    ApiBindingDef(
+        "research:deliverable-template:create", "POST", "/api/v1/research/doc-gen/deliverable-templates/batch-upload"
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:read",
+        "GET",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/anchor-candidates",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:read",
+        "GET",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/download",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:update",
+        "POST",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/enrich-semantics",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:read",
+        "GET",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/markdown",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:update",
+        "POST",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/slots",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:update",
+        "POST",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/upload",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:read",
+        "GET",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:delete",
+        "DELETE",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:read",
+        "GET",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/download",
+    ),
+    ApiBindingDef(
+        "research:deliverable-template:update",
+        "POST",
+        "/api/v1/research/doc-gen/deliverable-templates/{template_id}/versions/{version_id}/restore",
+    ),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs"),
+    ApiBindingDef("research:doc-gen:create", "POST", "/api/v1/research/doc-gen/jobs"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}"),
+    ApiBindingDef("research:doc-gen:update", "PATCH", "/api/v1/research/doc-gen/jobs/{job_id}"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/cancel"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/confirm"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/conversation"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/conversation/complete"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/conversation/skip"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/document"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/extract"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/extracted-info"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/files"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/generate"),
+    ApiBindingDef(
+        "research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_id}/download"
+    ),
+    ApiBindingDef(
+        "research:doc-gen:update", "DELETE", "/api/v1/research/doc-gen/jobs/{job_id}/input-files/{file_row_id}"
+    ),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/messages"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/outline"),
+    ApiBindingDef("research:doc-gen:update", "POST", "/api/v1/research/doc-gen/jobs/{job_id}/regenerate"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/report"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/slots"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/jobs/{job_id}/superseded"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/kb-coverage"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/limits"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/reports/{report_id}/jobs"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/slot-profiles"),
+    ApiBindingDef("research:doc-gen:read", "GET", "/api/v1/research/doc-gen/templates"),
+    ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases"),
+    ApiBindingDef("research:knowledge-base:create", "POST", "/api/v1/research/knowledge-bases"),
+    ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/limits"),
+    ApiBindingDef("research:knowledge-base:delete", "DELETE", "/api/v1/research/knowledge-bases/{kb_id}"),
+    ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/{kb_id}"),
+    ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/{kb_id}/documents"),
+    ApiBindingDef("research:knowledge-base:create", "POST", "/api/v1/research/knowledge-bases/{kb_id}/documents"),
+    ApiBindingDef(
+        "research:knowledge-base:delete",
+        "DELETE",
+        "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}",
+    ),
+    ApiBindingDef(
+        "research:knowledge-base:read",
+        "GET",
+        "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/chunks",
+    ),
+    ApiBindingDef(
+        "research:knowledge-base:read",
+        "GET",
+        "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/download",
+    ),
+    ApiBindingDef(
+        "research:knowledge-base:update",
+        "POST",
+        "/api/v1/research/knowledge-bases/{kb_id}/documents/{document_row_id}/reparse",
+    ),
+    ApiBindingDef("research:knowledge-base:read", "GET", "/api/v1/research/knowledge-bases/{kb_id}/images/{image_id}"),
     # ── environment / administration / warehouse / procurement 模板端点 ──
     ApiBindingDef("environment:module:read", "GET", "/api/v1/environment"),
     ApiBindingDef("environment:module:read", "GET", "/api/v1/environment/"),
