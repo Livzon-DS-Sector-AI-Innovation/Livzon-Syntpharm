@@ -12,7 +12,8 @@
  * 本组件与 `actions/agent-skills.ts`、`lib/api/server/agent-skills.ts` 均无需改动。
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   App,
   Button,
@@ -70,28 +71,20 @@ export default function AgentSkillManagementClient() {
   const { can, loading: permissionLoading } = usePermission()
   const canManage = !permissionLoading && can(PERM.configManage)
 
-  const [skills, setSkills] = useState<AgentSkill[]>([])
-  const [loading, setLoading] = useState(false)
+  const {
+    data: skillsData,
+    isLoading: loading,
+    refetch: refetchSkills,
+  } = useQuery({
+    queryKey: ['agent-skills'],
+    queryFn: () => getAgentSkills(),
+  })
+  const skills: AgentSkill[] = skillsData ?? []
   const [modalOpen, setModalOpen] = useState(false)
   const [editingSkill, setEditingSkill] = useState<AgentSkill | null>(null)
   const [saving, setSaving] = useState(false)
   const [keyword, setKeyword] = useState('')
   const [form] = Form.useForm()
-
-  const loadSkills = useCallback(async () => {
-    setLoading(true)
-    try {
-      setSkills(await getAgentSkills())
-    } catch (error) {
-      message.error(error instanceof Error ? (error.message || '加载 Skill 失败') : '加载 Skill 失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [message])
-
-  useEffect(() => {
-    void Promise.resolve().then(loadSkills)
-  }, [loadSkills])
 
   const handleCreate = () => {
     setEditingSkill(null)
@@ -136,7 +129,7 @@ export default function AgentSkillManagementClient() {
         message.success('Skill 已创建')
       }
       setModalOpen(false)
-      loadSkills()
+      void refetchSkills()
     } catch (error) {
       message.error(error instanceof Error ? error.message : '保存失败')
     } finally {
@@ -153,7 +146,7 @@ export default function AgentSkillManagementClient() {
         await enableAgentSkill(record.id)
         message.success('Skill 已启用')
       }
-      loadSkills()
+      void refetchSkills()
     } catch (error) {
       message.error(error instanceof Error ? (error.message || '操作失败') : '操作失败')
     }
@@ -163,7 +156,7 @@ export default function AgentSkillManagementClient() {
     try {
       await deleteAgentSkill(record.id)
       message.success('Skill 已删除')
-      loadSkills()
+      void refetchSkills()
     } catch (error) {
       message.error(error instanceof Error ? (error.message || '删除失败') : '删除失败')
     }
@@ -285,7 +278,7 @@ export default function AgentSkillManagementClient() {
                 onChange={(event) => setKeyword(event.target.value)}
               />
             </div>
-            <Button icon={<ReloadOutlined />} onClick={loadSkills}>
+            <Button icon={<ReloadOutlined />} onClick={() => void refetchSkills()}>
               刷新
             </Button>
             {canManage && (

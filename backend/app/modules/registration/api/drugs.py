@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import success_response
 from app.modules.registration import service
 from app.modules.registration.models.review import ReviewNode
@@ -24,7 +24,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取药品列表")
 async def list_drugs(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -36,7 +36,7 @@ async def list_drugs(
 
 @router.post("/", summary="创建药品")
 async def create_drug(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     data: DrugCreate,
     ctx: PermissionContext = Depends(require_permission("registration:drug:create")),
     db: AsyncSession = Depends(get_db),
@@ -48,7 +48,7 @@ async def create_drug(
 
 @router.get("/nodes", summary="获取审评节点配置")
 async def get_review_nodes(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
 ) -> JSONResponse:
     """获取10个审评节点的配置信息"""
@@ -58,7 +58,7 @@ async def get_review_nodes(
 
 @router.get("/{drug_id}", summary="获取药品详情")
 async def get_drug(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     drug_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("registration:drug:read")),
     db: AsyncSession = Depends(get_db),
@@ -70,7 +70,7 @@ async def get_drug(
 
 @router.put("/{drug_id}", summary="更新药品")
 async def update_drug(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     drug_id: uuid.UUID,
     data: DrugUpdate,
     ctx: PermissionContext = Depends(require_permission("registration:drug:update")),
@@ -83,7 +83,7 @@ async def update_drug(
 
 @router.delete("/{drug_id}", summary="删除药品")
 async def delete_drug(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     drug_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("registration:drug:delete")),
     db: AsyncSession = Depends(get_db),

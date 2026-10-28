@@ -1,24 +1,20 @@
 services:
   backend:
-    # 容器名可通过环境变量覆盖（LOCAL_BACKEND_NAME）：
-    # 当 docker daemon 名称索引残留脏记录（报 "container name already in use" 但容器实际不存在）时，
-    # 无需 sudo 重启 daemon，改个名字即可绕过。默认值与 base（docker-compose.yml）一致。
-    container_name: ${LOCAL_BACKEND_NAME:-erp-backend}
     volumes:
     - ./backend/app:/app/app:ro
+    # DATABASE_URL 的 host 是容器网络服务名，宿主机连不到 Postgres，DB 测试只能在容器内跑
+    - ./backend/tests:/app/tests:ro
     environment:
     - UVICORN_RELOAD=true
     command: "bash -c \"\n  cd /app &&\n  uv run uvicorn app.main:app --reload --host\
       \ 0.0.0.0 --port 8000\n\"\n"
   frontend:
-    # 容器名覆盖能力，用途同 backend 的 LOCAL_BACKEND_NAME。
-    container_name: ${LOCAL_FRONTEND_NAME:-erp-frontend}
     volumes:
     - ./frontend:/app
     - /app/node_modules
     environment:
     - NEXT_TELEMETRY_DISABLED=1
-    # dev 模式的跨站资源保护白名单（读 .env.local；缺省仅 localhost）
+    # dev 模式的跨站资源保护白名单：取 shell 环境变量或仓库根目录 .env（Compose 不读 .env.local）；缺省仅 localhost
     - ALLOWED_DEV_ORIGINS=${ALLOWED_DEV_ORIGINS:-localhost,127.0.0.1}
     command: ["pnpm", "dev"]
     build:

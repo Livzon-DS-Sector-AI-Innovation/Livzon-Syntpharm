@@ -18,6 +18,7 @@ interface Props {
 interface UserOption {
   value: string
   label: string
+  account: string
   dept: string
   eno: string
   avatar: string | null
@@ -48,13 +49,19 @@ export function PersonnelDrawer({ open, onClose, roles: _roles }: Props) {
       if (!resp.ok) return []
       const json = await resp.json()
       const items = json.data?.items ?? []
-      return items.map((u: Record<string, unknown>) => ({
-        value: String(u.id),
-        label: String(u.name ?? ''),
-        dept: String(u.department ?? ''),
-        eno: String(u.employee_no ?? ''),
-        avatar: u.avatar_url ? String(u.avatar_url) : null,
-      })) as UserOption[]
+      return items.map((u: Record<string, unknown>) => {
+        const name = String(u.name ?? '')
+        const account = String(u.username ?? '')
+        return {
+          value: String(u.id),
+          // 统一「姓名（账号）」：重名时能区分
+          label: account ? `${name}（${account}）` : name,
+          account,
+          dept: String(u.department ?? ''),
+          eno: String(u.employee_no ?? ''),
+          avatar: u.avatar_url ? String(u.avatar_url) : null,
+        }
+      }) as UserOption[]
     },
     enabled: open,
   })

@@ -53,6 +53,7 @@ export function ChangePasswordClient({ userName, forced = false }: ChangePasswor
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md shadow-lg" variant="borderless">
         <div className="mb-4 text-center">
+          <h1 className="sr-only">{forced ? '请先修改密码' : '修改密码'}</h1>
           <Title level={4} style={{ marginBottom: 4 }}>
             {forced ? '请先修改密码' : '修改密码'}
           </Title>

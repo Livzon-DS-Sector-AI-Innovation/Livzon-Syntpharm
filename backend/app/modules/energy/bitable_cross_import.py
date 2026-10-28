@@ -10,15 +10,46 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.modules.energy.models import EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyMonthlyRecord, EnergyWorkshop
+from app.modules.energy.repository import apply_changed_fields
+from app.modules.energy.workshop_names import (
+    MAPPING_TABLE_NAME,  # noqa: F401  # 测试与调用方沿用本模块的导出路径
+    WORKSHOP_ALIASES,  # noqa: F401
+    load_workshop_alias_map,
+    normalize_workshop_name,
+    resolve_workshop_name,
+)
 from app.platform.integrations.feishu.client import FeishuClient
 
 logger = logging.getLogger(__name__)
 _settings = get_settings()
+
+# 一致性校验：合计行与其构成项（同一月份导入批次内比对）
+ROLLUP_COMPONENTS: dict[str, tuple[str, tuple[str, ...]]] = {
+    "动力运行": (
+        "electricity",
+        (
+            "201盐水机组",
+            "103冷水机组",
+            "4号楼冷水机组",
+            "500T冷水机组",
+            "500T盐水机组",
+            "空压氮气系统",
+        ),
+    ),
+}
+
+# 包含关系校验：容器实体的数值应不小于被包含实体（环保中心（含RTO） ⊇ RTO）
+ROLLUP_CONTAINERS: dict[str, tuple[str, str]] = {
+    "环保中心": ("electricity", "RTO"),
+}
+
+# 容差：合计行与构成项之和的相对偏差超过该比例即告警
+ROLLUP_TOLERANCE = 0.01
 
 
 class EnergyBitableCrossImport:
@@ -47,6 +78,17 @@ class EnergyBitableCrossImport:
     def __init__(self, app_token: str | None = None) -> None:
         self.client = FeishuClient()
         self.app_token = app_token or _settings.feishu.energy.app_token
+        self._alias_map: dict[str, str] | None = None
+
+    async def _get_alias_map(self) -> dict[str, str]:
+        """取别名表，每次导入只加载一次。"""
+        if self._alias_map is None:
+            self._alias_map = await self._load_workshop_alias_map()
+        return self._alias_map
+
+    async def _load_workshop_alias_map(self) -> dict[str, str]:
+        """读取「车间映射」表的别名列，缺表时回退内置常量。"""
+        return await load_workshop_alias_map(self.list_tables, self.list_records)
 
     async def list_tables(self) -> list[dict[str, Any]]:
         """获取多维表格中的所有数据表（自动分页）。"""
@@ -154,28 +196,40 @@ class EnergyBitableCrossImport:
 
     def _normalize_workshop_name(self, name: str) -> str:
         """标准化车间名称。"""
-        name = name.strip()
-        # 处理 "303、106车间" 这种格式
-        if "、" in name:
-            name = name.split("、")[0]
-        # 纯数字名称自动加"车间"后缀（如 "101" → "101车间"）
-        if re.match(r"^\d+$", name):
-            name = name + "车间"
-        return name
+        return normalize_workshop_name(name)
+
+    async def _resolve_workshop_name(self, name: str) -> str:
+        """归一化并套用别名，得到规范车间名。"""
+        return resolve_workshop_name(name, await self._get_alias_map())
 
     async def _get_or_create_workshop(self, db: AsyncSession, name: str, category: str = "workshop") -> EnergyWorkshop:
         """获取或创建车间。"""
-        normalized_name = self._normalize_workshop_name(name)
+        normalized_name = await self._resolve_workshop_name(name)
 
-        # 先按名称查找
-        result = await db.execute(select(EnergyWorkshop).where(EnergyWorkshop.name == normalized_name))
-        workshop = result.scalar_one_or_none()
+        # 先按名称查找。name 上没有唯一约束（models.py 只对 code 建了唯一约束），
+        # 历史数据里可能同名多行，取第一条而不是用 scalar_one_or_none 抛错
+        result = await db.execute(
+            select(EnergyWorkshop)
+            .where(
+                EnergyWorkshop.name == normalized_name,
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+            .order_by(EnergyWorkshop.id)
+        )
+        workshop = result.scalars().first()
         if workshop:
             return workshop
 
         # 按 code 查找
-        result = await db.execute(select(EnergyWorkshop).where(EnergyWorkshop.code == normalized_name))
-        workshop = result.scalar_one_or_none()
+        result = await db.execute(
+            select(EnergyWorkshop)
+            .where(
+                EnergyWorkshop.code == normalized_name,
+                EnergyWorkshop.is_deleted == False,  # noqa: E712
+            )
+            .order_by(EnergyWorkshop.id)
+        )
+        workshop = result.scalars().first()
         if workshop:
             return workshop
 
@@ -186,6 +240,8 @@ class EnergyBitableCrossImport:
             category=category,
             sort_order=0,
             is_active=True,
+            # 只在新建时打标：已存在的车间以车间管理页的人工配置为准
+            excluded_energy_types=list(ROLLUP_WORKSHOPS.get(normalized_name, ())),
         )
         db.add(workshop)
         await db.flush()
@@ -276,11 +332,7 @@ class EnergyBitableCrossImport:
             if main_value == "车间":
                 continue
 
-            # 检查是否是RTO用电行（跳过，但保留RTO天然气）
-            if main_value == "RTO用电":
-                continue
-
-            # 检测天然气相关行
+            # 检测天然气相关行（天然气数据挂在汽 section 尾部，没有独立 section 标题）
             if "天然气" in main_value:
                 if "总表" in main_value or "合计" in main_value or "总量" in main_value:
                     # 跳过汇总行
@@ -374,10 +426,24 @@ class EnergyBitableCrossImport:
                 existing = result.scalar_one_or_none()
 
                 if existing:
-                    existing.value = parsed["value"]
-                    existing.unit = parsed["unit"]
-                    existing.date_range_end = parsed["date_range_end"]
-                    updated += 1
+                    if existing.is_deleted:
+                        # 唯一约束 uq_energy_monthly_record 不含 is_deleted，命中软删行只能复活，
+                        # 否则插入分支会撞 UniqueViolation
+                        logger.info(
+                            "Reviving soft-deleted monthly record",
+                            extra={"record_id": str(existing.id), "record_date": str(existing.record_date)},
+                        )
+                    # 只统计值真变化的行，否则每次都把整表匹配数报成「更新 N 条」（D-51）
+                    if apply_changed_fields(
+                        existing,
+                        {
+                            "is_deleted": False,
+                            "value": parsed["value"],
+                            "unit": parsed["unit"],
+                            "date_range_end": parsed["date_range_end"],
+                        },
+                    ):
+                        updated += 1
                 else:
                     new_record = EnergyMonthlyRecord(
                         workshop_id=workshop.id,
@@ -397,6 +463,8 @@ class EnergyBitableCrossImport:
 
         await db.commit()
 
+        warnings = await self._check_rollup_consistency(db, all_parsed)
+
         return {
             "status": "success",
             "table": table_name,
@@ -404,7 +472,56 @@ class EnergyBitableCrossImport:
             "total_updated": updated,
             "total_parsed": len(all_parsed),
             "errors": errors[:10],
+            "rollup_warnings": warnings,
         }
+
+    async def _check_rollup_consistency(self, db: AsyncSession, parsed: list[dict[str, Any]]) -> list[str]:
+        """比对合计行与其构成项、容器与被包含项，偏差超容差时告警。
+
+        只告警不改数：多维表格里的行名可能变化，静默修数会掩盖源表问题。
+        """
+        dates = [p["record_date"] for p in parsed if p.get("record_date")]
+        if not dates:
+            return []
+
+        result = await db.execute(
+            select(EnergyWorkshop.name, EnergyMonthlyRecord.energy_type, func.sum(EnergyMonthlyRecord.value))
+            .join(EnergyMonthlyRecord, EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id)
+            .where(
+                EnergyMonthlyRecord.record_date >= min(dates),
+                EnergyMonthlyRecord.record_date <= max(dates),
+                EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            )
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.energy_type)
+        )
+        totals: dict[tuple[str, str], float] = {(r[0], r[1]): float(r[2] or 0) for r in result.all()}
+
+        warnings: list[str] = []
+        for rollup_name, (energy_type, components) in ROLLUP_COMPONENTS.items():
+            rollup_total = totals.get((rollup_name, energy_type))
+            component_sum = sum(totals.get((c, energy_type), 0.0) for c in components)
+            if rollup_total is None or component_sum <= 0:
+                continue
+            deviation = abs(rollup_total - component_sum) / component_sum
+            if deviation > ROLLUP_TOLERANCE:
+                warnings.append(
+                    f"{rollup_name}({energy_type})={rollup_total:.2f} 与构成项之和={component_sum:.2f} "
+                    f"偏差 {deviation * 100:.2f}%"
+                )
+
+        for container, (energy_type, member) in ROLLUP_CONTAINERS.items():
+            container_total = totals.get((container, energy_type))
+            member_total = totals.get((member, energy_type))
+            if container_total is None or member_total is None:
+                continue
+            if member_total > container_total:
+                warnings.append(
+                    f"{container}({energy_type})={container_total:.2f} 小于 {member}={member_total:.2f}，容器应包含成员"
+                )
+
+        for msg in warnings:
+            logger.warning(f"能耗合计行一致性校验: {msg}")
+        return warnings
 
     async def import_year(self, db: AsyncSession, year: int) -> dict[str, Any]:
         """导入一整年的数据。"""
@@ -429,8 +546,8 @@ class EnergyBitableCrossImport:
         for table_name in year_tables:
             result = await self.import_month(db, table_name)
             results.append(result)
-            total_created += result.get("created", 0)
-            total_updated += result.get("updated", 0)
+            total_created += result.get("total_created", 0)
+            total_updated += result.get("total_updated", 0)
             total_errors.extend(result.get("errors", []))
 
         return {

@@ -614,6 +614,8 @@ export interface ClaimTimeoutConfig {
 export interface Maintainer {
   id: string
   name: string
+  /** 登录账号（选人下拉用「姓名（账号）」展示） */
+  username?: string | null
   employee_id?: string
   employee_no?: string
   user_id?: string

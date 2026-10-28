@@ -1,5 +1,6 @@
 """Validation Audit business logic."""
 
+import asyncio
 import json
 import logging
 import uuid
@@ -142,6 +143,14 @@ class ValidationAuditService:
 
     # ── 文件解析 ──────────────────────────────────────────
 
+    async def mark_parsing(self, task: ValidationAuditTask) -> None:
+        """提交解析后台任务前同步置状态，避免前端轮询期出现「状态还没变」的竞态。"""
+        await self.task_repo.update(task, status=TaskStatus.PARSING.value)
+
+    async def mark_auditing(self, task: ValidationAuditTask) -> None:
+        """提交审核后台任务前同步置状态（同上）。"""
+        await self.task_repo.update(task, status=TaskStatus.AUDITING.value)
+
     async def parse_files(self, task: ValidationAuditTask) -> None:
         """解析任务下所有待解析文件"""
         files = await self.file_repo.list_by_task_id(task.id)
@@ -155,7 +164,9 @@ class ValidationAuditService:
         for audit_file in pending_files:
             try:
                 await self.file_repo.update_parse_result(audit_file, parse_status="parsing")
-                text = DocumentParser.extract_text(audit_file.file_path, max_chars=80000)
+                # DocumentParser 是同步实现（docx/pdf 解析），放到线程池避免阻塞事件循环
+                file_path = audit_file.file_path
+                text = await asyncio.to_thread(DocumentParser.extract_text, file_path, max_chars=80000)
                 await self.file_repo.update_parse_result(audit_file, parse_status="completed", parsed_text=text)
             except Exception as e:
                 logger.exception("文件解析失败: %s", audit_file.original_filename)

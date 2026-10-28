@@ -19,8 +19,12 @@ from app.modules.equipment.schemas.equipment import (
     EquipmentCreate,
     EquipmentImportance,
     EquipmentResponse,
+    EquipmentSortBy,
+    EquipmentSortOrder,
     EquipmentStatistics,
     EquipmentStatus,
+    EquipmentSyncResponse,
+    EquipmentSyncResult,
     EquipmentUpdate,
     LocationCreate,
     LocationResponse,
@@ -128,6 +132,8 @@ from app.modules.equipment.schemas.work_order import (
     WorkOrderVerify,
 )
 from app.modules.equipment.schemas.work_order_image import (
+    WorkOrderImageDeleteApiResponse,
+    WorkOrderImageListApiResponse,
     WorkOrderImageResponse,
 )
 
@@ -147,6 +153,7 @@ __all__ = [
     "EquipmentResponse",
     "EquipmentStatistics",
     "BatchDeleteRequest",
+    "EquipmentSyncResult",
     # failure code
     "FailureCodeType",
     "FailureCodeCreate",
@@ -214,6 +221,8 @@ __all__ = [
     # inspection
     "RouteCheckSubmit",
     # work order image
+    "WorkOrderImageDeleteApiResponse",
+    "WorkOrderImageListApiResponse",
     "WorkOrderImageResponse",
     # personnel
     "CandidateResponse",

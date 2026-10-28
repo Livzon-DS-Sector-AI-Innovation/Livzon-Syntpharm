@@ -1,9 +1,12 @@
 import { apiFetch, apiFetchRaw, getApiBaseUrl, } from '@/lib/api/server/base'
 import type { components } from '@/types/generated/schema'
+import { buildEquipmentQuery, type EquipmentListQuery, type EquipmentStatsQuery } from '@/lib/api/equipment-query'
 
 
 // Equipment import row type (matches backend EquipmentImportRow schema)
+// 列名由 Excel 表头动态决定（后端 import-v4 下发 headers），已知列保留强类型
 export interface EquipmentImportRow {
+  [column: string]: string | number | boolean | null | undefined;
   资产编号?: string | null;
   资产说明?: string | null;
   实物所在部门?: string | null;
@@ -360,18 +363,26 @@ export async function updateScheduleApiTyped(routeId: string, scheduleId: string
 }
 
 // Equipment Import (using EquipmentImportRow from backend)
-export async function previewEquipmentImportApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/preview`, {
+export async function previewEquipmentImportApiTyped(
+  data: EquipmentImportRow[], 
+  headers?: Record<string, string>,
+  forceOverride: boolean = false
+) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-v4/preview`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
   })
 }
 
-export async function batchImportEquipmentApiTyped(data: EquipmentImportRow[], headers?: Record<string, string>) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import/batch`, {
+export async function batchImportEquipmentApiTyped(
+  data: EquipmentImportRow[], 
+  headers?: Record<string, string>,
+  forceOverride: boolean = false
+) {
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import-v4/batch`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ data, force_override_business_fields: forceOverride }),
     headers,
   })
 }
@@ -454,8 +465,8 @@ export async function deleteInspectionTemplateItemApi(itemId: string, headers?: 
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
-export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
+
+export async function uploadWorkOrderImagesApi(workOrderId: string, formData: FormData, headers?: Record<string, string>): Promise<unknown> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/work-orders/${workOrderId}/images`, {
     method: 'POST',
     headers,
@@ -486,8 +497,8 @@ export async function downloadImportTemplateApi(headers?: Record<string, string>
   return Buffer.from(arrayBuffer).toString('base64')
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
-export async function importEquipmentsApi(formData: FormData, headers?: Record<string, string>): Promise<any> {
+
+export async function importEquipmentsApi(formData: FormData, headers?: Record<string, string>): Promise<unknown> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/import`, {
     method: 'POST',
     headers,
@@ -523,7 +534,8 @@ export async function deleteInspectionRouteApi(id: string, headers?: Record<stri
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function setRouteLocationsApi(routeId: string, locations: any[], headers?: Record<string, string>) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/routes/${routeId}/locations`, {
     method: 'POST',
@@ -554,8 +566,8 @@ export async function closeInspectionTaskApi(id: string, closureRemark?: string,
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
-export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
+
+export async function uploadInspectionPhotoApi(taskId: string, equipmentId: string, formData: FormData, headers?: Record<string, string>): Promise<unknown> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/equipments/${equipmentId}/photos`, {
     method: 'POST',
     headers,
@@ -570,8 +582,8 @@ export async function deleteInspectionPhotoApi(taskId: string, photoId: string, 
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
-export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers?: Record<string, string>): Promise<any> {
+
+export async function uploadTaskPhotoApi(taskId: string, formData: FormData, headers?: Record<string, string>): Promise<unknown> {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/tasks/${taskId}/photos`, {
     method: 'POST',
     headers,
@@ -619,22 +631,15 @@ export async function fetchLocationTree() {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/locations?tree=true`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
-export async function fetchEquipments(filters: any = {}) {
-  const params = new URLSearchParams()
-  if (filters.category_id) params.append('category_id', filters.category_id)
-  if (filters.location_id) params.append('location_id', filters.location_id)
-  if (filters.department_id) params.append('department_id', filters.department_id)
-  if (filters.status) params.append('status', filters.status)
-  if (filters.keyword) params.append('keyword', filters.keyword)
-  if (filters.page) params.append('page', filters.page.toString())
-  if (filters.page_size) params.append('page_size', filters.page_size.toString())
-  const qs = params.toString()
+export async function fetchEquipments(query: EquipmentListQuery = {}) {
+  const qs = buildEquipmentQuery(query).toString()
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments${qs ? `?${qs}` : ''}`)
 }
 
-export async function fetchEquipmentStatistics() {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/statistics`)
+/** 首屏统计按 URL 上的筛选取数，与列表同口径，否则 SSR 数字会被客户端二次请求覆盖 */
+export async function fetchEquipmentStatistics(filters: EquipmentStatsQuery = {}) {
+  const qs = buildEquipmentQuery(filters).toString()
+  return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/equipments/statistics${qs ? `?${qs}` : ''}`)
 }
 
 export async function fetchDepartments() {
@@ -642,7 +647,8 @@ export async function fetchDepartments() {
   return res.data || []
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function fetchInspectionTemplates(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -652,7 +658,8 @@ export async function fetchInspectionTemplates(filters: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/inspection/templates${qs ? `?${qs}` : ''}`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function fetchWorkOrders(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.status) params.append('status', filters.status)
@@ -677,7 +684,8 @@ export async function fetchFailureCodes(type: string) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/failure-codes/${type}`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function fetchCalibrationPlans(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -688,7 +696,8 @@ export async function fetchCalibrationPlans(filters: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/plans${qs ? `?${qs}` : ''}`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function fetchCalibrationRecords(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -699,7 +708,8 @@ export async function fetchCalibrationRecords(filters: any = {}) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/calibration/records${qs ? `?${qs}` : ''}`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function fetchMaintenancePlans(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.equipment_id) params.append('equipment_id', filters.equipment_id)
@@ -717,7 +727,8 @@ export async function fetchOverdueMaintenancePlans(days?: number) {
   return apiFetch(`${getApiBaseUrl()}/api/v1/equipment/maintenance/plans/overdue${qs ? `?${qs}` : ''}`)
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- filters/return types use any to avoid breaking callers; these are legacy API functions with untyped JSON responses
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- 历史遗留未类型化函数：改具体类型需连带改调用方，单独一轮处理
 export async function fetchSpareParts(filters: any = {}) {
   const params = new URLSearchParams()
   if (filters.category) params.append('category', filters.category)

@@ -1,16 +1,8 @@
 import { apiFetch, getApiBaseUrl } from '@/lib/api/server/base'
+import type { components } from '@/types/generated/schema'
+import type { AuditLogQuery } from '@/types/audit'
 
-export async function getAuditLogsApi(
-  authToken: string,
-  params: {
-    page?: number
-    page_size?: number
-    user_id?: string
-    action?: string
-    resource_type?: string
-    keyword?: string
-  },
-) {
+export async function getAuditLogsApi(authToken: string, params: AuditLogQuery) {
   const searchParams = new URLSearchParams()
   if (params.page) searchParams.set('page', String(params.page))
   if (params.page_size) searchParams.set('page_size', String(params.page_size))
@@ -19,7 +11,8 @@ export async function getAuditLogsApi(
   if (params.resource_type) searchParams.set('resource_type', params.resource_type)
   if (params.keyword) searchParams.set('keyword', params.keyword)
 
-  return apiFetch(`${getApiBaseUrl()}/api/v1/audit/logs?${searchParams.toString()}`, {
-    headers: { Authorization: `Bearer ${authToken}` },
-  })
+  return apiFetch<components['schemas']['AuditLogListResponse']>(
+    `${getApiBaseUrl()}/api/v1/audit/logs?${searchParams.toString()}`,
+    { headers: { Authorization: `Bearer ${authToken}` } },
+  )
 }

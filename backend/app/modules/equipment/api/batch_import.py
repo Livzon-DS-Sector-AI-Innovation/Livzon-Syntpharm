@@ -128,7 +128,7 @@ def parse_excel_date(value: Any) -> date | None:
     # 处理 datetime 对象（openpyxl 读取 Excel 日期单元格时返回）
     if isinstance(value, datetime):
         return value.date()
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         from datetime import timedelta
 
         base_date = date(1899, 12, 30)
@@ -423,17 +423,3 @@ async def import_excel(
             row_dict = {str(headers[i]): row[i] for i in range(len(headers)) if i < len(row) and headers[i]}
             data.append(row_dict)
     return build_response(data=data)
-
-
-# Temporary test endpoint for debugging validation errors
-@router.post("/test-validation", summary="测试验证错误")
-async def test_validation(data: list[EquipmentImportRow]) -> dict[str, Any]:
-    """Test endpoint to debug validation errors without authentication."""
-    import logging
-
-    logger = logging.getLogger(__name__)
-    logger.error(f"[TEST] Received {len(data)} rows")
-    if data:
-        logger.error(f"[TEST] First row: {data[0]}")
-        logger.error(f"[TEST] First row dict: {data[0].model_dump()}")
-    return {"status": "ok", "count": len(data)}

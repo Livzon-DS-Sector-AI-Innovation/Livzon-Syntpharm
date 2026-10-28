@@ -203,7 +203,6 @@ export const moduleMenus: ModuleMenu[] = [
         label: "AI工具",
         path: "",
         children: [
-          { key: "ai-config", label: "AI配置", path: "/quality/ai-config" },
           { key: "ai-log", label: "AI日志", path: "/quality/ai-log" },
         ],
       },
@@ -523,7 +522,7 @@ export const moduleMenus: ModuleMenu[] = [
       { key: "settings-overview", label: "概览", path: "/settings" },
       { key: "users", label: "用户管理", path: "/settings/users" },
       { key: "login-logs", label: "登录记录", path: "/settings/login-logs" },
-      { key: "audit", label: "操作审计", path: "/settings/audit" },
+      { key: "audit", label: "操作记录", path: "/settings/audit" },
       { key: "permission", label: "权限管理", path: "/settings/permission" },
       { key: "platform", label: "系统配置", path: "/settings/platform" },
       { key: "ops", label: "系统运维", path: "/settings/ops" },

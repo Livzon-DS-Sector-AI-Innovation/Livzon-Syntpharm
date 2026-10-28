@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.modules.quality.qms.iqc_schemas import (
     IQCApprovalCreate,
     IQCApprovalRecordResponse,
@@ -17,6 +17,7 @@ from app.modules.quality.qms.iqc_schemas import (
     IQCInspectionCreate,
     IQCInspectionFilter,
     IQCInspectionListResponse,
+    IQCInspectionPageResponse,
     IQCInspectionResponse,
     IQCInspectionUpdate,
 )
@@ -32,9 +33,9 @@ def get_iqc_service(session: AsyncSession = Depends(get_db)) -> IQCInspectionSer
 @router.post("/inspections", response_model=IQCInspectionApiResponse, status_code=201)
 async def post(
     data: IQCInspectionCreate,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:create")),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """创建IQC检验单"""
     try:
@@ -48,8 +49,9 @@ async def post(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/inspections", response_model=dict)
+@router.get("/inspections", response_model=IQCInspectionPageResponse)
 async def get(
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:read")),
     inspection_no: str | None = Query(None, description="检验单号"),
     material_code: str | None = Query(None, description="物料编码"),
@@ -63,7 +65,6 @@ async def get(
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取IQC检验单列表"""
     filters = IQCInspectionFilter(
@@ -89,9 +90,9 @@ async def get(
 @router.get("/inspections/{inspection_id}", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def get(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:read")),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取IQC检验单详情"""
     try:
@@ -105,9 +106,9 @@ async def get(  # noqa: F811
 async def put(
     inspection_id: UUID,
     data: IQCInspectionUpdate,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:update")),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """更新IQC检验单"""
     try:
@@ -124,9 +125,9 @@ async def put(
 @router.delete("/inspections/{inspection_id}")
 async def delete(
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:delete")),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """删除IQC检验单"""
     try:
@@ -140,9 +141,9 @@ async def delete(
 @router.post("/inspections/{inspection_id}/submit", response_model=IQCInspectionApiResponse)  # type: ignore[no-redef]
 async def post(  # noqa: F811
     inspection_id: UUID,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:submit")),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """提交IQC检验单审批"""
     try:
@@ -160,9 +161,9 @@ async def post(  # noqa: F811
 async def post(  # noqa: F811
     inspection_id: UUID,
     data: IQCApprovalCreate,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("quality:iqc:approve")),
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """审批IQC检验单"""
     try:
@@ -184,8 +185,8 @@ async def post(  # noqa: F811
 )
 async def handler(
     inspection_id: UUID,
+    current_user: RequiredUser,
     service: IQCInspectionService = Depends(get_iqc_service),
-    current_user: CurrentUser = None,
 ) -> Any:  # noqa: F821  # type: ignore[name-defined]
     """获取审批记录"""
     approvals = await service.get_approval_records(inspection_id)

@@ -15,8 +15,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.database import get_db
-from app.core.deps import CurrentUser
+from app.core.deps import RequiredUser
 from app.core.storage import get_object
 from app.core.storage import is_enabled as minio_enabled
 
@@ -51,20 +52,60 @@ def _guess_content_type(file_path: str) -> str:
     return _MIME_TYPES.get(ext, "application/octet-stream")
 
 
+def _allowed_upload_roots() -> list[str]:
+    """Absolute directories that the file proxy is allowed to read from."""
+    settings = get_settings()
+    roots: list[str] = []
+    for raw in (settings.UPLOAD_DIR, settings.LEGACY_UPLOAD_DIR):
+        if not raw:
+            continue
+        root = os.path.realpath(os.path.abspath(raw))
+        # 根目录 / 盘符根不能当白名单，否则等于放开整个文件系统
+        if os.path.dirname(root) == root:
+            continue
+        if root not in roots:
+            roots.append(root)
+    return roots
+
+
+def _within_upload_roots(candidate: str) -> str | None:
+    """Return the real path when it stays inside an upload root, else None.
+
+    ``realpath`` 先解析符号链接与 ``..``，再与白名单根做 commonpath 比较，
+    因此 ``/etc/passwd``、``../../.env``、软链逃逸都会被判为越界。
+    """
+    try:
+        real = os.path.realpath(candidate)
+    except (OSError, ValueError):
+        return None
+    for root in _allowed_upload_roots():
+        try:
+            if os.path.commonpath([real, root]) == root:
+                return real
+        except ValueError:  # 跨盘符（Windows）无法比较
+            continue
+    return None
+
+
 def _resolve_local_path(file_path: str) -> str | None:
-    """Resolve a stored file path to an actual local filesystem path.
+    """Resolve a stored file path to a local path inside an upload root.
 
     Handles three storage conventions:
       1. Clean relative paths (new): ``safety/hazard/file.jpg``
-         → ``{cwd}/uploads/safety/hazard/file.jpg``
+         → ``{uploads}/safety/hazard/file.jpg``
       2. Legacy prefix paths (old): ``uploads/safety/hazard/file.jpg``
-         → ``{cwd}/uploads/safety/hazard/file.jpg`` (via stripping prefix
-         and rejoining with uploads base)
-      3. Absolute paths (very old / cross-drive): ``E:/.../uploads/...``
-         → used as-is if the file exists
+         → ``{uploads}/safety/hazard/file.jpg`` (via stripping the prefix)
+      3. Paths already anchored at cwd or absolute legacy paths
+         → kept only when they resolve inside an upload root
+
+    所有候选路径都必须落在 ``UPLOAD_DIR`` / ``LEGACY_UPLOAD_DIR`` 之内，
+    否则返回 ``None``（对外表现为 404），避免通过 ``{file_path:path}``
+    读取任意文件（如 ``.env``、``/etc/passwd``）。
     """
-    cwd = os.path.abspath(".")
-    uploads_base = os.path.abspath("./uploads")
+    if not file_path or "\x00" in file_path:
+        return None
+
+    uploads_base = os.path.abspath(get_settings().UPLOAD_DIR)
 
     # 1. Try joining with uploads base (handles clean paths + legacy prefix paths)
     #    If path starts with "uploads/", strip it to avoid double prefix:
@@ -78,16 +119,20 @@ def _resolve_local_path(file_path: str) -> str | None:
         relative = file_path
     candidate = os.path.normpath(os.path.join(uploads_base, relative))
     if os.path.isfile(candidate):
-        return candidate
+        resolved = _within_upload_roots(candidate)
+        if resolved:
+            return resolved
 
-    # 2. Try the path directly (handles absolute paths and edge cases)
+    # 2. Try the path directly (handles absolute legacy paths)
     if os.path.isabs(file_path) and os.path.isfile(file_path):
-        return file_path
+        resolved = _within_upload_roots(file_path)
+        if resolved:
+            return resolved
 
     # 3. Try relative to cwd directly (for paths already anchored at cwd)
-    candidate = os.path.normpath(os.path.join(cwd, file_path))
+    candidate = os.path.normpath(os.path.join(os.path.abspath("."), file_path))
     if os.path.isfile(candidate):
-        return candidate
+        return _within_upload_roots(candidate)
 
     return None
 
@@ -98,7 +143,7 @@ def _resolve_local_path(file_path: str) -> str | None:
     description="通过 object_key 或本地路径返回文件内容。支持向后兼容旧路径。",
 )
 async def handler(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     file_path: str,
     request: Request,
     db: AsyncSession = Depends(get_db),

@@ -1,155 +1,118 @@
-"""Doc Check 模块请求/响应 Schema
+"""Doc Check 模块请求/响应模型。
 
-定义文档合规校验 API 的请求和响应数据结构。
+字段与 quality.sop_ai_check_main / quality.sop_ai_check_problem 表的真实列一一对应，
+避免出现表中不存在的字段（历史版本的 problem_no/category/severity/title 等列并不存在）。
 """
 
-import uuid
 from datetime import datetime
-from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.shared.schemas import PaginationMeta
 
-class CheckStatus(StrEnum):
-    """校验状态"""
-
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
+CheckStatusValue = Literal["pending", "running", "completed", "failed", "cancelled"]
+CheckTypeValue = Literal["single", "batch", "scheduled"]
+ProblemTypeValue = Literal["duplicate", "conflict", "compliance", "format", "content"]
+RiskLevelValue = Literal["high", "medium", "low"]
+HandleStatusValue = Literal["pending", "confirmed", "ignored", "fixed"]
 
 
-class ProblemSeverity(StrEnum):
-    """问题严重程度"""
-
-    INFO = "info"
-    WARNING = "warning"
-    ERROR = "error"
-    CRITICAL = "critical"
+def _normalize_enum(value: Any) -> Any:
+    """把 StrEnum 成员或大写枚举名归一化为小写字符串。"""
+    if isinstance(value, str):
+        return value.lower()
+    return getattr(value, "value", value)
 
 
-class ProblemCategory(StrEnum):
-    """问题分类"""
-
-    FORMAT = "format"
-    CONTENT = "content"
-    COMPLIANCE = "compliance"
-    LOGIC = "logic"
-    MISSING = "missing"
+# ============ 配置 ============
 
 
-# ============ 配置 Schema ============
+class DocCheckConfigCreate(BaseModel):
+    """新增配置项"""
 
-
-class DocCheckConfigBase(BaseModel):
-    """文档校验配置基础模式（与 SopAiConfig 匹配）"""
-
-    config_key: str = Field(..., max_length=100, description="配置键")
-    config_value: str = Field(..., description="配置值")
-    description: str | None = Field(None, max_length=500, description="描述")
-
-
-class DocCheckConfigCreate(DocCheckConfigBase):
-    """创建配置"""
-
-    pass
+    config_key: str = Field(..., min_length=1, max_length=100, description="配置键")
+    config_value: str = Field(..., min_length=1, description="配置值")
+    description: str | None = Field(None, max_length=500, description="配置说明")
 
 
 class DocCheckConfigUpdate(BaseModel):
-    """更新配置"""
+    """修改配置项"""
 
-    config_value: str | None = Field(None, description="配置值")
-    description: str | None = Field(None, max_length=500, description="描述")
+    config_value: str | None = Field(None, min_length=1, description="配置值")
+    description: str | None = Field(None, max_length=500, description="配置说明")
 
 
 class DocCheckConfigResponse(BaseModel):
-    """配置响应（与 SopAiConfig 匹配）"""
+    """配置项"""
 
-    id: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
     config_key: str
     config_value: str
     description: str | None = None
-    operator: str | None = None
+    is_enabled: bool = True
+    sort_order: int = 0
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
 
-    @model_validator(mode="before")
-    @classmethod
-    def convert_uuid_to_str(cls, data) -> Any:  # type: ignore[no-untyped-def]
-        """将 UUID 对象转换为字符串"""
-        if hasattr(data, "__dict__"):
-            # SQLAlchemy 模型对象
-            data = data.__dict__.copy()
-        if isinstance(data, dict):
-            if "id" in data and hasattr(data["id"], "hex"):
-                data["id"] = str(data["id"])
-            if "created_at" in data and data["created_at"]:
-                data["created_at"] = data["created_at"].isoformat()
-            if "updated_at" in data and data["updated_at"]:
-                data["updated_at"] = data["updated_at"].isoformat()
-        return data
-
-
-# ============ 校验主表 Schema ============
+# ============ 校验任务 ============
 
 
 class DocCheckCreate(BaseModel):
     """创建校验任务"""
 
-    doc_type: str = Field("SOP", max_length=50, description="文档类型")
-    doc_title: str | None = Field(None, max_length=255, description="文档标题")
-    doc_content: str | None = Field(None, description="文档内容")
-    file_id: str | None = Field(None, description="上传文件ID")
-    check_config: dict[str, Any] | None = Field(None, description="校验配置(前端扩展字段)")
+    doc_type: str = Field(..., min_length=1, max_length=50, description="文件类型，如 SOP")
+    doc_title: str = Field(..., min_length=1, max_length=500, description="文件名称")
+    check_type: CheckTypeValue = Field("single", description="校验类型")
 
 
 class DocCheckUpdate(BaseModel):
-    """更新校验任务"""
+    """修改校验任务（仅待处理状态可改）"""
 
-    doc_type: str | None = Field(None, max_length=50, description="文档类型")
-    doc_title: str | None = Field(None, max_length=255, description="文档标题")
-    doc_content: str | None = Field(None, description="文档内容")
-    status: str | None = Field(None, description="校验状态")
+    doc_type: str | None = Field(None, min_length=1, max_length=50)
+    doc_title: str | None = Field(None, min_length=1, max_length=500)
+    check_type: CheckTypeValue | None = None
 
-
-class ProblemItem(BaseModel):
-    """问题明细"""
-
-    problem_no: int = Field(..., description="问题序号")
-    category: ProblemCategory = Field(..., description="问题分类")
-    severity: ProblemSeverity = Field(..., description="严重程度")
-    title: str = Field(..., max_length=255, description="问题标题")
-    description: str = Field(..., description="问题描述")
-    location: str | None = Field(None, max_length=255, description="位置信息")
-    suggestion: str | None = Field(None, description="改进建议")
-    reference: str | None = Field(None, description="参考依据")
+    @field_validator("check_type", mode="before")
+    @classmethod
+    def _lower_check_type(cls, value: Any) -> Any:
+        return _normalize_enum(value)
 
 
-class CheckResult(BaseModel):
-    """校验结果"""
+class DocCheckExecuteRequest(BaseModel):
+    """执行校验：二选一提供上传文件标识或直接文本内容"""
 
-    status: CheckStatus = Field(..., description="校验状态")
-    check_result: str | None = Field(None, description="校验结果(JSON)")
-    ai_suggestion: str | None = Field(None, description="AI 改进建议")
-    problem_count: int = Field(0, description="问题数量")
-    critical_count: int = Field(0, description="严重问题数量")
-    error_count: int = Field(0, description="错误数量")
-    warning_count: int = Field(0, description="警告数量")
-    problems: list[ProblemItem] = Field(default_factory=list, description="问题列表")
+    file_id: str | None = Field(None, max_length=64, description="上传接口返回的文件标识")
+    doc_content: str | None = Field(None, description="直接提交的文档正文")
+
+    @model_validator(mode="after")
+    def _require_one_source(self) -> "DocCheckExecuteRequest":
+        if not self.file_id and not self.doc_content:
+            raise ValueError("file_id 与 doc_content 至少提供一个")
+        return self
+
+
+class DocCheckBatchCreate(BaseModel):
+    """批量创建校验任务"""
+
+    file_ids: list[str] = Field(..., min_length=1, max_length=50, description="文件标识列表")
+    check_type: CheckTypeValue = "batch"
 
 
 class DocCheckResponse(BaseModel):
-    """校验任务响应"""
+    """校验任务"""
 
-    id: uuid.UUID
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
     file_code: str | None = None
     file_name: str | None = None
     file_type: str | None = None
-    status: CheckStatus
+    check_type: str | None = None
+    status: str
     result_summary: str | None = None
     total_problems: int = 0
     risk_high: int = 0
@@ -159,78 +122,140 @@ class DocCheckResponse(BaseModel):
     created_at: datetime | None = None
     updated_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
+    @field_validator("status", mode="before")
+    @classmethod
+    def _lower_status(cls, value: Any) -> Any:
+        return _normalize_enum(value)
+
+
+class ProblemResponse(BaseModel):
+    """问题明细"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    main_id: str
+    problem_type: str | None = None
+    risk_level: str | None = None
+    location: str | None = None
+    description: str | None = None
+    source_file: str | None = None
+    suggestion: str | None = None
+    handle_status: str
+    ignore_reason: str | None = None
+    operator: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    @field_validator("problem_type", "risk_level", "handle_status", mode="before")
+    @classmethod
+    def _lower_enum_fields(cls, value: Any) -> Any:
+        return _normalize_enum(value)
 
 
 class DocCheckDetailResponse(DocCheckResponse):
-    """校验任务详情响应(含问题列表)"""
+    """校验任务详情（含问题明细）"""
 
-    problems: list[ProblemItem] = Field(default_factory=list, description="问题列表")
-
-    class Config:
-        from_attributes = True
+    problems: list[ProblemResponse] = Field(default_factory=list)
 
 
-# ============ 问题明细 Schema ============
+class DocCheckTaskResponse(BaseModel):
+    """任务提交结果"""
+
+    check_id: str
+    status: str
+    job_id: str | None = None
 
 
-class ProblemBase(BaseModel):
-    """问题基础模式"""
+class DocCheckProgressResponse(BaseModel):
+    """任务进度"""
 
-    problem_no: int = Field(..., description="问题序号")
-    category: ProblemCategory = Field(..., description="问题分类")
-    severity: ProblemSeverity = Field(..., description="严重程度")
-    title: str = Field(..., max_length=255, description="问题标题")
-    description: str = Field(..., description="问题描述")
-    location: str | None = Field(None, max_length=255, description="位置信息")
-    suggestion: str | None = Field(None, description="改进建议")
-    reference: str | None = Field(None, description="参考依据")
+    check_id: str
+    status: str
+    progress: int = Field(..., ge=0, le=100)
+    current_step: str
 
 
-class ProblemResponse(ProblemBase):
-    """问题响应"""
+class DocCheckBatchResponse(BaseModel):
+    """批量创建结果"""
 
-    id: uuid.UUID
-    check_main_id: uuid.UUID
-    created_at: datetime
-    updated_at: datetime
+    created: int
+    skipped: list[str] = Field(default_factory=list)
+    check_ids: list[str] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+
+class DocCheckConfirmResponse(BaseModel):
+    """确认通过结果"""
+
+    check_id: str
+    status: str
+    confirmed_problems: int
+
+
+class DocCheckExportResponse(BaseModel):
+    """导出结果"""
+
+    file_name: str
+    download_url: str
+    format: str
+
+
+# ============ 上传 ============
+
+
+class DocCheckUploadResponse(BaseModel):
+    """上传结果"""
+
+    file_id: str
+    file_name: str
+    file_size: int
+    content_type: str
+
+
+class DocCheckUploadProgressResponse(BaseModel):
+    """上传进度（同步落盘，返回即完成）"""
+
+    file_id: str
+    status: str
+    progress: int = Field(..., ge=0, le=100)
+
+
+# ============ 问题处理 ============
 
 
 class ProblemUpdate(BaseModel):
-    """问题更新请求"""
+    """处理单个问题"""
 
-    handle_status: str | None = Field(None, description="处理状态")
-    ignore_reason: str | None = Field(None, description="忽略原因")
-    operator: str | None = Field(None, description="操作人")
+    handle_status: HandleStatusValue
+    ignore_reason: str | None = Field(None, description="忽略原因，handle_status=ignored 时必填")
 
-
-# ============ 向量缓存 Schema ============
-
-
-class VectorCacheResponse(BaseModel):
-    """向量缓存响应"""
-
-    id: uuid.UUID
-    doc_type: str
-    doc_hash: str
-    doc_title: str | None = None
-    doc_summary: str | None = None
-    content_vector: list[float]
-    vector_storage_type: str
-    hit_count: int
-    last_hit_at: datetime | None = None
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
+    @field_validator("handle_status", mode="before")
+    @classmethod
+    def _lower_handle_status(cls, value: Any) -> Any:
+        return _normalize_enum(value)
 
 
-# ============ API Response Wrappers ============
+class ProblemBatchUpdate(BaseModel):
+    """批量处理问题"""
+
+    problem_ids: list[str] = Field(..., min_length=1, max_length=200)
+    handle_status: HandleStatusValue
+    ignore_reason: str | None = None
+
+    @field_validator("handle_status", mode="before")
+    @classmethod
+    def _lower_handle_status(cls, value: Any) -> Any:
+        return _normalize_enum(value)
+
+
+class ProblemBatchResult(BaseModel):
+    """批量处理结果"""
+
+    updated: int
+    skipped: list[str] = Field(default_factory=list)
+
+
+# ============ 响应信封 ============
 
 
 class DocCheckConfigListApiResponse(BaseModel):
@@ -242,108 +267,68 @@ class DocCheckConfigListApiResponse(BaseModel):
 
 
 class DocCheckConfigApiResponse(BaseModel):
-    """配置响应包装"""
+    """单条配置响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: DocCheckConfigResponse | None = None
-
-
-class DocCheckTaskApiResponse(BaseModel):
-    """校验任务响应包装"""
-
-    code: int = 200
-    message: str = "success"
-    data: dict[str, Any] | None = None
+    data: DocCheckConfigResponse
 
 
 class DocCheckListApiResponse(BaseModel):
-    """校验列表响应包装"""
+    """校验任务列表响应包装"""
 
     code: int = 200
     message: str = "success"
     data: list[DocCheckResponse]
-    meta: dict[str, Any] | None = None
+    meta: PaginationMeta | None = None
+
+
+class DocCheckApiResponse(BaseModel):
+    """校验任务响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocCheckResponse
 
 
 class DocCheckDetailApiResponse(BaseModel):
-    """校验详情响应包装"""
+    """校验任务详情响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: DocCheckDetailResponse | None = None
+    data: DocCheckDetailResponse
 
 
-class DocCheckProblemListApiResponse(BaseModel):
-    """问题列表响应包装"""
-
-    code: int = 200
-    message: str = "success"
-    data: list[ProblemResponse]
-
-
-class DocCheckVectorCacheListApiResponse(BaseModel):
-    """向量缓存列表响应包装"""
+class DocCheckTaskApiResponse(BaseModel):
+    """任务提交响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: list[dict[str, Any]]
-
-
-class DocCheckUploadApiResponse(BaseModel):
-    """文件上传响应包装"""
-
-    code: int = 200
-    message: str = "success"
-    data: dict[str, Any]
+    data: DocCheckTaskResponse
 
 
 class DocCheckProgressApiResponse(BaseModel):
-    """校验进度响应包装"""
+    """任务进度响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: dict[str, Any]
+    data: DocCheckProgressResponse
 
 
-class DocCheckRecordsApiResponse(BaseModel):
-    """校验记录响应包装"""
-
-    code: int = 200
-    message: str = "success"
-    data: dict[str, Any]
-
-
-class DocCheckMessageApiResponse(BaseModel):
-    """消息响应包装"""
+class DocCheckBatchApiResponse(BaseModel):
+    """批量创建响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: None = None
+    data: DocCheckBatchResponse
 
 
-class DocCheckSuccessApiResponse(BaseModel):
-    """成功响应包装"""
-
-    code: int = 200
-    message: str = "success"
-    data: dict[str, Any]
-
-
-class DocCheckProblemUpdateApiResponse(BaseModel):
-    """问题更新响应包装"""
+class DocCheckConfirmApiResponse(BaseModel):
+    """确认通过响应包装"""
 
     code: int = 200
     message: str = "success"
-    data: dict[str, Any]
-
-
-class DocCheckBatchUpdateApiResponse(BaseModel):
-    """批量更新响应包装"""
-
-    code: int = 200
-    message: str = "success"
-    data: dict[str, Any]
+    data: DocCheckConfirmResponse
 
 
 class DocCheckExportApiResponse(BaseModel):
@@ -351,4 +336,52 @@ class DocCheckExportApiResponse(BaseModel):
 
     code: int = 200
     message: str = "success"
-    data: dict[str, Any] | None = None
+    data: DocCheckExportResponse
+
+
+class DocCheckUploadApiResponse(BaseModel):
+    """上传响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocCheckUploadResponse
+
+
+class DocCheckUploadProgressApiResponse(BaseModel):
+    """上传进度响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: DocCheckUploadProgressResponse
+
+
+class ProblemListApiResponse(BaseModel):
+    """问题列表响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: list[ProblemResponse]
+
+
+class ProblemApiResponse(BaseModel):
+    """单条问题响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProblemResponse
+
+
+class ProblemBatchApiResponse(BaseModel):
+    """批量处理响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: ProblemBatchResult
+
+
+class MessageApiResponse(BaseModel):
+    """无数据响应包装"""
+
+    code: int = 200
+    message: str = "success"
+    data: None = None

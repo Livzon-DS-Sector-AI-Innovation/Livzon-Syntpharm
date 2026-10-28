@@ -7,6 +7,7 @@ import type {
   EnergyMonthlyRecord,
   EnergyWorkshop,
   MonthlySummary,
+  SyncJobStatus,
   RuleQueryParams,
   RecordQueryParams,
   MonthlyRecordQueryParams,
@@ -41,7 +42,7 @@ export async function fetchEnergyOverviewClient(params: {
 }
 
 export async function fetchCollectLogDetailClient(logId: string): Promise<CollectLogDetail> {
-  return apiGet<CollectLogDetail>(`${API_BASE}/energy/collect-logs/${logId}`)
+  return apiGet<CollectLogDetail>(`${API_BASE}/energy/collect/logs/${logId}/detail`)
 }
 
 export async function fetchPlatformsClient(): Promise<EnergyPlatform[]> {
@@ -80,9 +81,26 @@ export async function fetchWorkshopsClient(params?: WorkshopQueryParams): Promis
   return apiGet<EnergyWorkshop[]>(`${API_BASE}/energy/workshops${query}`)
 }
 
+export async function fetchWorkshopsPageClient(params?: WorkshopQueryParams): Promise<PaginatedResponse<EnergyWorkshop>> {
+  const query = buildQueryString(params as Record<string, unknown>)
+  return apiFetchPaginated<EnergyWorkshop>(`${API_BASE}/energy/workshops${query}`)
+}
+
 export async function fetchMonthlySummaryClient(params?: MonthlyRecordQueryParams): Promise<MonthlySummary> {
   const query = buildQueryString(params as Record<string, unknown>)
   return apiGet<MonthlySummary>(`${API_BASE}/energy/monthly/summary${query}`)
+}
+
+// ═══════════════════════════════════════════════════════════
+//  异步导入任务状态
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * 查异步导入任务状态。`/sync/bitable*` 只回受理句柄，计数必须靠这里轮询（`D-48`）。
+ * 任务状态存在后端进程内（`D-11`），重启即丢，因此 404 是「状态不可查」而不是「任务失败」。
+ */
+export async function fetchSyncJobClient(jobId: string): Promise<SyncJobStatus> {
+  return apiGet<SyncJobStatus>(`${API_BASE}/energy/jobs/${jobId}`)
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -158,33 +176,33 @@ export interface AIAnalysisResult {
   ai_suggestion: AISuggestion | null
 }
 
-export async function analyzeEnergyV2(data: {
+/** 提交 AI 能耗分析后台任务，返回 job_id（结果轮询 fetchEnergyAiJob）。 */
+export async function submitEnergyAnalysisJob(data: {
   workshop_id: string
   analysis_month: string
   production_items: { product_name: string; quantity: number; unit: string }[]
   include_ai_suggestion?: boolean
-}): Promise<AIAnalysisResult> {
-  const result = await fetchApi<{ code: number; data: AIAnalysisResult; message?: string }>(`${API_BASE}/energy/ai-analysis-v2`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
+}): Promise<string> {
+  const result = await fetchApi<{ code: number; data: { job_id: string }; message?: string }>(
+    `${API_BASE}/energy/ai-analysis-v2`,
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    },
+  )
+  return result.data.job_id
+}
+
+export interface EnergyAiJobState {
+  status: 'running' | 'done' | 'failed'
+  result: AIAnalysisResult | null
+  error: string | null
+}
+
+/** 轮询 AI 能耗分析任务状态。 */
+export async function fetchEnergyAiJob(jobId: string): Promise<EnergyAiJobState> {
+  const result = await fetchApi<{ code: number; data: EnergyAiJobState; message?: string }>(
+    `${API_BASE}/energy/ai-analysis-v2/jobs/${jobId}`,
+  )
   return result.data
-}
-
-// ═══════════════════════════════════════════════════════════
-//  生产数据同步
-// ═══════════════════════════════════════════════════════════
-
-export interface ProductionOutputItem {
-  product_name: string
-  quantity: number
-  unit: string
-}
-
-export async function fetchProductionOutput(params: {
-  workshop_id: string
-  month: string
-}): Promise<{ items: ProductionOutputItem[] }> {
-  const query = buildQueryString(params)
-  return apiGet<{ items: ProductionOutputItem[] }>(`${API_BASE}/energy/production/output${query}`)
 }

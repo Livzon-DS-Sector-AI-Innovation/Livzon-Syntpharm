@@ -8,12 +8,13 @@ import logging
 import re
 import uuid
 from datetime import date
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import text
+from sqlalchemy import Table, func, or_, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.ai.service import AiLogService
+from app.modules.quality.qms.reagent_models import ReagentQuality
 
 logger = logging.getLogger(__name__)
 
@@ -77,67 +78,51 @@ confidence 表示识别置信度（0-1之间）。
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[dict[str, Any]], int]:
-        """获取试剂列表"""
-        # 构建WHERE条件
-        conditions = []
-        params: dict[str, Any] = {}
+        """获取试剂列表（默认排除已软删除记录）"""
+        table = ReagentQuality.__table__
+        filters = [table.c.is_deleted == False]  # noqa: E712
 
         if keyword:
-            conditions.append("""
-                (reagent_name ILIKE :keyword
-                OR lot_no ILIKE :keyword
-                OR reagent_no ILIKE :keyword
-                OR manufacturer ILIKE :keyword)
-            """)
-            params["keyword"] = f"%{keyword}%"
+            like = f"%{keyword}%"
+            filters.append(
+                or_(
+                    table.c.reagent_name.ilike(like),
+                    table.c.lot_no.ilike(like),
+                    table.c.reagent_no.ilike(like),
+                    table.c.manufacturer.ilike(like),
+                )
+            )
 
         if category:
-            conditions.append("category = :category")
-            params["category"] = category
+            filters.append(table.c.category == category)
 
         if status:
-            conditions.append("status = :status")
-            params["status"] = status
-
-        where_clause = " AND ".join(conditions) if conditions else "1=1"
+            filters.append(table.c.status == status)
 
         # 查询总数
-        count_sql = text(f"""
-            SELECT COUNT(*)
-            FROM qms.qms_reagent_quality
-            WHERE {where_clause}
-        """)
-        total_result = await self.session.execute(count_sql, params)
-        total = total_result.scalar() or 0
+        count_stmt = select(func.count()).select_from(table).where(*filters)
+        total = (await self.session.execute(count_stmt)).scalar() or 0
 
         # 分页查询
-        offset = (page - 1) * page_size
-        params["offset"] = offset
-        params["limit"] = page_size
+        query_stmt = (
+            select(table)
+            .where(*filters)
+            .order_by(table.c.created_at.desc())
+            .offset((page - 1) * page_size)
+            .limit(page_size)
+        )
 
-        query_sql = text(f"""
-            SELECT *
-            FROM qms.qms_reagent_quality
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-            OFFSET :offset LIMIT :limit
-        """)
-
-        result = await self.session.execute(query_sql, params)
-        rows = result.fetchall()
-        columns = result.keys()
-
-        # 转换为字典列表
-        reagents = [dict(zip(columns, row)) for row in rows]
+        result = await self.session.execute(query_stmt)
+        reagents = [dict(row) for row in result.mappings().all()]
 
         return reagents, total
 
     async def get_reagent_by_id(self, reagent_id: str) -> dict[str, Any] | None:
-        """根据ID获取试剂详情"""
+        """根据ID获取试剂详情（已软删除的视为不存在）"""
         query_sql = text("""
             SELECT *
             FROM qms.qms_reagent_quality
-            WHERE id = :id
+            WHERE id = :id AND is_deleted = false
         """)
         result = await self.session.execute(query_sql, {"id": reagent_id})
         row = result.fetchone()
@@ -244,52 +229,44 @@ confidence 表示识别置信度（0-1之间）。
         data: dict[str, Any],
     ) -> dict[str, Any] | None:
         """更新试剂记录"""
-        # 构建更新字段
-        update_fields = []
-        params: dict[str, Any] = {"id": reagent_id}
+        table = cast(Table, ReagentQuality.__table__)
+        # 只允许更新表中真实存在的列，非表字段直接拒绝，避免列名拼接
+        unknown = set(data) - set(table.c.keys()) - {"id", "created_at"}
+        if unknown:
+            raise ValueError(f"不支持更新的字段: {', '.join(sorted(unknown))}")
 
-        for key, value in data.items():
-            if value is not None and key not in ["id", "created_at"]:
-                if key == "reagent_label_urls":
-                    # JSONB 字段：原生 SQL 需要显式序列化 + CAST
-                    update_fields.append(f"{key} = CAST(:{key} AS jsonb)")
-                    params[key] = json.dumps(value, ensure_ascii=False)
-                else:
-                    update_fields.append(f"{key} = :{key}")
-                    params[key] = value
+        values = {
+            key: value
+            for key, value in data.items()
+            if value is not None and key not in ("id", "created_at") and key in table.c
+        }
 
-        if not update_fields:
+        if not values:
             return await self.get_reagent_by_id(reagent_id)
 
-        update_fields.append("updated_at = NOW()")
+        # JSONB 字段由 SQLAlchemy 类型负责序列化
+        update_stmt = update(table).where(table.c.id == uuid.UUID(reagent_id)).values(**values).returning(*table.c)
 
-        update_sql = text(f"""
-            UPDATE qms.qms_reagent_quality
-            SET {", ".join(update_fields)}
-            WHERE id = :id
-            RETURNING *
-        """)
-
-        result = await self.session.execute(update_sql, params)
+        result = await self.session.execute(update_stmt)
         await self.session.commit()
 
-        row = result.fetchone()
+        row = result.mappings().first()
         if not row:
             return None
 
-        columns = result.keys()
-        return dict(zip(columns, row))
+        return dict(row)
 
     async def delete_reagent(self, reagent_id: str) -> bool:
-        """删除试剂记录"""
+        """软删除试剂记录（模型继承 BaseModel，默认不物理删除）。"""
         delete_sql = text("""
-            DELETE FROM qms.qms_reagent_quality
-            WHERE id = :id
+            UPDATE qms.qms_reagent_quality
+            SET is_deleted = true, updated_at = now()
+            WHERE id = :id AND is_deleted = false
         """)
         result = await self.session.execute(delete_sql, {"id": reagent_id})
         await self.session.commit()
 
-        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]  # type: ignore[attr-defined,no-any-return]
+        return result.rowcount > 0  # type: ignore[attr-defined,no-any-return]
 
     async def recognize_label(
         self,

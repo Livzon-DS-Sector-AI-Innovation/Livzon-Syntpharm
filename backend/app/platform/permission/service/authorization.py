@@ -12,10 +12,12 @@
 import logging
 from dataclasses import dataclass, field
 
+from fastapi import status
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenException
+from app.core.config import get_settings
+from app.core.exceptions import AppException, ForbiddenException
 from app.platform.identity.models import User
 from app.platform.permission.models import UserRoleGrant
 from app.platform.permission.repository import GrantRepository
@@ -57,6 +59,37 @@ def _detach_user(db: AsyncSession, user: User) -> None:
         logger.warning("detach user failed during permission degradation", exc_info=True)
 
 
+async def _handle_missing_permission_table(
+    db: AsyncSession,
+    user: User,
+    permission_code: str,
+) -> PermissionContext:
+    """权限表未迁移时的统一处置。
+
+    - `PERMISSION_ENFORCE_ENABLED=true`（强制模式）：拒绝请求（fail-closed），
+      明确提示去执行迁移，避免「权限表没了 = 全员放行」；
+    - 关闭时：保留原有降级语义（仅登录），用于尚未迁移的历史环境。
+    """
+    # 先摘出 user 再 rollback：rollback 会 expire 会话内对象，
+    # 之后调用方读 ctx.user.id 会触发同步 IO（MissingGreenlet）。
+    _detach_user(db, user)
+    await db.rollback()
+    if get_settings().PERMISSION_ENFORCE_ENABLED:
+        logger.exception(
+            "权限表不存在（permission schema 未迁移）且 PERMISSION_ENFORCE_ENABLED=true，"
+            "按 fail-closed 拒绝；请执行: alembic upgrade 0082_create_permission_schema",
+        )
+        raise AppException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            message="权限体系尚未初始化，请先执行数据库迁移 0082_create_permission_schema",
+        )
+    logger.exception(
+        "权限表不存在（permission schema 未迁移），权限判定降级为仅登录；"
+        "请执行: alembic upgrade 0082_create_permission_schema",
+    )
+    return PermissionContext(user=user, permission_code=permission_code, degraded=True)
+
+
 async def is_superuser_with_cache(db: AsyncSession, user: User) -> bool:
     """带缓存的超管判定。"""
     from app.platform.permission.cache import (
@@ -79,8 +112,9 @@ async def build_permission_context(
 ) -> PermissionContext:
     """构建权限上下文。无权限时抛 ForbiddenException。
 
-    降级：权限表尚未迁移（权限体系未部署）时，退化为「仅登录」并记 ERROR 日志；
-    迁移后自动恢复严格判定。不做静默放行——日志会明确提示需要执行的迁移。
+    权限表尚未迁移（权限体系未部署）时：
+    - `PERMISSION_ENFORCE_ENABLED=true`：fail-closed，返回 503 并提示执行迁移；
+    - 关闭：退化为「仅登录」并记 ERROR 日志，迁移后自动恢复严格判定。
     """
     from app.platform.permission.service.management import effective_permission_codes
 
@@ -89,13 +123,7 @@ async def build_permission_context(
     except ProgrammingError as exc:
         if not _is_missing_permission_table(exc):
             raise
-        _detach_user(db, user)
-        await db.rollback()
-        logger.error(
-            "权限表不存在（permission schema 未迁移），权限判定降级为仅登录；"
-            "请执行: alembic upgrade 0082_create_permission_schema",
-        )
-        return PermissionContext(user=user, permission_code=permission_code, degraded=True)
+        return await _handle_missing_permission_table(db, user, permission_code)
 
     if is_superuser:
         return PermissionContext(user=user, permission_code=permission_code, is_superuser=True)
@@ -105,13 +133,7 @@ async def build_permission_context(
     except ProgrammingError as exc:
         if not _is_missing_permission_table(exc):
             raise
-        _detach_user(db, user)
-        await db.rollback()
-        logger.error(
-            "权限表不存在（permission schema 未迁移），权限判定降级为仅登录；"
-            "请执行: alembic upgrade 0082_create_permission_schema",
-        )
-        return PermissionContext(user=user, permission_code=permission_code, degraded=True)
+        return await _handle_missing_permission_table(db, user, permission_code)
 
     if permission_code not in codes:
         raise ForbiddenException(f"缺少权限：{permission_code}")
@@ -136,6 +158,9 @@ async def has_permission(db: AsyncSession, user: User, permission_code: str) -> 
             raise
         _detach_user(db, user)
         await db.rollback()
-        logger.error("权限表不存在，has_permission 降级为 True（请执行迁移 0082）")
+        if get_settings().PERMISSION_ENFORCE_ENABLED:
+            logger.exception("权限表不存在且 PERMISSION_ENFORCE_ENABLED=true，has_permission 按 fail-closed 返回 False")
+            return False
+        logger.exception("权限表不存在，has_permission 降级为 True（请执行迁移 0082）")
         return True
     return permission_code in codes

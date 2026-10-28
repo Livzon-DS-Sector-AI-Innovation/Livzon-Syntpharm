@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import error_response, success_response
 from app.modules.registration.repository import reference_substance as repo
 from app.modules.registration.schemas.reference_substance import (
@@ -21,7 +21,7 @@ router = APIRouter()
 
 @router.get("/", summary="获取对照品列表")
 async def list_reference_substances(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:reference-substance:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
@@ -33,7 +33,7 @@ async def list_reference_substances(
 
 @router.post("/", summary="创建对照品")
 async def create_reference_substance(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     payload: ReferenceSubstanceCreate,
     ctx: PermissionContext = Depends(require_permission("registration:reference-substance:create")),
     db: AsyncSession = Depends(get_db),
@@ -46,7 +46,7 @@ async def create_reference_substance(
 
 @router.get("/{substance_id}", summary="获取对照品详情")
 async def get_reference_substance(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     substance_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-substance:read")),
     db: AsyncSession = Depends(get_db),
@@ -60,7 +60,7 @@ async def get_reference_substance(
 
 @router.put("/{substance_id}", summary="更新对照品")
 async def update_reference_substance(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     substance_id: uuid.UUID,
     payload: ReferenceSubstanceUpdate,
     ctx: PermissionContext = Depends(require_permission("registration:reference-substance:update")),
@@ -77,7 +77,7 @@ async def update_reference_substance(
 
 @router.delete("/{substance_id}", summary="删除对照品")
 async def delete_reference_substance(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     substance_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-substance:delete")),
     db: AsyncSession = Depends(get_db),

@@ -782,29 +782,6 @@ export async function resubmitDeviation(deviationId: string) {
   })
 }
 
-// ============ AI Config Actions ============
-
-export async function saveAIConfig(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/ai/config`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function resetAIConfig(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/ai/config`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
-export async function testAIConnection(data: unknown) {
-  return apiFetch(`${getApiBaseUrl()}/api/v1/quality/ai/config/test`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  })
-}
-
 // ============ Deviation Automation Actions ============
 
 export async function createDeviationTask(data: unknown) {

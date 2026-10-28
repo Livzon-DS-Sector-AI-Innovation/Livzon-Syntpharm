@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.schemas import AuthorizationLetterCreate
@@ -25,7 +25,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> AuthorizationLetterS
 
 @router.get("/products", summary="获取品种登记号对照表")
 async def list_products(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
 ) -> Any:
@@ -35,7 +35,7 @@ async def list_products(
 
 @router.get("", summary="授权书生成记录列表")
 async def get(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     product_name: str | None = Query(None, description="产品名称搜索"),
     preparation_unit: str | None = Query(None, description="制剂单位搜索"),
@@ -59,7 +59,7 @@ async def get(
 
 @router.post("/generate", summary="生成授权书")
 async def post(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     template: UploadFile,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:create")),
     product_name: str = Form(..., description="产品名称"),
@@ -105,7 +105,7 @@ async def post(
 
 @router.get("/{letter_id}", summary="授权书记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
@@ -116,7 +116,7 @@ async def get(  # noqa: F811
 
 @router.get("/{letter_id}/download-url", summary="获取授权书文件下载URL")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
@@ -134,7 +134,7 @@ async def get(  # noqa: F811
 
 @router.get("/{letter_id}/download", summary="下载生成的授权书文件")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:read")),
     service: AuthorizationLetterService = Depends(get_service),
@@ -156,7 +156,7 @@ async def get(  # noqa: F811
 
 @router.delete("/{letter_id}", summary="删除授权书记录")
 async def delete(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     letter_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:authorization-letter:delete")),
     service: AuthorizationLetterService = Depends(get_service),

@@ -15,7 +15,6 @@ from uuid import UUID, uuid4
 
 import jwt
 from fastapi import HTTPException, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -123,7 +122,8 @@ def validate_password_strength(password: str) -> str | None:
 async def resolve_username_prefix() -> str:
     """用户名前缀：运行时配置 `identity.USERNAME_PREFIX` 优先，缺省 YTH。"""
     raw = await get_module_setting("identity", USERNAME_PREFIX_SETTING_KEY, DEFAULT_USERNAME_PREFIX)
-    cleaned = "".join(ch for ch in raw.strip().upper() if ch.isalnum())[:8]
+    # 只保留 ASCII 字母数字：中文前缀会生成中文用户名，与新建账号的字符集规则冲突
+    cleaned = "".join(ch for ch in raw.strip().upper() if ch.isascii() and ch.isalnum())[:8]
     return cleaned or DEFAULT_USERNAME_PREFIX
 
 
@@ -1201,8 +1201,13 @@ def _verify_feishu_callback_signature(
     nonce: str | None,
     signature: str | None,
 ) -> bool:
-    if not encrypt_key or not timestamp or not nonce or not signature:
+    # 未配置 Encrypt Key 时无法做签名校验，此时由调用方的 verification token 校验兜底。
+    if not encrypt_key:
         return True
+    # 配置了 Encrypt Key 就必须提供完整签名材料，缺任何一项都判失败（fail-closed），
+    # 否则「删掉签名头」即可绕过校验。
+    if not timestamp or not nonce or not signature:
+        return False
     raw = f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body
     expected = hashlib.sha256(raw).hexdigest()
     return hmac.compare_digest(expected, signature)
@@ -1568,26 +1573,33 @@ async def get_or_create_e2e_user(db: AsyncSession) -> User:
     return user
 
 
-MAX_LOGIN_FAILURES = 5
-LOCKOUT_SECONDS = 15 * 60
+def lockout_policy() -> tuple[int, int]:
+    """登录失败锁定策略：(最大失败次数, 锁定秒数)。
+
+    从配置读取（`LOGIN_MAX_FAILURES` / `LOGIN_LOCKOUT_SECONDS`），默认 5 次 / 900 秒，
+    与原硬编码一致；运维可只改环境变量调整，不需要改代码。
+    """
+    settings = get_settings()
+    return settings.LOGIN_MAX_FAILURES, settings.LOGIN_LOCKOUT_SECONDS
 
 
 async def authenticate_local_user(db: AsyncSession, *, username: str, password: str) -> tuple[User, str]:
     user = await _repo.get_by_login_identifier(db, username)
     if user is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
 
     now = datetime.now(UTC)
     if user.locked_until is not None and user.locked_until > now:
         raise HTTPException(status.HTTP_423_LOCKED, "登录失败次数过多，账号已临时锁定，请稍后再试")
 
+    max_failures, lockout_seconds = lockout_policy()
     if not verify_password(password, user.password_hash):
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-        if user.failed_login_attempts >= MAX_LOGIN_FAILURES:
-            user.locked_until = now + timedelta(seconds=LOCKOUT_SECONDS)
+        if user.failed_login_attempts >= max_failures:
+            user.locked_until = now + timedelta(seconds=lockout_seconds)
             user.failed_login_attempts = 0
         await db.flush()
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "账号或密码错误")
 
     if user.status == "disabled":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "账号已禁用")
@@ -1630,47 +1642,15 @@ async def bind_feishu_user(
     目标账号保留自己的 username / password_hash / auth_source —— 本地账号合并后
     既能继续用账号密码登录，也能用飞书登录（登录回调按 feishu_open_id 命中它）。
     """
-    from app.platform.permission.models import UserRoleGrant
+    from app.platform.permission.public_api import migrate_user_grants
 
-    # 1. 迁移授权
-    target_grants = (
-        (
-            await db.execute(
-                select(UserRoleGrant).where(
-                    UserRoleGrant.user_id == target.id,
-                    UserRoleGrant.is_deleted == False,  # noqa: E712
-                )
-            )
-        )
-        .scalars()
-        .all()
+    # 1. 迁移授权（授权数据的读写收敛在 permission 模块，identity 只经 public_api 调用）
+    moved, deduplicated = await migrate_user_grants(
+        db,
+        source_user_id=source.id,
+        target_user_id=target.id,
+        operator_id=operator_id,
     )
-    existing_keys = {(grant.role_id, grant.scope_type) for grant in target_grants}
-
-    source_grants = (
-        (
-            await db.execute(
-                select(UserRoleGrant).where(
-                    UserRoleGrant.user_id == source.id,
-                    UserRoleGrant.is_deleted == False,  # noqa: E712
-                )
-            )
-        )
-        .scalars()
-        .all()
-    )
-
-    moved = 0
-    deduplicated = 0
-    for grant in source_grants:
-        if (grant.role_id, grant.scope_type) in existing_keys:
-            grant.is_deleted = True
-            deduplicated += 1
-        else:
-            grant.user_id = target.id
-            grant.version += 1
-            moved += 1
-        grant.updated_by = operator_id
 
     # 2. 身份字段搬迁
     for field in FEISHU_IDENTITY_FIELDS:

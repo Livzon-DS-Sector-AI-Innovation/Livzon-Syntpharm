@@ -32,16 +32,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.energy import repository as repo
 from app.modules.energy.models import EnergyWorkshop
 from app.modules.energy.schemas import EnergyMonthlyRecordCreate
+from app.modules.energy.workshop_names import NORMALIZED_WORKSHOP_ALIASES, resolve_workshop_name
 from app.platform.integrations.feishu.spreadsheet import SpreadsheetClient
 
 logger = logging.getLogger(__name__)
 
 # ── Date range parsing ──
 
-_DATE_RANGE_RE = re.compile(
-    r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})"
-    r"(?:\s*[-–~至]\s*(?:(\d{1,2})[/-])?(\d{1,2}))?"
-)
+_DATE_RANGE_RE = re.compile(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})" r"(?:\s*[-–~至]\s*(?:(\d{1,2})[/-])?(\d{1,2}))?")
 
 _ENERGY_TYPE_MAP: dict[str, str] = {
     "电": "electricity",
@@ -97,6 +95,7 @@ class ImportResult:
     workshops_created: int = 0
     workshops_existing: int = 0
     records_created: int = 0
+    records_updated: int = 0
     records_skipped: int = 0
     errors: list[str] = field(default_factory=list)
 
@@ -483,7 +482,7 @@ class FeishuEnergyImporter:
             try:
                 created, updated = await repo.batch_upsert_monthly_records(db, [r.model_dump() for r in record_data])
                 result.records_created = len(created)
-                result.records_skipped = updated
+                result.records_updated = updated
             except Exception as exc:
                 result.errors.append(f"Batch upsert failed: {exc}")
                 logger.exception("Batch upsert failed")
@@ -504,27 +503,30 @@ class FeishuEnergyImporter:
         workshop_map: dict[str, EnergyWorkshop] = {}
 
         for name in workshop_names:
+            resolved_name = resolve_workshop_name(name, NORMALIZED_WORKSHOP_ALIASES)
+
             # Try to find by name first
-            existing = await repo.get_workshop_by_name(db, name)
+            existing = await repo.get_workshop_by_name(db, resolved_name)
             if existing:
                 workshop_map[name] = existing
                 continue
 
             # Auto-create with a generated code
-            code = self._generate_code(name)
+            code = self._generate_code(resolved_name)
             # Check if code exists
             by_code = await repo.get_workshop_by_code(db, code)
             if by_code:
                 workshop_map[name] = by_code
                 continue
 
-            from app.modules.energy.models import EnergyWorkshop
+            from app.modules.energy.models import ROLLUP_WORKSHOPS, EnergyWorkshop
 
             new_ws = EnergyWorkshop(
                 code=code,
-                name=name,
+                name=resolved_name,
                 category="workshop",
                 sort_order=0,
+                excluded_energy_types=list(ROLLUP_WORKSHOPS.get(resolved_name, ())),
             )
             db.add(new_ws)
             await db.flush()

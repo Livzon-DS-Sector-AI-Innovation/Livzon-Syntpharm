@@ -9,11 +9,14 @@
 退出码：0 通过，非 0 失败（违反则 PR 不能合并）。
 
 完整性门禁（registry.ENFORCE_READY_MODULES 列出的模块）：
-- 该模块每个 @router 路由都必须登记绑定（或列入 EXEMPT_ROUTES 豁免）。
+- 该模块每个已挂载路由都必须登记绑定（或列入 EXEMPT_ROUTES 豁免）。
 - 该模块代码里每个 require_permission("...") 引用的权限码都必须存在。
 
-局限性（v1 可接受）：静态扫描假定模块路由全部挂在 /api/v1/{module.path} 前缀下
-（router.py 的现状如此）。若模块内部再定义带 prefix 的子路由，需先展平再纳入。
+路由清单来源：导入 app.api.router 并生成 OpenAPI，按 module.path 前缀过滤。
+v1 曾静态扫描模块目录并手工拼接前缀，把「文件里存在但从未 include 的路由」
+和「子路由自带 prefix」（如 /hr/turnover-analysis 被拼成 /hr）都算成缺口，
+实测 512 条报错全部是误报，真实缺口反而被埋掉。故改为以挂载结果为准；
+导入失败时退回静态扫描并在 stderr 告警。
 """
 
 import re
@@ -49,6 +52,57 @@ def _normalize_template(template: str) -> str:
 def _module_api_files(module_code: str) -> list[Path]:
     module_dir = _BACKEND_ROOT / "app" / "modules" / module_code
     return sorted(module_dir.rglob("*.py")) if module_dir.is_dir() else []
+
+
+def _api_prefix() -> str:
+    try:
+        from app.core.config import get_settings
+
+        return get_settings().API_V1_PREFIX.rstrip("/") or "/api/v1"
+    except Exception:  # 配置不可用（本地裸跑脚本）时按默认前缀处理
+        return "/api/v1"
+
+
+def _mounted_routes() -> dict[str, frozenset[str]] | None:
+    """返回 {归一化路由模板: {METHOD}}，取自真实挂载的 FastAPI 应用。
+
+    无法构建应用（缺环境变量、依赖导入失败）时返回 None，调用方退回静态扫描。
+    """
+    try:
+        from fastapi import FastAPI
+
+        from app.api.router import api_router
+
+        test_app = FastAPI()
+        test_app.include_router(api_router, prefix=_api_prefix())
+        paths = test_app.openapi().get("paths", {})
+    except Exception as exc:  # 导入链任何失败都降级，但必须显式告警
+        print(f"警告: 无法加载已挂载路由（{exc}），退回静态扫描，结果可能含未挂载路由", file=sys.stderr)
+        return None
+    mounted: dict[str, set[str]] = {}
+    for path, item in paths.items():
+        mounted.setdefault(_normalize_template(path.rstrip("/")), set()).update(m.upper() for m in item)
+    return {path: frozenset(methods) for path, methods in mounted.items()}
+
+
+def _scan_module_files_static(
+    errors: list[str],
+    module_code: str,
+    module_prefix: str,
+    files: list[Path],
+    bound_templates: set[str],
+    exempt_templates: set[str],
+) -> None:
+    """降级路径：静态扫描模块目录（可能包含未挂载路由，仅用于排查）。"""
+    for py in files:
+        text = py.read_text(encoding="utf-8")
+        for method, route in _ROUTE_RE.findall(text):
+            full = f"{module_prefix}{'' if route.startswith('/') else '/'}{route}".rstrip("/") or module_prefix
+            norm = _normalize_template(full)
+            if norm not in bound_templates and norm not in exempt_templates:
+                errors.append(
+                    f"模块 {module_code} 路由未登记绑定: {method.upper()} {full}（{py.relative_to(_BACKEND_ROOT)}）"
+                )
 
 
 def _check() -> list[str]:
@@ -116,28 +170,40 @@ def _check() -> list[str]:
         if b.permission_code not in seen_codes:
             errors.append(f"接口绑定引用了未定义的权限码: {b.permission_code}（{b.method} {b.route_template}）")
 
-    # 7. 就绪模块完整性门禁：每路由有绑定（或豁免）、require_permission 可反查
-    bound_templates = {_normalize_template(b.route_template) for b in API_BINDINGS}
-    exempt_templates = {_normalize_template(t) for _, t in EXEMPT_ROUTES}
+    # 7. 就绪模块完整性门禁：每个已挂载路由有绑定（或豁免）、require_permission 可反查
+    bound_pairs = {(b.method.upper(), _normalize_template(b.route_template.rstrip("/"))) for b in API_BINDINGS}
+    exempt_pairs = {(m.upper(), _normalize_template(t.rstrip("/"))) for m, t in EXEMPT_ROUTES}
+    mounted = _mounted_routes()
     for module_code in ENFORCE_READY_MODULES:
         module = MODULES_BY_CODE.get(module_code)
         if module is None:
             errors.append(f"ENFORCE_READY_MODULES 含未知模块码: {module_code}")
             continue
-        prefix = f"/api/v1/{module.path.lstrip('/')}"
+        module_prefix = f"{_api_prefix()}{module.path.rstrip('/')}"
         files = _module_api_files(module_code)
-        if not files:
-            errors.append(f"就绪模块 {module_code} 未找到任何 api 文件: app/modules/{module_code}")
-            continue
+        if mounted is None:
+            if not files:
+                errors.append(f"就绪模块 {module_code} 未找到任何 api 文件: app/modules/{module_code}")
+            else:
+                _scan_module_files_static(
+                    errors,
+                    module_code,
+                    module_prefix,
+                    files,
+                    {t for _, t in bound_pairs},
+                    {t for _, t in exempt_pairs},
+                )
+        else:
+            for route_path in sorted(mounted):
+                if route_path != module_prefix and not route_path.startswith(f"{module_prefix}/"):
+                    continue
+                for method in sorted(mounted[route_path]):
+                    if (method, route_path) in bound_pairs or (method, route_path) in exempt_pairs:
+                        continue
+                    errors.append(f"模块 {module_code} 路由未登记绑定: {method} {route_path}")
+        # require_permission 字面量引用检查与路由是否挂载无关，始终静态扫
         for py in files:
             text = py.read_text(encoding="utf-8")
-            for method, route in _ROUTE_RE.findall(text):
-                full = f"{prefix}{'' if route.startswith('/') else '/'}{route}".rstrip("/") or prefix
-                norm = _normalize_template(full)
-                if norm not in bound_templates and norm not in exempt_templates:
-                    errors.append(
-                        f"模块 {module_code} 路由未登记绑定: {method.upper()} {full}（{py.relative_to(_BACKEND_ROOT)}）"
-                    )
             for code in _REQUIRE_RE.findall(text):
                 if code not in seen_codes:
                     errors.append(f"模块 {module_code} require_permission 引用未定义权限码: {code}（{py.name}）")

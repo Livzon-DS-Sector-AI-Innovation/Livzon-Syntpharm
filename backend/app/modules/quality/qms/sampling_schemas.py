@@ -308,3 +308,21 @@ class SampleRetentionLedgerListApiResponse(BaseModel):
     code: int = 200
     message: str = "success"
     data: list[SampleRetentionLedgerResponse] | None = None
+
+
+class SamplingOrderPageResponse(BaseModel):
+    """取样单列表分页响应（列表接口直接返回 items/total/page/page_size）"""
+
+    items: list[SamplingOrderListResponse]
+    total: int
+    page: int
+    page_size: int
+
+
+class SampleRetentionLedgerPageResponse(BaseModel):
+    """留样台账列表分页响应"""
+
+    items: list[SampleRetentionLedgerResponse]
+    total: int
+    page: int
+    page_size: int

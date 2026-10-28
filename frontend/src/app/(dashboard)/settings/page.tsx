@@ -72,8 +72,8 @@ export default async function SettingsPage() {
       },
       {
         key: 'audit',
-        title: '操作审计',
-        description: '按用户、资源与时间检索后台操作留痕。',
+        title: '操作记录',
+        description: '按操作者、对象与时间检索后台操作留痕。',
         path: '/settings/audit',
         icon: 'audit',
         manageable: false,

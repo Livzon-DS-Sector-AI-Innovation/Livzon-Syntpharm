@@ -50,7 +50,8 @@ import {
   updateStageDeliverable as updateStageDeliverableApi,
   deleteStageDeliverable as deleteStageDeliverableApi,
   publishConclusionVersion as publishConclusionVersionApi,
-  generateReport as generateReportApi,
+  submitReportJob as submitReportJobApi,
+  fetchResearchJob as fetchResearchJobApi,
 } from '@/lib/api/server/research'
 
 type RdExperimentLogCreate = Omit<components['schemas']['RdExperimentLogCreate'], 'project_id'>
@@ -262,25 +263,39 @@ export async function deleteStageDeliverable(id: string) {
 }
 
 // Conclusion Versions
-export async function publishConclusionVersion(trackId: string, data: {
-  conclusion?: string
-  confidence: string
-  change_summary?: string
-  evidence_refs?: Record<string, unknown>
-}) {
+export async function publishConclusionVersion(
+  trackId: string,
+  data: Omit<components['schemas']['RdTrackConclusionVersionCreate'], 'track_id'>,
+) {
   const result = await publishConclusionVersionApi(trackId, data)
   revalidatePath('/research')
   return result
 }
 
 // AI Report Generation
-export async function generateReport(data: {
+export interface ResearchJobState {
+  status: 'running' | 'done' | 'failed'
+  result: { content: string; structure: Record<string, unknown> | null; data_sources: string[] } | null
+  error: string | null
+}
+
+/** 提交 AI 报告生成后台任务，返回 job_id（结果轮询 fetchResearchReportJob）。 */
+export async function submitReportJob(data: {
   project_id: string
   deliverable_type: string
   template_id?: string
   additional_context?: string
-}): Promise<{ content: string; structure: Record<string, unknown> | null; data_sources: string[] }> {
-  const result = await generateReportApi(data)
+}): Promise<string> {
+  const result = await submitReportJobApi(data)
   revalidatePath('/research')
-  return result as { content: string; structure: Record<string, unknown> | null; data_sources: string[] }
+  const payload = result as { data?: { job_id?: string } }
+  if (!payload.data?.job_id) {
+    throw new Error('报告生成任务提交失败：响应缺少 job_id')
+  }
+  return payload.data.job_id
+}
+
+export async function fetchResearchReportJob(jobId: string): Promise<ResearchJobState> {
+  const result = await fetchResearchJobApi(jobId)
+  return result as ResearchJobState
 }

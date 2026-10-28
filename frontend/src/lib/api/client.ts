@@ -83,7 +83,9 @@ export async function fetchApi<T>(
     if (response.status === 401 && typeof window !== 'undefined') {
       const target = `${window.location.pathname}${window.location.search}`
       if (!target.startsWith('/login')) {
-        document.cookie = `login_redirect=${encodeURIComponent(target)}; path=/; max-age=600`
+        // SameSite=Lax 防跨站携带；Secure 只在 https 下加，避免本地 http 开发时 cookie 写不进去
+        const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+        document.cookie = `login_redirect=${encodeURIComponent(target)}; path=/; max-age=600; SameSite=Lax${secure}`
       }
       window.location.href = '/login'
     }

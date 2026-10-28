@@ -1,17 +1,18 @@
 import logging
+import secrets
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, get_settings
 from app.core.database import get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.jobs import spawn_task
-from app.core.response import build_response, success_response
+from app.core.response import build_response
 from app.platform.audit.service import record_audit_log
 from app.platform.identity.models import User
 from app.platform.identity.repository import DepartmentRepository, UserRepository
@@ -19,6 +20,7 @@ from app.platform.identity.schemas import (
     ChangePasswordApiResponse,
     ChangePasswordData,
     ChangePasswordRequest,
+    CurrentUserApiResponse,
     DepartmentResponse,
     DepartmentTreeNode,
     FeishuBindRequest,
@@ -32,12 +34,30 @@ from app.platform.identity.schemas import (
     PasswordResetData,
     PasswordResetRequest,
     PersonnelItem,
+    PersonnelListApiResponse,
     PersonnelListResponse,
+    SessionListApiResponse,
+    SessionRevokeApiResponse,
+    SyncAllTriggerApiResponse,
+    SyncDepartmentsTriggerApiResponse,
+    SyncMembersTriggerApiResponse,
     TokenResponse,
+    UserBatchFailure,
+    UserBatchStatusApiResponse,
+    UserBatchStatusData,
+    UserBatchStatusRequest,
+    UserBindFeishuApiResponse,
+    UserCreateApiResponse,
+    UserCreateData,
+    UserDeleteApiResponse,
+    UserDeleteData,
+    UserManagementApiResponse,
     UserManagementItem,
+    UserManagementListApiResponse,
     UserManagementListResponse,
     UserManagementUpdate,
     UserResponse,
+    UserUnbindFeishuApiResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -88,8 +108,13 @@ async def test_login(
         raise HTTPException(status_code=404)
 
     from app.platform.identity.service import generate_jwt, get_or_create_e2e_user
+    from app.platform.permission.public_api import ensure_superadmin
 
     user = await get_or_create_e2e_user(db)
+    # E2E 用例覆盖全部业务模块，逐个授权既脆弱又难维护：直接给测试账号挂超管（幂等）。
+    # 只有 APP_ENV=test/e2e 且携带正确 X-E2E-Secret 才能走到这里。
+    if user.username:
+        await ensure_superadmin(db, user.username)
     await db.commit()
     token = generate_jwt(user)
     return {"token": token, "user": {"id": str(user.id), "name": user.name}}
@@ -110,9 +135,8 @@ async def local_login(
     from app.core.exceptions import UnauthorizedException
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.service import (
-        LOCKOUT_SECONDS,
-        MAX_LOGIN_FAILURES,
         generate_jwt,
+        lockout_policy,
         verify_password,
     )
 
@@ -129,7 +153,7 @@ async def local_login(
             db,
             status="failed",
             login_type="local",
-            # 记下尝试登录的账号：页面「按用户名搜索」才能搜到失败的登录尝试
+            # 记下尝试登录的账号：页面「按账号搜索」才能搜到失败的登录尝试
             user_name=payload.username[:100],
             ip_address=ip_address,
             user_agent=user_agent,
@@ -142,10 +166,11 @@ async def local_login(
     if user.locked_until is not None and user.locked_until > datetime.now(UTC):
         raise UnauthorizedException("登录失败次数过多，账号已临时锁定，请稍后再试")
 
+    max_failures, lockout_seconds = lockout_policy()
     if not verify_password(payload.password, user.password_hash):
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-        if user.failed_login_attempts >= MAX_LOGIN_FAILURES:
-            user.locked_until = datetime.now(UTC) + timedelta(seconds=LOCKOUT_SECONDS)
+        if user.failed_login_attempts >= max_failures:
+            user.locked_until = datetime.now(UTC) + timedelta(seconds=lockout_seconds)
             user.failed_login_attempts = 0
         await log_repo.create(
             db,
@@ -182,22 +207,36 @@ async def local_login(
 
 
 @auth_router.get("/login", summary="发起飞书 SSO 登录")
-async def login() -> RedirectResponse:
-    """Generate state token and redirect user to Feishu authorization page."""
+async def login(request: Request) -> RedirectResponse:
+    """Generate state token and redirect user to Feishu authorization page.
+
+    state 同时写进短时 httpOnly cookie（`oauth_state`），回调时与 query 里的 state
+    做双击提交比对 —— 只校验 JWT 签名无法防「把受害者浏览器导向攻击者 code」的 CSRF。
+    """
     from app.platform.identity.service import generate_state_token
     from app.platform.integrations.feishu.oauth import FeishuOAuthClient
 
     state = generate_state_token()
     oauth = FeishuOAuthClient.from_settings()
     authorize_url = oauth.build_authorize_url(state)
-    return RedirectResponse(url=authorize_url, status_code=302)
+    response = RedirectResponse(url=authorize_url, status_code=302)
+    response.set_cookie(
+        "oauth_state",
+        state,
+        max_age=300,
+        httponly=True,
+        samesite="lax",
+        secure=request.url.scheme == "https",
+        path="/api/v1/identity/auth",
+    )
+    return response
 
 
 @auth_router.get("/callback", summary="飞书 SSO 回调")
 async def auth_callback(
     request: Request,
     code: str = Query(...),
-    state: str = Query(""),
+    state: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ) -> RedirectResponse:
     """Handle the OAuth callback from Feishu.
@@ -215,8 +254,10 @@ async def auth_callback(
     user_agent = request.headers.get("user-agent")
     log_repo = LoginLogRepository()
 
-    # Validate state for CSRF protection
-    if state and not validate_state_token(state):
+    # Validate state for CSRF protection：签名/有效期 + 与本次会话的 cookie 比对
+    cookie_state = request.cookies.get("oauth_state") or ""
+    state_matches = bool(cookie_state) and secrets.compare_digest(cookie_state, state)
+    if not state_matches or not validate_state_token(state):
         await log_repo.create(
             db,
             status="failed",
@@ -226,10 +267,9 @@ async def auth_callback(
             error_message="invalid_state: 登录状态已过期",
         )
         await db.commit()
-        return RedirectResponse(
-            url="/login?error=invalid_state",
-            status_code=302,
-        )
+        response = RedirectResponse(url="/login?error=invalid_state", status_code=302)
+        response.delete_cookie("oauth_state", path="/api/v1/identity/auth")
+        return response
 
     try:
         user, token = await handle_oauth_callback(db, code)
@@ -277,8 +317,34 @@ async def auth_callback(
 
 
 @auth_router.get("/logout", summary="登出")
-async def logout() -> RedirectResponse:
-    """Redirect to frontend login page (frontend handles cookie clearing)."""
+async def logout(
+    request: Request,
+    auth_token: str | None = Cookie(default=None),
+) -> RedirectResponse:
+    """登出：吊销当前 token 的会话（写入吊销黑名单）后跳登录页。
+
+    前端仍负责清 cookie；这里补上「服务端失效」——否则退出登录后 token 在剩余
+    有效期内依然可用（Redis 不可用时只记日志，不阻塞登出）。
+    """
+    token = None
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        token = auth.removeprefix("Bearer ")
+    token = token or auth_token
+
+    if token:
+        try:
+            import jwt as pyjwt
+
+            from app.platform.identity.session import revoke_session
+
+            payload = pyjwt.decode(token, get_settings().SECRET_KEY, algorithms=["HS256"])
+            jti = payload.get("jti")
+            if jti:
+                await revoke_session(jti)
+        except Exception:
+            logger.warning("登出时吊销会话失败（不阻塞登出）", exc_info=True)
+
     return RedirectResponse(
         url="/login",
         status_code=302,
@@ -288,15 +354,15 @@ async def logout() -> RedirectResponse:
 # ── Current User ────────────────────────────────────────────────────
 
 
-@user_router.get("/me", summary="获取当前登录用户信息")
+@user_router.get("/me", summary="获取当前登录用户信息", response_model=CurrentUserApiResponse)
 async def get_me(
     current_user: RequiredUser,
-) -> JSONResponse:
+) -> Any:
     """Return the currently authenticated user's profile.
 
     Authentication via Bearer header or auth_token cookie.
     """
-    return success_response(data=UserResponse.model_validate(current_user).model_dump())
+    return build_response(data=UserResponse.model_validate(current_user).model_dump())
 
 
 # ── Departments ─────────────────────────────────────────────────────
@@ -331,16 +397,16 @@ async def list_departments(
     current_user: RequiredUser,
     tree: bool = Query(False, description="是否返回树形结构"),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """获取所有部门。传 ?tree=true 返回层级组织架构树。"""
     repo = DepartmentRepository()
     depts = await repo.list_all(db)
 
     if tree:
         nodes = _build_department_tree(depts, parent_id=None)
-        return success_response(data=[n.model_dump() for n in nodes])
+        return build_response(data=[n.model_dump() for n in nodes])
 
-    return success_response(
+    return build_response(
         data=[DepartmentResponse.model_validate(d).model_dump() for d in depts],
     )
 
@@ -350,7 +416,7 @@ async def get_department(
     dept_id: str,
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """按 open_department_id 获取单个部门详情。"""
     repo = DepartmentRepository()
     dept = await repo.get_by_feishu_id(db, dept_id)
@@ -358,13 +424,13 @@ async def get_department(
         from fastapi import HTTPException
 
         raise HTTPException(status_code=404, detail="部门不存在")
-    return success_response(data=DepartmentResponse.model_validate(dept).model_dump())
+    return build_response(data=DepartmentResponse.model_validate(dept).model_dump())
 
 
 # ── Personnel ───────────────────────────────────────────────────────
 
 
-@personnel_router.get("", summary="获取人员名单")
+@personnel_router.get("", response_model=PersonnelListApiResponse, summary="获取人员名单")
 async def list_personnel(
     current_user: RequiredUser,
     department_id: str | None = Query(None, description="按部门 ID 筛选"),
@@ -372,7 +438,7 @@ async def list_personnel(
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """分页获取所有人员名单，支持按部门和姓名筛选。"""
     repo = UserRepository()
     users, total = await repo.list_all(
@@ -390,17 +456,21 @@ async def list_personnel(
         offset=offset,
         limit=limit,
     )
-    return success_response(data=resp.model_dump())
+    return build_response(data=resp.model_dump())
 
 
 # ── Sync ────────────────────────────────────────────────────────────
 
 
-@sync_router.post("/departments", summary="触发飞书组织架构同步（异步）")
+@sync_router.post(
+    "/departments",
+    summary="触发飞书组织架构同步（异步）",
+    response_model=SyncDepartmentsTriggerApiResponse,
+)
 async def trigger_sync_departments(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
-) -> JSONResponse:
+) -> Any:
     """POST 触发一次飞书组织架构同步，后台执行不阻塞，立即返回。"""
     # root_id 允许为空：为空时由 get_all_departments 自动从「应用可见范围内的部门」出发
     # （应用可见范围通常不含根部门 "0"，硬编码 "0" 会报 40004 no dept authority error）
@@ -410,16 +480,20 @@ async def trigger_sync_departments(
 
     spawn_task(sync_departments(root_id), name="identity.sync_departments")
     logger.info("Department sync triggered for root=%s", root_id or "(自动：可见范围内的部门)")
-    return success_response(
+    return build_response(
         data={"message": "组织架构同步已触发", "root_dept_id": root_id or "auto"},
     )
 
 
-@sync_router.post("/members", summary="触发飞书成员同步（异步）")
+@sync_router.post(
+    "/members",
+    summary="触发飞书成员同步（异步）",
+    response_model=SyncMembersTriggerApiResponse,
+)
 async def trigger_sync_members(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
     settings: Settings = Depends(get_settings),
-) -> JSONResponse:
+) -> Any:
     """POST 触发一次飞书成员同步，后台执行不阻塞，立即返回。"""
     # target_id 允许为空：为空时由 sync_members 自动从「应用可见范围内的部门」出发
     target_id = settings.feishu.platform.sync_member_dept_id or None
@@ -428,15 +502,19 @@ async def trigger_sync_members(
 
     spawn_task(sync_members(target_id), name="identity.sync_members")
     logger.info("Member sync triggered for target=%s", target_id or "(自动)")
-    return success_response(
+    return build_response(
         data={"message": "成员同步已触发", "target_dept_id": target_id or "auto"},
     )
 
 
-@sync_router.post("/all", summary="同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）")
+@sync_router.post(
+    "/all",
+    summary="同步 Livzon 助手飞书通讯录（部门 + 成员，后台执行）",
+    response_model=SyncAllTriggerApiResponse,
+)
 async def trigger_sync_all(
     ctx: PermissionContext = Depends(require_permission("platform:config:manage")),
-) -> JSONResponse:
+) -> Any:
     """POST 触发一次「部门 + 成员」全量同步。
 
     全量同步耗时较长（数百人约 50 秒），按项目规范走后台任务、不阻塞请求；
@@ -446,7 +524,7 @@ async def trigger_sync_all(
 
     spawn_task(sync_livzon_feishu_contacts_all(), name="identity.sync_all")
     logger.info("Livzon Feishu contacts sync (departments + members) triggered")
-    return success_response(
+    return build_response(
         data={
             "status": "ok",
             "message": "通讯录同步已在后台开始（部门 + 成员），约 1 分钟后刷新本页查看结果。",
@@ -507,12 +585,12 @@ login_log_router = APIRouter(prefix="/login-logs", tags=["登录记录"])
 async def list_login_logs(
     ctx: PermissionContext = Depends(require_permission("platform:audit:read")),
     status: str | None = Query(None, description="筛选状态：success / failed"),
-    keyword: str | None = Query(None, description="按用户名搜索"),
+    keyword: str | None = Query(None, description="按账号搜索"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
-    """分页查询登录记录，支持按状态和用户名筛选。"""
+) -> Any:
+    """分页查询登录记录，支持按状态和账号筛选。"""
     from app.platform.identity.repository import LoginLogRepository
     from app.platform.identity.schemas import LoginLogListResponse, LoginLogResponse
 
@@ -532,13 +610,13 @@ async def list_login_logs(
         page=page,
         page_size=page_size,
     )
-    return success_response(data=resp.model_dump())
+    return build_response(data=resp.model_dump())
 
 
 # ── 用户管理（管理页）──────────────────────────────────────────────
 
 
-@user_router.get("/users", summary="用户管理列表")
+@user_router.get("/users", summary="用户管理列表", response_model=UserManagementListApiResponse)
 async def list_users_management(
     ctx: PermissionContext = Depends(require_permission("platform:user:read")),
     keyword: str | None = Query(None, description="按姓名/账号/邮箱/手机号搜索"),
@@ -549,15 +627,14 @@ async def list_users_management(
     offset: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     repo = UserRepository()
     # 超管账号只对超管可见：非超管即使有 platform:user:read，也不返回超管行
     # （否则会泄露超管姓名、联系方式与所持角色）。
     from app.platform.permission.public_api import list_superuser_user_ids, user_is_superuser
 
-    exclude_user_ids = None
-    if not await user_is_superuser(db, ctx.user):
-        exclude_user_ids = await list_superuser_user_ids(db)
+    super_ids = set(await list_superuser_user_ids(db))
+    exclude_user_ids = None if await user_is_superuser(db, ctx.user) else list(super_ids)
 
     users, total = await repo.list_users(
         db,
@@ -575,34 +652,57 @@ async def list_users_management(
     for u in users:
         item = UserManagementItem.model_validate(u)
         item.roles = roles_map.get(u.id, [])
+        # 批量操作的复选框据此置灰（前端体验层，后端批量接口仍逐条校验）
+        item.is_superuser = u.id in super_ids
         items.append(item.model_dump())
     resp = UserManagementListResponse(items=items, total=total, offset=offset, limit=limit)
-    return success_response(data=resp.model_dump())
+    return build_response(data=resp.model_dump())
 
 
-@user_router.post("/users", summary="新建本地用户")
+@user_router.post(
+    "/users",
+    summary="新建本地用户（初始密码留空则自动生成）",
+    response_model=UserCreateApiResponse,
+)
 async def create_user_management(
     payload: LocalUserCreate,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
+    """新建本地账号。
+
+    - `password` 留空：后端生成 12 位随机密码，明文只在本次响应里返回一次（不落库）；
+    - 传了 `password`：按管理员指定值设置，响应不含明文；
+    - 两种情况都置 `must_change_password`，用户首次登录必须自行改密 —— 一次性密码
+      不应该变成长期凭据。
+    """
     from app.core.exceptions import BadRequestException, DuplicateException
-    from app.platform.identity.service import hash_password, validate_password_strength
+    from app.platform.identity.service import (
+        generate_random_password,
+        hash_password,
+        validate_password_strength,
+    )
 
     repo = UserRepository()
     existing = await repo.get_by_username(db, payload.username)
     if existing is not None:
-        raise DuplicateException("用户名", payload.username)
+        raise DuplicateException("账号", payload.username)
 
-    strength_error = validate_password_strength(payload.password)
-    if strength_error:
-        raise BadRequestException(strength_error)
+    generated: str | None = None
+    if payload.password:
+        strength_error = validate_password_strength(payload.password)
+        if strength_error:
+            raise BadRequestException(strength_error)
+        password = payload.password
+    else:
+        generated = generate_random_password()
+        password = generated
 
     user = await repo.create(
         db,
         name=payload.name,
         username=payload.username,
-        password_hash=hash_password(payload.password),
+        password_hash=hash_password(password),
         email=payload.email,
         mobile=payload.mobile,
         employee_no=payload.employee_no,
@@ -610,26 +710,34 @@ async def create_user_management(
         position=payload.position,
         status=payload.status,
         auth_source="local",
+        must_change_password=True,
     )
+    # 审计只记「是否自动生成」，绝不记录密码明文
     await record_audit_log(
         db,
         user=ctx.user,
         action="user.create",
         resource_type="user",
         resource_id=user.id,
-        new_value={"username": payload.username, "name": payload.name, "status": payload.status},
+        new_value={
+            "username": payload.username,
+            "name": payload.name,
+            "status": payload.status,
+            "password_generated": generated is not None,
+        },
     )
     await db.commit()
-    return success_response(data=UserManagementItem.model_validate(user).model_dump())
+    data = UserCreateData.model_validate(user).model_copy(update={"initial_password": generated})
+    return build_response(data=data.model_dump())
 
 
-@user_router.put("/users/{user_id}", summary="更新用户")
+@user_router.put("/users/{user_id}", summary="更新用户", response_model=UserManagementApiResponse)
 async def update_user_management(
     user_id: uuid.UUID,
     payload: UserManagementUpdate,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     from app.core.exceptions import ForbiddenException, NotFoundException
 
     repo = UserRepository()
@@ -701,7 +809,155 @@ async def update_user_management(
         },
     )
     await db.commit()
-    return success_response(data=UserManagementItem.model_validate(user).model_dump())
+    return build_response(data=UserManagementItem.model_validate(user).model_dump())
+
+
+@user_router.post(
+    "/users/batch-status",
+    summary="批量启用 / 禁用账号",
+    response_model=UserBatchStatusApiResponse,
+)
+async def batch_update_user_status(
+    payload: UserBatchStatusRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """批量启用 / 禁用账号（单次最多 100 个）。
+
+    逐条复用单条更新的保护规则：不能改自己、不能操作系统内置账号、非超管不能操作
+    超管或权限更高的账号。失败条目不影响其他条目，结果里返回失败原因。
+    状态与目标一致的条目按幂等处理（计入成功，不写审计）。
+    """
+    from app.core.exceptions import ForbiddenException
+    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.permission.public_api import guard_manage_target
+
+    repo = UserRepository()
+    succeeded: list[uuid.UUID] = []
+    failed: list[UserBatchFailure] = []
+
+    # dict.fromkeys 去重且保持顺序：前端重复选同一条不应重复处理
+    for user_id in dict.fromkeys(payload.user_ids):
+        user = await repo.get_by_id(db, user_id)
+        if user is None:
+            failed.append(UserBatchFailure(id=user_id, reason="账号不存在或已删除"))
+            continue
+        if user.id == ctx.user.id:
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="不能修改自己的状态"))
+            continue
+        if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
+            failed.append(UserBatchFailure(id=user.id, username=user.username, reason="系统内置账号不允许批量修改"))
+            continue
+
+        try:
+            await guard_manage_target(db, actor=ctx.user, target=user)
+        except ForbiddenException as exc:
+            failed.append(
+                UserBatchFailure(id=user.id, username=user.username, reason=exc.message or "无权操作该账号"),
+            )
+            continue
+
+        if user.status == payload.status:
+            succeeded.append(user.id)
+            continue
+
+        old_status = user.status
+        user.status = payload.status
+        user.updated_by = ctx.user.id
+        await record_audit_log(
+            db,
+            user=ctx.user,
+            action="user.update",
+            resource_type="user",
+            resource_id=user.id,
+            old_value={"username": user.username, "status": old_status},
+            new_value={"username": user.username, "status": payload.status, "batch": True},
+        )
+        succeeded.append(user.id)
+
+    await db.commit()
+    return build_response(data=UserBatchStatusData(succeeded=succeeded, failed=failed).model_dump())
+
+
+@user_router.delete(
+    "/users/{user_id}",
+    summary="删除用户（仅超级管理员，软删除）",
+    response_model=UserDeleteApiResponse,
+)
+async def delete_user_management(
+    user_id: uuid.UUID,
+    ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
+    db: AsyncSession = Depends(get_db),
+) -> Any:
+    """删除账号：软删除 + 禁用，并清空角色授权、吊销在线会话。
+
+    「仅超级管理员」在 handler 内显式判定：`platform:user:manage` 同时授予普通账号
+    管理员（如 admin_account_manager），只靠权限码拦不住。
+
+    账号名不会被释放——`uq_identity_users_username` 不区分 `is_deleted`，删除后同名
+    账号无法重建；如需复用名称，请另建新名（或后续做改名迁移）。
+    """
+    from app.core.exceptions import ForbiddenException, NotFoundException
+    from app.platform.identity.service import SYSTEM_ADMIN_USERNAME
+    from app.platform.identity.session import revoke_all_user_sessions
+    from app.platform.permission.public_api import (
+        list_superuser_user_ids,
+        revoke_all_user_grants,
+        user_is_superuser,
+    )
+
+    if not await user_is_superuser(db, ctx.user):
+        raise ForbiddenException("只有超级管理员可以删除账号")
+
+    repo = UserRepository()
+    user = await repo.get_by_id(db, user_id)
+    if user is None:
+        raise NotFoundException("用户")
+
+    if user.id == ctx.user.id:
+        raise ForbiddenException("不能删除当前登录账号")
+    if (user.username or "").strip().lower() == SYSTEM_ADMIN_USERNAME.lower():
+        raise ForbiddenException("系统内置账号不允许删除")
+
+    super_ids = await list_superuser_user_ids(db)
+    if user.id in super_ids and len(super_ids) <= 1:
+        raise ForbiddenException("不能删除最后一个超级管理员账号")
+
+    old_value = {
+        "username": user.username,
+        "name": user.name,
+        "status": user.status,
+        "auth_source": user.auth_source,
+    }
+    await repo.soft_delete_user(db, user, operator_id=ctx.user.id)
+    revoked_grants = await revoke_all_user_grants(db, user.id)
+    await record_audit_log(
+        db,
+        user=ctx.user,
+        action="user.delete",
+        resource_type="user",
+        resource_id=user.id,
+        old_value=old_value,
+        new_value={"is_deleted": True, "status": "disabled", "revoked_grants": revoked_grants},
+    )
+    await db.commit()
+
+    # 会话存放在 Redis，提交成功之后再吊销：事务回滚时不应把用户误踢下线。
+    # Redis 不可用时只降级为「会话未吊销」，不能让已完成的删除返回失败。
+    try:
+        revoked_sessions = await revoke_all_user_sessions(user.id)
+    except Exception:
+        logger.warning("删除账号后吊销会话失败 user_id=%s", user.id, exc_info=True)
+        revoked_sessions = 0
+
+    return build_response(
+        data=UserDeleteData(
+            id=user.id,
+            username=user.username,
+            revoked_grants=revoked_grants,
+            revoked_sessions=revoked_sessions,
+        )
+    )
 
 
 @user_router.post(
@@ -724,7 +980,7 @@ async def reset_user_password(
     """
     from app.core.exceptions import ForbiddenException, NotFoundException
     from app.platform.identity.service import reset_password_by_admin
-    from app.platform.permission.public_api import user_is_superuser
+    from app.platform.permission.public_api import guard_manage_target, user_is_superuser
 
     repo = UserRepository()
     user = await repo.get_by_id(db, user_id)
@@ -733,6 +989,9 @@ async def reset_user_password(
 
     if await user_is_superuser(db, user):
         raise ForbiddenException("超级管理员的密码只能由本人登录后修改")
+
+    # 分级校验：只能重置权限严格低于自己的账号，防止低级管理员重置上级口令后接管账号
+    await guard_manage_target(db, actor=ctx.user, target=user)
 
     generated = await reset_password_by_admin(
         db,
@@ -799,7 +1058,7 @@ async def _record_login_session(token: str, user: User, ip_address: str | None, 
         logger.warning("记录登录会话失败", exc_info=True)
 
 
-@user_router.get("/sessions", summary="在线会话列表")
+@user_router.get("/sessions", summary="在线会话列表", response_model=SessionListApiResponse)
 async def list_sessions(
     ctx: PermissionContext = Depends(require_permission("platform:user:read")),
 ) -> Any:
@@ -809,7 +1068,7 @@ async def list_sessions(
     return build_response(data=await list_all_sessions())
 
 
-@user_router.delete("/sessions/{jti}", summary="吊销会话（踢下线）")
+@user_router.delete("/sessions/{jti}", summary="吊销会话（踢下线）", response_model=SessionRevokeApiResponse)
 async def revoke_session_api(
     jti: str,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
@@ -820,7 +1079,7 @@ async def revoke_session_api(
     return build_response(data={"revoked": True})
 
 
-@user_router.delete("/users/{user_id}/sessions", summary="吊销某用户全部会话")
+@user_router.delete("/users/{user_id}/sessions", summary="吊销某用户全部会话", response_model=SessionRevokeApiResponse)
 async def revoke_user_sessions(
     user_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
@@ -828,10 +1087,13 @@ async def revoke_user_sessions(
 ) -> Any:
     from app.core.exceptions import NotFoundException
     from app.platform.identity.session import revoke_all_user_sessions
+    from app.platform.permission.public_api import guard_manage_target
 
     user = await UserRepository().get_by_id(db, user_id)
     if user is None:
         raise NotFoundException("用户")
+    # 分级校验：只能踢权限严格低于自己的账号，防止低级管理员把上级踢下线
+    await guard_manage_target(db, actor=ctx.user, target=user, resource_label="会话")
     count = await revoke_all_user_sessions(user.id)
     return build_response(data={"revoked": count})
 
@@ -869,13 +1131,13 @@ async def change_my_password(
     return build_response(data=ChangePasswordData(message="密码已修改"))
 
 
-@user_router.post("/users/{user_id}/bind-feishu", summary="绑定飞书用户")
+@user_router.post("/users/{user_id}/bind-feishu", summary="绑定飞书用户", response_model=UserBindFeishuApiResponse)
 async def bind_user_feishu(
     user_id: uuid.UUID,
     payload: FeishuBindRequest,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """把一条飞书用户记录合并进该账号：迁角色授权 + 迁飞书身份 + 软删原记录。
 
     ⚠️ 产品要求（2026-10-13）：**管理端界面不再提供「绑定飞书」入口** ——
@@ -908,15 +1170,15 @@ async def bind_user_feishu(
     result = await bind_feishu_user(db, target=target, source=source, operator_id=ctx.user.id)
     data = UserManagementItem.model_validate(target).model_dump()
     data["bind_result"] = result
-    return success_response(data=data)
+    return build_response(data=data)
 
 
-@user_router.delete("/users/{user_id}/bind-feishu", summary="解绑飞书用户")
+@user_router.delete("/users/{user_id}/bind-feishu", summary="解绑飞书用户", response_model=UserUnbindFeishuApiResponse)
 async def unbind_user_feishu(
     user_id: uuid.UUID,
     ctx: PermissionContext = Depends(require_permission("platform:user:manage")),
     db: AsyncSession = Depends(get_db),
-) -> JSONResponse:
+) -> Any:
     """解绑飞书身份。
 
     - 由飞书首次登录自动创建的账号（`auth_source=feishu`）：解绑即**软删除**该账号，
@@ -964,4 +1226,4 @@ async def unbind_user_feishu(
     await db.commit()
     data = UserManagementItem.model_validate(user).model_dump()
     data["account_deleted"] = delete_account
-    return success_response(data=data)
+    return build_response(data=data)

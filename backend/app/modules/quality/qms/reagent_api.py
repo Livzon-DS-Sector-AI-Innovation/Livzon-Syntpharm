@@ -10,15 +10,21 @@ from typing import Any
 from urllib.parse import quote
 
 import openpyxl
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import PermissionContext, require_permission
+from app.core.exceptions import AppException
 from app.core.storage import save_upload_files
 from app.modules.quality.qms.reagent_schemas import (
     CreateReagentRequest,
+    ReagentDetailApiResponse,
+    ReagentListApiResponse,
+    ReagentMessageApiResponse,
+    ReagentNextLotNoApiResponse,
+    ReagentRecognizeApiResponse,
     ReagentResponse,
     UpdateReagentRequest,
 )
@@ -58,7 +64,7 @@ def dict_to_response(data: dict[str, Any]) -> ReagentResponse:
 # ============ API Endpoints ============
 
 
-@router.post("/recognize", response_model=dict, summary="AI识别试剂标签图片")
+@router.post("/recognize", response_model=ReagentRecognizeApiResponse, summary="AI识别试剂标签图片")
 async def post(
     ctx: PermissionContext = Depends(require_permission("quality:reagent:create")),
     files: list[UploadFile] = File(..., description="试剂标签图片（支持多张）"),
@@ -110,7 +116,7 @@ async def post(
         }
 
 
-@router.get("/next-lot-no", response_model=dict, summary="获取下一个入场批号")
+@router.get("/next-lot-no", response_model=ReagentNextLotNoApiResponse, summary="获取下一个入场批号")
 async def get(
     ctx: PermissionContext = Depends(require_permission("quality:reagent:read")),
     date_str: str | None = Query(None, description="日期(YYYY-MM-DD)，默认今天"),
@@ -147,7 +153,7 @@ async def get(
         }
 
 
-@router.get("/list", response_model=dict, summary="获取试剂台账列表")  # type: ignore[no-redef]
+@router.get("/list", response_model=ReagentListApiResponse, summary="获取试剂台账列表")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     ctx: PermissionContext = Depends(require_permission("quality:reagent:read")),
     keyword: str | None = Query(None, description="关键词搜索"),
@@ -318,7 +324,7 @@ async def get(  # noqa: F811
     )
 
 
-@router.get("/{reagent_id}", response_model=dict, summary="获取试剂详情")  # type: ignore[no-redef]
+@router.get("/{reagent_id}", response_model=ReagentDetailApiResponse, summary="获取试剂详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
     reagent_id: str,
     ctx: PermissionContext = Depends(require_permission("quality:reagent:read")),
@@ -342,7 +348,7 @@ async def get(  # noqa: F811
     }
 
 
-@router.post("", response_model=dict, summary="创建试剂记录")  # type: ignore[no-redef]
+@router.post("", response_model=ReagentDetailApiResponse, summary="创建试剂记录")  # type: ignore[no-redef]
 async def post(  # noqa: F811
     request: CreateReagentRequest,
     ctx: PermissionContext = Depends(require_permission("quality:reagent:create")),
@@ -383,10 +389,10 @@ async def post(  # noqa: F811
         }
     except Exception as e:
         logger.exception("创建试剂失败")
-        raise HTTPException(status_code=500, detail=f"创建失败: {e}") from e
+        raise AppException(status_code=500, message=f"创建失败: {e}") from e
 
 
-@router.put("/{reagent_id}", response_model=dict, summary="更新试剂记录")
+@router.put("/{reagent_id}", response_model=ReagentDetailApiResponse, summary="更新试剂记录")
 async def put(
     reagent_id: str,
     request: UpdateReagentRequest,
@@ -422,7 +428,7 @@ async def put(
         }
 
 
-@router.delete("/{reagent_id}", response_model=dict, summary="删除试剂记录")
+@router.delete("/{reagent_id}", response_model=ReagentMessageApiResponse, summary="删除试剂记录")
 async def delete(
     reagent_id: str,
     ctx: PermissionContext = Depends(require_permission("quality:reagent:delete")),

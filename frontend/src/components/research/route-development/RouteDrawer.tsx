@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {Drawer, Form, Input, Select, Button, Space, App} from 'antd'
 import { createRouteAction, updateRouteAction } from '@/actions/research'
 import { PermissionGate } from '@/components/auth/PermissionGate'
@@ -18,12 +17,9 @@ interface RouteDrawerProps {
 export function RouteDrawer({ open, route, onClose, onRefresh }: RouteDrawerProps) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
-  const [submitting, setSubmitting] = useState(false)
   const isEditing = !!route
 
   const handleSubmit = async () => {
-    if (submitting) return
-    setSubmitting(true)
     try {
       const values = await form.validateFields()
       
@@ -64,8 +60,6 @@ export function RouteDrawer({ open, route, onClose, onRefresh }: RouteDrawerProp
       onRefresh()
     } catch (error) {
       console.error('Form validation failed:', error)
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -82,7 +76,7 @@ export function RouteDrawer({ open, route, onClose, onRefresh }: RouteDrawerProp
         <Space>
           <Button onClick={onClose}>取消</Button>
           <PermissionGate code={isEditing ? PERM.researchRouteUpdate : PERM.researchRouteCreate}>
-            <Button type="primary" onClick={handleSubmit} loading={submitting}>
+            <Button type="primary" onClick={handleSubmit}>
               保存
             </Button>
           </PermissionGate>

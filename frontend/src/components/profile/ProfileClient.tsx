@@ -36,7 +36,7 @@ const EMPTY = '-'
 export function ProfileClient({ user, isSuperuser, permissionCount }: ProfileClientProps) {
   const fields = [
     { key: 'name', label: '姓名', children: user.name || EMPTY },
-    { key: 'username', label: '用户名', children: user.username || EMPTY },
+    { key: 'username', label: '账号', children: user.username || EMPTY },
     { key: 'employee_no', label: '工号', children: user.employeeNo || EMPTY },
     { key: 'department', label: '部门', children: user.department || EMPTY },
     { key: 'position', label: '职位', children: user.position || EMPTY },

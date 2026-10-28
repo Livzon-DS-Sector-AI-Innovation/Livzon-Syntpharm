@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Dropdown, Avatar } from "antd"
@@ -18,19 +18,8 @@ import {
 import { resolveMenus } from "@/lib/menu/resolve"
 import { ModuleIcon, SearchIcon, BellIcon } from "@/components/Icons"
 import { logout } from "@/actions/auth"
-import type { ImpersonateUserInfo } from "@/types/user"
 import type { PermissionView } from "@/lib/permissions/modules"
 import { useSidebarStore } from "@/stores/sidebar"
-
-interface ImpersonationStatus {
-  is_impersonating: boolean
-  original_user?: ImpersonateUserInfo
-  impersonated_user?: ImpersonateUserInfo
-}
-
-async function getImpersonationStatus(): Promise<ImpersonationStatus | null> {
-  return null
-}
 
 interface TopNavProps {
   onMenuClick?: () => void
@@ -47,12 +36,6 @@ export function TopNav({ onMenuClick, permissionView, userName, avatarUrl }: Top
   const activeModule = pathname.split("/")[1] || "production"
   const [loggingOut, setLoggingOut] = useState(false)
   const { collapsed, toggle: toggleSidebar } = useSidebarStore()
-
-  const [_impersonation, setImpersonation] = useState<ImpersonationStatus | null>(null)
-
-  useEffect(() => {
-    getImpersonationStatus().then(setImpersonation)
-  }, [])
 
   const handleLogout = async () => {
     setLoggingOut(true)

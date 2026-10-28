@@ -4,7 +4,8 @@ import { useActionState } from "react"
 import Link from "next/link"
 import { Button, Card, Divider, Input, Typography } from "antd"
 import { LockOutlined, UserOutlined } from "@ant-design/icons"
-import { loginWithPassword, type LoginActionState } from "@/actions/auth"
+import { loginWithPassword } from "@/actions/auth"
+import type { LoginActionState } from "@/types/auth"
 
 const INITIAL_STATE: LoginActionState = {}
 
@@ -21,6 +22,7 @@ export default function PasswordLoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-sm shadow-lg" variant="borderless">
         <div className="mb-6 text-center">
+          <h1 className="sr-only">账号密码登录</h1>
           <Typography.Title level={3} style={{ marginBottom: 4 }}>
             账号密码登录
           </Typography.Title>
@@ -34,7 +36,7 @@ export default function PasswordLoginPage() {
             <Input
               name="username"
               size="large"
-              placeholder="账号（用户名 / 邮箱 / 手机号 / 工号）"
+              placeholder="账号 / 邮箱 / 手机号 / 工号"
               prefix={<UserOutlined className="text-[var(--color-stone)]" />}
               autoComplete="username"
               required

@@ -2,24 +2,59 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+import logging
+from collections.abc import Sequence
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+import sqlalchemy as sa
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.energy.models import (
     EnergyAlertRecord,
     EnergyAlertRule,
     EnergyCollectLog,
+    EnergyDailyData,
     EnergyData,
     EnergyDeviceConfig,
     EnergyMonthlyRecord,
     EnergyUnitConsumptionTarget,
     EnergyWorkshop,
 )
+
+logger = logging.getLogger(__name__)
+
+CST = timezone(timedelta(hours=8))
+
+
+def _cst_date(value: datetime) -> date:
+    """把查询窗口端点换算成东八区日期。
+
+    前端把本地零点 `toISOString()` 成 UTC，东八区零点是前一天 16:00 UTC；
+    直接取 `.date()` 会让「今日」窗口变成「昨天 + 今天」。
+    """
+    if value.tzinfo is None:
+        # 没带时区的值按调用方已给出的本地时间处理
+        return value.date()
+    return value.astimezone(CST).date()
+
+
+def apply_changed_fields(obj: Any, values: dict[str, Any]) -> bool:
+    """逐字段按需赋值，返回是否真的有字段发生变化。
+
+    SQLAlchemy 只对值真变了的属性发 UPDATE，所以「匹配到已有行」不等于「更新了该行」；
+    导入器用返回值计数（`D-51`）。
+    """
+    changed = False
+    for field, value in values.items():
+        if getattr(obj, field) != value:
+            setattr(obj, field, value)
+            changed = True
+    return changed
+
 
 # ── 设备配置 ──
 
@@ -218,10 +253,33 @@ async def list_energy_data(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyData.timestamp.desc())
+    query = query.order_by(EnergyData.timestamp.desc(), EnergyData.device_config_id, EnergyData.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
+
+
+# ── 全厂汇总口径 ──
+
+
+def _not_rollup_record() -> ColumnElement[bool]:
+    """剔除车间已标记的合计行能源类型，避免全厂汇总与其构成项重复计数。
+
+    粒度是 (车间, 能源类型)：RTO 的电已含在「环保中心（含RTO）」内，但其天然气是全厂唯一气源，仍须计入。
+    """
+    marked = (
+        select(sa.literal(1))
+        .where(EnergyWorkshop.id == EnergyMonthlyRecord.workshop_id)
+        .where(
+            func.array_position(
+                EnergyWorkshop.excluded_energy_types,
+                EnergyMonthlyRecord.energy_type,
+            ).is_not(None)
+        )
+        .correlate(EnergyMonthlyRecord)
+        .scalar_subquery()
+    )
+    return ~sa.exists(marked)
 
 
 async def get_energy_statistics(
@@ -233,8 +291,8 @@ async def get_energy_statistics(
     end_time: datetime,
 ) -> list[dict[str, Any]]:
     """按车间/产线/设备汇总能耗（从月度记录表查询）"""
-    start_date = start_time.date() if hasattr(start_time, "date") else start_time
-    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+    start_date = _cst_date(start_time)
+    end_date = _cst_date(end_time)
 
     if group_by == "workshop":
         query = (
@@ -242,6 +300,7 @@ async def get_energy_statistics(
                 EnergyWorkshop.name.label("group_key"),
                 func.sum(EnergyMonthlyRecord.value).label("total_value"),
                 EnergyMonthlyRecord.unit,
+                EnergyMonthlyRecord.energy_type,
                 func.count(EnergyMonthlyRecord.id).label("data_count"),
             )
             .join(
@@ -254,7 +313,7 @@ async def get_energy_statistics(
                 EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
                 EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
             )
-            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit, EnergyMonthlyRecord.energy_type)
         )
     else:
         # 对于其他分组方式，暂时按车间分组
@@ -263,6 +322,7 @@ async def get_energy_statistics(
                 EnergyWorkshop.name.label("group_key"),
                 func.sum(EnergyMonthlyRecord.value).label("total_value"),
                 EnergyMonthlyRecord.unit,
+                EnergyMonthlyRecord.energy_type,
                 func.count(EnergyMonthlyRecord.id).label("data_count"),
             )
             .join(
@@ -275,11 +335,14 @@ async def get_energy_statistics(
                 EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
                 EnergyWorkshop.is_deleted == False,  # noqa: E712  # noqa: E712
             )
-            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit)
+            .group_by(EnergyWorkshop.name, EnergyMonthlyRecord.unit, EnergyMonthlyRecord.energy_type)
         )
 
     if energy_type:
         query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
+
+    # 区域分布/按车间汇总属全厂口径，剔除合计行避免重复计数
+    query = query.where(_not_rollup_record())
 
     result = await db.execute(query)
     rows = result.all()
@@ -288,6 +351,7 @@ async def get_energy_statistics(
             "group_key": row.group_key,
             "total_value": float(row.total_value or 0),
             "unit": row.unit,
+            "energy_type": row.energy_type,
             "data_count": row.data_count,
         }
         for row in rows
@@ -306,9 +370,9 @@ async def get_overview_summary(
     end_time: datetime,
 ) -> list[dict[str, Any]]:
     """按能源类型汇总能耗（从月度记录表查询）"""
-    # 将 datetime 转换为 date 用于查询
-    start_date = start_time.date() if hasattr(start_time, "date") else start_time
-    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+    # 将 datetime 换算成东八区日期用于查询
+    start_date = _cst_date(start_time)
+    end_date = _cst_date(end_time)
 
     query = (
         select(
@@ -316,10 +380,16 @@ async def get_overview_summary(
             func.sum(EnergyMonthlyRecord.value).label("total_value"),
             EnergyMonthlyRecord.unit,
         )
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+            _not_rollup_record(),
         )
         .group_by(EnergyMonthlyRecord.energy_type, EnergyMonthlyRecord.unit)
     )
@@ -341,9 +411,9 @@ async def get_overview_trend(
     energy_type: str | None = None,
 ) -> list[dict[str, Any]]:
     """按日期获取能耗趋势数据（从月度记录表查询）"""
-    # 将 datetime 转换为 date 用于查询
-    start_date = start_time.date() if hasattr(start_time, "date") else start_time
-    end_date = end_time.date() if hasattr(end_time, "date") else end_time
+    # 将 datetime 换算成东八区日期用于查询
+    start_date = _cst_date(start_time)
+    end_date = _cst_date(end_time)
 
     query = (
         select(
@@ -351,16 +421,24 @@ async def get_overview_trend(
             EnergyMonthlyRecord.energy_type,
             func.sum(EnergyMonthlyRecord.value).label("total_value"),
         )
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
         .where(
             EnergyMonthlyRecord.record_date >= start_date,
             EnergyMonthlyRecord.record_date <= end_date,
-            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712  # noqa: E712
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
         )
         .group_by(EnergyMonthlyRecord.record_date, EnergyMonthlyRecord.energy_type)
         .order_by(EnergyMonthlyRecord.record_date.asc())
     )
     if energy_type:
         query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
+
+    # 趋势曲线属全厂口径，剔除合计行避免重复计数
+    query = query.where(_not_rollup_record())
 
     result = await db.execute(query)
     return [
@@ -399,7 +477,7 @@ async def list_collect_logs(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyCollectLog.collect_time.desc())
+    query = query.order_by(EnergyCollectLog.collect_time.desc(), EnergyCollectLog.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -496,7 +574,8 @@ async def list_alert_rules(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyAlertRule.created_at.desc())
+    # 同一事务批量写入的行 created_at 完全相同，必须补 id 才能保证翻页不重不漏
+    query = query.order_by(EnergyAlertRule.created_at.desc(), EnergyAlertRule.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -553,6 +632,24 @@ async def get_alert_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyAle
     return result.scalar_one_or_none()
 
 
+async def delete_alert_record(db: AsyncSession, record_id: UUID) -> bool:
+    """软删除预警记录，并清掉日数据行上的反向引用。
+
+    清 `energy_daily_data.alert_record_id` 是让「删除 → 重导入」能拿回这条预警：`check_alerts`
+    只处理 `alert_record_id IS NULL` 的行，留着引用就等于永久屏蔽。多维表格的日数据每天会被修正，
+    改对之后重新导入应当按新的 `is_alert` 重新判定——仍然超线就再生成，已被改到线下就不再生成。
+    """
+    obj = await get_alert_record_by_id(db, record_id)
+    if obj is None:
+        return False
+    obj.is_deleted = True
+    await db.execute(
+        sa.update(EnergyDailyData).where(EnergyDailyData.alert_record_id == record_id).values(alert_record_id=None)
+    )
+    await db.flush()
+    return True
+
+
 async def list_alert_records(
     db: AsyncSession,
     *,
@@ -581,7 +678,8 @@ async def list_alert_records(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyAlertRecord.alert_time.desc())
+    # alert_time 只到日，同一天必然并列；不补决胜位会让同一行在翻页时重复出现
+    query = query.order_by(EnergyAlertRecord.alert_time.desc(), EnergyAlertRecord.energy_type, EnergyAlertRecord.id)
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
     return list(result.scalars().all()), total
@@ -656,6 +754,7 @@ async def list_workshops(
     *,
     category: str | None = None,
     is_active: bool | None = None,
+    name_in: Sequence[str] | None = None,
     page: int = 1,
     page_size: int = 100,
 ) -> tuple[list[EnergyWorkshop], int]:
@@ -668,6 +767,8 @@ async def list_workshops(
         query = query.where(EnergyWorkshop.category == category)
     if is_active is not None:
         query = query.where(EnergyWorkshop.is_active == is_active)
+    if name_in is not None:
+        query = query.where(EnergyWorkshop.name.in_(list(name_in)))
 
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
@@ -705,6 +806,18 @@ async def delete_workshop(db: AsyncSession, workshop_id: UUID) -> bool:
     return True
 
 
+async def count_active_monthly_records_by_workshop(db: AsyncSession, workshop_id: UUID) -> int:
+    result = await db.execute(
+        select(func.count())
+        .select_from(EnergyMonthlyRecord)
+        .where(
+            EnergyMonthlyRecord.workshop_id == workshop_id,
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar() or 0
+
+
 # ── 月度记录 ──
 
 
@@ -731,7 +844,7 @@ async def batch_upsert_monthly_records(
 ) -> tuple[list[EnergyMonthlyRecord], int]:
     """批量 upsert 月度记录，遇到唯一约束冲突时更新 value。
 
-    返回 (新建列表, 更新数量)。
+    返回 (新建列表, 变更数量)——只匹配到已有行但值没变的不计入变更（`D-51`）。
     """
     from app.modules.energy.models import EnergyMonthlyRecord
 
@@ -748,12 +861,25 @@ async def batch_upsert_monthly_records(
         )
         existing = result.scalar_one_or_none()
         if existing:
-            existing.value = r["value"]
-            existing.unit = r.get("unit", existing.unit)
-            existing.source = r.get("source", existing.source)
-            existing.remark = r.get("remark")
-            existing.date_range_end = r.get("date_range_end")
-            updated_count += 1
+            if existing.is_deleted:
+                # 唯一约束 uq_energy_monthly_record 不含 is_deleted，命中软删行只能复活，
+                # 否则插入分支会撞 UniqueViolation
+                logger.info(
+                    "Reviving soft-deleted monthly record",
+                    extra={"record_id": str(existing.id), "record_date": str(existing.record_date)},
+                )
+            if apply_changed_fields(
+                existing,
+                {
+                    "is_deleted": False,
+                    "value": r["value"],
+                    "unit": r.get("unit", existing.unit),
+                    "source": r.get("source", existing.source),
+                    "remark": r.get("remark"),
+                    "date_range_end": r.get("date_range_end"),
+                },
+            ):
+                updated_count += 1
         else:
             obj = EnergyMonthlyRecord(**r)
             db.add(obj)
@@ -775,8 +901,16 @@ async def list_monthly_records(
 ) -> tuple[list[EnergyMonthlyRecord], int]:
     from app.modules.energy.models import EnergyMonthlyRecord
 
-    query = select(EnergyMonthlyRecord).where(
-        EnergyMonthlyRecord.is_deleted == False  # noqa: E712
+    query = (
+        select(EnergyMonthlyRecord, EnergyWorkshop.name)
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
+        .where(
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
     )
     if workshop_id:
         query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
@@ -790,10 +924,20 @@ async def list_monthly_records(
     count_query = select(func.count()).select_from(query.subquery())
     total = (await db.execute(count_query)).scalar() or 0
 
-    query = query.order_by(EnergyMonthlyRecord.record_date.desc())
+    # record_date 在同一批次里大量并列，并列行的顺序 Postgres 不保证稳定 → 翻页会重复显示同一车间；补唯一键其余两列决胜
+    query = query.order_by(
+        EnergyMonthlyRecord.record_date.desc(),
+        EnergyMonthlyRecord.workshop_id,
+        EnergyMonthlyRecord.energy_type,
+    )
     query = query.offset((page - 1) * page_size).limit(page_size)
     result = await db.execute(query)
-    return list(result.scalars().all()), total
+    records: list[EnergyMonthlyRecord] = []
+    for record, workshop_name in result.all():
+        # 带上规范车间名，前端不必再靠 workshop_id 回查（合并未完成时也不会退化成 UUID 前缀）
+        setattr(record, "workshop_name", workshop_name)
+        records.append(record)
+    return records, total
 
 
 async def get_monthly_record_by_id(db: AsyncSession, record_id: UUID) -> EnergyMonthlyRecord | None:
@@ -825,14 +969,27 @@ async def get_monthly_summary(
     end_date: date | None = None,
 ) -> dict[str, Any]:
     """获取月度记录汇总，按能源类型分组统计总量"""
-    query = select(
-        EnergyMonthlyRecord.energy_type,
-        func.sum(EnergyMonthlyRecord.value).label("total_value"),
-        EnergyMonthlyRecord.unit,
+    query = (
+        select(
+            EnergyMonthlyRecord.energy_type,
+            func.sum(EnergyMonthlyRecord.value).label("total_value"),
+            EnergyMonthlyRecord.unit,
+        )
+        .join(
+            EnergyWorkshop,
+            EnergyMonthlyRecord.workshop_id == EnergyWorkshop.id,
+        )
+        .where(
+            EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
+            EnergyWorkshop.is_deleted == False,  # noqa: E712
+        )
     )
 
     if workshop_id:
         query = query.where(EnergyMonthlyRecord.workshop_id == workshop_id)
+    else:
+        # 全公司口径才剔除合计行；指定车间时保留其自身上报值
+        query = query.where(_not_rollup_record())
     if energy_type:
         query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
     if start_date:
@@ -863,8 +1020,13 @@ async def get_monthly_energy_total(
     workshop_id: UUID,
     start_date: date,
     end_date: date,
+    energy_type: str | None = None,
 ) -> Decimal | None:
-    """获取指定车间在指定时间范围内的总能耗"""
+    """获取指定车间在指定时间范围内的总能耗。
+
+    `energy_type` 传值时只统计该类型。`value` 是各能源的裸值（kWh / m³ / t / Nm³），
+    不加过滤把四类相加得到的数没有单位含义（单耗口径见 docs/energy-module-prd.md 6.4）。
+    """
     from decimal import Decimal
 
     from sqlalchemy import func, select
@@ -875,6 +1037,8 @@ async def get_monthly_energy_total(
         EnergyMonthlyRecord.record_date < end_date,  # 不包含结束日期
         EnergyMonthlyRecord.is_deleted == False,  # noqa: E712
     )
+    if energy_type is not None:
+        query = query.where(EnergyMonthlyRecord.energy_type == energy_type)
 
     result = await db.execute(query)
     total = result.scalar()

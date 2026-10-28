@@ -51,6 +51,25 @@ class UserRepository:
         )
         return result.scalar_one_or_none()
 
+    async def soft_delete_user(
+        self,
+        session: AsyncSession,
+        user: User,
+        *,
+        operator_id: UUID | None = None,
+    ) -> User:
+        """软删除账号：标记删除并置禁用。
+
+        物理删除不可行——`permission.user_role_grants.user_id` 等外键是 NOT NULL 且
+        没有 ON DELETE 规则（PostgreSQL 默认 NO ACTION），删行会被数据库挡住。
+        """
+        user.is_deleted = True
+        user.status = "disabled"
+        if operator_id is not None:
+            user.updated_by = operator_id
+        await session.flush()
+        return user
+
     async def get_by_login_identifier(
         self,
         session: AsyncSession,
@@ -235,28 +254,12 @@ class UserRepository:
     ) -> dict[UUID, list[str]]:
         """批量取用户的有效角色名（用户管理列表的「角色」列据此显示）。
 
-        只统计「生效中」的授权（授权 status=active 且未软删）——禁用授权不算。
+        授权数据由 permission 模块读写，这里委托给 `permission.public_api`，
+        避免 identity 反向 import permission 的 models/repository。
         """
-        if not user_ids:
-            return {}
-        # 函数内导入：避免 identity ↔ permission 模块级循环依赖
-        from app.platform.permission.models import GRANT_ACTIVE, Role, UserRoleGrant
+        from app.platform.permission.public_api import get_role_names_by_user_ids
 
-        stmt = (
-            select(UserRoleGrant.user_id, Role.name)
-            .join(Role, Role.id == UserRoleGrant.role_id)
-            .where(
-                UserRoleGrant.user_id.in_(user_ids),
-                UserRoleGrant.is_deleted == False,  # noqa: E712
-                UserRoleGrant.status == GRANT_ACTIVE,
-            )
-            .order_by(Role.name)
-        )
-        rows = (await session.execute(stmt)).all()
-        result: dict[UUID, list[str]] = {}
-        for user_id, role_name in rows:
-            result.setdefault(user_id, []).append(role_name)
-        return result
+        return await get_role_names_by_user_ids(session, user_ids)
 
     async def list_all(
         self,

@@ -57,7 +57,6 @@ _STANDALONE_LOOPS: tuple[tuple[str, str, str], ...] = (
     ("maintenance_plan_loop", "interval 60s", "设备保养计划生成"),
     ("timeout_scan_loop", "interval 60s", "设备工单超时扫描"),
     ("member_sync_loop", "interval 按配置", "飞书组织成员同步"),
-    ("audit_cleanup_loop", "每天 04:00", "审计日志过期清理"),
 )
 
 

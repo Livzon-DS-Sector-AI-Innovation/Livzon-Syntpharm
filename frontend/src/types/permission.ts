@@ -1,113 +1,43 @@
 /**
- * 权限管理 UI 类型（手写，对应后端 permission 模块 schema）。
+ * 权限管理类型。
+ *
+ * API 请求/响应契约类型全部从 `@/types/generated/schema` 派生；
+ * 仅保留纯前端 UI 类型（字面量联合、下拉选项投影）与 Server Action 结果类型。
  */
+import type { components } from '@/types/generated/schema'
+
+export type RoleDetail = components['schemas']['RoleDetailResponse']
+export type GrantItem = components['schemas']['GrantResponse']
+export type PermissionItem = components['schemas']['PermissionResponse']
+export type ApiBindingItem = components['schemas']['ApiBindingResponse']
+export type PermissionTreeNode = components['schemas']['PermissionTreeNode']
+export type PermissionTreeData = components['schemas']['PermissionTreeData']
+export type MyPermissions = components['schemas']['MyPermissionsData']
+
+// ── 请求契约类型 ──
+
+export type RoleCreateInput = components['schemas']['app__platform__permission__schemas__RoleCreate']
+export type RoleUpdateInput = components['schemas']['app__platform__permission__schemas__RoleUpdate']
+export type GrantCreateInput = components['schemas']['GrantCreate']
+export type GrantUpdateInput = components['schemas']['GrantUpdate']
+export type DepartmentOption = components['schemas']['DepartmentOption']
+
+export type { BatchFailureItem, BatchResult } from '@/types/batch'
+
+/**
+ * 权限写操作统一返回结果对象，业务错误（如「角色编码已存在」）不抛异常。
+ * 定义在类型文件而不是 `actions/permission.ts`：`'use server'` 文件只允许导出
+ * 异步函数，导出类型会破坏「服务端动作模块」的边界约定。
+ */
+export type PermissionActionResult<T> = { ok: true; data: T } | { ok: false; message: string }
+
+// ── 纯前端 UI 类型（字面量联合 / 下拉选项投影，非 API 响应契约） ──
 
 export type RoleCategory = 'platform' | 'module'
 export type ScopeType = 'self' | 'department' | 'department_and_children' | 'all'
-
-export interface RoleDetail {
-  id: string
-  code: string
-  name: string
-  category: RoleCategory
-  module_code: string | null
-  description: string | null
-  is_builtin: boolean
-  is_superuser: boolean
-  status: string
-  permission_codes: string[]
-}
-
-export interface RoleCreateInput {
-  code: string
-  name: string
-  category: RoleCategory
-  module_code?: string | null
-  description?: string | null
-  permission_codes?: string[]
-}
-
-export interface RoleUpdateInput {
-  name?: string
-  description?: string | null
-  permission_codes?: string[]
-  status?: string
-}
-
-export interface PermissionItem {
-  id: string
-  code: string
-  name: string
-  module: string
-  resource: string
-  action: string
-  description: string | null
-  status: string
-  is_builtin: boolean
-}
-
-export interface GrantItem {
-  id: string
-  user_id: string
-  role_id: string
-  scope_type: ScopeType
-  scope_dept_codes: string[] | null
-  status: string
-  granted_by: string | null
-  version: number
-  role_code: string | null
-  role_name: string | null
-  user_name: string | null
-}
-
-export interface GrantCreateInput {
-  user_id: string
-  role_id: string
-  scope_type: ScopeType
-  scope_dept_codes?: string[] | null
-}
-
-export interface GrantUpdateInput {
-  scope_type?: ScopeType
-  scope_dept_codes?: string[] | null
-  status?: string
-}
-
-export interface ApiBindingItem {
-  id: string
-  permission_code: string
-  method: string
-  route_template: string
-  scope_required: boolean
-  status: string
-}
 
 export interface UserOption {
   id: string
   name: string
   username: string | null
-}
-
-export interface DepartmentOption {
-  code: string
-  name: string
-}
-
-export interface PermissionTreeNode {
-  key: string
-  title: string
-  type: 'module' | 'resource' | 'permission'
-  code: string | null
-  kind: string | null
-  status: string | null
-  description: string | null
-  binding_count: number
-  disabled: boolean
-  children: PermissionTreeNode[]
-}
-
-export interface PermissionTreeData {
-  tree: PermissionTreeNode[]
-  total_permissions: number
-  total_modules: number
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button, Space, Input, Select, Tag, Typography, Modal, Form, message, Divider, Switch, Alert, Spin } from 'antd'
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined,
@@ -239,15 +240,45 @@ function TemplateCard({ item, onEdit, onToggle, onDelete, onSetDefault }: {
 }
 
 export default function DeviationSettingsPage() {
-  const [loading, setLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [activeSection, setActiveSection] = useState<SectionKey>('qa')
-  const [qaUsers, setQaUsers] = useState<SettingUser[]>([])
-  const [leaders, setLeaders] = useState<SettingUser[]>([])
-  const [rules, setRules] = useState<SettingRule[]>([])
-  const [autoTriggers, setAutoTriggers] = useState<AutoTrigger[]>([])
-  const [messageTemplates, setMessageTemplates] = useState<MessageTemplate[]>([])
-  const [feishuBot, setFeishuBot] = useState<FeishuBot | null>(null)
+
+  // 六块设置一次并行拉取，交给 React Query 管缓存与并发去重（原先在 useEffect 里手写）
+  const {
+    data: settingsData,
+    isLoading: loading,
+    refetch: refetchSettings,
+  } = useQuery({
+    queryKey: ['deviation-settings'],
+    queryFn: async () => {
+      const responses = await Promise.all([
+        fetch(`${API_BASE}/quality/deviation-settings/qa-users`),
+        fetch(`${API_BASE}/quality/deviation-settings/leaders`),
+        fetch(`${API_BASE}/quality/deviation-settings/rules`),
+        fetch(`${API_BASE}/quality/deviation-settings/auto-triggers`),
+        fetch(`${API_BASE}/quality/deviation-settings/message-templates`),
+        fetch(`${API_BASE}/quality/deviation-settings/feishu-bot`),
+      ])
+      const [qa, leader, rule, trigger, template, bot] = await Promise.all(
+        responses.map((res) => res.json()),
+      )
+      return {
+        qaUsers: (qa.code === 200 ? qa.data : null) ?? ([] as SettingUser[]),
+        leaders: (leader.code === 200 ? leader.data : null) ?? ([] as SettingUser[]),
+        rules: (rule.code === 200 ? rule.data : null) ?? ([] as SettingRule[]),
+        autoTriggers: (trigger.code === 200 ? trigger.data : null) ?? ([] as AutoTrigger[]),
+        messageTemplates: (template.code === 200 ? template.data : null) ?? ([] as MessageTemplate[]),
+        feishuBot: (bot.code === 200 ? bot.data : null) as FeishuBot | null,
+      }
+    },
+  })
+
+  const qaUsers: SettingUser[] = settingsData?.qaUsers ?? []
+  const leaders: SettingUser[] = settingsData?.leaders ?? []
+  const rules: SettingRule[] = settingsData?.rules ?? []
+  const autoTriggers: AutoTrigger[] = settingsData?.autoTriggers ?? []
+  const messageTemplates: MessageTemplate[] = settingsData?.messageTemplates ?? []
+  const feishuBot: FeishuBot | null = settingsData?.feishuBot ?? null
 
   const [qaModalVisible, setQaModalVisible] = useState(false)
   const [leaderModalVisible, setLeaderModalVisible] = useState(false)
@@ -273,38 +304,8 @@ export default function DeviationSettingsPage() {
     return () => mq.removeEventListener('change', update)
   }, [])
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
-    setLoading(true)
-    try {
-      const [qaRes, leaderRes, ruleRes, triggerRes, templateRes, botRes] = await Promise.all([
-        fetch(`${API_BASE}/quality/deviation-settings/qa-users`),
-        fetch(`${API_BASE}/quality/deviation-settings/leaders`),
-        fetch(`${API_BASE}/quality/deviation-settings/rules`),
-        fetch(`${API_BASE}/quality/deviation-settings/auto-triggers`),
-        fetch(`${API_BASE}/quality/deviation-settings/message-templates`),
-        fetch(`${API_BASE}/quality/deviation-settings/feishu-bot`),
-      ])
-
-      const [qaResult, leaderResult, ruleResult, triggerResult, templateResult, botResult] = await Promise.all([
-        qaRes.json(), leaderRes.json(), ruleRes.json(),
-        triggerRes.json(), templateRes.json(), botRes.json(),
-      ])
-
-      if (qaResult.code === 200) setQaUsers(qaResult.data || [])
-      if (leaderResult.code === 200) setLeaders(leaderResult.data || [])
-      if (ruleResult.code === 200) setRules(ruleResult.data || [])
-      if (triggerResult.code === 200) setAutoTriggers(triggerResult.data || [])
-      if (templateResult.code === 200) setMessageTemplates(templateResult.data || [])
-      if (botResult.code === 200) setFeishuBot(botResult.data)
-    } catch {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
+  const loadData = () => {
+    void refetchSettings()
   }
 
   const handleSave = async (url: string, method: string, values: Record<string, unknown>, successMsg: string) => {

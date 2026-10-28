@@ -1,21 +1,28 @@
 """AI exam API endpoints."""
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.core.deps import CurrentUser, PermissionContext, require_permission
-from app.core.response import success_response
+from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.job_store import start_job
 from app.modules.hr.ai_exam.schemas import ExamExportRequest
 from app.modules.hr.ai_exam.service import export_exam, generate_exam
+from app.modules.hr.job_store import hr_job_store
+from app.shared.schemas import AsyncJobAccepted, AsyncJobAcceptedResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["AI 出题"])
 
+# 出题后台任务状态存 hr 模块共享的 hr_job_store；查询走 GET /api/v1/hr/jobs/{job_id}
 
-@router.post("/generate", summary="生成考试题目")
+
+@router.post("/generate", response_model=AsyncJobAcceptedResponse, summary="生成考试题目")
 async def post(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     file: UploadFile,
     ctx: PermissionContext = Depends(require_permission("hr:ai-exam:generate")),
     choice_count: int = Form(5),
@@ -23,13 +30,15 @@ async def post(
     multi_choice_count: int = Form(0),
     fill_blank_count: int = Form(0),
 ) -> Any:
-    """上传培训材料（docx/txt），AI 自动识别内容并按指定题型/题量生成试卷。"""
+    """提交出题后台任务（LLM 耗时 >5s）；轮询 GET /api/v1/hr/jobs/{job_id} 拿结果。"""
     if not file.filename:
         raise HTTPException(400, "文件名不能为空")
-    import logging
-
-    logging.getLogger(__name__).info(
-        f"Exam config: choice={choice_count} tf={true_false_count} multi={multi_choice_count} fill={fill_blank_count}"
+    logger.info(
+        "Exam config: choice=%s tf=%s multi=%s fill=%s",
+        choice_count,
+        true_false_count,
+        multi_choice_count,
+        fill_blank_count,
     )
     config = {
         "choice_count": choice_count,
@@ -37,20 +46,26 @@ async def post(
         "multi_choice_count": multi_choice_count,
         "fill_blank_count": fill_blank_count,
     }
-    try:
-        content = await file.read()
-        result = await generate_exam(content, file.filename, config)
-    except ValueError as e:
-        raise HTTPException(400, str(e))
-    except Exception as e:
-        raise HTTPException(500, f"AI 出题失败: {e}")
-    return success_response(data=result, message="出题完成")
+    content = await file.read()
+
+    async def _run(_job: str) -> dict[str, Any]:
+        try:
+            result = await generate_exam(content, file.filename or "", config)
+        except ValueError as e:
+            raise RuntimeError(str(e)) from e
+        except Exception as e:
+            logger.exception("AI 出题失败")
+            raise RuntimeError(f"AI 出题失败: {e}") from e
+        return result
+
+    job_id = start_job(hr_job_store, "hr-ai-exam", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
 @router.post("/export", summary="导出考试试卷")
 async def api_export_exam(
     data: ExamExportRequest,
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:ai-exam:export")),
 ) -> Any:
     """将试卷导出为 Word 文档。"""

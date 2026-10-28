@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, require_permission
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.exceptions import NotFoundException
 from app.core.response import paginated_response, success_response
 from app.modules.registration.service import ReferenceStandardService
@@ -23,7 +23,7 @@ def get_service(session: AsyncSession = Depends(get_db)) -> ReferenceStandardSer
 
 @router.post("/parse-coa", summary="解析COA文件提取信息")
 async def post(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:create")),
     coa: UploadFile = File(...),
 ) -> Any:
@@ -42,7 +42,7 @@ async def post(
 
 @router.post("/generate", summary="生成对照物质说明表")  # type: ignore[no-redef]
 async def post(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     coa: UploadFile,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:create")),
     drug_name: str = Form(..., description="药品名称"),
@@ -91,7 +91,7 @@ async def post(  # noqa: F811
 
 @router.get("", summary="对照物质说明表记录列表")
 async def get(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     drug_name: str | None = Query(None, description="药品名称搜索"),
     page_params: PageParams = Depends(),
@@ -113,7 +113,7 @@ async def get(
 
 @router.get("/{record_id}", summary="对照物质说明表记录详情")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
@@ -124,7 +124,7 @@ async def get(  # noqa: F811
 
 @router.get("/{record_id}/download-url", summary="获取说明表文件下载URL")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
@@ -142,7 +142,7 @@ async def get(  # noqa: F811
 
 @router.get("/{record_id}/download", summary="下载生成的说明表文件")  # type: ignore[no-redef]
 async def get(  # noqa: F811
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:read")),
     service: ReferenceStandardService = Depends(get_service),
@@ -164,7 +164,7 @@ async def get(  # noqa: F811
 
 @router.delete("/{record_id}", summary="删除对照物质说明表记录")
 async def delete(
-    current_user: CurrentUser,
+    current_user: RequiredUser,
     record_id: UUID,
     ctx: PermissionContext = Depends(require_permission("registration:reference-standard:delete")),
     service: ReferenceStandardService = Depends(get_service),

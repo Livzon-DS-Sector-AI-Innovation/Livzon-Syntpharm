@@ -41,11 +41,20 @@ def _parse_enabled_modules(raw: str) -> frozenset[str]:
 
 
 def _find_binding(method: str, path: str) -> ApiBindingDef | None:
-    """按「方法 + 实际路径」匹配绑定登记项。"""
+    """按「方法 + 实际路径」匹配绑定登记项。
+
+    `/plans` 与 `/plans/` 在 FastAPI 里是两条独立路由，但业务语义相同；
+    直接命中失败时按「尾斜杠归一」再试一次，避免为每个尾斜杠变体单独登记。
+    """
     method = method.upper()
     for (binding_method, template), binding in BINDINGS_BY_ROUTE.items():
         if binding_method == method and template_matches(template, path):
             return binding
+    normalized = path.rstrip("/") if path.endswith("/") else path + "/"
+    if normalized not in ("", "/"):
+        for (binding_method, template), binding in BINDINGS_BY_ROUTE.items():
+            if binding_method == method and template_matches(template, normalized):
+                return binding
     return None
 
 

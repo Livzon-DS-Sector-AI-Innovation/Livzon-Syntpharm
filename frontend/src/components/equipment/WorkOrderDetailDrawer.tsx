@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { App, Drawer, Descriptions, Tag, Timeline, Button, Space, Select, Input, Image } from 'antd'
 import {
   ClockCircleOutlined, UserOutlined, ToolOutlined,
@@ -52,7 +52,13 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
   const { message, modal } = App.useApp()
   const { workOrderDetailOpen, viewingWorkOrder, closeWorkOrderDetail, setViewingWorkOrder } = useEquipmentStore()
 
-  const [maintainers, setMaintainersState] = useState<Maintainer[]>([])
+  // 维修人候选：详情抽屉打开时才拉
+  const { data: maintainersData } = useQuery({
+    queryKey: ['equipment-maintainers'],
+    queryFn: () => fetchMaintainersClient(),
+    enabled: workOrderDetailOpen,
+  })
+  const maintainers: Maintainer[] = maintainersData ?? []
 
   const refreshDetail = async (id: string) => {
     try {
@@ -61,12 +67,6 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
     } catch { /* 静默失败，列表刷新已覆盖 */ }
     onRefresh?.()
   }
-  useEffect(() => {
-    if (workOrderDetailOpen) {
-      fetchMaintainersClient().then(setMaintainersState).catch(() => {})
-    }
-  }, [workOrderDetailOpen])
-
   if (!viewingWorkOrder) return null
 
   const wo = viewingWorkOrder
@@ -86,7 +86,8 @@ export function WorkOrderDetailDrawer({ onRefresh }: WorkOrderDetailDrawerProps)
             optionFilterProp="label"
             onChange={(val) => { assigneeId = val }}
             options={maintainers.map((m) => ({
-              label: `${m.name} (${m.employee_no || '-'})`,
+              // 统一「姓名（账号）」；没有账号时退回工号
+              label: `${m.name}${m.username ? `（${m.username}）` : m.employee_no ? ` (${m.employee_no})` : ''}`,
               value: m.user_id,
             }))}
           />

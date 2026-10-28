@@ -5,7 +5,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.quality.ai.models import QmsAiLog
@@ -97,55 +97,35 @@ class AiLogService:
         Returns:
             (日志列表, 总数)
         """
-        params = {}
-        conditions = []
+        filters = []
 
         if operate_type:
-            conditions.append("operate_type = :operate_type")
-            params["operate_type"] = operate_type
+            filters.append(QmsAiLog.operate_type == operate_type)
         if operator:
-            conditions.append("operator = :operator")
-            params["operator"] = operator
+            filters.append(QmsAiLog.operator == operator)
         if bill_no:
-            conditions.append("bill_no = :bill_no")
-            params["bill_no"] = bill_no
+            filters.append(QmsAiLog.bill_no == bill_no)
         if start_date:
-            conditions.append("created_at >= :start_date")
-            params["start_date"] = start_date  # type: ignore[assignment]
+            filters.append(QmsAiLog.created_at >= start_date)
         if end_date:
-            conditions.append("created_at <= :end_date")
-            params["end_date"] = end_date  # type: ignore[assignment]
+            filters.append(QmsAiLog.created_at <= end_date)
 
-        # 构建WHERE子句
-        if conditions:
-            where_clause = " AND ".join(conditions)
-        else:
-            where_clause = "1=1"
+        # 统计总数
+        count_stmt = select(func.count()).select_from(QmsAiLog).where(*filters)
+        total = (await self.session.execute(count_stmt)).scalar() or 0
 
-        # 查询SQL - 始终按创建时间倒序
-        query_sql = text(f"""
-            SELECT id, bill_no, operate_type, operator, system_prompt, user_input,
-                   ai_response, error_message, tokens_used, latency_ms, created_at
-            FROM qms.qms_ai_log
-            WHERE {where_clause}
-            ORDER BY created_at DESC
-            LIMIT :limit OFFSET :offset
-        """)
+        # 查询列表 - 始终按创建时间倒序
+        stmt = (
+            select(QmsAiLog)
+            .where(*filters)
+            .order_by(QmsAiLog.created_at.desc())
+            .limit(page_size)
+            .offset((page - 1) * page_size)
+        )
+        result = await self.session.execute(stmt)
+        logs = list(result.scalars().all())
 
-        # 统计SQL
-        count_sql = text(f"SELECT COUNT(*) FROM qms.qms_ai_log WHERE {where_clause}")
-
-        offset = (page - 1) * page_size
-        params["limit"] = page_size  # type: ignore[assignment]
-        params["offset"] = offset  # type: ignore[assignment]
-
-        result = await self.session.execute(query_sql, params)
-        logs = result.fetchall()
-
-        count_result = await self.session.execute(count_sql, params)
-        total = count_result.scalar() or 0
-
-        return logs, total  # type: ignore[return-value]
+        return logs, total
 
 
 def log_ai_interaction(
@@ -177,7 +157,9 @@ def log_ai_interaction(
     import concurrent.futures
 
     def _save_log() -> Any:
-        return asyncio.new_event_loop().run_until_complete(
+        # 用 asyncio.run 而不是 new_event_loop().run_until_complete()：
+        # 后者创建的事件循环从不关闭，会一直堆积（线程池里反复调用时尤其明显）。
+        return asyncio.run(
             service.save_ai_log(
                 operate_type=operate_type,
                 operator=operator,

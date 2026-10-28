@@ -24,7 +24,7 @@ function FeishuLoginCard() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50">
       <Card className="w-full max-w-sm shadow-lg" variant="borderless">
         <div className="mb-6 text-center">
-          <Typography.Title level={3} style={{ marginBottom: 4 }}>
+          <Typography.Title level={1} style={{ marginBottom: 4, fontSize: 24 }}>
             工厂管理平台
           </Typography.Title>
           <Typography.Text type="secondary">

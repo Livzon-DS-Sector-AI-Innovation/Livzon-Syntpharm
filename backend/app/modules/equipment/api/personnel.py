@@ -7,8 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.deps import CurrentUser, PermissionContext, RequiredUser, require_permission
-from app.core.exceptions import AppException
+from app.core.deps import PermissionContext, RequiredUser, require_permission
 from app.core.response import success_response
 from app.modules.equipment import service
 from app.modules.equipment.schemas.personnel import (
@@ -23,12 +22,6 @@ from app.modules.equipment.schemas.personnel import (
 router = APIRouter()
 
 
-def _require_user(current_user: CurrentUser) -> uuid.UUID:
-    if not current_user:
-        raise AppException(message="需要登录才能执行此操作", status_code=401)
-    return current_user.id
-
-
 # ═══════════════ 角色 API ═══════════════
 
 
@@ -39,7 +32,6 @@ async def create_role(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     role = await service.create_role(db, data)
     return success_response(data=role.model_dump(mode="json"))
 
@@ -54,7 +46,6 @@ async def list_roles(
     page_size: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     roles, total = await service.list_roles(
         db,
         scope=scope,
@@ -75,7 +66,6 @@ async def get_role(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:read")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     role = await service.get_role(db, role_id)
     return success_response(data=role.model_dump(mode="json"))
 
@@ -87,7 +77,6 @@ async def update_role(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     role = await service.update_role(db, role_id, data)
     return success_response(data=role.model_dump(mode="json"))
 
@@ -99,7 +88,6 @@ async def delete_role(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:delete")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     await service.delete_role(db, role_id)
     return success_response(message="角色已删除")
 
@@ -113,7 +101,6 @@ async def add_personnel(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     result = await service.add_personnel(db, data)
     return success_response(data=result.model_dump(mode="json"))
 
@@ -129,7 +116,6 @@ async def list_personnel(
     page_size: int = Query(20, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     result = await service.list_personnel(
         db,
         role_ids=role_id,
@@ -159,7 +145,6 @@ async def get_candidates(
     category_id: uuid.UUID | None = Query(None, description="设备分类ID（可选）"),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     candidates = await service.get_candidates(
         db,
         role_codes,
@@ -174,7 +159,6 @@ async def get_personnel(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     person = await service.get_personnel(db, personnel_id)
     return success_response(data=person.model_dump(mode="json"))
 
@@ -187,7 +171,6 @@ async def update_personnel(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:update")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     person = await service.update_personnel(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
 
@@ -198,7 +181,6 @@ async def delete_personnel(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     await service.delete_personnel(db, personnel_id)
     return success_response(message="人员已移除")
 
@@ -211,7 +193,6 @@ async def assign_roles(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     person = await service.assign_roles(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
 
@@ -223,7 +204,6 @@ async def update_roles(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     person = await service.assign_roles(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
 
@@ -236,7 +216,6 @@ async def assign_categories(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     person = await service.update_categories(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
 
@@ -248,7 +227,6 @@ async def update_categories(
     current_user: RequiredUser,
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     person = await service.update_categories(db, personnel_id, data)
     return success_response(data=person.model_dump(mode="json"))
 
@@ -259,6 +237,5 @@ async def refresh_feishu(
     ctx: PermissionContext = Depends(require_permission("equipment:personnel:create")),
     db: AsyncSession = Depends(get_db),
 ) -> JSONResponse:
-    _require_user(current_user)
     result = await service.refresh_feishu(db)
     return success_response(data=result.model_dump(mode="json"))

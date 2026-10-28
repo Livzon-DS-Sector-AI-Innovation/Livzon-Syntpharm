@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Card,
   Row,
@@ -130,9 +131,6 @@ export default function DocCheckPage() {
   const [activeTab, setActiveTab] = useState<string>('duplicate')
 
   // 记录列表状态
-  const [_records, setRecords] = useState<CheckMainDetail[]>([])
-  const [_loading, setLoading] = useState(false)
-  const [_total, setTotal] = useState(0)
   const [page, _setPage] = useState(1)
   const [pageSize, _setPageSize] = useState(10)
 
@@ -204,7 +202,7 @@ export default function DocCheckPage() {
       message.loading({ content: '正在上传文件...', key: 'upload' })
 
       const response = await fetch(
-        `/api/v1/doc-check/upload`,
+        `/api/v1/quality/upload`,
         {
           method: 'POST',
           body: formData,
@@ -244,7 +242,7 @@ export default function DocCheckPage() {
       message.loading({ content: '正在启动AI预审...', key: 'check' })
 
       const response = await fetch(
-        `/api/v1/doc-check/check`,
+        `/api/v1/quality/check`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -283,7 +281,7 @@ export default function DocCheckPage() {
     pollRef.current = setInterval(async () => {
       try {
         const response = await fetch(
-          `/api/v1/doc-check/check/${tid}/progress`
+          `/api/v1/quality/check/${tid}/progress`
         )
         const data = await response.json()
 
@@ -386,7 +384,7 @@ export default function DocCheckPage() {
       if (!selectedProblem) return
 
       const response = await fetch(
-        `/api/v1/doc-check/problems/${selectedProblem.id}`,
+        `/api/v1/quality/problems/${selectedProblem.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -427,7 +425,7 @@ export default function DocCheckPage() {
       message.loading({ content: '正在生成报告...', key: 'export' })
 
       const response = await fetch(
-        `/api/v1/doc-check/export/${checkResult.id}?format=pdf`
+        `/api/v1/quality/export/${checkResult.id}?format=pdf`
       )
 
       const data = await response.json()
@@ -449,7 +447,7 @@ export default function DocCheckPage() {
 
     try {
       const response = await fetch(
-        `/api/v1/doc-check/records/${checkResult.id}/confirm`,
+        `/api/v1/quality/records/${checkResult.id}/confirm`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -461,7 +459,7 @@ export default function DocCheckPage() {
       if (data.code === 200) {
         message.success('确认通过成功')
         // 刷新记录
-        loadRecords()
+        void refetchRecords()
       } else {
         message.error(data.message || '确认失败')
       }
@@ -480,28 +478,15 @@ export default function DocCheckPage() {
 
   // ============ 记录列表 ============
 
-  const loadRecords = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(
-        `/api/v1/doc-check/records?page=${page}&page_size=${pageSize}`
-      )
+  // 记录列表由 React Query 负责拉取与缓存（页面暂未渲染这些数据，保留查询便于后续接入）
+  const { refetch: refetchRecords } = useQuery({
+    queryKey: ['doc-check-records', page, pageSize],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/quality/records?page=${page}&page_size=${pageSize}`)
       const data = await response.json()
-
-      if (data.code === 200) {
-        setRecords(data.data.items || [])
-        setTotal(data.data.total || 0)
-      }
-    } catch (error) {
-      console.error('加载记录失败:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize])
-
-  useEffect(() => {
-    loadRecords()
-  }, [loadRecords])
+      return data.code === 200 ? (data.data?.items ?? []) : []
+    },
+  })
 
   // ============ 表格列定义 ============
 

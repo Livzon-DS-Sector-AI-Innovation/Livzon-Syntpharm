@@ -131,13 +131,30 @@ export async function fillChapterFields(chapterId: string): Promise<FieldFillRes
 }
 
 // ====== AI Fill ======
-export async function aiPreviewExtraction(chapterId: string): Promise<AIPreviewResult> {
-  const result = unwrapResponse(await apiFetch<{code: number; data: AIPreviewResult; message?: string; meta?: unknown}>(`/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`, {
-    method: 'POST',
-    signal: AbortSignal.timeout(600000),
-  }))
+export interface DossierJobState {
+  status: 'running' | 'done' | 'failed'
+  result: AIPreviewResult | null
+  error: string | null
+}
+
+/** 提交 AI 智能解析预览后台任务，返回 job_id（结果轮询 aiPreviewJob）。 */
+export async function aiPreviewSubmit(chapterId: string): Promise<string> {
+  const data = unwrapResponse(
+    await apiFetch<{ code: number; data: { job_id: string }; message?: string; meta?: unknown }>(
+      `/api/v1/registration/dossier-writer/chapters/${chapterId}/ai-preview`,
+      { method: 'POST' },
+    ),
+  )
   revalidatePath('/registration/dossier-writer')
-  return result
+  return data.job_id
+}
+
+export async function aiPreviewJob(jobId: string): Promise<DossierJobState> {
+  return unwrapResponse(
+    await apiFetch<{ code: number; data: DossierJobState; message?: string; meta?: unknown }>(
+      `/api/v1/registration/dossier-writer/jobs/${jobId}`,
+    ),
+  )
 }
 
 export async function aiConfirmAndFill(chapterId: string, data: AIConfirmRequest): Promise<AIFillResult> {

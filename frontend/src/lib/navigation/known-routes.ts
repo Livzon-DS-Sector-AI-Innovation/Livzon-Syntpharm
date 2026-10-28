@@ -94,7 +94,6 @@ export const KNOWN_STATIC_ROUTES: readonly string[] = [
   '/production/product-output/all-products',
   '/production/records',
   '/quality',
-  '/quality/ai-config',
   '/quality/ai-log',
   '/quality/calculator',
   '/quality/cpv',

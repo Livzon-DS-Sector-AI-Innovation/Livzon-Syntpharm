@@ -57,7 +57,6 @@ export function InitiationPage({ projectId }: Props) {
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingRecord, setEditingRecord] = useState<RdInitiation | null>(null)
-  const [saving, setSaving] = useState(false)
   const [form] = Form.useForm()
 
   const { data: items = [], isLoading: loading } = useQuery({
@@ -116,8 +115,6 @@ export function InitiationPage({ projectId }: Props) {
   }
 
   const handleSave = async () => {
-    if (saving) return
-    setSaving(true)
     try {
       const values = await form.validateFields()
       const payload = {
@@ -164,8 +161,6 @@ export function InitiationPage({ projectId }: Props) {
     } catch (e: unknown) {
       if (e && typeof e === "object" && "errorFields" in e) return
       msgApi.error(e instanceof Error ? e.message : '保存失败')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -388,7 +383,7 @@ export function InitiationPage({ projectId }: Props) {
           <Space>
             <Button onClick={() => setDrawerOpen(false)}>取消</Button>
             <PermissionGate code={editingRecord ? PERM.researchInitiationUpdate : PERM.researchInitiationCreate}>
-              <Button type="primary" onClick={handleSave} loading={saving}>保存</Button>
+              <Button type="primary" onClick={handleSave}>保存</Button>
             </PermissionGate>
           </Space>
         }

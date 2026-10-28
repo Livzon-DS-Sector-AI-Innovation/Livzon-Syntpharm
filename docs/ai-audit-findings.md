@@ -4839,3 +4839,729 @@ _None._
 - OpenAPI drift check now fails on drift instead of auto-committing
 - 11 legacy quality tables migrated to shared BaseModel
 
+
+---
+
+### PR #43: feat(equipment): 设备台账导入 V4、动态排序、强制覆盖与 UI 优化 (base: main, head: lzhc-zhuang-equipment, date: 2026-08-27)
+
+**Changed files (159):**
+- `backend/alembic/versions/0069_add_sync_logs_table.py` (added)
+- `backend/alembic/versions/0070_add_equipment_import_v4_fields.py` (added)
+- `backend/alembic/versions/0071_add_import_audit_override_type.py` (added)
+- `backend/alembic/versions/0072_add_equipment_quantity.py` (added)
+- `backend/app/modules/equipment/` (28 files modified/added/removed)
+- `backend/app/modules/administration/service.py` (modified)
+- `backend/app/modules/energy/feishu_import.py` (modified)
+- `backend/app/modules/production/pressure/api.py` (modified, -37)
+- `backend/app/modules/quality/ai/api.py` (modified)
+- `backend/app/modules/quality/label_verification/api.py` (modified)
+- `backend/app/modules/registration/dossier_writer/asset_text_extractor.py` (modified)
+- `backend/app/modules/research/api.py` (modified, -95)
+- `backend/app/modules/safety/card_builder.py` (modified)
+- `backend/app/modules/warehouse/api.py` (modified)
+- `backend/scripts/` (20+ migration/seed scripts added)
+- `backend/tests/modules/equipment/` (10 test files added/modified)
+- `backend/tests/modules/production/conftest.py` (modified, -35)
+- `frontend/src/actions/equipment.ts` (modified)
+- `frontend/src/actions/equipment/` (3 files removed)
+- `frontend/src/app/(dashboard)/equipment/assets/` (2 files modified)
+- `frontend/src/components/equipment/` (25+ files modified/added/removed)
+- `frontend/src/lib/api/` (3 files modified/added)
+- `frontend/src/stores/equipment.ts` (modified)
+- `frontend/src/stores/equipment/` (3 files removed)
+- `frontend/src/types/generated/schema.ts` (modified, +334)
+- `frontend/e2e/equipment-sorting.spec.ts` (added, 177 lines)
+- `frontend/e2e/auth.setup.ts` (modified)
+- `docker-compose.dev.yml` (modified)
+- `backend/openapi.json` (modified, +513)
+
+**Affected categories:** 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16
+
+---
+
+#### Category 2: Secrets and hardcoded values
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 49 |
+| Files not inspected | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+No hardcoded absolute paths, localhost URLs (except E2E test defaults with env var overrides), API keys in logs, or .env files found.
+
+---
+
+#### Category 3: Backend module boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 28 |
+| Cross-module import sites evaluated | 4 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+All cross-module imports correctly use `public_api.py`:
+- `batch_import_v4.py:548` → `from app.modules.hr.public_api import get_department_by_name` ✅
+- `repository/equipment.py:2028` → `from app.modules.hr.public_api import list_all_departments` ✅
+- `service/equipment.py:2247` → `from app.modules.hr.public_api import list_all_departments` ✅
+- `repository/equipment.py:15` → `from app.platform.identity.models import Department, User` ✅ (global layer)
+
+---
+
+#### Category 4: API and authentication
+
+| Stat | Count |
+|------|-------|
+| New endpoints evaluated | 3 |
+| Modified endpoints evaluated | 2 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+| Endpoint | Auth | response_model | Verdict |
+|----------|------|----------------|---------|
+| `POST /equipments/import-v4/batch` | `RequiredUser` ✅ | `ImportV4BatchApiResponse` ✅ | ✅ |
+| `POST /equipments/import-v4/preview` | `RequiredUser` ✅ | `ImportV4PreviewApiResponse` ✅ | ✅ |
+| `POST /equipments/sync-excel` | `RequiredUser` ✅ | `EquipmentSyncResponse` ✅ | ✅ |
+
+Soft delete: `bulk_soft_delete()` uses `is_deleted=True` ✅
+
+---
+
+#### Category 5: Models and migrations
+
+| Stat | Count |
+|------|-------|
+| New models evaluated | 2 |
+| New migrations evaluated | 4 |
+| Modified models evaluated | 1 |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `backend/app/modules/equipment/models/import_audit.py:14` — 业务模型继承规则 — `class ImportAuditLog(Base):` 继承 `Base` 而非 `BaseModel`。AGENTS.md 规定"业务模型继承 `app/shared/base_model.py` 中的 `BaseModel`"。代码注释说明原因是"避免 updated_by 等不存在字段的冲突"，但这导致缺少 `updated_at`（无变更追踪）、`is_deleted`（无软删除）等标准审计列。建议：(a) 继承 `BaseModel` 并添加 dummy 列，或 (b) 在 AGENTS.md 例外表中注册此偏差。
+
+**Notes:**
+- `models/equipment.py:133` — 注释说"见迁移 0081"但实际由迁移 0070 创建，建议更新为"见迁移 0070"（非违规，仅注释准确性）
+
+---
+
+#### Category 6: Configuration and logging
+
+| Stat | Count |
+|------|-------|
+| `os.getenv()` calls | 0 |
+| Logger calls inspected | ~12 |
+| Sensitive data in logs | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+All logger calls use lazy `%s` formatting ✅
+
+**Notes:**
+- `main.py:380` — `logger.exception("Database integrity error occurred")` 缺少上下文（表名、约束、请求路径），建议改为 `logger.exception("Database integrity error: %s", exc.orig)`（非违规，仅改进建议）
+- `api/equipment.py:47-60` — 内存速率限制器 `_rate_limit_store` 不跨 Uvicorn worker，代码注释已说明"生产环境应使用 Redis"（非违规，当前单 worker 部署可接受）
+
+---
+
+#### Category 7: External services and background tasks
+
+| Stat | Count |
+|------|-------|
+| `asyncio.create_task()` calls | 0 |
+| `SchedulerEngine` usage | 0 |
+| `register_background_worker()` usage | 0 |
+| Rules evaluated | 3 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+No background tasks or async task spawning introduced. All new code runs within HTTP request lifecycle ✅
+
+---
+
+#### Category 8: Backend tests
+
+| Stat | Count |
+|------|-------|
+| Test files modified | 2 |
+| Test files added | 8 |
+| Total lines added | ~850 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 1 |
+
+**Confirmed:**
+
+- [ ] `backend/tests/modules/equipment/test_import_engine_v4.py:17`, `test_sync_tdd.py:37,73,108,137`, `test_sync_logic.py:38,75,111` — pytest-asyncio auto mode — 8 个 async test 函数使用 `@pytest.mark.asyncio` 装饰器，但 `pyproject.toml` 已配置 `asyncio_mode = "auto"`。AGENTS.md 规定"`async def test_*` 函数会被自动识别为异步测试，不需要 `@pytest.mark.asyncio` 装饰器"。冗余且与同 PR 其他测试文件（如 `test_sorting.py`、`test_import_v4_contract.py`）不一致。
+
+- [ ] `backend/tests/modules/equipment/test_batch_import_integration.py` — 测试目录结构 — 文件 docstring 明确说明"Integration tests for Equipment Import v4 Force Override"，但放置在 `backend/tests/modules/equipment/` 而非 `backend/tests/integration/`。AGENTS.md 规定"集成测试放在 `backend/tests/integration/`"。代码库已有 `backend/tests/integration/test_import_api_integration.py` 确立了集成测试的目录模式。
+
+**Uncertain:**
+
+- [ ] `backend/tests/modules/equipment/test_import_v4_matching.py` — 测试覆盖率 — 文件包含 4 个 async test 函数，但全部使用 `pass` 语句，无实际测试逻辑或断言。文件注释说明"Running in Red state..."，似乎是 TDD 占位符。虽然不直接违反规则，但这些测试提供零覆盖率，可能给人测试完整的错觉。标记为 Uncertain 因为：(1) 可能是有意的 TDD 工作流；(2) 规则未明确禁止 stub 测试。
+
+**Notes:**
+- 所有测试文件正确遵循 `backend/tests/modules/<module>/` 模式 ✅
+- 无测试调用真实外部服务（LLM、飞书、MinIO），全部使用 `MagicMock` 和 `AsyncMock` ✅
+- `conftest.py` 包含两个几乎相同的 fixture（`seed_departments_and_locations` 和 `seed_basic_data`），存在不必要的重复（非违规，仅代码质量建议）
+
+---
+
+#### Category 9: Frontend component boundaries
+
+| Stat | Count |
+|------|-------|
+| Files inspected | 25+ |
+| Barrel file `'use client'` check | ✅ |
+| `page.tsx` `export const dynamic` check | ✅ |
+| Client Components `'use client'` check | ⚠️ |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 2 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `frontend/src/components/equipment/ImportCockpit.tsx:1` — Client Component `'use client'` 指令 — 文件导入 `Table`, `Tag`, `Tooltip` from `antd` 但缺少 `'use client'` 指令。AGENTS.md 规定"使用了 React Hooks、浏览器 API、事件处理器、Zustand store 或直接使用 antd 组件 → 必须加 `'use client'`"。严重程度：Low — 组件仅从已有 `'use client'` 的 `EquipmentImportModal.tsx` 导入，继承了客户端上下文，但文件本身应声明以防将来被其他地方导入。
+
+- [ ] `frontend/src/components/equipment/ForceOverrideToggle.tsx:1` — Client Component `'use client'` 指令 — 文件导入 `Switch`, `Popconfirm` from `antd` 并使用事件处理器（`onConfirm`, `onClick`）但缺少 `'use client'` 指令。严重程度：Low — 同上，仅从客户端组件导入。
+
+---
+
+#### Category 10: Frontend API and generated types
+
+| Stat | Count |
+|------|-------|
+| API types from generated schema | ✅ |
+| Write operations in Server Actions | ✅ |
+| Client calls use relative paths | ✅ |
+| Server calls use `API_BASE_URL` | ✅ |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+- `ExcelSyncButton.tsx:35` uses direct `fetch()` with `FormData` for file upload — **allowed exception** per AGENTS.md ✅
+- `equipment-query.ts` derives types from generated schema ✅
+- All Server Actions properly wrap API calls ✅
+
+---
+
+#### Category 11: Proxy and routing
+
+| Stat | Count |
+|------|-------|
+| `proxy.ts` modified | ❌ Not modified |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+`proxy.ts` was not changed in this PR ✅
+
+---
+
+#### Category 12: Cross-project OpenAPI
+
+| Stat | Count |
+|------|-------|
+| `backend/openapi.json` updated | ✅ |
+| `frontend/src/types/generated/schema.ts` regenerated | ✅ |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+- `openapi.json` adds `sort_by`, `sort_order` query parameters and new endpoints ✅
+- `schema.ts` adds corresponding types (334 lines added) ✅
+
+---
+
+#### Category 13: Docker and deployment
+
+| Stat | Count |
+|------|-------|
+| Protected files modified | ⚠️ Yes |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 1 |
+| Uncertain findings | 0 |
+
+**Confirmed:**
+
+- [ ] `docker-compose.dev.yml:4-5` — 受保护文件修改 — AGENTS.md 将 `docker-compose.dev.yml` 列为受保护文件，修改前需要批准。变更添加了 `./backend/tests:/app/tests:ro` volume mount 用于容器内测试执行。注释说明了理由（"宿主机无 uv，测试只能在容器里跑"），但 PR 中未记录批准。严重程度：Medium — 影响所有开发者环境和 CI。
+
+---
+
+#### Category 14: E2E
+
+| Stat | Count |
+|------|-------|
+| E2E tests in `frontend/e2e/` | ✅ |
+| Uses Playwright | ✅ |
+| Rules evaluated | 2 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+- New file: `frontend/e2e/equipment-sorting.spec.ts` (177 lines) ✅
+- Uses Playwright test framework ✅
+- `auth.setup.ts` refactored to support `E2E_AUTH_TOKEN` injection ✅
+
+---
+
+#### Category 15: SQL 注入与不安全查询
+
+| Stat | Count |
+|------|-------|
+| SQL query sites inspected | ~25 |
+| Raw SQL `text()` usage | 2 (static constants) |
+| f-string/concatenation in SQL | 0 |
+| Rules evaluated | 4 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 0 |
+
+Dynamic sort logic analysis (`repository/equipment.py` `_build_order_by()`):
+1. Whitelist validation: `sort_by` checked against `_SORT_COLUMNS` dict ✅
+2. API-layer enforcement: `EquipmentSortBy = Literal[...]` rejects invalid values ✅
+3. `text()` fragments are module-level constants with zero runtime interpolation ✅
+4. ORM `case()` expression built from static dict ✅
+5. All WHERE clauses use ORM expressions (parameterized) ✅
+6. LIKE patterns use `_escape_like()` ✅
+7. `update().values(**new_vals)` passes as bound parameters ✅
+
+---
+
+#### Category 16: React Hooks 与 React Compiler
+
+| Stat | Count |
+|------|-------|
+| useEffect + setState for data fetching | ⚠️ Present but justified |
+| useEffect + setState for derived state | ✅ Uses useMemo |
+| useEffect dependencies complete | ✅ |
+| Direct state mutations | ✅ None |
+| Rules evaluated | 5 |
+| Rules not evaluated | 0 |
+| Confirmed findings | 0 |
+| Uncertain findings | 3 |
+
+**Uncertain:**
+
+- [ ] `frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx:221-229` — useEffect + setState for data fetching — 页面使用混合 SSR + 客户端 fetch 模式。数据先通过 `page.tsx` 服务端获取，然后客户端用于更新。`useEffect` 用于 filter/pagination 变化，非初始加载。标记为 Uncertain 因为：(1) 这是 URL 驱动状态的有意架构选择；(2) 使用 `useRef` 防止重复 fetch（`lastFetchKey`）；(3) 代码已文档化。建议：考虑迁移到 React Query 以与项目偏好一致，但当前模式功能正常且有文档。
+
+- [ ] `frontend/src/app/(dashboard)/equipment/assets/EquipmentPage.tsx:89-103` — useEffect + setState for localStorage hydration — 读取 `localStorage` 在 useState initializer 中会导致 SSR/client hydration 不匹配。eslint-disable 注释说明了原因。标记为 Uncertain 因为：(1) 这是客户端存储的合理例外；(2) 已有 eslint-disable 文档化。
+
+- [ ] `frontend/src/components/equipment/EquipmentTable.tsx:209-211` — useEffect + setState for animation phase toggle — 这不是数据获取或派生状态，而是 CSS 动画触发器。toggle 重启 CSS 动画而不重新挂载。eslint-disable 注释说明了原因。标记为 Uncertain 因为：(1) 这是动画控制的合理例外；(2) 已有 eslint-disable 文档化。
+
+---
+
+#### Categories not affected
+
+1 — no relevant files changed (no test/script directory reorganization)
+
+---
+
+#### PR #43 Summary
+
+| Category | Confirmed | Uncertain |
+|----------|-----------|-----------|
+| 1. Repository layout | 0 | 0 |
+| 2. Secrets and hardcoded values | 0 | 0 |
+| 3. Backend module boundaries | 0 | 0 |
+| 4. API and authentication | 0 | 0 |
+| 5. Models and migrations | 1 | 0 |
+| 6. Configuration and logging | 0 | 0 |
+| 7. External services and background tasks | 0 | 0 |
+| 8. Backend tests | 2 | 1 |
+| 9. Frontend component boundaries | 2 | 0 |
+| 10. Frontend API and generated types | 0 | 0 |
+| 11. Proxy and routing | 0 | 0 |
+| 12. Cross-project OpenAPI | 0 | 0 |
+| 13. Docker and deployment | 1 | 0 |
+| 14. E2E | 0 | 0 |
+| 15. SQL 注入与不安全查询 | 0 | 0 |
+| 16. React Hooks 与 React Compiler | 0 | 3 |
+| **Total** | **6** | **4** |
+
+---
+
+#### PR #43 Overall Assessment
+
+**Severity breakdown:**
+
+| Severity | Count | Key issues |
+|----------|-------|------------|
+| **Blocking** | 0 | — |
+| **High** | 0 | — |
+| **Medium** | 3 | `ImportAuditLog` inherits `Base` instead of `BaseModel`; `docker-compose.dev.yml` modified without documented approval; integration test in wrong directory |
+| **Low** | 3 | 2 missing `'use client'` directives; 8 redundant `@pytest.mark.asyncio` decorators |
+
+**Top 3 priorities for fix:**
+1. **`docker-compose.dev.yml`**: Add approval note to PR or revert the change — this is a protected file affecting all developer environments
+2. **`models/import_audit.py`**: Either inherit `BaseModel` and add dummy columns, or document the deviation in AGENTS.md exceptions table
+3. **Test directory**: Move `test_batch_import_integration.py` to `backend/tests/integration/` to follow established pattern
+
+**Positive changes:**
+- ✅ All new endpoints use concrete Pydantic response models (not `ApiResponse`)
+- ✅ Cross-module imports correctly use `public_api.py`
+- ✅ SQL injection prevention: whitelist validation, parameterized queries, ORM expressions
+- ✅ Logger uses lazy `%s` formatting throughout
+- ✅ OpenAPI spec and generated types synchronized
+- ✅ E2E test added for new sorting functionality
+- ✅ Soft delete correctly implemented
+- ✅ All external services properly mocked in tests
+
+**Recommendation:** **fix first** — 3 medium-severity issues should be addressed before merge:
+1. Document approval for `docker-compose.dev.yml` change or revert
+2. Fix `ImportAuditLog` inheritance or document exception
+3. Move integration test to correct directory
+
+The 2 low-severity `'use client'` issues and 8 redundant `@pytest.mark.asyncio` decorators can be fixed in a follow-up commit.
+
+### PR #121: 权限体系落地与系统管理补全（base: main @ 590be0b8, head: feature/permission-system-admin @ 80e9c15e, date: 2026-10-23）
+
+**修复轮次：P0（阻断）+ P1（安全高危）**
+
+#### 已修复（Confirmed → RESOLVED）
+
+- [x] Cat 5 — `backend/alembic/env.py` — 补 `import_module("app.platform.permission.models")`；5 张 `permission.*` 表已进入 `Base.metadata`，`--autogenerate` 不再误判为 drop_table。（blocking，RESOLVED）
+- [x] Cat 4 — `backend/app/modules/hr/api.py` — 飞书审批回调移除 `require_permission("hr:webhook:create")`（飞书服务器无用户 JWT，原实现使所有真实回调 401）；改为 `HR_FEISHU_APPROVAL_ENCRYPT_KEY` 签名校验 + `HR_FEISHU_APPROVAL_VERIFICATION_TOKEN` 校验 + `challenge` 回显，两者都未配置时直接 503（fail-closed）。绑定从 `API_BINDINGS` 移除并登记到 `EXEMPT_ROUTES`。（blocking，RESOLVED）
+- [x] Cat 4 — `backend/app/platform/permission/service/authorization.py` — 权限表未迁移的降级改为：`PERMISSION_ENFORCE_ENABLED=true` 时 fail-closed（503 + 迁移提示），关闭时保留「仅登录」降级；`has_permission` 同步返回 False。（high，RESOLVED）
+- [x] Cat 4 — `backend/app/platform/identity/service.py` — `_verify_feishu_callback_signature` 不再 fail-open：配置了 Encrypt Key 后，缺 timestamp/nonce/signature 即判失败。（high，RESOLVED）
+- [ ] Cat 4 — `backend/app/platform/identity/deps.py` — 会话吊销查询异常**保持 fail-open**（未修复，已决策）：曾改为 fail-closed，但 E2E 栈不含 Redis，导致 `auth.setup` 拿到的合法 token 被判 401；同时 fail-closed 意味着 Redis 抖动会全员登出。经权衡按「可用性优先」回滚为 fail-open 并保留 `logger.warning`。**残留风险**：Redis 不可用期间，已被踢下线 / 已删除账号的 token 仍可在有效期内使用；后续若要收回，需先给所有环境（含 CI/e2e）补齐 Redis，再按环境统一开启。
+- [x] Cat 4 — `backend/app/platform/identity/api.py` — `reset-password` 与 `DELETE /users/{id}/sessions` 补 `guard_manage_target`，禁止低级管理员操作权限不低于自己的账号。（high，RESOLVED）
+- [x] Cat 4 — `backend/app/modules/safety/api/feishu.py` — `POST /feishu/ws/restart`（及 status）不再匿名可调，新增权限码 `safety:feishu:manage` 并登记绑定。（high，RESOLVED）
+- [x] Cat 6 — `backend/app/modules/hr/api.py` — `hr.system_settings` 的凭据类键（`*SECRET`、`*_API_KEY`）加密后落库，读取接口只返回掩码；空值/回传掩码视为「不修改」，避免把掩码写成新密钥。（high，RESOLVED）
+- [x] Cat 2 / Cat 6 — `.env.example` 移除 `LLM_ENCRYPTION_KEY` 明文占位；三个 `.env*.example` 同步补 `PERMISSION_ENFORCE_ENABLED` / `PERMISSION_ENFORCE_MODULES` / `HR_FEISHU_APPROVAL_*` / `BOOTSTRAP_ADMIN_FORCE_RESET`。（medium，RESOLVED）
+- [x] Cat 8 — 新增 `backend/tests/unit/test_hr_feishu_webhook_auth.py`（6 例），覆盖回调鉴权的全部 fail-closed 分支。
+
+#### 未处理（按决策保留 / 不在本轮范围）
+
+- [ ] Cat 9 / Cat 11 — `frontend/src/hooks/usePermission.ts`、`frontend/src/proxy.ts` 治理审批：按决策本轮保留，待架构负责人确认后补审批记录；`consumeLoginRedirect` 只在 `/` 生效导致登录落到 `/home` 时失效的缺陷一并留待该轮修复。
+- [ ] Cat 4（剩余）— safety 子路由共用 `safety:module:read`、dossier_writer 读写共用、equipment/quality/energy 写接口缺权限码等约 60 个端点：归入 P2 批量接入。
+- [ ] Cat 9 / Cat 10 / Cat 16 — 前端类型收敛、跨模块深引用、`useEffect` 取数改 React Query：归入 P3。
+- [ ] Cat 6 / Cat 7 / Cat 13 — `audit_cleanup_loop` 改 SchedulerEngine、日志 `extra={}`、Dockerfile Playwright 层说明：归入 P4。
+- [ ] 标注 *(pre-existing)* 的低危项：独立跟进，不作为本 PR 合并前置条件。
+
+#### PR #121 第二轮修复（P2 鉴权缺口，2026-10-23）
+
+盘点结论：受保护前缀下原有 **314 个路由没有登记绑定**（审计报告只点了其中约 60 个写接口），
+其中 safety 220、registration 43、quality 33、equipment 14、energy/audit 各 1、模块根路由 5。
+
+- [x] Cat 4 — safety 全部 220 个接口：从「统一 `safety:module:read`」改为按 `资源 + 方法` 逐请求判定
+      （`safety/api/permission_map.py`）。读接口要 `<resource>:read`，写/审批/删除要 `<resource>:manage`，
+      导出/预览/解析查询这类只读 POST 仍按只读码。新增 45 个安全细码 + 220 条绑定。
+- [x] Cat 4 — `registration/dossier_writer`：路由级 `dossier:read` 改为
+      `GET→read / POST→create / PUT,PATCH→update / DELETE→delete`（原 TODO 落地），新增 32 条绑定。
+- [x] Cat 4 — quality：`standards` 的 PUT/DELETE/submit/approve/reject/obsolete/detail/items/approvals
+      9 个接口补权限依赖（原来仅登录）；`static-data` 的 batch-import / increment-usage / adjust-quantity / jobs、
+      `doc_check` 的 upload-progress / check-progress / records-confirm、`sampling` 的留样台账详情同样补齐；
+      新增 `quality:standard:update|delete|submit|approve` 四个码 + 33 条绑定。
+- [x] Cat 4 — equipment：`import-v4/batch`、`import-v4/preview`、`sync-excel` 补权限依赖（原仅登录），
+      `categories`、模块根路由补绑定，共 14 条。
+- [x] Cat 4 — energy `DELETE /alerts/records/{id}`、audit `GET /logs/export` 补绑定。
+- [x] Cat 4 — `PermissionBindingMiddleware` 增加「尾斜杠归一」匹配：`/plans` 与 `/plans/` 是两条独立路由，
+      不再需要为每个变体单独登记（一次消除 19 条未绑定）。
+- [x] 门禁 — `frontend/src/lib/permissions/codes.ts` 同步 55 个新码（CI `check_permissions.py` 强制两边一致）。
+- [x] 上线配套 — 新增 `backend/scripts/migration/backfill_permission_grants_20261023.py`：持有
+      `safety:module:read` / `registration:dossier:read` 的角色需补新码，否则细分后立刻 403。
+      默认「保持改造前能力」并支持 `--read-only`（只补读码）与 `--apply`。
+
+**覆盖率验证**：按中间件真实匹配逻辑重算，`openapi.json` 中 1284 个 method+path 全部命中绑定或豁免（未绑定 = 0）。
+**未处理**：`scripts/ci/check_permissions.py` 的完整性扫描仍按「模块前缀 + 装饰器路径」拼路径，
+对带内部 prefix 的子路由（如 `equipment/batch_import.py`、`quality/static_data/api.py`）产生约 510 条误报，
+需要先展平子路由再纳入门禁（工具改造，另开）。
+
+#### PR #121 第三轮修复（P3 前端类型与边界，2026-10-23）
+
+- [x] Cat 10 — `'use server'` 文件导出类型（`actions/permission.ts`、`users.ts`、`menu.ts`、`auth.ts`）：
+      `PermissionActionResult` 移到 `types/permission.ts`，`LoginActionState` 移到 `types/auth.ts`（并改
+      `app/login/password/page.tsx` 的导入），`UsersActionResult` / `MenuActionState` 无外部消费方 → 改为模块内私有。
+- [x] Cat 10 — 权限/用户/系统运维/审计/菜单/身份 API 层全部改用生成类型：
+      `lib/api/server/{permission,users,system-ops,audit,menu,identity,settings}.ts` 的 `apiFetch` 补
+      `components['schemas'][...]` 泛型，请求体改用生成请求模型（`RoleCreate`/`StatusBatchRequest`/`ApiSwitchRequest` 等），
+      调用侧改用 `unwrapResponse()`，删除约 30 处 `as { data: X }` 手写断言。
+- [x] Cat 10 — 生成类型与手写类型的语义差在边界归一：新增 `lib/api/batch.ts`
+      （`normalizeBatchResult` / `normalizeUserBatchStatus`），补齐 OpenAPI 标成可选的 `succeeded/failed`；
+      菜单 `custom[].parent/perms`、人员下拉 `username`、会话吊销 `revoked` 同样在边界收敛。
+- [x] Cat 10 — 重复类型定义：`BatchResult` 抽出到 `types/batch.ts`，`types/permission.ts` 与
+      `types/system-ops.ts` 改为 re-export；审计/登录日志的查询参数抽成 `AuditLogQuery` / `LoginLogQuery` 供两层共用。
+- [x] Cat 10 — `lib/api/server/{module-settings,agent-skills}.ts` 由相对 `/api/v1` 改为 `getApiBaseUrl()`。
+- [x] Cat 9 — `components/auth/RequirePermission.tsx` 删除：全仓无引用、与 `PermissionGate` 功能重复，
+      其跨模块深引用 `@/components/settings/NoAccessResult` 一并消除。
+- [x] Cat 10 — `lib/permissions/server.ts` 的 lib→actions 反向依赖：改为直接调用 `lib/api/server/menu`，
+      菜单配置与权限快照都通过 `unwrapResponse` 解包。
+
+**未处理（本轮范围外）**：Cat 9 的 `<Card title>` 语义 h1（9 个页面需重构标题层级，留到 P4）；
+Cat 16 的 `useEffect` 取数改 React Query（风险最高，单独一轮）；
+`types/identity.ts`、`types/equipment-personnel.ts` 仍是手写契约 —— 根因是后端
+`GET /identity/login-logs`、`GET /identity/personnel` 未声明 `response_model`，需先补后端模型再重新生成 schema。
+
+#### PR #121 第四轮修复（P4 后台任务 / 日志 / 配置 / 部署说明，2026-10-23）
+
+- [x] Cat 7 — `app/platform/audit/cleanup.py`：审计日志清理从 `main.py` 手写
+      `asyncio.ensure_future(audit_cleanup_loop())` + 自建调度，改为 `TaskDefinition`（CRON `0 4 * * *`，
+      Asia/Shanghai）+ `scheduler_registry.register_task`；新增 `AUDIT_CLEANUP_ENABLED` 作为
+      `settings_toggle_key`，可在「系统运维 → 定时任务」里运行时开关；`timeout_seconds=1800` 避免大批量删除被取消。
+      同时从 `ops_service._STANDALONE_LOOPS` 移除该条目（不再属于独立轮询循环）。
+- [x] Cat 7 — `registration/regulatory_tracker/api/routes.py`：同步任务从 `BackgroundTasks.add_task(_run_sync)`
+      （签名多一个必填参数 ⇒ 响应结束后 TypeError、任务永远 pending）改为 `spawn_task`，并在失败时
+      写日志 + 把 `sync_job.status` 置为 `failed`。
+- [x] Cat 7 — `quality/sop_ai/scheduler.py`：`register()` 从未被调用 ⇒ 定时巡检永不触发；已在 startup 注册。
+      同时修 `_cron_matches` 用 `croniter.get_prev()` 导致「基准时刻正好匹配时永远返回上一拍」的问题，改用 `match()`。
+- [x] Cat 7 — `equipment/api/claim.py`：接单通知从裸 `asyncio.ensure_future` 改为 `spawn_task`（异常进日志）。
+- [x] Cat 7 — `hr/analysis_service.py`：流失率 AI 分析失败由静默兜底改为 `logger.warning(exc_info=True)`
+      并在摘要里标注「AI 分析暂时不可用，请人工复核」。
+- [x] Cat 6 — `quality/qms/{reagent,deviation_reporter}_reminder_scheduler.py`：`logger.error(f"...{e}")` 改
+      `logger.exception`（保留 traceback）；`main.py` 两处调度注册失败同样改 `logger.exception`。
+- [x] Cat 7 — `registration/dossier_writer/api.py`：`print(traceback)` 改为 `logger.exception`。
+- [x] Cat 7 — `energy/scheduler.py`：月度同步失败重试由固定 60s 改为指数退避（60/120/240s）。
+- [x] Cat 1 — 文档失效引用：`permission-module-onboarding.md` 与 `alembic-guide.md` 里的
+      `docker-compose.local-dev.yml` / `.env.local` 改为实际使用的 `docker-compose.yml + docker-compose.dev.yml` 与 `.env`；
+      `docker-compose.dev.yml` 的注释同步更正（Compose 不读 `.env.local`）。
+- [x] Cat 6 — 核实 `identity` 登录锁定参数：`MAX_LOGIN_FAILURES` / `LOCKOUT_SECONDS` 已在 `service.py` 定义并被
+      `api.py` 引用，**审计该条已过期**，无需改动。
+
+**未处理（pre-existing，需独立排期）**：Cat 7 里 6 处「请求内联 LLM/OCR 超过 5 秒」的接口
+（hr ai_exam / hr 简历解析 / quality doc_check / label_verification / registration validation_audit /
+equipment inspection）—— 都要改成「提交任务 + 轮询」，属接口契约变更，不适合与安全修复混做一个 PR。
+Cat 5 的「`0086`/`0087` 三张表无 ORM model、靠 `RAW_SQL_ONLY_TABLES` 白名单长期遮蔽」需要补 model 并
+在有库环境跑 `alembic check` 验证，同样留待独立一轮。
+
+#### PR #121 第五轮修复（A 批：安全收口，2026-10-26）
+
+本轮针对复核中确认的**匿名可访问 / 缺权限码**缺口，并更正上一轮一处误判。
+
+- [x] Cat 4 — `equipment/api/equipment.py`：`GET /locations/{location_id}`、`GET /equipments/{equipment_id}`
+      原先**没有任何认证依赖**（项目无全局登录中间件、`PERMISSION_ENFORCE_ENABLED` 默认 false
+      ⇒ 匿名可直接读），现补 `RequiredUser` + `equipment:equipment:read`。
+- [x] Cat 4 — 同文件写接口补权限码：`PUT /categories/{id}` → `equipment:equipment:update`；
+      `DELETE /locations/{id}`、`DELETE /equipments/{id}` → `equipment:equipment:delete`
+      （原先仅要求登录）。
+- [x] Cat 4 — `equipment/api/images.py` `GET /{work_order_id}/images` 原先匿名可读，
+      补 `RequiredUser` + `equipment:work-order:read`。
+- [x] Cat 4 — `equipment/api/batch_import.py` 的 `POST /test-validation`（文档写明「without
+      authentication」、接收任意行数据并用 `logger.error` 打印首行）**删除**，同步移除
+      registry 中 `equipment:batch-import:create` 对
+      `/api/v1/equipment/equipments/import/test-validation` 的绑定；OpenAPI 与前端生成类型已重生成。
+- [x] Cat 4 — **更正上一轮误判**：`safety/api/hazard_identifications.py` 的 `/hazard-identifications/stats`
+      与 `/ledger-stats` 此前仍返回裸 `{"code":200,...}` 且无 `response_model`（上一轮标记为已修属误判）。
+      现新增 `HazardIdentificationStatsApiResponse` / `HazardIdentificationLedgerStatsApiResponse`
+      及对应 Data 模型，两个接口改为具体响应模型并纳入 OpenAPI。
+- [x] Cat 4 — `quality/qms/reagent_service.delete_reagent` 由物理 `DELETE FROM` 改为软删除
+      （`is_deleted = true`）；同步给读取路径补过滤：列表、详情、库存提醒查询
+      （`reagent_reminder_service.get_low_stock_reagents`），避免删除后仍出现在列表/提醒里。
+
+**验证**：`ruff check .` / `ruff format --check .`（1038 文件）通过；`mypy app tests`（900 文件）
+0 issues；`pytest tests/unit tests/modules/{safety,equipment}` 346 passed（84 errors 均为本地
+PostgreSQL 未启动）；`openapi.json` 与前端 `schema.ts` 已重生成；`tsc --noEmit` / `eslint` 通过。
+
+**未纳入本轮**（仍在 B/C/D 批次）：45 处 `JSONResponse` 绕过 response_model、`OpaqueDataApiResponse`
+泛型信封、registration 裸 `HTTPException`、`research/api.py` 硬编码 `/tmp` 上传目录、
+`0086/0087` 无 ORM model、identity↔permission 与 shared→platform 循环依赖。
+
+#### PR #121 第六轮修复（C 批：模型与迁移一致性，2026-10-26）
+
+- [x] Cat 5 — `0086` 的两张表补 ORM 模型：新增
+      `app/modules/quality/qms/reminder_models.py`（`QmsReagentItemReminderConfig`、
+      `QmsDeviationReminderRule`），并在 `quality/models.py` 注册（`env.py` 的模块循环据此发现）。
+      两张表是配置表、物理表没有 `BaseModel` 的 `created_by/updated_by`，因此继承 `Base` 并在
+      docstring 写明原因；读写仍走现有原生 SQL，不改表结构。
+- [x] Cat 5 — `0087` 的 `hr.system_settings` 补模型 `SystemSetting`（`hr/models.py`），
+      同样继承 `Base`（以 `key` 为主键、无审计列）。
+- [x] Cat 5 — `alembic/env.py` 的 `RAW_SQL_ONLY_TABLES` **清空**：三张表已可被 `autogenerate` /
+      `alembic check` 感知，白名单不再遮蔽字段漂移；注释里写明「新增条目请优先补模型」。
+- [x] 顺带修正 `quality/qms/reagent_service.py` 的列表/详情查询：软删除过滤已在 A 批加入。
+
+**验证**（临时 postgres:17 容器，用完即删）：
+- `alembic upgrade head` 全量迁移通过
+- `alembic check` → **No new upgrade operations detected**（证明三张表模型与迁移/实际表结构一致）
+- `Base.metadata` 中三张表均已注册：`qms.qms_reagent_item_reminder_config`、
+  `qms.qms_deviation_reminder_rules`、`hr.system_settings`
+- `ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+  `pytest tests/unit` 220 passed；`openapi.json` 无漂移（补模型不影响接口契约）
+
+**未纳入**：`module_registry` 未登记 `permission` schema —— 与 `identity`/`audit`/`core` 等平台 schema
+现状一致（都未登记），单独补 `permission` 反而不一致，需与架构负责人一并决定平台 schema 的登记口径。
+
+#### PR #121 第七轮修复（D 架构循环 + B 响应模型绕过，2026-10-26）
+
+- [x] Cat 3 — `shared/module_api.py` 反向依赖 `platform.identity`：`require_current_user` 改从
+      `app.core.deps` 门面导入、返回类型用 `Any`，不再直接 import `platform.identity.deps/models`，
+      切断 shared ↔ platform.identity 的包级环。
+- [x] Cat 3 — `identity ↔ permission` 循环：identity 不再直接 import permission 的 models/repository。
+      新增 `permission/public_api.py` 的 `get_role_names_by_user_ids` / `migrate_user_grants`，
+      `identity/repository.get_roles_for_users` 与 `identity/service.bind_feishu_user` 改为经 public_api 调用
+      （授权数据读写收敛在 permission 模块）；identity 里已无任何 `from app.platform.permission`（除 public_api）。
+- [x] Cat 4 — `success_response()` 返回 `JSONResponse` 绕过 `response_model`：`dossier_writer/api.py`（25 处）、
+      `validation_audit.py`（11 处）、`identity/api.py`（13 处）全部改为 `build_response()`（返回 `ApiResponse`，
+      由 FastAPI 应用 response_model 校验）；相应返回注解 `-> JSONResponse` 改为 `-> Any`，移除未用的 `JSONResponse` 导入。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+`pytest tests/unit + tests/modules/registration` 223 passed（2 errors 为本地 PostgreSQL 未启动）；
+`openapi.json` 因响应 media-type 由 `application/json; charset=utf-8` 收敛为 `application/json` 有 16 行差异，
+已重导出；前端 `schema.ts` 无变化（生成类型不包含 content-type）。
+
+#### PR #121 第八轮修复（e2e quality 三页失败，2026-10-26）
+
+e2e（run 40252813300）在 quality 模块失败。根因是**本 PR 才给 E2E 账号授予超管**
+（`identity/api.py` test-login 新增 `ensure_superadmin`）：此前该账号无权限，受影响接口一律 403，
+前端 action 抛错被 React Query 吞掉，页面以空表照常渲染；授权后真实数据链路第一次跑通，
+暴露出两个**既有**前端缺陷（与权限改造本身无关）：
+
+- [x] `frontend/src/actions/quality.ts` — `wrap()` 把服务端返回值整体塞进 `data`，而
+      `lib/api/server/quality.ts` 多数函数返回完整信封 `{code,message,data,meta}`，
+      于是页面把信封当列表传给 antd Table → `dataSource` 非数组 → `eU.some is not a function`
+      整页崩（`/quality/inspection/standards`）。改为识别信封并解包，同时透传 `meta`
+      （顺带修掉分页 `total` 恒为 0）。
+- [x] `quality/instrument/records/page.tsx` — `getInstruments({page_size: 1000})` 超过后端
+      `Query(20, ge=1, le=100)` → 422 → 页面取数整体失败（e2e 报 `[500] POST /quality/instrument/records`）。改 100。
+- [x] `quality/inspection/standards/page.tsx` — 导出时 `page_size: 10000` 超过 `le=200` → 422，
+      导出按钮实际不可用。改 200。
+
+**验证方法**：本地用生产构建（`NEXT_DIST_DIR=.next-prod`，容器内 `next build`）+ 容器内
+Playwright 驱动真实页面，复现出 `eU.some is not a function` 与 500；修复后
+`/quality/inspection`、`/quality/inspection/standards`、`/quality/instrument/records`
+三页 0 console error、0 4xx/5xx。`tsc --noEmit` / `eslint src --max-warnings=0` 通过。
+
+#### PR #121 第九轮修复（contract tail，2026-10-26）
+
+- [x] Cat 4 — `equipment/api/images.py`：上传/列表/删除三个接口不再返回 `success_response()`（JSONResponse
+      绕过 response_model），改为 `build_response()` + 具体响应模型
+      （新增 `WorkOrderImageListApiResponse` / `WorkOrderImageDeleteApiResponse`）。
+- [x] Cat 4 — `registration/api/projects.py`、`certificates.py`、`quality/qms/reagent_api.py`：
+      裸 `HTTPException(404/500)` 改为 `AppException`，与其他模块统一走全局异常信封。
+- [x] Cat 2 — `research/api.py`：交付物附件目录由硬编码 `/tmp/dazah_uploads/research/deliverables`
+      改为 `settings.UPLOAD_DIR/research/deliverables` 派生；下载保留旧 `/tmp` 兜底，
+      避免升级后已存在的附件 404。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+`pytest tests/unit + tests/modules/{equipment,registration}` 270 passed（83 errors 均为本地 PostgreSQL 未启动）；
+`openapi.json` 与前端 `schema.ts` 已重生成（新增 3 个 images 响应模型）；`tsc --noEmit` / `eslint` 通过。
+
+**仍未处理（已决策/需排期）**：`OpaqueDataApiResponse` 泛型信封（6 个 dossier 接口，需逐接口定模型）、
+`equipment.ts` 的 `Personnel` 手写类型（根因是后端 `/identity/personnel` 无 response_model）、
+`permission/cache.py` 日志 `extra={}`（低危）、session-revocation 保持 fail-open（`04913ddc` 决策）、
+Cat 7 内联 >5s（10 处）、Cat 16 hooks、h1 语义（均 pre-existing，需独立轮次）。
+
+#### PR #121 第十轮修复（超限分页 422，2026-10-26）
+
+- [x] `frontend/src/app/(dashboard)/safety/regulation/page.tsx` — 关联规程下拉用 `page_size: 500`，
+      后端 `/safety/regulations` 上限 `le=200` ⇒ 422，下拉静默变空。改 200。
+- [x] `frontend/src/components/production/BatchesPageClient.tsx` — 导出用 `page_size: 10000`，
+      后端 `/production/batches` 上限 `le=200` ⇒ 422，导出恒失败。改为按页（200/页）拉全量后再导出。
+
+**核查结论**（逐个对照 OpenAPI 的 `page_size.maximum`）：`safety/regulation`、`production/batches` 是本轮修掉的
+两处真实 422；其余超大字面值均未越限 —— `safety/ai-workflow-configs`（500/上限 500）、
+`energy/workshops`（500/500）、`production/product-output`（5000/5000）、`quality/instrument`（已改 100/100）、
+`quality/standards`（已改 200/200）。
+
+#### PR #121 第十一轮修复（P1 安全语义 + P2 契约收尾，2026-10-26）
+
+**P1**
+- [x] Cat 4（uncertain 升级）— `POST/GET /auth/logout` 现在会**吊销当前会话**（解出 jti → 写吊销黑名单），
+      前端 `logout()` server action 同步通知后端；Redis 故障时只记日志，不阻塞登出。此前"退出登录"后
+      token 仍可继续用到 7 天。
+- [x] Cat 11（uncertain 升级）— `proxy.ts` 的 `consumeLoginRedirect` **回滚**（文件恢复成 main 版本，
+      不再属于本 PR 改动），登录回跳逻辑移入 `loginWithPassword`：读 `login_redirect` cookie → 站内路径校验
+      → 回跳 → 删 cookie。同时修掉"只在 `/` 生效、登录落 `/home` 因此功能失效"的缺陷。
+- [x] Cat 4（uncertain 升级）— OAuth `state` 由可选改为**必填**，并在 `/login` 写入短时 httpOnly
+      `oauth_state` cookie，回调用 `secrets.compare_digest` 与 query 里的 state 比对（双击提交），
+      杜绝"可选 state ⇒ 省略即绕过 CSRF"。
+
+**P2**
+- [x] Cat 5/10 — `/identity/personnel` 补 `response_model=PersonnelListApiResponse`（此前是 inline schema，
+      导致前端只能手写类型）；前端删除 `lib/api/client/equipment.ts` 里无人使用、且把 equipment 人员类型
+      套到 identity 数据上的 `fetchPersonnelList`（dead code）。
+- [x] Cat 10 — `lib/api/server/settings.ts` 的泛型 helper `fetchFeishuConfigData<T>` 删除，三个飞书配置接口
+      改用生成 schema 信封（`FeishuConfigApiResponse` / `FeishuDiagnosticApiResponse`）+ `unwrapResponse`；
+      `actions/settings.ts` 三处 `as` 断言随之移除。
+- [x] Cat 6 — `permission/cache.py` 六处日志补 `extra={"user_id": ...}`。
+
+验证：`ruff`/`format`（1039 文件）、`mypy app tests`（901 文件）通过；`pytest tests/unit` 220 passed；
+`openapi.json` 与前端 `schema.ts` 重生成；`tsc --noEmit` / `eslint src --max-warnings=0` 通过。
+
+#### PR #121 第十二轮修复（Cat 9 语义 h1，2026-10-26）
+
+- [x] Cat 9 — 9 个页面补页面级语义 `h1`：`quality/ai-config`、`quality/ai-log`（原 h2 提升）、
+      `quality/deviation-automation/sop`、`quality/deviation`、`quality/doc-check/[id]`、
+      `quality/inspection-table/[id]`、`home`（`HomeWorkspace`）、`change-password`（`ChangePasswordClient`）、
+      `login/password`。
+      采用 `sr-only` 的 h1（视觉仍由 Card / antd Title 承担，零布局变化）；
+      `deviation-automation/templates` 早已是「Card title 内嵌 h1」的写法，未改。
+
+- [x] Cat 16 — `production/WorkshopRankingTrend.tsx`：`visibleSet` 由「useEffect 里 setState + ref 防抖」
+      改为派生值（`userVisibleSet ?? 默认前三个车间`），去掉一轮多余渲染与 ref。
+
+#### PR #121 第十三轮修复（决策项收口，2026-10-26）
+
+按架构负责人「需要拍板的都按建议修改、配置默认值可改」的指示，处理剩余 4 条决策项：
+
+- [x] Cat 4 — `dossier_writer/schemas.py` 的 `OpaqueDataApiResponse`（`data: dict | list`）删除，
+      按 8 个接口的真实响应体拆成具体模型：`ChapterPreviewApiResponse`、`AssetMatchApiResponse`、
+      `FieldFillApiResponse`、`FieldMappingListApiResponse`、`InitChapterConfigApiResponse`、
+      `AiPreviewApiResponse`、`AssetCategoryListApiResponse`、`AvailableAssetListApiResponse`
+      （含明细模型：预览段落/表格、匹配明细、填充结果、字段映射、AI 提取字段、可用素材）。
+      已用 12 组真实载荷（成功 + 失败分支）验证模型可通过校验。
+- [x] Cat 5 — `shared/module_registry.py` 新增 `PLATFORM_SCHEMAS` / `ALL_SCHEMAS`，`permission`（及
+      identity/core/audit）正式登记；`core/database.py` 的 `search_path` 改用 `ALL_SCHEMAS`，
+      `alembic/env.py` 的 `PROJECT_SCHEMAS` 复用同一清单（原来两处各写一份，容易漂移）。
+- [x] Cat 6 — 登录失败锁定策略由硬编码常量改为配置项 `LOGIN_MAX_FAILURES`（默认 5）/
+      `LOGIN_LOCKOUT_SECONDS`（默认 900），`identity/service.lockout_policy()` 统一读取，
+      `identity/api.py` 改为调用同一函数；三个 `.env*.example` 已补默认值。
+- [x] Cat 13 — `docker-compose.dev.yml` 的 `ALLOWED_DEV_ORIGINS` 变更经架构负责人确认保留（2026-10-26），
+      注释已说明 Compose 读取的是 shell 环境变量或仓库根 `.env`，不是 `.env.local`。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）通过；`mypy app tests`（901 文件）0 issues；
+`pytest tests/unit + tests/modules/registration` 223 passed（2 errors 为本地无 PostgreSQL）；
+临时 postgres:17 上 `alembic upgrade head` + `alembic check` → **No new upgrade operations detected**（容器已删）；
+`openapi.json` 与前端 `schema.ts` 已重生成；`tsc --noEmit` / `eslint src --max-warnings=0` 通过。
+
+#### PR #121 第十四轮修复（Cat 16 hooks + Cat 7 阻塞调用，2026-10-26）
+
+**Cat 16 — `useEffect` 取数改 React Query（12 处中已改 9 处）**
+
+| 位置 | 处理 |
+|---|---|
+| `layout/Sidebar.tsx` | 仓储飞书表菜单项 → `useQuery` + `enabled: moduleKey === 'warehouse'` |
+| `equipment/MaintenancePlanDrawer.tsx` | 责任人候选 → `useQuery(enabled: open)`；表单回填仍用 effect（无取数） |
+| `equipment/WorkOrderDetailDrawer.tsx` | 维修人候选 → `useQuery(enabled: open)` |
+| `equipment/inspection/InspectionTaskDrawer.tsx` | 线路模板 + 人员 → 两个 `useQuery(enabled: open, select)` |
+| `quality/doc-check/page.tsx` | 记录列表 → `useQuery`，确认通过后 `refetch()` |
+| `quality/inspection-table/[id]/page.tsx` | 详情 → `useQuery`；行数据改「渲染期派生 + 带版本号的本地编辑副本」，避免 effect 里 setState |
+| `settings/AgentSkillManagementClient.tsx` | 列表 → `useQuery`，增删改后 `refetch()` |
+| `quality/deviation-flow/settings/page.tsx` | 六连 `fetch` → 单个 `useQuery`（并行）+ 派生六个列表，保存后 `refetch()` |
+| `research/pilot-workflow/PilotWorkflowDetail.tsx` | `setInterval` 轮询 → `useQuery.refetchInterval`（仅 running/waiting_approval 时 3s） |
+| `components/production/WorkshopRankingTrend.tsx` | 已在前一轮改为派生值 |
+
+**仍保留（需独立重构，不在本轮）**：
+`research/route-development/RouteWorkflowPage.tsx`（后端数据要摊进 6+ 个可编辑且本地持久化的状态，
+改 React Query 等于重做页面状态模型）、`safety/HazardInspectionForm.tsx`（effect 是表单回填与
+防抖搜索，不是渲染取数）。
+
+**Cat 7 — 只处理「阻塞事件循环」的两处（其余是慢接口，需改契约）**
+- `quality/label_verification/api.py`：OpenCV 抽帧是同步阻塞调用，改 `asyncio.to_thread`，不再卡事件循环。
+- `quality/ai/service.py:160`：`new_event_loop().run_until_complete()` 创建的事件循环从不关闭，
+  改为 `asyncio.run()`。
+
+**仍开放（需要「提交任务 + 轮询」的接口契约变更）**：hr `ai_exam`、hr 简历解析、`hr/analysis_api.py`、
+`quality/qms/doc_check`（服务内自带同步 httpx 客户端，要改 AsyncClient）、`quality/ai/api.py`、
+`registration/api/validation_audit.py`、`energy/api.py`、`research/api.py`、`equipment/api/inspection.py`
+—— 这些是「接口本身耗时 >5s」，不是「阻塞事件循环」，单靠 `to_thread` 无法解决，必须改成异步任务。
+
+**验证**：`ruff check .` / `ruff format --check .`（1039 文件）、`mypy app tests`（901 文件）0 issues、
+`pytest tests/unit` 220 passed、`tsc --noEmit`、`eslint src --max-warnings=0` 全部通过。

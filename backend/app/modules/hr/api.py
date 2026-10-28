@@ -1,24 +1,31 @@
 # mypy: ignore-errors
+import hashlib
+import hmac
 import logging
 import os
 import re
 from datetime import date, datetime
+from functools import cache
 from io import BytesIO
+from typing import Any
 from urllib.parse import quote
 from uuid import UUID
 
-from fastapi import Body, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import Body, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-from sqlalchemy import text
+from sqlalchemy import column, func, literal_column, or_, select, text
+from sqlalchemy import table as sa_table
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
-from app.core.database import get_db
+from app.core.database import async_session_factory, get_db
 from app.core.deps import PermissionContext, RequiredUser, require_permission
+from app.core.job_store import get_job_state_or_404, start_job
 from app.core.redis import cache_get, cache_set
 from app.core.response import paginated_response, success_response
+from app.core.secrets import decrypt_secret, encrypt_secret, mask_secret
 from app.modules.hr.schemas import (
     AnnualTrainingPlanCreate,
     AnnualTrainingPlanItemBatchUpdate,
@@ -90,6 +97,7 @@ try:
     from app.modules.hr.attendance_api import router as attendance_router  # type: ignore[import-not-found]
 except ImportError:
     attendance_router = None  # type: ignore
+from app.modules.hr.job_store import hr_job_store
 from app.modules.hr.repository import (
     PrejobTemplateRepository,
     TrainingSpecialistRepository,
@@ -111,11 +119,77 @@ from app.modules.hr.service import (  # type: ignore[attr-defined]
 )
 from app.shared.module_api import create_module_router
 from app.shared.module_registry import MODULES_BY_CODE
-from app.shared.schemas import PageParams
+from app.shared.schemas import (
+    AsyncJobAccepted,
+    AsyncJobAcceptedResponse,
+    AsyncJobStateResponse,
+    PageParams,
+)
 
 router = create_module_router(MODULES_BY_CODE["hr"])
 
 logger = logging.getLogger(__name__)
+
+# HR 模块后台任务状态表（进程内）见 app/modules/hr/job_store.py：hr/api.py 与 ai_exam 子包共用
+
+# ─── 原生 SQL 白名单 ───
+# 老厂/新厂员工数据分布在两张固定表中，SQL 以静态语句维护，不做表名拼接
+_SELECT_EMPLOYEE_BY_NAME_SQL: dict[str, object] = {
+    "hr.employees": text("SELECT * FROM hr.employees WHERE name = :name AND is_deleted = false LIMIT 1"),
+    "hr.employees_new": text("SELECT * FROM hr.employees_new WHERE name = :name AND is_deleted = false LIMIT 1"),
+}
+_SELECT_EMPLOYEE_BY_NUMBER_SQL: dict[str, object] = {
+    "hr.employees": text("SELECT * FROM hr.employees WHERE employee_number = :num AND is_deleted = false LIMIT 1"),
+    "hr.employees_new": text(
+        "SELECT * FROM hr.employees_new WHERE employee_number = :num AND is_deleted = false LIMIT 1"
+    ),
+}
+_UPDATE_EMPLOYEE_OPEN_ID_SQL: dict[str, object] = {
+    "hr.employees": text("UPDATE hr.employees SET feishu_open_id = :oid WHERE employee_number = :eno"),
+    "hr.employees_new": text("UPDATE hr.employees_new SET feishu_open_id = :oid WHERE employee_number = :eno"),
+}
+_EMPLOYEE_SOURCE_TABLES = tuple(_SELECT_EMPLOYEE_BY_NAME_SQL)
+
+# 新厂克隆表查询允许的表名与列名；白名单之外的标识符一律拒绝，避免把运行期输入拼入 SQL
+_CLONE_TABLE_COLUMNS: dict[str, frozenset[str]] = {
+    "hr.employees_new": frozenset(
+        {
+            "name",
+            "employee_number",
+            "department",
+            "team",
+            "status",
+            "hire_date",
+            "offboarding_date",
+            "created_at",
+            "is_deleted",
+        }
+    ),
+    "hr.onboarding_records_new": frozenset(
+        {
+            "name",
+            "employee_number",
+            "department",
+            "position",
+            "hire_date",
+            "created_at",
+            "is_deleted",
+        }
+    ),
+    "hr.departure_records_new": frozenset(
+        {
+            "name",
+            "employee_number",
+            "department",
+            "position",
+            "offboarding_type",
+            "offboarding_date",
+            "created_at",
+            "is_deleted",
+        }
+    ),
+}
+_CLONE_SORT_ORDERS = frozenset({"asc", "desc"})
 
 
 async def _get_new_employee(employee_id: UUID, session: AsyncSession) -> Employee:
@@ -337,13 +411,65 @@ async def sync_employee_to_feishu(  # type: ignore[no-untyped-def]
     )
 
 
+async def _verify_feishu_approval_callback(request: Request, payload: dict) -> None:  # type: ignore[type-arg]
+    """校验飞书审批完成回调的合法性（fail-closed）。
+
+    飞书服务器发起回调时不可能携带用户 JWT，因此该路由不挂权限码
+    （已在 registry.EXEMPT_ROUTES 豁免绑定兜底），改用回调凭据鉴权：
+
+    - 配置了 Encrypt Key：必须带齐 timestamp/nonce/signature，且 HMAC-SHA256 校验通过；
+    - 配置了 Verification Token：payload.token 或 payload.header.token 必须一致；
+    - 两者都没配置：直接拒绝，避免留下一个无鉴权的数据变更入口。
+    """
+    settings = get_settings()
+    encrypt_key = settings.HR_FEISHU_APPROVAL_ENCRYPT_KEY
+    verification_token = settings.HR_FEISHU_APPROVAL_VERIFICATION_TOKEN
+
+    if not encrypt_key and not verification_token:
+        logger.error(
+            "HR 飞书审批回调未配置校验凭据（HR_FEISHU_APPROVAL_ENCRYPT_KEY / "
+            "HR_FEISHU_APPROVAL_VERIFICATION_TOKEN），已拒绝回调",
+        )
+        raise HTTPException(status_code=503, detail="飞书审批回调未配置校验凭据")
+
+    if encrypt_key:
+        timestamp = request.headers.get("X-Lark-Request-Timestamp")
+        nonce = request.headers.get("X-Lark-Request-Nonce")
+        signature = request.headers.get("X-Lark-Signature")
+        if not timestamp or not nonce or not signature:
+            raise HTTPException(status_code=401, detail="飞书回调缺少签名头")
+        raw_body = await request.body()
+        expected = hashlib.sha256(f"{timestamp}{nonce}{encrypt_key}".encode() + raw_body).hexdigest()
+        if not hmac.compare_digest(expected, signature):
+            raise HTTPException(status_code=401, detail="飞书回调签名校验失败")
+
+    if verification_token:
+        header = payload.get("header")
+        token = payload.get("token")
+        if not isinstance(token, str) and isinstance(header, dict):
+            token = header.get("token")
+        if not isinstance(token, str) or not hmac.compare_digest(token, verification_token):
+            raise HTTPException(status_code=401, detail="飞书回调 token 校验失败")
+
+
 @router.post("/webhook/feishu-approval", summary="飞书审批完成回调")
 async def feishu_approval_webhook(  # type: ignore[no-untyped-def]
+    request: Request,
     payload: dict,  # type: ignore[type-arg]
-    ctx: PermissionContext = Depends(require_permission("hr:webhook:create")),
     service: EmployeeService = Depends(get_employee_service),
 ):
-    """接收飞书审批完成通知，更新员工状态为在职。"""
+    """接收飞书审批完成通知，更新员工状态为在职。
+
+    鉴权方式见 `_verify_feishu_approval_callback`：飞书回调没有用户登录态，
+    用签名 + verification token 校验替代 JWT。
+    """
+    await _verify_feishu_approval_callback(request, payload)
+
+    # 飞书配置回调地址时会先发一次 url_verification 挑战请求
+    challenge = payload.get("challenge")
+    if isinstance(challenge, str):
+        return {"challenge": challenge}
+
     employee_number = payload.get("employee_number")
     if not employee_number:
         return success_response(message="缺少工号")
@@ -645,8 +771,8 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
     # 查询李文兆（先查老厂，再查新厂）
     li_employee = None
     li_table = None
-    for table in ["hr.employees", "hr.employees_new"]:
-        sql = text(f"SELECT * FROM {table} WHERE name = :name AND is_deleted = false LIMIT 1")
+    for table in _EMPLOYEE_SOURCE_TABLES:
+        sql = _SELECT_EMPLOYEE_BY_NAME_SQL[table]
         result = await service.repo.session.execute(sql, {"name": "李文兆"})
         row = result.mappings().first()
         if row:
@@ -666,7 +792,7 @@ async def send_training_select_task(  # type: ignore[no-untyped-def]
             open_id = mapping.get(mobile) or mapping.get(li_employee.phone)
             if open_id:
                 # 持久化到数据库
-                update_sql = text(f"UPDATE {li_table} SET feishu_open_id = :oid WHERE employee_number = :eno")
+                update_sql = _UPDATE_EMPLOYEE_OPEN_ID_SQL[li_table]
                 await service.repo.session.execute(update_sql, {"oid": open_id, "eno": li_employee.employee_number})
                 await service.repo.session.flush()
         except Exception:
@@ -1974,56 +2100,87 @@ async def export_annual_training_plan(  # type: ignore[no-untyped-def]
 from types import SimpleNamespace  # noqa: E402
 
 
+@cache
+def _clone_table_ref(base_table: str) -> object:
+    """返回 clone 表的轻量 Table 引用。
+
+    表名/列名均来自 `_CLONE_TABLE_COLUMNS` 常量白名单，由 SQLAlchemy 编译期
+    quote，不通过 f-string 拼进 SQL 文本；取值一律走绑定参数。
+    """
+    allowed = _CLONE_TABLE_COLUMNS.get(base_table)
+    if allowed is None:
+        raise ValueError(f"不支持的数据表: {base_table}")
+    schema_name, _, table_name = base_table.partition(".")
+    return sa_table(table_name, *[column(name) for name in sorted(allowed)], schema=schema_name or None)
+
+
 def _build_where(
     base_table: str,
     filters: list[tuple[str, str | None]],
     keyword_fields: list[str] | None = None,
     keyword: str | None = None,
-) -> tuple[str, dict]:  # type: ignore[type-arg]
-    """Build WHERE clause and params for raw SQL."""
-    conditions = [f"{base_table}.is_deleted = false"]
-    params: dict = {}  # type: ignore[type-arg]
+) -> list:  # type: ignore[type-arg]
+    """构造查询条件（列名命中白名单，取值全部绑定参数）。"""
+    allowed = _CLONE_TABLE_COLUMNS.get(base_table)
+    if allowed is None:
+        raise ValueError(f"不支持的数据表: {base_table}")
+
+    tbl = _clone_table_ref(base_table)
+    conditions: list = [tbl.c["is_deleted"].is_(False)]  # type: ignore[index,attr-defined]
     for col, val in filters:
         if val:
-            conditions.append(f"{base_table}.{col} ILIKE :{col}")
-            params[col] = f"%{val}%"
+            if col not in allowed:
+                raise ValueError(f"不支持的过滤字段: {base_table}.{col}")
+            conditions.append(tbl.c[col].ilike(f"%{val}%"))  # type: ignore[index,attr-defined]
     if keyword and keyword_fields:
-        ors = [f"{base_table}.{f} ILIKE :keyword" for f in keyword_fields]
-        conditions.append(f"({' OR '.join(ors)})")
-        params["keyword"] = f"%{keyword}%"
-    return " AND ".join(conditions), params
+        for field_name in keyword_fields:
+            if field_name not in allowed:
+                raise ValueError(f"不支持的搜索字段: {base_table}.{field_name}")
+        conditions.append(
+            or_(*[tbl.c[field_name].ilike(f"%{keyword}%") for field_name in keyword_fields])  # type: ignore[index,attr-defined]
+        )
+    return conditions
 
 
 async def _query_clone_table(
     session: AsyncSession,
     table: str,
     schema: type,
-    where_sql: str,
-    params: dict,  # type: ignore[type-arg]
+    conditions: list,  # type: ignore[type-arg]
     page: int,
     page_size: int,
     sort_by: str = "created_at",
     sort_order: str = "desc",
 ) -> tuple[list, int]:  # type: ignore[type-arg]
-    count_sql = text(f"SELECT COUNT(*) FROM {table} WHERE {where_sql}")
-    total = (await session.execute(count_sql, params)).scalar()
+    allowed = _CLONE_TABLE_COLUMNS.get(table)
+    if allowed is None:
+        raise ValueError(f"不支持的数据表: {table}")
+    if sort_by not in allowed:
+        raise ValueError(f"不支持的排序字段: {table}.{sort_by}")
+    if sort_order.lower() not in _CLONE_SORT_ORDERS:
+        raise ValueError(f"不支持的排序方向: {sort_order}")
 
-    sql = text(f"""
-        SELECT * FROM {table}
-        WHERE {where_sql}
-        ORDER BY {sort_by} {sort_order}
-        LIMIT :limit OFFSET :offset
-    """)
-    params["limit"] = page_size
-    params["offset"] = (page - 1) * page_size
+    tbl = _clone_table_ref(table)
+    count_stmt = select(func.count()).select_from(tbl).where(*conditions)  # type: ignore[arg-type]
+    total = (await session.execute(count_stmt)).scalar() or 0
 
-    result = await session.execute(sql, params)
+    order_col = tbl.c[sort_by]  # type: ignore[index,attr-defined]
+    stmt = (
+        select(literal_column("*"))
+        .select_from(tbl)  # type: ignore[arg-type]
+        .where(*conditions)  # type: ignore[arg-type]
+        .order_by(order_col.desc() if sort_order.lower() == "desc" else order_col.asc())
+        .limit(page_size)
+        .offset((page - 1) * page_size)
+    )
+
+    result = await session.execute(stmt)
     rows = result.mappings().all()
     data = [
         schema.model_validate(SimpleNamespace(**dict(row))).model_dump(mode="json")  # type: ignore[attr-defined]
         for row in rows
     ]
-    return data, total  # type: ignore[return-value]
+    return data, total
 
 
 @router.get("/new/employees", summary="新厂员工列表")
@@ -2044,22 +2201,18 @@ async def list_new_employees(  # type: ignore[no-untyped-def]
         dept_filter = "多肽车间"
         team_filter = department.replace("多肽车间-", "")
 
-    where, params = _build_where(
+    where = _build_where(
         "hr.employees_new",
-        [("department", dept_filter), ("status", status)],
+        [("department", dept_filter), ("status", status), ("team", team_filter)],
         keyword_fields=["name", "employee_number"],
         keyword=keyword,
     )
-    if team_filter:
-        where += " AND hr.employees_new.team = :team"
-        params["team"] = team_filter
 
     data, total = await _query_clone_table(
         session,
         "hr.employees_new",
         EmployeeResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
     )
@@ -2081,7 +2234,7 @@ async def list_new_onboarding_records(  # type: ignore[no-untyped-def]
     page_params: PageParams = Depends(),
     session: AsyncSession = Depends(get_db),
 ):
-    where, params = _build_where(
+    where = _build_where(
         "hr.onboarding_records_new",
         [("department", department), ("position", position)],
         keyword_fields=["name", "employee_number"],
@@ -2092,7 +2245,6 @@ async def list_new_onboarding_records(  # type: ignore[no-untyped-def]
         "hr.onboarding_records_new",
         OnboardingRecordResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
         sort_by="hire_date",
@@ -2116,7 +2268,7 @@ async def list_new_departure_records(  # type: ignore[no-untyped-def]
     page_params: PageParams = Depends(),
     session: AsyncSession = Depends(get_db),
 ):
-    where, params = _build_where(
+    where = _build_where(
         "hr.departure_records_new",
         [("department", department), ("offboarding_type", offboarding_type)],
         keyword_fields=["name", "department", "position"],
@@ -2127,7 +2279,6 @@ async def list_new_departure_records(  # type: ignore[no-untyped-def]
         "hr.departure_records_new",
         DepartureRecordResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
         sort_by="offboarding_date",
@@ -2152,7 +2303,7 @@ async def list_new_offboarding_records(  # type: ignore[no-untyped-def]
     session: AsyncSession = Depends(get_db),
 ):
     # Reuse departure_records_new as offboarding data for new factory
-    where, params = _build_where(
+    where = _build_where(
         "hr.departure_records_new",
         [("department", department), ("offboarding_type", offboarding_type)],
         keyword_fields=["name", "department", "position"],
@@ -2163,7 +2314,6 @@ async def list_new_offboarding_records(  # type: ignore[no-untyped-def]
         "hr.departure_records_new",
         DepartureRecordResponse,
         where,
-        params,
         page_params.page,
         page_params.page_size,
         sort_by="offboarding_date",
@@ -2186,19 +2336,19 @@ async def list_new_departments(  # type: ignore[no-untyped-def]
     session: AsyncSession = Depends(get_db),
 ):
     """Aggregate departments from employees_new (no standalone departments_new table)."""
-    where = "is_deleted = false"
-    params: dict = {}  # type: ignore[type-arg]
-    if keyword:
-        where += " AND name ILIKE :keyword"
-        params["keyword"] = f"%{keyword}%"
+    params: dict = {"keyword": f"%{keyword}%" if keyword else None}  # type: ignore[type-arg]
 
-    count_sql = text(f"""
+    count_sql = text(
+        """
         SELECT COUNT(DISTINCT department) FROM hr.employees_new
-        WHERE {where}
-    """)
+        WHERE is_deleted = false
+          AND (CAST(:keyword AS text) IS NULL OR name ILIKE :keyword)
+        """
+    )
     total = (await session.execute(count_sql, params)).scalar()
 
-    sql = text(f"""
+    sql = text(
+        """
         SELECT DISTINCT ON (department)
             department AS name,
             department AS code,
@@ -2207,10 +2357,12 @@ async def list_new_departments(  # type: ignore[no-untyped-def]
             NOW() AS created_at,
             NOW() AS updated_at
         FROM hr.employees_new
-        WHERE {where}
+        WHERE is_deleted = false
+          AND (CAST(:keyword AS text) IS NULL OR name ILIKE :keyword)
         ORDER BY department
         LIMIT :limit OFFSET :offset
-    """)
+        """
+    )
     params["limit"] = page_params.page_size
     params["offset"] = (page_params.page - 1) * page_params.page_size
 
@@ -2293,18 +2445,32 @@ async def list_candidates(  # type: ignore[no-untyped-def]
     )
 
 
-@router.post("/candidates/parse-preview", summary="预览简历AI解析结果")
+@router.get("/jobs/{job_id}", response_model=AsyncJobStateResponse, summary="查询 HR 后台任务状态")
+async def get_hr_job_status(
+    job_id: str,
+    current_user: RequiredUser,
+    ctx: PermissionContext = Depends(require_permission("hr:candidates:read")),
+) -> AsyncJobStateResponse:
+    return AsyncJobStateResponse(data=get_job_state_or_404(hr_job_store, job_id))
+
+
+@router.post("/candidates/parse-preview", response_model=AsyncJobAcceptedResponse, summary="预览简历AI解析结果")
 async def preview_resume_parse(  # type: ignore[no-untyped-def]
     current_user: RequiredUser,
     ctx: PermissionContext = Depends(require_permission("hr:candidates:read")),
     resume: UploadFile = File(..., description="简历 PDF 附件"),
     position: str = Form(..., max_length=64, description="应聘职位名称"),
-    service: CandidateService = Depends(get_candidate_service),
-):
-    """上传简历 PDF，转为图片后由 AI 视觉识别并返回预览字段（不保存）。"""
+) -> AsyncJobAcceptedResponse:
+    """提交简历解析后台任务（PDF 转图 + vision AI 耗时 >5s）；轮询 GET /hr/jobs/{job_id} 拿结果。"""
     resume_bytes = await resume.read()
-    result = await service.parse_resume_preview(resume_bytes, position)
-    return success_response(data=result)
+
+    async def _run(_job: str) -> dict[str, Any] | None:
+        async with async_session_factory() as job_db:
+            job_service = CandidateService(job_db)
+            return await job_service.parse_resume_preview(resume_bytes, position)
+
+    job_id = start_job(hr_job_store, "hr-resume-preview", _run)
+    return AsyncJobAcceptedResponse(data=AsyncJobAccepted(job_id=job_id))
 
 
 @router.post("/candidates", summary="新建候选人")
@@ -2669,8 +2835,8 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
 
         if specialist_config:
             # 根据工号从对应厂区的员工表查找
-            for table in ["hr.employees", "hr.employees_new"]:
-                sql = text(f"SELECT * FROM {table} WHERE employee_number = :num AND is_deleted = false LIMIT 1")
+            for table in _EMPLOYEE_SOURCE_TABLES:
+                sql = _SELECT_EMPLOYEE_BY_NUMBER_SQL[table]
                 result = await employee_service.repo.session.execute(sql, {"num": specialist_config.employee_number})
                 row = result.mappings().first()
                 if row:
@@ -2705,9 +2871,7 @@ async def send_training_session_select_tasks(  # type: ignore[no-untyped-def]
                 mapping = await im.batch_get_open_ids_by_mobile([mobile])
                 open_id = mapping.get(mobile) or mapping.get(specialist.phone)
                 if open_id:
-                    update_sql = text(
-                        f"UPDATE {specialist_table} SET feishu_open_id = :oid WHERE employee_number = :eno"
-                    )
+                    update_sql = _UPDATE_EMPLOYEE_OPEN_ID_SQL[specialist_table]
                     await employee_service.repo.session.execute(
                         update_sql, {"oid": open_id, "eno": specialist.employee_number}
                     )
@@ -3047,6 +3211,25 @@ SETTING_KEYS = [
     "AI_MODEL",
 ]
 
+# 凭据类键：落库前加密（app.core.secrets.encrypt_secret），读出后一律按掩码返回。
+SECRET_SETTING_KEYS: frozenset[str] = frozenset(
+    key for key in SETTING_KEYS if "SECRET" in key or key.endswith("_API_KEY")
+)
+# 前端回传的「未修改」占位符：拿到掩码后原样提交时不能把掩码当成新密钥写库。
+MASK_PLACEHOLDER = "****"
+
+
+def _get_db_setting(db_settings: dict[str, str], key: str) -> str:
+    """取 DB 中的设置值；凭据类先解密（兼容历史明文行）。"""
+    raw = db_settings.get(key)
+    if not raw:
+        return ""
+    try:
+        return decrypt_secret(raw)
+    except RuntimeError:
+        logger.exception("HR 系统设置解密失败 key=%s（ENCRYPTION_KEY 不匹配？）", key)
+        return ""
+
 
 def _get_setting_value(settings, key: str) -> str:
     parts = key.lower().split("__")
@@ -3064,7 +3247,7 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     ctx: PermissionContext = Depends(require_permission("hr:system-settings:read")),
     session: AsyncSession = Depends(get_db),
 ):
-    """获取所有系统配置。secret 类字段仅返回尾部 4 位。"""
+    """获取所有系统配置。凭据类字段只返回掩码（如 `cli_ab****cd12`），绝不返回明文。"""
     result = {}
     _settings = get_settings()
     from sqlalchemy import text as sql_text
@@ -3073,8 +3256,8 @@ async def get_system_settings(  # type: ignore[no-untyped-def]
     db_settings = {row[0]: row[1] for row in r.fetchall()}
 
     for key in SETTING_KEYS:
-        val = db_settings.get(key) or _get_setting_value(_settings, key)
-        result[key] = val
+        val = _get_db_setting(db_settings, key) or _get_setting_value(_settings, key)
+        result[key] = mask_secret(val) if key in SECRET_SETTING_KEYS else val
 
     return success_response(data=result)
 
@@ -3086,21 +3269,34 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
     payload: dict = Body(...),  # type: ignore[type-arg]
     session: AsyncSession = Depends(get_db),
 ):
-    """批量保存系统配置到 DB，同时写入 .env 文件。"""
+    """批量保存系统配置到 DB，同时写入 .env 文件。
+
+    凭据类字段加密后落库；空值或前端回传的掩码（****）视为「不修改」，
+    避免把掩码当成新密钥写进库。
+    """
     from sqlalchemy import text as sql_text
 
-    updated = []
-    for key, value in payload.items():
+    updated: list[str] = []
+    env_updates: dict[str, str] = {}
+    for key, raw_value in payload.items():
         if key not in SETTING_KEYS:
             continue
+        value_text = "" if raw_value is None else str(raw_value)
+        if key in SECRET_SETTING_KEYS:
+            if not value_text or MASK_PLACEHOLDER in value_text:
+                continue
+            stored_value = encrypt_secret(value_text)
+        else:
+            stored_value = value_text
         await session.execute(
             sql_text(
                 "INSERT INTO hr.system_settings (key, value, updated_at) VALUES (:k, :v, now()) "
                 "ON CONFLICT (key) DO UPDATE SET value = :v, updated_at = now()"
             ),
-            {"k": key, "v": value},
+            {"k": key, "v": stored_value},
         )
         updated.append(key)
+        env_updates[key] = value_text
     await session.commit()
 
     # Write to .env file
@@ -3116,9 +3312,7 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
             if m:
                 existing_keys[m.group(1)] = i
 
-        for key, value in payload.items():
-            if key not in SETTING_KEYS:
-                continue
+        for key, value in env_updates.items():
             new_line = f"{key}={value}\n"
             if key in existing_keys:
                 lines[existing_keys[key]] = new_line
@@ -3127,7 +3321,7 @@ async def save_system_settings(  # type: ignore[no-untyped-def]
 
         with open(ENV_PATH, "w", encoding="utf-8") as f:
             f.writelines(lines)
-    except Exception as e:
-        logger.warning("Failed to write .env: %s", e)
+    except Exception:
+        logger.exception("写入 .env 失败（设置已保存到数据库，但需手工补环境变量）")
 
     return success_response(data={"updated": updated}, message=f"已保存 {len(updated)} 项设置")

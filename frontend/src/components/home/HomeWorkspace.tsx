@@ -41,6 +41,7 @@ export function HomeWorkspace({
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4">
+      <h1 className="sr-only">工作台</h1>
       <section className="rounded-[var(--rounded-lg)] border border-[var(--color-hairline)] bg-[var(--color-canvas)] p-6">
         <Title level={3} style={{ margin: 0 }}>
           {userName}，欢迎回来

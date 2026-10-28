@@ -105,7 +105,6 @@ def patch_registry(sections):
             new_lines.append(line)
         elif in_api_bindings and not bindings_inserted:
             # Look ahead: if next non-empty line after this is just ")", we're at end of bindings
-            rest = [l.strip() for l in lines[i + 1 : i + 5]]
             if line.rstrip() == ")" and not bindings_inserted:
                 # Actually we want to insert BEFORE the closing )
                 # So go back one position
@@ -113,8 +112,6 @@ def patch_registry(sections):
             # Find the line that is just ")" preceded by quality bindings
             # We know the last quality binding ends with a quality: prefix
             stripped = line.strip()
-            next_stripped = lines[i + 1].strip() if i + 1 < len(lines) else ""
-            next_next_stripped = lines[i + 2].strip() if i + 2 < len(lines) else ""
 
             if stripped == ")" and not bindings_inserted:
                 # Insert bindings before this closing paren - but we need to go back

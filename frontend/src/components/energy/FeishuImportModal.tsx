@@ -180,6 +180,9 @@ export function FeishuImportModal({ open, onClose, onSuccess }: FeishuImportModa
             <div>
               <div>新建车间：{finalResult.workshops_created} 个</div>
               <div>创建记录：{finalResult.records_created} 条</div>
+              {finalResult.records_updated > 0 && (
+                <div>更新记录：{finalResult.records_updated} 条</div>
+              )}
               {finalResult.records_skipped > 0 && (
                 <div>跳过记录：{finalResult.records_skipped} 条</div>
               )}

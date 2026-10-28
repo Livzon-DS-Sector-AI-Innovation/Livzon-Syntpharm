@@ -137,7 +137,8 @@ class ReagentReminderService:
                 STRING_AGG(DISTINCT unit, ', ') as units,
                 MAX(arrival_date) as latest_arrival
             FROM qms.qms_reagent_quality
-            WHERE status NOT IN ('scrap', 'used_up', 'expired')
+            WHERE is_deleted = false
+              AND status NOT IN ('scrap', 'used_up', 'expired')
             GROUP BY reagent_name
             HAVING COUNT(*) < :threshold
             ORDER BY COUNT(*) ASC, reagent_name

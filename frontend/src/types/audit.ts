@@ -1,21 +1,17 @@
-export interface AuditLogItem {
-  id: string
-  user_id: string | null
-  user_name: string | null
-  username: string | null
-  action: string
-  resource_type: string | null
-  resource_id: string | null
-  old_value: Record<string, unknown> | null
-  new_value: Record<string, unknown> | null
-  extra: Record<string, unknown> | null
-  ip_address: string | null
-  created_at: string
-}
+import type { components } from '@/types/generated/schema'
 
-export interface AuditLogListResponse {
-  items: AuditLogItem[]
-  total: number
-  page: number
-  page_size: number
+/** 单条操作记录（对应后端 audit 模块 AuditLogItem）。 */
+export type AuditLogItem = components['schemas']['AuditLogItem']
+
+/** 操作记录分页数据（前端取的是信封内的 data，即 items/total/page/page_size）。 */
+export type AuditLogListResponse = components['schemas']['AuditLogListData']
+
+/** 操作记录查询参数（actions 与 lib/api/server 共用一份，避免两层各写一遍）。 */
+export interface AuditLogQuery {
+  page?: number
+  page_size?: number
+  user_id?: string
+  action?: string
+  resource_type?: string
+  keyword?: string
 }

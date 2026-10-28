@@ -213,10 +213,10 @@ export default function AiLogPage() {
     <div style={{ padding: 24 }}>
       {/* 页面标题 */}
       <div style={{ marginBottom: 24 }}>
-        <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
           <RobotOutlined />
           AI交互日志
-        </h2>
+        </h1>
         <p style={{ margin: '8px 0 0 0', color: '#666' }}>
           查看AI辅助生成领用事由、报废原因及异常分析的交互记录
         </p>

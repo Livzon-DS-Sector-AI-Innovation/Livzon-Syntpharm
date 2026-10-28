@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {Card, Spin, Segmented, Empty, Alert} from 'antd'
 import ReactECharts from 'echarts-for-react'
@@ -61,16 +61,14 @@ export default function WorkshopRankingTrend({ year }: Props) {
 
   const ranking = useMemo(() => queryData || [], [queryData])
   const error = queryError?.message || null
-  const [visibleSet, setVisibleSet] = useState<Set<string>>(new Set())
-  const prevRankingLengthRef = useRef(0)
-
-  // Initialize visibleSet when ranking changes (only once per data load)
-  useEffect(() => {
-    if (ranking.length > 0 && prevRankingLengthRef.current === 0) {
-      setVisibleSet(new Set(ranking.slice(0, 3).map((w) => w.workshop)))
-    }
-    prevRankingLengthRef.current = ranking.length
-  }, [ranking])
+  // 默认勾选权重前三的车间；用户一旦手动勾选（userVisibleSet 非 null）就以用户选择为准。
+  // 用派生值代替「useEffect 里 setState」：避免多余一轮渲染，也不再依赖 ref 防抖。
+  const [userVisibleSet, setUserVisibleSet] = useState<Set<string> | null>(null)
+  const defaultVisibleSet = useMemo(
+    () => new Set(ranking.slice(0, 3).map((w) => w.workshop)),
+    [ranking],
+  )
+  const visibleSet = userVisibleSet ?? defaultVisibleSet
 
 
 
@@ -161,12 +159,10 @@ export default function WorkshopRankingTrend({ year }: Props) {
   }, [ranking, visibleSet, months, trendType])
 
   const toggleWorkshop = (workshop: string) => {
-    setVisibleSet((prev: Set<string>) => {
-      const next = new Set(prev)
-      if (next.has(workshop)) next.delete(workshop)
-      else next.add(workshop)
-      return next
-    })
+    const next = new Set(visibleSet)
+    if (next.has(workshop)) next.delete(workshop)
+    else next.add(workshop)
+    setUserVisibleSet(next)
   }
 
   if (loading) {

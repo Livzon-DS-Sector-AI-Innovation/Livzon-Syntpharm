@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Button, Alert, Divider } from 'antd'
 import { BulbOutlined, ReloadOutlined } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
-import { fetchTurnoverAnalysis } from '@/lib/api/client/hr'
+import { fetchHrJob, submitTurnoverAnalysisJob } from '@/lib/api/client/hr'
 import type { TurnoverAnalysisResponse } from '@/types/hr'
 
 type Stage = 'idle' | 'extracting' | 'thinking' | 'streaming' | 'done' | 'error'
@@ -93,13 +93,46 @@ export default function TurnoverAnalysisPanel() {
     setResult(null)
 
     try {
-      const data = await fetchTurnoverAnalysis()
-      setResult(data)
+      // 分析是后台任务：提交拿 job_id 后轮询（LLM 报告生成 >5s，不再同步等待）
+      const jobId = await submitTurnoverAnalysisJob()
+      const POLL_MS = 2000
+      const TIMEOUT_MS = 5 * 60_000
+      const startedAt = Date.now()
+      for (;;) {
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          setErrorMsg('分析超时，请稍后重试')
+          setStage('error')
+          return
+        }
+        await new Promise((r) => setTimeout(r, POLL_MS))
+        let state
+        try {
+          state = await fetchHrJob(jobId)
+        } catch {
+          setErrorMsg('查询分析任务失败（服务可能已重启），请重试')
+          setStage('error')
+          return
+        }
+        if (state.status === 'failed') {
+          setErrorMsg(state.error || '分析失败，请稍后重试')
+          setStage('error')
+          return
+        }
+        if (state.status === 'done') {
+          const data = {
+            code: 200,
+            message: 'success',
+            data: (state.result ?? {}) as TurnoverAnalysisResponse['data'],
+          } as TurnoverAnalysisResponse
+          setResult(data)
 
-      setStage('thinking')
-      await new Promise((r) => setTimeout(r, 1500))
+          setStage('thinking')
+          await new Promise((r) => setTimeout(r, 1500))
 
-      setStage('streaming')
+          setStage('streaming')
+          return
+        }
+      }
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : '分析失败，请稍后重试')
       setStage('error')

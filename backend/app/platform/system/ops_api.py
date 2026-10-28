@@ -5,15 +5,20 @@
 
 from fastapi import APIRouter, Depends, Query, Request
 
+from app.core import log_buffer
 from app.core.deps import PermissionContext, require_permission
 from app.core.exceptions import BadRequestException
 from app.platform.system import api_switch_service, ops_service
 from app.platform.system.ops_schemas import (
     ApiRouteItemModel,
     ApiRoutesResponse,
+    ApiSwitchBatchRequest,
     ApiSwitchRequest,
     ApiSwitchResponse,
     ApiSwitchResult,
+    BatchFailure,
+    BatchResultData,
+    BatchResultResponse,
     DbColumnsResponse,
     DbTablesResponse,
     HealthResponse,
@@ -28,11 +33,11 @@ from app.platform.system.ops_schemas import (
     ResourcesResponse,
     ScheduledTasksResponse,
     SystemInfoResponse,
+    TaskBatchToggleRequest,
     TaskToggleRequest,
     TaskToggleResponse,
     TaskToggleResult,
 )
-from app.shared import log_buffer
 
 router = APIRouter(tags=["系统运维"])
 
@@ -118,6 +123,26 @@ async def system_scheduled_task_toggle(
     return TaskToggleResponse(data=TaskToggleResult(name=name, enabled=payload.enabled))
 
 
+@router.post(
+    "/scheduled-tasks/batch-toggle",
+    response_model=BatchResultResponse,
+    summary="批量启用 / 禁用定时任务",
+)
+async def system_scheduled_tasks_batch_toggle(
+    payload: TaskBatchToggleRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:ops:manage")),
+) -> BatchResultResponse:
+    """逐条运行时启停（内存态）；不存在的任务 / 不可切换的 kind 记入失败明细。"""
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+    for name in dict.fromkeys(payload.names):
+        if ops_service.set_task_enabled(name, payload.enabled):
+            succeeded.append(name)
+        else:
+            failed.append(BatchFailure(key=name, reason="任务不存在或不可切换"))
+    return BatchResultResponse(data=BatchResultData(succeeded=succeeded, failed=failed))
+
+
 # ── API 启停开关 ──────────────────────────────────────────────────
 
 
@@ -158,6 +183,47 @@ async def system_api_switch(
             message="已启用" if payload.enabled else "已禁用",
         )
     )
+
+
+@router.post(
+    "/api-routes/batch-switch",
+    response_model=BatchResultResponse,
+    summary="批量启用 / 禁用接口",
+)
+async def system_api_routes_batch_switch(
+    payload: ApiSwitchBatchRequest,
+    ctx: PermissionContext = Depends(require_permission("platform:ops:manage")),
+) -> BatchResultResponse:
+    """逐条切换；保护名单内接口拒绝禁用（记入失败明细），其余照常生效。"""
+    succeeded: list[str] = []
+    failed: list[BatchFailure] = []
+    seen: set[tuple[str, str]] = set()
+
+    for item in payload.items:
+        key = (item.method.upper(), item.route)
+        if key in seen:
+            continue
+        seen.add(key)
+        label = f"{key[0]} {key[1]}"
+
+        if not payload.enabled and api_switch_service.is_protected_route(item.route):
+            failed.append(BatchFailure(key=label, reason="保护名单内接口不允许禁用"))
+            continue
+
+        try:
+            await api_switch_service.set_switch(
+                item.method,
+                item.route,
+                payload.enabled,
+                payload.reason,
+                ctx.user.id,
+            )
+        except ValueError as exc:
+            failed.append(BatchFailure(key=label, reason=str(exc)))
+            continue
+        succeeded.append(label)
+
+    return BatchResultResponse(data=BatchResultData(succeeded=succeeded, failed=failed))
 
 
 # ── 日志管理 ──────────────────────────────────────────────────────

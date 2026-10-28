@@ -22,6 +22,7 @@ type CreateCalibrationRecordInput = components['schemas']['app__modules__equipme
 type CreateSparePartInput = components['schemas']['SparePartCreate']
 type UpdateSparePartInput = components['schemas']['SparePartUpdate']
 type StockInboundInput = components['schemas']['StockInboundRequest']
+type ClaimTimeoutUpdateInput = components['schemas']['ClaimTimeoutUpdateRequest']
 type StockAdjustInput = components['schemas']['StockAdjustRequest']
 type CreateMaintenancePlanInput = components['schemas']['MaintenancePlanCreate']
 type UpdateMaintenancePlanInput = components['schemas']['MaintenancePlanUpdate']
@@ -316,7 +317,7 @@ export async function claimWorkOrder(id: string) {
   return result
 }
 
-export async function updateClaimTimeoutConfig(data: { emergency?: number; high?: number; medium?: number; low?: number }) {
+export async function updateClaimTimeoutConfig(data: ClaimTimeoutUpdateInput) {
   const result = await updateClaimTimeoutConfigApiTyped(data, await authHeaders())
   revalidatePath('/equipment')
   return result
@@ -382,18 +383,13 @@ export async function deleteRole(id: string) {
   return result
 }
 
-export async function previewEquipmentImport(data: EquipmentImportRow[]) {
-  console.log('[DEBUG] previewEquipmentImport called with:', {
-    dataLength: data?.length,
-    firstItem: data?.[0],
-    firstItemType: typeof data?.[0],
-  })
-  const result = await previewEquipmentImportApiTyped(data, await authHeaders())
+export async function previewEquipmentImport(data: EquipmentImportRow[], forceOverride: boolean = false) {
+  const result = await previewEquipmentImportApiTyped(data, await authHeaders(), forceOverride)
   return result
 }
 
-export async function batchImportEquipment(data: EquipmentImportRow[]) {
-  const result = await batchImportEquipmentApiTyped(data, await authHeaders())
+export async function batchImportEquipment(data: EquipmentImportRow[], forceOverride: boolean = false) {
+  const result = await batchImportEquipmentApiTyped(data, await authHeaders(), forceOverride)
   revalidatePath('/equipment')
   return result
 }

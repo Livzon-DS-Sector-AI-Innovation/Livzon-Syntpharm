@@ -63,13 +63,13 @@ async def xxx(
 
 新建 `scripts/seed/seed_<module>_roles.py`（参照 `seed_research_roles.py`），四档：admin / editor / approver / viewer。**每个角色都必须含 `<module>:module:read`**（模块菜单准入码），否则角色看不到模块。
 
-落库：`DATABASE_URL="$(grep -E '^DATABASE_URL=' ../.env.local | cut -d= -f2-)" uv run python scripts/seed/seed_<module>_roles.py`（容器内 `.env.local` 的 SECRET_KEY 与宿主机 `.env` 不同，签测试 JWT 时要用 `.env.local` 的值）。
+落库：`DATABASE_URL="$(grep -E '^DATABASE_URL=' ../.env | cut -d= -f2-)" uv run python scripts/seed/seed_<module>_roles.py`（本地开发统一用仓库根目录的 `.env`，由 `scripts/dev.sh` 从 `.env.dev.example` 复制）。
 
 ### 7. 标记就绪 + 开灰度
 
 1. `registry.ENFORCE_READY_MODULES` 加入模块码 → `uv run python scripts/ci/check_permissions.py` 必须全绿。
-2. `.env.local` 的 `PERMISSION_ENFORCE_MODULES` 追加模块码。
-3. `docker compose -f docker-compose.local-dev.yml --env-file .env.local up -d --force-recreate backend`（env 变更必须 force-recreate，重启不生效）。
+2. `.env` 的 `PERMISSION_ENFORCE_MODULES` 追加模块码。
+3. `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --force-recreate backend`（env 变更必须 force-recreate，仅重启不生效）。
 4. 验证矩阵（用脚本签 JWT 测，勿用真实账号）：
    - 超管：读/写均 200
    - 无权限账号：读/写均 403，报错文案为「缺少权限：<code>」

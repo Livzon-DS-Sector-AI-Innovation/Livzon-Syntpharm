@@ -197,6 +197,42 @@ class ApiSwitchResponse(BaseModel):
     data: ApiSwitchResult
 
 
+# ── 批量操作（定时任务 / API 开关）────────────────────────────────
+
+
+class TaskBatchToggleRequest(BaseModel):
+    names: list[str] = Field(..., min_length=1, max_length=100)
+    enabled: bool
+
+
+class ApiSwitchBatchItem(BaseModel):
+    method: str = Field(..., min_length=1, max_length=16)
+    route: str = Field(..., min_length=1, max_length=256)
+
+
+class ApiSwitchBatchRequest(BaseModel):
+    items: list[ApiSwitchBatchItem] = Field(..., min_length=1, max_length=100)
+    enabled: bool
+    reason: str | None = Field(None, max_length=500)
+
+
+class BatchFailure(BaseModel):
+    key: str
+    label: str | None = None
+    reason: str
+
+
+class BatchResultData(BaseModel):
+    succeeded: list[str] = Field(default_factory=list)
+    failed: list[BatchFailure] = Field(default_factory=list)
+
+
+class BatchResultResponse(BaseModel):
+    code: int = 200
+    message: str = "success"
+    data: BatchResultData
+
+
 # ── 日志管理 ──────────────────────────────────────────────────────
 
 

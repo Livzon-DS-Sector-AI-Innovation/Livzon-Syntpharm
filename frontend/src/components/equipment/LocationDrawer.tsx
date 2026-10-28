@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { App, Drawer, Form, Input, Select, Button, Space } from 'antd'
 import { useEquipmentStore } from '@/stores/equipment'
+import { useEquipmentTaxonomyQuery } from '@/hooks/useEquipmentLedger'
 import { createLocation, updateLocation } from '@/actions/equipment'
 
 const { TextArea } = Input
@@ -15,8 +16,9 @@ export function LocationDrawer({ onRefresh }: { onRefresh?: () => void }) {
     locationDrawerOpen,
     editingLocation,
     closeLocationDrawer,
-    locations,
   } = useEquipmentStore()
+  const { data: taxonomy } = useEquipmentTaxonomyQuery()
+  const locations = taxonomy?.locations ?? []
 
   useEffect(() => {
     if (!locationDrawerOpen) return

@@ -37,7 +37,7 @@ logging.basicConfig(
 )
 
 # 运行日志内存环形缓冲（供「系统运维 → 日志管理」查看，不落盘）
-from app.shared.log_buffer import install_log_buffer  # noqa: E402
+from app.core.log_buffer import install_log_buffer  # noqa: E402
 
 install_log_buffer()
 
@@ -65,11 +65,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting %s (%s)", settings.APP_NAME, settings.APP_ENV)
 
     # Initialize OCR service in background (model loading is heavy)
-    # 可通过 OCR_ENABLED=false 环境变量禁用（PaddleOCR 在某些环境会段错误）
-    if os.environ.get("OCR_ENABLED", "true").lower() not in ("false", "0", "no"):
-        asyncio.create_task(asyncio.to_thread(init_ocr))
-    else:
-        logger.info("OCR service disabled by OCR_ENABLED environment variable")
+    asyncio.create_task(asyncio.to_thread(init_ocr))
 
     # Initialize file conversion service (libreoffice CLI wrapper, no-op)
     init_file_conversion()
@@ -132,25 +128,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     register_feishu_event_handlers()
 
-    from app.modules.energy.scheduler import (
-        energy_collection_loop,
-    )
     from app.modules.equipment.scheduler import (
         maintenance_plan_loop,
         timeout_scan_loop,
     )
-    from app.platform.audit.cleanup import audit_cleanup_loop
     from app.platform.identity.scheduler import (
         member_sync_loop,
     )
 
     # regulatory_tracker 的调度引擎由其 background worker（regulatory_tracker.scheduler）
-    # 负责初始化并运行；这里不再重复启动，避免定时任务被执行两遍。
-    energy_task = asyncio.ensure_future(energy_collection_loop())
+    # 负责初始化并运行；energy 采集由其 background worker（energy.__init__）负责启动。
+    # 这里不再重复启动，避免定时任务被执行两遍。
     maintenance_plan_task = asyncio.ensure_future(maintenance_plan_loop())
     timeout_task = asyncio.ensure_future(timeout_scan_loop())
     member_task = asyncio.ensure_future(member_sync_loop())
-    audit_cleanup_task = asyncio.ensure_future(audit_cleanup_loop())
+
+    # 审计日志过期清理：走 SchedulerEngine（可在「系统运维 → 定时任务」里看到并开关）
+    try:
+        from app.platform.audit.cleanup import register as register_audit_cleanup
+
+        register_audit_cleanup()
+    except Exception:
+        logger.exception("审计日志过期清理任务注册失败")
 
     # Start reagent reminder scheduler
     try:
@@ -158,8 +157,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         register()
         logger.info("Reagent reminder scheduler registered")
-    except Exception as e:
-        logger.warning(f"Failed to register reagent reminder scheduler: {e}")
+    except Exception:
+        logger.exception("Failed to register reagent reminder scheduler")
+
+    # SOP AI 定时巡检任务（此前 register() 从未被调用，动态任务永远不触发）
+    try:
+        from app.modules.quality.sop_ai.scheduler import register as register_sop_ai_scheduler
+
+        register_sop_ai_scheduler()
+    except Exception:
+        logger.exception("SOP AI 定时任务注册失败")
 
     # Start deviation reporter reminder scheduler
     try:
@@ -169,8 +176,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
         register_deviation_reminder()
         logger.info("Deviation reporter reminder scheduler registered")
-    except Exception as e:
-        logger.warning(f"Failed to start deviation reporter reminder scheduler: {e}")
+    except Exception:
+        logger.exception("Failed to start deviation reporter reminder scheduler")
 
     # ── 平台级飞书 WebSocket 长连接 ──
     if settings.feishu.platform.ws_enabled:
@@ -257,11 +264,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await stop_warehouse_ws()
 
-    energy_task.cancel()
     maintenance_plan_task.cancel()
     timeout_task.cancel()
     member_task.cancel()
-    audit_cleanup_task.cancel()
 
     # 停止平台级飞书 WebSocket
     from app.platform.integrations.feishu.ws_client import stop_ws_client
@@ -350,7 +355,8 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     if exc.status_code >= 500:
-        logger.exception(
+        # 这里不在 except 上下文中，logger.exception 会产生无意义的 "NoneType: None" 堆栈。
+        logger.error(
             "HTTP %d on %s %s: %s",
             exc.status_code,
             request.method,
@@ -363,49 +369,21 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException) 
     )
 
 
-# Add middleware to log all POST requests with body
-@app.middleware("http")
-async def log_request_body(request: Request, call_next):
-    if request.method == "POST" and "/import/" in str(request.url.path):
-        import logging
-
-        logger = logging.getLogger(__name__)
-        body = await request.body()
-        logger.error(f"[REQUEST LOGGER] Path: {request.url.path}")
-        logger.error(f"[REQUEST LOGGER] Body length: {len(body)}")
-        if len(body) < 5000:
-            logger.error(f"[REQUEST LOGGER] Body: {body.decode('utf-8', errors='ignore')}")
-        else:
-            logger.error(f"[REQUEST LOGGER] Body (first 5000 chars): {body[:5000].decode('utf-8', errors='ignore')}")
-
-        # Create a new request with the same body
-        async def receive():
-            return {"type": "http.request", "body": body, "more_body": False}
-
-        request = Request(request.scope, receive)
-
-    response = await call_next(request)
-    return response
-
-
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    import logging
+    """422 只记录出错字段的位置与错误类型，绝不记录请求体内容。
 
-    logger = logging.getLogger(__name__)
+    请求体可能包含明文密码、token、API key（登录、改密、凭证配置等接口），
+    一旦写入日志即等价泄露，且日志通常会被收集到集中平台。
+    """
     errors = exc.errors()
-    logger.error(f"[VALIDATION ERROR] Path: {request.url.path}")
-    logger.error(f"[VALIDATION ERROR] Errors: {errors}")
-    logger.error(f"[VALIDATION ERROR] Body type: {type(exc.body)}")
-    if exc.body:
-        # Try to get more details about the body
-        if isinstance(exc.body, list):
-            logger.error(f"[VALIDATION ERROR] Body is list with {len(exc.body)} items")
-            if exc.body:
-                logger.error(f"[VALIDATION ERROR] First item: {exc.body[0]}")
-                logger.error(f"[VALIDATION ERROR] First item type: {type(exc.body[0])}")
-        body_str = str(exc.body)[:2000]
-        logger.error(f"[VALIDATION ERROR] Body: {body_str}")
+    fields = [{"loc": [str(part) for part in e.get("loc", ())], "type": e.get("type", "")} for e in errors]
+    logger.warning(
+        "request validation failed: method=%s path=%s fields=%s",
+        request.method,
+        request.url.path,
+        fields,
+    )
     detail = "; ".join(f"{e.get('loc', [''])[-1]}: {e.get('msg', '')}" for e in errors)
     return error_response(
         message="请求参数校验失败",
@@ -416,6 +394,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(IntegrityError)
 async def integrity_error_handler(request: Request, exc: IntegrityError):
+    logger.exception("Database integrity error occurred")
     msg = str(exc.orig) if hasattr(exc, "orig") else str(exc)
     # Extract constraint info for a user-friendly message
     if "duplicate key" in msg or "unique constraint" in msg:

@@ -203,11 +203,26 @@ export function BatchesPageClient() {
   const handleExport = async () => {
     setExportLoading(true)
     try {
-      const response = await getBatches({ page: 1, page_size: 10000 })
-      if (response.code === 200) {
-        exportBatchesToCsv(response.data)
-        message.success('导出成功')
+      // 后端 /production/batches 的 page_size 上限是 200（Query(20, ge=1, le=200)），
+      // 传 10000 会被 422 拒掉；导出需要按页拉全量。
+      const pageSize = 200
+      const all: Batch[] = []
+      let page = 1
+      let total = Number.POSITIVE_INFINITY
+      while (all.length < total) {
+        const response = await getBatches({ page, page_size: pageSize })
+        if (response.code !== 200) {
+          message.error(response.message || '导出失败')
+          return
+        }
+        const items = response.data || []
+        all.push(...items)
+        total = response.meta?.total ?? all.length
+        if (items.length < pageSize) break
+        page += 1
       }
+      exportBatchesToCsv(all)
+      message.success('导出成功')
     } catch {
       message.error('导出失败')
     } finally {

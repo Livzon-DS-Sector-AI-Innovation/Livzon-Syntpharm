@@ -222,7 +222,6 @@ def inject_into_file(filepath, prefix_parts, dry_run=False):
                     non_default_names.append(name)
 
             # Find where to insert ctx: after last non-default param
-            default_params_start = len(non_default_names)
 
             # Map non-default names back to line indices
             # Find which line contains param number default_params_start
@@ -248,7 +247,7 @@ def inject_into_file(filepath, prefix_parts, dry_run=False):
             sig_end += 1  # adjust for insertion
 
     # Check if import is needed
-    has_import = any("from app.core.deps import PermissionContext, require_permission" in l for l in lines)
+    has_import = any("from app.core.deps import PermissionContext, require_permission" in line for line in lines)
     if not has_import:
         # Check for existing deps import
         for i, line in enumerate(lines):

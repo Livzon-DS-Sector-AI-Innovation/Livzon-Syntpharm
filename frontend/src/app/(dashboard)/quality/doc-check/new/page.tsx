@@ -122,7 +122,7 @@ export default function DocCheckNewPage() {
       message.loading({ content: '正在上传文件...', key: 'upload' })
 
       const response = await fetch(
-        `/api/v1/doc-check/upload`,
+        `/api/v1/quality/upload`,
         {
           method: 'POST',
           body: formData,
@@ -161,7 +161,7 @@ export default function DocCheckNewPage() {
       message.loading({ content: '正在启动AI预审...', key: 'check' })
 
       const response = await fetch(
-        `/api/v1/doc-check/check`,
+        `/api/v1/quality/check`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -198,7 +198,7 @@ export default function DocCheckNewPage() {
     pollRef.current = setInterval(async () => {
       try {
         const response = await fetch(
-          `/api/v1/doc-check/check/${tid}/progress`
+          `/api/v1/quality/check/${tid}/progress`
         )
         const data = await response.json()
 

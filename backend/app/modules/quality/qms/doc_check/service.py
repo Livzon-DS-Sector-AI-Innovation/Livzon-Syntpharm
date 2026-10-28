@@ -1,405 +1,518 @@
 """Doc Check 模块业务逻辑层
 
-提供文档合规校验的核心业务逻辑，包括 AI 调用、问题解析等。
+负责文档上传暂存、文本抽取、LLM 调用与问题落库。
+表格字段以 quality.sop_ai_check_main / quality.sop_ai_check_problem 为准。
 """
 
-import json
+import asyncio
 import logging
-import time
 import uuid
+from collections import OrderedDict
+from dataclasses import dataclass
 from datetime import datetime
+from io import BytesIO
 from typing import Any
 
+import httpx
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.quality.ai.minimax_util import MinimaxAiUtil
-from app.modules.quality.qms.doc_check.models import (
-    CheckStatus,
-    ProblemCategory,
-    ProblemSeverity,
-)
+from app.core.exceptions import BadRequestException, DuplicateException, NotFoundException
+from app.core.llm import LLMError, llm_client
+from app.core.storage import get_object, upload_object
+from app.core.storage import is_enabled as storage_enabled
 from app.modules.quality.qms.doc_check.repository import DocCheckRepository
 from app.modules.quality.qms.doc_check.schemas import (
     DocCheckConfigCreate,
     DocCheckConfigUpdate,
     DocCheckCreate,
     DocCheckUpdate,
+    ProblemUpdate,
+)
+from app.modules.quality.sop_ai.models import (
+    CheckStatus,
+    HandleStatus,
+    ProblemType,
+    RiskLevel,
+    SopAiCheckMain,
+    SopAiCheckProblem,
 )
 
 logger = logging.getLogger(__name__)
+
+# 单次提交给 LLM 的正文上限与问题条数上限，避免超长文档撑爆上下文
+MAX_DOC_CHARS = 30000
+MAX_PROBLEMS = 50
+# 未启用 MinIO 时的进程内兜底缓存上限（仅用于本地开发）
+UPLOAD_CACHE_MAX_ENTRIES = 16
+UPLOAD_CACHE_MAX_BYTES = 64 * 1024 * 1024
+
+STORAGE_MODULE = "quality"
+OBJECT_PREFIX = "doc-check"
+
+_PROBLEM_TYPE_ALIASES: dict[str, ProblemType] = {
+    "duplicate": ProblemType.DUPLICATE,
+    "重复": ProblemType.DUPLICATE,
+    "重复文件": ProblemType.DUPLICATE,
+    "conflict": ProblemType.CONFLICT,
+    "冲突": ProblemType.CONFLICT,
+    "参数冲突": ProblemType.CONFLICT,
+    "compliance": ProblemType.COMPLIANCE,
+    "合规": ProblemType.COMPLIANCE,
+    "合规问题": ProblemType.COMPLIANCE,
+    "format": ProblemType.FORMAT,
+    "格式": ProblemType.FORMAT,
+    "格式问题": ProblemType.FORMAT,
+    "content": ProblemType.CONTENT,
+    "内容": ProblemType.CONTENT,
+    "内容问题": ProblemType.CONTENT,
+    "logic": ProblemType.CONTENT,
+    "missing": ProblemType.CONTENT,
+}
+
+_RISK_LEVEL_ALIASES: dict[str, RiskLevel] = {
+    "high": RiskLevel.HIGH,
+    "critical": RiskLevel.HIGH,
+    "error": RiskLevel.HIGH,
+    "高": RiskLevel.HIGH,
+    "严重": RiskLevel.HIGH,
+    "medium": RiskLevel.MEDIUM,
+    "warning": RiskLevel.MEDIUM,
+    "中": RiskLevel.MEDIUM,
+    "警告": RiskLevel.MEDIUM,
+    "low": RiskLevel.LOW,
+    "info": RiskLevel.LOW,
+    "低": RiskLevel.LOW,
+    "提示": RiskLevel.LOW,
+}
+
+
+@dataclass(frozen=True)
+class UploadedDoc:
+    """一次上传的元信息"""
+
+    file_id: str
+    file_name: str
+    file_size: int
+    content_type: str
+
+    @property
+    def object_key(self) -> str:
+        return f"{OBJECT_PREFIX}/{self.file_id}"
+
+
+_upload_cache: OrderedDict[str, tuple[UploadedDoc, bytes | None]] = OrderedDict()
+_upload_cache_bytes = 0
+
+
+def _remember_upload(doc: UploadedDoc, payload: bytes | None) -> None:
+    """记录上传结果；MinIO 可用时只留元信息，不可用时缓存正文。"""
+    global _upload_cache_bytes
+    _upload_cache[doc.file_id] = (doc, payload)
+    _upload_cache.move_to_end(doc.file_id)
+    if payload is not None:
+        _upload_cache_bytes += len(payload)
+    while _upload_cache and (
+        len(_upload_cache) > UPLOAD_CACHE_MAX_ENTRIES or _upload_cache_bytes > UPLOAD_CACHE_MAX_BYTES
+    ):
+        _, dropped = _upload_cache.popitem(last=False)
+        if dropped[1] is not None:
+            _upload_cache_bytes -= len(dropped[1])
+
+
+async def store_upload(file_name: str, content_type: str, data: bytes) -> UploadedDoc:
+    """保存上传文件：优先 MinIO，不可用时退化为进程内缓存。"""
+    doc = UploadedDoc(
+        file_id=str(uuid.uuid4()),
+        file_name=file_name,
+        file_size=len(data),
+        content_type=content_type,
+    )
+    if storage_enabled():
+        await asyncio.to_thread(upload_object, STORAGE_MODULE, doc.object_key, data, len(data), content_type)
+        _remember_upload(doc, None)
+    else:
+        logger.warning("MinIO 未启用，上传文件仅保存在当前进程内存中: file_id=%s", doc.file_id)
+        _remember_upload(doc, data)
+    return doc
+
+
+async def load_upload_bytes(file_id: str) -> bytes | None:
+    """读取上传文件正文；进程内没有则回源 MinIO。"""
+    entry = _upload_cache.get(file_id)
+    if entry is not None and entry[1] is not None:
+        _upload_cache.move_to_end(file_id)
+        return entry[1]
+    if not storage_enabled():
+        return None
+    stored = await asyncio.to_thread(get_object, STORAGE_MODULE, f"{OBJECT_PREFIX}/{file_id}")
+    return stored[0] if stored else None
+
+
+def _extract_text(data: bytes) -> str:
+    """按文件头识别格式并抽取纯文本（docx / pdf / txt）。"""
+    if data.startswith(b"%PDF"):
+        import pdfplumber
+
+        with pdfplumber.open(BytesIO(data)) as pdf:
+            return "\n".join((page.extract_text() or "") for page in pdf.pages)
+    if data.startswith(b"PK\x03\x04"):
+        import docx
+
+        document = docx.Document(BytesIO(data))
+        return "\n".join(paragraph.text for paragraph in document.paragraphs)
+    return data.decode("utf-8", errors="replace")
+
+
+def _clip(value: Any, limit: int) -> str | None:
+    """截断到列长度上限。"""
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text[:limit] or None
+
+
+def _to_problem_type(value: Any) -> ProblemType:
+    if isinstance(value, ProblemType):
+        return value
+    return _PROBLEM_TYPE_ALIASES.get(str(value or "").strip().lower(), ProblemType.CONTENT)
+
+
+def _to_risk_level(value: Any) -> RiskLevel:
+    if isinstance(value, RiskLevel):
+        return value
+    return _RISK_LEVEL_ALIASES.get(str(value or "").strip().lower(), RiskLevel.MEDIUM)
+
+
+def _enum_value(value: Any) -> str:
+    """枚举成员取小写值，兼容直接存字符串的历史数据。"""
+    if isinstance(value, str):
+        return value.lower()
+    return str(getattr(value, "value", value)).lower()
 
 
 class DocCheckService:
     """Doc Check 模块服务层"""
 
-    # 默认系统提示词
-    DEFAULT_SYSTEM_PROMPT = """你是一位专业的GMP文档审核专家，负责审核制药企业的SOP文档、质量标准等文件。
-请根据以下维度对文档进行审核：
-1. 格式规范：检查文档格式是否符合企业规范
-2. 内容完整性：检查必要章节是否完整
-3. 合规性：检查是否符合GMP法规要求
-4. 逻辑性：检查流程和步骤是否合理
-5. 风险识别：识别潜在的质量风险
-
-请以JSON格式返回审核结果，格式如下：
+    DEFAULT_SYSTEM_PROMPT = """你是一位 GMP 文档审核专家，负责审核制药企业的 SOP、质量标准等文件。
+请从格式规范、内容完整性、法规合规性、逻辑合理性、参数一致性等维度审核，并只以 JSON 返回结果：
 {
-    "status": "completed",
-    "check_result": {...},
-    "ai_suggestion": "改进建议...",
-    "problems": [
-        {
-            "problem_no": 1,
-            "category": "format|content|compliance|logic|missing",
-            "severity": "info|warning|error|critical",
-            "title": "问题标题",
-            "description": "问题描述",
-            "location": "位置信息",
-            "suggestion": "改进建议",
-            "reference": "参考依据"
-        }
-    ]
-}"""
+  "summary": "总体结论（200 字以内）",
+  "problems": [
+    {
+      "problem_type": "duplicate|conflict|compliance|format|content",
+      "risk_level": "high|medium|low",
+      "location": "问题所在章节或页码",
+      "description": "问题描述",
+      "suggestion": "整改建议",
+      "source_file": "来源文件名"
+    }
+  ]
+}
+没有发现问题时 problems 返回空数组。"""
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self.session = session
         self.repo = DocCheckRepository(session)
 
-    # ============ 配置操作 ============
+    # ============ 配置 ============
 
     async def get_configs(self) -> list[Any]:
-        """获取配置列表"""
         return await self.repo.get_configs()
 
-    async def get_config_by_key(self, config_key: str) -> Any | None:
-        """根据键获取配置"""
-        return await self.repo.get_config_by_key(config_key)
+    async def get_config(self, config_id: str) -> Any:
+        config = await self.repo.get_config_by_id(config_id)
+        if config is None:
+            raise NotFoundException("配置", config_id)
+        return config
 
-    async def create_config(self, data: DocCheckConfigCreate) -> Any:
-        """创建配置"""
-        config_data = {
-            "config_key": data.config_key,
-            "config_value": data.config_value,
-            "description": data.description,
-        }
-        return await self.repo.create_config(config_data)
+    async def create_config(self, data: DocCheckConfigCreate, operator: str | None) -> Any:
+        if await self.repo.get_config_by_key(data.config_key) is not None:
+            raise DuplicateException("配置键", data.config_key)
+        try:
+            return await self.repo.create_config(
+                {
+                    "config_key": data.config_key,
+                    "config_value": data.config_value,
+                    "description": data.description,
+                    "operator": operator,
+                }
+            )
+        except IntegrityError as exc:
+            await self.session.rollback()
+            raise DuplicateException("配置键", data.config_key) from exc
 
-    async def update_config(self, config_id: uuid.UUID, data: DocCheckConfigUpdate) -> Any | None:
-        """更新配置"""
-        update_data = {}
+    async def update_config(self, config_id: str, data: DocCheckConfigUpdate, operator: str | None) -> Any:
+        config = await self.get_config(config_id)
+        changes: dict[str, Any] = {"operator": operator}
         if data.config_value is not None:
-            update_data["config_value"] = data.config_value
+            changes["config_value"] = data.config_value
         if data.description is not None:
-            update_data["description"] = data.description
+            changes["description"] = data.description
+        if len(changes) == 1:
+            return config
+        updated = await self.repo.update_config(config_id, changes)
+        return updated or config
 
-        return await self.repo.update_config(config_id, update_data)
+    # ============ 校验任务 ============
 
-    # ============ 校验操作 ============
+    async def create_check(self, data: DocCheckCreate, operator: str | None) -> SopAiCheckMain:
+        return await self.repo.create_check(
+            {
+                "file_code": self._generate_file_code(data.doc_type),
+                "file_type": data.doc_type,
+                "file_name": data.doc_title,
+                "check_type": data.check_type,
+                "status": CheckStatus.PENDING.value,
+                "operator": operator,
+            }
+        )
 
     async def get_checks(
         self,
         skip: int = 0,
         limit: int = 20,
         status: str | None = None,
-        doc_type: str | None = None,
+        file_type: str | None = None,
         operator: str | None = None,
-    ) -> tuple[list[Any], int]:
-        """获取校验列表"""
+    ) -> tuple[list[SopAiCheckMain], int]:
         return await self.repo.get_checks(
             skip=skip,
             limit=limit,
             status=status,
-            doc_type=doc_type,
+            file_type=file_type,
             operator=operator,
         )
 
-    async def get_check(self, check_id: uuid.UUID) -> Any | None:
-        """获取校验详情"""
-        return await self.repo.get_check_by_id(check_id)
+    async def get_check(self, check_id: str) -> SopAiCheckMain:
+        check = await self.repo.get_check_by_id(check_id)
+        if check is None:
+            raise NotFoundException("校验任务", check_id)
+        return check
 
-    async def create_check(
-        self,
-        data: DocCheckCreate,
-        operator: str | None = None,
-    ) -> Any:
-        """创建校验任务"""
-        # 生成校验单号
-        file_code = await self._generate_check_no(data.doc_type)
+    async def update_check(self, check_id: str, data: DocCheckUpdate) -> SopAiCheckMain:
+        check = await self.get_check(check_id)
+        if _enum_value(check.status) != CheckStatus.PENDING.value:
+            raise BadRequestException("只有待处理状态的任务才能修改")
+        changes: dict[str, Any] = {}
+        if data.doc_type is not None:
+            changes["file_type"] = data.doc_type
+        if data.doc_title is not None:
+            changes["file_name"] = data.doc_title
+        if data.check_type is not None:
+            changes["check_type"] = data.check_type
+        if not changes:
+            return check
+        updated = await self.repo.update_check(check_id, changes)
+        return updated or check
 
-        # 如果有file_id，从上传存储中获取文档内容
-        doc_content = data.doc_content
-        if data.file_id and not doc_content:
-            from app.modules.quality.qms.doc_check.api import _upload_store
+    async def mark_running(self, check_id: str) -> SopAiCheckMain:
+        check = await self.get_check(check_id)
+        status = _enum_value(check.status)
+        if status == CheckStatus.RUNNING.value:
+            raise BadRequestException("任务正在执行中，请稍后查看进度")
+        if status == CheckStatus.COMPLETED.value:
+            raise BadRequestException("已完成的任务不能重复执行")
+        updated = await self.repo.update_check(
+            check_id,
+            {"status": CheckStatus.RUNNING.value, "result_summary": None},
+        )
+        return updated or check
 
-            upload_data = _upload_store.get(data.file_id)
-            if upload_data:
-                doc_content = upload_data.get("content", "")
-                data.doc_title = upload_data.get("file_name", data.doc_title)
+    async def cancel_check(self, check_id: str) -> SopAiCheckMain:
+        check = await self.get_check(check_id)
+        if _enum_value(check.status) not in (CheckStatus.PENDING.value, CheckStatus.RUNNING.value):
+            raise BadRequestException("只有待处理或执行中的任务才能取消")
+        updated = await self.repo.update_check(check_id, {"status": CheckStatus.CANCELLED.value})
+        return updated or check
 
-        # 构建主表数据
-        check_data = {
-            "file_code": file_code,
-            "file_type": data.doc_type or "SOP",
-            "file_name": data.doc_title,
-            "status": CheckStatus.PENDING.value,
-            "operator": operator,
-        }
-
-        # 创建主表记录
-        check = await self.repo.create_check(check_data)
-
-        # 如果有文档内容，保存到result_summary
-        if doc_content:
-            await self.repo.update_check(
-                check.id,  # type: ignore[arg-type]
-                {
-                    "result_summary": doc_content[:10000] if doc_content else None,  # 限制长度
-                },
-            )
-
-        # 返回完整数据
-        return await self.repo.get_check_by_id(check.id)  # type: ignore[arg-type]
+    async def delete_check(self, check_id: str) -> None:
+        check = await self.get_check(check_id)
+        if _enum_value(check.status) == CheckStatus.RUNNING.value:
+            raise BadRequestException("执行中的任务不能删除，请先取消")
+        if not await self.repo.delete_check(check_id):
+            raise NotFoundException("校验任务", check_id)
 
     async def execute_check(
         self,
-        check_id: uuid.UUID,
-        operator: str | None = None,
-    ) -> Any:
-        """执行校验（调用 AI）"""
-        # 获取校验任务
-        check = await self.repo.get_check_by_id(check_id)
-        if not check:
-            return None
-
-        # 更新状态为处理中
-        await self.repo.update_check(
-            check_id,
-            {
-                "status": CheckStatus.PROCESSING.value,
-            },
-        )
-
+        check_id: str,
+        *,
+        file_id: str | None,
+        doc_content: str | None,
+        operator: str | None,
+    ) -> str:
+        """执行校验：抽取正文 → 调用 LLM → 落库问题明细。返回最终状态。"""
+        check = await self.get_check(check_id)
         try:
-            # 获取系统提示词配置
-            system_prompt = await self._get_system_prompt()
-
-            # 构建用户消息
-            user_message = self._build_check_prompt(
-                check.file_type,  # type: ignore[arg-type]
-                check.file_name or "",
-                check.doc_content,  # type: ignore[attr-defined]
-            )
-
-            # 调用 AI
-            start_time = time.time()
-            ai_util = MinimaxAiUtil()
-            ai_response = ai_util.chat(
-                system_prompt=system_prompt,
-                user_message=user_message,
-                temperature=0.7,
-                max_tokens=4096,
-            )
-            latency_ms = int((time.time() - start_time) * 1000)
-
-            # 解析 AI 响应
-            result = self._parse_ai_response(ai_response)
-
-            # 更新主表
-            update_data = {
-                "status": result.get("status", CheckStatus.COMPLETED.value),
-                "check_result": json.dumps(result.get("check_result", {}), ensure_ascii=False),
-                "ai_suggestion": result.get("ai_suggestion"),
-            }
-
-            # 计算向量（若 pgvector 可用则存储，否则降级）
-            try:
-                vector = self.repo.compute_simple_vector(check.doc_content)  # type: ignore[attr-defined]
-                update_data["content_vector"] = vector
-                update_data["vector_storage_type"] = "text"
-            except Exception as e:
-                logger.warning(f"向量生成失败: {e}")
-
-            # 统计问题数量
-            problems = result.get("problems", [])
-            problem_count = len(problems)
-            critical_count = sum(1 for p in problems if p.get("severity") == "critical")
-            error_count = sum(1 for p in problems if p.get("severity") == "error")
-            warning_count = sum(1 for p in problems if p.get("severity") == "warning")
-
-            update_data.update(
-                {
-                    "problem_count": problem_count,
-                    "critical_count": critical_count,
-                    "error_count": error_count,
-                    "warning_count": warning_count,
-                }
-            )
-
-            await self.repo.update_check(check_id, update_data)
-
-            # 保存问题明细
+            text = (doc_content or "").strip() or await self._load_document_text(file_id)
+            summary, problems = await self._analyze(check, text)
+            await self.repo.soft_delete_problems_by_check(check_id)
             if problems:
-                await self.repo.delete_problems_by_check(check_id)
-                problems_data = []
-                for i, prob in enumerate(problems, 1):
-                    problems_data.append(
-                        {
-                            "problem_no": prob.get("problem_no", i),
-                            "category": prob.get("category", ProblemCategory.CONTENT.value),
-                            "severity": prob.get("severity", ProblemSeverity.WARNING.value),
-                            "title": prob.get("title", ""),
-                            "description": prob.get("description", ""),
-                            "location": prob.get("location"),
-                            "suggestion": prob.get("suggestion"),
-                            "reference": prob.get("reference"),
-                        }
-                    )
-                await self.repo.create_problems_bulk(check_id, problems_data)
-
-            logger.info(
-                f"文档校验完成: file_code={check.file_code}, problem_count={problem_count}, latency_ms={latency_ms}"
-            )
-
-            # 返回更新后的数据
-            return await self.repo.get_check_by_id(check_id)
-
-        except Exception as e:
-            logger.error(f"文档校验失败: {e}")
-            # 更新状态为失败
+                await self.repo.create_problems_bulk(check_id, problems)
             await self.repo.update_check(
                 check_id,
                 {
-                    "status": CheckStatus.FAILED.value,
-                    "check_result": json.dumps({"error": str(e)}, ensure_ascii=False),
+                    "status": CheckStatus.COMPLETED.value,
+                    "result_summary": summary,
+                    "total_problems": len(problems),
+                    "risk_high": sum(1 for item in problems if item["risk_level"] is RiskLevel.HIGH),
+                    "risk_medium": sum(1 for item in problems if item["risk_level"] is RiskLevel.MEDIUM),
+                    "risk_low": sum(1 for item in problems if item["risk_level"] is RiskLevel.LOW),
+                    "operator": operator or check.operator,
                 },
+            )
+            logger.info(
+                "文档校验完成: check_id=%s problem_count=%s",
+                check_id,
+                len(problems),
+                extra={"module": "quality", "check_id": check_id},
+            )
+            return CheckStatus.COMPLETED.value
+        except BadRequestException as exc:
+            logger.warning("文档校验前置条件不满足: check_id=%s detail=%s", check_id, exc.detail)
+            await self.repo.update_check(
+                check_id,
+                {"status": CheckStatus.FAILED.value, "result_summary": str(exc.detail or "校验执行失败")},
+            )
+            raise
+        except (LLMError, httpx.HTTPError):
+            logger.exception("文档校验 AI 调用失败: check_id=%s", check_id)
+            await self.repo.update_check(
+                check_id,
+                {"status": CheckStatus.FAILED.value, "result_summary": "AI 分析暂时不可用，请人工审核"},
+            )
+            return CheckStatus.FAILED.value
+        except Exception:
+            logger.exception("文档校验执行失败: check_id=%s", check_id)
+            await self.repo.update_check(
+                check_id,
+                {"status": CheckStatus.FAILED.value, "result_summary": "校验执行失败，请重试或人工审核"},
             )
             raise
 
-    async def update_check(self, check_id: uuid.UUID, data: DocCheckUpdate) -> Any | None:
-        """更新校验任务"""
-        check = await self.repo.get_check_by_id(check_id)
-        if not check:
-            return None
+    # ============ 问题明细 ============
 
-        # 状态更新（取消/确认通过）- 允许任何状态
-        if data.status is not None:
-            # 取消操作：pending/running -> cancelled
-            if data.status == "cancelled" and check.status in [
-                CheckStatus.PENDING.value,
-                CheckStatus.PROCESSING.value,
-            ]:
-                return await self.repo.update_check(check_id, {"status": data.status})
-            # 确认通过：completed -> confirmed
-            if data.status == "confirmed" and check.status == CheckStatus.COMPLETED.value:
-                return await self.repo.update_check(check_id, {"status": data.status})
-            # 其他状态更新需要验证
-            if check.status != CheckStatus.PENDING.value:
-                raise ValueError("只有待处理状态的任务才能编辑")
+    async def get_problems(self, check_id: str) -> list[SopAiCheckProblem]:
+        return await self.repo.get_problems_by_check(check_id)
 
-        update_data = {}
-        if data.doc_type is not None:
-            update_data["doc_type"] = data.doc_type
-        if data.doc_title is not None:
-            update_data["doc_title"] = data.doc_title
-        if data.doc_content is not None:
-            update_data["doc_content"] = data.doc_content
+    async def update_problem(self, problem_id: str, data: ProblemUpdate, operator: str | None) -> SopAiCheckProblem:
+        problem = await self.repo.get_problem_by_id(problem_id)
+        if problem is None:
+            raise NotFoundException("问题", problem_id)
+        handle_status = HandleStatus(data.handle_status)
+        ignore_reason = data.ignore_reason or problem.ignore_reason
+        if handle_status is HandleStatus.IGNORED and not ignore_reason:
+            raise BadRequestException("忽略问题必须填写忽略原因")
+        updated = await self.repo.update_problem(
+            problem_id,
+            {
+                "handle_status": handle_status,
+                "ignore_reason": ignore_reason if handle_status is HandleStatus.IGNORED else None,
+                "operator": operator,
+            },
+        )
+        return updated or problem
 
-        return await self.repo.update_check(check_id, update_data)
-
-    async def delete_check(self, check_id: uuid.UUID) -> bool:
-        """删除校验任务"""
-        check = await self.repo.get_check_by_id(check_id)
-        if not check:
-            return False
-
-        # 只有待处理状态可以删除
-        if check.status != CheckStatus.PENDING.value:
-            raise ValueError("只有待处理状态的任务才能删除")
-
-        return await self.repo.delete_check(check_id)
-
-    # ============ 问题操作 ============
-
-    async def get_problems(
+    async def batch_update_problems(
         self,
-        check_main_id: uuid.UUID,
-    ) -> list[Any]:
-        """获取问题列表"""
-        return await self.repo.get_problems_by_check(check_main_id)
+        problem_ids: list[str],
+        handle_status: str,
+        ignore_reason: str | None,
+        operator: str | None,
+    ) -> tuple[int, list[str]]:
+        updated = 0
+        skipped: list[str] = []
+        payload = ProblemUpdate(handle_status=handle_status, ignore_reason=ignore_reason)
+        for problem_id in dict.fromkeys(problem_ids):
+            try:
+                await self.update_problem(problem_id, payload, operator)
+            except (NotFoundException, BadRequestException) as exc:
+                logger.info("批量处理跳过问题: problem_id=%s detail=%s", problem_id, exc.detail)
+                skipped.append(problem_id)
+            else:
+                updated += 1
+        return updated, skipped
 
-    # ============ 向量缓存操作 ============
+    async def confirm_check(self, check_id: str, operator: str | None) -> tuple[str, int]:
+        """确认通过：把仍未处理的问题标记为已确认，返回（任务状态, 确认条数）。"""
+        check = await self.get_check(check_id)
+        if _enum_value(check.status) != CheckStatus.COMPLETED.value:
+            raise BadRequestException("只有已完成的校验才能确认通过")
+        problems = await self.repo.get_problems_by_check(check_id)
+        pending = [item for item in problems if _enum_value(item.handle_status) == HandleStatus.PENDING.value]
+        for item in pending:
+            await self.repo.update_problem(
+                item.id,
+                {"handle_status": HandleStatus.CONFIRMED, "ignore_reason": None, "operator": operator},
+            )
+        return _enum_value(check.status), len(pending)
 
-    async def get_vector_cache(
-        self,
-        doc_type: str | None = None,
-        doc_hash: str | None = None,
-    ) -> list[Any]:
-        """获取向量缓存"""
-        return await self.repo.get_vector_cache(doc_type=doc_type, doc_hash=doc_hash)  # type: ignore[attr-defined,no-any-return]
+    # ============ 内部方法 ============
 
-    async def get_vector_cache_by_doc(self, doc_type: str, doc_content: str) -> Any | None:
-        """根据文档获取向量缓存"""
-        doc_hash = self.repo.compute_doc_hash(doc_content)
-        return await self.repo.get_vector_cache_by_doc(doc_type, doc_hash)  # type: ignore[attr-defined]
-
-    # ============ 辅助方法 ============
-
-    async def _generate_check_no(self, doc_type: str) -> str:
-        """生成校验单号"""
-        # 格式: DC-文档类型-时间戳
+    def _generate_file_code(self, doc_type: str) -> str:
+        prefix = "".join(ch for ch in doc_type.strip().upper() if ch.isalnum()) or "DOC"
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        return f"DC-{doc_type}-{timestamp}"
+        return f"DC-{prefix}-{timestamp}-{uuid.uuid4().hex[:4].upper()}"
+
+    async def _load_document_text(self, file_id: str | None) -> str:
+        if not file_id:
+            raise BadRequestException("缺少待校验文件，请先上传文件或提交文档正文")
+        data = await load_upload_bytes(file_id)
+        if data is None:
+            raise BadRequestException("上传文件已失效，请重新上传")
+        try:
+            text = await asyncio.to_thread(_extract_text, data)
+        except Exception as exc:
+            logger.exception("文档解析失败: file_id=%s", file_id)
+            raise BadRequestException("文档解析失败，请确认格式为 docx/pdf/txt") from exc
+        cleaned = text.strip()
+        if not cleaned:
+            raise BadRequestException("未能从文档中提取到文本内容")
+        return cleaned[:MAX_DOC_CHARS]
+
+    async def _analyze(self, check: SopAiCheckMain, text: str) -> tuple[str, list[dict[str, Any]]]:
+        payload = await llm_client.chat_json(
+            messages=[
+                {"role": "system", "content": await self._get_system_prompt()},
+                {"role": "user", "content": self._build_prompt(check.file_name or "", check.file_type or "", text)},
+            ],
+            expected_keys=["summary", "problems"],
+            temperature=0.3,
+        )
+        summary = _clip(payload.get("summary"), 4000) or "AI 未返回总体结论，请人工复核"
+        raw_items = payload.get("problems")
+        items = raw_items if isinstance(raw_items, list) else []
+        problems: list[dict[str, Any]] = []
+        for item in items[:MAX_PROBLEMS]:
+            if not isinstance(item, dict):
+                continue
+            normalized = self._normalize_problem(item, check)
+            if normalized["description"] or normalized["suggestion"]:
+                problems.append(normalized)
+        return summary, problems
+
+    def _normalize_problem(self, item: dict[str, Any], check: SopAiCheckMain) -> dict[str, Any]:
+        return {
+            "problem_type": _to_problem_type(item.get("problem_type") or item.get("category")),
+            "risk_level": _to_risk_level(item.get("risk_level") or item.get("severity")),
+            "location": _clip(item.get("location"), 500),
+            "description": _clip(item.get("description") or item.get("title"), 4000),
+            "source_file": _clip(item.get("source_file") or check.file_name, 500),
+            "suggestion": _clip(item.get("suggestion"), 4000),
+            "handle_status": HandleStatus.PENDING,
+            "operator": check.operator,
+        }
 
     async def _get_system_prompt(self) -> str:
-        """获取系统提示词"""
         config = await self.repo.get_config_by_key("system_prompt")
-        if config and config.config_value:
-            try:
-                return json.loads(config.config_value).get(  # type: ignore[no-any-return]
-                    "prompt", self.DEFAULT_SYSTEM_PROMPT
-                )
-            except Exception:
-                logger.exception("Failed to parse system prompt config JSON, falling back to default")
-                pass
+        if config is not None and config.config_value and config.config_value.strip():
+            return config.config_value.strip()
         return self.DEFAULT_SYSTEM_PROMPT
 
-    def _build_check_prompt(self, doc_type: str, doc_title: str, doc_content: str) -> str:
-        """构建校��提示词"""
-        return f"""请审核以下{doc_type}文档：
+    def _build_prompt(self, file_name: str, file_type: str, text: str) -> str:
+        return f"""请审核以下{file_type or "SOP"}文档：
+文档名称：{file_name or "未命名"}
+文档正文：
+{text}
 
-文档标题：{doc_title}
-
-文档内容：
-{doc_content}
-
-请进行合规性审核并返回JSON格式的审核结果。"""
-
-    def _parse_ai_response(self, ai_response: str) -> dict[str, Any]:
-        """解析 AI 响应"""
-        try:
-            # 尝试直接解析 JSON
-            result = json.loads(ai_response)
-            return result  # type: ignore[no-any-return]
-        except Exception:
-            logger.exception("Failed to directly parse AI response as JSON, attempting regex extraction")
-            pass
-
-        try:
-            # 尝试从文本中提取 JSON
-            import re
-
-            json_match = re.search(r"\{.*\}", ai_response, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
-                return result  # type: ignore[no-any-return]
-        except Exception:
-            logger.exception("Failed to extract and parse JSON from AI response using regex")
-            pass
-
-        # 解析失败，返回错误结果
-        logger.warning(f"AI 响应解析失败: {ai_response[:200]}")
-        return {
-            "status": CheckStatus.FAILED.value,
-            "check_result": {"raw_response": ai_response},
-            "ai_suggestion": "AI 响应解析失败，请检查格式",
-            "problems": [],
-        }
+请按系统提示要求返回 JSON 审核结果。"""

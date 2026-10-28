@@ -13,7 +13,7 @@ import {
 import type { ChapterAsset } from '@/types/dossier-writer'
 import type { AIPreviewResult, AIFieldResult, PageSplitInfo } from '@/types/dossier-writer'
 import { fetchAssetCategories, fetchSelectedAssets } from '@/lib/api/client/dossier-writer'
-import { aiConfirmAndFill, aiPreviewExtraction, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
+import { aiConfirmAndFill, aiPreviewJob, aiPreviewSubmit, splitPreview, splitConfirmAndInsert } from '@/actions/dossier-writer'
 import { testLLMConnection } from '@/actions/settings'
 
 const { Text, Paragraph } = Typography
@@ -117,7 +117,40 @@ export function AiFillPanel({ chapterId, chapterCode, assets: _assets, refreshKe
   const handleAiPreview = async () => {
     setPreviewLoading(true)
     try {
-      const result = await aiPreviewExtraction(chapterId)
+      // 解析是后台任务：提交拿 job_id 后轮询（逐类目 LLM 调用 >5s，不再同步等 10 分钟）
+      const jobId = await aiPreviewSubmit(chapterId)
+      const POLL_MS = 2000
+      const TIMEOUT_MS = 10 * 60_000
+      const startedAt = Date.now()
+      let result: AIPreviewResult | null = null
+      for (;;) {
+        if (Date.now() - startedAt > TIMEOUT_MS) {
+          message.error('AI 解析超时，请稍后重试或减少素材数量', 10)
+          return
+        }
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS))
+        let state
+        try {
+          state = await aiPreviewJob(jobId)
+        } catch {
+          message.error('查询解析任务失败（服务可能已重启），请重试', 10)
+          return
+        }
+        if (state.status === 'failed') {
+          message.error(state.error || 'AI解析失败', 10)
+          return
+        }
+        if (state.status === 'done') {
+          result = state.result
+          break
+        }
+      }
+
+      if (!result) {
+        message.error('AI 服务返回为空，请检查后端日志或稍后重试', 10)
+        return
+      }
+
       if (result.success) {
         setPreviewResult(result)
         setEditedFields(result.fields)

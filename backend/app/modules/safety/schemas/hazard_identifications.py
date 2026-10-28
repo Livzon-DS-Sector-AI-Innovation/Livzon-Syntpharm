@@ -299,6 +299,41 @@ class HazardIdentificationBatchApiResponse(BaseModel):
     data: HazardIdentificationBatchResponse
 
 
+class HazardIdentificationStatsData(BaseModel):
+    """危险源辨识工作流统计（按 overall_status 分组）"""
+
+    total_draft: int = 0
+    total_in_progress: int = 0
+    total_pending_review: int = 0
+    total_completed: int = 0
+
+
+class HazardIdentificationStatsApiResponse(BaseModel):
+    """工作流统计响应（替代裸 dict，保证 response_model 校验与前端类型生成）"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardIdentificationStatsData | None = None
+
+
+class HazardIdentificationLedgerStatsData(BaseModel):
+    """危险源辨识台账统计（按固有风险等级分组）"""
+
+    total: int = 0
+    level_1: int = 0
+    level_2: int = 0
+    level_3: int = 0
+    level_4: int = 0
+
+
+class HazardIdentificationLedgerStatsApiResponse(BaseModel):
+    """台账统计响应（替代裸 dict）"""
+
+    code: int = 200
+    message: str = "success"
+    data: HazardIdentificationLedgerStatsData | None = None
+
+
 class RegulationStagesApiResponse(BaseModel):
     """Regulation stages response wrapper"""
 

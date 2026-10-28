@@ -9,7 +9,7 @@ core.deps 的 re-export 形成循环依赖。
 
 from collections.abc import Awaitable, Callable
 
-from fastapi import Depends
+from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -61,4 +61,31 @@ def require_any_permission(*permission_codes: str) -> PermissionDependency:
     return _dependency
 
 
-__all__ = ["PermissionContext", "require_any_permission", "require_permission"]
+def require_route_permission(
+    resolver: Callable[[str, str], str],
+) -> PermissionDependency:
+    """依赖工厂：由 `resolver(method, path)` 动态解析权限码。
+
+    用于「一个子路由里读写混排、按导入时的静态码无法区分动作」的场景（如 safety
+    模块：20 个子路由、220 个接口）。`resolver` 必须是模块内的纯函数，声明
+    「哪个资源段 + 哪种方法 → 哪个权限码」，不要在 resolver 里做 IO。
+
+    与 `require_permission` 的区别仅在于权限码来源；判定、降级与异常语义完全一致。
+    """
+
+    async def _dependency(
+        request: Request,
+        user: User = Depends(require_current_user),
+        db: AsyncSession = Depends(get_db),
+    ) -> PermissionContext:
+        return await build_permission_context(db, user, resolver(request.method, request.url.path))
+
+    return _dependency
+
+
+__all__ = [
+    "PermissionContext",
+    "require_any_permission",
+    "require_permission",
+    "require_route_permission",
+]

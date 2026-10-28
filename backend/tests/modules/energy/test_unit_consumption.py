@@ -96,13 +96,18 @@ class TestDeviationStatus:
         """5% < 偏差 ≤ 15% 为 warning"""
         assert determine_deviation_status(5.01) == "warning"
         assert determine_deviation_status(15.0) == "warning"
-        assert determine_deviation_status(-10.0) == "warning"
 
     async def test_critical_status(self) -> None:
         """偏差 > 15% 为 critical"""
         assert determine_deviation_status(15.01) == "critical"
         assert determine_deviation_status(30.0) == "critical"
-        assert determine_deviation_status(-20.0) == "critical"
+
+    async def test_negative_deviation_is_normal(self) -> None:
+        """低于目标（节能）一律 normal——分档只算超标，不看绝对值（`D-29`）"""
+        assert determine_deviation_status(-5.01) == "normal"
+        assert determine_deviation_status(-10.0) == "normal"
+        assert determine_deviation_status(-20.0) == "normal"
+        assert determine_deviation_status(-99.0) == "normal"
 
     async def test_unknown_status(self) -> None:
         """None 返回 unknown"""
@@ -124,7 +129,8 @@ def _patched_energy_source(total_energy: float) -> Iterator[None]:
     with (
         patch(
             "app.modules.energy.service.get_workshop_by_id",
-            AsyncMock(return_value=SimpleNamespace(name="装配车间A")),
+            # 车间名必须落在 PRODUCTION_WORKSHOPS 内，否则被生产车间守卫先挡下，走不到被测的计算路径
+            AsyncMock(return_value=SimpleNamespace(name="101车间")),
         ),
         patch("app.modules.energy.service.get_target", AsyncMock(return_value=None)),
         patch(
