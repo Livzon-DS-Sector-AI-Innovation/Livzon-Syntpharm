@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -59,6 +60,7 @@ import {
   submitSamplingOrderForApproval,
   approveSamplingOrder,
 } from '@/actions/quality'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 const { RangePicker } = DatePicker
 const { Text: _Text } = Typography
@@ -78,12 +80,10 @@ const initialFilters: SamplingOrderFilter = {
 
 export default function SamplingPage() {
   // 状态
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<SamplingOrderListItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState<SamplingOrderFilter>(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState<SamplingOrderFilter>(initialFilters)
 
   // 弹窗状态
   const [modalVisible, setModalVisible] = useState(false)
@@ -98,40 +98,39 @@ export default function SamplingPage() {
   const [items, setItems] = useState<SamplingOrderItemCreate[]>([])
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  // 加载数据
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  // 打开即加载：已提交的筛选条件 / 翻页变化 → queryKey 变化 → 自动重取。
+  // filters 是输入中的草稿态，appliedFilters 才是真正发请求的条件，避免每敲一个字都请求。
+  const samplingQuery = useQuery({
+    queryKey: ['sampling-orders', appliedFilters, page, pageSize],
+    queryFn: async () => {
       const response = await getSamplingOrders({
-        ...filters,
+        ...appliedFilters,
         page,
         page_size: pageSize,
       })
       if (response.code === 200 || response.code === 0) {
-        const data = response.data as SamplingOrderListResponse
-        setData(data?.items || [])
-        setTotal(data?.total || 0)
-      } else {
-        message.error(response.message || '加载失败')
+        const payload = response.data as SamplingOrderListResponse
+        return { items: payload?.items ?? [], total: payload?.total ?? 0 }
       }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page, pageSize])
+      throw new Error(response.message || '加载失败')
+    },
+    placeholderData: keepPreviousData,
+  })
 
-  // 筛选
+  const data = samplingQuery.data?.items ?? []
+  const total = samplingQuery.data?.total ?? 0
+
+  // 筛选：只更新「已提交条件」与页码，由 queryKey 触发取数（条件未变则不重复请求）
   const handleSearch = () => {
+    setAppliedFilters(filters)
     setPage(1)
-    loadData()
   }
 
   // 重置筛选
   const handleReset = () => {
     setFilters(initialFilters)
+    setAppliedFilters(initialFilters)
     setPage(1)
-    loadData()
   }
 
   // 新建
@@ -195,7 +194,7 @@ export default function SamplingPage() {
       const response = await deleteSamplingOrder(id)
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
-        loadData()
+        void samplingQuery.refetch()
       } else {
         message.error(response.message || '删除失败')
       }
@@ -210,7 +209,7 @@ export default function SamplingPage() {
       const response = await submitSamplingOrderForApproval(id)
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
-        loadData()
+        void samplingQuery.refetch()
       } else {
         message.error(response.message || '提交失败')
       }
@@ -227,7 +226,7 @@ export default function SamplingPage() {
       })
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
-        loadData()
+        void samplingQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -274,7 +273,7 @@ export default function SamplingPage() {
       if (response.code === 200 || response.code === 0 || response.data?.order_no) {
         message.success(editingRecord ? '更新成功' : '创建成功')
         setModalVisible(false)
-        loadData()
+        void samplingQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -534,8 +533,14 @@ export default function SamplingPage() {
           columns={columns}
           dataSource={data}
           rowKey="id"
-          loading={loading}
+          loading={samplingQuery.isPending}
           scroll={{ x: 1500 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: samplingQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void samplingQuery.refetch()} />
+            ) : undefined,
+          }}
           pagination={{
             current: page,
             pageSize: pageSize,

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useMemo } from 'react'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import {
   Table,
   Button,
@@ -57,6 +58,7 @@ import {
   approveStabilityStudy,
   getStabilityStudySampleNodes,
 } from '@/actions/quality'
+import { DataUnavailable } from '@/components/common/DataUnavailable'
 
 const { RangePicker } = DatePicker
 const { TextArea } = Input
@@ -78,12 +80,10 @@ const DEFAULT_SAMPLE_INTERVALS = [0, 3, 6, 9, 12, 18, 24, 36, 48, 60]
 
 export default function StabilityStudyPage() {
   // 状态
-  const [loading, setLoading] = useState(false)
-  const [data, setData] = useState<StabilityStudyListItem[]>([])
-  const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [filters, setFilters] = useState<StabilityStudyFilter>(initialFilters)
+  const [appliedFilters, setAppliedFilters] = useState<StabilityStudyFilter>(initialFilters)
 
   // 弹窗状态
   const [createModalVisible, setCreateModalVisible] = useState(false)
@@ -98,42 +98,43 @@ export default function StabilityStudyPage() {
   const [createForm] = Form.useForm()
   const [submitLoading, setSubmitLoading] = useState(false)
 
-  // 加载数据
-  const loadData = useCallback(async () => {
-    setLoading(true)
-    try {
+  // 打开即加载：已提交的筛选条件 / 翻页变化 → queryKey 变化 → 自动重取。
+  // filters 是输入中的草稿态，appliedFilters 才是真正发请求的条件，避免每敲一个字都请求。
+  const studiesQuery = useQuery({
+    queryKey: ['stability-studies', appliedFilters, page, pageSize],
+    queryFn: async () => {
       const response = await getStabilityStudies({
-        ...filters,
+        ...appliedFilters,
         page,
         page_size: pageSize,
       }) as { items?: StabilityStudyListItem[]; total?: number; code?: number; message?: string; data?: { items?: StabilityStudyListItem[]; total?: number } }
-      if (response.items !== undefined) {
-        setData(response.items || [])
-        setTotal(response.total || 0)
-      } else if (response.code === 200 || response.code === 0) {
-        setData(response.data?.items || [])
-        setTotal(response.data?.total || 0)
-      } else {
-        message.error(response.message || '加载失败')
-      }
-    } catch (_error) {
-      message.error('加载数据失败')
-    } finally {
-      setLoading(false)
-    }
-  }, [filters, page, pageSize])
 
-  // 筛选
+      // 后端对这批接口存在两种信封形态，这里统一成 { items, total }
+      if (response.items !== undefined) {
+        return { items: response.items ?? [], total: response.total ?? 0 }
+      }
+      if (response.code === 200 || response.code === 0) {
+        return { items: response.data?.items ?? [], total: response.data?.total ?? 0 }
+      }
+      throw new Error(response.message || '加载失败')
+    },
+    placeholderData: keepPreviousData,
+  })
+
+  const data = studiesQuery.data?.items ?? []
+  const total = studiesQuery.data?.total ?? 0
+
+  // 筛选：只更新「已提交条件」与页码，由 queryKey 触发取数（条件未变则不重复请求）
   const handleSearch = () => {
+    setAppliedFilters(filters)
     setPage(1)
-    loadData()
   }
 
   // 重置筛选
   const handleReset = () => {
     setFilters(initialFilters)
+    setAppliedFilters(initialFilters)
     setPage(1)
-    loadData()
   }
 
   // 新建
@@ -204,7 +205,7 @@ export default function StabilityStudyPage() {
       const response = await deleteStabilityStudy(id) as { code?: number; message?: string }
       if (response.code === 200 || response.code === 0 || response.message?.includes('成功')) {
         message.success('删除成功')
-        loadData()
+        void studiesQuery.refetch()
       } else {
         message.error(response.message || '删除失败')
       }
@@ -219,7 +220,7 @@ export default function StabilityStudyPage() {
       const response = await submitStabilityStudy(id) as { code?: number; message?: string; data?: { status?: string } }
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success('提交成功')
-        loadData()
+        void studiesQuery.refetch()
       } else {
         message.error(response.message || '提交失败')
       }
@@ -236,7 +237,7 @@ export default function StabilityStudyPage() {
       }) as { code?: number; message?: string; data?: { status?: string } }
       if (response.code === 200 || response.code === 0 || response.data?.status) {
         message.success(approved ? '审批通过' : '已驳回')
-        loadData()
+        void studiesQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -276,7 +277,7 @@ export default function StabilityStudyPage() {
       if (response.code === 200 || response.code === 0 || response.data?.study_no) {
         message.success(editingRecord ? '更新成功' : '创建成功')
         setCreateModalVisible(false)
-        loadData()
+        void studiesQuery.refetch()
       } else {
         message.error(response.message || '操作失败')
       }
@@ -614,8 +615,14 @@ export default function StabilityStudyPage() {
           columns={columns}
           dataSource={data}
           rowKey="id"
-          loading={loading}
+          loading={studiesQuery.isPending}
           scroll={{ x: 1800 }}
+          locale={{
+            // 取数失败时在表格内嵌降级区块，与「确实没有记录」的空态区分开
+            emptyText: studiesQuery.isError ? (
+              <DataUnavailable compact onRetry={() => void studiesQuery.refetch()} />
+            ) : undefined,
+          }}
           pagination={{
             current: page,
             pageSize: pageSize,
