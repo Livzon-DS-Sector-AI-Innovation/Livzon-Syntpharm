@@ -51,6 +51,16 @@ const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 /** 被测前端源：与 playwright.config.ts 的 baseURL 同源，本地跑 dev 栈时用 E2E_FRONTEND_URL 覆盖 */
 const APP_ORIGIN = (process.env.E2E_FRONTEND_URL ?? 'http://127.0.0.1:13000').replace(/\/+$/, '')
 
+/**
+ * 取数断言的等待预算。
+ *
+ * 不能按本地开发机的速度定：CI runner 上 Next 生产构建 + 后端 + PostgreSQL 同机，
+ * 实测一次 Server Action 取数要 25~60s（/quality/fqc 30.6s、/quality/instrument/records 57.4s），
+ * 台账页的浏览器 fetch 也要 40s+。15s 的预算会把「环境慢」误判成「页面根本没有取数」。
+ * 需要更严/更松时用 E2E_DATA_TIMEOUT_MS 覆盖。
+ */
+const DATA_TIMEOUT_MS = Number(process.env.E2E_DATA_TIMEOUT_MS ?? 90_000)
+
 function summarizeErrors(errors: string[], label: string): string {
   if (errors.length <= 3) return errors.join('\n')
   // Group by URL prefix (domain + first 2 path segments + method + status)
@@ -183,7 +193,7 @@ async function checkRoute(page: Page, route: RouteCase) {
         .poll(
           async () => (await rows(page).count()) > 0 || (await emptyLocator.isVisible()),
           {
-            timeout: 15_000,
+            timeout: DATA_TIMEOUT_MS,
             message: `${route.path} 既没有数据行也没有空态文案：页面可能根本没有发起取数`,
           },
         )
@@ -206,7 +216,7 @@ async function checkRoute(page: Page, route: RouteCase) {
               return request.url.includes(spec)
             }),
           {
-            timeout: 15_000,
+            timeout: DATA_TIMEOUT_MS,
             message: `${route.path} 没有发出取数请求（${spec}）：查询可能没有接线`,
           },
         )
@@ -587,7 +597,8 @@ test('regulation detail renders after opening from the list (#169)', async ({ pa
 
 for (const { name, routes } of allModuleRouteSets) {
   test(`${name} routes load`, async ({ page }) => {
-    test.setTimeout(Math.max(60_000, routes.length * 15_000)) // 60s base + 15s per route
+    // 60s base + 15s/路由，再留一个 DATA_TIMEOUT_MS 的余量：慢环境下单个页面可能把取数预算用满
+    test.setTimeout(Math.max(60_000, routes.length * 15_000) + DATA_TIMEOUT_MS)
     const failures: { path: string; error: string }[] = []
 
     for (const route of routes) {
